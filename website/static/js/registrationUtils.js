@@ -1,4 +1,3 @@
-/*global  */
 require('css/registrations.css');
 
 var $ = require('jquery');
@@ -304,6 +303,9 @@ var MetaSchema = function(params) {
     self.schema = params.schema || {};
     self.id = [self.name, self.version].join('_');
 
+    self.requiresApproval = params.requires_approval || false;
+    self.fulfills = params.fulfills || [];
+
     $.each(self.schema.pages, function(i, page) {
         var mapped = {};
         $.each(page.questions, function(qid, question) {
@@ -340,7 +342,7 @@ MetaSchema.prototype.flatQuestions = function() {
  * @param {Date} params.initated
  * @param {Date} params.updated
  * @param {Boolean} params.is_pending_review
- * @param {Boolean} params.approved
+ * @param {Boolean} params.is_approved
  * @param {Date} params.updated
  * @param {Object} params.urls
  * @param {String} params.urls.edit
@@ -364,18 +366,17 @@ var Draft = function(params, metaSchema) {
 
     self.urls = params.urls || {};
 
-    // TODO: uncomment to support draft approval states
-    //    self.fulfills = params.fulfills || [];
-    //    self.isPendingReview = params.flags.isPendingReview || false;
-    //    self.requiresApproval = params.config.requiresApproval || false;
-    //    self.isApproved = params.flags.isApproved || true;
-    //
-    //   $.each(params.config || {}, function(key, value) {
-    //        self[key] = value;
-    //    });
-    //    $.each(params.flags || {}, function(key, value) {
-    //        self[key] = value;
-    //    });
+
+    self.fulfills = params.fulfills || [];
+    self.isPendingReview = params.is_pending_review;
+    self.isApproved = params.is_approved;
+
+    self.requiresApproval = ko.pureComputed(function() {
+        return self.metaSchema && self.metaSchema.requiresApproval;
+    });
+    self.fulfills = ko.pureComputed(function() {
+        return self.metaSchema ? self.metaSchema.fulfills : [];
+    });
 
     self.completion = ko.computed(function() {
         var total = 0;
@@ -519,7 +520,12 @@ var RegistrationEditor = function(urls, editorId) {
         }
     });
 
-    self.iterObject = $osf.iterObject;
+    self.canRegister = ko.computed(function() {
+        var draft = self.draft();
+        return draft && draft.isApproved;
+    });
+
+    self.iterObject = $osf.iterObject;    
 
     // TODO: better extensions system?
     self.extensions = {

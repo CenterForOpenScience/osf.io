@@ -77,7 +77,6 @@
                 <p>initiated by: <span data-bind="text: initiator.fullname"></span>
                 <p>started: <span data-bind="text: initiated"></span></p>
                 <p>last updated: <span data-bind="text: updated"></span></p>
-                <!--
                 <span data-bind="if: requiresApproval">
                     <div data-bind="if: isApproved">
                         <div class="draft-status-badge bg-success"> Approved</div>
@@ -89,7 +88,6 @@
                         <div class="draft-status-badge bg-warning"> Pending Review</div>
                     </div>
                 </span>
-                -->
                 </small>
                 <div class="row">
                   <div class="col-md-10">
@@ -98,16 +96,14 @@
                     <button class="btn btn-danger"
                             data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
                   </div>
-                  <!--
                   <div class="col-md-1">
                      <a class="btn btn-success" data-bind="attr.href: urls.register_page,
                                                            tooltip: {
-                                                             placement: top,
+                                                             placement: 'top',
                                                              title: isApproved ? 'Finialize this draft' : 'This draft must be approved before it can be registered'
                                                            },
                                                            css: {'disabled': !isApproved}">Register</a>
                   </div>
-                  -->
                 </div>
               </h4>
             </li>
@@ -141,10 +137,23 @@
         <hr />
         <div class="row" data-bind="if: selectedSchema">
           <div class="col-md-12" data-bind="with: selectedSchema">
-            <span data-bind="if: schema.config">
+            <span data-bind="if: requiresApproval">
+              <div class="row">
+                <div class="col-md-12 schema-fulfillment">
+                  <span class="well" data-bind="tooltip: {
+                                                  placement: 'top',
+                                                  title: 'Site administrations will need to approve this draft before it can be registered'
+                                                }">
+                    <span>Requires Approval</span>&nbsp;&nbsp;
+                    <i class="fa fa-exclamation-triangle" target="_blank"></i>
+                  </span>              
+                </div>
+              </div>
+            </span>
+            <span data-bind="if: fulfills.length">
               <h4> Fulfills: </h4>
               <div class="row">
-                <div class="col-md-12 schema-fulfillment" data-bind="foreach: schema.config.fulfills">
+                <div class="col-md-12 schema-fulfillment" data-bind="foreach: fulfills">
                   <span class="well">
                     <span data-bind="text: name"></span>&nbsp;&nbsp;
                     <a class="fa fa-info-circle" target="_blank" data-bind="attr.href: info"></a>

@@ -1659,7 +1659,7 @@ class TestNode(OsfTestCase):
         assert_equal(user, draft.initiator)
         assert_equal(schema, draft.registration_schema)
         assert_equal(data, draft.registration_metadata)
-        
+
     def test_create_draft_registration_adds_to_draft_registrations_list(self):
         ensure_schemas()
         proj = ProjectFactory()

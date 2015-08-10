@@ -7,7 +7,7 @@
       <div id="embargo-addon" data-bind="with: $root.embargoAddon">
         <hr />
         
-        <p class="help-block">${language.REGISTRATION_EMBARGO_INFO}</p>
+        <p class="help-block">${language.REGISTRATION_EMBARGO_INFO | n}</p>
         <div class="form-group">
           <label class="control-label">Registration Choice</label>
           <select class="form-control" data-bind="options: registrationOptions,
@@ -29,8 +29,9 @@
       <div id="register-show-submit">
 
         <hr />
-        
-        <p class="help-block">${language.BEFORE_REGISTRATION_INFO}</p>
+        <p class="help-block">
+          ${language.BEFORE_REGISTRATION_INFO | n}
+        </p>
         
         <div class="form-group">
           <label>
@@ -54,7 +55,7 @@
   <% import json %>
   <script type="text/javascript">
     window.contextVars = window.contextVars || {};
-    window.contextVars.draft = ${json.dumps(draft)};
+    window.contextVars.draft = ${draft | sjson, n};
   </script>
   <script src=${"/static/public/js/register-page.js" | webpack_asset}></script>
 </%def>

@@ -3610,11 +3610,16 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     @property
     def is_pending_review(self):
-        return self.approval and (self.approval.is_pending_review if self.requires_approval else False)
+        return self.approval.is_pending_review if (self.requires_approval and self.approval) else False
 
     @property
     def is_approved(self):
-        return self.approval and (self.approval.is_approved if self.requires_approval else True)
+        if self.requires_approval and not self.approval:
+            return False
+        elif self.requires_approval and self.approval:
+            return self.approval.is_approved
+        else:
+            return True
 
     def update_metadata(self, metadata, save=True):
         # TODO(barbour-em): delete or implement in schema

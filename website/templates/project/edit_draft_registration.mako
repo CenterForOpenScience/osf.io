@@ -83,8 +83,13 @@
                 </p>
                 <button data-bind="click: save" type="button" class="btn btn-primary">Save
                 </button>
-                <a data-bind="click: $root.check" type="button" class="pull-right btn btn-success">Register
-                </a>
+                <span data-bind="tooltip: {
+                                   title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
+                                 }">                      
+                  <a data-bind="css: {'disabled': !canRegister()},
+                                click: $root.check" type="button" class="pull-right btn btn-success">Register
+                  </a>
+                </span>
               </div>
             </div>
           </div>
@@ -100,7 +105,7 @@
         <%
         import json %>
             window.contextVars = $.extend(true, {}, window.contextVars, {
-                draft: ${json.dumps(draft)}
+                draft: ${draft | sjson, n}
 
             });
     </script>

@@ -207,13 +207,15 @@ ko.bindingHandlers.fadeVisible = {
     }
 };
 
+var tooltip = function(el, valueAccessor) {
+    var params = valueAccessor();
+    $(el).tooltip(params);
+};
 // Run Bootstrap tooltip JS automagically
 // http://getbootstrap.com/javascript/#tooltips
 ko.bindingHandlers.tooltip = {
-    init: function(el, valueAccessor) {
-        var params = valueAccessor();
-        $(el).tooltip(params);
-    }
+    init: tooltip,
+    update: tooltip
 };
 // Attach view model logic to global keypress events
 ko.bindingHandlers.onKeyPress = {
