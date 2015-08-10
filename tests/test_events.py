@@ -251,7 +251,10 @@ class TestFileMoved(OsfTestCase):
         self.private_sub.save()
         # for file subscription
         self.file_sub = factories.NotificationSubscriptionFactory(
-            _id=self.project._id + '_' + self.event.wbid + '_file_updated',
+            _id='{pid}_{wbid}_file_updated'.format(
+                pid=self.project._id,
+                wbid=self.event.waterbutler_id
+            ),
             owner=self.project,
             event_name='xyz42_file_updated'
         )
@@ -341,7 +344,10 @@ class TestCategorizeUsers(OsfTestCase):
         self.private_sub.save()
         # for file subscription
         self.file_sub = factories.NotificationSubscriptionFactory(
-            _id=self.project._id + '_' + self.event.wbid + '_file_updated',
+            _id='{pid}_{wbid}_file_updated'.format(
+                pid=self.project._id,
+                wbid=self.event.waterbutler_id
+            ),
             owner=self.project,
             event_name='xyz42_file_updated'
         )

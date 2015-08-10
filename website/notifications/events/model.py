@@ -37,10 +37,6 @@ class Event(object):
       - class
       example: event = file_added, class = FileAdded
     """
-    _text_message = None
-    _html_message = None
-    _url = None
-    _event = None
 
     def __init__(self, user, node, action):
         self.user = user
@@ -79,101 +75,81 @@ class Event(object):
 
     @property
     def url(self):
-        return self._url
+        raise NotImplementedError
 
     @property
     def event(self):
-        return self._event
+        """String
 
-    def form_event(self):
-        """
-        Built from USER_SUBSCRIPTIONS_AVAILABLE, NODE_SUBSCRIPTIONS_AVAILABLE, and guids where applicable
-        """
-        raise NotImplementedError
-
-    def form_message(self):
-        """Piece together the message to be sent to subscribed users"""
-        raise NotImplementedError
-
-    def form_url(self):
-        """Build url from relevant info"""
+        Examples:
+            <waterbutler id>_file_updated"""
         raise NotImplementedError
 
 
 class FileEvent(Event):
-    _wbid = None  # waterbutler id/path
 
     """File event base class, should not be called directly"""
     def __init__(self, user, node, event, payload=None):
         super(FileEvent, self).__init__(user, node, event)
         self.payload = payload
-        self._wbid = None
+        self._url = None
 
     @property
-    def wbid(self):
-        return self._wbid
+    def html_message(self):
+        return '{action} {f_type} "<b>{name}</b>".'.format(
+            action=tuple(self.action.split("_"))[1],
+            f_type=tuple(self.action.split("_"))[0],
+            name=self.payload['metadata']['materialized'].lstrip('/')
+        )
 
-    def form_message(self):
-        """Sets the message to 'action file/folder <location>' """
-        f_type, action = tuple(self.action.split("_"))
-        name = self.payload['metadata']['materialized'].lstrip('/')
-        self._html_message = '{} {} "<b>{}</b>".'.format(action, f_type, name)
-        self._text_message = '{} {} "{}".'.format(action, f_type, name)
+    @property
+    def text_message(self):
+        return '{action} {f_type} "{name}".'.format(
+            action=tuple(self.action.split("_"))[1],
+            f_type=tuple(self.action.split("_"))[0],
+            name=self.payload['metadata']['materialized'].lstrip('/')
+        )
 
-    def form_event(self):
-        """Simplest event set"""
-        self._event = "file_updated"
-        self._wbid = self.payload['metadata']['path'].strip('/')
+    @property
+    def event(self):
+        return "file_updated"
 
-    def form_url(self):
+    @property
+    def waterbutler_id(self):
+        return self.payload['metadata']['path'].strip('/')
+
+    @property
+    def url(self):
         """Basis of making urls, this returns the url to the node."""
-        self._url = furl(self.node.absolute_url)
-        self._url.path.segments = self.node.web_url_for('collect_file_trees').split('/')
+        if self._url is None:
+            url = furl(self.node.absolute_url)
+            url.path.segments = self.node.web_url_for(
+                'collect_file_trees'
+            ).split('/')
+
+        return url
 
 
-class UpdateFileEvent(FileEvent):
-    """
-    Class for simple file operations such as updating, adding files
-    """
-    def __init__(self, user, node, event, payload=None):
-        super(UpdateFileEvent, self).__init__(user, node, event, payload=payload)
-        self.form_event()
-        self.form_message()
-        self.form_url()
-
-    def form_event(self):
-        """Add waterbutler id to file_updated"""
-        super(UpdateFileEvent, self).form_event()
-        self._event = self.wbid + '_file_updated'
-
-
-class FileAdded(UpdateFileEvent):
+class FileAdded(FileEvent):
     """Actual class called when a file is added"""
-    pass
+    @property
+    def event(self):
+        return '{}_file_updated'.format(self.waterbutler_id)
 
 
-class FileUpdated(UpdateFileEvent):
+class FileUpdated(FileEvent):
     """Actual class called when a file is updated"""
-    pass
+    @property
+    def event(self):
+        return '{}_file_updated'.format(self.waterbutler_id)
 
 
-class SimpleFileEvent(FileEvent):
-    """
-    Class for file/folder operations that don't lead to a specific place
-    """
-    def __init__(self, user, node, event, payload=None):
-        super(SimpleFileEvent, self).__init__(user, node, event, payload=payload)
-        self.form_event()
-        self.form_message()
-        self.form_url()
-
-
-class FileRemoved(SimpleFileEvent):
+class FileRemoved(FileEvent):
     """Actual class called when a file is removed"""
     pass
 
 
-class FolderCreated(SimpleFileEvent):
+class FolderCreated(FileEvent):
     """Actual class called when a folder is created"""
     pass
 
@@ -187,48 +163,86 @@ class ComplexFileEvent(FileEvent):
 
     def __init__(self, user, node, event, payload=None):
         super(ComplexFileEvent, self).__init__(user, node, event, payload=payload)
+
         self.source_node = Node.load(self.payload['source']['node']['_id'])
         self.addon = self.node.get_addon(self.payload['destination']['provider'])
-        self.form_event()
-        self.form_url()
-        self.form_message()
-
-    @property
-    def source_wbid(self):
-        return self._source_wbid
 
     @property
     def source_url(self):
         return self._source_url
 
-    def form_message(self):
-        """lists source and destination in message"""
+    @property
+    def html_message(self):
+        # TODO: Factor these methods into a single, private method with a flag
         addon, f_type, action = tuple(self.action.split("_"))
+
+        # TODO: see if this conditional is necessary
         if self.payload['destination']['kind'] == u'folder':
             f_type = 'folder'
+
         destination_name = self.payload['destination']['materialized'].lstrip('/')
         source_name = self.payload['source']['materialized'].lstrip('/')
-        self._html_message = '{} {} "<b>{}</b>" from {} in {} to "<b>{}</b>" in {} in {}.'.format(
-            action, f_type, source_name, self.payload['source']['addon'], self.payload['source']['node']['title'],
-            destination_name, self.payload['destination']['addon'], self.payload['destination']['node']['title']
-        )
-        self._text_message = '{} {} "{}" from {} in {} to "{}" in {} in {}.'.format(
-            action, f_type, source_name, self.payload['source']['addon'], self.payload['source']['node']['title'],
-            destination_name, self.payload['destination']['addon'], self.payload['destination']['node']['title']
+
+        return (
+            '{action} {f_type} "<b>{source_name}</b>" '
+            'from {source_addon} in {source_node_title} '
+            'to "<b>{dest_name}</b>" in {dest_addon} in {dest_node_title}.'
+        ).format(
+            action=action,
+            f_type=f_type,
+            source_name=source_name,
+            source_addon=self.payload['source']['addon'],
+            source_node_title=self.payload['source']['node']['title'],
+            dest_name=destination_name,
+            dest_addon=self.payload['destination']['addon'],
+            dest_node_title=self.payload['destination']['node']['title'],
         )
 
-    def form_event(self):
+    @property
+    def text_message(self):
+        addon, f_type, action = tuple(self.action.split("_"))
+
+        # TODO: see if this conditional is necessary
+        if self.payload['destination']['kind'] == u'folder':
+            f_type = 'folder'
+
+        destination_name = self.payload['destination']['materialized'].lstrip('/')
+        source_name = self.payload['source']['materialized'].lstrip('/')
+
+        return (
+            '{action} {f_type} "<b>{source_name}</b>" '
+            'from {source_addon} in {source_node_title} '
+            'to "<b>{dest_name}</b>" in {dest_addon} in {dest_node_title}.'
+        ).format(
+            action=action,
+            f_type=f_type,
+            source_name=source_name,
+            source_addon=self.payload['source']['addon'],
+            source_node_title=self.payload['source']['node']['title'],
+            dest_name=destination_name,
+            dest_addon=self.payload['destination']['addon'],
+            dest_node_title=self.payload['destination']['node']['title'],
+        )
+
+    @property
+    def waterbutler_id(self):
+        return self.payload['destination']['path'].strip('/')
+
+    @property
+    def event(self):
         """Sets event to be passed as well as the source event."""
-        self._wbid = self.payload['destination']['path'].strip('/')
-        if self.payload['destination']['kind'] != u'folder':
-            self._event = self.wbid + '_file_updated'
-        else:
-            self._event = 'file_updated'
 
-    def form_url(self):
-        super(ComplexFileEvent, self).form_url()
-        self._source_url = furl(self.source_node.absolute_url)
-        self._source_url.path.segments = self.source_node.web_url_for('collect_file_trees').split('/')
+        if self.payload['destination']['kind'] != u'folder':
+            return '{}_file_updated'.format(self.waterbutler_id)  # folder
+
+        return 'file_updated'  # file
+
+    @property
+    def source_url(self):
+        url = furl(self.source_node.absolute_url)
+        url.path.segments = self.source_node.web_url_for('collect_file_trees').split('/')
+
+        return url
 
 
 class AddonFileMoved(ComplexFileEvent):
@@ -274,19 +288,31 @@ class AddonFileMoved(ComplexFileEvent):
                                     self.timestamp, message=remove_message,
                                     gravatar_url=self.gravatar_url, url=self.source_url.url)
 
-    def form_message(self):
-        super(AddonFileMoved, self).form_message()
+    @property
+    def html_message(self):
         source = self.payload['source']['materialized'].rstrip('/').split('/')
         destination = self.payload['destination']['materialized'].rstrip('/').split('/')
+
         if source[:-1] == destination[:-1]:
-            self._html_message = 'renamed {} "<b>{}</b>" to "<b>{}</b>".'.format(
-                self.payload['destination']['kind'], self.payload['source']['materialized'],
-                self.payload['destination']['materialized']
-            )
-            self._text_message = 'renamed {} "{}" to "{}".'.format(
-                self.payload['destination']['kind'], self.payload['source']['materialized'],
-                self.payload['destination']['materialized']
-            )
+            return 'renamed {} "<b>{}</b>" to "<b>{}</b>".'.format(
+                    self.payload['destination']['kind'], self.payload['source']['materialized'],
+                    self.payload['destination']['materialized']
+                )
+
+        return super(AddonFileMoved, self).html_message
+
+    @property
+    def text_message(self):
+        source = self.payload['source']['materialized'].rstrip('/').split('/')
+        destination = self.payload['destination']['materialized'].rstrip('/').split('/')
+
+        if source[:-1] == destination[:-1]:
+            return 'renamed {} "{}" to "{}".'.format(
+                    self.payload['destination']['kind'], self.payload['source']['materialized'],
+                    self.payload['destination']['materialized']
+                )
+
+        return super(AddonFileMoved, self).text_message
 
 
 class AddonFileCopied(ComplexFileEvent):
@@ -320,12 +346,12 @@ class AddonFileCopied(ComplexFileEvent):
                                     self.timestamp, message=remove_message,
                                     gravatar_url=self.gravatar_url, url=self.source_url.url)
 
-    def form_message(self):
-        """Adds warning to message to tell user that subscription did not copy with the file."""
-        super(AddonFileCopied, self).form_message()
-        self._html_message += ' You are not subscribed to the new file.'
-        self._text_message += ' You are not subscribed to the new file.'
+    @property
+    def html_message(self):
+        message = super(AddonFileCopied, self).html_message
+        return message + ' You are not subscribed to the new file.'
 
-    def form_url(self):
-        """Source url points to original file"""
-        super(AddonFileCopied, self).form_url()
+    @property
+    def text_message(self):
+        message = super(AddonFileCopied, self).text_message
+        return message + ' You are not subscribed to the new file.'
