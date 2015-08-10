@@ -347,16 +347,16 @@
 ${parent.javascript_bottom()}
 <script>
 
-    var canEdit = ${json.dumps(user['can_edit'])};
-    var canPublicEdit = ${json.dumps(can_edit)};
+    var canEdit = ${json.dumps(can_edit)};
+    var userCanEdit = ${json.dumps(user['can_edit'])};
 
-    var canEditPageName = canEdit && ${json.dumps(
+    var canEditPageName = userCanEdit && ${json.dumps(
         wiki_id and wiki_name != 'home'
     )};
 
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
-        canEdit: canPublicEdit,
+        canEdit: canEdit,
         canEditPageName: canEditPageName,
         usePythonRender: ${json.dumps(use_python_render)},
         versionSettings: ${json.dumps(version_settings) | n},
