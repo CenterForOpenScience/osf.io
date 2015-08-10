@@ -685,7 +685,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
         if self.registration_approval is None:
             if self.parent_node:
-                return self.parent_node.pending_registration
+                return self.parent_node.is_pending_registration
             return False
         return self.registration_approval.pending_approval
 
