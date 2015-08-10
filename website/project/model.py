@@ -2776,8 +2776,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
             save=True,
         )
-        # Embargo record needs to be saved to ensure the forward reference Node->Embargo
-        self.embargo = embargo
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
