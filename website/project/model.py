@@ -2328,6 +2328,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
 
+            if not contrib_to_add.is_active:
+                self.mailing_unsubs.append(contrib_to_add)
+
             if log:
                 self.add_log(
                     action=NodeLog.CONTRIB_ADDED,

@@ -148,12 +148,11 @@ class TestNodeMailingParams(OsfTestCase):
         })
 
     def test_params_update_on_email_change(self):
-        new_email = 'new_newmail.new'
+        new_email = 'new@newmail.new'
         self.user.emails.append(new_email)
         self.user.save()
         url = api_url_for('update_user', uid=self.user._id)
         payload = {
-            'locale': '',
             'id': self.user._id,
             'emails': [
                 {'address': self.user.email, 'confirmed': True, 'primary': False},
@@ -161,7 +160,8 @@ class TestNodeMailingParams(OsfTestCase):
             ]
         }
 
-        self.app.post(url, payload, auth=self.user.auth)
+        self.app.put_json(url, payload, auth=self.user.auth)
+        self.user.reload()
 
         self.intended_params['unsubs'] = [new_email]
         self.intended_params['contributors'] = [self.creator.email, new_email]
@@ -245,7 +245,7 @@ class TestDiscussionsOnUserActions(OsfTestCase):
         self.project.mailing_enabled = False
         self.project.save()
 
-        new_email = 'new@newmail.new'
+        new_email = 'newer@newmail.new'
         self.user.emails.append(new_email)
         self.user.save()
         url = api_url_for('update_user', uid=self.user._id)
@@ -259,7 +259,15 @@ class TestDiscussionsOnUserActions(OsfTestCase):
 
         self.app.put_json(url, payload, auth=self.user.auth)
 
-        mock_update_email.assert_not_called(self.project._id, self.user.email, new_email)
+        mock_update_email.assert_not_called()
+
+    @mock.patch('website.project.model.mailing_list.match_members')
+    def test_unclaimed_user_is_unsubscribed(self, mock_match_members):
+        unreg = self.project.add_unregistered_contributor('Billy', 'billy@gmail.com', Auth(self.user))
+        self.project.reload()
+
+        assert_in(unreg, self.project.mailing_unsubs)
+        mock_match_members.assert_called()
 
 
 class TestEmailRejections(OsfTestCase):

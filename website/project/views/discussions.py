@@ -6,6 +6,7 @@ from flask import request
 
 from framework.auth.decorators import collect_auth
 from framework.auth.core import get_user
+from framework.auth.signals import user_confirmed
 
 from website import mails
 from website.project.decorators import (
@@ -63,6 +64,18 @@ def set_subscription(node, auth, **kwargs):
         node.mailing_unsubs.append(user)
 
     node.save()
+
+
+###############################################################################
+# Signalled Functions
+###############################################################################
+
+
+@user_confirmed.connect
+def resubscribe_on_confirm(user):
+    for node in user.node__contributed:
+        node.mailing_unsubs.remove(user)
+        update_subscription(node._id, user.email, True)
 
 
 ###############################################################################
