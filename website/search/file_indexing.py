@@ -50,3 +50,12 @@ def delete_search_file(file_node):
     path = file_node.path
     parent_id = file_node.node._id
     tasks.delete_file_task.delay(file_node_id=path, parent_id=parent_id)
+
+
+@file_util.require_file_indexing
+@except_search_unavailable
+def move_search_file(file_node, from_, to_):
+    old_parent_id = from_._id
+    new_parent_id = to_._id
+    nid = file_node._id
+    tasks.move_file_task.delay(file_node_id=nid, old_parent_id=old_parent_id, new_parent_id=new_parent_id)

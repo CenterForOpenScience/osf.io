@@ -96,6 +96,7 @@ TRIGGER_CONTEXT = PatchedContext(
     update_search_files=mock.patch('website.search.file_indexing.update_search_files'),
     delete_search_file=mock.patch('website.search.file_indexing.delete_search_file'),
     delete_search_files=mock.patch('website.search.file_indexing.delete_search_files'),
+    move_search_file=mock.patch('website.search.file_indexing.move_search_file'),
 )
 
 LOAD_LOCAL_FILE_CONTEXT = PatchedContext(
@@ -126,6 +127,16 @@ def file_count(index=None):
     count = len(resp['hits']['hits'])
     return count
 
+
+def get_file(file_id, file_parent, index=None):
+    resp = elastic_search.es.get(
+        index=index or settings.ELASTIC_INDEX,
+        doc_type='file',
+        id=file_id,
+        parent=file_parent,
+        ignore=404,
+    )
+    return resp['found']
 
 class OsfStorageFileNodeFactory(ModularOdmFactory):
     FACTORY_FOR = OsfStorageFileNode
@@ -208,6 +219,20 @@ class TestFileIndexingTestCase(FileIndexingTestCase):
         time.sleep(1)
         count = file_count()
         assert_equal(2, count)
+
+    def test_get_existing_file(self):
+        elastic_search.es.index(
+            doc_type='file',
+            body={'name': 'test'},
+            parent='12345',
+            index=settings.ELASTIC_INDEX,
+            id='abcde'
+        )
+        time.sleep(1)
+        assert_true(get_file('abcde', '12345', settings.ELASTIC_INDEX))
+
+    def test_get_non_existing_file(self):
+        assert_false(get_file('abcde', '12345', settings.ELASTIC_INDEX))
 
 
 # file_util.py
@@ -373,11 +398,9 @@ class TestWaterbutlerUpdateCallsSearchFunction(FileIndexingTestCase):
         other_project = ProjectWithAddonFactory()
         self.project.is_public = True
         with TRIGGER_CONTEXT as patches:
-            update_search_mock = patches.get_named_mock('update_search_file')
-            delete_search_mock = patches.get_named_mock('delete_search_file')
+            move_search_mock = patches.get_named_mock('move_search_file')
             wb_update_search(self.project, 'move', self.addon, self.file_node.name, other_project._id)
-            delete_search_mock.assert_called_once_with(self.file_node)
-            update_search_mock.assert_called_once_with(self.file_node)
+            move_search_mock.assert_called_once_with(self.file_node, other_project, self.project)
 
     def test_no_action_on_delete(self):
         with TRIGGER_CONTEXT as patches:
@@ -423,3 +446,24 @@ class TestProjectPrivacyUpdatesSearch(FileIndexingTestCase):
 
             assert_true(delete_all_mock.called)
             assert_false(update_all_mock.called)
+
+
+class TestMoveFiles(FileIndexingTestCase):
+    def test_move_file(self):
+        fid = '12345'
+        parent_id = 'abcde'
+        new_parent_id = 'fghij'
+        elastic_search.es.index(
+            index=settings.ELASTIC_INDEX,
+            doc_type='file',
+            id=fid,
+            parent=parent_id,
+            body={'name': 'hank_smithington.txt'},
+        )
+        time.sleep(1)
+        assert_true(get_file(file_id=fid, file_parent=parent_id, index=settings.ELASTIC_INDEX))
+
+        search.move_file(file_node_id=fid, old_parent_id=parent_id, new_parent_id=new_parent_id, index=settings.ELASTIC_INDEX)
+        time.sleep(1)
+        assert_true(get_file(file_id=fid, file_parent=new_parent_id, index=settings.ELASTIC_INDEX))
+

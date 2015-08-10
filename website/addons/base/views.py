@@ -30,6 +30,7 @@ from website.project.utils import serialize_node
 from website.search import file_util
 
 
+
 @decorators.must_have_permission('write')
 @decorators.must_not_be_registration
 def disable_addon(auth, **kwargs):
@@ -316,8 +317,7 @@ def update_search(node, action, addon, file_name, source_node_id=None):
         if not source_node_id:
             raise ValueError('{} requires source_node_id'.format(action))
         source_node = Node.load(source_node_id)
-        source_node.delete_search_file(file_node)
-        node.update_search_file(file_node)
+        source_node.move_search_file(file_node, node)
 
 
 @must_be_valid_project

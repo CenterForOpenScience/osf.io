@@ -444,6 +444,37 @@ def delete_all_files(node, index=None):
     )
 
 
+def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
+    """ Change parent of an existing document. """
+    index = index or INDEX
+
+    path = file_util.norm_path(file_node_id)
+
+    doc = es.get(
+        index=index,
+        doc_type='file',
+        id=path,
+        parent=old_parent_id,
+    )['_source']
+
+    es.delete(
+        index=index,
+        doc_type='file',
+        parent=old_parent_id,
+        id=path,
+        refresh=True,
+    )
+    es.index(
+        index=index,
+        doc_type='file',
+        parent=new_parent_id,
+        id=path,
+        body=doc,
+        refresh=True,
+    )
+
+    return True
+
 ## FILE INDEXING  ##
 
 

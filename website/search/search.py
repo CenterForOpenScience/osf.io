@@ -73,6 +73,11 @@ def delete_all_files(node, index=None):
 
 
 @requires_search
+def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.move_file(file_node_id, old_parent_id, new_parent_id, index=index)
+
+@requires_search
 def delete_node(node, index=None):
     index = index or settings.ELASTIC_INDEX
     doc_type = node.project_or_component
