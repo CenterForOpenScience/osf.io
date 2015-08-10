@@ -49,8 +49,8 @@
 
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
-      <div id="mfrIframeParent" class="col-sm-9">
-        <div id="externalView"></div>
+        <div id="externalView" class="col-sm-9"></div>
+        <div id="mfrIframeParent" class="col-sm-9">
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
