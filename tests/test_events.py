@@ -214,11 +214,73 @@ class TestFolderCreated(OsfTestCase):
     @mock.patch('website.notifications.emails.notify')
     def test_folder_added(self, mock_notify):
         self.event.perform()
-        # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
         assert_true(mock_notify.called)
 
     def tearDown(self):
         pass
+
+
+class TestFileRenamed(OsfTestCase):
+    def setUp(self):
+        super(TestFileRenamed, self).setUp()
+        self.user_1 = factories.AuthUserFactory()
+        self.auth = Auth(user=self.user_1)
+        self.user_2 = factories.AuthUserFactory()
+        self.project = factories.ProjectFactory(creator=self.user_1)
+        # subscription
+        self.sub = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + 'file_updated',
+            owner=self.project,
+            event_name='file_updated',
+        )
+        self.sub.save()
+
+        # Payload
+        file_renamed_payload = file_move_payload(self.project, self.project)
+        self.event = Event.parse_event(self.user_1, self.project, 'addon_file_moved', payload=file_renamed_payload)
+        self.sub.email_digest.append(self.user_2)
+        self.sub.save()
+
+    def test_rename_file_html(self):
+        self.event.payload['destination']['materialized'] = "/One/Paper14.txt"
+        assert_equal(self.event.html_message, 'renamed file "<b>/One/Paper13.txt</b>" to "<b>/One/Paper14.txt</b>".')
+
+    def test_move_file_html(self):
+        self.event.payload['destination']['materialized'] = "/Two/Paper13.txt"
+        assert_not_equal(self.event.html_message, 'renamed file "<b>/One/Paper13.txt</b>" to "<b>/Two/Paper13.txt</b>".')
+
+    def test_rename_folder_html(self):
+        self.event.payload['destination']['kind'] = 'folder'
+        self.event.payload['destination']['materialized'] = "/One/Two/Four"
+        self.event.payload['source']['materialized'] = "/One/Two/Three"
+        assert_equal(self.event.html_message, 'renamed folder "<b>/One/Two/Three</b>" to "<b>/One/Two/Four</b>".')
+
+    def test_move_folder_html(self):
+        self.event.payload['destination']['kind'] = 'folder'
+        self.event.payload['destination']['materialized'] = "/Five/Two/Three"
+        self.event.payload['source']['materialized'] = "/One/Two/Three"
+        assert_not_equal(self.event.html_message, 'renamed folder "<b>/One/Two/Three</b>" to "<b>/Five/Two/Three</b>".')
+
+    def test_rename_file_text(self):
+        self.event.payload['destination']['materialized'] = "/One/Paper14.txt"
+        assert_equal(self.event.text_message, 'renamed file "/One/Paper13.txt" to "/One/Paper14.txt".')
+
+    def test_move_file_text(self):
+        self.event.payload['destination']['materialized'] = "/Two/Paper13.txt"
+        assert_not_equal(self.event.text_message,
+                         'renamed file "/One/Paper13.txt" to "/Two/Paper13.txt".')
+
+    def test_rename_folder_text(self):
+        self.event.payload['destination']['kind'] = 'folder'
+        self.event.payload['destination']['materialized'] = "/One/Two/Four"
+        self.event.payload['source']['materialized'] = "/One/Two/Three"
+        assert_equal(self.event.text_message, 'renamed folder "/One/Two/Three" to "/One/Two/Four".')
+
+    def test_move_folder_text(self):
+        self.event.payload['destination']['kind'] = 'folder'
+        self.event.payload['destination']['materialized'] = "/Five/Two/Three"
+        self.event.payload['source']['materialized'] = "/One/Two/Three"
+        assert_not_equal(self.event.text_message, 'renamed folder "/One/Two/Three" to "/Five/Two/Three".')
 
 
 class TestFileMoved(OsfTestCase):

@@ -64,6 +64,8 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
     node_lineage_ids = get_node_lineage(node) if node else []
 
     for user_id in recipient_ids:
+        if user_id == user._id:
+            continue
         recipient = website_models.User.load(user_id)
         context['localized_timestamp'] = localize_timestamp(timestamp, recipient)
         message = mails.render_message(template, **context)

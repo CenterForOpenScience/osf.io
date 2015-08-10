@@ -87,8 +87,8 @@ class Event(object):
 
 
 class FileEvent(Event):
-
     """File event base class, should not be called directly"""
+
     def __init__(self, user, node, event, payload=None):
         super(FileEvent, self).__init__(user, node, event)
         self.payload = payload
@@ -96,6 +96,7 @@ class FileEvent(Event):
 
     @property
     def html_message(self):
+        """Most basic html message"""
         return '{action} {f_type} "<b>{name}</b>".'.format(
             action=tuple(self.action.split("_"))[1],
             f_type=tuple(self.action.split("_"))[0],
@@ -104,6 +105,7 @@ class FileEvent(Event):
 
     @property
     def text_message(self):
+        """Most basic message without html tags."""
         return '{action} {f_type} "{name}".'.format(
             action=tuple(self.action.split("_"))[1],
             f_type=tuple(self.action.split("_"))[0],
@@ -116,22 +118,24 @@ class FileEvent(Event):
 
     @property
     def waterbutler_id(self):
+        """Waterbutler's file id for the file in question"""
         return self.payload['metadata']['path'].strip('/')
 
     @property
     def url(self):
         """Basis of making urls, this returns the url to the node."""
         if self._url is None:
-            url = furl(self.node.absolute_url)
-            url.path.segments = self.node.web_url_for(
+            self._url = furl(self.node.absolute_url)
+            self._url.path.segments = self.node.web_url_for(
                 'collect_file_trees'
             ).split('/')
 
-        return url
+        return self._url
 
 
 class FileAdded(FileEvent):
     """Actual class called when a file is added"""
+
     @property
     def event(self):
         return '{}_file_updated'.format(self.waterbutler_id)
@@ -139,6 +143,7 @@ class FileAdded(FileEvent):
 
 class FileUpdated(FileEvent):
     """Actual class called when a file is updated"""
+
     @property
     def event(self):
         return '{}_file_updated'.format(self.waterbutler_id)
@@ -156,73 +161,60 @@ class FolderCreated(FileEvent):
 
 class ComplexFileEvent(FileEvent):
     """
-    Class for move and copy files. Users could be removed from subscription.
-    - Essentially every method is redone for these more complex actions.
+    Parent class for move and copy files. Exists because simpler interactions aren't quite enough
     """
-    _source_url = None
-
     def __init__(self, user, node, event, payload=None):
         super(ComplexFileEvent, self).__init__(user, node, event, payload=payload)
 
         self.source_node = Node.load(self.payload['source']['node']['_id'])
         self.addon = self.node.get_addon(self.payload['destination']['provider'])
 
-    @property
-    def source_url(self):
-        return self._source_url
+    def _build_message(self, html=False):
+        addon, f_type, action = tuple(self.action.split("_"))
+        # f_type is always file for the action
+        if self.payload['destination']['kind'] == u'folder':
+            f_type = 'folder'
+
+        destination_name = self.payload['destination']['materialized'].lstrip('/')
+        source_name = self.payload['source']['materialized'].lstrip('/')
+
+        if html:
+            return (
+                '{action} {f_type} "<b>{source_name}</b>" '
+                'from {source_addon} in {source_node_title} '
+                'to "<b>{dest_name}</b>" in {dest_addon} in {dest_node_title}.'
+            ).format(
+                action=action,
+                f_type=f_type,
+                source_name=source_name,
+                source_addon=self.payload['source']['addon'],
+                source_node_title=self.payload['source']['node']['title'],
+                dest_name=destination_name,
+                dest_addon=self.payload['destination']['addon'],
+                dest_node_title=self.payload['destination']['node']['title'],
+            )
+        return (
+            '{action} {f_type} "{source_name}" '
+            'from {source_addon} in {source_node_title} '
+            'to "{dest_name}" in {dest_addon} in {dest_node_title}.'
+        ).format(
+            action=action,
+            f_type=f_type,
+            source_name=source_name,
+            source_addon=self.payload['source']['addon'],
+            source_node_title=self.payload['source']['node']['title'],
+            dest_name=destination_name,
+            dest_addon=self.payload['destination']['addon'],
+            dest_node_title=self.payload['destination']['node']['title'],
+        )
 
     @property
     def html_message(self):
-        # TODO: Factor these methods into a single, private method with a flag
-        addon, f_type, action = tuple(self.action.split("_"))
-
-        # TODO: see if this conditional is necessary
-        if self.payload['destination']['kind'] == u'folder':
-            f_type = 'folder'
-
-        destination_name = self.payload['destination']['materialized'].lstrip('/')
-        source_name = self.payload['source']['materialized'].lstrip('/')
-
-        return (
-            '{action} {f_type} "<b>{source_name}</b>" '
-            'from {source_addon} in {source_node_title} '
-            'to "<b>{dest_name}</b>" in {dest_addon} in {dest_node_title}.'
-        ).format(
-            action=action,
-            f_type=f_type,
-            source_name=source_name,
-            source_addon=self.payload['source']['addon'],
-            source_node_title=self.payload['source']['node']['title'],
-            dest_name=destination_name,
-            dest_addon=self.payload['destination']['addon'],
-            dest_node_title=self.payload['destination']['node']['title'],
-        )
+        return self._build_message(html=True)
 
     @property
     def text_message(self):
-        addon, f_type, action = tuple(self.action.split("_"))
-
-        # TODO: see if this conditional is necessary
-        if self.payload['destination']['kind'] == u'folder':
-            f_type = 'folder'
-
-        destination_name = self.payload['destination']['materialized'].lstrip('/')
-        source_name = self.payload['source']['materialized'].lstrip('/')
-
-        return (
-            '{action} {f_type} "<b>{source_name}</b>" '
-            'from {source_addon} in {source_node_title} '
-            'to "<b>{dest_name}</b>" in {dest_addon} in {dest_node_title}.'
-        ).format(
-            action=action,
-            f_type=f_type,
-            source_name=source_name,
-            source_addon=self.payload['source']['addon'],
-            source_node_title=self.payload['source']['node']['title'],
-            dest_name=destination_name,
-            dest_addon=self.payload['destination']['addon'],
-            dest_node_title=self.payload['destination']['node']['title'],
-        )
+        return self._build_message(html=False)
 
     @property
     def waterbutler_id(self):
@@ -231,11 +223,10 @@ class ComplexFileEvent(FileEvent):
     @property
     def event(self):
         """Sets event to be passed as well as the source event."""
-
         if self.payload['destination']['kind'] != u'folder':
-            return '{}_file_updated'.format(self.waterbutler_id)  # folder
+            return '{}_file_updated'.format(self.waterbutler_id)  # file
 
-        return 'file_updated'  # file
+        return 'file_updated'  # folder
 
     @property
     def source_url(self):
@@ -252,26 +243,36 @@ class AddonFileMoved(ComplexFileEvent):
     """
     def perform(self):
         """Sends a message to users who are removed from the file's subscription when it is moved"""
+        # Do this is the two nodes are the same, no one needs to know specifics of permissions
         if self.node == self.source_node:
             super(AddonFileMoved, self).perform()
             return
+        # File
         if self.payload['destination']['kind'] != u'folder':
             moved, warn, rm_users = event_utils.categorize_users(self.user, self.event, self.source_node,
                                                                  self.event, self.node)
-            warn_message = self.html_message + ' Your component-level subscription was not transferred.'
-            remove_message = self.html_message + ' Your subscription has been removed' \
-                                                 ' due to insufficient permissions in the new component.'
+            warn_message = '{} Your component-level subscription was not transferred.'.format(self.html_message)
+            remove_message = ('{} Your subscription has been removed'
+                              ' due to insufficient permissions in the new component.').format(self.html_message)
+        # Folder
         else:
+            # Gets all the files in a folder to look for permissions conflicts
             files = event_utils.get_file_subs_from_folder(self.addon, self.user, self.payload['destination']['kind'],
                                                           self.payload['destination']['path'],
                                                           self.payload['destination']['name'])
+            # Bins users into different permissions
             moved, warn, rm_users = event_utils.compile_user_lists(files, self.user, self.source_node, self.node)
+
+            # For users that don't have individual file subscription but has permission on the new node
             warn_message = self.html_message + ' Your component-level subscription was not transferred.'
+            # For users without permission on the new node
             remove_message = self.html_message + ' Your subscription has been removed for the folder,' \
                                                  ' or a file within,' \
                                                  ' due to insufficient permissions in the new component.'
 
+        # Move the document from one subscription to another because the old one isn't needed
         utils.move_subscription(rm_users, self.event, self.source_node, self.event, self.node)
+        # Notify each user
         for notification in NOTIFICATION_TYPES:
             if notification == 'none':
                 continue
@@ -294,10 +295,11 @@ class AddonFileMoved(ComplexFileEvent):
         destination = self.payload['destination']['materialized'].rstrip('/').split('/')
 
         if source[:-1] == destination[:-1]:
-            return 'renamed {} "<b>{}</b>" to "<b>{}</b>".'.format(
-                    self.payload['destination']['kind'], self.payload['source']['materialized'],
-                    self.payload['destination']['materialized']
-                )
+            return 'renamed {kind} "<b>{source_name}</b>" to "<b>{destination_name}</b>".'.format(
+                kind=self.payload['destination']['kind'],
+                source_name=self.payload['source']['materialized'],
+                destination_name=self.payload['destination']['materialized'],
+            )
 
         return super(AddonFileMoved, self).html_message
 
@@ -307,10 +309,11 @@ class AddonFileMoved(ComplexFileEvent):
         destination = self.payload['destination']['materialized'].rstrip('/').split('/')
 
         if source[:-1] == destination[:-1]:
-            return 'renamed {} "{}" to "{}".'.format(
-                    self.payload['destination']['kind'], self.payload['source']['materialized'],
-                    self.payload['destination']['materialized']
-                )
+            return 'renamed {kind} "{source_name}" to "{destination_name}".'.format(
+                kind=self.payload['destination']['kind'],
+                source_name=self.payload['source']['materialized'],
+                destination_name=self.payload['destination']['materialized'],
+            )
 
         return super(AddonFileMoved, self).text_message
 
