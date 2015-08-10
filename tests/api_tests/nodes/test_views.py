@@ -1018,28 +1018,97 @@ class TestNodeChildrenList(ApiTestCase):
 
         Node.remove()
 
-    def test_node_children_list_creates_child_logged_out(self):
-        res = self.app.post_json(self.public_project_url, {
-            'title': 'test',
-            'description': 'test description',
-            'category': 'data'
-        }, expect_errors=True)
+
+class TestNodeChildCreate(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeChildCreate, self).setUp()
+        self.user = UserFactory.build()
+        self.user.set_password('justapoorboy')
+        self.user.save()
+        self.basic_auth = (self.user.username, 'justapoorboy')
+        self.project = ProjectFactory(creator=self.user)
+        self.url = '/{}nodes/{}/children/'.format(API_BASE, self.project._id)
+
+        self.title = 'Cool Project'
+        self.description = 'A Properly Cool Project'
+        self.category = 'data'
+
+        self.user_two = UserFactory.build()
+        self.user_two.set_password('justapoorboy')
+        self.user_two.save()
+        self.basic_auth_two = (self.user_two.username, 'justapoorboy')
+
+        self.public_child = {'title': self.title,
+                               'description': self.description,
+                               'category': self.category,
+                               'public': True}
+        self.private_child = {'title': self.title,
+                                'description': self.description,
+                                'category': self.category,
+                                'public': False}
+
+    def test_creates_public_child_logged_out(self):
+        res = self.app.post_json(self.url, self.public_child, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0].keys()
 
-    def test_node_children_list_creates_child_logged_in(self):
-        res = self.app.post_json(self.public_project_url, {
-            'title': 'test',
-            'description': 'test description',
-            'category': 'data'
-        }, auth=self.basic_auth)
+    def test_creates_public_child_logged_in(self):
+        res = self.app.post_json(self.url, self.public_child, auth=self.basic_auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], 'test')
-        assert_equal(res.json['data']['attributes']['description'], 'test description')
-        assert_equal(res.json['data']['attributes']['category'], 'data')
+        assert_equal(res.json['data']['attributes']['title'], self.public_child['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.public_child['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.public_child['category'])
+
+        self.project.reload()
+        assert_equal(self.project.nodes[0]._id, res.json['data']['id'])
+        assert_equal(res.content_type, 'application/vnd.api+json')
+
+    def test_creates_private_child_logged_out(self):
+        res = self.app.post_json(self.url, self.private_child, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0].keys()
+
+    def test_creates_private_child_logged_in_contributor(self):
+        res = self.app.post_json(self.url, self.private_child, auth=self.basic_auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['title'], self.private_child['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.private_child['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.private_child['category'])
+
+        self.project.reload()
+        assert_equal(self.project.nodes[0]._id, res.json['data']['id'])
+        assert_equal(res.content_type, 'application/vnd.api+json')
+
+    def test_creates_child_creates_child_and_sanitizes_html(self):
+        title = '<em>Cool</em> <strong>Project</strong>'
+        description = 'An <script>alert("even cooler")</script> child'
+
+        res = self.app.post_json(self.url, {
+            'title': title,
+            'description': description,
+            'category': self.category,
+            'public': True,
+        }, auth=self.basic_auth)
+        child_id = res.json['data']['id']
+        assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        url = '/{}nodes/{}/'.format(API_BASE, child_id)
+
+        res = self.app.get(url, auth=self.basic_auth)
+        assert_equal(res.json['data']['attributes']['title'], strip_html(title))
+        assert_equal(res.json['data']['attributes']['description'], strip_html(description))
+        assert_equal(res.json['data']['attributes']['category'], self.category)
+
+        self.project.reload()
+        assert_equal(self.project.nodes[0]._id, res.json['data']['id'])
         assert_equal(res.content_type, 'application/vnd.api+json')
 
 
