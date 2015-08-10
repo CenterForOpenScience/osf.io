@@ -50,30 +50,6 @@ RAVEN_CONFIG = {
     'dsn': osf_settings.SENTRY_DSN
 }
 
-# REST_FRAMEWORK = {
-#     'PAGE_SIZE': 10,
-#
-#     # Order is important here because of a bug in rest_framework_swagger. For now,
-#     # rest_framework.renderers.JSONRenderer needs to be first, at least until
-#     # https://github.com/marcgibbons/django-rest-swagger/issues/271 is resolved.
-#     'DEFAULT_RENDERER_CLASSES': (
-#         'rest_framework.renderers.JSONRenderer',
-#         'api.base.renderers.JSONAPIRenderer',
-#         'rest_framework.renderers.BrowsableAPIRenderer',
-#     ),
-#     'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
-#     'DEFAULT_VERSION': '2.0',
-#     'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
-#     'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
-#     'ORDERING_PARAM': 'sort',
-#     'DEFAULT_AUTHENTICATION_CLASSES': (
-#         # Custom auth classes
-#         'api.base.authentication.drf.OSFBasicAuthentication',
-#         'api.base.authentication.drf.OSFSessionAuthentication',
-#         'api.base.authentication.drf.OSFCASAuthentication'
-#     ),
-# }
-
 REST_FRAMEWORK = {
     'PAGINATE_BY': 10,
     'PAGINATE_BY_PARAM': 'page_size',
