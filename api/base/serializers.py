@@ -225,14 +225,8 @@ class JSONAPISerializer(ser.Serializer):
         :param obj: Object to be serialized.
         :param envelope: Key for resource object.
         """
-        ret = {}
-        meta = getattr(self, 'Meta', None)
-        type_ = getattr(meta, 'type_', None)
-        assert type_ is not None, 'Must define Meta.type_'
         data = super(JSONAPISerializer, self).to_representation(obj)
-        data['type'] = type_
-        ret = data
-        return ret
+        return data
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):

@@ -47,10 +47,6 @@ class NodeSerializer(JSONAPISerializer):
 
     # TODO: finish me
 
-    class Meta:
-        type_ = 'nodes'
-        model = Node
-
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
@@ -111,9 +107,6 @@ class NodePointersSerializer(JSONAPISerializer):
     title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
                                                                          'points to')
 
-    class Meta:
-        type_ = 'pointers'
-
     url = LinksField({'html': 'get_absolute_url'})
 
     def get_absolute_url(self, obj):
@@ -146,9 +139,6 @@ class NodeFilesSerializer(JSONAPISerializer):
     item_type = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
     metadata = ser.DictField(read_only=True)
-
-    class Meta:
-        type_ = 'files'
 
     url = LinksField({
         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),

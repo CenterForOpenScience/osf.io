@@ -31,9 +31,6 @@ class UserSerializer(JSONAPISerializer):
     })
     nodes = ser.HyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id')
 
-    class Meta:
-        type_ = 'users'
-
     def absolute_url(self, obj):
         return obj.absolute_url
 
