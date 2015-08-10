@@ -135,7 +135,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         contributors = []
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in visible_contributors
-            contributor.permissions = node.get_permissions(contributor)
+            contributor.permissions_list = node.get_permissions(contributor)
             contributors.append(contributor)
         return contributors
 
