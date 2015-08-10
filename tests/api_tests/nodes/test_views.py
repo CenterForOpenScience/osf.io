@@ -404,6 +404,10 @@ class TestNodeDetail(ApiTestCase):
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
+        self.public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
+        self.public_component_url = '/{}nodes/{}/'.format(API_BASE, self.public_component._id)
+
+
     def test_return_public_project_details_logged_out(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
@@ -442,12 +446,49 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['relationships']['parent']['links']['self'], None)
 
     def test_child_project_has_parent(self):
-        public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
-        public_component_url = '/{}nodes/{}/'.format(API_BASE, public_component._id)
-        res = self.app.get(public_component_url)
+        res = self.app.get(self.public_component_url)
         assert_equal(res.status_code, 200)
-        url = str(res.json['data']['relationships']['parent']['links']['self'])
+        url = res.json['data']['relationships']['parent']['links']['self']
         assert_equal(urlparse(url).path, self.public_url)
+
+    def test_node_has_children_link(self):
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['children']['links']['related']['href']
+        expected_url = self.public_url + 'children/'
+        assert_equal(urlparse(url).path, expected_url)
+
+    def test_node_has_contributors_link(self):
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['contributors']['links']['related']['href']
+        expected_url = self.public_url + 'contributors/'
+        assert_equal(urlparse(url).path, expected_url)
+
+    def test_node_has_pointers_link(self):
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['pointers']['links']['related']['href']
+        expected_url = self.public_url + 'pointers/'
+        assert_equal(urlparse(url).path, expected_url)
+
+    def test_node_has_registrations_link(self):
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['registrations']['links']['related']['href']
+        expected_url = self.public_url + 'registrations/'
+        assert_equal(urlparse(url).path, expected_url)
+
+    def test_node_has_files_link(self):
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['files']['links']['related']
+        expected_url = self.public_url + 'files/'
+        assert_equal(urlparse(url).path, expected_url)
+
+    def test_node_properties(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.json['data']['attributes']['public'], True)
+        assert_equal(res.json['data']['attributes']['registration'], False)
+        assert_equal(res.json['data']['attributes']['collection'], False)
+        assert_equal(res.json['data']['attributes']['dashboard'], False)
+        assert_equal(res.json['data']['attributes']['tags']['user'], [])
+
 
 
 class TestNodeUpdate(ApiTestCase):
