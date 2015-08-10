@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 
-from website.models import Node
+from api.base.utils import get_object_or_404
+from website.models import Node, User
 from framework.auth.core import Auth
 from rest_framework import exceptions
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
@@ -178,12 +179,37 @@ class NodeContributorsSerializer(JSONAPISerializer):
         # TODO
         pass
 
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
+    bibliographic = ser.NullBooleanField(help_text='Whether the user will be included in citations for '
+                                                   'this node or not.  Defaults to true if user being added '
+                                                   'and current status if user is being edited')
 
     permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True,
-                                 help_text='Highest permission the user has.  Blank input defaults to current '
-                                           'permission if user is being edited or write permission if user is'
-                                           ' being added.')
+                                 help_text='Highest permission the user has.  Blank input defaults write permission if '
+                                           'user is being added and to current permission if user is being edited.')
+
+    def create(self, validated_data):
+        request = self.context['request']
+        user = request.user
+        auth = Auth(user)
+        node = self.context['view'].get_node()
+        get_object_or_404(User, validated_data['_id'])
+        bibliographic = validated_data['bibliographic'] if validated_data['bibliographic'] else True
+        permissions = self.get_permissions_list(validated_data['permission'])
+        node.add_contributor(user, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+        user.permissions = permissions
+        user.bibliographic = node.get_visible(user)
+        return User
+
+    @staticmethod
+    def get_permissions_list(permission):
+        if permission == 'admin':
+            return ['read', 'write', 'admin']
+        elif permission == 'write':
+            return ['read', 'write']
+        elif permission == 'read':
+            return ['read']
+        else:
+            return ['read', 'write']
 
 
 class NodePointersSerializer(JSONAPISerializer):
