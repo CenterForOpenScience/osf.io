@@ -2,6 +2,7 @@ import requests
 
 from website import settings
 
+
 INDEXED_TYPES = (
     '.txt',
     '.md',
@@ -9,6 +10,7 @@ INDEXED_TYPES = (
     '.docx',
     '.pdf',
 )
+
 
 def require_file_indexing(func):
     """ Execute function only if use_file_indexing setting is true. """
@@ -30,6 +32,7 @@ def is_indexed(file_node):
 
 
 def name_is_indexed(file_name):
+    """ Return true id the filename indicates the file is to be indexed. """
     if not file_name.endswith(INDEXED_TYPES):
         return False
     return True
@@ -42,14 +45,16 @@ def get_file_content(file_node):
     response = requests.get(url)
     return response.content
 
+
 def get_file_content_url(file_node):
+    """ Return the url from which content can be downloaded """
     file_, _ = file_node.node_settings.find_or_create_file_guid(file_node.path)
     url = file_.download_url + '&mode=render'
     return url
 
 
 def get_file_size(file_node):
-    """ Return the size of the file. """
+    """ Return the size of a file in bytes. """
     latest_version = file_node.get_version()
     return latest_version.size
 
@@ -59,33 +64,8 @@ def norm_path(path):
     return path if not path[0] == '/' else path[1:]
 
 
-#TODO: remove @findexing
-# def build_file_document(file_node, include_content=True):
-#     """ Return file data to be in the indexed document as a dict.
-#
-#     :param name: Name of file.
-#     :param path: Path of file.
-#     :param addon: Instance of storage addon containing the containing the file.
-#     :param include_content: Include the content of the file in document.
-#     """
-#     name = file_node.name
-#     parent_node = file_node.node
-#     parent_id = parent_node._id
-#     path = norm_path(file_node.path)
-#
-#     file_size = get_file_size(file_node)
-#     file_content = get_file_content(file_node) if include_content else None
-#
-#     return {
-#         'name': name,
-#         'path': path,
-#         'content': file_content,
-#         'parent_id': parent_id,
-#         'size': file_size,
-#     }
-
-
 def collect_files_from_filenode(file_node):
+    """ Generate the file nodes child files. """
     children = [] if file_node.is_file else file_node.children
     if file_node.is_file:
         yield file_node
@@ -96,6 +76,10 @@ def collect_files_from_filenode(file_node):
 
 
 def collect_files(node, recur=True):
+    """ Generate the files under the given node.
+
+    :param recur: If true recursively returns the files under child nodes.
+    """
     osf_addon = node.get_addon('osfstorage')
     root_node = osf_addon.root_node
 

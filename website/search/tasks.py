@@ -9,7 +9,9 @@ from website.addons.osfstorage import model
 from website.app import init_addons, do_set_backends
 from website.search import file_util
 
+
 logger = logging.getLogger(__name__)
+
 
 @app.task
 def update_file_task(file_node_id, file_url, index=None):
@@ -36,14 +38,14 @@ def delete_file_task(file_node_id, parent_id, index=None):
     return search.delete_file_given_path(file_path, file_parent_id=parent_id, index=index)
 
 
-def update_all_files_task(node, index=None):
+def update_all_files_task(node):
     file_gen = file_util.collect_files(node, recur=False)
     jobs = celery.group(update_file_task.si(fn._id, file_util.get_file_content_url(fn)) for fn in file_gen)
     jobs.delay()
     logger.info('\n\n I must acknowledge the fact that update all has been called!')
 
 
-def delete_all_files_task(node, index=None):
+def delete_all_files_task(node):
     node_id = node._id
     file_gen = file_util.collect_files(node, recur=False)
     jobs = celery.group(delete_file_task.si(fn._id, node_id) for fn in file_gen)

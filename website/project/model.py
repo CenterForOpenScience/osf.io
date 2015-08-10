@@ -1533,25 +1533,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             log_exception()
 
     def update_search_files(self):
-        """Update all files associated with node based on node's privacy.
-        """
+        """Update all files within the current project in search."""
         from website.search import file_indexing
         if self.is_public:
             file_indexing.update_search_files(self)
 
     def delete_search_files(self):
+        """ Remove all files within the current project from search."""
         from website.search import file_indexing
         file_indexing.delete_search_files(self)
         # tasks.enqueue_task(tasks.delete_all_files_task.s(self))
 
     def update_search_file(self, file_node):
-        """ Update a single file in the node based on the action given."""
+        """ Update a single file in search. """
         from website.search import file_indexing
         if not self.is_public:
             return
         file_indexing.update_search_file(file_node)
 
     def delete_search_file(self, file_node):
+        """ Remove a single file from search. """
         from website.search import file_indexing
         file_indexing.delete_search_file(file_node)
 

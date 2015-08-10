@@ -111,6 +111,22 @@ def patch_context(func):
     return wrapper
 
 
+def query(text, index=None):
+    index = index or settings.ELASTIC_INDEX
+    body = {'query': {'query_string': {'query': text}}}
+    resp = elastic_search.es.search(body=body, index=index)
+    hits = resp['hits']['hits']
+    return hits
+
+
+def file_count(index=None):
+    index = index or settings.ELASTIC_INDEX
+    body = {'query': {'query_string': {'query': '*'}}}
+    resp = elastic_search.es.search(doc_type='file', body=body, index=index)
+    count = len(resp['hits']['hits'])
+    return count
+
+
 class OsfStorageFileNodeFactory(ModularOdmFactory):
     FACTORY_FOR = OsfStorageFileNode
     name = 'test file node'
@@ -176,8 +192,26 @@ class TestFileIndexingTestCase(FileIndexingTestCase):
             file_indexing.delete_search_file(self.file_node)
             patch.assert_called_once_with(self.file_node)
 
+    def test_file_count(self):
+        elastic_search.es.index(
+            doc_type='file',
+            body={'name': 'test'},
+            parent='12345',
+            index=settings.ELASTIC_INDEX,
+        )
+        elastic_search.es.index(
+            doc_type='file',
+            body={'name': 'test_two'},
+            parent='67890',
+            index=settings.ELASTIC_INDEX,
+        )
+        time.sleep(1)
+        count = file_count()
+        assert_equal(2, count)
+
 
 # file_util.py
+
 
 class TestNormPath(OsfTestCase):
     def test_path_with_slash(self):
@@ -217,7 +251,6 @@ class TestCollectFiles(FileIndexingTestCase):
             folder.append_file(factories.fake.file_name(), save=True)
             folder.append_file(factories.fake.file_name(), save=True)
 
-    @patch_context
     def test_addon_has_correct_number_of_children(self):
         count = len(self.addon.root_node.children)
         assert_equal(count, 4)
@@ -263,19 +296,14 @@ class TestCollectFiles(FileIndexingTestCase):
 class TestGetFileContent(FileIndexingTestCase):
     pass
 
+class TestGetFileSize(FileIndexingTestCase):
+    pass
+
+class TestGetFileContentUrl(FileIndexingTestCase):
+    pass
+
 
 # elastic_search.py / search.py
-
-
-def query(text, index=None):
-    index = index or settings.ELASTIC_INDEX
-    body = {'query': {'query_string': {'query': text}}}
-    resp = elastic_search.es.search(body=body, index=index)
-    hits = resp['hits']['hits']
-    return hits
-
-def file_count(index=None):
-    pass
 
 
 class TestIndexRealFiles(FileIndexingTestCase):
@@ -326,7 +354,7 @@ class TestIndexRealFiles(FileIndexingTestCase):
             assert_equal(len(query('diamond')), 1)
 
 
-class TestWaterbutlerUpdateSearch(FileIndexingTestCase):
+class TestWaterbutlerUpdateCallsSearchFunction(FileIndexingTestCase):
     def test_update_on_create(self):
         self.project.is_public = True
         with TRIGGER_CONTEXT as patches:
