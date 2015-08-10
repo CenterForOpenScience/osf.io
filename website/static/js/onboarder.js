@@ -104,7 +104,7 @@ function serializeNode(node) {
         urls: {
             web: node.url,
             api: node.api_url,
-            register: node.url + 'register/',
+            register: node.url + 'register',
             files: node.url + 'files/',
             children: node.api_url + 'get_children/?permissions=write'
         }
