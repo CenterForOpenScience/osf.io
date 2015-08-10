@@ -432,8 +432,16 @@ def delete_all_files(node, index=None):
     :param node:
     """
     index = index or INDEX
-    for file_node in file_util.collect_files(node):
-        delete_file(file_node, index=index)
+    body = {
+        'query': {
+            'term': {'parent_id': node._id}
+        }
+    }
+    es.delete_by_query(
+        index=index,
+        doc_type='file',
+        body=body,
+    )
 
 
 ## FILE INDEXING  ##

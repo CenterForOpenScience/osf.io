@@ -28,10 +28,9 @@ def update_search_files(node):
         tasks.update_all_files_task(node=node)
 
 
-@file_util.require_file_indexing
 @except_search_unavailable
 def delete_search_files(node):
-    tasks.delete_all_files_task(node=node)
+    search.search.delete_all_files(node)
 
 
 @file_util.require_file_indexing
