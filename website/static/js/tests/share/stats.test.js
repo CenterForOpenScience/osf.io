@@ -76,7 +76,7 @@ describe('share/stats', () => {
 
             requiredAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.aggregations.articlesOverTime.date_histogram.extended_bounds = returnedAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.aggregations.articlesOverTime.date_histogram.extended_bounds;
             requiredAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.filter.range.providerUpdatedDateTime = returnedAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.filter.range.providerUpdatedDateTime ;
-            var diffInMs = requiredAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.aggregations.articlesOverTime.date_histogram.extended_bounds.max - returnedAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.aggregations.articlesOverTime.date_histogram.extended_bounds.min;
+            var diffInMs = returnedAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.aggregations.articlesOverTime.date_histogram.extended_bounds.max - returnedAgg.aggregations.sourcesByTimes.aggregations.articlesOverTime.aggregations.articlesOverTime.date_histogram.extended_bounds.min;
             var testDate = new Date(0);
             testDate.setUTCSeconds(diffInMs/1000);
             assert.equal(testDate.getMonth(),3);
