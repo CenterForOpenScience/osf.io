@@ -2549,11 +2549,11 @@ class TestProject(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         registration.save()
-        assert_true(registration.pending_embargo)
+        assert_true(registration.is_pending_embargo)
 
         approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
         registration.embargo.approve_embargo(self.user, approval_token)
-        assert_false(registration.pending_embargo)
+        assert_false(registration.is_pending_embargo)
 
         registration.set_privacy('public', auth=self.consolidate_auth)
         registration.save()
