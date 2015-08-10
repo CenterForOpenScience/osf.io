@@ -44,11 +44,6 @@ utils.errorState = function(vm){
     $osf.growl('Error', 'invalid query');
 };
 
-/* handles field highlighting for returned results */
-utils.highlightField = function(result, fieldName) {
-    return utils.scrubHTML(result.highlight[fieldName] ? result.highlight[fieldName][0] : result[fieldName] || '');
-};
-
 /** Updates the vm with new search results
  *
  * @param {Object} vm The current state of the vm
@@ -403,7 +398,7 @@ utils.parseFilter = function (filterString) {
 };
 
 utils.processStats = function (vm, data) {
-    $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
+    $.each(Object.keys(data.aggregations), function (key) { //parse data and load correctly
         if (vm.statsParsers[key]) {
             var chartData = vm.statsParsers[key](data);
             vm.statsData.charts[chartData.name] = chartData;
