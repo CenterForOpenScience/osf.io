@@ -693,7 +693,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def is_registration_approved(self):
         if self.registration_approval is None:
             if self.parent_node:
-                return self.parent_node.is_registered
+                return self.parent_node.is_registration_approved
             return False
         return self.registration_approval.is_approved
 
@@ -734,7 +734,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def embargo_pending_registration(self):
         if self.embargo is None:
             if self.parent_node:
-                return self.parent_node.pending_registration
+                return self.parent_node.embargo_pending_registration
             return False
         return self.embargo.pending_registration
 
