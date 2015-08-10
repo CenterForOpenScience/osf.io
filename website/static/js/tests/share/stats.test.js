@@ -25,8 +25,7 @@ describe('share/stats', () => {
                       'min_doc_count': 0
                     }
                   }
-                },
-                'filters': {}
+                }
               };
             assert.deepEqual(returnedAgg, requiredAgg);
         });
