@@ -32,7 +32,11 @@ utils.formatNumber = function(num) {
     return num;
 };
 
-var loadingIcon = m('img[src=/static/img/loading.gif]',{style: {margin: 'auto', display: 'block'}});
+utils.loadingIcon = {
+    view: function(ctrl) {
+        return m('img', {src: '/static/img/loading.gif'});
+    }
+};
 
 /* This resets the state of the vm on error */
 utils.errorState = function(vm){
@@ -43,11 +47,6 @@ utils.errorState = function(vm){
     vm.resultsLoading(false);
     m.redraw(true);
     $osf.growl('Error', 'invalid query');
-};
-
-/* handles field highlighting for returned results */
-utils.highlightField = function(result, fieldName) {
-    return utils.scrubHTML(result.highlight[fieldName] ? result.highlight[fieldName][0] : result[fieldName] || '');
 };
 
 /** Updates the vm with new search results
@@ -106,6 +105,7 @@ utils.search = function(vm) {
         vm.query = m.prop('');
         vm.results = null;
         vm.showFooter = true;
+        vm.showStats = false;
         vm.optionalFilters = [];
         vm.requiredFilters = [];
         vm.sort('Relevance');
@@ -114,6 +114,7 @@ utils.search = function(vm) {
     } else if (vm.query().length === 0) {
         ret.resolve(null);
     } else {
+        vm.showStats = true;
         vm.page = 0;
         vm.results = [];
         if (utils.stateChanged(vm)) {
@@ -391,7 +392,7 @@ utils.queryFilter = function (query) {
  * @param {String} filterString A string representation of a filter dictionary
  */
 utils.parseFilter = function (filterString) {
-        var parts = filterString.split(':');
+    var parts = filterString.split(':');
     var type = parts[0];
     var field = parts[1];
 
@@ -407,7 +408,7 @@ utils.parseFilter = function (filterString) {
 };
 
 utils.processStats = function (vm, data) {
-    $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
+    Object.keys(data.aggregations).forEach(function (key) { //parse data and load correctly
         if (vm.statsParsers[key]) {
             var chartData = vm.statsParsers[key](data);
             vm.statsData.charts[chartData.name] = chartData;

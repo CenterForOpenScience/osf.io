@@ -32,12 +32,6 @@ function donutGraph(data, vm) {
     });
 }
 
-/**
- * Creates a c3 time graph from the parsed elasticsearch data
- *
- * @param {Object} data The formatted elasticsearch results
- * @param {Object} vm The state of the view model
- */
 function timeGraph(data, vm) {
     return c3.generate({
         bindto: '#shareTimeGraph',
@@ -64,10 +58,6 @@ function timeGraph(data, vm) {
         axis: {
             x: {
                 type: 'timeseries',
-                label: {
-                    text: 'Date',
-                    position: 'outer-center'
-                },
                 tick: {
                     format: function (d) {return Stats.timeSinceEpochInMsToMMYY(d); }
                 }
@@ -92,15 +82,12 @@ function timeGraph(data, vm) {
     });
 }
 
-/* Creates an Elasticsearch aggregation by source */
-Stats.sourcesAgg = {
-    query: {match_all: {} },
-    aggregations: {
-        sources: utils.termsFilter('field', '_type')
-    }
+Stats.sourcesAgg = function () {
+    var sourcesQuery = {'match_all': {} };
+    var sourcesAgg = {'sources': utils.termsFilter('field', '_type')};
+    return {'query' : sourcesQuery, 'aggregations': sourcesAgg, 'filters' : {}};
 };
 
-/* Creates an Elasticsearch aggregation that breaks down sources by date (and number of things published on those dates) */
 Stats.sourcesByDatesAgg = function () {
     var dateTemp = new Date(); //get current time
     dateTemp.setMonth(dateTemp.getMonth() - 3);
@@ -119,14 +106,12 @@ Stats.sourcesByDatesAgg = function () {
     return {aggregations: dateHistogramAgg};
 };
 
-/* Helper function for dealing with epoch times returned by elasticsearch */
 Stats.timeSinceEpochInMsToMMYY = function (timeSinceEpochInMs) {
     var d = new Date(0);
     d.setUTCSeconds(timeSinceEpochInMs / 1000);
     return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
 };
 
-/* Parses elasticsearch data so that it can be fed into a c3 donut graph */
 Stats.shareDonutGraphParser = function (data) {
     var chartData = {};
     chartData.name = 'shareDonutGraph';
@@ -150,7 +135,6 @@ Stats.shareDonutGraphParser = function (data) {
     return chartData;
 };
 
-/* Parses elasticsearch data so that it can be fed into a c3 time graph */
 Stats.shareTimeGraphParser = function (data) {
     var chartData = {};
     chartData.name = 'shareTimeGraph';
@@ -197,16 +181,16 @@ Stats.view = function (ctrl) {
                 m('.col-md-4', m('p.text-center', ctrl.vm.providers + ' content providers'))
             ])
         ),
-        m('.row', ctrl.vm.showStats ? [
+        m('.row', [
             m('.col-md-12', [
                 m('.row', m('.col-md-12', [
-                    m('.row', (ctrl.vm.statsData) ? [
+                    m('.row', (ctrl.vm.statsData && ctrl.vm.count > 0) ? [
                         m('.col-sm-3', (ctrl.vm.statsData.charts.shareDonutGraph) ? [ctrl.drawGraph('shareDonutGraph', donutGraph)] : []),
                         m('.col-sm-9', (ctrl.vm.statsData.charts.shareTimeGraph) ? [ctrl.drawGraph('shareTimeGraph', timeGraph)] : [])
-                    ] : [])
+                    ]: [])
                 ]))
             ]),
-        ] : [])
+        ]),
     ];
 };
 
@@ -216,11 +200,10 @@ Stats.controller = function (vm) {
     self.vm = vm;
     self.vm.graphs = {}; //holds actual c3 chart objects
     self.vm.statsData = {'charts': {}}; //holds data for charts
-    self.vm.loadStats = true; //we want to turn stats on
     //request these querys/aggregations for charts
     self.vm.statsQueries = {
         'shareTimeGraph' : Stats.sourcesByDatesAgg(),
-        'shareDonutGraph' : Stats.sourcesAgg
+        'shareDonutGraph' : Stats.sourcesAgg()
     };
 
     //set each aggregation as the data source for each chart parser, and hence chart
@@ -231,7 +214,6 @@ Stats.controller = function (vm) {
 
     self.vm.totalCount = 0;
     self.vm.latestDate = undefined;
-    self.vm.statsLoaded = m.prop(false);
 
     self.drawGraph = function (divId, graphFunction) {
         return m('div', {id: divId, config: function (e, i) {
@@ -245,10 +227,10 @@ Stats.controller = function (vm) {
     m.request({
         method: 'GET',
         background: true,
-        url: '/api/v1/share/search/?size=1&sort=providerUpdatedDateTime'
+        url: '/api/v1/share/search/?count'
     }).then(function (data) {
         self.vm.totalCount = data.count;
-        self.vm.latestDate = new $osf.FormattableDate(data.results[0].providerUpdatedDateTime).local;
+        self.vm.latestDate = new $osf.FormattableDate(new Date()).local;
     }).then(m.redraw);
 };
 

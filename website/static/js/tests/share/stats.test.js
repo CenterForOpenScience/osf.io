@@ -11,7 +11,7 @@ describe('share/stats', () => {
     describe('#sourcesAgg', () => {
 
         it('builds correct query, aggregation and filters for a source aggregation', () => {
-            var returnedAgg = Stats.sourcesAgg();
+            var returnedAgg = Stats.sourcesAgg;
             var requiredAgg = {
                 'query': {
                   'match_all': {}
@@ -25,8 +25,7 @@ describe('share/stats', () => {
                       'min_doc_count': 0
                     }
                   }
-                },
-                'filters': {}
+                }
               };
             assert.deepEqual(returnedAgg, requiredAgg);
         });

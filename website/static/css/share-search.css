@@ -91,12 +91,18 @@
   color: white;
 }
 
+
 .sidebar-header {
   margin: 12px 0 7px 0;
   font-size: 19px;
   border-bottom: 1px solid #eee;
   padding: 3px 0;
   font-weight: 300;
+}
+
+.unstyled {
+    padding-left: 0;
+    list-style-type: none;
 }
 
 .li.render-filter {
@@ -130,13 +136,27 @@ stroke: #BAB5B5;
     -webkit-column-gap: 2.5em;
     column-count: 2;
     column-gap: 2.5em;
+    list-style-type: none;
 }
 
-@media (max-width: 767px) {
+.provider-favicon {
+    height: 16px;
+    width: 16px;
+}
+
+@media (max-width: 992px) {
     .provider-footer {
         -moz-column-count: 1;
         -webkit-column-count: 1;
         column-count: 1;
+    }
+
+    .provider-list {
+        display: none;
+    }
+
+    ul.unstyled {
+        border-bottom: 1px solid #eee;
     }
 }
 

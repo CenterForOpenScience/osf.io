@@ -5,33 +5,40 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('./utils');
+require('truncate');
+
 var Results = {
-    controller: function(vm) {
-        var self = this;
-        self.vm = vm;
-        self.vm.resultsLoading = m.prop(false);
-    },
-    view: function(ctrl) {
-        var resultViews = $.map(ctrl.vm.results || [], function(result, i) {
-            return m.component(Result, {result: result, vm: ctrl.vm});
+    view: function(ctrl, params) {
+        var vm = params.vm;
+        var resultViews = $.map(vm.results || [], function(result, i) {
+            return m.component(Result, {result: result, vm: vm,});
         });
 
 
 
         var len = 0;
-        if (ctrl.vm.results){
-            len = ctrl.vm.results.length;
+        if (vm.results){
+            len = vm.results.length;
         }
+        var maybeResults = function(results, loading) {
+            if (results.length > 0) {
+                return results;
+            } else if (!loading && results.length === 0) {
+                return m('p', {class: 'text-muted'}, 'No results for this query');
+            } else {
+                return m('', [m.component(utils.loadingIcon), 'loading...']);
+            }
+        };
+
         return m('', [
-            m('.row', m('.col-md-12', (!utils.arrayEqual(resultViews, [])) ? resultViews : (!ctrl.vm.resultsLoading() && (ctrl.vm.results !== null)) ? m('span', {style: {margin: 'auto'}}, 'No results for this query') : [])),
-            m('.row', m('.col-md-12', ctrl.vm.resultsLoading() ? utils.loadingIcon : [])),
+            m('.row', m('.col-md-12', maybeResults(resultViews, vm.resultsLoading()))),
             m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
-                len > 0 && len < ctrl.vm.count ?
+                len > 0 && len < vm.count ?
                 m('a.btn.btn-md.btn-default', {
                     onclick: function(){
-                        utils.loadMore(ctrl.vm)
+                        utils.loadMore(vm)
                             .then(function(data) {
-                                utils.updateVM(ctrl.vm, data);
+                                utils.updateVM(vm, data);
                             });
                     }
                 }, 'More') : [])
@@ -42,12 +49,6 @@ var Results = {
 };
 
 var Result = {
-    /**
-     * Formats a single search result for display
-     *
-     * @param {Object} result A map containing a single search result
-     * @param {Integer} index Just ignore this, it doesn't matter
-     */
     view: function(ctrl, params) {
         return m( '.animated.fadeInUp', [
             m('div', [
@@ -80,7 +81,7 @@ var TitleBar = {
     view: function(ctrl, params) {
         var result = params.result;
         return m('span', {}, [
-            m('a[href=]' + result.canonicalUri + ']', ((result.title || 'No title provided'))),
+            m('a[href=' + result.uris.canonicalUri + ']', ((result.title || 'No title provided'))),
             m('br'),
             m.component(Description, params)
         ]);
@@ -89,22 +90,31 @@ var TitleBar = {
 
 /* Render the description of a single result. Will highlight the matched text */
 var Description = {
+    controller: function(vm) {
+        var self = this;
+        self.showAll = false;
+    },
     view: function(ctrl, params) {
         var result = params.result;
         if ((result.description || '').length > 350) {
-                return m('p.readable.pointer', {
-                    onclick:function(){
-                        result.showAll = result.showAll ? false : true;
-                        }
-                    },
-                    result.showAll ? result.description : $.trim(result.description.substring(0, 350)) + '...'
-                );
-            }
+            return m('p.readable.pointer', {
+                onclick: function() {
+                    ctrl.showAll = !ctrl.showAll;
+                    }
+                },
+                ctrl.showAll ? result.description : $.truncate(result.description, {length: 350})
+            );
+        } else {
             return m('p.readable', result.description);
+        }
     }
 };
 
 var Contributors = {
+    controller: function(vm) {
+        var self = this;
+        self.showAll = false;
+    },
     view: function(ctrl, params) {
         var result = params.result;
         var contributorViews = $.map(result.contributors, function(contributor, i) {
@@ -112,12 +122,12 @@ var Contributors = {
             });
 
         return m('span.pull-left', {style: {'text-align': 'left'}},
-            result.showAllContrib || result.contributors.length < 8 ?
+            ctrl.showAll || result.contributors.length < 8 ?
                 contributorViews :
                 m('span', [
                     contributorViews.slice(0, 7),
                     m('br'),
-                    m('a', {onclick: function(){result.showAllContrib = result.showAllContrib ? false : true;}}, 'See All')
+                    m('a', {onclick: function(){ctrl.showAll = !ctrl.showAll;}}, 'See All')
                 ])
         );
 
@@ -142,18 +152,22 @@ var Contributor = {
 };
 
 var Subjects = {
+    controller: function(vm) {
+        var self = this;
+        self.showAll = false;
+    },
     view: function(ctrl, params){
         var result = params.result;
         var subjectViews = $.map(result.subjects || [], function(subject, i) {
             return m.component(Subject, $.extend({subject: subject}, params));
         });
-        if (result.showAllsubjects || (result.subjects || []).length <= 5) {
+        if (ctrl.showAll || (result.subjects || []).length <= 5) {
             return m('span', subjectViews);
         }
         return m('span', [
             subjectViews.slice(0, 5),
             m('br'),
-            m('div', m('a', {onclick: function() {result.showAllsubjects = result.showAllsubjects ? false : true;}},'See All'))
+            m('div', m('a', {onclick: function() {ctrl.showAll = !ctrl.showAll;}},'See All'))
         ]);
 
     }
@@ -165,8 +179,8 @@ var Subject = {
         var vm = params.vm;
         return m('span', m('.badge.pointer', {onclick: function(){
                 utils.updateFilter(vm, 'match:subjects:"' + subject + '"', true);
-            }}, subject.length < 50 ? subject : subject.substring(0, 47) + '...'),
-            ' ');
+            }}, $.truncate(subject, {length: 50}), ' '
+        ));
     }
 };
 
