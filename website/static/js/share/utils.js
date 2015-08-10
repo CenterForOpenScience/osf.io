@@ -1,5 +1,6 @@
 var $ = require('jquery');
 var m = require('mithril');
+var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var History = require('exports?History!history');
 
@@ -14,6 +15,7 @@ utils.onSearch = function(fb) {
 var COLORBREWER_COLORS = [[166, 206, 227], [31, 120, 180], [178, 223, 138], [51, 160, 44], [251, 154, 153], [227, 26, 28], [253, 191, 111], [255, 127, 0], [202, 178, 214], [106, 61, 154], [255, 255, 153], [177, 89, 40]];
 var tags = ['div', 'i', 'b', 'sup', 'p', 'span', 'sub', 'bold', 'strong', 'italic', 'a', 'small'];
 
+/* Removes certain HTML tags from the source */
 utils.scrubHTML = function(text) {
     tags.forEach(function(tag) {
         text = text.replace(new RegExp('<' + tag + '>', 'g'), '');
@@ -22,6 +24,7 @@ utils.scrubHTML = function(text) {
     return text;
 };
 
+/* */
 utils.formatNumber = function(num) {
     while (/(\d+)(\d{3})/.test(num.toString())){
         num = num.toString().replace(/(\d+)(\d{3})/, '$1'+','+'$2');
@@ -29,8 +32,13 @@ utils.formatNumber = function(num) {
     return num;
 };
 
-var loadingIcon = m('img[src=/static/img/loading.gif]',{style: {margin: 'auto', display: 'block'}});
+utils.loadingIcon = {
+    view: function(ctrl) {
+        return m('img', {src: '/static/img/loading.gif'});
+    }
+};
 
+/* This resets the state of the vm on error */
 utils.errorState = function(vm){
     vm.results = null;
     vm.statsData = undefined;
@@ -41,10 +49,11 @@ utils.errorState = function(vm){
     $osf.growl('Error', 'invalid query');
 };
 
-utils.highlightField = function(result, field_name) {
-    return utils.scrubHTML(result.highlight[field_name] ? result.highlight[field_name][0] : result[field_name] || '');
-};
-
+/** Updates the vm with new search results
+ *
+ * @param {Object} vm The current state of the vm
+ * @param {Object} data New search results
+ */
 utils.updateVM = function(vm, data) {
     if (data === null) {
         return;
@@ -55,12 +64,13 @@ utils.updateVM = function(vm, data) {
     //    result.title = utils.highlightField(result, 'title');
     //    result.description = utils.highlightField(result, 'description');
     //});
-    //vm.results.push.apply(vm.results, data.results);
+    vm.results.push.apply(vm.results, data.results);
     vm.data = data; //TODO this is return data (results) for search widgets, make for all (i.e. inc. share)
     vm.dataLoaded(true);
     m.endComputation();
 };
 
+/* Handles searching via the search API */
 utils.loadMore = function(vm) {
     m.startComputation();
     var ret = m.deferred();
@@ -87,6 +97,7 @@ utils.loadMore = function(vm) {
     return ret.promise;
 };
 
+/* Makes sure the state we are in is valid for searching, passes the work to loadMore if so */
 utils.search = function(vm) {
     vm.dataLoaded(false);
     vm.showFooter = false;
@@ -95,6 +106,7 @@ utils.search = function(vm) {
         vm.query = m.prop('');
         vm.results = null;
         vm.showFooter = true;
+        vm.showStats = false;
         vm.optionalFilters = [];
         vm.requiredFilters = [];
         vm.sort('Relevance');
@@ -106,7 +118,6 @@ utils.search = function(vm) {
         vm.page = 0;
         vm.results = [];
         if (utils.stateChanged(vm)) {
-            // TODO @bdyetton remove of range filter should update range on subgraph
             History.pushState({
                 optionalFilters: vm.optionalFilters,
                 requiredFilters: vm.requiredFilters,
@@ -116,8 +127,12 @@ utils.search = function(vm) {
         }
         utils.loadMore(vm)
             .then(function (data) {
-                if (vm.processStats) {
-                    utils.processStats(vm, data);
+                if (vm.processStats) { //TODO remove after share stats moves to dashboard model
+                    if (data.aggregations) {
+                        utils.processStats(vm, data);
+                    } else {
+                        $osf.growl('Error', 'Could not load search statistics', 'danger');
+                    }
                 }
                 utils.updateVM(vm, data);
                 ret.resolve(vm);
@@ -127,6 +142,7 @@ utils.search = function(vm) {
     return ret.promise;
 };
 
+/* updates the current state when history changed. Should be bound to forward/back buttons callback */
 utils.updateHistory = function(vm){
     var state = History.getState().data;
     if (!utils.stateChanged(vm)){
@@ -141,6 +157,7 @@ utils.updateHistory = function(vm){
     return true;
 };
 
+/* Checks to see if the state of the vm has changed */
 utils.stateChanged = function (vm) {
     var state = History.getState().data;
     return !(state.query === vm.query() && state.sort === vm.sort() &&
@@ -148,6 +165,7 @@ utils.stateChanged = function (vm) {
             utils.arrayEqual(state.requiredFilters, vm.requiredFilters));
 };
 
+/* Turns the vm state into a nice-ish to look at representation that can be stored in a URL */
 utils.buildURLParams = function(vm){
     var d = {};
     if (vm.query()) {
@@ -165,6 +183,7 @@ utils.buildURLParams = function(vm){
     return $.param(d);
 };
 
+/* Builds the elasticsearch query that will be POSTed to the search API */
 utils.buildQuery = function (vm) {
     var must = $.map(vm.requiredFilters, utils.parseFilter);
     var should = $.map(vm.optionalFilters, utils.parseFilter);
@@ -213,6 +232,7 @@ utils.maybeQuashEvent = function (event) {
     }
 };
 
+/* Adds a filter to the list of filters if it doesn't already exist */
 utils.updateFilter = function (vm, filter, required, suppressUpdate) {
     if (required && vm.requiredFilters.indexOf(filter) === -1) {
         vm.requiredFilters.push(filter);
@@ -222,6 +242,7 @@ utils.updateFilter = function (vm, filter, required, suppressUpdate) {
     if (!suppressUpdate) utils.search(vm);
 };
 
+/* Removes a filter from the list of filters */
 utils.removeFilter = function (vm, filter, suppressUpdate) {
     var reqIndex = vm.requiredFilters.indexOf(filter);
     var optIndex = vm.optionalFilters.indexOf(filter);
@@ -234,45 +255,48 @@ utils.removeFilter = function (vm, filter, suppressUpdate) {
     if (!suppressUpdate) utils.search(vm);
 };
 
+/* Tests array equality */
 utils.arrayEqual = function (a, b) {
     return $(a).not(b).length === 0 && $(b).not(a).length === 0;
 };
 
-utils.addFiltersToQuery = function (query, filters) {
-    if (filters) {
-        filters.forEach(function (filter) {
-            query = utils.filteredQuery(query, filter.filter);
-        });
-    }
-    return query;
-};
-
+/* Loads the raw and normalized data for a specific result */
 utils.loadRawNormalized = function(result){
-    var nonJsonErrors = function(xhr) {
-        return xhr.status > 200 ? JSON.stringify(xhr.responseText) : xhr.responseText;
-    };
     var source = encodeURIComponent(result.shareProperties.source);
     var docID = encodeURIComponent(result.shareProperties.docID);
     return m.request({
         method: 'GET',
-        url: '/api/v1/share/documents/' + source + '/' + docID + '/',
-        extract: nonJsonErrors
-    }).then(function(data) {
+        url: 'api/v1/share/documents/' + source + '/' + docID + '/',
+        unwrapSuccess: function(data) {
+            var unwrapped = {};
+            var normed = JSON.parse(data.normalized);
+            var allRaw = JSON.parse(data.raw);
+            unwrapped.normalized = JSON.parse(data.normalized);
+            unwrapped.raw = allRaw.doc;
+            unwrapped.rawfiletype = allRaw.filetype;
+            unwrapped.normalized = normed;
 
-        var normed = JSON.parse(data.normalized);
-        normed = JSON.stringify(normed, undefined, 2);
+            return unwrapped;
+        },
+        unwrapError: function(response, xhr) {
+            var error = {};
+            error.rawfiletype = 'json';
+            error.normalized = 'Normalized data not found.';
+            error.raw = '"Raw data not found."';
+            if (xhr.status >= 500) {
+                Raven.captureMessage('SHARE Raw and Normalized API Internal Server Error.', {
+                    textStatus: status
+                });
+            }
 
-        var all_raw = JSON.parse(data.raw);
-        result.raw = all_raw.doc;
-        result.rawfiletype = all_raw.filetype;
-        result.normalized = normed;
-    }, function(error) {
-        result.rawfiletype = 'json';
-        result.normalized = '"Normalized data not found."';
-        result.raw = '"Raw data not found."';
+            return error;
+        }
     });
 };
 
+/*** Elasticsearch functions below ***/
+
+/* Creates a filtered query */
 utils.filteredQuery = function(query, filter) {
     var ret = {
         'filtered': {}
@@ -303,12 +327,14 @@ utils.termsFilter = function (field, value, minDocCount, exclustions) {
     return ret;
 };
 
+/* Creates a match query */
 utils.matchQuery = function (field, value) {
     var ret = {'match': {}};
     ret.match[field] = value;
     return ret;
 };
 
+/* Creates a range filter */
 utils.rangeFilter = function (fieldName, gte, lte) {
     lte = lte || new Date().getTime();
     gte = gte || 0;
@@ -317,6 +343,7 @@ utils.rangeFilter = function (fieldName, gte, lte) {
     return ret;
 };
 
+/* Creates a bool query */
 utils.boolQuery = function (must, mustNot, should, minimum) {
     var ret = {
         'bool': {
@@ -332,6 +359,7 @@ utils.boolQuery = function (must, mustNot, should, minimum) {
     return ret;
 };
 
+/* Creates a date histogram filter */
 utils.dateHistogramFilter = function (field, gte, lte, interval) {
     //gte and lte in ms since epoch
     lte = lte || new Date().getTime();
@@ -344,7 +372,7 @@ utils.dateHistogramFilter = function (field, gte, lte, interval) {
             'field': field,
             'interval': interval,
             'min_doc_count': 0,
-             extended_bounds : {
+            'extended_bounds': {
                 'min': gte,
                 'max': lte
             }
@@ -352,6 +380,7 @@ utils.dateHistogramFilter = function (field, gte, lte, interval) {
     };
 };
 
+/* Creates a common query */
 utils.commonQuery = function (queryString, field) {
     field = field || '_all';
     var ret = {'common': {}};
@@ -361,63 +390,67 @@ utils.commonQuery = function (queryString, field) {
     return ret;
 };
 
+/* Creates a match_all query */
 utils.matchAllQuery = function () {
     return {
         match_all: {}
     };
 };
 
+/* Creates an and filter */
 utils.andFilter = function (filters) {
     return {
         'and': filters
     };
 };
 
+/* Creates a query filter */
 utils.queryFilter = function (query) {
     return {
         query: query
     };
 };
 
+/**
+ * Parses a filter string into one of the above filters
+ *
+ * parses a filter of the form
+ *  filterName:fieldName:param1:param2...
+ *  ex: range:providerUpdatedDateTime:2015-06-05:2015-06-16
+ * @param {String} filterString A string representation of a filter dictionary
+ */
 utils.parseFilter = function (filterString) {
-    // parses a filter of the form
-    // filterName:fieldName:param1:param2...
-    // range:providerUpdatedDateTime:2015-06-05:2015-06-16
     var parts = filterString.split(':');
     var type = parts[0];
     var field = parts[1];
-    if (type === 'range') {
-        return utils.rangeFilter(field, parts[2], parts[3]);
-    } else if (type === 'match') {
-        return utils.queryFilter(
-            utils.matchQuery(field, parts[2])
-        );
-    }
+
     // Any time you add a filter, put it here
-    // TODO: Maybe this would be better as a map?
+    switch(type) {
+        case 'range':
+            return utils.rangeFilter(field, parts[2], parts[3]);
+        case 'match':
+            return utils.queryFilter(
+                utils.matchQuery(field, parts[2])
+            );
+    }
 };
 
 utils.processStats = function (vm, data) {
-    if (data.aggregations) {
-        $.map(Object.keys(data.aggregations), function (key) { //parse data and load correctly
-            if (vm.statsParsers[key]) {
-                var chartData = vm.statsParsers[key](data);
-                vm.statsData.charts[chartData.name] = chartData;
-                if (chartData.name in vm.graphs) {
-                    vm.graphs[chartData.name].load(chartData);
-                }
+    Object.keys(data.aggregations).forEach(function (key) { //parse data and load correctly
+        if (vm.statsParsers[key]) {
+            var chartData = vm.statsParsers[key](data);
+            vm.statsData.charts[chartData.name] = chartData;
+            if (chartData.name in vm.graphs) {
+                vm.graphs[chartData.name].load(chartData);
             }
-        });
-    } else {
-        $osf.growl('Error', 'Could not load search statistics', 'danger');
-    }
+        }
+    });
 };
 
 
 utils.updateAggs = function (currentAgg, newAgg, globalAgg) {
     globalAgg = globalAgg || false;
 
-    //var returnAgg = currentAgg;
     if (currentAgg) {
         var returnAgg = $.extend({},currentAgg);
         if (returnAgg.all && globalAgg) {
@@ -459,7 +492,6 @@ utils.generateColors = function (numColors) {
     var colorsToGenerate = COLORBREWER_COLORS.slice();
     var colorsUsed = [];
     var colorsOut = [];
-    var colorsNorm = [];
     var color;
     while (colorsOut.length < numColors) {
         color = colorsToGenerate.shift();
@@ -468,7 +500,6 @@ utils.generateColors = function (numColors) {
             colorsUsed = [];
         } else {
             colorsUsed.push(color);
-            colorsNorm.push(color);
             colorsOut.push(rgbToHex(color));
         }
     }

@@ -58,6 +58,10 @@ function timeGraph(data, vm) {
         axis: {
             x: {
                 type: 'timeseries',
+                label: {
+                    text: 'Date',
+                    position: 'outer-center'
+                },
                 tick: {
                     format: function (d) {return Stats.timeSinceEpochInMsToMMYY(d); }
                 }
@@ -82,11 +86,12 @@ function timeGraph(data, vm) {
     });
 }
 
-Stats.sourcesAgg = function () {
-    var sourcesAgg = {'sources': utils.termsFilter('field', '_type')};
-    return sourcesAgg;
+/* Creates an Elasticsearch aggregation by source */
+Stats.sourcesAgg = {
+    sources: utils.termsFilter('field', '_type')
 };
 
+/* Creates an Elasticsearch aggregation that breaks down sources by date (and number of things published on those dates) */
 Stats.sourcesByDatesAgg = function () {
     var dateTemp = new Date(); //get current time
     dateTemp.setMonth(dateTemp.getMonth() - 3);
@@ -105,12 +110,14 @@ Stats.sourcesByDatesAgg = function () {
     return dateHistogramAgg;
 };
 
+/* Helper function for dealing with epoch times returned by elasticsearch */
 Stats.timeSinceEpochInMsToMMYY = function (timeSinceEpochInMs) {
     var d = new Date(0);
     d.setUTCSeconds(timeSinceEpochInMs / 1000);
     return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
 };
 
+/* Parses elasticsearch data so that it can be fed into a c3 donut graph */
 Stats.shareDonutGraphParser = function (data) {
     var chartData = {};
     chartData.name = 'shareDonutGraph';
@@ -134,6 +141,7 @@ Stats.shareDonutGraphParser = function (data) {
     return chartData;
 };
 
+/* Parses elasticsearch data so that it can be fed into a c3 time graph */
 Stats.shareTimeGraphParser = function (data) {
     var chartData = {};
     chartData.name = 'shareTimeGraph';
@@ -183,20 +191,13 @@ Stats.view = function (ctrl) {
         m('.row', ctrl.vm.showStats ? [
             m('.col-md-12', [
                 m('.row', m('.col-md-12', [
-                    m('.row', (ctrl.vm.statsData && ctrl.vm.count > 0) ? [
+                    m('.row', (ctrl.vm.statsData) ? [
                         m('.col-sm-3', (ctrl.vm.statsData.charts.shareDonutGraph) ? [ctrl.drawGraph('shareDonutGraph', donutGraph)] : []),
                         m('.col-sm-9', (ctrl.vm.statsData.charts.shareTimeGraph) ? [ctrl.drawGraph('shareTimeGraph', timeGraph)] : [])
                     ] : [])
                 ]))
             ]),
-        ] : []),
-        m('.row', [
-            m('col-md-12', m('a.stats-expand', {
-                onclick: function () {ctrl.vm.showStats = !ctrl.vm.showStats;}
-            },
-                ctrl.vm.showStats ? m('i.fa.fa-angle-up') : m('i.fa.fa-angle-down')
-            ))
-        ])
+        ] : [])
     ];
 };
 
@@ -207,11 +208,10 @@ Stats.controller = function (vm) {
     self.vm.graphs = {}; //holds actual c3 chart objects
     self.vm.statsData = {'charts': {}}; //holds data for charts
     self.vm.loadStats = true; //we want to turn stats on
-    self.vm.processStats = true;//we want to process the stats too TODO will be made more intuative after @bdyetton refactor
     //request these querys/aggregations for charts
     self.vm.aggregations = {
         'shareTimeGraph' : Stats.sourcesByDatesAgg(),
-        'shareDonutGraph' : Stats.sourcesAgg()
+        'shareDonutGraph' : Stats.sourcesAgg
     };
 
     //set each aggregation as the data source for each chart parser, and hence chart
