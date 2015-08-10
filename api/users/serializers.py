@@ -1,7 +1,6 @@
 from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import User
-from rest_framework.parsers import JSONParser
 
 
 class ProfileDictSerializer(ser.ListField):
