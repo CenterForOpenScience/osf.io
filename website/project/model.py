@@ -695,9 +695,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
         if self.registration_approval is None:
             if self.parent_node:
-                return self.parent_node.pending_registration
+                return self.parent_node.is_pending_registration
             return False
-        return self.registration_approval.pending_approval
+        return self.registration_approval.is_pending_approval
 
     @property
     def is_registration_approved(self):
@@ -3590,7 +3590,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
-    extra = fields.DictionaryField()
+    flags = fields.DictionaryField()
 
     notes = fields.StringField()
 
@@ -3606,15 +3606,15 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     @property
     def requires_approval(self):
-        return self.approval is not None
+        return self.registration_schema.requires_approval
 
     @property
     def is_pending_review(self):
-        return self.approval.is_pending_review if self.requires_approval else False
+        return self.approval and (self.approval.is_pending_review if self.requires_approval else False)
 
     @property
     def is_approved(self):
-        return self.approval.is_approved if self.requires_approval else True
+        return self.approval and (self.approval.is_approved if self.requires_approval else True)
 
     def update_metadata(self, metadata, save=True):
         # TODO(barbour-em): delete or implement in schema
