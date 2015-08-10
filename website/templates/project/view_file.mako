@@ -182,7 +182,7 @@
             docId: ${ sharejs_uuid | sjson, n },
             userId: ${ user['id'] | sjson, n },
             userName: ${ user['fullname'] | sjson, n },
-            userUrl: ${ '/' + (user['id'] or '') + '/' | sjson, n },
+            userUrl: ${ ('/' + user['id'] + '/') if user['id'] else None | sjson, n },
             userGravatar: ${ urls['gravatar'].replace('&amp;', '&') | sjson, n }
         },
         node: {
