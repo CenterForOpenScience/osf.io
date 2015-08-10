@@ -2944,6 +2944,7 @@ class Sanction(StoredObject):
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
     # are automatically made ACTIVE by a daily cron job
+    # Use end_date=None for a non-expiring Sanction
     end_date = fields.DateTimeField(default=None)
 
     # Sanction subclasses must have an initiated_by field
@@ -2961,10 +2962,7 @@ class Sanction(StoredObject):
     state = fields.StringField(default='unapproved')
 
     def __repr__(self):
-        return '<Sanction(end_date={1}) with _id {2}>'.format(
-            self.end_date,
-            self._id
-        )
+        return '<Sanction(end_date={self.end_date!r}) with _id {self._id!r}>'.format(self=self)
 
     @property
     def is_pending_approval(self):

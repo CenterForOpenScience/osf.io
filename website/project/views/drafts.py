@@ -18,7 +18,7 @@ from website.project.decorators import (
     must_have_permission,
     http_error_if_disk_saving_mode
 )
-from website import settings
+from website import language
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
@@ -33,7 +33,7 @@ autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'dra
 def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     draft.approval = DraftRegistrationApproval(
         initiated_by=auth.user,
-        end_date=None,  # TODO: expire me?
+        end_date=None,
     )
     draft.approval.ask(node.get_active_contributors)
     draft.save()
@@ -60,29 +60,26 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     data = request.get_json()
     register = draft.register(auth)
 
-    if data.get('registrationChoice', 'immediate') == 'embargo':
+    try:
         embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
+    except KeyError:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short="No embargo end date provided",
+            message_long="Creating an embargo requires supplying a valid end date"
+        ))
 
-        # Initiate embargo
-        try:
+    try:
+        if data.get('registrationChoice', 'immediate') == 'embargo':
+            # Initiate embargo
             register.embargo_registration(auth.user, embargo_end_date)
-            register.save()
-        except ValidationValueError as err:
-            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
-        if settings.ENABLE_ARCHIVER:
-            register.archive_job.meta = {
-                'embargo_urls': {
-                    contrib._id: project_utils.get_embargo_urls(register, contrib)
-                    for contrib in node.active_contributors()
-                }
-            }
-            register.archive_job.save()
-    else:
-        register.set_privacy('public', auth, log=False)
-        for child in register.get_descendants_recursive(lambda n: n.primary):
-            child.set_privacy('public', auth, log=False)
+        else:
+            register.require_approval(auth.user)
+    except ValidationValueError as err:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
-    push_status_message('Files are being copied to the newly created registration, and you will receive an email notification containing a link to the registration when the copying is finished.')
+    push_status_message(language.AFTER_REGISTER_ARCHIVING,
+                        kind='info',
+                        trust=False)
 
     return {
         'status': 'initiated',
