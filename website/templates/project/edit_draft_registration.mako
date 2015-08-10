@@ -42,6 +42,7 @@
                       <ul class="list-group" data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
                         <span data-bind="with: page.questions[qid]">
                           <li data-bind="css: {
+                                           list-item-warning: !$data.value.isValid(),
                                            registration-editor-question-current: $root.currentQuestion().id === $data.id,
                                            list-group-item-danger: $root.showValidation() && $data.validationStatus()
                                          },
@@ -100,17 +101,18 @@
 </div>
 
 <%def name="javascript_bottom()">
-    ${parent.javascript_bottom()}
-    <script>
-        <%
-        import json %>
-            window.contextVars = $.extend(true, {}, window.contextVars, {
-                draft: ${draft | sjson, n}
+  ${parent.javascript_bottom()}
 
-            });
-    </script>
-    <script src=${ "/static/public/js/registration-edit-page.js" | webpack_asset}>
-    </script>
+  <% import json %>
+  <script>
+   window.contextVars = $.extend(true, {}, window.contextVars, {
+     draft: ${draft | sjson, n}
+   });
+
+  </script>
+  <script src=${ "/static/public/js/registration-edit-page.js" | webpack_asset}>
+  </script>
+
 </%def>
 
 <%include file="project/registration_editor_templates.mako" />

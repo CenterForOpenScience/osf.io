@@ -58,17 +58,6 @@ var mkMetaSchema = function() {
     return [qid, params, ms];
 };
 
-
-describe('Utilites', () => {
-    describe('validators', () => {
-        it('is valid if the value is either a number or a string that can be parsed as a number', () => {
-            assert.isTrue(utilities.validators.number('1').status);
-            assert.isTrue(utilities.validators.number(42).status);
-            assert.isFalse(utilities.validators.number('abc').status);
-        });
-    });
-});
-
 describe('Comment', () => {
     describe('#constructor', () => {
         it('loads in optional instantiation data', () => {
@@ -275,6 +264,7 @@ describe('Question', () => {
             format: 'text',
             description: faker.lorem.sentence(),
             help: faker.lorem.sentence(),
+            required: true,
             options: [1, 1, 1].map(faker.internet.domainWord)
         };
         q = new Question(question, id);
@@ -289,6 +279,7 @@ describe('Question', () => {
             assert.equal(q.format, question.format);
             assert.equal(q.description, question.description);
             assert.equal(q.help, question.help);
+            assert.equal(q.required, question.required);
             assert.equal(q.options, question.options);
             assert.isDefined(q.value);
         });
@@ -307,19 +298,11 @@ describe('Question', () => {
             assert.isTrue(q.isComplete());
         });
     });
-    describe('#valid', () => {
-        it('is true if the Question\'s value passes the corresponding validator\'s checks', () => {
-            q.value('not blank');
-            assert.isTrue(q.valid().status);
-            q.type = 'number';
-            assert.isFalse(q.valid().status);
-        });
-        it('is false with a message if the field is required and blank', () => {
-            q.value(null);
-            q.required = true;
-            var valid = q.valid();
-            assert.isFalse(valid.status);
-            assert.isNotNull(valid.message);
+    describe('#isValid', () => {
+        it('is true if the Question\'s value is not empty and the question is required', () => {
+            assert.isFalse(q.value.isValid());
+            q.value('not empty');
+            assert.isTrue(q.value.isValid());
         });
     });
     describe('#init', () => {
