@@ -179,8 +179,8 @@ var Subject = {
         var vm = params.vm;
         return m('span', m('.badge.pointer', {onclick: function(){
                 utils.updateFilter(vm, 'match:subjects:"' + subject + '"', true);
-            }}, subject.length < 50 ? subject : subject.substring(0, 47) + '...'),
-            ' ');
+            }}, $.truncate(subject, {length: 50}), ' '
+        ));
     }
 };
 
