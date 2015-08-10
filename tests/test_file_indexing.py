@@ -179,26 +179,6 @@ class TestFileIndexingTestCase(FileIndexingTestCase):
 
 # file_util.py
 
-
-class TestBuildFileDocument(FileIndexingTestCase):
-    def setUp(self):
-        super(TestBuildFileDocument, self).setUp()
-
-    def test_build_file_document_with_no_content(self):
-        with PATCH_CONTEXT:
-            file_doc = file_util.build_file_document(self.file_node, include_content=False)
-            assert_in('size', file_doc.keys())
-            assert_in('content', file_doc.keys())
-            assert_is(file_doc['content'], None)
-
-    def test_build_file_document_with_content(self):
-        with PATCH_CONTEXT:
-            file_doc = file_util.build_file_document(self.file_node, include_content=True)
-            assert_in('size', file_doc.keys())
-            assert_in('content', file_doc.keys())
-            assert_is_not(file_doc['content'], None)
-
-
 class TestNormPath(OsfTestCase):
     def test_path_with_slash(self):
         path = '/123ab345cd'
@@ -294,45 +274,20 @@ def query(text, index=None):
     hits = resp['hits']['hits']
     return hits
 
-
-class TestSearchFileFunctions(FileIndexingTestCase):
-    def setUp(self):
-        super(TestSearchFileFunctions, self).setUp()
-        self.root = self.addon.root_node
-
-    @patch_context
-    def test_update_delete_single_file(self):
-        assert_equal(len(query('cat')), 0)
-
-        file_indexing.update_search_file(self.file_node)
-        assert_equal(len(query('cat')), 1, 'failed to update')
-
-        file_indexing.delete_search_file(self.file_node)
-        assert_equal(len(query('cat')), 0, 'failed to delete')
-
-    @patch_context
-    def test_update_delete_all_files(self):
-        assert_equal(len(query('cat')), 0)
-
-        self.root.append_file(factories.fake.file_name(extension='txt'))
-        folder = self.root.append_folder(factories.fake.first_name())
-        folder.append_file(factories.fake.file_name(extension='txt'))
-
-        file_indexing.update_search_files(self.project)
-        assert_equal(len(query('cat')), 3, 'failed to update')
-
-        file_indexing.delete_search_files(self.project)
-        assert_equal(len(query('cat')), 0, 'failed to delete')
-
-    @patch_context
-    def test_search_unavailable(self):
-        pass
+def file_count(index=None):
+    pass
 
 
 class TestIndexRealFiles(FileIndexingTestCase):
     def setUp(self):
         super(TestIndexRealFiles, self).setUp()
         self.root = self.addon.root_node
+        self.mock_size = mock.patch('website.search.file_util.get_file_size', return_value=10)
+        self.mock_size.start()
+
+    def tearDown(self):
+        super(TestIndexRealFiles, self).tearDown()
+        self.mock_size.stop()
 
     @patch_context
     def test_txt_file_searchable(self):
@@ -375,33 +330,33 @@ class TestWaterbutlerUpdateSearch(FileIndexingTestCase):
     def test_update_on_create(self):
         self.project.is_public = True
         with TRIGGER_CONTEXT as patches:
-            update_seach_mock = patches.get_named_mock('update_search_file')
+            update_search_mock = patches.get_named_mock('update_search_file')
             wb_update_search(self.project, 'create', self.addon, self.file_node.name, None)
-            update_seach_mock.assert_called_once_with(self.file_node)
+            update_search_mock.assert_called_once_with(self.file_node)
 
     def test_update_on_copy(self):
         self.project.is_public = True
         with TRIGGER_CONTEXT as patches:
-            update_seach_mock = patches.get_named_mock('update_search_file')
+            update_search_mock = patches.get_named_mock('update_search_file')
             wb_update_search(self.project, 'copy', self.addon, self.file_node.name, None)
-            update_seach_mock.assert_called_once_with(self.file_node)
+            update_search_mock.assert_called_once_with(self.file_node)
 
     def test_update_on_move(self):
         other_project = ProjectWithAddonFactory()
         self.project.is_public = True
         with TRIGGER_CONTEXT as patches:
-            update_seach_mock = patches.get_named_mock('update_search_file')
+            update_search_mock = patches.get_named_mock('update_search_file')
             delete_search_mock = patches.get_named_mock('delete_search_file')
             wb_update_search(self.project, 'move', self.addon, self.file_node.name, other_project._id)
             delete_search_mock.assert_called_once_with(self.file_node)
-            update_seach_mock.assert_called_once_with(self.file_node)
+            update_search_mock.assert_called_once_with(self.file_node)
 
     def test_no_action_on_delete(self):
         with TRIGGER_CONTEXT as patches:
             wb_update_search(self.project, 'delete', self.addon, self.file_node, None)
-            update_seach_mock = patches.get_named_mock('update_search_file')
+            update_search_mock = patches.get_named_mock('update_search_file')
             delete_search_mock = patches.get_named_mock('delete_search_file')
-            assert_false(update_seach_mock.called)
+            assert_false(update_search_mock.called)
             assert_false(delete_search_mock.called)
 
 
@@ -417,6 +372,7 @@ class TestFileNodeUpdateSearch(FileIndexingTestCase):
 
             delete_search_mock.assert_called_once_with(self.file_node)
             assert_false(update_search_mock.called)
+
 
 class TestProjectPrivacyUpdatesSearch(FileIndexingTestCase):
     def test_update_on_make_public(self):

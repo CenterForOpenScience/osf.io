@@ -59,29 +59,30 @@ def norm_path(path):
     return path if not path[0] == '/' else path[1:]
 
 
-def build_file_document(file_node, include_content=True):
-    """ Return file data to be in the indexed document as a dict.
-
-    :param name: Name of file.
-    :param path: Path of file.
-    :param addon: Instance of storage addon containing the containing the file.
-    :param include_content: Include the content of the file in document.
-    """
-    name = file_node.name
-    parent_node = file_node.node
-    parent_id = parent_node._id
-    path = norm_path(file_node.path)
-
-    file_size = get_file_size(file_node)
-    file_content = get_file_content(file_node) if include_content else None
-
-    return {
-        'name': name,
-        'path': path,
-        'content': file_content,
-        'parent_id': parent_id,
-        'size': file_size,
-    }
+#TODO: remove @findexing
+# def build_file_document(file_node, include_content=True):
+#     """ Return file data to be in the indexed document as a dict.
+#
+#     :param name: Name of file.
+#     :param path: Path of file.
+#     :param addon: Instance of storage addon containing the containing the file.
+#     :param include_content: Include the content of the file in document.
+#     """
+#     name = file_node.name
+#     parent_node = file_node.node
+#     parent_id = parent_node._id
+#     path = norm_path(file_node.path)
+#
+#     file_size = get_file_size(file_node)
+#     file_content = get_file_content(file_node) if include_content else None
+#
+#     return {
+#         'name': name,
+#         'path': path,
+#         'content': file_content,
+#         'parent_id': parent_id,
+#         'size': file_size,
+#     }
 
 
 def collect_files_from_filenode(file_node):
