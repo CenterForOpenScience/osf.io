@@ -583,13 +583,13 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return self.contents().length > 1;
     });
 
-    self.enablebtn = ko.computed(function(){
+    self.institutionObjectsEmpty = ko.computed(function(){
         for (var i=0; i<self.contents().length; i++) {
             if (self.contents()[i].institutionObjectEmpty()) {
-                return 'disabled';
+                return true;
             }
         }
-        return 'enabled';
+        return false;
     }, this);
 
     self.isValid = ko.computed(function() {
@@ -664,7 +664,16 @@ var ListViewModel = function(ContentModel, urls, modes) {
 ListViewModel.prototype = Object.create(BaseViewModel.prototype);
 
 ListViewModel.prototype.addContent = function() {
-    this.contents.push(new this.ContentModel(this));
+    if (!this.institutionObjectsEmpty() && this.isValid()) {
+        this.contents.push(new this.ContentModel(this));
+    }
+    else {
+        this.changeMessage(
+            'Institution Field is Required',
+            'text-danger',
+            5000
+        );
+    }
 };
 
 ListViewModel.prototype.removeContent = function(content) {
