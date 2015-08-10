@@ -207,14 +207,14 @@ class TestUserNodes(ApiTestCase):
 class TestUserUpdate(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestUserUpdate, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
         self.user_one.fullname = 'Martin Luther King Jr.'
         self.user_one.given_name = 'Martin'
         self.user_one.family_name = 'King'
         self.user_one.suffix = 'Jr.'
-        self.user_one.social['github'] = 'userOneGithub'
+        self.user_one.social['github'] = 'userOnegitHub'
         self.user_one.social['scholar'] = 'userOneScholar'
         self.user_one.social['personal'] = 'http://www.useronepersonalwebsite.com'
         self.user_one.social['twitter'] = 'userOneTwitter'
@@ -249,6 +249,57 @@ class TestUserUpdate(ApiTestCase):
         self.new_family_name = 'X'
         self.new_suffix = 'Sr.'
         self.blank_suffix = ''
+        self.new_gitHub = 'newgitHub'
+        self.new_scholar = 'newScholar'
+        self.new_personal_website = 'http://www.newpersonalwebsite.com'
+        self.new_twitter = 'newTwitter'
+        self.new_linkedIn = 'newLinkedIn'
+        self.new_impactStory = 'newImpactStory'
+        self.new_orcid = 'newOrcid'
+        self.new_researcherId = 'newResearcherId'
+        self.new_user_data = {
+            'id': self.user_one._id,
+            'fullname': self.new_fullname,
+            'given_name': self.new_given_name,
+            'family_name': self.new_family_name,
+            'suffix': self.new_suffix,
+            'gitHub': self.new_gitHub,
+            'personal_website': self.new_personal_website,
+            'twitter': self.new_twitter,
+            'linkedIn': self.new_linkedIn,
+            'impactStory': self.new_impactStory,
+            'orcid': self.new_orcid,
+            'researcherId': self.new_researcherId,
+        }
+        self.blank_user_data =  {
+            'id': self.user_one._id,
+            'fullname': self.new_fullname,
+            'given_name': '',
+            'family_name': '',
+            'suffix': '',
+            'gitHub': '',
+            'personal_website': '',
+            'twitter': '',
+            'linkedIn':  '',
+            'impactStory': '',
+            'orcid': '',
+            'researcherId': '',
+        }
+
+    def tearDown(self):
+        super(TestUserUpdate, self).tearDown()
+
+    def test_patch_user_logged_out(self):
+        res = self.app.patch_json(self.user_one_url, {
+            'fullname': self.new_fullname,
+        }, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_patch_user_read_only_field(self):
+        # Test to make sure read only fields cannot be updated
         self.new_employment_institutions = [
             {
                 'startYear': '1982',
@@ -261,7 +312,6 @@ class TestUserUpdate(ApiTestCase):
                 'institution': 'IHop'
             }
         ]
-
         self.new_educational_institutions = [
             {
                 "startYear": '',
@@ -274,60 +324,10 @@ class TestUserUpdate(ApiTestCase):
                 "institution": 'Heeyyyy'
             }
         ]
-
-        self.newGithub = 'newGithub'
-        self.newScholar = 'newScholar'
-        self.newPersonal_website = 'http://www.newpersonalwebsite.com'
-        self.newTwitter = 'newTwitter'
-        self.newLinkedIn = 'newLinkedIn'
-        self.newImpactStory = 'newImpactStory'
-        self.newOrcid = 'newOrcid'
-        self.newResearcherId = 'newResearcherId'
-        self.new_user_data = {
-            'id': self.user_one._id,
-            'fullname': self.new_fullname,
-            'given_name': self.new_given_name,
-            'family_name': self.new_family_name,
-            'suffix': self.new_suffix,
-            'github': self.newGithub,
-            'personal_website': self.newPersonal_website,
-            'twitter': self.newTwitter,
-            'linkedIn': self.newLinkedIn,
-            'impactStory': self.newImpactStory,
-            'orcid': self.newOrcid,
-            'researcherId': self.newResearcherId,
-        }
-        self.blank_user_data =  {
-            'id': self.user_one._id,
-            'fullname': self.new_fullname,
-            'given_name': '',
-            'family_name': '',
-            'suffix': '',
-            'github': '',
-            'personal_website': '',
-            'twitter': '',
-            'linkedIn':  '',
-            'impactStory': '',
-            'orcid': '',
-            'researcherId': '',
-        }
-
-    def test_patch_user_logged_out(self):
-        res = self.app.patch_json(self.user_one_url, {
-            'fullname': self.new_fullname,
-        }, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
-
-    def test_patch_user_read_only_field(self):
-        # Logged in user updates their user information via patch
         res = self.app.patch_json(self.user_one_url, {
             'employment_institutions': self.new_employment_institutions,
             'educational_institutions': self.new_educational_institutions,
             'fullname': self.new_fullname,
-
         }, auth=self.auth_one)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['employment_institutions'], self.user_one.jobs)
@@ -342,13 +342,25 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['given_name'], self.new_given_name)
         assert_equal(res.json['data']['family_name'], self.new_family_name)
         assert_equal(res.json['data']['suffix'], self.new_suffix)
-        assert_equal(res.json['data']['github'], self.newGithub)
-        assert_equal(res.json['data']['personal_website'], self.newPersonal_website)
-        assert_equal(res.json['data']['twitter'], self.newTwitter)
-        assert_equal(res.json['data']['linkedIn'], self.newLinkedIn)
-        assert_equal(res.json['data']['impactStory'], self.newImpactStory)
-        assert_equal(res.json['data']['orcid'], self.newOrcid)
-        assert_equal(res.json['data']['researcherId'], self.newResearcherId)
+        assert_equal(res.json['data']['gitHub'], self.new_gitHub)
+        assert_equal(res.json['data']['personal_website'], self.new_personal_website)
+        assert_equal(res.json['data']['twitter'], self.new_twitter)
+        assert_equal(res.json['data']['linkedIn'], self.new_linkedIn)
+        assert_equal(res.json['data']['impactStory'], self.new_impactStory)
+        assert_equal(res.json['data']['orcid'], self.new_orcid)
+        assert_equal(res.json['data']['researcherId'], self.new_researcherId)
+        self.user_one.reload()
+        assert_equal(self.user_one.fullname, self.new_fullname)
+        assert_equal(self.user_one.given_name, self.new_given_name)
+        assert_equal(self.user_one.family_name, self.new_family_name)
+        assert_equal(self.user_one.suffix, self.new_suffix)
+        assert_equal(self.user_one.social['github'], self.new_gitHub)
+        assert_equal(self.user_one.social['personal'], self.new_personal_website)
+        assert_equal(self.user_one.social['twitter'], self.new_twitter)
+        assert_equal(self.user_one.social['linkedIn'], self.new_linkedIn)
+        assert_equal(self.user_one.social['impactStory'], self.new_impactStory)
+        assert_equal(self.user_one.social['orcid'], self.new_orcid)
+        assert_equal(self.user_one.social['researcherId'], self.new_researcherId)
 
     def test_put_blank_user(self):
         # Logged in user updates their user information via patch
@@ -359,13 +371,25 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['given_name'], '')
         assert_equal(res.json['data']['family_name'], '')
         assert_equal(res.json['data']['suffix'], '')
-        assert_equal(res.json['data']['github'], '')
+        assert_equal(res.json['data']['gitHub'], '')
         assert_equal(res.json['data']['personal_website'], '')
         assert_equal(res.json['data']['twitter'], '')
         assert_equal(res.json['data']['linkedIn'], '')
         assert_equal(res.json['data']['impactStory'], '')
         assert_equal(res.json['data']['orcid'], '')
         assert_equal(res.json['data']['researcherId'], '')
+        self.user_one.reload()
+        assert_equal(self.user_one.fullname, self.new_fullname)
+        assert_equal(self.user_one.given_name, '')
+        assert_equal(self.user_one.family_name, '')
+        assert_equal(self.user_one.suffix, '')
+        assert_equal(self.user_one.social['github'], '')
+        assert_equal(self.user_one.social['personal'], '')
+        assert_equal(self.user_one.social['twitter'], '')
+        assert_equal(self.user_one.social['linkedIn'], '')
+        assert_equal(self.user_one.social['impactStory'], '')
+        assert_equal(self.user_one.social['orcid'], '')
+        assert_equal(self.user_one.social['researcherId'], '')
 
     def test_patch_user_logged_in_blank_suffix(self):
         # Logged in user updates their user information via patch
@@ -376,13 +400,25 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['given_name'], '')
         assert_equal(res.json['data']['family_name'], '')
         assert_equal(res.json['data']['suffix'], '')
-        assert_equal(res.json['data']['github'], '')
+        assert_equal(res.json['data']['gitHub'], '')
         assert_equal(res.json['data']['personal_website'], '')
         assert_equal(res.json['data']['twitter'], '')
         assert_equal(res.json['data']['linkedIn'], '')
         assert_equal(res.json['data']['impactStory'], '')
         assert_equal(res.json['data']['orcid'], '')
         assert_equal(res.json['data']['researcherId'], '')
+        self.user_one.reload()
+        assert_equal(self.user_one.fullname, self.new_fullname)
+        assert_equal(self.user_one.given_name, '')
+        assert_equal(self.user_one.family_name, '')
+        assert_equal(self.user_one.suffix, '')
+        assert_equal(self.user_one.social['github'], '')
+        assert_equal(self.user_one.social['personal'], '')
+        assert_equal(self.user_one.social['twitter'], '')
+        assert_equal(self.user_one.social['linkedIn'], '')
+        assert_equal(self.user_one.social['impactStory'], '')
+        assert_equal(self.user_one.social['orcid'], '')
+        assert_equal(self.user_one.social['researcherId'], '')
 
     def test_put_user_logged_in_blank_required_field(self):
         # Logged in user updates their user information via patch
@@ -406,12 +442,13 @@ class TestUserUpdate(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(put.status_code, 403)
+        self.user_one.reload()
         res = self.app.get(self.user_one_url)
         assert_equal(res.json['data']['fullname'], self.user_one.fullname)
         assert_equal(res.json['data']['given_name'],self.user_one.given_name)
         assert_equal(res.json['data']['family_name'], self.user_one.family_name)
         assert_equal(res.json['data']['suffix'], self.user_one.suffix)
-        assert_equal(res.json['data']['github'], self.user_one.social['github'])
+        assert_equal(res.json['data']['gitHub'], self.user_one.social['github'])
         assert_equal(res.json['data']['personal_website'], self.user_one.social['personal'])
         assert_equal(res.json['data']['twitter'], self.user_one.social['twitter'])
         assert_equal(res.json['data']['linkedIn'], self.user_one.social['linkedIn'])
@@ -426,12 +463,13 @@ class TestUserUpdate(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(put.status_code, 403)
+        self.user_one.reload()
         res = self.app.get(self.user_one_url)
         assert_equal(res.json['data']['fullname'], self.user_one.fullname)
         assert_equal(res.json['data']['given_name'],self.user_one.given_name)
         assert_equal(res.json['data']['family_name'], self.user_one.family_name)
         assert_equal(res.json['data']['suffix'], self.user_one.suffix)
-        assert_equal(res.json['data']['github'], self.user_one.social['github'])
+        assert_equal(res.json['data']['gitHub'], self.user_one.social['github'])
         assert_equal(res.json['data']['personal_website'], self.user_one.social['personal'])
         assert_equal(res.json['data']['twitter'], self.user_one.social['twitter'])
         assert_equal(res.json['data']['linkedIn'], self.user_one.social['linkedIn'])
@@ -452,7 +490,7 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['given_name'],self.user_one.given_name)
         assert_equal(res.json['data']['family_name'], self.user_one.family_name)
         assert_equal(res.json['data']['suffix'], self.user_one.suffix)
-        assert_equal(res.json['data']['github'], self.user_one.social['github'])
+        assert_equal(res.json['data']['gitHub'], self.user_one.social['github'])
         assert_equal(res.json['data']['personal_website'], self.user_one.social['personal'])
         assert_equal(res.json['data']['twitter'], self.user_one.social['twitter'])
         assert_equal(res.json['data']['linkedIn'], self.user_one.social['linkedIn'])
