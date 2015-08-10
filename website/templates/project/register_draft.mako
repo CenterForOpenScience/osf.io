@@ -54,7 +54,7 @@
   <% import json %>
   <script type="text/javascript">
     window.contextVars = window.contextVars || {};
-    window.contextVars.draft = ${json.dumps(draft)};
+    window.contextVars.draft = ${draft | sjson, n};
   </script>
   <script src=${"/static/public/js/register-page.js" | webpack_asset}></script>
 </%def>
