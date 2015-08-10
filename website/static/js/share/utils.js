@@ -398,7 +398,7 @@ utils.parseFilter = function (filterString) {
 };
 
 utils.processStats = function (vm, data) {
-    $.each(Object.keys(data.aggregations), function (key) { //parse data and load correctly
+    Object.keys(data.aggregations).forEach(function (key) { //parse data and load correctly
         if (vm.statsParsers[key]) {
             var chartData = vm.statsParsers[key](data);
             vm.statsData.charts[chartData.name] = chartData;
