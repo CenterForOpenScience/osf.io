@@ -97,7 +97,7 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         assert_equal(user_json['attributes']['fullname'], self.user_one.fullname)
-        # assert_equal(user_json['attributes']['social_accounts']['twitter'], 'howtopizza')
+        assert_equal(user_json['attributes']['social_accounts'], 'howtopizza')
 
     def test_get_incorrect_pk_user_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
