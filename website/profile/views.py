@@ -17,7 +17,7 @@ from framework.auth.decorators import must_be_logged_in
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
 from framework.auth.signals import user_merged
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import HTTPError, PermissionsError, ProfileValidationError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
@@ -623,9 +623,9 @@ def unserialize_social(auth, **kwargs):
 
     try:
         user.save()
-    except ValidationError as exc:
+    except ProfileValidationError as exc:
         raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_long=exc.args[0]
+            message_long=exc.message_long
         ))
 
 

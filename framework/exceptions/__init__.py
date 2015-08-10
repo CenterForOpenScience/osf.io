@@ -4,9 +4,12 @@ import copy
 import httplib as http
 from flask import request
 
+from modularodm.exceptions import ValidationError
+
 class FrameworkError(Exception):
     """Base class from which framework-related errors inherit."""
     pass
+
 
 class HTTPError(FrameworkError):
 
@@ -91,3 +94,18 @@ class PermissionsError(FrameworkError):
     """Raised if an action cannot be performed due to insufficient permissions
     """
     pass
+
+
+class ProfileValidationError(ValidationError):
+    """Raised if a field in User.social does not pass validation."""
+    def __init__(self, field, message):
+        self.field = field
+        self.message = message
+
+    @property
+    def message_short(self):
+        return 'Failed to validate {}'.format(self.field)
+
+    @property
+    def message_long(self):
+        return self.message

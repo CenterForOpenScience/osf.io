@@ -22,7 +22,7 @@ from framework.sentry import log_exception
 from framework.addons import AddonModelMixin
 from framework.sessions.model import Session
 from framework.sessions.utils import remove_sessions_for_user
-from framework.exceptions import PermissionsError
+from framework.exceptions import PermissionsError, ProfileValidationError
 from framework.guid.model import GuidStoredObject
 from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
@@ -90,12 +90,92 @@ def validate_personal_site(value):
         try:
             validate_url(value)
         except ValidationError:
-            # Reraise with a better message
-            raise ValidationError('Invalid personal URL.')
+            raise ProfileValidationError(
+                'personal',
+                'Invalid personal URL.'
+            )
+
+
+def validate_twitter(value):
+    if value:
+        if not re.match(r'^\w+$', value):
+            raise ProfileValidationError(
+                'twitter',
+                'The twitter handle provided is not of valid form.')
+        else:
+            if User.find(Q('social.twitter', 'eq', value)).count():
+                raise ProfileValidationError(
+                    'Invalid Request',
+                    'The twitter handle provided is already associated with '
+                    'another OSF account. If you believe this is wrong, '
+                    'contact suppoert@osf.io for further direction.'
+                )
+
+
+def validate_github(value):
+    if value:
+        if not re.match(r'^\w+$', value):
+            raise ProfileValidationError(
+                'github',
+                'The GitHub username provided is not of valid form.'
+            )
+
+
+def validate_orcid(value):
+    if value:
+        if not re.match(r'^[\d]{4}-[\d]{4}-[\d]{4}-[\d]{4}$', value):
+            raise ProfileValidationError(
+                'orcid',
+                'The orcid provided is not of valid form.'
+            )
+
+
+def validate_scholar(value):
+    if value:
+        if not re.match(r'^\w+$', value):
+            raise ProfileValidationError(
+                'scholar',
+                'The Google Scholar id provided is not of valid form.'
+            )
+
+
+def validate_linkedin(value):
+    if value:
+        # LinkedIn profiles can be in/<UserID>, profile/<ProfileID>, or pub/<some link>
+        if not re.match(r'^in\/\w+$|^profile\/\w+$|^pub\/.+$', value):
+            raise ProfileValidationError(
+                'linkedin',
+                'The LinkedIn ID provided is not of valid form.'
+            )
+
+
+def validate_impactstory(value):
+    if value:
+        if not re.match(r'^\w+$', value):
+            raise ProfileValidationError(
+                'impactStory',
+                'The Impact Story ID provided is not of valid form.'
+            )
+
+
+def validate_researcherid(value):
+    if value:
+        if not re.match(r'^[A-Za-z]-\d{4}-\d{4}$', value):
+            raise ProfileValidationError(
+                'researcherId',
+                'The Researcher ID provided is not of valid form.'
+            )
 
 
 def validate_social(value):
     validate_personal_site(value.get('personal'))
+    validate_twitter(value.get('twitter'))
+    validate_github(value.get('github'))
+    validate_orcid(value.get('orcid'))
+    validate_scholar(value.get('scholar'))
+    validate_linkedin(value.get('linkedin'))
+    validate_impactstory(value.get('impactStory'))
+    validate_researcherid(value.get('researcherId'))
 
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
@@ -351,6 +431,12 @@ class User(GuidStoredObject, AddonModelMixin):
     # Format: {
     #     'personal': <personal site>,
     #     'twitter': <twitter id>,
+    #     'orcid': <orc id>,
+    #     'github': <github id>,
+    #     'scholar': <scholar id>,
+    #     'linkedIn': <linkedIn id>,
+    #     'impactStory': <impact story id>,
+    #     'researcherId: <researcher id>
     # }
 
     # hashed password used to authenticate to Piwik
