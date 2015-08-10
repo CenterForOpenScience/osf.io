@@ -106,7 +106,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
     def test_embargo_public_project_makes_private_pending_embargo(self):
         self.registration.is_public = True
@@ -116,7 +116,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
         assert_false(self.registration.is_public)
 
     def test_embargo_non_registration_raises_NodeStateError(self):
@@ -127,7 +127,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
                 self.user,
                 datetime.datetime.utcnow() + datetime.timedelta(days=10)
             )
-        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_pending_embargo)
 
     # Embargo#approve_embargo tests
     def test_invalid_approval_token_raises_InvalidSanctionApprovalToken(self):
@@ -136,12 +136,12 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         invalid_approval_token = 'not a real token'
         with assert_raises(InvalidSanctionApprovalToken):
             self.registration.embargo.approve_embargo(self.user, invalid_approval_token)
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
     def test_non_admin_approval_token_raises_PermissionsError(self):
         non_admin = UserFactory()
@@ -150,12 +150,12 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         with assert_raises(PermissionsError):
             self.registration.embargo.approve_embargo(non_admin, approval_token)
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
     def test_one_approval_with_one_admin_embargoes(self):
         self.registration.embargo_registration(
@@ -163,12 +163,12 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         self.registration.embargo.approve_embargo(self.user, approval_token)
         assert_true(self.registration.embargo_end_date)
-        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_pending_embargo)
 
     def test_approval_adds_to_parent_projects_log(self):
         initial_project_logs = len(self.registration.registered_from.logs)
@@ -196,7 +196,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         # First admin approves
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         self.registration.embargo.approve_embargo(self.user, approval_token)
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
         num_of_approvals = sum([val['has_approved'] for val in self.registration.embargo.approval_state.values()])
         assert_equal(num_of_approvals, 1)
 
@@ -204,7 +204,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         approval_token = self.registration.embargo.approval_state[admin2._id]['approval_token']
         self.registration.embargo.approve_embargo(admin2, approval_token)
         assert_true(self.registration.embargo_end_date)
-        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_pending_embargo)
         num_of_approvals = sum([val['has_approved'] for val in self.registration.embargo.approval_state.values()])
         assert_equal(num_of_approvals, 2)
 
@@ -215,10 +215,10 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
         with assert_raises(InvalidSanctionRejectionToken):
             self.registration.embargo.disapprove_embargo(self.user, fake.sentence())
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
     def test_non_admin_disapproval_token_raises_PermissionsError(self):
         non_admin = UserFactory()
@@ -227,12 +227,12 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         with assert_raises(PermissionsError):
             self.registration.embargo.disapprove_embargo(non_admin, disapproval_token)
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
     def test_one_disapproval_cancels_embargo(self):
         self.registration.embargo_registration(
@@ -240,12 +240,12 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
-        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_pending_embargo)
 
     def test_disapproval_adds_to_parent_projects_log(self):
         initial_project_logs = len(self.registration.registered_from.logs)
@@ -338,12 +338,12 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
             self.valid_embargo_end_date
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         # Ensure descendant nodes are pending embargo
         descendants = self.registration.get_descendants_recursive()
         for node in descendants:
-            assert_true(node.pending_embargo)
+            assert_true(node.is_pending_embargo)
 
         # Approve parent registration's embargo
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
@@ -362,23 +362,23 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
             self.valid_embargo_end_date
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         # Ensure descendant nodes are pending embargo
         descendants = self.registration.get_descendants_recursive()
         for node in descendants:
-            assert_true(node.pending_embargo)
+            assert_true(node.is_pending_embargo)
 
         # Disapprove parent registration's embargo
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
-        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_pending_embargo)
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
 
         # Ensure descendant nodes' embargoes are cancelled
         descendants = self.registration.get_descendants_recursive()
         for node in descendants:
-            assert_false(node.pending_embargo)
+            assert_false(node.is_pending_embargo)
             assert_false(node.embargo_end_date)
 
 
@@ -399,7 +399,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_equal(res.status_code, 403)
 
     def test_GET_approve_registration_without_embargo_raises_HTTPBad_Request(self):
-        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_pending_embargo)
         res = self.app.get(
             self.registration.web_url_for('node_registration_embargo_approve', token=fake.sentence()),
             auth=self.user.auth,
@@ -413,7 +413,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         res = self.app.get(
             self.registration.web_url_for('node_registration_embargo_approve', token=fake.sentence()),
@@ -431,7 +431,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         wrong_approval_token = self.registration.embargo.approval_state[admin2._id]['approval_token']
         res = self.app.get(
@@ -450,7 +450,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         wrong_approval_token = self.registration.embargo.approval_state[admin2._id]['approval_token']
         res = self.app.get(
@@ -458,7 +458,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
         assert_equal(res.status_code, 400)
 
     def test_GET_approve_with_valid_token_returns_redirect(self):
@@ -467,7 +467,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
         res = self.app.get(
@@ -476,7 +476,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         self.registration.embargo.reload()
         assert_true(self.registration.embargo_end_date)
-        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_pending_embargo)
         assert_equal(res.status_code, 302)
 
     # node_registration_embargo_disapprove tests
@@ -490,7 +490,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_equal(res.status_code, 403)
 
     def test_GET_disapprove_registration_without_embargo_HTTPBad_Request(self):
-        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_pending_embargo)
         res = self.app.get(
             self.registration.web_url_for('node_registration_embargo_disapprove', token=fake.sentence()),
             auth=self.user.auth,
@@ -504,7 +504,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         res = self.app.get(
             self.registration.web_url_for('node_registration_embargo_disapprove', token=fake.sentence()),
@@ -512,7 +512,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             expect_errors=True
         )
         self.registration.embargo.reload()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
         assert_equal(res.status_code, 400)
 
     def test_GET_disapprove_with_wrong_admins_token_returns_HTTPBad_Request(self):
@@ -524,7 +524,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         wrong_disapproval_token = self.registration.embargo.approval_state[admin2._id]['rejection_token']
         res = self.app.get(
@@ -532,7 +532,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
         assert_equal(res.status_code, 400)
 
     def test_GET_disapprove_with_valid_token_returns_redirect_to_parent(self):
@@ -543,7 +543,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         registration.save()
-        assert_true(registration.pending_embargo)
+        assert_true(registration.is_pending_embargo)
 
         disapproval_token = registration.embargo.approval_state[self.user._id]['rejection_token']
         res = self.app.get(
@@ -552,7 +552,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         registration.embargo.reload()
         assert_equal(registration.embargo.state, Embargo.REJECTED)
-        assert_false(registration.pending_embargo)
+        assert_false(registration.is_pending_embargo)
         assert_equal(res.status_code, 302)
         assert_true(project._id in res.location)
 
@@ -563,7 +563,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
             for_existing_registration=True
         )
         self.registration.save()
-        assert_true(self.registration.pending_embargo)
+        assert_true(self.registration.is_pending_embargo)
 
         disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         res = self.app.get(
@@ -572,7 +572,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         self.registration.embargo.reload()
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
-        assert_false(self.registration.pending_embargo)
+        assert_false(self.registration.is_pending_embargo)
         assert_equal(res.status_code, 302)
         assert_true(self.registration._id in res.location)
 

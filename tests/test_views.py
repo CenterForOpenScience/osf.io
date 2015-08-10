@@ -578,7 +578,7 @@ class TestProjectViews(OsfTestCase):
         # The registration created is not public
         assert_false(reg.is_public)
         # The registration is pending an embargo that has not been approved
-        assert_true(reg.pending_embargo)
+        assert_true(reg.is_pending_embargo)
 
     def test_register_template_page_with_invalid_template_name(self):
         url = self.project.web_url_for('node_register_template_page', template='invalid')

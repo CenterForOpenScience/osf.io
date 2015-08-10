@@ -79,7 +79,7 @@ def node_registration_retraction_get(auth, node, **kwargs):
             'message_short': 'Invalid Request',
             'message_long': 'Retractions of non-registrations is not permitted.'
         })
-    if node.pending_retraction:
+    if node.is_pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
             'message_long': 'This registration is already pending a retraction.'
@@ -127,7 +127,7 @@ def node_registration_retraction_approve(auth, node, token, **kwargs):
     :raises: HTTPError if invalid token or user is not admin
     """
 
-    if not node.pending_retraction:
+    if not node.is_pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Token',
             'message_long': 'This registration is not pending a retraction.'
@@ -163,7 +163,7 @@ def node_registration_retraction_disapprove(auth, node, token, **kwargs):
     :raises: HTTPError if invalid token or user is not admin
     """
 
-    if not node.pending_retraction:
+    if not node.is_pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Token',
             'message_long': 'This registration is not pending a retraction.'
@@ -197,7 +197,7 @@ def node_registration_embargo_approve(auth, node, token, **kwargs):
     :raises: HTTPError if invalid token or user is not admin
     """
 
-    if not node.pending_embargo:
+    if not node.is_pending_embargo:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Token',
             'message_long': 'This registration is not pending an embargo.'
@@ -230,7 +230,7 @@ def node_registration_embargo_disapprove(auth, node, token, **kwargs):
     :raises: HTTPError if invalid token or user is not admin
     """
 
-    if not node.pending_embargo:
+    if not node.is_pending_embargo:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Token',
             'message_long': 'This registration is not pending an embargo.'
