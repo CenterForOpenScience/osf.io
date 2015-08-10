@@ -50,3 +50,4 @@ class ContributorSerializer(UserSerializer):
     filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
+    permissions = ser.ListField(help_text='An array of user permissions')
