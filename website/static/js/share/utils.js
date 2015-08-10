@@ -1,5 +1,6 @@
 var $ = require('jquery');
 var m = require('mithril');
+var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var History = require('exports?History!history');
 
@@ -255,11 +256,16 @@ utils.loadRawNormalized = function(result){
 
             return unwrapped;
         },
-        unwrapError: function(data) {
+        unwrapError: function(response, xhr) {
             var error = {};
             error.rawfiletype = 'json';
             error.normalized = 'Normalized data not found.';
             error.raw = '"Raw data not found."';
+            if (xhr.status >= 500) {
+                Raven.captureMessage('SHARE Raw and Normalized API Internal Server Error.', {
+                    textStatus: status
+                });
+            }
 
             return error;
         }
