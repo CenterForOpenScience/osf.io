@@ -26,7 +26,7 @@ var Results = {
             } else if (!loading && results.length === 0) {
                 return m('p', {class: 'text-muted'}, 'No results for this query');
             } else {
-                return m('', [m('img[src=/static/img/loading.gif]'), 'loading...']);
+                return m('', [m.component(utils.loadingIcon), 'loading...']);
             }
         };
 
