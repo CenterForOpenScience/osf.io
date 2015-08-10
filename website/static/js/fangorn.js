@@ -763,7 +763,11 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         }
     }
     if (msgText !== 'Upload canceled.') {
-        $osf.growl('Error', msgText);
+        $osf.growl(
+            'Error',
+            'Unable to reach the provider, please try again later. If the ' +
+            'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.'
+            );
     }
     treebeard.options.uploadInProgress = false;
 }
