@@ -93,10 +93,11 @@ function timeGraph(data, vm) {
 }
 
 /* Creates an Elasticsearch aggregation by source */
-Stats.sourcesAgg = function () {
-    var sourcesQuery = {'match_all': {} };
-    var sourcesAgg = {'sources': utils.termsFilter('field', '_type')};
-    return {'query' : sourcesQuery, 'aggregations': sourcesAgg, 'filters' : {}};
+Stats.sourcesAgg = {
+    query: {match_all: {} },
+    aggregations: {
+        sources: utils.termsFilter('field', '_type')
+    }
 };
 
 /* Creates an Elasticsearch aggregation that breaks down sources by date (and number of things published on those dates) */
@@ -219,7 +220,7 @@ Stats.controller = function (vm) {
     //request these querys/aggregations for charts
     self.vm.statsQueries = {
         'shareTimeGraph' : Stats.sourcesByDatesAgg(),
-        'shareDonutGraph' : Stats.sourcesAgg()
+        'shareDonutGraph' : Stats.sourcesAgg
     };
 
     //set each aggregation as the data source for each chart parser, and hence chart
