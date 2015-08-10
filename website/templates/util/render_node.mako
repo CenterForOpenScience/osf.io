@@ -39,9 +39,10 @@
                 <span class="f-w-lg">${summary['title']}</span>
             % endif
 
-
             % if summary['is_registration']:
                 | Registered: ${summary['registered_date']}
+            % elif summary['is_fork']:
+                | Forked: ${summary['forked_date']}
             % endif
             </span>
 
@@ -59,7 +60,12 @@
 
         % if summary['show_path'] and summary['node_type'] == 'component':
             <div style="padding-bottom: 10px">
-                ${summary['parent_title'] if summary['parent_is_public'] else "<em>-- private project --</em>"} / <b>${summary['title']}</b>
+                % if summary['parent_is_public']:
+                    ${summary['parent_title']}
+                % else:
+                    <em>-- private project --</em>
+                % endif
+                 / <b>${summary['title']}</b>
             </div>
         % endif
 

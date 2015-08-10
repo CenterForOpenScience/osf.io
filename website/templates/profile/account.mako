@@ -11,7 +11,7 @@
 <%def name="content()">
     <% from website import settings %>
     <div id="accountSettings">
-        <h2 class="page-header">Account Settings</h2>
+        <h2 class="page-header">Settings</h2>
         <div class="row">
             <div class="col-md-3 affix-parent">
               <%include file="include/profile/settings_navpanel.mako" args="current_page='account'"/>
@@ -44,7 +44,7 @@
                                 <tr>
                                     <td style="word-break: break-all;">{{ $data.address }}</td>
                                     <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary">make&nbsp;primary</a></td>
-                                    <td><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                    <td style="width:50px;"><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -60,14 +60,15 @@
                                 <tr>
                                     <td style="word-break: break-all;">{{ $data.address }}</td>
                                     <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation">resend&nbsp;confirmation</a></td>
-                                    <td><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                    <td style="width:50px;" ><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                                 <!-- /ko -->
                                 <tr>
                                     <td colspan="3">
                                         <form data-bind="submit: addEmail">
                                             <div class="form-group">
-                                              <input placeholder="Email address" data-bind="value: emailInput" class="form-control">
+                                                ## email input verification is not supported on safari
+                                              <input placeholder="Email address" type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
                                             </div>
                                             <input type="submit" value="Add Email" class="btn btn-success">
                                         </form>
@@ -145,7 +146,7 @@
        template = config['user_settings_template']
        tpl = template.render(**config)
     %>
-    ${tpl}
+    ${ tpl | n }
 </%def>
 
 <%def name="javascript_bottom()">

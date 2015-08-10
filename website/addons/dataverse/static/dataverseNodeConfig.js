@@ -221,7 +221,7 @@ function ViewModel(url) {
         self.updateFromData(response.result);
         self.loadedSettings(true);
     }).fail(function(xhr, textStatus, error) {
-        self.changeMessage(self.messages.userSettingsError, 'text-warning');
+        self.changeMessage(self.messages.userSettingsError, 'text-danger');
         Raven.captureMessage('Could not GET dataverse settings', {
             url: url,
             textStatus: textStatus,
@@ -349,6 +349,12 @@ ViewModel.prototype.getDatasets = function() {
 /** Send POST request to authorize Dataverse */
 ViewModel.prototype.sendAuth = function() {
     var self = this;
+
+    // Selection should not be empty
+    if( !self.selectedHost() ){
+        self.changeMessage("Please select a Dataverse repository.", 'text-danger');
+        return;
+    }
     var url = self.urls().create;
     return $osf.postJSON(
         url,
@@ -380,7 +386,7 @@ ViewModel.prototype.fetchAccounts = function() {
         ret.resolve(data.accounts);
     });
     request.fail(function(xhr, textStatus, error) {
-        self.changeMessage(self.messages.updateAccountsError(), 'text-warning');
+        self.changeMessage(self.messages.updateAccountsError(), 'text-danger');
         Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
             url: self.url,
             textStatus: textStatus,

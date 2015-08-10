@@ -19,6 +19,7 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
 
+
 from api.base.wsgi import application as django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
@@ -37,8 +38,10 @@ from website.addons.wiki.model import NodeWikiPage
 
 import website.models
 from website.signals import ALL_SIGNALS
+from website.project.signals import contributor_added
 from website.app import init_app
 from website.addons.base import AddonConfig
+from website.project.views.contributor import notify_added_contributor
 
 # Just a simple app without routing set up or backends
 test_app = init_app(
@@ -142,6 +145,11 @@ class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
 
+    DISCONNECTED_SIGNALS = {
+        # disconnect notify_add_contributor so that add_contributor does not send "fake" emails in tests
+        contributor_added: [notify_added_contributor]
+    }
+
     def setUp(self):
         super(AppTestCase, self).setUp()
         self.app = TestApp(test_app)
@@ -149,11 +157,17 @@ class AppTestCase(unittest.TestCase):
         self.context.push()
         with self.context:
             g._celery_tasks = []
+        for signal in self.DISCONNECTED_SIGNALS:
+            for receiver in self.DISCONNECTED_SIGNALS[signal]:
+                signal.disconnect(receiver)
 
     def tearDown(self):
         super(AppTestCase, self).tearDown()
         with mock.patch('website.mailchimp_utils.get_mailchimp_api'):
             self.context.pop()
+        for signal in self.DISCONNECTED_SIGNALS:
+            for receiver in self.DISCONNECTED_SIGNALS[signal]:
+                signal.connect(receiver)
 
 
 class ApiAppTestCase(unittest.TestCase):
@@ -311,10 +325,15 @@ def assert_datetime_equal(dt1, dt2, allowance=500):
     assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
 
 
-def init_mock_addon(short_name, user_settings, node_settings):
+def init_mock_addon(short_name, user_settings=None, node_settings=None):
     """Add an addon to the settings, so that it is ready for app init
 
     This is used to inject addons into the application context for tests."""
+
+    #Importing within the function to prevent circular import problems.
+    import factories
+    user_settings = user_settings or factories.MockAddonUserSettings
+    node_settings = node_settings or factories.MockAddonNodeSettings
     settings.ADDONS_REQUESTED.append(short_name)
 
     addon_config = AddonConfig(

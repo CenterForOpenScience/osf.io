@@ -7,9 +7,8 @@
 </%def>
 
 <%def name="content()">
-<% import json %>
 <% from website import settings%>
-<h2 class="page-header">Notifications</h2>
+<h2 class="page-header">Settings</h2>
 
 <div id="notificationSettings" class="row">
     <div class="col-sm-3 affix-parent">
@@ -64,10 +63,9 @@
 
 <%def name="javascript()">
     <% import website %>
-    <% import json %>
     ${parent.javascript()}
     <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'mailingList': '${website.settings.MAILCHIMP_GENERAL_LIST}'});
+        window.contextVars = $.extend({}, window.contextVars, {'mailingList': ${website.settings.MAILCHIMP_GENERAL_LIST | sjson, n }});
     </script>
 </%def>
 

@@ -226,24 +226,6 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     # backwards compatibility
     before_register = before_register_message
 
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return ('Because you have authorized the Dataverse add-on for this '
-                '{category}, forking it will also transfer your authentication '
-                'to the forked {category}.').format(category=category)
-
-        else:
-            return ('Because the Dataverse add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication to the forked '
-                    '{category}.').format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
-
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
         who authorized the Dataverse addon
@@ -297,7 +279,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         else:
             message = (
                 'Dataverse authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href="{url}">Settings</a> '
+                'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                 'page.'
             ).format(
                 url=fork.web_url_for('node_setting'),
@@ -328,7 +310,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message

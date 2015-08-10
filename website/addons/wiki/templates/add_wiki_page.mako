@@ -7,7 +7,7 @@
             <form class="form">
                 <div class="modal-header">
                     <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h3 class="modal-title">Add New Wiki Page</h3>
+                    <h3 class="modal-title">Add new wiki page</h3>
                 </div><!-- end modal-header -->
                 <div class="modal-body">
                     <div class='form-group'>
@@ -37,24 +37,24 @@
 
             $submitForm
                 .attr('disabled', 'disabled')
-                .text('Creating New Wiki page');
+                .text('Creating new wiki page');
 
             if ($.trim($data.val()) === '') {
                 $alert.text('The new wiki page name cannot be empty');
                 $submitForm
                     .removeAttr('disabled', 'disabled')
-                    .text('OK');
+                    .text('Add');
             } else if ($data.val().length > 100) {
                 $alert.text('The new wiki page name cannot be more than 100 characters.');
                 $submitForm
                     .removeAttr('disabled', 'disabled')
-                    .text('OK');
+                    .text('Add');
 
             } else if ($data.val().indexOf('/') != -1) {
                 $alert.text('The new wiki page name cannot contain forward slashes.');
                 $submitForm
                     .removeAttr('disabled', 'disabled')
-                    .text('OK');
+                    .text('Add');
             } else {
                 // TODO: helper to eliminate slashes in the url.
                 var wikiName = $data.val();
@@ -80,7 +80,7 @@
                     }
                     $submitForm
                         .removeAttr('disabled', 'disabled')
-                        .text('OK');
+                        .text('Add');
                 });
             }
         });
