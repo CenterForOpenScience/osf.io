@@ -180,7 +180,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
 
-    permission = ser.ChoiceField(choices=['read', 'write', 'admin'])
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True,
+                                 help_text='Highest permission the user has.  Blank input defaults to current '
+                                           'permission if user is being edited or write permission if user is'
+                                           ' being added.')
+
 
 class NodePointersSerializer(JSONAPISerializer):
 
