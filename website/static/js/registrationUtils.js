@@ -105,35 +105,6 @@ Comment.prototype.viewComment = function(user) {
     this.seenBy.push(user.id);
 };
 
-var validate = function(checks, message, value, required) {
-    required = required || false;        
-    var valid = true;
-    var blank = $osf.isBlank(value);
-    if (required && blank) {
-        return {
-            status: false, 
-            messages: ['This field is required']
-        };
-    }
-    else if (!required && blank) {
-        return {
-            status: true
-        };            
-    }
-    $.each(checks, function(i, check) {
-        var passed = check(value);
-        valid = valid && passed;
-    });
-    return {
-        status: valid,
-        message: !valid ? message: ''
-    }; 
-};
-
-var validators = {
-    number: validate.bind(null, [$osf.not(isNaN.bind(parseFloat))], 'This field must be a numeric value')
-};
-
 /**
  * @class Question
  * Model for schema questions
@@ -172,6 +143,16 @@ var Question = function(data, id) {
     self.properties = data.properties || {};
     self.match = data.match || '';
 
+    if ( self.required ) {
+        self.value.extend({
+            required: true
+        });
+    } else {
+      self.value.extend({
+        required: false
+      });
+    }
+
     self.extra = {};
 
     self.showExample = ko.observable(false);
@@ -195,24 +176,6 @@ var Question = function(data, id) {
      **/
     self.isComplete = ko.computed(function() {
         return !$osf.isBlank(self.value());
-    });
-
-    /**
-     * @returns {String}
-     **/
-    self.validationMessages = ko.computed(function() {
-        var valid = self.valid();
-        return valid.message;
-    });
-    /**
-     * @returns {Boolean}
-     **/ 
-    self.validationStatus = ko.computed(function() {
-        var valid = self.valid();
-        return {
-            false: 'text-error',
-            true: ''
-        }[valid.status];
     });
 
     self.init();
@@ -252,23 +215,6 @@ Question.prototype.toggleExample = function(){
  **/
 Question.prototype.toggleUploader = function(){
     this.showUploader(!this.showUploader());
-};
-/**
- * @returns {object} valid 
- * @returns {Boolean} valid.status
- * @returns {String[]} valid.messages
- **/
-Question.prototype.valid = function() {
-    var self = this;
-
-    var value = self.value();
-    var validator = validators[self.type];
-    if (validator) {
-        return validator(value, self.required);
-    }
-    else {
-        return validate([], '', value, self.required); 
-    }
 };
 
 /**
@@ -601,11 +547,26 @@ RegistrationEditor.prototype.check = function() {
 
     var proceed = true;
     $.each(self.flatQuestions(), function(i, question) {
-        var valid = question.valid();
-        proceed = proceed && valid.status;
+        if ( question.required ) {
+            var valid = question.value.isValid();
+            proceed = proceed && valid;
+        }
     });
     if (!proceed) {
-        self.showValidation(true);    
+
+        bootbox.dialog({
+            title: "Registration Not Complete",
+            message: "There are errors in your registration. Please double check it and submit again.",
+            buttons: {
+                success: {
+                    label: "Ok",
+                    className: "btn-success",
+                    callback: function() {
+                        self.showValidation(true);
+                    }
+                }
+            }
+        });
     }
     else {
         window.location = self.draft().urls.register_page;
@@ -781,7 +742,6 @@ RegistrationEditor.prototype.putSaveData = function(payload) {
  **/
 RegistrationEditor.prototype.save = function() {
     var self = this;
-
     var metaSchema = self.draft().metaSchema;
     var schema = metaSchema.schema;
     var data = {};
@@ -950,10 +910,6 @@ RegistrationManager.prototype.maybeWarn = function(draft) {
 };
 
 module.exports = {
-    utilities: {
-        validators: validators,
-        validate: validate
-    },
     Comment: Comment,
     Question: Question,
     MetaSchema: MetaSchema,
