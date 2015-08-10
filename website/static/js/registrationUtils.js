@@ -174,8 +174,7 @@ var Question = function(data, id) {
 
     if ( self.required ) {
         self.value.extend({
-            required: true,
-            message: 'You must fill out this field'
+            required: true
         });
     }
 
@@ -202,6 +201,18 @@ var Question = function(data, id) {
      **/
     self.isComplete = ko.computed(function() {
         return !$osf.isBlank(self.value());
+    });
+
+    /**
+     * @returns {Boolean} true if the value <input> does not validate
+     **/
+    self.hasErrors = ko.computed(function() {
+        if( self.required ){
+            return self.isValid();
+        }
+        else {
+            return false;
+        }
     });
 
     /**
@@ -523,6 +534,15 @@ var RegistrationEditor = function(urls, editorId) {
         }
     });
 
+    self.markAsRequired = function() {
+
+        var questions = self.flatQuestions();
+        $.each(questions, function(idx, question) {
+            question.value.extend({ required: true});
+            question.value.required = true;
+        });
+    };
+
     self.iterObject = $osf.iterObject;
 
     // TODO: better extensions system? 
@@ -608,11 +628,26 @@ RegistrationEditor.prototype.check = function() {
 
     var proceed = true;
     $.each(self.flatQuestions(), function(i, question) {
-        var valid = question.value.isValid();
-        proceed = proceed && valid.status;
+        if ( question.required ) {
+            var valid = question.value.isValid();
+            proceed = proceed && valid.status;
+        }
     });
     if (!proceed) {
-        self.showValidation(true);    
+
+        bootbox.dialog({
+            title: "Registration not complete",
+            message: "There are errors in your registration. Please double check it and submit again",
+            buttons: {
+                success: {
+                    label: "Ok",
+                    className: "btn-success",
+                    callback: function() {
+                        self.showValidation(true);
+                    }
+                }
+            }
+        });
     }
     else {
         window.location = self.draft().urls.register_page;
