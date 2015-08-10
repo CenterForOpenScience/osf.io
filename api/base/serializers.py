@@ -58,8 +58,10 @@ class HyperLinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
             return None
 
         lookup_value = getattr(obj, self.lookup_field)
+
         if lookup_value is None:
             return None
+
         kwargs = {self.lookup_url_kwarg: lookup_value}
         return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
 
