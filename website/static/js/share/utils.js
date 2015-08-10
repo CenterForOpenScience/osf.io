@@ -387,7 +387,7 @@ utils.queryFilter = function (query) {
  * @param {String} filterString A string representation of a filter dictionary
  */
 utils.parseFilter = function (filterString) {
-        var parts = filterString.split(':');
+    var parts = filterString.split(':');
     var type = parts[0];
     var field = parts[1];
 
