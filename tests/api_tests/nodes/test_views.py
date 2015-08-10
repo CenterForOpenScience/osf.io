@@ -1382,15 +1382,15 @@ class TestReturnDeletedNode(ApiTestCase):
 
     def test_edit_deleted_public_node(self):
         res = self.app.put(self.public_url, params={'title': self.new_title,
-                                             'node_id': self.public_deleted._id,
-                                             'category': self.public_deleted.category},
+                                                    'node_id': self.public_deleted._id,
+                                                    'category': self.public_deleted.category},
                            auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
 
     def test_edit_deleted_private_node(self):
         res = self.app.put(self.private_url, params={'title': self.new_title,
-                                             'node_id': self.private_deleted._id,
-                                             'category': self.private_deleted.category},
+                                                     'node_id': self.private_deleted._id,
+                                                     'category': self.private_deleted.category},
                            auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
 
