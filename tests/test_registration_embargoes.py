@@ -58,7 +58,6 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             self.user,
             self.valid_embargo_end_date,
             for_existing_registration=True,
-            save=True
         )
         self.assertEqual(Embargo.find().count(), initial_count + 1)
 

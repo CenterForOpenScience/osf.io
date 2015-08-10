@@ -349,7 +349,7 @@ class NodeLog(StoredObject):
 
     REGISTRATION_APPROVAL_CANCELLED = 'registration_cancelled'
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
-    REGISTRATION_APPROVAL_COMPLETE = 'registration_complete'
+    REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -680,7 +680,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.CATEGORY_MAP[self.category]
 
     @property
-    def pending_registration(self):
+    def sanction(self):
+        sanction = self.registration_approval or self.embargo
+        if sanction:
+            return sanction
+        elif self.parent_node:
+            return self.parent_node.sanction
+        else:
+            return None
+
+    @property
+    def is_pending_registration(self):
+        if not self.is_registration:
+            return False
         if self.registration_approval is None:
             if self.parent_node:
                 return self.parent_node.pending_registration
@@ -688,7 +700,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.registration_approval.pending_approval
 
     @property
-    def is_registered(self):
+    def is_registration_approved(self):
         if self.registration_approval is None:
             if self.parent_node:
                 return self.parent_node.is_registered
@@ -2686,7 +2698,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             'is_registration': self.is_registration,
         }
 
-    def _initiate_retraction(self, user, justification=None, save=False):
+    def _initiate_retraction(self, user, justification=None):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param justification: Justification, if given, for retraction
@@ -2697,13 +2709,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             justification=justification or None,  # make empty strings None
             state=Retraction.UNAPPROVED
         )
-        retraction.save()
+        retraction.save()  # Save retraction so it has a primary key
         self.retraction = retraction
-        self.save()
+        self.save()  # Set foreign field reference Node.retraction
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         for admin in admins:
             retraction.add_authorizer(admin)
-        retraction.save()
+        retraction.save()  # Save retraction approval state
         return retraction
 
     def retract_registration(self, user, justification=None, save=True):
@@ -2717,7 +2729,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.root is not self:
             raise NodeStateError('Retraction of non-parent registrations is not permitted.')
 
-        retraction = self._initiate_retraction(user, justification, save=True)
+        retraction = self._initiate_retraction(user, justification)
         self.registered_from.add_log(
             action=NodeLog.RETRACTION_INITIATED,
             params={
@@ -2737,7 +2749,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 return True
         return False
 
-    def _initiate_embargo(self, user, end_date, for_existing_registration=False, save=False):
+    def _initiate_embargo(self, user, end_date, for_existing_registration=False):
         """Initiates the retraction process for a registration
         :param user: User who initiated the retraction
         :param end_date: Date when the registration should be made public
@@ -2747,13 +2759,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             end_date=datetime.datetime.combine(end_date, datetime.datetime.min.time()),
             for_existing_registration=for_existing_registration
         )
-        embargo.save()
+        embargo.save()  # Save embargo so it has a primary key
         self.embargo = embargo
-        self.save()
+        self.save()  # Set foreign field reference Node.embargo
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         for admin in admins:
             embargo.add_authorizer(admin)
-        embargo.save()
+        embargo.save()  # Save embargo's approval_state
         return embargo
 
     def embargo_registration(self, user, end_date, for_existing_registration=False):
@@ -2773,7 +2785,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self._is_embargo_date_valid(end_date):
             raise ValidationValueError('Embargo end date must be more than one day in the future')
 
-        embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration, save=True)
+        embargo = self._initiate_embargo(user, end_date, for_existing_registration=for_existing_registration)
 
         self.registered_from.add_log(
             action=NodeLog.EMBARGO_INITIATED,
@@ -2784,24 +2796,22 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
             save=True,
         )
-        # Embargo record needs to be saved to ensure the forward reference Node->Embargo
-        self.embargo = embargo
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
-    def _initiate_approval(self, user, save=False):
+    def _initiate_approval(self, user):
         end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_PERIOD
         approval = RegistrationApproval(
             initiated_by=user,
             end_date=end_date,
         )
-        approval.save()
+        approval.save()  # Save approval so it has a primary key
         self.registration_approval = approval
-        self.save()
+        self.save()  # Set foreign field reference Node.registration_approval
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         for admin in admins:
             approval.add_authorizer(admin)
-        approval.save()
+        approval.save()  # Save approval's approval_state
         return approval
 
     def require_approval(self, user):
@@ -2810,7 +2820,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.has_permission(user, 'admin'):
             raise PermissionsError('Only admins may embargo a registration')
 
-        approval = self._initiate_approval(user, save=True)
+        approval = self._initiate_approval(user)
 
         # TODO(hrybacki): Figureo ut why this is being called twice (only in tests maybe)
         self.registered_from.add_log(
@@ -2925,7 +2935,7 @@ class Sanction(StoredObject):
 
     # Neither approved not cancelled
     UNAPPROVED = 'unapproved'
-    # Has unanious approval
+    # Has approval
     APPROVED = 'approved'
     # Rejected by at least one person
     REJECTED= 'rejected'
@@ -3082,8 +3092,8 @@ class Sanction(StoredObject):
 
 class EmailApprovableSanction(Sanction):
 
-    AUTHORIZER_NOTIFY_TEMPLATE = None
-    NON_AUTHORIZER_NOTIFY_TEMPLATE = None
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
 
     VIEW_URL_TEMPLATE = ''
     APPROVE_URL_TEMPLATE = ''
@@ -3098,7 +3108,7 @@ class EmailApprovableSanction(Sanction):
     #     'reject': [REJECT_URL],
     #   }
     # }
-    stashed_urls = fields.DictionaryField(default={})
+    stashed_urls = fields.DictionaryField()
 
     @staticmethod
     def _format_or_empty(template, context):
@@ -3137,15 +3147,15 @@ class EmailApprovableSanction(Sanction):
 
     def _notify_authorizer(self, authorizer):
         context = self._email_template_context(authorizer, True)
-        if self.AUTHORIZER_NOTIFY_TEMPLATE:
-            self._send_approval_request_email(authorizer, self.AUTHORIZER_NOTIFY_TEMPLATE, context)
+        if self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
+            self._send_approval_request_email(authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:
             raise NotImplementedError
 
     def _notify_non_authorizer(self, user):
         context = self._email_template_context(user)
-        if self.NON_AUTHORIZER_NOTIFY_TEMPLATE:
-            self._send_approval_request_email(user, self.NON_AUTHORIZER_NOTIFY_TEMPLATE, context)
+        if self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
+            self._send_approval_request_email(user, self.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:
             raise NotImplementedError
 
@@ -3164,12 +3174,12 @@ class Embargo(EmailApprovableSanction):
     COMPLETED = 'completed'
     DISPLAY_NAME = 'embargo'
 
-    AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
-    NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = '/project/{node_id}/embargo/approve/{token}/'
-    REJECT_URL_TEMPLATE = '/project/{node_id}/embargo/disapprove/{token}/'
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/embargo/approve/{token}/'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/embargo/disapprove/{token}/'
 
     initiated_by = fields.ForeignField('user', backref='embargoed')
     for_existing_registration = fields.BooleanField(default=False)
@@ -3297,12 +3307,12 @@ class Retraction(EmailApprovableSanction):
 
     DISPLAY_NAME = 'retraction'
 
-    AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
-    NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = '/project/{node_id}/retraction/approve/{token}/'
-    REJECT_URL_TEMPLATE = '/project/{node_id}/retraction/disapprove/{token}/'
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/retraction/approve/{token}/'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/retraction/disapprove/{token}/'
 
     initiated_by = fields.ForeignField('user', backref='initiated')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
@@ -3417,12 +3427,12 @@ class RegistrationApproval(EmailApprovableSanction):
 
     DISPLAY_NAME = 'registration approval'
 
-    AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
-    NON_AUTHORIZER_NOTIFY_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
+    AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
+    NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = '/project/{node_id}/registration/approve/{token}/'
-    REJECT_URL_TEMPLATE = '/project/{node_id}/registration/disapprove/{token}/'
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/registration/approve/{token}/'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/registration/disapprove/{token}/'
 
     initiated_by = fields.ForeignField('user', backref='registration_approved')
 
@@ -3456,14 +3466,19 @@ class RegistrationApproval(EmailApprovableSanction):
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = settings.REGISTRATION_APPROVAL_PERIOD
+
+            approval_time_span = (24 * settings.REGISTRATION_APPROVAL_PERIOD.days) + (settings.REGISTRATION_APPROVAL_PERIOD.seconds / 60)
+
+            registration = Node.find_one(Q('registration_approval', 'eq', self))
 
             return {
+                'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
                 'approval_time_span': approval_time_span,
+                'project_name': registration.title,
             }
         else:
             return {
@@ -3495,6 +3510,16 @@ class RegistrationApproval(EmailApprovableSanction):
         for node in registered_from.root.node_and_primary_descendants():
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
+        registered_from.add_log(
+            action=NodeLog.REGISTRATION_APPROVAL_APPROVED,
+            params={
+                'node': registered_from._id,
+                'registration_approval_id': self._id,
+            },
+            auth=Auth(self.initiated_by),
+        )
+        self.state = self.APPROVED
+        self.save()
 
     def _on_reject(self, user, token):
         register = Node.find_one(Q('registration_approval', 'eq', self))

@@ -1698,7 +1698,6 @@ class TestNodeTraversals(OsfTestCase):
         assert_equal(len(descendants[0][1]), 1)  # only one visible child of comp1
         assert_equal(len(descendants[1][1]), 0)  # don't auto-include comp2's children
 
-
     def test_delete_registration_tree(self):
         proj = NodeFactory()
         NodeFactory(parent=proj)
@@ -1706,7 +1705,7 @@ class TestNodeTraversals(OsfTestCase):
         NodeFactory(parent=comp2)
         reg = RegistrationFactory(project=proj)
         reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
-        reg.delete_registration_tree()
+        reg.delete_registration_tree(save=True)
         assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
 
     def test_delete_registration_tree_deletes_backrefs(self):
@@ -1715,7 +1714,7 @@ class TestNodeTraversals(OsfTestCase):
         comp2 = NodeFactory(parent=proj)
         NodeFactory(parent=comp2)
         reg = RegistrationFactory(project=proj)
-        reg.delete_registration_tree()
+        reg.delete_registration_tree(save=True)
         assert_false(proj.node__registrations)
 
     def test_get_descendants_recursive(self):

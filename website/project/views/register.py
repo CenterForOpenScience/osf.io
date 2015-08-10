@@ -26,7 +26,7 @@ from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
     must_have_permission,
     must_not_be_registration, must_be_registration,
-    must_be_public_registration
+    must_be_public_registration, must_not_be_rejected
 )
 from website.identifiers.model import Identifier
 from website.identifiers.metadata import datacite_metadata_for_node
@@ -174,6 +174,7 @@ def node_registration_retraction_disapprove(auth, node, token, **kwargs):
     status.push_status_message('Your disapproval has been accepted and the retraction has been cancelled.', kind='success', trust=False)
     return redirect(node.web_url_for('view_project'))
 
+@must_not_be_rejected
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def node_registration_embargo_approve(auth, node, token, **kwargs):
@@ -207,6 +208,7 @@ def node_registration_embargo_approve(auth, node, token, **kwargs):
     status.push_status_message('Your approval has been accepted.', kind='success', trust=False)
     return redirect(node.web_url_for('view_project'))
 
+@must_not_be_rejected
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def node_registration_embargo_disapprove(auth, node, token, **kwargs):
@@ -243,6 +245,8 @@ def node_registration_embargo_disapprove(auth, node, token, **kwargs):
     status.push_status_message('Your disapproval has been accepted and the embargo has been cancelled.', kind='success', trust=False)
     return redirect(redirect_url)
 
+
+@must_not_be_rejected
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def node_registration_approve(auth, node, token, **kwargs):
@@ -252,10 +256,10 @@ def node_registration_approve(auth, node, token, **kwargs):
     :raises: HTTPError if invalid token or user is not admin
     """
 
-    if not node.pending_retraction:
+    if not node.is_pending_registration:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Token',
-            'message_long': 'This registration is not pending a retraction.'
+            'message_long': 'This registration is not pending approval.'
         })
 
     try:
@@ -274,9 +278,9 @@ def node_registration_approve(auth, node, token, **kwargs):
     status.push_status_message('Your approval has been accepted.', 'success')
     return redirect(node.web_url_for('view_project'))
 
+@must_not_be_rejected
 @must_be_valid_project
 @must_have_permission(ADMIN)
-@must_be_public_registration
 def node_registration_disapprove(auth, node, token, **kwargs):
     """Handles approval of registration retractions
     :param auth: User wanting to approve retraction
@@ -285,14 +289,14 @@ def node_registration_disapprove(auth, node, token, **kwargs):
     :raises: HTTPError if invalid token or user is not admin
     """
 
-    if not node.pending_retraction:
+    if not node.is_pending_registration:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Token',
             'message_long': 'This registration is not pending a retraction.'
         })
 
     try:
-        node.registration_approval.disapprove(auth.user, token)
+        node.registration_approval.reject(auth.user, token)
         node.registration_approval.save()
     except InvalidSanctionRejectionToken as e:
         raise HTTPError(http.BAD_REQUEST, data={
