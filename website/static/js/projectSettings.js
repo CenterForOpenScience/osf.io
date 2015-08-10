@@ -137,6 +137,11 @@ ProjectSettings.getConfirmationCode = function(nodeType) {
                 window.location.href = response.url;
             });
             request.fail($osf.handleJSONError);
+        },
+        buttons: {
+            success: {
+                label: 'Delete'
+            }
         }
     });
 };
