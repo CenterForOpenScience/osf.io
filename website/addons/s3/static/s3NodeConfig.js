@@ -346,7 +346,7 @@ ViewModel.prototype.openCreateBucket = function() {
                     var bucketLocation = $('#bucketLocation').val();
 
                     if (!bucketName) {
-                        var errorMessage = $('bucketModalErrorMessage');
+                        var errorMessage = $('#bucketModalErrorMessage');
                         errorMessage.text('Bucket name cannot be empty');
                         errorMessage[0].classList.add('text-danger');
                         return false;
