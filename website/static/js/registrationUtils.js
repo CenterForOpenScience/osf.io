@@ -458,7 +458,9 @@ var RegistrationEditor = function(urls, editorId) {
 
     self.iterObject = $osf.iterObject;
 
-    // TODO: better extensions system? 
+    self.iterObject = $osf.iterObject;
+
+    // TODO: better extensions system?
     self.extensions = {
         'osf-upload': editorExtensions.Uploader
     };
@@ -739,6 +741,7 @@ RegistrationEditor.prototype.save = function() {
     var metaSchema = self.draft().metaSchema;
     var schema = metaSchema.schema;
     var data = {};
+    debugger;
     $.each(schema.pages, function(i, page) {
         $.each(page.questions, function(qid, question) {
             if(question.type === 'object'){
