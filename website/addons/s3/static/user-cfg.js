@@ -57,5 +57,11 @@ function deleteToken() {
 }
 
 $(document).ready(function() {
-    $(window.contextVars.addonSettingsSelector).on('submit', AddonHelper.onSubmitSettings);
+    $(window.contextVars.addonSettingsSelector).on('submit',
+        function(){
+            AddonHelper.onSubmitSettings({
+                successUpdateMsg: 'Amazon S3 add-on successfully authorized',
+                failUpdateMsg: 'Amazon S3 add-on doesn\'t  authorized successfully'
+            });
+        });
 });
