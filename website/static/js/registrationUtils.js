@@ -555,12 +555,12 @@ RegistrationEditor.prototype.check = function() {
     if (!proceed) {
 
         bootbox.dialog({
-            title: "Registration Not Complete",
-            message: "There are errors in your registration. Please double check it and submit again.",
+            title: 'Registration Not Complete',
+            message: 'There are errors in your registration. Please double check it and submit again.',
             buttons: {
                 success: {
-                    label: "Ok",
-                    className: "btn-success",
+                    label: 'Ok',
+                    className: 'btn-success',
                     callback: function() {
                         self.showValidation(true);
                     }
