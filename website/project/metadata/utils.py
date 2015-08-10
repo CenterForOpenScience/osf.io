@@ -21,8 +21,8 @@ def serialize_draft_registration(draft, auth=None):
         'registration_schema': serialize_meta_schema(draft.registration_schema),
         'initiated': str(draft.datetime_initiated),
         'updated': str(draft.datetime_updated),
-        'config': {}, # or draft.config or {},
-        'flags': {}, # or draft.flags,
+        'config': {},  # or draft.config or {},
+        'flags': {},  # or draft.flags,
         'urls': {
             'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id),
             'before_register': node.api_url_for('project_before_register'),

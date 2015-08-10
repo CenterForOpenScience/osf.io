@@ -45,7 +45,7 @@ function Comment(data) {
         self.lastModified = new Date();
     });
 
-    self.created = data.created || new Date();
+    self.created = new Date(data.created) || new Date();
 
     self.isDeleted = ko.observable(data.isDeleted || false);
     self.isDeleted.subscribe(function(isDeleted) {

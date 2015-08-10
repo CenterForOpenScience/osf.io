@@ -2938,7 +2938,7 @@ class Sanction(StoredObject):
     # Has approval
     APPROVED = 'approved'
     # Rejected by at least one person
-    REJECTED= 'rejected'
+    REJECTED = 'rejected'
     # One of 'unapproved', 'active', 'cancelled', or 'completed
     state = fields.StringField(default=UNAPPROVED)
 
@@ -2949,7 +2949,7 @@ class Sanction(StoredObject):
     REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {DISPLAY_NAME}'
     REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {DISPLAY_NAME}.'
 
-	# Controls whether or not the Sanction needs unanimous approval or just a single approval
+    # Controls whether or not the Sanction needs unanimous approval or just a single approval
     ANY = 'any'
     UNANIMOUS = 'unanimous'
     mode = UNANIMOUS
@@ -3018,7 +3018,7 @@ class Sanction(StoredObject):
         return False
 
     def remove_authorizer(self, user):
-		"""Remove a user as an authorizer
+        """Remove a user as an authorizer
 
         :param User user:
         :return Boolean: True if user is removed else False
@@ -3031,7 +3031,7 @@ class Sanction(StoredObject):
         return True
 
     def _on_approve(self, user, token):
-		"""Callback for when a single user approves a Sanction. Calls #_on_complete under two conditions:
+        """Callback for when a single user approves a Sanction. Calls #_on_complete under two conditions:
         - mode is ANY and the Sanction has not already been cancelled
         - mode is UNANIMOUS and all users have given approval
 
@@ -3642,7 +3642,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                             # use the old one instead
                             loc = new_comments.index(new_comment)
                             new_comments[loc] = old_comment
-
 
             if not old_value or old_value.get('value') != value.get('value'):
                 changes.append(question_id)

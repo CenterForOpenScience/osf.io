@@ -62,28 +62,46 @@ def unique_on(*groups):
     return wrapper
 
 
-def get_or_http_error(Model, pk, allow_deleted=False):
-    instance = Model.load(pk)
-    if not allow_deleted and getattr(instance, 'is_deleted', False):
-        raise HTTPError(http.GONE, data=dict(
-            message_long="This resource has been deleted"
-        ))
-    if not instance:
-        raise HTTPError(http.NOT_FOUND, data=dict(
-            message_long="No resource with that primary key could be found"
-        ))
+def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None):
+    """Load an instance of Model by primary key or modularodm.Q query. Raise an appropriate
+    HTTPError if no record is found or if the query fails to find a unique record
+
+    :param type Model: StoredObject subclass to query
+    :param pk_or_query:
+    :type pk_or_query: either
+      - a <basestring> representation of the record's primary key, e.g. 'abcdef'
+      - a <QueryBase> subclass query to uniquely select a record, e.g.
+        Q('title', 'eq', 'Entitled') & Q('version', 'eq', 1)
+    :param boolean allow_deleted: allow deleted records
+    :param basestring display_name:
+    :return: Model instance
+    """
+    display_name = display_name or ''
+
+    instance = None
+    if isinstance(pk_or_query, QueryBase):
+        try:
+            instance = Model.find_one(pk_or_query)
+        except NoResultsFound:
+            raise HTTPError(http.NOT_FOUND, data=dict(
+                message_long="No {name} record matching that query could be found".format(name=display_name)
+            ))
+        except MultipleResultsFound:
+            raise HTTPError(http.BAD_REQUEST, data=dict(
+                message_long="The query must match exactly one {name} record".format(name=display_name)
+            ))
     else:
         instance = Model.load(pk_or_query)
         if not instance:
             raise HTTPError(http.NOT_FOUND, data=dict(
                 message_long="No {name} record with that primary key could be found".format(name=display_name)
             ))
-        if getattr(instance, 'is_deleted', False):
-            raise HTTPError(http.GONE, data=dict(
-                message_long="This {name} record has been deleted".format(name=display_name)
-            ))
-        else:
-            return instance
+    if not allow_deleted and getattr(instance, 'is_deleted', False):
+        raise HTTPError(http.GONE, data=dict(
+            message_long="This {name} record has been deleted".format(name=display_name)
+        ))
+    else:
+        return instance
 
 def autoload(Model, extract_key, inject_key, func):
     """Decorator to autoload a StoredObject instance by primary key and inject into kwargs. Raises
