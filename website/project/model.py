@@ -81,7 +81,7 @@ class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
     name = fields.StringField()
-    schema = fields.DictionaryField(default={})
+    schema = fields.DictionaryField()
     category = fields.StringField()
 
     # Deprecated legacy field
@@ -347,9 +347,9 @@ class NodeLog(StoredObject):
     RETRACTION_CANCELLED = 'retraction_cancelled'
     RETRACTION_INITIATED = 'retraction_initiated'
 
-    REGISTRATION_APPROVAL_CANCELLED = 'registration_approval_cancelled'
-    REGISTRATION_APPROVAL_INITIATED = 'registration_approval_initiated'
-    REGISTRATION_APPROVAL_COMPLETE = 'registration_approval_complete'
+    REGISTRATION_APPROVAL_CANCELLED = 'registration_cancelled'
+    REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
+    REGISTRATION_APPROVAL_COMPLETE = 'registration_complete'
 
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
@@ -2374,8 +2374,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-            project_signals.contributor_added.send(self, contributor=contributor)
-
+            project_signals.contributor_added.send(self, contributor=contributor, auth=auth)
             return True
 
         #Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
@@ -2918,27 +2917,32 @@ class PrivateLink(StoredObject):
         }
 
 class Sanction(StoredObject):
-    """Sanction object is a generic way to track approval states"""
-
+    """Sanction class is a generic way to track approval states"""
+    # Tell modularodm not to attach backends
     abstract = True
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
     # Neither approved not cancelled
     UNAPPROVED = 'unapproved'
+    # Has unanious approval
     APPROVED = 'approved'
-    REJECTED = 'rejected'
+    # Rejected by at least one person
+    REJECTED= 'rejected'
+    # One of 'unapproved', 'active', 'cancelled', or 'completed
+    state = fields.StringField(default=UNAPPROVED)
 
     DISPLAY_NAME = 'sanction'
 
-    APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this {0}'
-    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided for this {0}.'
-    REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {0}'
-    REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {0}.'
+    APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this {DISPLAY_NAME}'
+    APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided for this {DISPLAY_NAME}.'
+    REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {DISPLAY_NAME}'
+    REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {DISPLAY_NAME}.'
 
+	# Controls whether or not the Sanction needs unanimous approval or just a single approval
     ANY = 'any'
     UNANIMOUS = 'unanimous'
-    mode = 'unanimous'
+    mode = UNANIMOUS
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
@@ -2984,19 +2988,31 @@ class Sanction(StoredObject):
         return True
 
     def add_authorizer(self, user, approved=False, save=False):
-        valid = self._validate_authorizer(user)
-        if valid and user._id not in self.approval_state:
-            self.approval_state[user._id] = {
-                'has_approved': approved,
-                'approval_token': security.random_string(30),
-                'rejection_token': security.random_string(30),
-            }
-            if save:
-                self.save()
-            return True
+        """Add a user as an authorizer and generate approval/disapproval tokens
+
+        :param User user:
+        :param Boolean approved: optional approval state on instantiation
+        :param Boolean save: optionally save the Sanction
+        :return Boolean: True if the user is added else False
+        """
+        if self._validate_authorizer(user):
+            if user._id not in self.approval_state:
+                self.approval_state[user._id] = {
+                    'has_approved': approved,
+                    'approval_token': security.random_string(30),
+                    'rejection_token': security.random_string(30),
+                }
+                if save:
+                    self.save()
+                return True
         return False
 
     def remove_authorizer(self, user):
+		"""Remove a user as an authorizer
+
+        :param User user:
+        :return Boolean: True if user is removed else False
+        """
         if user._id not in self.approval_state:
             return False
 
@@ -3005,12 +3021,23 @@ class Sanction(StoredObject):
         return True
 
     def _on_approve(self, user, token):
+		"""Callback for when a single user approves a Sanction. Calls #_on_complete under two conditions:
+        - mode is ANY and the Sanction has not already been cancelled
+        - mode is UNANIMOUS and all users have given approval
+
+        :param User user:
+        :param str token: user's approval token
+        """
         if self.mode == self.ANY or all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
             self.state = Sanction.APPROVED
             self._on_complete(user)
 
     def _on_reject(self, user, token):
-        """Early termination of a Sanction"""
+        """Callback for rejection of a Sanction
+
+        :param User user:
+        :param str token: user's approval token
+        """
         raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
 
     def _on_complete(self, user):
@@ -3024,9 +3051,9 @@ class Sanction(StoredObject):
         """Add user to approval list if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['approval_token'] != token:
-                raise InvalidSanctionApprovalToken(self.APPROVAL_INVALID_TOKEN_MESSAGE.format(self.DISPLAY_NAME))
+                raise InvalidSanctionApprovalToken(self.APPROVAL_INVALID_TOKEN_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         except KeyError:
-            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(self.DISPLAY_NAME))
+            raise PermissionsError(self.APPROVAL_NOT_AUTHORIZED_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         self.approval_state[user._id]['has_approved'] = True
         self._on_approve(user, token)
 
@@ -3034,9 +3061,9 @@ class Sanction(StoredObject):
         """Cancels sanction if user is admin and token verifies."""
         try:
             if self.approval_state[user._id]['rejection_token'] != token:
-                raise InvalidSanctionRejectionToken(self.REJECTION_INVALID_TOKEN_MESSAGE.format(self.DISPLAY_NAME))
+                raise InvalidSanctionRejectionToken(self.REJECTION_INVALID_TOKEN_MESSAGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         except KeyError:
-            raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(self.DISPLAY_NAME))
+            raise PermissionsError(self.REJECTION_NOT_AUTHORIZED_MESSAEGE.format(DISPLAY_NAME=self.DISPLAY_NAME))
         self.state = Sanction.REJECTED
         self._on_reject(user, token)
 
@@ -3565,14 +3592,38 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         return self.approval.is_approved if self.requires_approval else True
 
     def update_metadata(self, metadata, save=True):
-        if self.is_pending_review or self.is_approved:
-            raise NodeStateError('Cannot edit while this draft is being reviewed')
+        # TODO(barbour-em): delete or implement in schema
+        # if self.is_pending_review or self.is_approved:
+        #    raise NodeStateError('Cannot edit while this draft is being reviewed')
+
         changes = []
-        for key, value in metadata.iteritems():
-            old_value = self.registration_metadata.get(key)
+        for question_id, value in metadata.iteritems():
+
+            old_value = self.registration_metadata.get(question_id)
+
+            if old_value:
+                old_comments = old_value.get('comments', [])
+                new_comments = value.get('comments', [])
+
+                #  we are using the `created` attribute sort of as a primary key
+                old_comment_ids = [comment['created'] for comment in old_comments]
+
+                # Handle comment conflicts
+                for old_comment in old_comments:
+                    for new_comment in new_comments:
+                        new_id = new_comment.get('created', [])
+                        # if the primary key is already in use and the old comment is more recent,
+                        if new_id in old_comment_ids and old_comment['lastModified'] > new_comment['lastModified']:
+                            # use the old one instead
+                            loc = new_comments.index(new_comment)
+                            new_comments[loc] = old_comment
+
+
             if not old_value or old_value.get('value') != value.get('value'):
-                changes.append(key)
+                changes.append(question_id)
+
         self.registration_metadata.update(metadata)
+
         if save:
             self.save()
         project_signals.draft_edited.send(changes)
@@ -3580,11 +3631,12 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         return changes
 
     def before_edit(self, auth):
+        # TODO(samchrisinger): Make sure we still need this
         messages = []
         if self.is_approved:
             messages.append('The draft registration you are editing is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.')
-        if self.requires_approval:
-            messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.')
+        if self.flags.get('isPendingReview'):
+            messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be canceled and you will need to submit for approval again.')
         return messages
 
     def after_edit(self, changes):

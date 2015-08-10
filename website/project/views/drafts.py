@@ -74,6 +74,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
             register.embargo_registration(auth.user, embargo_end_date)
         else:
             register.require_approval(auth.user)
+        register.save()
     except ValidationValueError as err:
         raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
