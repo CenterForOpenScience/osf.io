@@ -47,13 +47,22 @@ charts.c3Update = function(c3ChartSetup, vm, divID) {
                             return vm.chartHandles[divID];
                         }
                         if (!widgetUtils.updateTriggered(divID,vm)) {return; }
+                        //var newCols = charts.getChangedColumns(vm.chartHandles[divID].columns,c3ChartSetup.data.columns);
                         vm.chartHandles[divID].load({ //TODO unload only what is needed...
                             columns: c3ChartSetup.data.columns,
-                            unload: vm.chartHandles[divID].columns
+                            unload: true//vm.chartHandles[divID].columns
                         });
+
                         return;
                     }
             });
+};
+
+charts.getChangedColumns = function(oldCols, newCols){
+    var changedCols = [];
+    $.each(newCols, function(i, col){
+        if($.inArray(col, oldCols) === -1) changedCols.push(col);
+    });
 };
 
 /**
@@ -80,7 +89,7 @@ charts.donutChart = function (rawData, vm, widget) {
         },
         data: data,
         donut: {
-            title: widget.display.title,
+            title: widget.display.title ? widget.display.title : data.title,
             label: {
                 format: function (value, ratio, id) {
                     return value; //Math.round(ratio * 100) + '%';
@@ -174,7 +183,10 @@ charts.timeseriesChart = function (rawData, vm, widget) {
             size: {
                 height: 30
             },
-            onbrush: widget.display.callback ? widget.display.callback.onbrush.bind({vm: vm, widget: widget}) : undefined
+            onbrush: widget.display.callback.onbrushOfSubgraph ? widget.display.callback.onbrushOfSubgraph.bind({
+                vm: vm,
+                widget: widget
+            }) : undefined
         },
         axis: {
             x: {
@@ -200,7 +212,13 @@ charts.timeseriesChart = function (rawData, vm, widget) {
             }
         },
         legend: {
-            position: 'inset'
+            position: 'inset',
+            item: {
+                onclick: widget.display.callback.onclickOfLegend ? widget.display.callback.onclickOfLegend.bind({
+                    vm: vm,
+                    widget: widget
+                }) : undefined
+            }
         },
         tooltip: {
             grouped: false

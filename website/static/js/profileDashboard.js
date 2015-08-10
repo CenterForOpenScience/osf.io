@@ -19,8 +19,7 @@ var ctx = window.contextVars;
  * @return {object} JSON elastic search aggregation
  */
 profileDashboard.contributorsAgg = function(){
-    var agg = {'contributors': utils.termsFilter('field', 'contributors.url', 0, ctx.userId)};
-    agg.contributors.aggregations = {'fullname': utils.termsFilter('field','contributors.fullname',1)};
+    var agg = {'contributors': utils.termsFilter('field', 'contributors.url')};
     return agg;
 };
 
@@ -42,7 +41,7 @@ profileDashboard.nodeTypeAgg = function(){
 profileDashboard.projectsByTimesAgg = function() {
     var dateRegistered = new Date(ctx.date_registered); //get current time
     var agg = {'projectsByTimes': utils.termsFilter('field','_type', 1, 'user')};
-    agg.projectsByTimes.aggregations = {'projectsOverTime': utils.dateHistogramFilter('date_created',dateRegistered,undefined,'day')};
+    agg.projectsByTimes.aggregations = {'projectsOverTime': utils.dateHistogramFilter('date_created',dateRegistered.getTime(),undefined,'day')};
     return agg;
 };
 
@@ -60,10 +59,12 @@ profileDashboard.contributorsParser = function(rawData, levelNames, vm, widget){
     chartData.name = levelNames[0];
     chartData.columns = [];
     chartData.colors = {};
+    var numProjects = 0;
     var hexColors = charts.generateColors(rawData.aggregations[levelNames[0]].buckets.length);
     var i = 0;
     rawData.aggregations[levelNames[0]].buckets.forEach(
         function (bucket) {
+            if (bucket.key === ctx.userId){numProjects = bucket.doc_count; }
             if (bucket.doc_count) {
                 chartData.columns.push([vm.tempData.guidsToNames[bucket.key], bucket.doc_count]);
                 chartData.colors[vm.tempData.guidsToNames[bucket.key]] = hexColors[i];
@@ -71,6 +72,16 @@ profileDashboard.contributorsParser = function(rawData, levelNames, vm, widget){
             }
         }
     );
+    if (numProjects > 0) {
+        if (numProjects > 1){
+            chartData.title = numProjects.toString() + ' projects & components';
+        } else {
+            chartData.title = numProjects.toString() + ' project or component';
+        }
+    } else {
+        chartData.title = 'No Results';
+    }
+    $('.c3-chart-arcs-title').text(chartData.title); //dynamically update chart title //TODO update when c3 issue #1058 resolved (dynamic update of title)
     return chartData;
 
 };
@@ -93,24 +104,28 @@ profileDashboard.view = function(ctrl) {
  */
 profileDashboard.controller = function(params) {
     var contributors = {
-        title: 'Contributers of '+ ctx.name + '\'s projects',
+        title: 'Contributers of '+ ctx.name + '\'s projects and components',
         size: ['.col-md-6', 300],
         row: 1,
         levelNames: ['contributors','contributorsName'],
         display: {
             dataReady : m.prop(true),
             displayWidget: charts.donutChart,
-            title: 'Projects contributed to:',
+            //title: 'Projects contributed to:',
             parser: profileDashboard.contributorsParser,
             callback: { onclick : function (key) {
+                var vm = this.vm;
+                var widget = this.widget;
                 var name = key;
                 if (key.name) {name = key.name; }
+                utils.removeFilter(vm,vm.tempData.contributerFilter, true);
+                vm.tempData.contributerFilter = 'match:contributors.url:' + widgetUtils.getKeyFromValue(this.vm.tempData.guidsToNames, name);
                 utils.updateFilter(
-                    this.vm,
-                    'match:contributors.url:' + widgetUtils.getKeyFromValue(this.vm.tempData.guidsToNames, name),
+                    vm,
+                    vm.tempData.contributerFilter,
                     true
                 );
-                widgetUtils.signalWidgetsToUpdate(this.vm, this.widget.thisWidgetUpdates);
+                widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
             }}
         },
         aggregation: profileDashboard.contributorsAgg(),
@@ -134,7 +149,7 @@ profileDashboard.controller = function(params) {
     //};
 
     var projectsByTimes = {
-        title: ctx.name + '\'s projects over time',
+        title: ctx.name + '\'s projects and components over time',
         size: ['.col-md-6', 300],
         row: 1,
         levelNames: ['projectsByTimes', 'projectsOverTime'],
@@ -146,21 +161,31 @@ profileDashboard.controller = function(params) {
             xLabel: 'Time',
             type: 'area',
             customColors: [], //by setting custom colors to an empty string, we get the default c3 colors
-            callback: {onbrush : function(zoomWin){
-                var vm = this.vm;
-                var widget = this.widget;
-                clearTimeout(vm.tempData.projectByTimeTimeout); //stop constant redraws
-                vm.tempData.projectByTimeTimeout = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
-                    function(){
-                        utils.removeFilter(vm,vm.tempData.projectByTimeFilter);
-                        vm.tempData.projectByTimeFilter = 'range:providerUpdatedDateTime:' + zoomWin[0].getTime()+':'+zoomWin[1].getTime()
-                        utils.updateFilter(vm,vm.tempData.projectByTimeFilter,true);
-                        widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
-                    },1000);
-            }}
+            callback: {
+                onbrushOfSubgraph : function(zoomWin){
+                    var vm = this.vm;
+                    var widget = this.widget;
+                    clearTimeout(vm.tempData.projectByTimeTimeout); //stop constant redraws
+                    vm.tempData.projectByTimeTimeout = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
+                        function(){
+                            utils.removeFilter(vm,vm.tempData.projectByTimeTimeFilter, true);
+                            vm.tempData.projectByTimeTimeFilter = 'range:date_created:' + zoomWin[0].getTime() + ':' + zoomWin[1].getTime()
+                            widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                            utils.updateFilter(vm,vm.tempData.projectByTimeTimeFilter,true);
+                        },1000);
+                },
+                onclickOfLegend : function(item){
+                    var vm = this.vm;
+                    var widget = this.widget;
+                    utils.removeFilter(vm,vm.tempData.projectByTimeProjectFilter, true);
+                    vm.tempData.projectByTimeProjectFilter = 'match:_type:' + item;
+                    widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                    utils.updateFilter(vm,vm.tempData.projectByTimeProjectFilter,true);
+                }
+            }
         },
         aggregation: profileDashboard.projectsByTimesAgg(),
-        thisWidgetUpdates: ['contributors', 'results']
+        thisWidgetUpdates: ['contributors', 'results', 'projectsByTimes']
     };
 
     var results = {

@@ -83,8 +83,8 @@ searchDashboard.controller = function (params) {
     utils.search(self.vm); //initial search to init charts, redraw called inside utils, and will update widgets...
 
     History.Adapter.bind(window, 'statechange', function(e) {
-        widgetUtils.signalWidgetsToUpdate(self.vm, self.vm.widgetNames);
-        utils.updateHistory(self.vm);
+        var historyChanged = utils.updateHistory(self.vm);
+        if (historyChanged){ widgetUtils.signalWidgetsToUpdate(self.vm, self.vm.widgetNames);}
     });
 };
 

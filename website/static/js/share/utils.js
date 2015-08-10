@@ -130,7 +130,7 @@ utils.search = function(vm) {
 utils.updateHistory = function(vm){
     var state = History.getState().data;
     if (!utils.stateChanged(vm)){
-        return;
+        return false;
     }
 
     vm.optionalFilters = state.optionalFilters;
@@ -138,7 +138,8 @@ utils.updateHistory = function(vm){
     vm.query(state.query);
     vm.sort(state.sort);
     utils.search(vm);
-}
+    return true;
+};
 
 utils.stateChanged = function (vm) {
     var state = History.getState().data;
@@ -212,16 +213,16 @@ utils.maybeQuashEvent = function (event) {
     }
 };
 
-utils.updateFilter = function (vm, filter, required) {
+utils.updateFilter = function (vm, filter, required, suppressUpdate) {
     if (required && vm.requiredFilters.indexOf(filter) === -1) {
         vm.requiredFilters.push(filter);
     } else if (vm.optionalFilters.indexOf(filter) === -1 && !required) {
         vm.optionalFilters.push(filter);
     }
-    utils.search(vm);
+    if (!suppressUpdate) utils.search(vm);
 };
 
-utils.removeFilter = function (vm, filter) {
+utils.removeFilter = function (vm, filter, suppressUpdate) {
     var reqIndex = vm.requiredFilters.indexOf(filter);
     var optIndex = vm.optionalFilters.indexOf(filter);
     if (reqIndex > -1) {
@@ -230,7 +231,7 @@ utils.removeFilter = function (vm, filter) {
     if (optIndex > -1) {
         vm.optionalFilters.splice(optIndex, 1);
     }
-    utils.search(vm);
+    if (!suppressUpdate) utils.search(vm);
 };
 
 utils.arrayEqual = function (a, b) {
