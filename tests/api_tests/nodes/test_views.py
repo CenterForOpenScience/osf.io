@@ -40,6 +40,11 @@ class TestWelcomeToApi(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['meta']['current_user']['data']['attributes']['given_name'], self.user.given_name)
 
+    def test_node_detail_get_invalid_key(self):
+        self.url += 'users/?include=invalid'
+        res = self.app.get(self.url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
 
 class TestNodeList(ApiTestCase):
     def setUp(self):
