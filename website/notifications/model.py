@@ -15,8 +15,6 @@ class NotificationSubscription(StoredObject):
     # Notification types
     none = fields.ForeignField('user', list=True, backref='none')
     email_digest = fields.ForeignField('user', list=True, backref='email_digest')
-    email_quarter = fields.ForeignField('user', list=True, backref='email_quarter')
-    email_hour = fields.ForeignField('user', list=True, backref='email_hour')
     email_transactional = fields.ForeignField('user', list=True, backref='email_transactional')
 
     def add_user_to_subscription(self, user, notification_type, save=True):
@@ -63,8 +61,3 @@ class NotificationDigest(StoredObject):
     event = fields.StringField()
     message = fields.StringField()
     node_lineage = fields.StringField(list=True)
-
-
-# class PendingUserEmail(StoredObject):
-#     _id = fields.StringField(primary=True)
-#     task_id = fields.StringField()
