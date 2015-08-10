@@ -1,0 +1,34 @@
+{
+    "box": {
+        "fullName": "Box",
+        "externalView": false
+    },
+    "dataverse": {
+        "fullName": "Dataverse",
+        "externalView": false
+    },
+    "dropbox": {
+        "fullName": "Dropbox",
+        "externalView": false
+    },
+    "figshare": {
+        "fullName": "figshare",
+        "externalView": true
+    },
+    "github": {
+        "fullName": "GitHub",
+        "externalView": true
+    },
+    "googledrive": {
+        "fullName": "Google Drive",
+        "externalView": true
+    },
+    "osfstorage": {
+        "fullName": "OSF Storage",
+        "externalView": false
+    },
+    "s3": {
+        "fullName": "Amazon S3",
+        "externalView": false
+    }
+}

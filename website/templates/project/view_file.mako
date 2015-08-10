@@ -40,7 +40,7 @@
     </div>
 
     <!-- Menu toggle closed -->
-    <div class="panel panel-default osf-panel-show text-center reset-height"  style="display: none">
+    <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
       <div class="panel-heading">
         <i class="fa fa-angle-right"></i>
       </div>
@@ -50,6 +50,7 @@
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
       <div id="mfrIframeParent" class="col-sm-9">
+        <div id="externalView"></div>
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
@@ -96,6 +97,9 @@
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -113,6 +117,9 @@
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -129,6 +136,9 @@
           Your browser does not support collaborative editing. You may continue to make edits.
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -152,30 +162,32 @@
         file: {
             size: ${size},
             extra: ${extra},
-            error: '${error | js_str}',
-            name: '${file_name | js_str}',
-            path: '${file_path | js_str}',
-            provider: '${provider | js_str}',
-            safeName: '${file_name | h,js_str}',
-            materializedPath: '${materialized_path | js_str}',
+            error: ${ error | sjson, n },
+            privateRepo: ${private | sjson, n},
+            name: ${ file_name | sjson, n },
+            path: ${ file_path | sjson, n },
+            provider: ${ provider | sjson, n },
+            safeName: ${ file_name | h, sjson},
+            materializedPath: ${ materialized_path | sjson, n },
           urls: {
+              external: ${ (urls['external'] or '') | sjson, n },
         %if error is None:
-              render: '${urls['render']}',
+              render: ${ urls['render'] | sjson, n },
         %endif
-              sharejs: '${urls['sharejs'] | js_str}',
+              sharejs: ${ urls['sharejs'] | sjson, n },
             }
         },
         editor: {
             registration: true,
-            docId: '${sharejs_uuid}',
-            userId: '${user['id']}',
-            userName: '${user['fullname'] | js_str}',
-            userUrl: '/${user['id']}/',
-            userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
+            docId: ${ sharejs_uuid | sjson, n },
+            userId: ${ user['id'] | sjson, n },
+            userName: ${ user['fullname'] | sjson, n },
+            userUrl: ${ '/' + user['id'] + '/' | sjson, n },
+            userGravatar: ${ urls['gravatar'].replace('&amp;', '&') | sjson, n }
         },
         node: {
           urls: {
-            files: '${urls['files'] | js_str}'
+            files: ${ urls['files'] | sjson, n }
           }
         },
         panelsUsed: ['edit', 'view'],

@@ -32,5 +32,7 @@ $(document).ready(function() {
         panelVisible.show();
         panelHidden.hide();
     });
+    // TODO: This is a hack to highlight the "Files" tab. Rethink.
+    $('.osf-project-navbar li#projectNavFiles').addClass('active');
 
 });
