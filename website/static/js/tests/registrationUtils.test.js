@@ -275,6 +275,7 @@ describe('Question', () => {
             format: 'text',
             description: faker.lorem.sentence(),
             help: faker.lorem.sentence(),
+            required: true,
             options: [1, 1, 1].map(faker.internet.domainWord)
         };
         q = new Question(question, id);
@@ -289,6 +290,7 @@ describe('Question', () => {
             assert.equal(q.format, question.format);
             assert.equal(q.description, question.description);
             assert.equal(q.help, question.help);
+            assert.equal(q.required, question.required);
             assert.equal(q.options, question.options);
             assert.isDefined(q.value);
         });
@@ -305,6 +307,13 @@ describe('Question', () => {
             assert.isFalse(q.isComplete());
             q.value('not blank');
             assert.isTrue(q.isComplete());
+        });
+    });
+    describe('#isValid', () => {
+        it('is true if the Question\'s value is not empty', () => {
+            assert.isFalse(q.value.isValid());
+            q.value('not empty');
+            assert.isTrue(q.value.isValid());
         });
     });
     describe('#valid', () => {
