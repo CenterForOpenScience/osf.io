@@ -35,9 +35,8 @@ class TestWelcomeToApi(ApiTestCase):
 
     def test_returns_current_user_info_when_logged_in(self):
         res = self.app.get(self.url, auth=self.basic_auth, expect_errors=True)
-        print res
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['meta']['current_user']['data']['given_name'], self.user.given_name)
+        assert_equal(res.json['meta']['current_user']['given_name'], self.user.given_name)
 
 
 class TestNodeList(ApiTestCase):
@@ -362,7 +361,6 @@ class TestNodeCreate(ApiTestCase):
 
     def test_creates_private_project_logged_in_contributor(self):
         res = self.app.post(self.url, self.private_project, auth=self.basic_auth)
-        print res
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['title'], self.private_project['title'])
         assert_equal(res.json['data']['attributes']['description'], self.private_project['description'])
@@ -415,7 +413,6 @@ class TestNodeDetail(ApiTestCase):
 
     def test_return_public_project_details_logged_in(self):
         res = self.app.get(self.public_url, auth=self.basic_auth, expect_errors=True)
-        print res
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['title'], self.public_project.title)
         assert_equal(res.json['data']['attributes']['description'], self.public_project.description)
@@ -705,7 +702,6 @@ class TestNodeDelete(ApiTestCase):
     def test_deletes_private_node_logged_in_contributor(self):
         res = self.app.delete_json(self.private_url, auth=self.basic_auth, expect_errors=True)
         # self.project.reload()
-        print res
         assert_equal(res.status_code, 204)
         # assert_equal(self.project.is_deleted, True)
 
@@ -1106,7 +1102,6 @@ class TestCreateNodePointer(ApiTestCase):
 
     def test_create_node_pointer_already_connected(self):
         res = self.app.post(self.public_url, self.public_payload, expect_errors=True, auth=self.basic_auth)
-        print res
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['target_node_id'], self.public_pointer_project._id)
 
