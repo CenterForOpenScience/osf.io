@@ -65,6 +65,11 @@ input.typeahead.tt-input {
     -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
     box-shadow: 0 5px 10px rgba(0, 0, 0, .2);
 	margin-top: 12px;
+	cursor: pointer;
+}
+
+.tt-suggestion:hover .text-muted{
+    color: white;
 }
 
 .tt-suggestion {

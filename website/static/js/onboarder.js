@@ -75,8 +75,8 @@ function initTypeahead(element, nodes, viewModel, params){
         templates: {
             suggestion: function(data) {
                 return '<p>' + data.value.name + '</p> ' +
-                        '<p><small class="m-l-md">' +
-                        'modified ' + data.value.dateModified.local + '</small></p>';
+                        '<p><small class="m-l-md text-muted">'+
+                                        'modified ' + data.value.dateModified.local + '</small></p>';
             }
         },
         source: substringMatcher(myProjects)
