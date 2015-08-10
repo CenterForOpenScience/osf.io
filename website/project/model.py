@@ -729,12 +729,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
         return self.embargo.pending_approval
 
-    # FIXME(hrybacki): Need a more meaningful name
     @property
-    def embargo_pending_registration(self):
+    def is_pending_embargo_for_existing_registration(self):
+        """ Returns True if Node has an Embargo pending approval for an
+        existing registrations. This is used specifically to ensure
+        registrations pre-dating the Embargo feature do not get deleted if
+        their respective Embargo request is rejected.
+        """
         if self.embargo is None:
             if self.parent_node:
-                return self.parent_node.embargo_pending_registration
+                return self.parent_node.is_pending_embargo_for_existing_registration
             return False
         return self.embargo.pending_registration
 

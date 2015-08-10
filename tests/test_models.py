@@ -2536,7 +2536,7 @@ class TestProject(OsfTestCase):
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
-        assert_true(registration.pending_embargo)
+        assert_true(registration.is_pending_embargo)
 
         func = lambda: registration.set_privacy('public', auth=self.consolidate_auth)
         assert_raises(NodeStateError, func)
@@ -2557,7 +2557,7 @@ class TestProject(OsfTestCase):
 
         registration.set_privacy('public', auth=self.consolidate_auth)
         registration.save()
-        assert_false(registration.pending_embargo)
+        assert_false(registration.is_pending_embargo)
         assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_true(registration.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)

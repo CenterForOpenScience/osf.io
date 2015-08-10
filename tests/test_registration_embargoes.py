@@ -293,7 +293,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         self.registration.save()
-        assert_true(self.registration.embargo_pending_registration)
+        assert_true(self.registration.is_pending_embargo_for_existing_registration)
 
     def test_existing_registration_is_not_pending_registration(self):
         self.registration.embargo_registration(
@@ -302,7 +302,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             for_existing_registration=True
         )
         self.registration.save()
-        assert_false(self.registration.embargo_pending_registration)
+        assert_false(self.registration.is_pending_embargo_for_existing_registration)
 
 
 class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
@@ -673,7 +673,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
-        assert_true(registration.embargo_pending_registration)
+        assert_true(registration.is_pending_embargo_for_existing_registration)
         assert_is_not_none(registration.embargo)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
