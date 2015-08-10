@@ -959,7 +959,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if save:
             self.save()
 
-    def set_visible(self, user, visible, user_dicts=None, log=True, auth=None, save=False):
+    def set_visible(self, user, visible, log=True, auth=None, save=False):
         if not self.is_contributor(user):
             raise ValueError(u'User {0} not in contributors'.format(user))
         if visible and user._id not in self.visible_contributor_ids:
@@ -967,8 +967,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.update_visible_ids(save=False)
         elif not visible and user._id in self.visible_contributor_ids:
             if len(self.visible_contributor_ids) == 1:
-                if user_dicts is None or all([contributor['visible'] is False for contributor in user_dicts]):
-                    raise ValueError(
+                raise ValueError(
                         'Must have at least one visible contributor'
                     )
             self.visible_contributor_ids.remove(user._id)
@@ -2184,6 +2183,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             users = []
             user_ids = []
             permissions_changed = {}
+            visibility_removed = []
             to_retain = []
             to_remove = []
             for user_dict in user_dicts:
@@ -2198,12 +2198,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 if set(permissions) != set(self.get_permissions(user)):
                     self.set_permissions(user, permissions, save=False)
                     permissions_changed[user._id] = permissions
-                self.set_visible(user,
-                                 user_dict['visible'],
-                                 user_dicts,
-                                 auth=auth)
+                # visible must be added before removed to ensure they are validated properly
+                if user_dict['visible']:
+                    self.set_visible(user,
+                                     visible=True,
+                                     auth=auth)
+                else:
+                    visibility_removed.append(user)
                 users.append(user)
                 user_ids.append(user_dict['id'])
+
+            for user in visibility_removed:
+                self.set_visible(user,
+                                 visible=False,
+                                 auth=auth)
 
             for user in self.contributors:
                 if user._id in user_ids:
