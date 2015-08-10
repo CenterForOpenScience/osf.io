@@ -90,7 +90,8 @@ function findByTempID(parent, tmpID) {
 
 function cancelUploads (row) {
     var tb = this;
-    var filesArr = tb.dropzone.getQueuedFiles();
+    var uploading = tb.dropzone.getUploadingFiles();
+    var filesArr = uploading.concat(tb.dropzone.getQueuedFiles());
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
         if(!row){
@@ -352,13 +353,13 @@ function checkConflicts(tb, item, folder, cb) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
             tb.modal.update(m('', [
-                m('h3.break-word', 'An item named "' + item.data.name + '" already exists in this location.'),
-                m('p', 'Do you want to replace it?')
-            ]), m('', [
-                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
-            ]));
+                    m('p', 'An item named "' + item.data.name + '" already exists in this location.')
+                ]), m('', [
+                    m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                ]), m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
+            );
             return;
         }
     }
@@ -371,13 +372,12 @@ function checkConflictsRename(tb, item, name, cb) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
             tb.modal.update(m('', [
-                m('h3.break-word', 'An item named "' + name + '" already exists in this location.'),
-                m('p', 'Do you want to replace it?')
+                m('p', 'An item named "' + name + '" already exists in this location.')
             ]), m('', [
-                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
-                m('span.tb-modal-btn.text-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
-            ]));
+                m('span.btn.btn-info', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
+                m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
+            ]), m('h3.break-word.modal-title', 'Replace "' + name + '"?'));
             return;
         }
     }
@@ -762,7 +762,13 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    $osf.growl('Error', msgText);
+    if (msgText !== 'Upload canceled.') {
+        $osf.growl(
+            'Error',
+            'Unable to reach the provider, please try again later. If the ' +
+            'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.'
+            );
+    }
     treebeard.options.uploadInProgress = false;
 }
 
@@ -901,14 +907,14 @@ function _removeEvent (event, items, col) {
         var folder = items[0];
         if (folder.data.permissions.edit) {
                 var mithrilContent = m('div', [
-                        m('h3.break-word', 'Delete "' + folder.data.name+ '"?'),
+
                         m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.')
                     ]);
                 var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                        m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(folder); }  }, 'Delete')
+                        m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                        m('span.btn.btn-danger', {  onclick : function() { runDelete(folder); }  }, 'Delete')
                     ]);
-                tb.modal.update(mithrilContent, mithrilButtons);
+                tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', 'Delete "' + folder.data.name+ '"?'));
         } else {
             folder.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
         }
@@ -918,16 +924,15 @@ function _removeEvent (event, items, col) {
     if(items.length === 1) {
         if(items[0].kind !== 'folder'){
             var mithrilContentSingle = m('div', [
-                m('h3.break-word', 'Delete "' + items[0].data.name + '"'),
                 m('p', 'This action is irreversible.')
             ]);
             var mithrilButtonsSingle = m('div', [
-                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { cancelDelete(); } }, 'Cancel'),
-                m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'Delete')
+                m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
+                m('span.btn.btn-danger', { onclick : function() { runDelete(items[0]); }  }, 'Delete')
             ]);
             // This is already being checked before this step but will keep this edit permission check
             if(items[0].data.permissions.edit){
-                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle);
+                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', 'Delete "' + items[0].data.name + '"?'));
             }
         }
         if(items[0].kind === 'folder') {
@@ -959,7 +964,6 @@ function _removeEvent (event, items, col) {
         // If all items can be deleted
         if(canDelete){
             mithrilContentMultiple = m('div', [
-                    m('h3.break-word', 'Delete multiple files?'),
                     deleteMessage,
                     deleteList.map(function(n){
                         if(n.kind === 'folder'){
@@ -971,12 +975,11 @@ function _removeEvent (event, items, col) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
-                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
+                    m('span.btn.btn-default', { onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
+                    m('span.btn.btn-danger', { onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
                 ]);
         } else {
             mithrilContentMultiple = m('div', [
-                    m('h3.break-word', 'Delete multiple files?'),
                     m('p', 'Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.'),
                     deleteList.map(function(n){
                         if(n.kind === 'folder'){
@@ -991,11 +994,11 @@ function _removeEvent (event, items, col) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() {  tb.modal.dismiss(); } }, 'Cancel'),
-                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
+                    m('span.btn.btn-default', { 'class' : 'text-default', onclick : function() {  tb.modal.dismiss(); } }, 'Cancel'),
+                    m('span.btn.btn-danger', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
                 ]);
         }
-        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple);
+        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple, m('h3.break-word.modal-title', 'Delete multiple files?'));
     }
 }
 
@@ -1135,7 +1138,7 @@ function _connectCheckTemplate(item){
     var tb = this;
     return m('span.text-danger', [
         m('span', item.data.name),
-        m('em', ' could\'t load.' ),
+        m('em', ' couldn\'t load.' ),
         m('button.btn.btn-xs.btn-default.m-l-xs', {
             onclick : function(e){
                 e.stopImmediatePropagation();
@@ -1685,7 +1688,6 @@ var FGToolbar = {
             m.component(FGButton, {
                 onclick: function(event){
                     var mithrilContent = m('div', [
-                        m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
                         m('p', [ m('b', 'Select Rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
                         m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use Command or Shift keys to select multiple files.')]),
                         m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
@@ -1696,7 +1698,7 @@ var FGToolbar = {
                             'type':'button',
                             'class' : 'btn btn-default',
                             onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close');
-                    ctrl.tb.modal.update(mithrilContent, mithrilButtons);
+                    ctrl.tb.modal.update(mithrilContent, mithrilButtons, m('h3.modal-title.break-word', 'How to Use the File Browser'));
                 },
                 icon: 'fa fa-info',
                 className : 'text-info'

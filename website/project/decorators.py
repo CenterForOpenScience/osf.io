@@ -151,7 +151,7 @@ def check_can_access(node, user, key=None, api_node=None):
         return False
     if not node.can_view(Auth(user=user)) and api_node != node:
         if key in node.private_link_keys_deleted:
-            status.push_status_message("The view-only links you used are expired.")
+            status.push_status_message("The view-only links you used are expired.", trust=False)
         raise HTTPError(http.FORBIDDEN)
     return True
 

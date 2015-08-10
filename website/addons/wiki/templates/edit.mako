@@ -65,9 +65,53 @@
 
     <div class="wiki" id="wikiPageContext">
     <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">
-
       <div class="row">
-        % if can_edit:
+
+          <div data-osf-panel="View"
+               class="${'col-sm-{0}'.format(12 / num_columns) | n}"
+               style="${'' if 'view' in panels_used else 'display: none' | n}">
+              <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
+                <div class="panel-heading wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
+                    <div class="row">
+                        <div class="col-sm-6">
+                            <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
+                        </div>
+                        <div class="col-sm-6">
+
+                            <div class="pull-right">
+                                <!-- Version Picker -->
+                                <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
+                                    % if user['can_edit']:
+                                        <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
+                                    % endif
+                                    <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
+                                    % if len(versions) > 1:
+                                        <option value="previous" ${'selected' if version_settings['view'] == 'previous' else ''}>Previous</option>
+                                    % endif
+                                    % for version in versions[2:]:
+                                        <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>Version ${version['version']}</option>
+                                    % endfor
+                                </select>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div id="wikiViewPanel"  class="panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
+                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
+                      % if wiki_content:
+                          ${wiki_content | n}
+                      % else:
+                          <p><em>No wiki content</em></p>
+                      % endif
+                  </div>
+                </div>
+              </div>
+          </div>
+
+          % if can_edit:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
@@ -141,49 +185,7 @@
             </div>
           % endif
 
-          <div data-osf-panel="View"
-               class="${'col-sm-{0}'.format(12 / num_columns) | n}"
-               style="${'' if 'view' in panels_used else 'display: none' | n}">
-              <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
-                <div class="panel-heading wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
-                        </div>
-                        <div class="col-sm-6">
 
-                            <div class="pull-right">
-                                <!-- Version Picker -->
-                                <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
-                                    % if can_edit:
-                                        <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
-                                    % endif
-                                    <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
-                                    % if len(versions) > 1:
-                                        <option value="previous" ${'selected' if version_settings['view'] == 'previous' else ''}>Previous</option>
-                                    % endif
-                                    % for version in versions[2:]:
-                                        <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>Version ${version['version']}</option>
-                                    % endfor
-                                </select>
-
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-                <div id="wikiViewPanel"  class="panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
-                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
-                      % if wiki_content:
-                          ${wiki_content | n}
-                      % else:
-                          <p><em>No wiki content</em></p>
-                      % endif
-                  </div>
-                </div>
-              </div>
-          </div>
           <div data-osf-panel="Compare"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
@@ -345,7 +347,8 @@
 ${parent.javascript_bottom()}
 <script>
 
-    var canEdit = ${json.dumps(can_edit)};
+    var canEdit = ${json.dumps(user['can_edit'])};
+    var canPublicEdit = ${json.dumps(can_edit)};
 
     var canEditPageName = canEdit && ${json.dumps(
         wiki_id and wiki_name != 'home'
@@ -353,7 +356,7 @@ ${parent.javascript_bottom()}
 
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
-        canEdit: canEdit,
+        canEdit: canPublicEdit,
         canEditPageName: canEditPageName,
         usePythonRender: ${json.dumps(use_python_render)},
         versionSettings: ${json.dumps(version_settings) | n},
@@ -381,5 +384,4 @@ ${parent.javascript_bottom()}
 <script src="//${sharejs_url}/text.js"></script>
 <script src="//${sharejs_url}/share.js"></script>
 <script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
-
 </%def>

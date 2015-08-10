@@ -349,6 +349,7 @@ var ProjectViewModel = function(data) {
             self.idCreationInProgress(false); // hide loading indicator
         });
     };
+
 };
 
 ////////////////
