@@ -112,6 +112,27 @@ class TestNodeList(ApiTestCase):
 
         Node.remove()
 
+    def test_get_include_values(self):
+        child = ProjectFactory(is_public=True, creator=self.user, parent=self.public)
+        pointer = self.public.add_pointer(self.private, Auth(self.user))
+        registration = RegistrationFactory(project=self.public)
+
+        self.url += '?include=children,contributors,pointers,registrations'
+        res = self.app.get(self.url)
+        assert_equal(res.status_code, 200)
+        public_data = None
+        for project in res.json['data']:
+            if project['id'] == self.public._id:
+                public_data = project['relationships']
+        child_id = public_data['children']['links']['related']['meta']['data'][0]['id']
+        contributor_id = public_data['contributors']['links']['related']['meta']['data'][0]['id']
+        pointer_id = public_data['pointers']['links']['related']['meta']['data'][0]['id']
+        registration_id = public_data['registrations']['links']['related']['meta']['data'][0]['id']
+        assert_equal(child._id, child_id)
+        assert_equal(self.user._id, contributor_id)
+        assert_equal(pointer._id, pointer_id)
+        assert_equal(registration._id, registration_id)
+
 
 class TestNodeFiltering(ApiTestCase):
 
@@ -472,6 +493,24 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['relationships']['parent']['links']['self'], urlparse.urljoin(API_DOMAIN, self.public_url))
+
+    def test_get_include_values(self):
+        child = ProjectFactory(is_public=True, creator=self.user, parent=self.public_project)
+        pointer = self.public_project.add_pointer(self.private_project, Auth(self.user))
+        registration = RegistrationFactory(project=self.public_project)
+
+        self.public_url += '?include=children,contributors,pointers,registrations'
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        public_data = res.json['data']['relationships']
+        child_id = public_data['children']['links']['related']['meta']['data'][0]['id']
+        contributor_id = public_data['contributors']['links']['related']['meta']['data'][0]['id']
+        pointer_id = public_data['pointers']['links']['related']['meta']['data'][0]['id']
+        registration_id = public_data['registrations']['links']['related']['meta']['data'][0]['id']
+        assert_equal(child._id, child_id)
+        assert_equal(self.user._id, contributor_id)
+        assert_equal(pointer._id, pointer_id)
+        assert_equal(registration._id, registration_id)
 
 
 class TestNodeUpdate(ApiTestCase):
@@ -1556,18 +1595,6 @@ class TestNodeIncludeQueryParams(ApiTestCase):
 
     def test_node_detail_get_include_registration_value(self):
         self.url_detail += '?include=registrations'
-        res = self.app.get(self.url_detail)
-        assert_equal(res.status_code, 200)
-        registration_list = res.json['data']['relationships']['registrations']['links']['related']['meta']['data']
-        registration_in_list = False
-        for registration in registration_list:
-            if registration['id'] == self.registration._id:
-                registration_in_list = True
-                break
-        assert_true(registration_in_list)
-
-    def test_node_detail_get_values(self):
-        self.url_detail += '?include=children,contributors,pointers,registrations'
         res = self.app.get(self.url_detail)
         assert_equal(res.status_code, 200)
         registration_list = res.json['data']['relationships']['registrations']['links']['related']['meta']['data']
