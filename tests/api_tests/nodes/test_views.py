@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import mock
-import urlparse
+from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
 from website.models import Node
@@ -439,16 +439,15 @@ class TestNodeDetail(ApiTestCase):
     def test_top_level_project_has_no_parent(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        # This should be a self link
-        assert_equal(res.json['data']['relationships']['parent']['links']['related'], None)
+        assert_equal(res.json['data']['relationships']['parent']['links']['self'], None)
 
     def test_child_project_has_parent(self):
         public_component = NodeFactory(parent=self.public_project, creator=self.user, is_public=True)
         public_component_url = '/{}nodes/{}/'.format(API_BASE, public_component._id)
         res = self.app.get(public_component_url)
         assert_equal(res.status_code, 200)
-        # This should be a self link
-        assert_equal(res.json['data']['relationships']['parent']['links']['related'], urlparse.urljoin(API_DOMAIN, self.public_url))
+        url = str(res.json['data']['relationships']['parent']['links']['self'])
+        assert_equal(urlparse(url).path, self.public_url)
 
 
 class TestNodeUpdate(ApiTestCase):
