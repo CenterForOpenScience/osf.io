@@ -26,15 +26,15 @@ def get_object_or_error(model_cls, query_or_pk):
         query = Q('_id', 'eq', query_or_pk)
     else:
         query = query_or_pk
+
+    obj = model_cls.find_one(query)
+
+    if getattr(obj, 'is_deleted', False) is True:
+        raise Gone
+    if getattr(obj, 'is_active', None) is False:
+        raise Gone
     try:
-        obj = model_cls.find_one(query)
-
-        if getattr(obj, 'is_deleted', False) is True:
-            raise Gone
-        if getattr(obj, 'is_active', None) is False:
-            raise Gone
         return obj
-
     except NoResultsFound:
         raise NotFound
 

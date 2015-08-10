@@ -16,7 +16,8 @@ from tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
-    UserFactory
+    UserFactory,
+    AuthUserFactory
 )
 
 class TestWelcomeToApi(ApiTestCase):
@@ -1332,13 +1333,13 @@ class TestDeleteNodePointer(ApiTestCase):
         assert_equal(res.status_code, 403)
 
     def test_return_deleted_public_node_pointer(self):
-            res = self.app.delete(self.public_url, auth=self.basic_auth)
-            self.public_project.reload() # Update the model to reflect changes made by post request
-            assert_equal(res.status_code, 204)
+        res = self.app.delete(self.public_url, auth=self.basic_auth)
+        self.public_project.reload() # Update the model to reflect changes made by post request
+        assert_equal(res.status_code, 204)
 
-            #check that deleted pointer can not be returned
-            res = self.app.get(self.public_url, auth=self.basic_auth, expect_errors=True)
-            assert_equal(res.status_code, 404)
+        #check that deleted pointer can not be returned
+        res = self.app.get(self.public_url, auth=self.basic_auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
     def test_return_deleted_private_node_pointer(self):
         res = self.app.delete(self.private_url, auth=self.basic_auth)
@@ -1352,16 +1353,10 @@ class TestDeleteNodePointer(ApiTestCase):
 
 class TestReturnDeletedNode(ApiTestCase):
     def setUp(self):
-        super(TestReturnDeletedNode, self).setUp()
-        self.user = UserFactory.build()
-        self.user.set_password('justapoorboy')
-        self.user.save()
-        self.basic_auth = (self.user.username, 'justapoorboy')
 
-        self.non_contrib = UserFactory.build()
-        self.non_contrib.set_password('justapoorboy')
-        self.non_contrib.save()
-        self.basic_non_contrib_auth = (self.non_contrib.username, 'justapoorboy')
+        super(TestReturnDeletedNode, self).setUp()
+        self.user = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
 
         self.public_deleted = ProjectFactory(is_deleted=True, creator=self.user,
                                              title='This public project has been deleted', category='project',
@@ -1381,33 +1376,31 @@ class TestReturnDeletedNode(ApiTestCase):
 
     def test_return_deleted_private_node(self):
         self.url = '/{}nodes/{}/'.format(API_BASE, self.private_deleted._id)
-        res = self.app.get(self.url, auth=self.basic_auth, expect_errors=True)
+        res = self.app.get(self.url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
 
     def test_edit_deleted_public_node(self):
         self.url = '/{}nodes/{}/'.format(API_BASE, self.public_deleted._id)
         res = self.app.put(self.url, params={'title': self.new_title,
-                                                               'node_id': self.public_deleted._id,
-                                                               'category': self.public_deleted.category},
-                                            auth=self.basic_auth, expect_errors=True)
+                                             'node_id': self.public_deleted._id,
+                                             'category': self.public_deleted.category},
+                           auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
-        # assert_equal(res.json['data']['title'], self.public_deleted.title)
 
     def test_edit_deleted_private_node(self):
         self.url = '/{}nodes/{}/'.format(API_BASE, self.private_deleted._id)
         res = self.app.put(self.url, params={'title': self.new_title,
-                                                               'node_id': self.private_deleted._id,
-                                                               'category': self.private_deleted.category},
-                                            auth=self.basic_auth, expect_errors=True)
+                                             'node_id': self.private_deleted._id,
+                                             'category': self.private_deleted.category},
+                           auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
-        # assert_equal(res.json['data']['title'], self.public_deleted.title)
 
     def test_delete_deleted_public_node(self):
         self.url = '/{}nodes/{}/'.format(API_BASE, self.public_deleted._id)
-        res = self.app.delete(self.url, auth = self.basic_auth, expect_errors=True)
+        res = self.app.delete(self.url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
 
     def test_delete_deleted_private_node(self):
         self.url = '/{}nodes/{}/'.format(API_BASE, self.private_deleted._id)
-        res = self.app.delete(self.url, auth=self.basic_auth, expect_errors=True)
+        res = self.app.delete(self.url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
