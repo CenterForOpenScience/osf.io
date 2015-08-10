@@ -176,7 +176,7 @@ var Footer = {
         this.result = params.result;
         this.cleanResult = m.prop(null);
         this.missingError = m.prop(null);
-        this.showRawNormalized = false;
+        this.showRawNormalized = m.prop(false);
         this.loadRawNormalized = function() {
             utils.loadRawNormalized(this.result).then(
                 function(cleanData) {
@@ -197,7 +197,7 @@ var Footer = {
                     m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
                     m('a', {
                         onclick: function() {
-                            ctrl.showRawNormalized = !ctrl.showRawNormalized;
+                            ctrl.showRawNormalized(!ctrl.showRawNormalized());
                             ctrl.loadRawNormalized();
                         }
                     }, 'Data')
@@ -209,7 +209,7 @@ var Footer = {
                 m('a', {onclick: function() {utils.updateFilter(vm, 'shareProperties.source:' + result.shareProperties.source);}}, vm.ProviderMap[result.shareProperties.source].long_name),
                 m('br')
             ]),
-            ctrl.showRawNormalized ? m.component(RawNormalizedData, {result: ctrl.cleanResult(), missingError: ctrl.missingError()}) : '',
+            ctrl.showRawNormalized() ? m.component(RawNormalizedData, {result: ctrl.cleanResult(), missingError: ctrl.missingError()}) : '',
         ]);
     }
 };
@@ -217,7 +217,7 @@ var Footer = {
 var RawNormalizedData = {
     view: function(ctrl, params) {
         var result = params.result || params.missingError;
-        var divID = (result.normalized.shareProperties.docID + result.normalized.shareProperties.source).replace( /(:|\.|\[|\]|,)/g, '-' );
+        var divID = params.missingError ? '' : (result.normalized.shareProperties.docID + result.normalized.shareProperties.source).replace( /(:|\.|\[|\]|,)/g, '-' );
         return m('.row', [
             m('.col-md-12',
                 m('div', [
