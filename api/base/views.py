@@ -25,5 +25,3 @@ class Root(APIView):
                 'users': absolute_reverse('users:user-list'),
             }
         })
-
-

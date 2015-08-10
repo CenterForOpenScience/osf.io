@@ -45,7 +45,6 @@ class NodeSerializer(JSONAPISerializer):
     collection = ser.BooleanField(source='is_folder', read_only=True)
     dashboard = ser.BooleanField(source='is_dashboard', read_only=True)
 
-
     # TODO: finish me
 
     class Meta:
@@ -141,7 +140,6 @@ class NodePointersSerializer(JSONAPISerializer):
 
 class NodeFilesSerializer(JSONAPISerializer):
 
-
     id = ser.SerializerMethodField()
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
@@ -155,14 +153,11 @@ class NodeFilesSerializer(JSONAPISerializer):
     url = LinksField({
         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
         'related': {
-                    'href':
-                        Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
-                        query_kwargs={'path': '<path>', 'provider': '<provider>'}),
-                    'meta': {
-                       'self_methods': 'valid_self_link_methods',
-                    }
-                    },
-        })
+            'href': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
+                    query_kwargs={'path': '<path>', 'provider': '<provider>'}),
+            'meta': {'self_methods': 'valid_self_link_methods'}
+        }
+    })
 
     @staticmethod
     def get_id(obj):

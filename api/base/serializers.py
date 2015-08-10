@@ -5,10 +5,7 @@ from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 from django.core.urlresolvers import NoReverseMatch
-from django.core.exceptions import ObjectDoesNotExist, ImproperlyConfigured
-
-
-
+from django.core.exceptions import ImproperlyConfigured
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively."""
@@ -20,7 +17,6 @@ def _rapply(d, func, *args, **kwargs):
     else:
         return func(d, *args, **kwargs)
 
-
 def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
     schema.
@@ -31,6 +27,7 @@ def _url_val(val, obj, serializer, **kwargs):
         return getattr(serializer, val)(obj)
     else:
         return val
+
 
 class HyperLinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
 
@@ -132,14 +129,12 @@ class LinksField(ser.Field):
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
-
 def _tpl(val):
     """Return value within ``< >`` if possible, else return ``None``."""
     match = _tpl_pattern.match(val)
     if match:
         return match.groups()[0]
     return None
-
 
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
