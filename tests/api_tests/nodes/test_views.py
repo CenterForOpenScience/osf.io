@@ -450,6 +450,7 @@ class TestNodeDetail(ApiTestCase):
         # This should be a self link
         assert_equal(res.json['data']['relationships']['parent']['links']['related'], urlparse.urljoin(API_DOMAIN, self.public_url))
 
+
 class TestNodeUpdate(ApiTestCase):
 
     def setUp(self):
