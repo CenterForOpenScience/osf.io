@@ -22,6 +22,7 @@ from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
+from website.notifications.events.model import Event
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
@@ -299,6 +300,9 @@ def create_waterbutler_log(payload, **kwargs):
         metadata['path'] = metadata['path'].lstrip('/')
 
         node_addon.create_waterbutler_log(auth, action, metadata)
+
+    file_notify = Event.parse_event(user, node, action, payload=payload)
+    file_notify.perform()
 
     return {'status': 'success'}
 

@@ -125,7 +125,7 @@ var FileViewPage = {
 
 
         // Hack to delay creation of the editor
-        // until we know this is the current file revsion
+        // until we know this is the current file revision
         self.enableEditing = function() {
             // Sometimes we can get here twice, check just in case
             if (self.editor || !self.canEdit()) {
@@ -147,8 +147,8 @@ var FileViewPage = {
         //Ran into problems with mithrils caching messing up with multiple "Panels"
         self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
         self.revisions.selected = false;
-        self.revisions.title = 'Revisions';
-
+        self.revisions.title = 'More';
+        
         // inform the mfr of a change in display size performed via javascript,
         // otherwise the mfr iframe will not update unless the document windows is changed.
         self.triggerResize = $osf.throttle(function () {

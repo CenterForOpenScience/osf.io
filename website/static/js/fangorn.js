@@ -404,7 +404,6 @@ function doItemOp(operation, to, from, rename, conflict) {
     }
     orderFolder.call(tb, from.parent());
 
-
     $.ajax({
         type: 'POST',
         beforeSend: $osf.setXHRAuthorization,
