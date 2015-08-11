@@ -282,4 +282,4 @@ ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
 ENABLE_ARCHIVER = True
 ###########################
 
-MAX_INDEXED_FILE_SIZE = 1024 ** 2  # bytes
+MAX_INDEXED_FILE_SIZE = 5 * (10 ** 6)  # Megabytes

@@ -453,6 +453,9 @@ def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
         id=path,
         refresh=True,
     )
+
+    doc['parent_id'] = new_parent_id
+
     es.index(
         index=index,
         doc_type='file',
@@ -466,6 +469,7 @@ def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
 
 
 def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, index=None):
+    """ Get a document and index with a new parent. """
     index = index or INDEX
 
     path = file_util.norm_path(file_node_id)
@@ -477,6 +481,8 @@ def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, inde
         id=path,
         parent=old_parent_id,
     )['_source']
+
+    doc['parent_id'] = new_parent_id
 
     es.index(
         index=index,

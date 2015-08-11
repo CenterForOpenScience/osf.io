@@ -1542,7 +1542,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """ Remove all files within the current project from search."""
         from website.search import file_indexing
         file_indexing.delete_search_files(self)
-        # tasks.enqueue_task(tasks.delete_all_files_task.s(self))
 
     def update_search_file(self, file_node):
         """ Update a single file in search. """
