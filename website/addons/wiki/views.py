@@ -196,7 +196,7 @@ def wiki_page_content(wname, wver=None, **kwargs):
 
 
 @must_be_valid_project  # injects project
-@must_have_permission_or_public_wiki  # injects user, project
+@must_have_permission('write')  # injects user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_delete(auth, wname, **kwargs):
@@ -421,7 +421,7 @@ def project_wiki_compare(wname, wver, **kwargs):
 
 
 @must_not_be_registration
-@must_have_permission_or_public_wiki
+@must_have_permission('write')
 @must_have_addon('wiki', 'node')
 def project_wiki_rename(auth, wname, **kwargs):
     """View that handles user the X-editable input for wiki page renaming.
@@ -456,7 +456,7 @@ def project_wiki_rename(auth, wname, **kwargs):
 
 
 @must_be_valid_project  # returns project
-@must_have_permission_or_public_wiki  # returns user, project
+@must_have_permission('write')  # returns user, project
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_validate_name(wname, auth, node, **kwargs):
