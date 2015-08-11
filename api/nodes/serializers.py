@@ -162,11 +162,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
                                     help_text='A dictionary of various social media account dentifiers including '
                                               'an array of user-defined URLs')
     # Allows for null input (defaults to true) but can receive invalid input
-    bibliographic = ser.NullBooleanField(help_text='Whether the user will be included in citations for '
-                                                   'this node or not.  Defaults to true if user being added '
-                                                   'and current status if user is being edited')
+    bibliographic = ser.NullBooleanField(required=False, help_text='Whether the user will be included in citations for '
+                                                                   'this node or not.  Defaults to true if user being '
+                                                                   'added and current status if user is being edited')
 
-    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True,
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True, required=False,
                                  help_text='Highest permission the user has.  Blank input defaults write permission if '
                                            'user is being added and to current permission if user is being edited.')
     links = LinksField({
@@ -192,8 +192,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
         if user in node.contributors:
             raise exceptions.ValidationError('{} is already a validated contributor')
 
-        bibliographic = validated_data['bibliographic'] if validated_data['bibliographic'] else True
-        permissions = self.get_permissions_list(validated_data['permission'])
+        bibliographic = validated_data['bibliographic'] if 'bibliographic' in validated_data else True
+        permissions = self.get_permissions_list(validated_data['permission']) \
+            if 'permission' in validated_data else ['read', 'write']
         node.add_contributor(contributor=user, auth=auth, visible=bibliographic, permissions=permissions, save=True)
         node.reload()
         user.permission = node.get_permissions(user)[-1]
@@ -214,8 +215,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
             return ['read', 'write']
         elif permission == 'read':
             return ['read']
-        else:
-            return ['read', 'write']
 
 
 class NodePointersSerializer(JSONAPISerializer):
