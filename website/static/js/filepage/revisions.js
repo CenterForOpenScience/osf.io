@@ -132,7 +132,7 @@ var FileRevisionsTable = {
     view: function(ctrl) {
         return m('#revisionsPanel.panel.panel-default', [
                 m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
-                m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0'}}, (function() {
+                m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0', 'overflow': 'auto'}}, (function() {
                     if (!model.loaded()) {
                         return util.Spinner;
                     }
@@ -140,7 +140,7 @@ var FileRevisionsTable = {
                         return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
                     }
 
-                    return m('table.table',{style: {marginBottom: '0'}}, [
+                    return m('table.table.table-responsive',{style: {marginBottom: '0'}}, [
                         ctrl.getTableHead(),
                         m('tbody', model.revisions.map(ctrl.makeTableRow))
                     ]);

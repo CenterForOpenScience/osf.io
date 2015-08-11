@@ -49,8 +49,8 @@
 
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
-      <div id="mfrIframeParent" class="col-sm-9">
-        <div id="externalView"></div>
+        <div id="externalView" class="col-sm-9"></div>
+        <div id="mfrIframeParent" class="col-sm-9">
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
@@ -160,10 +160,10 @@
     <script type="text/javascript">
       window.contextVars = $.extend(true, {}, window.contextVars, {
         file: {
-            size: ${size},
-            extra: ${extra},
+            size: ${size | sjson, n },
+            extra: ${extra | sjson, n },
             error: ${ error | sjson, n },
-            privateRepo: ${private | sjson, n},
+            privateRepo: ${ private | sjson, n },
             name: ${ file_name | sjson, n },
             path: ${ file_path | sjson, n },
             provider: ${ provider | sjson, n },
@@ -182,7 +182,7 @@
             docId: ${ sharejs_uuid | sjson, n },
             userId: ${ user['id'] | sjson, n },
             userName: ${ user['fullname'] | sjson, n },
-            userUrl: ${ '/' + user['id'] + '/' | sjson, n },
+            userUrl: ${ ('/' + user['id'] + '/') if user['id'] else None | sjson, n },
             userGravatar: ${ urls['gravatar'].replace('&amp;', '&') | sjson, n }
         },
         node: {
@@ -192,7 +192,7 @@
         },
         panelsUsed: ['edit', 'view'],
         currentUser: {
-          canEdit: ${int(user['can_edit'])}
+          canEdit: ${ int(user['can_edit']) | sjson, n }
         }
       });
     </script>

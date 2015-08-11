@@ -317,6 +317,9 @@ ViewModel.prototype.openCreateBucket = function() {
                                 '<label class="col-md-4 control-label" for="bucketName">Bucket Name</label> ' +
                                 '<div class="col-md-8"> ' +
                                     '<input id="bucketName" name="bucketName" type="text" placeholder="Enter bucket name" class="form-control" autofocus> ' +
+                                    '<div>' +
+                                        '<span id="bucketModalErrorMessage" ></span>' +
+                                    '</div>'+
                                 '</div>' +
                             '</div>' +
                             '<div class="form-group"> ' +
@@ -343,7 +346,10 @@ ViewModel.prototype.openCreateBucket = function() {
                     var bucketLocation = $('#bucketLocation').val();
 
                     if (!bucketName) {
-                        return;
+                        var errorMessage = $('#bucketModalErrorMessage');
+                        errorMessage.text('Bucket name cannot be empty');
+                        errorMessage[0].classList.add('text-danger');
+                        return false;
                     } else if (isValidBucketName(bucketName, true)) {
                         bootbox.confirm({
                             title: 'Invalid bucket name',

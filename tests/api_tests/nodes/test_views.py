@@ -887,6 +887,94 @@ class TestNodeChildrenList(ApiTestCase):
         assert_equal(len(res.json['data']), 1)
 
 
+class TestNodeChildCreate(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeChildCreate, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+
+        self.project = ProjectFactory(creator=self.user, is_publc=True)
+
+        self.url = '/{}nodes/{}/children/'.format(API_BASE, self.project._id)
+        self.child = {
+            'title': 'child',
+            'description': 'this is a child project',
+            'category': 'project',
+        }
+
+    def test_creates_child_logged_out_user(self):
+        res = self.app.post_json(self.url, self.child, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_equal(len(self.project.nodes), 0)
+
+    def test_creates_child_logged_in_owner(self):
+        res = self.app.post_json(self.url, self.child, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['title'], self.child['title'])
+        assert_equal(res.json['data']['description'], self.child['description'])
+        assert_equal(res.json['data']['category'], self.child['category'])
+
+        self.project.reload()
+        assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
+
+    def test_creates_child_logged_in_write_contributor(self):
+        self.project.add_contributor(self.user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
+
+        res = self.app.post_json(self.url, self.child, auth=self.user_two.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['title'], self.child['title'])
+        assert_equal(res.json['data']['description'], self.child['description'])
+        assert_equal(res.json['data']['category'], self.child['category'])
+
+        self.project.reload()
+        assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
+
+    def test_creates_child_logged_in_read_contributor(self):
+        self.project.add_contributor(self.user_two, permissions=['read'], auth=Auth(self.user), save=True)
+        self.project.reload()
+
+        res = self.app.post_json(self.url, self.child, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_equal(len(self.project.nodes), 0)
+
+    def test_creates_child_logged_in_non_contributor(self):
+        res = self.app.post_json(self.url, self.child, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_equal(len(self.project.nodes), 0)
+
+    def test_creates_child_creates_child_and_sanitizes_html_logged_in_owner(self):
+        title = '<em>Cool</em> <strong>Project</strong>'
+        description = 'An <script>alert("even cooler")</script> child'
+
+        res = self.app.post_json(self.url, {
+            'title': title,
+            'description': description,
+            'category': 'project',
+            'public': True,
+        }, auth=self.user.auth)
+        child_id = res.json['data']['id']
+        assert_equal(res.status_code, 201)
+        url = '/{}nodes/{}/'.format(API_BASE, child_id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['title'], strip_html(title))
+        assert_equal(res.json['data']['description'], strip_html(description))
+        assert_equal(res.json['data']['category'], 'project')
+
+        self.project.reload()
+        assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
+
+
 class TestNodePointersList(ApiTestCase):
 
     def setUp(self):

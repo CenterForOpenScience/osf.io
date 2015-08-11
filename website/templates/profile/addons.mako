@@ -16,7 +16,7 @@
 </style>
 
 <% from website import settings %>
-<h2 class="page-header">Configure Add-on Accounts</h2>
+<h2 class="page-header">Settings</h2>
 
 
 <div id="addonSettings" class="row">
