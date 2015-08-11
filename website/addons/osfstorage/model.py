@@ -132,13 +132,15 @@ class OsfStorageUserSettings(AddonUserSettingsBase):
         :rtype: int
         :returns: The total collected storage usaging of this user in bytes
         """
+        q = Q('creator', 'eq', self.owner)
+
+        if not all:
+            q &= Q('ignore_size', 'eq', False)
+
         usage = sum(
             version.size
             for version in
-            OsfStorageFileVersion.find(
-                Q('creator', 'eq', self.owner) &
-                Q('ignore_size', 'eq', all)
-            )
+            OsfStorageFileVersion.find(q)
         )
 
         if save:
@@ -461,11 +463,8 @@ class OsfStorageFileNode(StoredObject):
         version._find_matching_archive(save=False)
 
         # No if guards, rely on ignore_size on the version
-        version.update_storage_usage(save=latest_version is None)
-        version.update_storage_usage(of=self.node_settings, save=latest_version is None)
-        if latest_version:  # None when first version is being created
-            latest_version.update_storage_usage(deleted=True)
-            latest_version.update_storage_usage(of=self.node_settings, deleted=True)
+        version.update_storage_usage(save=True)
+        version.update_storage_usage(of=self.node_settings, save=True)
 
         version.save()
         self.versions.append(version)
@@ -481,12 +480,11 @@ class OsfStorageFileNode(StoredObject):
                 return
         raise errors.VersionNotFoundError
 
-    def delete(self, recurse=True, ignore_size=False):
+    def delete(self, recurse=True, save=True):
         """Moves the given file node to the OsfStorageTrashedFileNode
         collection. Also updates user and node storage usages and optionally
         deleted children.
         :param bool recurse: Whether or not to delete children
-        :param bool ignore_size: Whether or not to update storage_usages
         """
         trashed = OsfStorageTrashedFileNode()
         trashed._id = self._id
@@ -498,16 +496,18 @@ class OsfStorageFileNode(StoredObject):
 
         trashed.save()
 
-        # Sometimes there are no versions
-        if self.versions:
-            # No if guards, rely on ignore_size on the version
-            self.get_version().update_storage_usage(deleted=True)
-            self.get_version().update_storage_usage(of=self.node_settings, deleted=True)
+        for version in self.versions:
+            version.update_storage_usage(deleted=True, save=True)
+            version.update_storage_usage(of=self.node_settings, deleted=True)
+            # Dont include deleted versions in future calculations
+            version.ignore_size = True
+            version.save()
 
         if self.is_folder and recurse:
             for child in self.children:
-                child.delete()
+                child.delete(save=False)
 
+        self.node_settings.save()
         self.__class__.remove_one(self)
 
     def serialized(self, include_full=False):

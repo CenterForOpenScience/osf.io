@@ -289,7 +289,7 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(400, self.user_addon.storage_usage)
         assert_equal(400, self.node_addon.storage_usage)
 
-        # Creating a version should update but delete the old one
+        # Creating a version should update
         child.create_version(self.user, {
             'service': 'cloud',
             settings.WATERBUTLER_RESOURCE: 'osf',
@@ -297,8 +297,8 @@ class TestOsfstorageFileNode(StorageTestCase):
         }, metadata={'size': 800})
         self.user.reload()
         self.node.reload()
-        assert_equal(800, self.user_addon.storage_usage)
-        assert_equal(800, self.node_addon.storage_usage)
+        assert_equal(1200, self.user_addon.storage_usage)
+        assert_equal(1200, self.node_addon.storage_usage)
 
         # Deleting should remove usage
         child.delete()
@@ -348,6 +348,13 @@ class TestOsfstorageFileNode(StorageTestCase):
 
     def test_can_ignore_ignore_size(self):
         child = self.node_settings.root_node.append_file('Test')
+        child1 = self.node_settings.root_node.append_file('Test1')
+
+        child1.create_version(self.user, {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd088f2',
+        }, metadata={'size': 300}, ignore_size=False)
 
         child.create_version(self.user, {
             'service': 'cloud',
@@ -356,15 +363,15 @@ class TestOsfstorageFileNode(StorageTestCase):
         }, metadata={'size': 400}, ignore_size=True)
         self.user.reload()
         self.node.reload()
-        assert_equal(0, self.user_addon.storage_usage)
-        assert_equal(0, self.node_addon.storage_usage)
+        assert_equal(300, self.user_addon.storage_usage)
+        assert_equal(300, self.node_addon.storage_usage)
 
         self.user_addon.calculate_storage_usage(save=True, all=True)
         self.node_addon.calculate_storage_usage(save=True, all=True)
         self.user.reload()
         self.node.reload()
-        assert_equal(400, self.user_addon.storage_usage)
-        assert_equal(400, self.node_addon.storage_usage)
+        assert_equal(700, self.user_addon.storage_usage)
+        assert_equal(700, self.node_addon.storage_usage)
 
     def test_materialized_path(self):
         child = self.node_settings.root_node.append_file('Test')
