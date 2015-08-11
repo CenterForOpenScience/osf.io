@@ -148,7 +148,7 @@ var FileRevisionsTable = {
         return self;
     },
     view: function(ctrl) {
-        return m('#revisionsPanel.panel.panel-default',[
+        return m('#revisionsPanel.panel.panel-default', [
                 m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
                 m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0', 'overflow': 'auto'}}, (function() {
                     if (!model.loaded()) {
