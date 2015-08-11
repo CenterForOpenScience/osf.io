@@ -229,6 +229,26 @@ ko.bindingHandlers.onKeyPress = {
     }
 };
 
+/*
+ * A return key binding
+ * Usage:
+ * <input type="text" data-bind="value:message, returnKey:send"/>
+ *
+ * Source: https://lassieadventurestudio.wordpress.com/2012/06/14/return-key-binding-knockout/
+ *
+ */
+ko.bindingHandlers.returnKey = {
+    init: function(element, valueAccessor, allBindingsAccessor, viewModel) {
+        ko.utils.registerEventHandler(element, 'keydown', function(event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                event.target.blur();
+                valueAccessor().call(viewModel);
+            }
+        });
+    }
+};
+
 /* A binding handler to convert lists into formatted lists, e.g.:
  * [dog] -> dog
  * [dog, cat] -> dog and cat
