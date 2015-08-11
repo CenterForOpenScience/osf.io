@@ -354,7 +354,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         self.forceSubmit(true);
         bootbox.confirm({
             title: 'Save changes?',
-            message: 'Are you sure you want to save these changes?',
+            message: 'Are you sure you want to save these changes? They will only affect this component.',
             callback: function(result) {
                 if (result) {
                     $osf.postJSON(

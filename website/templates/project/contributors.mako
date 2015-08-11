@@ -3,6 +3,8 @@
 
 <%include file="project/modal_generate_private_link.mako"/>
 <%include file="project/modal_add_contributor.mako"/>
+<%include file="project/modal_batchRemove_contributor.mako"/>
+
 
 <div class="page-header  visible-xs">
   <h2 class="text-300">Contributors</h2>
@@ -16,6 +18,11 @@
                     <!-- ko if: canEdit -->
                         <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
                           <i class="fa fa-plus"></i> Add
+                        </a>
+                    <!-- /ko -->
+                    <!-- ko if: canEdit -->
+                        <a href="#batchRemoveContribs" data-toggle="modal" class="btn btn-danger btn-sm" style="margin-left:20px;margin-top: -3px">
+                          <i class="fa fa-minus"></i> Remove
                         </a>
                     <!-- /ko -->
                 </h3>
@@ -225,7 +232,11 @@
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
+<<<<<<< HEAD
+                    <b> Removing</b>
+=======
                     Save to Remove
+>>>>>>> 90f8ce9d6d69c4db0efe1dbb5b24cfb1e54cb2da
                 <!-- /ko -->
             <!-- /ko -->
 
