@@ -162,6 +162,13 @@ class NodeContributorsSerializer(JSONAPISerializer):
                                     help_text='A dictionary of various social media account dentifiers including '
                                               'an array of user-defined URLs')
 
+    bibliographic = ser.NullBooleanField(help_text='Whether the user will be included in citations for '
+                                                   'this node or not.  Defaults to true if user being added '
+                                                   'and current status if user is being edited')
+
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True,
+                                 help_text='Highest permission the user has.  Blank input defaults write permission if '
+                                           'user is being added and to current permission if user is being edited.')
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
@@ -175,24 +182,16 @@ class NodeContributorsSerializer(JSONAPISerializer):
     def absolute_url(self, obj):
         return obj.absolute_url
 
-    def update(self, instance, validated_data):
-        # TODO
-        pass
-
-    bibliographic = ser.NullBooleanField(help_text='Whether the user will be included in citations for '
-                                                   'this node or not.  Defaults to true if user being added '
-                                                   'and current status if user is being edited')
-
-    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True,
-                                 help_text='Highest permission the user has.  Blank input defaults write permission if '
-                                           'user is being added and to current permission if user is being edited.')
-
     def create(self, validated_data):
         request = self.context['request']
         current_user = request.user
         auth = Auth(current_user)
         node = self.context['view'].get_node()
         user = get_object_or_404(User, validated_data['_id'])
+        # Node object checks for contributor existence but can still change permissions anyway
+        if user in node.contributors:
+            raise exceptions.ValidationError('{} is already a validated contributor')
+
         bibliographic = validated_data['bibliographic'] if validated_data['bibliographic'] else True
         permissions = self.get_permissions_list(validated_data['permission'])
         node.add_contributor(contributor=user, auth=auth, visible=bibliographic, permissions=permissions, save=True)
@@ -200,6 +199,12 @@ class NodeContributorsSerializer(JSONAPISerializer):
         user.permission = node.get_permissions(user)[-1]
         user.bibliographic = node.get_visible(user)
         return user
+
+    def update(self, instance, validated_data):
+        pass
+
+    def delete(self, validated_data):
+        pass
 
     @staticmethod
     def get_permissions_list(permission):
