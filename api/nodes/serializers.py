@@ -183,9 +183,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def create(self, validated_data):
-        request = self.context['request']
-        current_user = request.user
-        auth = Auth(current_user)
+        auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
         user = get_object_or_404(User, validated_data['_id'])
         # Node object checks for contributor existence but can still change permissions anyway
@@ -199,13 +197,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
         node.reload()
         user.permission = node.get_permissions(user)[-1]
         user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
         return user
-
-    def update(self, instance, validated_data):
-        pass
-
-    def delete(self, validated_data):
-        pass
 
     @staticmethod
     def get_permissions_list(permission):
@@ -215,6 +208,15 @@ class NodeContributorsSerializer(JSONAPISerializer):
             return ['read', 'write']
         elif permission == 'read':
             return ['read']
+
+
+class NodeContributorDetailSerializer(NodeContributorsSerializer):
+    """ Overrides node contributor serializer to make id read only and add addtional methods
+    """
+    id = ser.CharField(read_only=True, source='_id')
+
+    def update(self, instance, validated_data):
+        pass
 
 
 class NodePointersSerializer(JSONAPISerializer):
