@@ -1,6 +1,7 @@
 /*global describe, it, expect, example, before, after, beforeEach, afterEach, mocha, sinon*/
 'use strict';
 var $ = require('jquery');
+var bootbox = require('bootbox');
 
 var assert = require('chai').assert;
 
@@ -301,6 +302,7 @@ describe('s3NodeConfigViewModel', () => {
                         assert.isTrue(vm.loadedBucketList());
                         assert.isAbove(vm.bucketList().length, 0);
                         assert(spy.calledOnce);
+                        spy.restore();
                         done();
                     });
                 });
@@ -326,6 +328,7 @@ describe('s3NodeConfigViewModel', () => {
         });
         it('submits the selected bucket to the server, and updates data on success', (done) => {
             var vm = new s3NodeConfigVM('', {url: '/api/v1/12345/s3/settings/' });
+
             vm.updateFromData()
                 .always(function() {
                     vm.selectedBucket(bucket);
@@ -334,6 +337,18 @@ describe('s3NodeConfigViewModel', () => {
                         assert.equal(vm.currentBucket(), bucket);
                         done();
                     });
+                });
+        });
+        it('alerts the user that the S3 addon does not support bucket names containing periods', (done) => {
+            var vm = new s3NodeConfigVM('', {url: '/api/v1/12345/s3/settings/'});
+            var spy = sinon.spy(bootbox, 'alert');
+            vm.updateFromData()
+                .always(function () {
+                    vm.selectedBucket('pew.pew.pew');
+                    vm.selectBucket();
+                    assert(spy.calledOnce);
+                    spy.restore();
+                    done();
                 });
         });
     });

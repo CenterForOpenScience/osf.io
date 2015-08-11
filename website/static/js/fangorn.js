@@ -188,6 +188,9 @@ function resolveIconView(item) {
         var template = m('span', { 'class' : iconType});
         return template;
     }
+    if (!item.data.permissions.view) {
+        return m('span', { 'class' : iconmap.private });
+    }
     if (item.data.isDashboard) {
         return returnView('collection');
     }
@@ -228,7 +231,7 @@ function resolveIconView(item) {
  * @private
  */
 function _fangornResolveIcon(item) {
-    var privateFolder =  m('div.file-extension._folder_delete', ' '),
+    var privateFolder =  m('i.fa.fa-lock', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
         closedFolder = m('i.fa.fa-folder', ' '),
@@ -355,8 +358,8 @@ function checkConflicts(tb, item, folder, cb) {
             tb.modal.update(m('', [
                     m('p', 'An item named "' + item.data.name + '" already exists in this location.')
                 ]), m('', [
-                    m('span.btn.btn-info', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
                 ]), m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
             );
@@ -763,7 +766,11 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         }
     }
     if (msgText !== 'Upload canceled.') {
-        $osf.growl('Error', msgText);
+        $osf.growl(
+            'Error',
+            'Unable to reach the provider, please try again later. If the ' +
+            'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.'
+            );
     }
     treebeard.options.uploadInProgress = false;
 }
@@ -872,7 +879,7 @@ function _removeEvent (event, items, col) {
         tb.modal.dismiss();
     }
     function runDelete(item) {
-        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');
+        tb.select('.modal-footer .btn-danger').html('<i> Deleting...</i>').removeClass('btn-danger').addClass('btn-default disabled');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
         url = url || waterbutler.buildTreeBeardDelete(item);
@@ -1127,7 +1134,7 @@ function _fangornTitleColumn(item, col) {
             }
         }, item.data.name);
     }
-    if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
+    if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
                 item.data.name);
     }
@@ -1176,6 +1183,10 @@ function _fangornResolveRows(item) {
     item.css = '';
     if(tb.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
+    }
+
+    if(item.data.permissions && !item.data.permissions.view){
+        item.css += ' tb-private-row';
     }
 
     if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){

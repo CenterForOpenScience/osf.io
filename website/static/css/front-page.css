@@ -82,6 +82,10 @@ h6 {
     font-size: 3.5em;
     margin-bottom: -20px;
 }
+#home-hero h1, #home-hero h3 {
+    z-index: 9;
+    position: relative;
+}
 #home-hero h2 {
     margin-top: -50px;
     background-color: #ffffff;
@@ -123,6 +127,10 @@ h6 {
 }
 #hero-signup a:hover {
     text-decoration: none;
+}
+#signUpScope button, #signUpScope input, #signUpScope .help-block {
+    z-index: 9;
+    position: relative;
 }
 #screenshot {
     margin-top: -10%;
@@ -463,6 +471,12 @@ footer {
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
 }
 
+@media (min-width: 992px) {
+    .container {
+        width: 1170px !important;
+    }
+}
+
 @media (min-width: 992px) and (max-width: 1199px) {
     .student-image .quote {
         min-height: 100px;
@@ -560,7 +574,9 @@ footer {
         min-height: 100px;
     }
     .student-image .quote:before {
-        left: 90px;
+        left: 80px;
+        border-width: 0 14px 26px 14px;
+        top: -26px;
     }
     .student-image .main {
         font-size: 1.0em !important;

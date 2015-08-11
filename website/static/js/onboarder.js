@@ -75,8 +75,8 @@ function initTypeahead(element, nodes, viewModel, params){
         templates: {
             suggestion: function(data) {
                 return '<p>' + data.value.name + '</p> ' +
-                        '<p><small class="m-l-md text-muted">' +
-                        'modified ' + data.value.dateModified.local + '</small></p>';
+                        '<p><small class="m-l-md text-muted">'+
+                                        'modified ' + data.value.dateModified.local + '</small></p>';
             }
         },
         source: substringMatcher(myProjects)
@@ -104,7 +104,7 @@ function serializeNode(node) {
         urls: {
             web: node.url,
             api: node.api_url,
-            register: node.url + 'register/',
+            register: node.url + 'register',
             files: node.url + 'files/',
             children: node.api_url + 'get_children/?permissions=write'
         }
