@@ -136,8 +136,7 @@ var FileViewPage = {
         $(document).on('fileviewpage:force_return', function() {
             bootbox.confirm({
                 title: 'Force check-in file?',
-                message: 'This will allow all users to edit again, and it will only work if you are an ' +
-                'administrator.',
+                message: 'This will check-in the file for all users, allowing it to be edited. Are you sure?',
                 buttons: {
                     confirm:{
                         label: 'Force check-in',
