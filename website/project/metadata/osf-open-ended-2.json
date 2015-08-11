@@ -5,8 +5,7 @@
     "pages": [{
         "id": "page1",
         "title": "Summary",
-        "questions": {
-            "summary": {
+        "questions": [{
                 "title": "Summary",
                 "nav": "Summary",
                 "type": "string",
@@ -14,6 +13,6 @@
                 "description": "Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations.",
                 "required": true
             }
-        }
+        ]
     }]
 }
