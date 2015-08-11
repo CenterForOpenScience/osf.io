@@ -1,8 +1,9 @@
 import collections
 import re
 
-from rest_framework import serializers as ser
+from website.util import api_v2_url
 from website.util.sanitize import strip_html
+from rest_framework import serializers as ser
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
 
@@ -27,6 +28,26 @@ def _url_val(val, obj, serializer, **kwargs):
         return getattr(serializer, val)(obj)
     else:
         return val
+
+
+class CollectionLinksField(ser.Field):
+
+    def __init__(self, links, *args, **kwargs):
+        ser.Field.__init__(self, read_only=True, *args, **kwargs)
+        self.links = links
+
+    def get_attribute(self, obj):
+        # We pass the object instance onto `to_representation`,
+        # not just the field attribute.
+        return obj
+
+    def to_representation(self, obj):
+        if isinstance(obj, dict):
+            return api_v2_url('/collections/{}/'.format(obj['id']))
+        else:
+            ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
+            ret['self'] = absolute_reverse('collections:collection-detail', kwargs={'collection_id': obj._id})
+            return ret
 
 
 class LinksField(ser.Field):
@@ -80,21 +101,28 @@ def _tpl(val):
 
 
 def _get_attr_from_tpl(attr_tpl, obj):
-    attr_name = _tpl(str(attr_tpl))
-    if attr_name:
-        attribute_value = getattr(obj, attr_name, ser.empty)
-        if attribute_value is not ser.empty:
-            return attribute_value
-        elif attr_name in obj:
-            return obj[attr_name]
+    if isinstance(obj, dict):
+        if 'smart_folder' in obj:
+            return ''
+    try:
+        return obj.pk
+    except AttributeError:
+
+        attr_name = _tpl(str(attr_tpl))
+        if attr_name:
+            attribute_value = getattr(obj, attr_name, ser.empty)
+            if attribute_value is not ser.empty:
+                return attribute_value
+            elif attr_name in obj:
+                return obj[attr_name]
+            else:
+                raise AttributeError(
+                    '{attr_name!r} is not a valid '
+                    'attribute of {obj!r}'.format(
+                        attr_name=attr_name, obj=obj,
+                    ))
         else:
-            raise AttributeError(
-                '{attr_name!r} is not a valid '
-                'attribute of {obj!r}'.format(
-                    attr_name=attr_name, obj=obj,
-                ))
-    else:
-        return attr_tpl
+            return attr_tpl
 
 
 # TODO: Make this a Field that is usable on its own?

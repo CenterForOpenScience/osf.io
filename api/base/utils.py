@@ -7,12 +7,20 @@ from rest_framework.reverse import reverse
 from rest_framework.exceptions import NotFound
 from modularodm.exceptions import NoResultsFound
 
-from website import util as website_util  # noqa
+from framework.auth.core import Auth
 from website import settings as website_settings
+from website import util as website_util  # noqa
 
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
+
+    # this facilitates spoofing smart_folders
+    if kwargs is not None:
+        if 'properties' in kwargs:
+            if kwargs['properties']['smart_folder'] is True:
+                return ''
+
     relative_url = reverse(view_name, kwargs=kwargs)
 
     url = website_util.api_v2_url(relative_url, params=query_kwargs)
@@ -56,3 +64,11 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
     url.args.update(query)
     return url.url
+
+def get_user_auth(request):
+    user = request.user
+    if user.is_anonymous():
+        auth = Auth(None)
+    else:
+        auth = Auth(user)
+    return auth
