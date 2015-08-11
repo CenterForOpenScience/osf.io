@@ -481,7 +481,7 @@ def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, inde
     es.index(
         index=index,
         doc_type='file',
-        id=new_file_node_id,
+        id=new_path,
         parent=new_parent_id,
         body=doc,
         refresh=True,
