@@ -216,12 +216,12 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
 
     def test_get_200_path_users_me_userone_logged_in(self):
         url = "/{}users/me/".format(API_BASE)
-        res = self.app.get(url, auth=self.auth_one)
+        res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
 
     def test_get_200_path_users_me_usertwo_logged_in(self):
         url = "/{}users/me/".format(API_BASE)
-        res = self.app.get(url, auth=self.auth_two)
+        res = self.app.get(url, auth=self.user_two.auth)
         assert_equal(res.status_code, 200)
 
     def test_get_403_path_users_me_no_user(self):
@@ -246,7 +246,7 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
 
     def test_get_404_path_users_user_id_me_unauthorized_user(self):
         url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth= self.auth_two, expect_errors=True)
+        res = self.app.get(url, auth= self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_get_200_path_users_user_id_user_logged_in(self):
