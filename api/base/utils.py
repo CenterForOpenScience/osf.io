@@ -56,14 +56,3 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
     url.args.update(query)
     return url.url
-
-
-# created due to issues with node admin contributors attribute
-def has_multiple_admins(node):
-    has_one_admin = False
-    for contributor in node.contributors:
-        if node.has_permission(contributor, 'admin'):
-            if has_one_admin:
-                return True
-            has_one_admin = True
-    return False
