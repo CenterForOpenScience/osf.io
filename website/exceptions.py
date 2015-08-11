@@ -20,11 +20,15 @@ class SanctionTokenError(NodeError):
     pass
 
 class InvalidSanctionRejectionToken(SanctionTokenError):
-    """Raised if a embargo disapproval token is not found."""
+    """Raised if a Sanction subclass disapproval token submitted is invalid
+     or associated with another admin authorizer
+    """
     message_short = "Invalid Token"
-    message_long = "This embargo disapproval link is invalid. Are you logged into the correct account?"
+    message_long = "This disapproval link is invalid. Are you logged into the correct account?"
 
 class InvalidSanctionApprovalToken(SanctionTokenError):
-    """Raised if a embargo disapproval token is not found."""
+    """Raised if a Sanction subclass approval token submitted is invalid
+     or associated with another admin authorizer
+    """
     message_short = "Invalid Token"
-    message_long = "This embargo disapproval link is invalid. Are you logged into the correct account?"
+    message_long = "This disapproval link is invalid. Are you logged into the correct account?"
