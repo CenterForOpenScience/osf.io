@@ -2,14 +2,15 @@ import requests
 
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
-from website.models import Node, Pointer
+from website.models import Node, Pointer, User
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_404, waterbutler_url_for
+from api.base.utils import get_object_or_404, waterbutler_url_for, has_multiple_admins
 from .serializers import NodeSerializer, NodeContributorsSerializer, NodePointersSerializer, NodeFilesSerializer
-from .permissions import ContributorOrPublic, AdminOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from .permissions import ContributorOrPublic, AdminOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, \
+    ContributorDetailPermissions
 
 
 class NodeMixin(object):
@@ -122,8 +123,8 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     """
 
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
         AdminOrPublic,
+        drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
     serializer_class = NodeContributorsSerializer
@@ -136,11 +137,55 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
             contributor.bibliographic = contributor._id in visible_contributors
             contributor.permission = node.get_permissions(contributor)[-1]
             contributors.append(contributor)
+            contributor.node_id = node._id
         return contributors
 
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+
+class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+    """Detail of a contributor for a node.
+
+    Contributors are users who can make changes to the node or, in the case of private nodes,
+    have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
+    contributors. From a permissions standpoint, both are the same, but bibliographic contributors
+    are included in citations, while non-bibliographic contributors are not included in citations.
+
+    Allows for a user to view, remove a contributor from, and change bibliographic and admin status for a node.
+    """
+
+    permission_classes = (
+        ContributorDetailPermissions,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    serializer_class = NodeContributorsSerializer
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        user = get_object_or_404(User, self.kwargs['user_id'])
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        if user not in node.contributors:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+        user.permissions = node.get_permissions(user)
+        user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
+        return user
+
+    # overrides DestroyAPIView
+    def perform_destroy(self, instance):
+        node = self.get_node()
+        current_user = self.request.user
+        auth = Auth(current_user)
+        if not has_multiple_admins(node) and node.has_permission(instance, 'admin'):
+            raise ValidationError("Must have at least one registered admin contributor")
+        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+            raise ValidationError("Must have at least one visible contributor")
+        node.remove_contributor(instance, auth)
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
