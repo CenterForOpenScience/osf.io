@@ -161,7 +161,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     social_accounts = ser.DictField(read_only=True, source='social',
                                     help_text='A dictionary of various social media account dentifiers including '
                                               'an array of user-defined URLs')
-
+    # Allows for null input (defaults to true) but can receive invalid input
     bibliographic = ser.NullBooleanField(help_text='Whether the user will be included in citations for '
                                                    'this node or not.  Defaults to true if user being added '
                                                    'and current status if user is being edited')
