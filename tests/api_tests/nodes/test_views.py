@@ -7,7 +7,6 @@ from website.models import Node
 from framework.auth.core import Auth
 from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
-from website.settings import API_DOMAIN
 
 from tests.base import ApiTestCase, fake
 from tests.factories import (
@@ -353,7 +352,7 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['category'], self.public_project['category'])
 
     def test_creates_private_project_logged_out(self):
-        res = self.app.post_json(self.url, self.private_project, expect_errors=True)
+        res = self.app.post(self.url, self.private_project, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
@@ -488,7 +487,6 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['collection'], False)
         assert_equal(res.json['data']['attributes']['dashboard'], False)
         assert_equal(res.json['data']['attributes']['tags']['user'], [])
-
 
 
 class TestNodeUpdate(ApiTestCase):
