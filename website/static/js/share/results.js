@@ -98,18 +98,19 @@ var TitleBar = {
 var Description = {
     controller: function(vm) {
         var self = this;
-        self.showAll = false;
+        self.showAll = m.prop(false);
     },
     view: function(ctrl, params) {
         var result = params.result;
+        var showOnClick = function() {
+            ctrl.showAll(!ctrl.showAll());
+        };
         if ((result.description || '').length > 350) {
-            return m('p.readable.pointer', {
-                onclick: function() {
-                    ctrl.showAll = !ctrl.showAll;
-                    }
-                },
-                ctrl.showAll ? result.description : $.truncate(result.description, {length: 350})
-            );
+            return m('', [
+                m('p.readable.pointer', {onclick: showOnClick},
+                    ctrl.showAll() ? result.description : $.truncate(result.description, {length: 350})
+                ),
+                m('a.sr-only', {href: '#', onclick: showOnClick}, ctrl.showAll() ? 'See less' : 'See more')]);
         } else {
             return m('p.readable', result.description);
         }
@@ -148,6 +149,7 @@ var Contributor = {
         return m('span', [
             m('span', index !== 0 ? ' · ' : ''),
             m('a', {
+                href: '#',
                 onclick: function() {
                     utils.updateFilter(vm, 'match:contributors.familyName:' + contributor.familyName, true);
                     utils.updateFilter(vm, 'match:contributors.givenName:' + contributor.givenName, true);
@@ -173,7 +175,7 @@ var Subjects = {
         return m('span', [
             subjectViews.slice(0, 5),
             m('br'),
-            m('div', m('a', {onclick: function() {ctrl.showAll = !ctrl.showAll;}},'See All'))
+            m('div', m('a', {href: '#', onclick: function() {ctrl.showAll = !ctrl.showAll;}},'See All'))
         ]);
 
     }
