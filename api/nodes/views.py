@@ -7,8 +7,9 @@ from rest_framework.exceptions import PermissionDenied, ValidationError, NotFoun
 from framework.auth.core import Auth
 from website.models import Node, Pointer, User
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_404, waterbutler_url_for, has_multiple_admins
-from .serializers import NodeSerializer, NodeContributorsSerializer, NodePointersSerializer, NodeFilesSerializer
+from api.base.utils import get_object_or_404, waterbutler_url_for
+from .serializers import NodeSerializer, NodeContributorsSerializer, NodePointersSerializer, NodeFilesSerializer, \
+    NodeContributorDetailSerializer
 from .permissions import ContributorOrPublic, AdminOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, \
     ContributorDetailPermissions
 
@@ -136,8 +137,8 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in visible_contributors
             contributor.permission = node.get_permissions(contributor)[-1]
-            contributors.append(contributor)
             contributor.node_id = node._id
+            contributors.append(contributor)
         return contributors
 
     # overrides ListAPIView
@@ -161,7 +162,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
-    serializer_class = NodeContributorsSerializer
+    serializer_class = NodeContributorDetailSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -181,11 +182,10 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node = self.get_node()
         current_user = self.request.user
         auth = Auth(current_user)
-        if not has_multiple_admins(node) and node.has_permission(instance, 'admin'):
-            raise ValidationError("Must have at least one registered admin contributor")
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError("Must have at least one visible contributor")
-        node.remove_contributor(instance, auth)
+        if not node.remove_contributor(instance, auth):
+            raise ValidationError("Must have at least one registered admin contributor")
 
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
