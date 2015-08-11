@@ -121,7 +121,7 @@ profileDashboard.controller = function(params) {
                 var widget = this.widget;
                 var name = key;
                 if (key.name) {name = key.name; }
-                utils.removeFilter(vm,vm.tempData.contributerFilter, true);
+                //utils.removeFilter(vm,vm.tempData.contributerFilter, true); //uncomment to overwrite last filter
                 vm.tempData.contributerFilter = 'match:contributors.url:' + widgetUtils.getKeyFromValue(this.vm.tempData.guidsToNames, name);
                 utils.updateFilter(
                     vm,
@@ -131,7 +131,7 @@ profileDashboard.controller = function(params) {
                 widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
             }}
         },
-        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'appliedFilters'] //TODO give simple 'all' option
+        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'activeFilters'] //TODO give simple 'all' option
     };
 
     var projectLevelNames = ['projectsByTimes', 'projectsOverTime'];
@@ -173,7 +173,7 @@ profileDashboard.controller = function(params) {
             }
         },
         aggregation: profileDashboard.projectsByTimesAgg(),
-        thisWidgetUpdates: ['contributors', 'results', 'projectsByTimes', 'appliedFilters']
+        thisWidgetUpdates: ['contributors', 'results', 'projectsByTimes', 'activeFilters']
     };
 
         //var nodeType = {
@@ -192,9 +192,9 @@ profileDashboard.controller = function(params) {
     //    thisWidgetUpdates: ['Contributors', 'projectsByTimes', 'results']
     //};
 
-    var appliedFilters = {
-        id: 'appliedFilters',
-        title: 'Search and Filters',
+    var activeFilters = {
+        id: 'activeFilters',
+        title: 'Active Filters',
         size: ['.col-md-12'],
         row: 1,
         display: {
@@ -202,7 +202,7 @@ profileDashboard.controller = function(params) {
             displayWidget: filterAndSearchWidget.display
         },
         aggregation: null, //this displays no stats, so needs no aggregations
-        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'appliedFilters']
+        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'activeFilters']
     };
 
     var results = {
@@ -215,17 +215,17 @@ profileDashboard.controller = function(params) {
             displayWidget: ResultsWidget.display
         },
         aggregation: null, //this displays no stats, so needs no aggregations
-        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'appliedFilters']
+        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'activeFilters']
     };
 
     this.searchSetup = {
         elasticURL: '/api/v1/search/',
         user: ctx.userId,
         tempData: {guidsToNames : {}}, //collaborators require a second level of query to get URL to names mappings
-        widgets : [contributors, projectsByTimes, results, appliedFilters],
+        widgets : [contributors, projectsByTimes, results, activeFilters],
         rows: 3, //number of rows to draw
-        requiredFilters: ['match:contributors.url:' + ctx.userId], //forces us to only find  projects TODO this might not find components...
-        optionalFilters: ['match:_type:project', 'match:_type:component']
+        requiredFilters: ['match:contributors.url:' + ctx.userId + '=lock'],
+        optionalFilters: ['match:_type:project=lock', 'match:_type:component=lock']
     };
 };
 

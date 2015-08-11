@@ -24,8 +24,7 @@ var SearchWidget = {
      * @param {Object} controller object automatically passed in by mithril
      * @return {m.component object}  initialised searchWidget component
      */
-    view: function (ctrl, params) { //this should always be a component, and c3 should be wrapped!
-        //m('.pull-left', params.vm.dataLoaded() ? [] : m('.logo-spin.logo-sm', m('img[src=/static/img/logo_spin.png][alt=loader]'))),
+    view: function (ctrl, params) {
         var loaded = params.vm.dataLoaded() && params.widget.display.dataReady;
         return m('div',{}, loaded ? ctrl.drawChart(params.widget, params.vm, params.vm.data) : loadingIcon());
     },

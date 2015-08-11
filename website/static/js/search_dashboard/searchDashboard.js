@@ -58,6 +58,7 @@ searchDashboard.controller = function (params) {
     self.vm.aggregations = [];
     self.vm.widgetsToUpdate = [];
     self.vm.widgetIds = [];
+    self.vm.requestFlags = {};
     if (self.widgets){
         self.widgets.forEach(function(widget){
             self.vm.aggregations.push(widget.aggregation);

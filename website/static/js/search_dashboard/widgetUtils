@@ -107,10 +107,15 @@ widgetUtils.getGuidsToNamesMap = function(urls, widget, vm) {
 
     if (missingKeys.length > 0) { //if we have missing keys then we have to add to the map between url and name
         widget.display.dataReady(false);
+        if (vm.requestFlags.nameRequest) { //a request has already been scheduled...
+            return false;
+        }
+        vm.requestFlags.nameRequest = true; //flag that we are requesting data
         widgetUtils.mapGuidsToName(missingKeys).then(
             function (newGuids) {
+                vm.requestFlags.nameRequest = false; //flag that this request has finished
                 $.extend(vm.tempData.guidsToNames, newGuids);
-                widget.display.dataReady(true);
+                widget.display.dataReady(true); //TODO move widget out of here somehow, its too coupled
                 m.redraw(); //cool, now we have the data we need, so lets try creating this chart again...
                 //note that other charts will not update because we haven't signaled there update
             }

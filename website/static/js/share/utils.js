@@ -420,7 +420,8 @@ utils.queryFilter = function (query) {
  * @param {String} filterString A string representation of a filter dictionary
  */
 utils.parseFilter = function (filterString) {
-    var parts = filterString.split(':');
+    var filterParts = filterString.split('='); //remove lock qualifier if it exists
+    var parts = filterParts[0].split(':');
     var type = parts[0];
     var field = parts[1];
 
