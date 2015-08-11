@@ -29,7 +29,7 @@ def _url_val(val, obj, serializer, **kwargs):
         return val
 
 
-class HyperLinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
+class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
     # Returns a list with a url and an optional hash containing additional meta information
 
     def __init__(self, view_name=None, **kwargs):
