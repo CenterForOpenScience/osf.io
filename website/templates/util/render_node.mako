@@ -22,11 +22,11 @@
                     <span class="label label-info"><strong>Pending Registration</strong></span> |
                   % elif summary['is_retracted']:
                     <span class="label label-danger"><strong>Retracted</strong></span> |
-                  % elif summary['pending_retraction']:
+                  % elif summary['is_pending_retraction']:
                     <span class="label label-info"><strong>Pending Retraction</strong></span> |
                   % elif summary['embargo_end_date']:
                     <span class="label label-info"><strong>Embargoed</strong></span> |
-                  % elif summary['pending_embargo']:
+                  % elif summary['is_pending_embargo']:
                     <span class="label label-info"><strong>Pending Embargo</strong></span> |
                   % endif
                   % if summary['archiving']:

@@ -685,7 +685,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
         if self.registration_approval is None:
             if self.parent_node:
-                return self.parent_node.pending_registration
+                return self.parent_node.is_pending_registration
             return False
         return self.registration_approval.pending_approval
 
@@ -693,7 +693,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def is_registration_approved(self):
         if self.registration_approval is None:
             if self.parent_node:
-                return self.parent_node.is_registered
+                return self.parent_node.is_registration_approved
             return False
         return self.registration_approval.is_approved
 
@@ -706,10 +706,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.retraction.is_approved
 
     @property
-    def pending_retraction(self):
+    def is_pending_retraction(self):
         if self.retraction is None:
             if self.parent_node:
-                return self.parent_node.pending_retraction
+                return self.parent_node.is_pending_retraction
             return False
         return self.retraction.pending_approval
 
@@ -722,19 +722,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.embargo.embargo_end_date
 
     @property
-    def pending_embargo(self):
+    def is_pending_embargo(self):
         if self.embargo is None:
             if self.parent_node:
-                return self.parent_node.pending_embargo
+                return self.parent_node.is_pending_embargo
             return False
         return self.embargo.pending_approval
 
-    # FIXME(hrybacki): Need a more meaningful name
     @property
-    def embargo_pending_registration(self):
+    def is_pending_embargo_for_existing_registration(self):
+        """ Returns True if Node has an Embargo pending approval for an
+        existing registrations. This is used specifically to ensure
+        registrations pre-dating the Embargo feature do not get deleted if
+        their respective Embargo request is rejected.
+        """
         if self.embargo is None:
             if self.parent_node:
-                return self.parent_node.pending_registration
+                return self.parent_node.is_pending_embargo_for_existing_registration
             return False
         return self.embargo.pending_registration
 
@@ -2457,14 +2461,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         """
         if permissions == 'public' and not self.is_public:
             if self.is_registration:
-                if self.pending_embargo:
+                if self.is_pending_embargo:
                     raise NodeStateError("A registration with an unapproved embargo cannot be made public")
-                if self.embargo_end_date and not self.pending_embargo:
+                if self.embargo_end_date and not self.is_pending_embargo:
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:
-            if self.is_registration and not self.pending_embargo:
+            if self.is_registration and not self.is_pending_embargo:
                 raise NodeStateError("Public registrations must be retracted, not made private.")
             else:
                 self.is_public = False
@@ -2703,7 +2707,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         and associate it with the respective registration.
         """
 
-        if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.pending_embargo)):
+        if not self.is_registration or (not self.is_public and not (self.embargo_end_date or self.is_pending_embargo)):
             raise NodeStateError('Only public registrations or active embargoes may be retracted.')
 
         if self.root is not self:
@@ -3329,7 +3333,7 @@ class Retraction(EmailApprovableSanction):
             auth=Auth(self.initiated_by),
         )
         # Remove any embargoes associated with the registration
-        if parent_registration.embargo_end_date or parent_registration.pending_embargo:
+        if parent_registration.embargo_end_date or parent_registration.is_pending_embargo:
             parent_registration.embargo.state = self.REJECTED
             parent_registration.registered_from.add_log(
                 action=NodeLog.EMBARGO_CANCELLED,
