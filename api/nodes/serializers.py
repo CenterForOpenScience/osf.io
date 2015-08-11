@@ -216,7 +216,33 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     id = ser.CharField(read_only=True, source='_id')
 
     def update(self, instance, validated_data):
-        pass
+        auth = Auth(self.context['request'].user)
+        node = self.context['view'].get_node()
+        if 'permission' in validated_data:
+            self.set_contributor_permissions(node, validated_data['permission'], instance, auth)
+        try:
+            node.set_visible(instance, validated_data['bibliographic'], auth=auth, save=True)
+        except ValueError as e:
+            raise exceptions.ValidationError(e)
+
+    # checks to make sure unique admin is removing own admin privilege
+    def set_contributor_permissions(self, node, permission, contributor, auth):
+        permissions = self.get_permissions_list(permission)
+        if self.has_multiple_admins(node) and contributor is not auth.user:
+            node.set_permissions(contributor, permissions=permissions, auth=auth, save=True)
+        if permission == 'admin':
+            node.set_permissions(contributor, permissions=permissions, auth=auth, save=True)
+        else:
+            raise exceptions.ValidationError('{} is the only admin.'.format(contributor.username))
+
+    def has_multiple_admins(self, node):
+        has_admin = False
+        for contributor in node.contributors:
+            if node.has_permission(contributor, 'admin'):
+                if has_admin:
+                    return True
+                has_admin = True
+        return False
 
 
 class NodePointersSerializer(JSONAPISerializer):
