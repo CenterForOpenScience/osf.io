@@ -2941,10 +2941,7 @@ class Sanction(StoredObject):
     state = fields.StringField(default='unapproved')
 
     def __repr__(self):
-        return '<Sanction(end_date={0}) with _id {1}>'.format(
-            self.end_date,
-            self._id
-        )
+        return '<Sanction(end_date={self.end_date}) with _id {self._id}>'.format(self=self)
 
     @property
     def pending_approval(self):
@@ -3074,7 +3071,7 @@ class EmailApprovableSanction(Sanction):
 
     def _send_approval_request_email(self, user, template, context):
         mails.send_mail(
-            self.initiated_by,
+            self.initiated_by.username,
             template,
             user=user,
             **context
