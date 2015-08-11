@@ -605,6 +605,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     comment_level = fields.StringField(default='private')
 
     mailing_enabled = fields.BooleanField(default=False, index=True)
+    mailing_updated = fields.BooleanField(default=False, index=True)
     mailing_unsubs = fields.ForeignField('user', list=True)
 
     wiki_pages_current = fields.DictionaryField()
@@ -1073,6 +1074,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         if first_save and not (getattr(self, 'parent', True) or self.is_registration):
             self.mailing_enabled = True
+            self.mailing_updated = True
 
         is_original = not self.is_registration and not self.is_fork
         if 'suppress_log' in kwargs.keys():
@@ -1184,6 +1186,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.is_registration = False
         new.piwik_site_id = None
         new.mailing_enabled = False if new.is_folder else top_level
+        new.mailing_updated = new.mailing_enabled
         new.mailing_unsubs = []
 
         # If that title hasn't been changed, apply the default prefix (once)
@@ -1510,6 +1513,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         original_title = self.title
         self.title = title
+        self.mailing_updated = True
         mailing_list.celery_update_title(self._id, title)
         self.add_log(
             action=NodeLog.EDITED_TITLE,
@@ -1586,6 +1590,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         if self.mailing_enabled:
             self.mailing_enabled = False
+            self.mailing_updated = True
             mailing_list.celery_delete_list(self._id)
 
         #if this is a folder, remove all the folders that this is pointing at.
@@ -1684,6 +1689,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.creator = user
         forked.piwik_site_id = None
         forked.mailing_enabled = False if forked.is_folder else top_level
+        forked.mailing_updated = forked.mailing_enabled
         forked.mailing_unsubs = []
 
         # Forks default to private status
@@ -2149,6 +2155,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if message:
                 status.push_status_message(message, kind='info', trust=True)
 
+        self.mailing_updated = True
+
         if log:
             self.add_log(
                 action=NodeLog.CONTRIB_REMOVED,
@@ -2325,6 +2333,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 user.recently_added.insert(0, contrib_to_add)
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
+
+            self.mailing_updated = True
 
             if not contrib_to_add.is_active:
                 self.mailing_unsubs.append(contrib_to_add)

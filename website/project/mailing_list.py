@@ -287,3 +287,47 @@ def send_message(node_id, node_title, message):
               'html': '<html>{}</html>'.format(message['text'])})
     if res.status_code != 200:
         raise HTTPError(400)
+
+
+###############################################################################
+# Full Update
+###############################################################################
+
+
+@require_project_mailing
+def full_update(node):
+    """ Fully updates the mailing list of a node to match its current status
+    :param node: The node whose mailing list is being updated
+    :return bool: Whether or not the update succeeded
+    """
+
+    # Reload the node to ensure that it is as current as possible
+    node.reload()
+
+    try:
+        info, members = get_list(node._id)
+
+        if node.mailing_enabled:
+
+            if 'list' in info.keys():
+                info = info['list']
+                members = [member['address'] for member in members['items']]
+
+                if info['name'] != ' Mailing List'.format(node.title):
+                    update_title(node._id, node.title)
+
+                if members != node.mailing_params['contributors']:
+                    match_members(**node.mailing_params)
+
+            else:
+                create_list(title=node.title, **node.mailing_params)
+
+        else:
+
+            if 'list' in info.keys():
+                delete_list(node._id)
+
+    except (HTTPError, requests.ConnectionError):
+        return False
+    else:
+        return True
