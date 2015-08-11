@@ -290,7 +290,7 @@ def serialize_log(node_log, auth=None, anonymous=False):
         else {'fullname': node_log.foreign_user},
         'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
         'action': node_log.action,
-        'params': sanitize.safe_unescape_html(node_log.params),
+        'params': sanitize.unescape_entities(node_log.params),
         'date': utils.iso8601format(node_log.date),
         'node': node_log.node.serialize(auth) if node_log.node else None,
         'anonymous': anonymous

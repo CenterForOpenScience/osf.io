@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import json
 import uuid
 import httplib
 import functools
@@ -453,7 +452,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         },
         # Note: must be called after get_or_start_render. This is really only for github
         'size': size,
-        'extra': json.dumps(getattr(guid_file, 'extra', {})),
+        'extra': getattr(guid_file, 'extra', {}),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
         'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),

@@ -715,7 +715,7 @@ class User(GuidStoredObject, AddonModelMixin):
                         mail=mails.REMOVED_EMAIL,
                         user=self,
                         removed_email=email,
-                        security_addr='alternative email address ({})'.format(email))
+                        security_addr='alternate email address ({})'.format(email))
         mails.send_mail(to_addr=email,
                         mail=mails.REMOVED_EMAIL,
                         user=self,

@@ -114,3 +114,8 @@
     word-break: break-all;
     word-break: break-word; /* Non standard for webkit*/
 }
+
+/* Disable word-break in project addon-settings table */
+.table-addon-terms td:first-child {
+    word-break: normal;
+}
