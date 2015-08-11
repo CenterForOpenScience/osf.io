@@ -1046,16 +1046,190 @@ class TestContributorDetail(ApiTestCase):
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
-#
-#
-# class TestNodeContributorUpdate(ApiTestCase):
-#     def setUp(self):
-#         super(TestNodeContributorUpdate, self).setUp()
-#
-#
-# class TestNodeContributorDelete(ApiTestCase):
-#     def setUp(self):
-#         super(TestNodeContributorDelete, self).setUp()
+
+
+class TestNodeContributorUpdate(ApiTestCase):
+    def setUp(self):
+        super(TestNodeContributorUpdate, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+
+        self.project = ProjectFactory(creator=self.user)
+        self.url_creator = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
+        self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_two._id)
+        self.project.add_contributor(self.user_two, permissions=['read', 'write'], visible=True, save=True)
+        self.project.reload()
+
+    def test_change_contributor_permissions(self):
+        data = {
+            'id': self.user_two._id,
+            'permission': 'admin',
+            'bibliographic': True
+        }
+        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user_two), ['read', 'write', 'admin'])
+
+        data = {
+            'id': self.user_two._id,
+            'permission': 'write',
+            'bibliographic': True
+        }
+        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user_two), ['read', 'write'])
+
+        data = {
+            'id': self.user_two._id,
+            'permission': 'read',
+            'bibliographic': True
+        }
+        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user_two), ['read'])
+
+    def test_change_contributor_bibliographic(self):
+        data = {
+            'id': self.user_two._id,
+            'bibliographic': False
+        }
+        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_false(self.project.get_visible(self.user_two))
+
+        data = {
+            'id': self.user_two._id,
+            'bibliographic': True
+        }
+        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_true(self.project.get_visible(self.user_two))
+
+    def test_change_contributor_permission_and_bibliographic(self):
+        data = {
+            'id': self.user_two._id,
+            'permission': 'read',
+            'bibliographic': False
+        }
+        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user_two), ['read'])
+        assert_false(self.project.get_visible(self.user_two))
+
+    def test_not_change_contributor(self):
+        data = {
+            'id': self.user_two._id,
+            'bibliographic': True
+        }
+        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user_two), ['read', 'write'])
+        assert_true(self.project.get_visible(self.user_two))
+
+    def test_invalid_change_inputs_contributor(self):
+        data = {
+            'id': self.user_two._id,
+            'permission': 'invalid',
+            'bibliographic': 'invalid'
+        }
+        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(self.project.get_permissions(self.user_two), ['read', 'write'])
+        assert_true(self.project.get_visible(self.user_two))
+
+    def test_change_admin_self_with_other_admin(self):
+        self.project.add_permission(self.user_two, 'admin', save=True)
+        self.project.reload()
+
+        data = {
+            'id': self.user._id,
+            'permission': 'write',
+            'bibliographic': True
+        }
+        res = self.app.put_json(self.url_creator, data, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
+
+    def test_change_admin_self_without_other_admin(self):
+        data = {
+            'id': self.user._id,
+            'permission': 'write',
+            'bibliographic': True
+        }
+        res = self.app.put_json(self.url_creator, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user), ['read', 'write', 'admin'])
+
+    def test_remove_all_bibliographic_statuses_contributors(self):
+        self.project.set_visible(self.user_two, False)
+        self.project.reload()
+        
+        data = {
+            'id': self.user._id,
+            'bibliographic': False
+        }
+        res = self.app.put_json(self.url_creator, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.project.reload()
+        assert_true(self.project.get_visible(self.user))
+
+    def test_change_contributor_non_admin_auth(self):
+        data = {
+            'id': self.user_two._id,
+            'permission': 'read',
+            'bibliographic': False
+        }
+        res = self.app.put_json(self.url_contributor, data, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user_two), ['read', 'write'])
+        assert_true(self.project.get_visible(self.user_two))
+
+    def test_change_contributor_not_logged_in(self):
+        data = {
+            'id': self.user_two._id,
+            'permission': 'read',
+            'bibliographic': False
+        }
+        res = self.app.put_json(self.url_contributor, data, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_equal(self.project.get_permissions(self.user_two), ['read', 'write'])
+        assert_true(self.project.get_visible(self.user_two))
+
+
+class TestNodeContributorDelete(ApiTestCase):
+    def setUp(self):
+        super(TestNodeContributorDelete, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_contributor(self.user_two, permissions=['read', 'write'], visible=True, save=True)
 
 
 class TestNodeRegistrationList(ApiTestCase):
