@@ -89,12 +89,6 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
-    logger.info('COPY')
-    logger.info('SOURCE: {} | DEST: {}'.format(repr(source), repr(destination)))
-    logger.info('KWARGS: {}'.format(kwargs))
-
-    # import ipdb; ipdb.set_trace()
-
     dest_node = destination.node
     node_addon = kwargs['node_addon']
     file_name = source.name
@@ -108,9 +102,6 @@ def osfstorage_copy_hook(source, destination, name=None, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
-    logger.info('MOVE')
-    logger.info('SOURCE: {} | DEST: {}'.format(repr(source), repr(destination)))
-    logger.info('KWARGS: {}'.format(kwargs))
     dest_node = destination.node
     node_addon = kwargs['node_addon']
     file_name = source.name
@@ -154,9 +145,6 @@ def osfstorage_get_children(file_node, **kwargs):
 @must_not_be_registration
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
-    logger.info('CREATE')
-    logger.info('PAYLOAD: {}'.format(payload))
-    logger.info('KWARGS: {}'.format(kwargs))
     parent = file_node  # Just for clarity
     name = payload.get('name')
     user = User.load(payload.get('user'))
