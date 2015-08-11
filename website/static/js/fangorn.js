@@ -1170,6 +1170,10 @@ function _fangornResolveRows(item) {
         item.css = 'fangorn-selected';
     }
 
+    if(!item.data.permissions.view){
+        item.css += ' tb-private-row';
+    }
+
     if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
         return uploadRowTemplate.call(tb, item);
     }

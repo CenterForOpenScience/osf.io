@@ -83,6 +83,9 @@ $(document).ready(function () {
                     if(tb.isMultiselected(item.id)){
                         item.css = 'fangorn-selected';
                     }
+                    if(!item.data.permissions.view){
+                        item.css += ' tb-private-row';
+                    }
                     var defaultColumns = [
                                 {
                                 data: 'name',
