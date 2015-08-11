@@ -9,7 +9,7 @@ from website.models import Node, Pointer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from .serializers import NodeSerializer, NodeContributorsSerializer, NodePointersSerializer, NodeFilesSerializer
-from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from .permissions import ContributorOrPublic, AdminOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
 class NodeMixin(object):
@@ -123,7 +123,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        AdminOrPublic,
     )
 
     serializer_class = NodeContributorsSerializer

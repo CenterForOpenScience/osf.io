@@ -189,16 +189,17 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         request = self.context['request']
-        user = request.user
-        auth = Auth(user)
+        current_user = request.user
+        auth = Auth(current_user)
         node = self.context['view'].get_node()
-        get_object_or_404(User, validated_data['_id'])
+        user = get_object_or_404(User, validated_data['_id'])
         bibliographic = validated_data['bibliographic'] if validated_data['bibliographic'] else True
         permissions = self.get_permissions_list(validated_data['permission'])
-        node.add_contributor(user, auth=auth, visible=bibliographic, permissions=permissions, save=True)
-        user.permissions = permissions
+        node.add_contributor(contributor=user, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+        node.reload()
+        user.permission = node.get_permissions(user)[-1]
         user.bibliographic = node.get_visible(user)
-        return User
+        return user
 
     @staticmethod
     def get_permissions_list(permission):
