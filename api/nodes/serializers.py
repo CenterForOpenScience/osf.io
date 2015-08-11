@@ -188,7 +188,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         user = get_object_or_404(User, validated_data['_id'])
         # Node object checks for contributor existence but can still change permissions anyway
         if user in node.contributors:
-            raise exceptions.ValidationError('{} is already a validated contributor')
+            raise exceptions.ValidationError('{} is already a validated contributor'.format(user.username))
 
         bibliographic = validated_data['bibliographic']
         permissions = self.get_permissions_list(validated_data['permission']) \
