@@ -1121,7 +1121,7 @@ function _fangornTitleColumn(item, col) {
             }
         }, item.data.name);
     }
-    if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
+    if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
                 item.data.name);
     }
