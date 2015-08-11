@@ -98,6 +98,23 @@ def delete_list(node_id):
 
 
 @require_project_mailing
+def update_title(node_id, node_title):
+    """ Updates the title of a mailing list to match the list's project
+    :param node_id: The id of the node in question
+    :param node_title: The new title
+    """
+    res = requests.put(
+        'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
+        auth=('api', settings.MAILGUN_API_KEY),
+        data={
+            'name': '{} Mailing List'.format(node_title)
+        }
+    )
+    if res.status_code != 200:
+        raise HTTPError(400)
+
+
+@require_project_mailing
 def update_members(node_id, members):
     """ Adds/updates members of a mailing list on Mailgun
     :param node_id: The id of the node in question
@@ -130,57 +147,6 @@ def remove_member(node_id, email):
 
 
 @require_project_mailing
-def update_subscription(node_id, email, subscription):
-    """ Updates the subscription status of a member on Mailgun
-    :param node_id: The id of the node in question
-    :param email: The email of the member that needs to be updated
-    :param subscription: The new subscription status
-    """
-    res = requests.put(
-        'https://api.mailgun.net/v3/lists/{0}/members/{1}'.format(address(node_id), email),
-        auth=('api', settings.MAILGUN_API_KEY),
-        data={
-            'subscribed': subscription,
-        }
-    )
-    if res.status_code != 200:
-        raise HTTPError(400)
-
-
-###############################################################################
-# Celery Tasks
-###############################################################################
-
-
-@require_project_mailing
-@queued_task
-@app.task
-def celery_create_list(**params):
-    """ The celery version of create_list
-    """
-    create_list(**params)
-
-    # TODO decide if this should send an email (only would happen on project creation)
-
-    # send_message(node_id, node_title, {
-    #     'subject': 'Mailing List Created for {}'.format(node_title),
-    #     'text': 'A mailing list has been created/enabled for the project {}.'.format(node_title)
-    # })
-
-
-@require_project_mailing
-@queued_task
-@app.task
-def celery_delete_list(node_id):
-    """ The celery version of delete_list
-    :param node_id: The id of the node in question
-    """
-    delete_list(node_id)
-
-
-@require_project_mailing
-@queued_task
-@app.task
 def match_members(node_id, url, contributors, unsubs):
     """ Matches the members of the list on Mailgun with the local one
     :param node_id: The id of the node in question
@@ -224,27 +190,6 @@ def match_members(node_id, url, contributors, unsubs):
 
 
 @require_project_mailing
-@queued_task
-@app.task
-def update_title(node_id, node_title):
-    """ Updates the title of a mailing list to match the list's project
-    :param node_id: The id of the node in question
-    :param node_title: The new title
-    """
-    res = requests.put(
-        'https://api.mailgun.net/v3/lists/{}'.format(address(node_id)),
-        auth=('api', settings.MAILGUN_API_KEY),
-        data={
-            'name': '{} Mailing List'.format(node_title)
-        }
-    )
-    if res.status_code != 200:
-        raise HTTPError(400)
-
-
-@require_project_mailing
-@queued_task
-@app.task
 def update_email(node_id, old_email, new_email):
     """ Updates the email of a mailing list's member on Mailgun
     :param node_id: The id of the node in question
@@ -260,6 +205,69 @@ def update_email(node_id, old_email, new_email):
     )
     if res.status_code != 200:
         raise HTTPError(400)
+
+
+@require_project_mailing
+def update_subscription(node_id, email, subscription):
+    """ Updates the subscription status of a member on Mailgun
+    :param node_id: The id of the node in question
+    :param email: The email of the member that needs to be updated
+    :param subscription: The new subscription status
+    """
+    res = requests.put(
+        'https://api.mailgun.net/v3/lists/{0}/members/{1}'.format(address(node_id), email),
+        auth=('api', settings.MAILGUN_API_KEY),
+        data={
+            'subscribed': subscription,
+        }
+    )
+    if res.status_code != 200:
+        raise HTTPError(400)
+
+
+###############################################################################
+# Celery Tasks
+###############################################################################
+
+# Celery versions of all functions that might need to be called with Celery.
+# These functions are only necessary while there is no way to either use Celery
+# or not on the same function. Note that this functionality changing will break
+# many of the tests due to mocking, so change with caution.
+
+
+@require_project_mailing
+@queued_task
+@app.task
+def celery_create_list(*args, **kwargs):
+    create_list(*args, **kwargs)
+
+
+@require_project_mailing
+@queued_task
+@app.task
+def celery_delete_list(*args, **kwargs):
+    delete_list(*args, **kwargs)
+
+
+@require_project_mailing
+@queued_task
+@app.task
+def celery_match_members(*args, **kwargs):
+    match_members(*args, **kwargs)
+
+
+@require_project_mailing
+@queued_task
+@app.task
+def celery_update_title(*args, **kwargs):
+    update_title(*args, **kwargs)
+
+
+@require_project_mailing
+@queued_task
+@app.task
+def celery_update_email(*args, **kwargs):
+    update_email(*args, **kwargs)
 
 
 @queued_task

@@ -1087,7 +1087,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if first_save:
                 mailing_list.celery_create_list(title=self.title, **self.mailing_params)
             elif 'contributors' in saved_fields:
-                mailing_list.match_members(**self.mailing_params)
+                mailing_list.celery_match_members(**self.mailing_params)
 
         if first_save and is_original and not suppress_log:
             # TODO: This logic also exists in self.use_as_template()
@@ -1510,7 +1510,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         original_title = self.title
         self.title = title
-        mailing_list.update_title(self._id, title)
+        mailing_list.celery_update_title(self._id, title)
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
