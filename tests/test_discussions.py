@@ -175,7 +175,7 @@ class TestDiscussionsOnProjectActions(OsfTestCase):
         self.creator = AuthUserFactory()
         self.project = ProjectFactory(creator=self.creator, parent=None)
 
-    @mock.patch('website.project.model.mailing_list.match_members')
+    @mock.patch('website.project.model.mailing_list.celery_match_members')
     def test_add_single_contributor_updates(self, mock_match_members):
         user = UserFactory()
 
@@ -183,7 +183,7 @@ class TestDiscussionsOnProjectActions(OsfTestCase):
 
         mock_match_members.assert_called_with(**self.project.mailing_params)
 
-    @mock.patch('website.project.model.mailing_list.match_members')
+    @mock.patch('website.project.model.mailing_list.celery_match_members')
     def test_add_many_contributors_updates_only_once(self, mock_match_members):
         users = [UserFactory() for i in range(10)]
         emails = {user.email for user in users + [self.creator]}
@@ -194,7 +194,7 @@ class TestDiscussionsOnProjectActions(OsfTestCase):
 
         mock_match_members.assert_called_once_with(**self.project.mailing_params)
 
-    @mock.patch('website.project.model.mailing_list.match_members')
+    @mock.patch('website.project.model.mailing_list.celery_match_members')
     def test_add_contributor_then_remove_creator(self, mock_match_members):
         user = UserFactory()
 
@@ -222,7 +222,7 @@ class TestDiscussionsOnUserActions(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, parent=None)
 
-    @mock.patch('website.profile.views.mailing_list.update_email')
+    @mock.patch('website.profile.views.mailing_list.celery_update_email')
     def test_change_email(self, mock_update_email):
         new_email = 'new@newmail.new'
         self.user.emails.append(new_email)
@@ -240,7 +240,7 @@ class TestDiscussionsOnUserActions(OsfTestCase):
 
         mock_update_email.assert_called_with(self.project._id, self.user.email, new_email)
 
-    @mock.patch('website.profile.views.mailing_list.update_email')
+    @mock.patch('website.profile.views.mailing_list.celery_update_email')
     def test_change_email_on_project_without_mailing_enabled(self, mock_update_email):
         self.project.mailing_enabled = False
         self.project.save()
@@ -261,7 +261,7 @@ class TestDiscussionsOnUserActions(OsfTestCase):
 
         mock_update_email.assert_not_called()
 
-    @mock.patch('website.project.model.mailing_list.match_members')
+    @mock.patch('website.project.model.mailing_list.celery_match_members')
     def test_unclaimed_user_is_unsubscribed(self, mock_match_members):
         unreg = self.project.add_unregistered_contributor('Billy', 'billy@gmail.com', Auth(self.user))
         self.project.reload()
