@@ -10,7 +10,7 @@ var Stats = {};
 
 function donutGraph(data, vm) {
     data.charts.shareDonutGraph.onclick = function (d) {
-        utils.updateFilter(vm, 'match:shareProperties.source:' + d.name, true);
+        utils.updateFilter(vm, 'match:shareProperties.source:' + d.name);
     };
     return c3.generate({
         bindto: '#shareDonutGraph',
