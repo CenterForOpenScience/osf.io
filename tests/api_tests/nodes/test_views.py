@@ -1380,9 +1380,6 @@ class TestNodeLogList(ApiTestCase):
 
     def test_log_create_on_public_project(self):
         datetime.datetime.strptime('2015-07-28 21:06:34.965114','%Y-%m-%d %H:%M:%S.%f')
-        date_str = "2008-11-10 17:53:59"
-        dt_obj = datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-        print repr(dt_obj)
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         (len(res.json['data']), 1)
@@ -1411,55 +1408,34 @@ class TestNodeLogList(ApiTestCase):
     def test_log_add_contributor_on_public_project(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        (len(res.json['data']), 1)
-        # 1 project create log, 1 add contributor log, then 5 generated logs
-        assert_equal(res.json['links']['first'], None)
-        assert_equal(res.json['links']['last'], None)
-        assert_equal(res.json['links']['prev'], None)
-        assert_equal(res.json['links']['next'], None)
-        assert_equal(res.json['links']['meta']['total'], 1)
-        assert_equal(res.json['links']['meta']['per_page'], 10)
-
-    def test_get_logs_defaults_to_ten(self):
-        res = self.app.get(self.public_url)
         (len(res.json['data']), 5)
-        # 1 project create log, 1 add contributor log, then 5 generated logs
-        assert_equal(res.json['links']['meta']['total'], 1)
-        assert_equal(res.json['links']['meta']['total'], 1)
-        assert_equal(res.json['links']['meta']['per_page'], 10)
-
-    def test_get_more_logs(self):
-        res = self.app.get(self.public_url)
-        (len(res.json['links']), 12)
-        #1 project create log, 1 add contributor log, then 12 generated logs
-        assert_equal(res.json['links']['meta']['total'], 1)
-        assert_equal(res.json['links']['meta']['per_page'], 10)
 
     def test_user_can_not_access_logs_on_private_project(self):
         self.project = ProjectFactory()
         self.project.add_contributor(self.user_two, permissions=['read'])
         self.project.save()
-        res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
+        res = self.app.get(self.public_url, auth=self.basic_auth_two, expect_errors=True)
         self.project.reload()
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 200)
         self.public_project.permissions = ['read']
 
     def test_private_project_in_logs(self):
-        res = self.app.get(self.private_url, auth=self.basic_auth, expect_errors=True)
-        self.private_project.reload()
-        assert_equal(res.status_code, 200)
-        self.public_project.permissions = ['read', 'write']
+        self.project = ProjectFactory()
+        res = self.app.get(self.private_url, expect_errors=True)
+        self.project.add_contributor(self.user, permissions=['read', 'write'])
+        self.user_two.reload()
+        assert_equal(res.status_code, 403)
 
     def test_private_log_in_non_contributor(self):
+        self.project = ProjectFactory()
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
-        self.private_project.reload()
+        self.project.add_contributor(self.user, permissions=['read'])
         assert_equal(res.status_code, 403)
         self.private_project.permissions = ['read']
 
     def test_private_log_in_read_only_contributor(self):
+        self.project = ProjectFactory()
         self.public_project.add_contributor(self.user_two, permissions=['read'])
         self.public_project.save()
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
-        self.private_project.reload()
         assert_equal(res.status_code, 403)
-        self.private_project.permissions = ['read']
