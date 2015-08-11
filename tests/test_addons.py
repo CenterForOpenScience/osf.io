@@ -217,9 +217,8 @@ class TestAddonLogs(OsfTestCase):
             'signature': signature,
         }
 
-    @mock.patch('website.notifications.events.model.FileAdded.form_message')
     @mock.patch('website.notifications.events.model.FileAdded.perform')
-    def test_add_log(self, mock_perform, mock_form_message):
+    def test_add_log(self, mock_perform):
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path})
@@ -227,8 +226,8 @@ class TestAddonLogs(OsfTestCase):
         self.test_app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert_equal(len(self.node.logs), nlogs + 1)
-        # Mocking form_message and perform so that the payload need not be exact.
-        assert_true(mock_form_message.called, "form_message not called")
+        # # Mocking form_message and perform so that the payload need not be exact.
+        # assert_true(mock_form_message.called, "form_message not called")
         assert_true(mock_perform.called, "perform not called")
 
     def test_add_log_missing_args(self):

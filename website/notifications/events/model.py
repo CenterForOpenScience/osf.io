@@ -30,7 +30,7 @@ class Event(object):
     - abstract methods set methods that must be defined by subclasses.
 
     To use this interface you must use the class as a Super (inherited).
-     - Implement the form_ methods in the subclass
+     - Implement property methods in subclasses
      - All subclasses must be in this file for the meta class to list them
      - Name the subclasses you will be calling as such:
       - event (the type of event from _SUBSCRIPTIONS_AVAILABLE or specific cases)
@@ -67,11 +67,11 @@ class Event(object):
 
     @property
     def text_message(self):
-        return self._text_message
+        raise NotImplementedError
 
     @property
     def html_message(self):
-        return self._html_message
+        raise NotImplementedError
 
     @property
     def url(self):
@@ -97,18 +97,20 @@ class FileEvent(Event):
     @property
     def html_message(self):
         """Most basic html message"""
+        f_type, action = self.action.split('_')
         return '{action} {f_type} "<b>{name}</b>".'.format(
-            action=tuple(self.action.split("_"))[1],
-            f_type=tuple(self.action.split("_"))[0],
+            action=action,
+            f_type=f_type,
             name=self.payload['metadata']['materialized'].lstrip('/')
         )
 
     @property
     def text_message(self):
-        """Most basic message without html tags."""
+        """Most basic message without html tags. For future use"""
+        f_type, action = self.action.split('_')
         return '{action} {f_type} "{name}".'.format(
-            action=tuple(self.action.split("_"))[1],
-            f_type=tuple(self.action.split("_"))[0],
+            action=action,
+            f_type=f_type,
             name=self.payload['metadata']['materialized'].lstrip('/')
         )
 
@@ -266,9 +268,9 @@ class AddonFileMoved(ComplexFileEvent):
             # For users that don't have individual file subscription but has permission on the new node
             warn_message = self.html_message + ' Your component-level subscription was not transferred.'
             # For users without permission on the new node
-            remove_message = self.html_message + ' Your subscription has been removed for the folder,' \
-                                                 ' or a file within,' \
-                                                 ' due to insufficient permissions in the new component.'
+            remove_message = ('{} Your subscription has been removed for the folder,'
+                              ' or a file within,'
+                              ' due to insufficient permissions in the new component.').format(self.html_message)
 
         # Move the document from one subscription to another because the old one isn't needed
         utils.move_subscription(rm_users, self.event, self.source_node, self.event, self.node)
@@ -325,7 +327,7 @@ class AddonFileCopied(ComplexFileEvent):
     """
     def perform(self):
         """Warns people that they won't have a subscription to the new copy of the file."""
-        remove_message = self.html_message + ' This is due to insufficient permissions in the new component.'
+        remove_message = self.html_message + ' You do not have permission in the new component.'
         if self.node == self.source_node:
             super(AddonFileCopied, self).perform()
             return
@@ -348,13 +350,3 @@ class AddonFileCopied(ComplexFileEvent):
                 emails.store_emails(rm_users[notification], notification, 'file_updated', self.user, self.source_node,
                                     self.timestamp, message=remove_message,
                                     gravatar_url=self.gravatar_url, url=self.source_url.url)
-
-    @property
-    def html_message(self):
-        message = super(AddonFileCopied, self).html_message
-        return message + ' You are not subscribed to the new file.'
-
-    @property
-    def text_message(self):
-        message = super(AddonFileCopied, self).text_message
-        return message + ' You are not subscribed to the new file.'

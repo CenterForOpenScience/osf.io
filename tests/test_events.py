@@ -11,6 +11,37 @@ from tests import factories
 from tests.base import OsfTestCase
 
 
+class TestEventNotImplemented(OsfTestCase):
+    """
+    Test non-implemented errors
+    """
+    class NotImplemented(Event):
+        pass
+
+    def setUp(self):
+        super(TestEventNotImplemented, self).setUp()
+        self.user = factories.UserFactory()
+        self.auth = Auth(user=self.user)
+        self.node = factories.ProjectFactory(creator=self.user)
+        self.event = Event.parse_event(self.user, self.node, 'not_implemented')
+
+    @raises(NotImplementedError)
+    def test_text(self):
+        text = self.event.text_message
+
+    @raises(NotImplementedError)
+    def test_html(self):
+        html = self.event.html_message
+
+    @raises(NotImplementedError)
+    def test_url(self):
+        url = self.event.url
+
+    @raises(NotImplementedError)
+    def test_event(self):
+        event = self.event.event
+
+
 class TestListOfFiles(OsfTestCase):
     """
     List files given a list
@@ -150,6 +181,7 @@ class TestFileAdded(OsfTestCase):
         assert_equal('{}_file_updated'.format(wb_path), self.event.event)
         assert_equal('added file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
         assert_equal('added file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
+        print self.event.text_message
 
     @mock.patch('website.notifications.emails.notify')
     def test_file_added(self, mock_notify):
@@ -220,9 +252,9 @@ class TestFolderCreated(OsfTestCase):
         pass
 
 
-class TestFileRenamed(OsfTestCase):
+class TestFolderFileRenamed(OsfTestCase):
     def setUp(self):
-        super(TestFileRenamed, self).setUp()
+        super(TestFolderFileRenamed, self).setUp()
         self.user_1 = factories.AuthUserFactory()
         self.auth = Auth(user=self.user_1)
         self.user_2 = factories.AuthUserFactory()
@@ -373,6 +405,83 @@ class TestFileMoved(OsfTestCase):
 
     def tearDown(self):
         pass
+
+
+class TestFileCopied(OsfTestCase):
+    """Test the copying of files"""
+    def setUp(self):
+        super(TestFileCopied, self).setUp()
+        self.user_1 = factories.AuthUserFactory()
+        self.auth = Auth(user=self.user_1)
+        self.user_2 = factories.AuthUserFactory()
+        self.user_3 = factories.AuthUserFactory()
+        self.user_4 = factories.AuthUserFactory()
+        self.project = factories.ProjectFactory(creator=self.user_1)
+        self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
+        # Payload
+        file_copied_payload = file_copy_payload(self.private_node, self.project)
+        self.event = Event.parse_event(self.user_2, self.private_node, 'addon_file_copied',
+                                       payload=file_copied_payload)
+        # Subscriptions
+        # for parent node
+        self.sub = factories.NotificationSubscriptionFactory(
+            _id=self.project._id + '_file_updated',
+            owner=self.project,
+            event_name='file_updated'
+        )
+        self.sub.save()
+        # for private node
+        self.private_sub = factories.NotificationSubscriptionFactory(
+            _id=self.private_node._id + '_file_updated',
+            owner=self.private_node,
+            event_name='file_updated'
+        )
+        self.private_sub.save()
+        # for file subscription
+        self.file_sub = factories.NotificationSubscriptionFactory(
+            _id='{pid}_{wbid}_file_updated'.format(
+                pid=self.project._id,
+                wbid=self.event.waterbutler_id
+            ),
+            owner=self.project,
+            event_name='xyz42_file_updated'
+        )
+        self.file_sub.save()
+
+    def test_info_correct(self):
+        """Move Event: Ensures data is correctly formatted"""
+        assert_equal('{}_file_updated'.format(wb_path), self.event.event)
+        assert_equal(('copied file "<b>One/Paper13.txt</b>" from OSF Storage'
+                      ' in Consolidate to "<b>Two/Paper13.txt</b>" in OSF'
+                      ' Storage in Consolidate.'), self.event.html_message)
+        assert_equal(('copied file "One/Paper13.txt" from OSF Storage'
+                      ' in Consolidate to "Two/Paper13.txt" in OSF'
+                      ' Storage in Consolidate.'), self.event.text_message)
+
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_copied_one_of_each(self, mock_store):
+        """Copy Event: Tests that store_emails is called 2 times, two with permissions, one without"""
+        self.sub.email_transactional.append(self.user_1)
+        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.project.save()
+        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.save()
+        self.sub.email_digest.append(self.user_3)
+        self.sub.save()
+        self.project.add_contributor(self.user_4, permissions=['write', 'read'], auth=self.auth)
+        self.project.save()
+        self.file_sub.email_digest.append(self.user_4)
+        self.file_sub.save()
+        self.event.perform()
+        assert_equal(2, mock_store.call_count)
+
+    @mock.patch('website.notifications.emails.store_emails')
+    def test_user_performing_action_no_email(self, mock_store):
+        """Move Event: Makes sure user who performed the action is not included in the notifications"""
+        self.sub.email_digest.append(self.user_2)
+        self.sub.save()
+        self.event.perform()
+        assert_equal(0, mock_store.call_count)
 
 
 class TestCategorizeUsers(OsfTestCase):
@@ -565,7 +674,7 @@ def file_copy_payload(new_node, old_node):
             (u'modified', None),
             (u'name', u'Paper13.txt'),
             (u'nid', u'nhgts'),
-            (u'path', u'/558ac45da24f714eff336d59'),
+            (u'path', wb_path),
             (u'provider', u'osfstorage'),
             (u'size', 2008),
             ('url', '/project/nhgts/files/osfstorage/558ac45da24f714eff336d59/'),
