@@ -83,7 +83,7 @@ var Provider = {
         var checked = (vm.optionalFilters.concat(vm.requiredFilters).indexOf('match:shareProperties.source:' + provider.short_name) > -1) ? 'in-filter' : '';
 
         return m('li',
-            m('.provider-filter.break-word', {
+            m('a.provider-filter.break-word', {
                 'class': checked,
                 onclick: function(cb){
                     if (checked === 'in-filter') {

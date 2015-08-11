@@ -183,7 +183,7 @@ var Subject = {
     view: function(ctrl, params) {
         var subject = params.subject;
         var vm = params.vm;
-        return m('span', m('.badge.pointer', {onclick: function(){
+        return m('span', m('a.badge.pointer', {href: '#', onclick: function(){
                 utils.updateFilter(vm, 'match:subjects:"' + subject + '"', true);
             }}, $.truncate(subject, {length: 50}), ' '
         ));

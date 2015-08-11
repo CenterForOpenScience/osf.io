@@ -81,9 +81,15 @@
 .provider-filter {
   background: #f5f5f5;
   margin: 4px 0;
-  padding: 9px 8px;
   border-radius: 4px;
   cursor: pointer;
+}
+
+a.provider-filter {
+  padding: 9px 8px;
+  display: block;
+  text-decoration: none;
+  color: inherit;
 }
 
 .provider-filter.in-filter {

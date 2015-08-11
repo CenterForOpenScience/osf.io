@@ -25,19 +25,22 @@ var Provider = {
         var vm = params.vm;
         var provider = params.provider;
         return m(
-            'li.provider-filter', {
-                onclick: function(cb){
-                    vm.query(vm.query() === '' ? '*' : vm.query());
-                    vm.showFooter = false;
-                    utils.updateFilter(vm, 'match:shareProperties.source:' + provider.short_name);
-                }
-            },
-            m('img.provider-favicon', {
-                src: provider.favicon,
-                alt: 'favicon for ' + provider.long_name
-            }), ' ',
-            provider.long_name
-        );
+            'li.provider-filter', [
+                m('a.provider-filter', {
+                    href: '#',
+                    onclick: function(cb){
+                        vm.query(vm.query() === '' ? '*' : vm.query());
+                        vm.showFooter = false;
+                        utils.updateFilter(vm, 'match:shareProperties.source:' + provider.short_name);
+                    }
+                }, [
+                    m('img.provider-favicon', {
+                        src: provider.favicon,
+                        alt: 'favicon for ' + provider.long_name
+                    }), ' ',
+                    provider.long_name
+                ])
+        ]);
     }
 };
 
