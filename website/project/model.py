@@ -3450,13 +3450,15 @@ class RegistrationApproval(EmailApprovableSanction):
         for node in register.root.node_and_primary_descendants():
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
+        # Accounts for system actions where no `User` performs the final approval
+        auth = Auth(user) if user else None
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_APPROVED,
             params={
                 'node': registered_from._id,
                 'registration_approval_id': self._id,
             },
-            auth=Auth(self.initiated_by),
+            auth=auth,
         )
         self.state = self.APPROVED
         self.save()
