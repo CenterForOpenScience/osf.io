@@ -247,10 +247,18 @@ var MetaSchema = function(params) {
     self.schema = params.schema || {};
     self.id = [self.name, self.version].join('_');
 
+    self.requiresApproval = params.requires_approval || false;
+    self.fulfills = params.fulfills || [];
+
+    var count = 1;
     $.each(self.schema.pages, function(i, page) {
         var mapped = {};
         $.each(page.questions, function(qid, question) {
-            mapped[qid]  = new Question(question, qid);
+            // This is necessary now since page.questions is a list
+            // This is used to create more unique keys
+            var questionId = 'q' + count;
+            mapped[questionId]  = new Question(question, questionId);
+            count++;
         });
         self.schema.pages[i].questions = mapped;
     });
@@ -334,7 +342,7 @@ var Draft = function(params, metaSchema) {
                     total++;
                 });
             });
-	    return Math.ceil(100 * (complete / total));
+        return Math.ceil(100 * (complete / total));
         }
         return 0;
     });
@@ -371,7 +379,7 @@ Draft.prototype.beforeRegister = function(data) {
     var self = this;
 
     $osf.block();
-    
+
     return $.getJSON(self.urls.before_register).then(function(response) {
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(response, self.preRegisterWarnings);
@@ -451,13 +459,11 @@ var RegistrationEditor = function(urls, editorId) {
         var t = self.lastSaveTime();
         if (t) {
             return t.toGMTString();
-        } 
+        }
         else {
             return 'never';
         }
     });
-
-    self.iterObject = $osf.iterObject;
 
     self.iterObject = $osf.iterObject;
 
@@ -572,7 +578,7 @@ RegistrationEditor.prototype.check = function() {
 // TODO: uncomment when we support commenting
 //RegistrationEditor.prototype.viewComments = function() {
 //    var self = this;
-//    
+//
 //    var comments = self.currentQuestion().comments();
 //    $.each(comments, function(index, comment) {
 //        if (comment.seenBy().indexOf(currentUser.id) === -1) {
@@ -666,12 +672,12 @@ RegistrationEditor.prototype.updateData = function(response) {
 //    var messages = self.draft().messages;
 //    bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
 //	if(result) {
-//	    $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {}).then(function() {
+//      $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {}).then(function() {
 //		bootbox.dialog({
 //                    closeButton: false,
-//		    message: messages.afterSubmitForApproval,
-//		    title: 'Pre-Registration Prize Submission',
-//		    buttons: {
+//          message: messages.afterSubmitForApproval,
+//          title: 'Pre-Registration Prize Submission',
+//          buttons: {
 //                        registrations: {
 //                            label: 'Return to registrations page',
 //                            className: 'btn-primary pull-right',
@@ -679,7 +685,7 @@ RegistrationEditor.prototype.updateData = function(response) {
 //                                window.location.href = self.draft().urls.registrations;
 //                            }
 //                        }
-//		    }
+//          }
 //		});
 //            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
 //	}
@@ -742,7 +748,6 @@ RegistrationEditor.prototype.save = function() {
     var metaSchema = self.draft().metaSchema;
     var schema = metaSchema.schema;
     var data = {};
-    debugger;
     $.each(schema.pages, function(i, page) {
         $.each(page.questions, function(qid, question) {
             if(question.type === 'object'){
