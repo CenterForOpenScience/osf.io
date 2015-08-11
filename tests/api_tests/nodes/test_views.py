@@ -1014,6 +1014,29 @@ class TestNodeContributorAdd(ApiTestCase):
         assert_equal(res.status_code, 403)
 
 
+class TestContributorDetail(ApiTestCase):
+    def setUp(self):
+        super(TestContributorDetail, self).setUp()
+        self.user = AuthUserFactory()
+
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
+        self.public_url = '{}nodes/{}/contrbutors/{}'.format(API_BASE, self.public_project, self.user)
+
+        self.private_project = ProjectFactory(creator=self.user, is_public=False)
+        self.private_url = '{}nodes/{}/contrbutors/{}'.format(API_BASE, self.private_project, self.user)
+
+
+
+class TestNodeContributorUpdate(ApiTestCase):
+    def setUp(self):
+        super(TestNodeContributorUpdate, self).setUp()
+
+
+class TestNodeContributorDelete(ApiTestCase):
+    def setUp(self):
+        super(TestNodeContributorDelete, self).setUp()
+
+
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
         super(TestNodeRegistrationList, self).setUp()
