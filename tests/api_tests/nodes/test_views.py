@@ -990,7 +990,6 @@ class TestNodeChildCreate(ApiTestCase):
 
     def test_creates_child_logged_in_write_contributor(self):
         self.project.add_contributor(self.user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
-        self.project.reload()
 
         res = self.app.post_json(self.url, self.child, auth=self.user_two.auth)
         assert_equal(res.status_code, 201)
@@ -1036,6 +1035,9 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.json['data']['title'], strip_html(title))
         assert_equal(res.json['data']['description'], strip_html(description))
         assert_equal(res.json['data']['category'], 'project')
+
+        self.project.reload()
+        assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
 
 
 class TestNodePointersList(ApiTestCase):
