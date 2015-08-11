@@ -228,7 +228,7 @@ function resolveIconView(item) {
  * @private
  */
 function _fangornResolveIcon(item) {
-    var privateFolder =  m('div.file-extension._folder_delete', ' '),
+    var privateFolder =  m('i.fa.fa-lock', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
         closedFolder = m('i.fa.fa-folder', ' '),
