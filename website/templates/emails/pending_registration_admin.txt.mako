@@ -10,7 +10,7 @@ To approve this registration, click the following link: ${approval_link}
 
 To immediately cancel this registration, click the following link: ${disapproval_link}
 
-Note: If you take no action within ${approval_time_span}, the registration will be automatically approved. This operation is irreversible.
+Note: If you take no action within ${approval_time_span} hours, the registration will be automatically approved. This operation is irreversible.
 
 Sincerely yours,
 
