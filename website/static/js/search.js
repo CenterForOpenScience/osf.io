@@ -151,6 +151,10 @@ var ViewModel = function(params) {
                             'default_field': '_all',
                             'query': self.query(),
                             'analyze_wildcard': true,
+                            'fields':[
+                                'name^0.5',
+                                'attachment^0.01'
+                            ]
                         }
                     }
                 }

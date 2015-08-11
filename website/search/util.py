@@ -67,8 +67,12 @@ def build_has_child_query_string(qs='*'):
                     'default_field': '_all',
                     'query': qs,
                     'analyze_wildcard': True,
-                }
-            }
+                    'fields': [
+                        'name^0.5',
+                        'attachment^0.01',
+                    ]
+                },
+            },
         }
     }
 
@@ -93,6 +97,7 @@ def build_query_string(qs):
             'query': qs,
             'analyze_wildcard': True,
             'lenient': True  # TODO, may not want to do this
+
         }
     }
 
