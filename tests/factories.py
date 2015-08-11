@@ -27,7 +27,7 @@ from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
     Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
-    Retraction, Embargo,
+    Retraction, Embargo, Sanction
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver import listeners as archiver_listeners
@@ -219,8 +219,8 @@ class RegistrationFactory(AbstractNodeFactory):
             with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
                 reg.archive_job.status = ARCHIVER_SUCCESS
                 reg.archive_job.save()
-                with patch('website.mails.send_mail'):
-                    archiver_listeners.archive_callback(reg)
+                reg.sanction.state = Sanction.APPROVED
+                reg.sanction.save()
         ArchiveJob(
             src_node=project,
             dst_node=reg,

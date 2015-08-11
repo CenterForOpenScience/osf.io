@@ -3081,11 +3081,11 @@ class EmailApprovableSanction(Sanction):
             **context
         )
 
-    def _email_template_context(self, is_authorizer=False):
+    def _email_template_context(self, user, is_authorizer=False):
         return {}
 
     def _notify_authorizer(self, authorizer):
-        context = self._email_template_context(authorizer, True)
+        context = self._email_template_context(authorizer, is_authorizer=True)
         if self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE:
             self._send_approval_request_email(authorizer, self.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE, context)
         else:

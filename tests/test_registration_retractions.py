@@ -786,3 +786,14 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         self.registration.registered_from.reload()
         # Logs: Created, registered, retraction initiated
         assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 1)
+
+    @mock.patch('website.mails.send_mail')
+    def test_valid_POST_calls_send_mail_with_username(self, mock_send):
+        self.app.post_json(
+            self.retraction_post_url,
+            {'justification': ''},
+            auth=self.auth,
+        )
+        assert_true(mock_send.called)
+        args, kwargs = mock_send.call_args
+        assert_true(self.user.username in args)
