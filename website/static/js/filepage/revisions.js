@@ -32,7 +32,7 @@ var FileRevisionsTable = {
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
         self.baseUrl = (window.location.href).split('?')[0];
-        model.hasHashes = model.revisions ? (model.revisions[0] ? (model.revisions[0].extra.hashes ? true : false): false): false;
+        model.hasHashes = model.revisions && model.revisions[0] && model.revisions[0].extra.hashes;
         model.hasDate = self.file.provider !== 'dataverse';
 
         self.reload = function() {
@@ -89,43 +89,21 @@ var FileRevisionsTable = {
             });
         };
 
-        self.showModal = function(hashName, index, hash) {
-            var client;
-            var showModal = bootbox.dialog({
-                title: 'Version ' + index + ' ' + hashName + ' hash',
-                message: '<div class="row">  ' +
-                    '<div class="col-md-12">' +
-                    '<div class="control-group">' +'<p class="col-xs-10">' + hash + '</p>' +
-                    '<a class="btn-sm btn-primary col-xs-2" style="align: right; text-align: center; ' +
-                    'padding: 5px; width: 80px" id="copyBtn" data-clipboard-text="' +
-                    hash + '"> Copy </a>'+
-                    '</div></div></div>',
-                onEscape: function() {
-                    client.destroy();
-                }
-            });
-            showModal.on('show.bs.modal', function() {
-                var $copyBtn = $('#copyBtn');
-                client = makeClient($copyBtn);
-            });
-            showModal.modal('show');
-        };
-
         self.getTableHead = function() {
             return m('thead', [
                 m('tr', [
                     m('th', 'Version ID'),
                     model.hasDate ? m('th', 'Date') : false,
                     model.hasUser ? m('th', 'User') : false,
-                    model.hasHashes ? m('th', 'Hashes') : false,
                     m('th[colspan=2]', 'Download'),
+                    model.hasHashes ? m('th', 'MD5') : false,
+                    model.hasHashes ? m('th', 'SHA2') : false,
                 ].filter(TRUTHY))
             ]);
         };
 
         self.makeTableRow = function(revision, index) {
             var isSelected = index === model.selectedRevision;
-
             return m('tr' + (isSelected ? '.active' : ''), [
                 m('td',  isSelected ? revision.displayVersion :
                   m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
@@ -136,18 +114,6 @@ var FileRevisionsTable = {
                             m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
                             revision.extra.user.name
                     ) : false,
-                model.hasHashes ? m('td', m('div.btn-group',
-                    m( 'a.btn.btn-primary.btn-sm', {
-                        onclick: function() {
-                            self.showModal('MD5', revision.displayVersion, revision.extra.hashes.md5);
-                        }
-                    }, m('td', 'MD5') ),
-                    m( 'a.btn.btn-primary.btn-sm', {
-                        onclick: function() {
-                            self.showModal('SHA256', revision.displayVersion, revision.extra.hashes.sha256);
-                        }
-                    }, m('td', 'SHA2') )
-                )) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
                     m('a.btn.btn-primary.btn-sm.file-download', {
@@ -158,6 +124,20 @@ var FileRevisionsTable = {
                         }
                     }, m('i.fa.fa-download'))
                 ),
+                model.hasHashes ? m('td',
+                    m('div.input-group[style="width: 180px"]',
+                        [
+                            m('span.input-group-btn', m('button#copyBtnMd5'+ revision.displayVersion +'.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+revision.extra.hashes.md5 + '"]', {config: new makeClient($('#copyBtnMd5'+ revision.displayVersion))}, m('.fa.fa-copy'))),
+                            m('input[value="'+revision.extra.hashes.md5+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;"]')
+                        ]
+                    )) : false,
+                model.hasHashes ? m('td',
+                    m('div.input-group[style="width: 180px"]',
+                        [
+                            m('span.input-group-btn', m('button#copyBtnSha'+ revision.displayVersion +'.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+revision.extra.hashes.sha256 + '"]',{config: new makeClient($('#copyBtnSha'+ revision.displayVersion))}, m('.fa.fa-copy'))),
+                            m('input[value="'+revision.extra.hashes.sha256+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;"]')
+                        ]
+                    )) : false
             ].filter(TRUTHY));
         };
 
@@ -168,9 +148,9 @@ var FileRevisionsTable = {
         return self;
     },
     view: function(ctrl) {
-        return m('#revisionsPanel.panel.panel-default', [
+        return m('#revisionsPanel.panel.panel-default',[
                 m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
-                m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0'}}, (function() {
+                m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0', 'overflow-x': 'scroll'}}, (function() {
                     if (!model.loaded()) {
                         return util.Spinner;
                     }

@@ -128,7 +128,7 @@
                             </div>
 
                             <div class="btn-group">
-                                <button class="btn btn-default btn-sm m-r-xs copy-button" data-trigger="manual"
+                                <button class="btn btn-default btn-sm m-r-xs copy-buttonbtn btn-default btn-sm m-r-xs copy-button" data-trigger="manual"
                                         data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
                                     <span class="fa fa-copy" ></span>
                                 </button>
