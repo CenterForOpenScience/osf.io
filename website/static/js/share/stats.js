@@ -162,10 +162,9 @@ Stats.shareTimeGraphParser = function (data) {
     var grouping = [];
     grouping.push('x');
     var hexColors = utils.generateColors(data.aggregations.sourcesByTimes.buckets.length);
-    var i = 0;
     var datesCol = [];
     data.aggregations.sourcesByTimes.buckets.forEach( //TODO @bdyetton what would be nice is a helper function to do this for any agg returned by elastic
-        function (source) {
+        function (source, i) {
             var total = 0;
             chartData.colors[source.key] = hexColors[i];
             var column = [source.key];
@@ -178,7 +177,6 @@ Stats.shareTimeGraphParser = function (data) {
                 }
             });
             chartData.columns.push(column);
-            i = i + 1;
         }
     );
     chartData.groups.push(grouping);
