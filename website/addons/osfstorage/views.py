@@ -162,7 +162,8 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
                         'service': payload['metadata']['provider'],
                     })
                 ),
-                dict(payload['metadata'], **payload['hashes'])
+                dict(payload['metadata'], **payload['hashes']),
+                ignore_size=node_addon.owner.is_registration
             )
             version_id = version._id
             archive_exists = version.archive is not None

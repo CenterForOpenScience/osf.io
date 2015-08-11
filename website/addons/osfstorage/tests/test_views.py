@@ -1,6 +1,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 
+import mock
 import datetime
 from nose.tools import *  # noqa
 
@@ -14,6 +15,7 @@ from website.addons.osfstorage.tests import factories
 from framework.auth import signing
 from website.util import rubeus
 
+from website.project.model import Node
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
@@ -183,6 +185,21 @@ class TestUploadFileHook(HookTestCase):
         assert_not_in(version, self.record.versions)
         assert_equal(record.serialized(), res.json['data'])
         assert_equal(res.json['data']['downloads'], self.record.get_download_count())
+
+    def test_registrations_excluded_from_quotas(self):
+        name = 'slightly-mad'
+        self.node_settings.owner.is_registration = True
+        self.node_settings.owner.save()
+        assert_equal(self.node_settings.storage_usage, 0)
+
+        with mock.patch.object(Node, 'archiving', True):
+            res = self.send_upload_hook(self.node_settings.root_node, self.make_payload(name=name))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+
+        self.node_settings.reload()
+        assert_equal(self.node_settings.storage_usage, 0)
 
     def test_upload_update(self):
         delta = Delta(lambda: len(self.record.versions), lambda value: value + 1)
