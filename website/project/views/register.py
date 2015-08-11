@@ -124,12 +124,12 @@ def node_registration_retraction_approve(auth, node, token, **kwargs):
     """Handles disapproval of registration retractions
     :param auth: User wanting to disapprove retraction
     :return: Redirect to registration or
-    :raises: HTTPError if invalid token or user is not admin
+    :raises: HTTPError if not pending retraction, invalid token, or user is not admin
     """
 
     if not node.is_pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Token',
+            'message_short': 'Not pending retraction',
             'message_long': 'This registration is not pending a retraction.'
         })
 
@@ -160,12 +160,12 @@ def node_registration_retraction_disapprove(auth, node, token, **kwargs):
     :param auth: User wanting to approve retraction
     :param kwargs:
     :return: Redirect to registration or
-    :raises: HTTPError if invalid token or user is not admin
+    :raises: HTTPError if not pending retraction, invalid token, or user is not admin
     """
 
     if not node.is_pending_retraction:
         raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Token',
+            'message_short': 'Not pending retraction',
             'message_long': 'This registration is not pending a retraction.'
         })
 
@@ -194,12 +194,12 @@ def node_registration_embargo_approve(auth, node, token, **kwargs):
     :param auth: User wanting to approve the embargo
     :param kwargs:
     :return: Redirect to registration or
-    :raises: HTTPError if invalid token or user is not admin
+    :raises: HTTPError if not pending embargo, invalid token, or user is not admin
     """
 
     if not node.is_pending_embargo:
         raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Token',
+            'message_short': 'Not pending embargo',
             'message_long': 'This registration is not pending an embargo.'
         })
 
@@ -227,12 +227,12 @@ def node_registration_embargo_disapprove(auth, node, token, **kwargs):
     """Handles disapproval of registration embargoes
     :param auth: User wanting to disapprove the embargo
     :return: Redirect to registration or
-    :raises: HTTPError if invalid token or user is not admin
+    :raises: HTTPError if not pending embargo, invalid token, or user is not admin
     """
 
     if not node.is_pending_embargo:
         raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Token',
+            'message_short': 'Not pending embargo',
             'message_long': 'This registration is not pending an embargo.'
         })
     # Note(hryabcki): node.registered_from not accessible after disapproval
@@ -265,12 +265,12 @@ def node_registration_approve(auth, node, token, **kwargs):
     """Handles disapproval of registration retractions
     :param auth: User wanting to disapprove retraction
     :return: Redirect to registration or
-    :raises: HTTPError if invalid token or user is not admin
+    :raises: HTTPError if not pending registration, invalid token, or user is not admin
     """
 
     if not node.is_pending_registration:
         raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Token',
+            'message_short': 'Not pending registration',
             'message_long': 'This registration is not pending approval.'
         })
 
@@ -298,12 +298,12 @@ def node_registration_disapprove(auth, node, token, **kwargs):
     :param auth: User wanting to approve retraction
     :param kwargs:
     :return: Redirect to registration or
-    :raises: HTTPError if invalid token or user is not admin
+    :raises: HTTPError if not pending registration, invalid token, or user is not admin
     """
 
     if not node.is_pending_registration:
         raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Invalid Token',
+            'message_short': 'Not pending registration',
             'message_long': 'This registration is not pending a retraction.'
         })
 
