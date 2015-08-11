@@ -939,7 +939,7 @@ class TestNodeContributorAdd(ApiTestCase):
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
-        assert_equal(self.private_project.get_permission(self.user_two), ['read', 'write', 'admin'])
+        assert_equal(self.private_project.get_permissions(self.user_two), ['read', 'write', 'admin'])
 
     def test_adds_write_contributor_private_project_admin(self):
         data = {
@@ -953,7 +953,7 @@ class TestNodeContributorAdd(ApiTestCase):
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
-        assert_equal(self.private_project.get_permission(self.user_two), ['read', 'write', 'admin'])
+        assert_equal(self.private_project.get_permissions(self.user_two), ['read', 'write'])
 
     def test_adds_read_contributor_private_project_admin(self):
         data = {
@@ -967,7 +967,7 @@ class TestNodeContributorAdd(ApiTestCase):
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
-        assert_equal(self.private_project.get_permission(self.user_two), ['read', 'write', 'admin'])
+        assert_equal(self.private_project.get_permissions(self.user_two), ['read'])
 
     def test_adds_invalid_permission_contributor_private_project_admin(self):
         data = {
