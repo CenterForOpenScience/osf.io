@@ -46,17 +46,17 @@ def move_file_task(file_node_id, old_parent_id, new_parent_id):
     return search.move_file(file_node_id, old_parent_id, new_parent_id)
 
 
+@app.task
+def copy_file_task(old_file_node_id, new_file_node_id, old_parent_id, new_parent_id):
+    logger.info('\n\n I am proud to announce copy file\'s calling!')
+
+    init_addons(settings, routes=False)
+    do_set_backends(settings)
+    return search.copy_file(old_file_node_id, new_file_node_id, old_parent_id, new_parent_id)
+
 
 def update_all_files_task(node):
     file_gen = file_util.collect_files(node, recur=False)
-    jobs = celery.group(update_file_task.si(fn._id, file_util.get_file_content_url(fn)) for fn in file_gen)
+    jobs = celery.chain(update_file_task.si(fn._id, file_util.get_file_content_url(fn)) for fn in file_gen)
     jobs.delay()
     logger.info('\n\n I must acknowledge the fact that update all has been called!')
-
-
-def delete_all_files_task(node):
-    node_id = node._id
-    file_gen = file_util.collect_files(node, recur=False)
-    jobs = celery.group(delete_file_task.si(fn._id, node_id) for fn in file_gen)
-    jobs.delay()
-    logger.info('\n\n Verily I say, the task to delete all files of a node has been called!\n')

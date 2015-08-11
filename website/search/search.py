@@ -46,13 +46,6 @@ def update_file_given_content(file_node, content, index=None):
     return search_engine.update_file_from_content(file_node, content, index=index)
 
 
-@file_util.require_file_indexing
-@requires_search
-def update_all_files(node, index=None):
-    index = index or settings.ELASTIC_INDEX
-    search_engine.update_all_files(node, index=index)
-
-
 @requires_search
 def delete_file(file_node, index=None):
     index = index or settings.ELASTIC_INDEX

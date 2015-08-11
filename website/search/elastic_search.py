@@ -342,11 +342,11 @@ def update_file(file_node, index=None):
 def update_file_from_content(file_node, content, index=Node):
     index = index or INDEX
 
-    file_size = file_util.get_file_size(file_node)
-    if not file_size < settings.MAX_INDEXED_FILE_SIZE:
+    if not file_util.is_indexed(file_node):
         return False
 
-    if not file_util.is_indexed(file_node):
+    file_size = file_util.get_file_size(file_node)
+    if not file_size < settings.MAX_INDEXED_FILE_SIZE:
         return False
 
     attachment = base64.encodestring(content)
@@ -411,17 +411,6 @@ def delete_file_from_path(file_node_path, file_node_parent_id, index=None):
         refresh=True,
     )
     return True
-
-@file_util.require_file_indexing
-@requires_search
-def update_all_files(node, index=None):
-    """Add all indexable files of a node to elasticsearch.
-
-    :param node: Instance of Node.
-    """
-    index = index or INDEX
-    for file_node in file_util.collect_files(node):
-        update_file(file_node, index=index)
 
 
 @file_util.require_file_indexing
