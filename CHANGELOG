@@ -2,7 +2,7 @@
 Changelog
 *********
 
-0.45.0 (unreleased)
+0.45.0 (2015-08-10)
 ===================
 
 - S3: Uploads to S3 are encrypted.
