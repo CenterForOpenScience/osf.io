@@ -2308,7 +2308,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-            project_signals.contributor_added.send(self, contributor=contributor)
+            if not self.parent_node or not self.parent_node.is_contributor(contributor):
+                project_signals.contributor_added.send(self, contributor=contributor)
 
             return True
 
