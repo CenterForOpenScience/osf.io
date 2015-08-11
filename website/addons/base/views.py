@@ -30,7 +30,6 @@ from website.project.utils import serialize_node
 from website.search import file_util
 
 
-
 @decorators.must_have_permission('write')
 @decorators.must_not_be_registration
 def disable_addon(auth, **kwargs):
@@ -285,39 +284,7 @@ def create_waterbutler_log(payload, **kwargs):
 
         node_addon.create_waterbutler_log(auth, action, metadata)
 
-    # file indexing
-    metadata = payload.get('metadata') or payload['destination']
-    name = metadata.get('name') or metadata['path']
-    action = payload['action']
-    provider = metadata.get('provider')
-    source_node_id = payload['source']['nid'] if 'source' in payload else None
-    node_addon = node.get_addon(provider)
-    update_search(node, action, node_addon, name, source_node_id)
-
     return {'status': 'success'}
-
-
-@file_util.require_file_indexing
-def update_search(node, action, addon, file_name, source_node_id=None):
-    # deletion handled in OsfFileNode.delete
-    if action == 'delete':
-        return
-
-    file_node = addon.root_node.find_child_by_name(file_name)
-    if not file_util.is_indexed(file_node):
-        return
-
-    if addon.config.short_name != 'osfstorage':
-        return
-
-    if action in ('create', 'update', 'copy'):
-        node.update_search_file(file_node)
-
-    if action in ('move', ):
-        if not source_node_id:
-            raise ValueError('{} requires source_node_id'.format(action))
-        source_node = Node.load(source_node_id)
-        source_node.move_search_file(file_node, node)
 
 
 @must_be_valid_project

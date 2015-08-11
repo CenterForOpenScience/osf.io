@@ -47,12 +47,12 @@ def move_file_task(file_node_id, old_parent_id, new_parent_id):
 
 
 @app.task
-def copy_file_task(old_file_node_id, new_file_node_id, old_parent_id, new_parent_id):
+def copy_file_task(file_node_id, new_file_node_id, old_parent_id, new_parent_id):
     logger.info('\n\n I am proud to announce copy file\'s calling!')
 
     init_addons(settings, routes=False)
     do_set_backends(settings)
-    return search.copy_file(old_file_node_id, new_file_node_id, old_parent_id, new_parent_id)
+    return search.copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id)
 
 
 def update_all_files_task(node):

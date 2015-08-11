@@ -18,12 +18,14 @@ from website.project.decorators import (
 )
 from website.util import rubeus
 from website.project.model import has_anonymous_link
+from website.project.model import Node
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import decorators
 from website.addons.osfstorage import settings as osf_storage_settings
 
+from website.search import file_util
 
 logger = logging.getLogger(__name__)
 
@@ -87,11 +89,34 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
-    return source.copy_under(destination, name=name).serialized(), httplib.CREATED
+    logger.info('COPY')
+    logger.info('SOURCE: {} | DEST: {}'.format(repr(source), repr(destination)))
+    logger.info('KWARGS: {}'.format(kwargs))
+
+    # import ipdb; ipdb.set_trace()
+
+    dest_node = destination.node
+    node_addon = kwargs['node_addon']
+    file_name = source.name
+    source_node_id = source.node._id
+
+    new_file_node, created = source.copy_under(destination, name=name), httplib.CREATED
+    update_search(dest_node, 'copy', node_addon, file_name, source_node_id, other_file_node=new_file_node)
+
+    return new_file_node.serialized(), created
 
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
+    logger.info('MOVE')
+    logger.info('SOURCE: {} | DEST: {}'.format(repr(source), repr(destination)))
+    logger.info('KWARGS: {}'.format(kwargs))
+    dest_node = destination.node
+    node_addon = kwargs['node_addon']
+    file_name = source.name
+    source_node_id = source.node._id
+
+    update_search(dest_node, 'move', node_addon, file_name, source_node_id)
     return source.move_under(destination, name=name).serialized(), httplib.OK
 
 
@@ -129,6 +154,9 @@ def osfstorage_get_children(file_node, **kwargs):
 @must_not_be_registration
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
+    logger.info('CREATE')
+    logger.info('PAYLOAD: {}'.format(payload))
+    logger.info('KWARGS: {}'.format(kwargs))
     parent = file_node  # Just for clarity
     name = payload.get('name')
     user = User.load(payload.get('user'))
@@ -167,7 +195,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
             )
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
-
+    update_search(parent.node, 'create', parent.node_settings, name, None)
     return {
         'status': 'success',
         'data': file_node.serialized(),
@@ -217,3 +245,30 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
             osf_storage_settings.WATERBUTLER_RESOURCE: version.location[osf_storage_settings.WATERBUTLER_RESOURCE],
         },
     }
+
+
+@file_util.require_file_indexing
+def update_search(node, action, addon, file_name, source_node_id=None, other_file_node=None):
+    # deletion handled in OsfFileNode.delete
+    if action == 'delete':
+        return
+
+    file_node = addon.root_node.find_child_by_name(file_name)
+    if not file_util.is_indexed(file_node):
+        return
+
+    if addon.config.short_name != 'osfstorage':
+        return
+
+    if action in ('create', 'update'):
+        node.update_search_file(file_node)
+
+    if action in ('copy'):
+        source_node = Node.load(source_node_id)
+        source_node.copy_search_file(file_node, other_file_node, node)
+
+    if action in ('move', ):
+        if not source_node_id:
+            raise ValueError('{} requires source_node_id'.format(action))
+        source_node = Node.load(source_node_id)
+        source_node.move_search_file(file_node, node)

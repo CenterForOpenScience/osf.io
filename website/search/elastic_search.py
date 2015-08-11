@@ -464,6 +464,30 @@ def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
 
     return True
 
+
+def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, index=None):
+    index = index or INDEX
+
+    path = file_util.norm_path(file_node_id)
+    new_path = file_util.norm_path(new_file_node_id)
+
+    doc = es.get(
+        index=index,
+        doc_type='file',
+        id=path,
+        parent=old_parent_id,
+    )['_source']
+
+    es.index(
+        index=index,
+        doc_type='file',
+        id=new_file_node_id,
+        parent=new_parent_id,
+        body=doc,
+        refresh=True,
+    )
+    return True
+
 ## FILE INDEXING  ##
 
 

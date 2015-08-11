@@ -59,3 +59,13 @@ def move_search_file(file_node, from_, to_):
     new_parent_id = to_._id
     nid = file_node._id
     tasks.move_file_task.delay(file_node_id=nid, old_parent_id=old_parent_id, new_parent_id=new_parent_id)
+
+
+@file_util.require_file_indexing
+@except_search_unavailable
+def copy_search_file(file_node, new_file_node, from_, to_):
+    old_parent_id = from_._id
+    new_parent_id = to_._id
+    nid = file_node._id
+    new_id = new_file_node._id
+    tasks.copy_file_task.delay(file_node_id=nid, new_file_node_id=new_id,old_parent_id=old_parent_id, new_parent_id=new_parent_id)

@@ -1,6 +1,10 @@
+import logging
 import requests
 
 from website import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 INDEXED_TYPES = (
@@ -17,6 +21,7 @@ def require_file_indexing(func):
     def wrapper(*args, **kwargs):
         if settings.USE_FILE_INDEXING:
             return func(*args, **kwargs)
+        logging.info('File indexing not enabled.')
         return None
     return wrapper
 

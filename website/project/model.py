@@ -1555,6 +1555,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website.search import file_indexing
         file_indexing.move_search_file(file_node, self, dest_node)
 
+    def copy_search_file(self, file_node, new_file_node, dest_node):
+        from website.search import file_indexing
+        file_indexing.copy_search_file(file_node, new_file_node, self, dest_node)
+
     def delete_search_file(self, file_node):
         """ Remove a single file from search. """
         from website.search import file_indexing
