@@ -7,6 +7,12 @@ var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 require('truncate');
 
+var LoadingIcon = {
+    view: function(ctrl) {
+        return m('img', {src: '/static/img/loading.gif'});
+    }
+};
+
 var Results = {
     view: function(ctrl, params) {
         var vm = params.vm;
@@ -26,7 +32,7 @@ var Results = {
             } else if (!loading && results.length === 0) {
                 return m('p', {class: 'text-muted'}, 'No results for this query');
             } else {
-                return m('', [m.component(utils.loadingIcon), 'loading...']);
+                return m('', [m.component(LoadingIcon), 'loading...']);
             }
         };
 

@@ -32,12 +32,6 @@ utils.formatNumber = function(num) {
     return num;
 };
 
-utils.loadingIcon = {
-    view: function(ctrl) {
-        return m('img', {src: '/static/img/loading.gif'});
-    }
-};
-
 /* This resets the state of the vm on error */
 utils.errorState = function(vm){
     vm.results = null;
