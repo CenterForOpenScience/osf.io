@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-import time
-import itertools
-import httplib as http
+
 from collections import Counter
+import httplib as http
+import itertools
+import time
 
 from flask import request
 from modularodm.exceptions import ValidationValueError
@@ -10,14 +11,14 @@ from modularodm.exceptions import ValidationValueError
 from framework import forms
 from framework import status
 from framework.auth import cas
-from framework.flask import redirect  # VOL-aware redirect
-from framework.sessions import session
 from framework.auth import User, get_user
-from framework.exceptions import HTTPError
-from framework.auth.signals import user_registered
 from framework.auth.core import generate_confirm_token
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
+from framework.auth.signals import user_registered
+from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
+from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 
 from website import mails
@@ -25,13 +26,13 @@ from website import language
 from website import security
 from website import settings
 from website.models import Node
-from website.profile import utils
-from website.project.model import has_anonymous_link
-from website.util import web_url_for, is_json_request
-from website.project.signals import unreg_contributor_added, contributor_added
-from website.util.permissions import expand_permissions, ADMIN
+from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project,
         must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
+from website.project.model import has_anonymous_link
+from website.project.signals import unreg_contributor_added, contributor_added
+from website.util import web_url_for, is_json_request
+from website.util.permissions import expand_permissions, ADMIN
 
 
 @collect_auth
@@ -102,7 +103,7 @@ def get_contributors(auth, node, **kwargs):
     # Limit is either an int or None:
     # if int, contribs list is sliced to specified length
     # if None, contribs list is not sliced
-    contribs = utils.serialize_contributors(
+    contribs = profile_utils.serialize_contributors(
         node.visible_contributors[0:limit],
         node=node,
     )
@@ -130,7 +131,7 @@ def get_contributors_from_parent(auth, node, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
-        utils.add_contributor_json(contrib)
+        profile_utils.add_contributor_json(contrib)
         for contrib in parent.visible_contributors
         if contrib._id not in node.visible_contributor_ids
     ]
@@ -161,7 +162,7 @@ def get_most_in_common_contributors(auth, node, **kwargs):
     contrib_objs = [(User.load(_id), count) for _id, count in limited]
 
     contribs = [
-        utils.add_contributor_json(most_contrib, auth.user)
+        profile_utils.add_contributor_json(most_contrib, auth.user)
         for most_contrib, count in sorted(contrib_objs, key=lambda t: (-t[1], t[0].fullname))
     ]
     return {'contributors': contribs}
@@ -189,7 +190,7 @@ def get_recently_added_contributors(auth, node, **kwargs):
     limited_contribs = itertools.islice(active_contribs, max_results)
 
     contribs = [
-        utils.add_contributor_json(contrib, auth.user)
+        profile_utils.add_contributor_json(contrib, auth.user)
         for contrib in limited_contribs
     ]
     return {'contributors': contribs}
@@ -613,7 +614,7 @@ def claim_user_registered(auth, node, **kwargs):
             forms.push_errors_to_status(form.errors)
     if is_json_request():
         form_ret = forms.utils.jsonify(form)
-        user_ret = utils.serialize_user(current_user, full=False)
+        user_ret = profile_utils.serialize_user(current_user, full=False)
     else:
         form_ret = form
         user_ret = current_user
@@ -706,7 +707,8 @@ def claim_user_form(auth, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def invite_contributor_post(node, **kwargs):
-    """API view for inviting an unregistered user.
+    """API view for inviting an unregistered user. Performs validation, but does not actually invite the user.
+
     Expects JSON arguments with 'fullname' (required) and email (not required).
     """
     fullname = request.json.get('fullname').strip()
@@ -725,13 +727,13 @@ def invite_contributor_post(node, **kwargs):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
         else:
-            serialized = utils.add_contributor_json(user)
+            serialized = profile_utils.add_contributor_json(user)
             # use correct display name
             serialized['fullname'] = fullname
             serialized['email'] = email
     else:
         # Create a placeholder
-        serialized = utils.serialize_unregistered(fullname, email)
+        serialized = profile_utils.serialize_unregistered(fullname, email)
     return {'status': 'success', 'contributor': serialized}
 
 
