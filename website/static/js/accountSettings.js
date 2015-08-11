@@ -206,8 +206,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                 for (var i=0; i<emails.length; i++) {
                     if (emails[i].address() === email.address()) {
                         this.emailInput('');
-                        var addrText = $osf.htmlEscape(email.address());
-                        $osf.growl('<em>' + addrText  + '</em> added to your account.','You will receive a confirmation email at <em>' + addrText  + '</em>. Please check your email and confirm.', 'success');
+                        $osf.growl('<em>' + email.address()  + '</em> added to your account.','You will receive a confirmation email at <em>' + email.address()  + '</em>. Please check your email and confirm.', 'success');
                         return;
                     }
                 }
@@ -224,13 +223,13 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
         var addrText = $osf.htmlEscape(email.address());
         bootbox.confirm({
             title: 'Resend Email Confirmation?',
-            message: 'Are you sure that you want to resend email confirmation to ' + '<em>' + addrText + '</em>?',
+            message: 'Are you sure that you want to resend email confirmation to ' + '<em><b>' + email.address() + '</b></em>',
             callback: function (confirmed) {
                 if (confirmed) {
                     self.client.update(self.profile(), email).done(function () {
                         $osf.growl(
-                            'Email confirmation resent to <em>' + addrText + '</em>',
-                            'You will receive a new confirmation email at <em>' + addrText  + '</em>. Please check your email and confirm.',
+                            'Email confirmation resent to <em>' + email.address() + '</em>',
+                            'You will receive a new confirmation email at <em>' + email.address()  + '</em>. Please check your email and confirm.',
                             'success');
                     });
                 }
@@ -254,7 +253,7 @@ var UserProfileViewModel = oop.extend(ChangeMessageMixin, {
                     if (confirmed) {
                         self.profile().emails.remove(email);
                         self.client.update(self.profile()).done(function () {
-                            $osf.growl('Email Removed', '<em>' + addrText + '</em>', 'success');
+                            $osf.growl('Email Removed', '<em>' + email.address() + '</em>', 'success');
                         });
                     }
                 },
