@@ -117,9 +117,6 @@
                             "replace": true
                         }'></div>
                     </ol>
-                    % if discussions['enabled'] and user['is_contributor']:
-                        <a href="mailto:${node['id']}@osf.io"> <i class="fa fa-envelope"></i> </a>
-                    % endif
                 % endif
                 </div>
                 % if node['is_fork']:

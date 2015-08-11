@@ -227,11 +227,7 @@
         </td>
         % if discussions['enabled']:
             <td class="text-center">
-                <input
-                        type="checkbox" class="no-sort discussions"
-                        data-bind="checked: subscribed, enable: false"
-                    />
-
+                <i class="fa fa-check" data-bind="visible: subscribed"></i>
             </td>
         % endif
         <td>
