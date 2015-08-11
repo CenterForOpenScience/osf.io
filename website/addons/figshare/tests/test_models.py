@@ -364,7 +364,6 @@ class TestCallbacks(OsfTestCase):
         registration = self.project.register_node(
             schema=None,
             auth=Auth(user=self.project.creator),
-            template='Template1',
             data='hodor'
         )
         assert_false(registration.has_addon('figshare'))

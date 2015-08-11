@@ -126,11 +126,8 @@
                     </p>
                 % endif
                 % if node['is_registration'] and node['registered_meta']:
-                    <p>Registration Supplement:
-                    % for meta in node['registered_meta']:
-                        <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
-                    % endfor
-                    </p>
+                    <br />Registration Supplement:
+                    <a href="${node['url']}register/">${node['registered_schema']['schema']['title']}</a>
                 % endif
                 % if node['is_registration']:
                     <p>
@@ -214,10 +211,10 @@
             </div>
             <div class="panel-body">
                 <div id="treeGrid">
-                    <div class="spinner-loading-wrapper">
-                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
-                         <p class="m-t-sm fg-load-message"> Loading files...  </p>
-                    </div>
+                  <div class="spinner-loading-wrapper">
+                    <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+                    <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                  </div>
                 </div>
             </div>
         </div>

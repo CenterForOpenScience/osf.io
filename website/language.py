@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 """Various text used throughout the website, e.g. status messages, errors, etc.
 """
@@ -84,6 +83,11 @@ MERGE_CONFIRMATION_REQUIRED_LONG = (
 
 # Node Actions
 
+AFTER_REGISTER_ARCHIVING = (
+    'Files are being copied to the newly created registration, and you will receive an email '
+    'notification when the copying is finished.'
+)
+
 BEFORE_REGISTER_HAS_POINTERS = (
     'This {category} contains links to other projects. Links will be copied '
     'into your registration, but the projects that they link to will not be '
@@ -99,7 +103,6 @@ BEFORE_FORK_HAS_POINTERS = (
 )
 
 REGISTRATION_INFO = '''
-
 <p>Registration creates a frozen version of the project that can never be
 edited or deleted but can be retracted. You can register your project by
 selecting a registration form, entering information about your project, and

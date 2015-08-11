@@ -271,6 +271,7 @@ def update_node(node, index=None):
             'description': node.description,
             'url': node.url,
             'is_registration': node.is_registration,
+            'is_pending_registration': node.is_pending_registration,
             'is_retracted': node.is_retracted,
             'pending_retraction': node.pending_retraction,
             'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,

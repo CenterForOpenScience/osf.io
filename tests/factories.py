@@ -16,7 +16,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 import datetime
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
-from mock import patch
+from mock import patch, Mock
 
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
@@ -27,11 +27,12 @@ from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
     Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
-    Retraction, Embargo,
+    Retraction, Embargo, MetaSchema, DraftRegistration
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver import utils as archiver_utils
 from website.archiver.model import ArchiveTarget, ArchiveJob
+from website.project import utils as project_utils
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -172,7 +173,7 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, archive=False, *args, **kwargs):
+                template=None, data=None, archive=False, embargo=None, approval=None, *args, **kwargs):
         save_kwargs(**kwargs)
 
         # Original project to be registered
@@ -185,30 +186,46 @@ class RegistrationFactory(AbstractNodeFactory):
         #)
         schema = None
         user = user or project.creator
-        template = template or "Template1"
         data = data or "Some words"
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            template=template,
             data=data,
         )
-        ArchiveJob(
-            src_node=project,
-            dst_node=register,
-            initiator=user,
-        )
+
+        def add_approval_step(reg):
+            target = None
+            if embargo:
+                reg.embargo = embargo
+                target = embargo
+            if approval:
+                reg.registration_approval = approval
+            else:
+                reg.require_approval(reg.creator)
+            if not embargo:
+                target = reg.registration_approval
+            target.save()
+
         if archive:
-            return register()
+            reg = register()
+            add_approval_step(reg)
         else:
             with patch('framework.tasks.handlers.enqueue_task'):
                 reg = register()
-                archiver_utils.archive_success(
-                    reg,
-                    reg.registered_user
-                )
-                return reg
+                add_approval_step(reg)
+            with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
+                reg.archive_job.status = ARCHIVER_SUCCESS
+                reg.archive_job.save()
+                with patch('website.mails.send_mail'):
+                    archiver_listeners.archive_callback(reg)
+        ArchiveJob(
+            src_node=project,
+            dst_node=reg,
+            initiator=user,
+        )
+        reg.save()
+        return reg
 
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer
@@ -484,3 +501,23 @@ class ArchiveTargetFactory(ModularOdmFactory):
 
 class ArchiveJobFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveJob
+
+class DraftRegistrationFactory(ModularOdmFactory):
+    FACTORY_FOR = DraftRegistration
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        branched_from = kwargs.get('branched_from')
+        initiator = kwargs.get('initiator')
+        registration_schema = kwargs.get('registration_schema')
+        registration_metadata = kwargs.get('registration_metadata')
+        if not branched_from:
+            project_params = {}
+            if initiator:
+                project_params['creator'] = initiator
+            branched_from = ProjectFactory(**project_params)
+        initiator = branched_from.creator
+        registration_schema = registration_schema or MetaSchema.find()[0]
+        registration_metadata = registration_metadata or {}
+        draft = branched_from.create_draft_registration(initiator, registration_schema, registration_metadata, save=True)
+        return draft
