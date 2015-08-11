@@ -29,7 +29,7 @@ class NodeSerializer(JSONAPISerializer):
     contributors = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count':'get_contrib_count'})
     pointers = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-pointers', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})
     registrations = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})
-    files = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')
+    files = ser.HyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')
     parent = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-detail', lookup_field='parent_id', lookup_url_kwarg='node_id')
 
     # TODO: When we have 'admin' permissions, make this writable for admins
