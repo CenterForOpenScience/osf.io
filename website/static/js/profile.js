@@ -604,10 +604,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return self.contents().length > 1;
     });
 
-    self.contentsLength = ko.computed(function() {
-        return self.contents().length;
-    });
-
     self.hasValidProperty(true);
 
     /** Determine if any of the models in the list are dirty
@@ -669,7 +665,7 @@ ListViewModel.prototype.addContent = function() {
     }
     else {
         this.changeMessage(
-            'Institution Field is Required',
+            'Institution field is required.',
             'text-danger',
             5000
         );
@@ -679,11 +675,8 @@ ListViewModel.prototype.addContent = function() {
 ListViewModel.prototype.removeContent = function(content) {
     var idx = this.contents().indexOf(content);
     //  If there is more then one model, then delete it.  If there is only one, then delete it and add another.
-    if (this.contentsLength() > 1) {
-        this.contents.splice(idx, 1);
-    }
-    else {
-        this.contents.splice(idx, 1);
+    this.contents.splice(idx, 1);
+    if (this.self.contents().length === 1) {
         this.contents.push(new this.ContentModel(this));
     }
     this.changeMessage(
@@ -714,7 +707,7 @@ ListViewModel.prototype.unserialize = function(data) {
 
 ListViewModel.prototype.serialize = function() {
     var contents = [];
-    if (this.contents().length !== 0 && typeof(this.contents()[0].serialize()) !== 'undefined') {
+    if (this.contents().length !== 0 && typeof(this.contents()[0].serialize() !== undefined)) {
         for (var i=0; i < this.contents().length; i++) {
             // If the requiredField is empty, it will not save it and will delete the blank structure from the database.
             if (!this.contents()[i].institutionObjectEmpty()) {
@@ -744,12 +737,10 @@ var JobViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-                if (!!self.department() || !!self.title()) {
-                    return true;
-                }
+               return !!self.department() || !!self.title();
             },
-            message: 'Institution/Employer Required'
-        },
+            message: 'Institution/Employer required'
+        }
     });
 
     self.trackedProperties = [
@@ -764,17 +755,11 @@ var JobViewModel = function() {
 
     var validated = ko.validatedObservable(self);
 
-    self.institutionObjectEmpty = ko.computed(function() {
-        if (self.institution() === '' && self.department() === '' && self.title() === '') {
-            return true;
-        }
-        else {
-            return false;
-        }
-    });
-
     //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
-    // Institution is only required when the item is not blank.
+    self.institutionObjectEmpty = ko.pureComputed(function() {
+        return self.institution() && self.department() && self.title();
+    }, self);
+
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
@@ -793,12 +778,10 @@ var SchoolViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-                if (!!self.department() || !!self.degree()) {
-                    return true;
-                }
+                return !!self.department() || !!self.degree();
             },
-            message: 'Institution Required'
-        },
+            message: 'Institution required'
+        }
     });
 
     self.trackedProperties = [
@@ -813,17 +796,11 @@ var SchoolViewModel = function() {
 
     var validated = ko.validatedObservable(self);
 
-    self.institutionObjectEmpty = ko.computed(function() {
-        if (self.institution() === '' && self.department() === '' && self.degree() === '') {
-            return true;
-        }
-        else {
-            return false;
-        }
-    });
-
     //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
-    // Institution is only required when the item is not blank.
+    self.institutionObjectEmpty = ko.purecomputed(function() {
+        return self.institution() && self.department() && self.degree();
+     });
+
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
