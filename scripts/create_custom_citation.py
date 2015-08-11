@@ -25,11 +25,11 @@ def create_fake_citaion(creator, project, text):
 def main():
     args = parse_args()
     creator = models.User.find(Q('username', 'eq', args.user))[0]
-    project = models.Node.find(Q('id', 'eq', args.projectId))[0]
+    project = models.Node.find(Q('_id', 'eq', args.projectID))[0]
     create_fake_citaion(creator, project, args.citation)
     sys.exit(0)
 
 
 if __name__ == '__main__':
-    init_app(set_backends=True, routes=False)
+    init_app(set_backends=True, routes=True)
     main()
