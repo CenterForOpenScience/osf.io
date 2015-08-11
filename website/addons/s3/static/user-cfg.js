@@ -61,7 +61,8 @@ $(document).ready(function() {
         function(){
             AddonHelper.onSubmitSettings({
                 successUpdateMsg: 'Amazon S3 add-on successfully authorized',
-                failUpdateMsg: 'Amazon S3 add-on doesn\'t  authorized successfully'
+                failUpdateMsg: 'Amazon S3 add-on doesn\'t  authorized successfully',
+                self: this
             });
         });
 });
