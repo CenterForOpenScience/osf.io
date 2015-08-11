@@ -26,7 +26,7 @@ class NodeSerializer(JSONAPISerializer):
 
     url = LinksField({'html': 'get_absolute_url'})
     children = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
-    contributors = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count':'get_contrib_count'})
+    contributors = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
     pointers = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-pointers', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})
     registrations = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})
     files = ser.HyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')

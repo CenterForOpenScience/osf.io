@@ -38,7 +38,6 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
         self.meta = kwargs.pop('meta', None)
         super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
 
-
     def get_url(self, obj, view_name, request, format):
         """
         Given an object, return the URL that hyperlinks to the object.
