@@ -97,7 +97,6 @@ def build_query_string(qs):
             'query': qs,
             'analyze_wildcard': True,
             'lenient': True  # TODO, may not want to do this
-
         }
     }
 

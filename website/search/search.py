@@ -4,6 +4,7 @@ from website import settings
 from website.search import file_util
 from website.search import share_search
 
+
 logger = logging.getLogger(__name__)
 
 if settings.SEARCH_ENGINE == 'elastic':
@@ -46,12 +47,14 @@ def update_file_given_content(file_node, content, index=None):
     return search_engine.update_file_from_content(file_node, content, index=index)
 
 
+@file_util.require_file_indexing
 @requires_search
 def delete_file(file_node, index=None):
     index = index or settings.ELASTIC_INDEX
     return search_engine.delete_file(file_node, index=index)
 
 
+@file_util.require_file_indexing
 @requires_search
 def delete_file_given_path(file_path, file_parent_id, index=None):
     index = index or settings.ELASTIC_INDEX
@@ -59,18 +62,21 @@ def delete_file_given_path(file_path, file_parent_id, index=None):
     return search_engine.delete_file_from_path(file_path, file_parent_id, index=index)
 
 
+@file_util.require_file_indexing
 @requires_search
 def delete_all_files(node, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.delete_all_files(node, index=index)
 
 
+@file_util.require_file_indexing
 @requires_search
 def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
     index = index or settings.ELASTIC_INDEX
     return search_engine.move_file(file_node_id, old_parent_id, new_parent_id, index=index)
 
 
+@file_util.require_file_indexing
 @requires_search
 def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, index=None):
     index = index or settings.ELASTIC_INDEX

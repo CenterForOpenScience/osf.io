@@ -5,9 +5,9 @@ from __future__ import division
 import re
 import copy
 import math
+import base64
 import logging
 import unicodedata
-import base64
 
 import six
 
@@ -50,7 +50,7 @@ ENGLISH_ANALYZER_PROPERTY = {'type': 'string', 'analyzer': 'english'}
 
 INDEX = settings.ELASTIC_INDEX
 
-SEARCHED_TYPES = ['project', 'component', 'registration', 'user']
+SEARCHED_TYPES = ('project', 'component', 'registration', 'user')
 
 try:
     es = Elasticsearch(
@@ -151,6 +151,7 @@ def search(query, index=None, doc_type='_all'):
 
     if doc_type == '_all' or doc_type is None:
         doc_type = SEARCHED_TYPES
+
     # Run the real query and get the results
     raw_results = es.search(index=index, doc_type=doc_type, body=query)
 
@@ -249,7 +250,6 @@ def update_node(node, index=None):
         except IndexError:
             # Skip orphaned components
             return
-
     if node.is_deleted or not node.is_public or node.archiving:
         delete_doc(elastic_document_id, node)
     else:
@@ -294,19 +294,17 @@ def update_node(node, index=None):
                 for x in node.wiki_pages_current.values()
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
+
         es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
-
-## FILE INDEXING ##
 
 @file_util.require_file_indexing
 @requires_search
 def update_file(file_node, index=None):
-    """Add file to elastic_search.
+    """Add file to elasticsearch.
 
-    :param file_node:
-    :param path: Path of file to index.
-    :param addon: Instance of storage containing the file.
+    :param file_node: Node to be updated.
+    :return True if file was indexed.
     """
     index = index or INDEX
     if not file_util.is_indexed(file_node):
@@ -329,6 +327,7 @@ def update_file(file_node, index=None):
         'attachment': base64.encodestring(file_content),
         'category': 'file'
     }
+
     es.index(
         index=index,
         doc_type='file',
@@ -337,9 +336,19 @@ def update_file(file_node, index=None):
         body=file_doc,
         refresh=True,
     )
+    return True
 
 
+@file_util.require_file_indexing
+@requires_search
 def update_file_from_content(file_node, content, index=Node):
+    """ Add file to elasticsearch with the given content.
+
+    :param file_node: File Node to be updated.
+    :param content: Raw content of file.
+    :param index:
+    :return: True if file was indexed.
+    """
     index = index or INDEX
 
     if not file_util.is_indexed(file_node):
@@ -375,9 +384,10 @@ def update_file_from_content(file_node, content, index=Node):
 @file_util.require_file_indexing
 @requires_search
 def delete_file(file_node, index=None):
-    """Remove a single file from search index.
+    """ Remove file from elasticsearch.
 
-    :param file_path:
+    :param file_node.
+    :return True if document deleted
     """
     index = index or INDEX
 
@@ -400,7 +410,14 @@ def delete_file(file_node, index=None):
     return True
 
 
+@file_util.require_file_indexing
+@requires_search
 def delete_file_from_path(file_node_path, file_node_parent_id, index=None):
+    """ Remove file with the given path and parent.
+
+    :param file_node_path: file document's path
+    :param file_node_parent_id: file document's parent's id
+    """
     index = index or INDEX
     file_path = file_util.norm_path(file_node_path)
     es.delete(
@@ -410,15 +427,14 @@ def delete_file_from_path(file_node_path, file_node_parent_id, index=None):
         id=file_path,
         refresh=True,
     )
-    return True
 
 
 @file_util.require_file_indexing
 @requires_search
 def delete_all_files(node, index=None):
-    """Remove all of a nodes files from search index.
+    """Remove all files which have the node as a parent from elasticsearch.
 
-    :param node:
+    :param node: Node from which to delete files.
     """
     index = index or INDEX
     body = {
@@ -433,8 +449,16 @@ def delete_all_files(node, index=None):
     )
 
 
+@file_util.require_file_indexing
+@requires_search
 def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
-    """ Change parent of an existing document. """
+    """ Change parent of existing document in elasticsearch.
+
+    :param file_node_id: path of File Node.
+    :param old_parent_id: pre-move parent of File Node.
+    :param new_parent_id: post-move parent of File Node.
+    :return: True if sucessfully moved.
+    """
     index = index or INDEX
 
     path = file_util.norm_path(file_node_id)
@@ -468,8 +492,17 @@ def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
     return True
 
 
+@file_util.require_file_indexing
+@requires_search
 def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, index=None):
-    """ Get a document and index with a new parent. """
+    """ Get a document and index with a new parent.
+
+    :param file_node_id: Original File Node's path.
+    :param new_file_node_id: New File Node's path.
+    :param old_parent_id: Original File Node's parent's id.
+    :param new_parent_id: New File Node's parent's id.
+    :return: True if move sucessful.
+    """
     index = index or INDEX
 
     path = file_util.norm_path(file_node_id)
@@ -493,8 +526,6 @@ def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, inde
         refresh=True,
     )
     return True
-
-## FILE INDEXING  ##
 
 
 def bulk_update_contributors(nodes, index=INDEX):

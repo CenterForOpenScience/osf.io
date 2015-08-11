@@ -1533,13 +1533,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             log_exception()
 
     def update_search_files(self):
-        """Update all files within the current project in search."""
+        """ Update all files within the current project in search. """
         from website.search import file_indexing
         if self.is_public:
             file_indexing.update_search_files(self)
 
     def delete_search_files(self):
-        """ Remove all files within the current project from search."""
+        """ Remove all files within the current project from search. """
         from website.search import file_indexing
         file_indexing.delete_search_files(self)
 
@@ -1551,10 +1551,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         file_indexing.update_search_file(file_node)
 
     def move_search_file(self, file_node, dest_node):
+        """ Update search when moving a file into a new node. """
         from website.search import file_indexing
         file_indexing.move_search_file(file_node, self, dest_node)
 
     def copy_search_file(self, file_node, new_file_node, dest_node):
+        """ Update search when coping a file into a new node. """
         from website.search import file_indexing
         file_indexing.copy_search_file(file_node, new_file_node, self, dest_node)
 
@@ -2427,7 +2429,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             else:
                 self.is_public = False
                 self.delete_search_files()
-
         else:
             return False
 

@@ -63,6 +63,7 @@ def migrate_files(index=None, app=None):
 
     ctx.pop()
 
+
 def migrate(delete, index=None, app=None):
     index = index or settings.ELASTIC_INDEX
     app = app or init_app("website.settings", set_backends=True, routes=True)

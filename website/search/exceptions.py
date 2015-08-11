@@ -13,7 +13,3 @@ class MalformedQueryError(SearchException):
 
 class SearchUnavailableError(SearchException):
     pass
-
-
-class FileIndexingNotEnabledError(SearchException):
-    pass

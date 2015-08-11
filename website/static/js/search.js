@@ -161,7 +161,6 @@ var ViewModel = function(params) {
             };
         });
 
-
     self.fullQuery = ko.pureComputed(function() {
         return {
             'filtered': {
@@ -176,7 +175,6 @@ var ViewModel = function(params) {
             }
         };
     });
-
 
     self.sortCategories = function(a, b) {
         if(a.name === 'Total') {

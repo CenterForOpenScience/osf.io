@@ -13,6 +13,7 @@ from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
 
 from website.models import User
+from website.search import file_util
 from website.project.decorators import (
     must_not_be_registration, must_have_addon,
 )
@@ -25,7 +26,6 @@ from website.addons.osfstorage import utils
 from website.addons.osfstorage import decorators
 from website.addons.osfstorage import settings as osf_storage_settings
 
-from website.search import file_util
 
 logger = logging.getLogger(__name__)
 
@@ -183,6 +183,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
             )
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
+
     update_search(parent.node, 'create', parent.node_settings, name, None)
     return {
         'status': 'success',
@@ -245,13 +246,10 @@ def update_search(node, action, addon, file_name, source_node_id=None, other_fil
     if not file_util.is_indexed(file_node):
         return
 
-    if addon.config.short_name != 'osfstorage':
-        return
-
     if action in ('create', 'update'):
         node.update_search_file(file_node)
 
-    if action in ('copy'):
+    if action in ('copy', ):
         source_node = Node.load(source_node_id)
         source_node.copy_search_file(file_node, other_file_node, node)
 

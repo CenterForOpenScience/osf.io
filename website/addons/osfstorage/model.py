@@ -264,7 +264,6 @@ class OsfStorageFileNode(StoredObject):
         )
         if save:
             child.save()
-
         return child
 
     def get_download_count(self, version=None):

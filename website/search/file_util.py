@@ -21,8 +21,7 @@ def require_file_indexing(func):
     def wrapper(*args, **kwargs):
         if settings.USE_FILE_INDEXING:
             return func(*args, **kwargs)
-        logging.info('File indexing not enabled.')
-        return None
+        logger.info('File indexing not enabled.')
     return wrapper
 
 
@@ -31,22 +30,12 @@ def is_indexed(file_node):
     addon = file_node.node_settings
     if not addon.config.short_name == 'osfstorage':
         return False
-    if not name_is_indexed(file_node.name):
-        return False
-    return True
-
-
-def name_is_indexed(file_name):
-    """ Return true id the filename indicates the file is to be indexed. """
-    if not file_name.endswith(INDEXED_TYPES):
-        return False
-    return True
+    return file_node.name.endswith(INDEXED_TYPES)
 
 
 def get_file_content(file_node):
     """ Return the content of the file node. """
-    file_, _ = file_node.node_settings.find_or_create_file_guid(file_node.path)
-    url = file_.download_url + '&mode=render'
+    url = get_file_content_url(file_node)
     response = requests.get(url)
     return response.content
 
