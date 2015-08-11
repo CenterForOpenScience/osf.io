@@ -38,9 +38,9 @@ class Root(APIView):
         the object you\'re crawling rather than constructing the link yourself.
         In general, links include:</p>
         <ol>
-        <li>1. "Related" links, which will give you detail information on individual items or a collection of related resources;</li>
-        <li>2. "Self" links, which is what you use for general REST operations (POST, DELETE, and so on);</li>
-        <li>3. Pagination links such as "next", "prev", "first", and "last". These are great for navigating long lists of information.</li></ol>
+        <li> "Related" links, which will give you detail information on individual items or a collection of related resources;</li>
+        <li> "Self" links, which is what you use for general REST operations (POST, DELETE, and so on);</li>
+        <li> Pagination links such as "next", "prev", "first", and "last". These are great for navigating long lists of information.</li></ol>
         <p>Some routes may have extra rules for links, especially if those links work with external services. Collections
         may have counts with them to indicate how many items are in that collection.</p>
 
