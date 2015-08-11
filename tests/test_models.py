@@ -1630,6 +1630,49 @@ class TestNode(OsfTestCase):
             self.node.set_visible(user=self.user, visible=False, auth=None)
             assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
+    def test_contributor_manage_visibility(self):
+
+        reg_user1 = UserFactory()
+        #This makes sure manage_contributors uses set_visible so visibility for contributors is added before visibility
+        #for other contributors is removed ensuring there is always at least one visible contributor
+        self.node.add_contributor(contributor=self.user, permissions=['read', 'write','admin'], auth=self.consolidate_auth)
+        self.node.add_contributor(contributor=reg_user1, permissions=['read', 'write','admin'], auth=self.consolidate_auth)
+
+        self.node.manage_contributors(
+            user_dicts=[
+                    {'id': self.user._id, 'permission': 'admin', 'visible': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'visible': False},
+                ],
+            auth=self.consolidate_auth,
+            save=True
+        )
+        self.node.manage_contributors(
+            user_dicts=[
+                    {'id': self.user._id, 'permission': 'admin', 'visible': False},
+                    {'id': reg_user1._id, 'permission': 'admin', 'visible': True},
+            ],
+            auth=self.consolidate_auth,
+            save=True
+        )
+
+        assert_equal(len(self.node.visible_contributor_ids),1)
+
+    def test_contributor_set_visibility_validation(self):
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        self.node.add_contributors(
+                        [
+                {'user': reg_user1, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': False},
+            ]
+        )
+        print(self.node.visible_contributor_ids)
+        with assert_raises(ValueError) as e:
+            self.node.set_visible(user=reg_user1, visible=False, auth=None)
+            self.node.set_visible(user=self.user, visible=False, auth=None)
+            assert_equal(e.exception.message, 'Must have at least one visible contributor')
+
 class TestNodeTraversals(OsfTestCase):
 
     def setUp(self):
