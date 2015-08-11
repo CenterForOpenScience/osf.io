@@ -171,7 +171,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'html': 'absolute_url',
         'nodes': {
             'relation': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
-        }
+        },
+        'detail': Link('nodes:node-contributor-detail',
+                       kwargs={'node_id': '<node_id>', 'user_id': '<pk>'})
     })
 
     class Meta:
