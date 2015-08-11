@@ -1170,7 +1170,7 @@ function _fangornResolveRows(item) {
         item.css = 'fangorn-selected';
     }
 
-    if(!item.data.permissions.view){
+    if(item.data.permissions && !item.data.permissions.view){
         item.css += ' tb-private-row';
     }
 
