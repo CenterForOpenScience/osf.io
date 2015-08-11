@@ -32,61 +32,60 @@ var currentUser = window.contextVars.currentUser || {
  * @property {String} name
  **/
 function Comment(data) {
-    var self = this;
+        var self = this;
 
-    self.saved = ko.observable(data ? true : false);
+        self.saved = ko.observable(data ? true : false);
 
-    data = data || {};
-    self.user = data.user || currentUser;
-    self.lastModified = new Date(data.lastModified)|| new Date();
-    self.value = ko.observable(data.value || '');
-    self.value.subscribe(function() {
-        self.lastModified = new Date();
-    });
+        data = data || {};
+        self.user = data.user || currentUser;
+        self.lastModified = new Date(data.lastModified) || new Date();
+        self.value = ko.observable(data.value || '');
+        self.value.subscribe(function() {
+            self.lastModified = new Date();
+        });
 
-    self.created = new Date(data.created) || new Date();
+        self.created = new Date(data.created) || new Date();
 
-    self.isDeleted = ko.observable(data.isDeleted || false);
-    self.isDeleted.subscribe(function(isDeleted) {
-        if (isDeleted) {
-            self.value('');
-        }
-    });
+        self.isDeleted = ko.observable(data.isDeleted || false);
+        self.isDeleted.subscribe(function(isDeleted) {
+            if (isDeleted) {
+                self.value('');
+            }
+        });
 
-    self.seenBy = ko.observableArray([self.user.id] || []);
-    /**
-     * Returns the author as the actual user, not 'You'
-     **/
-    self.author = ko.pureComputed(function() {
-        return self.user.fullname;
-    });
-
-    /**
-     * Returns 'You' if the current user is the commenter, else the commenter's name
-     */
-    self.getAuthor = ko.pureComputed(function() {
-        if (self.user.id === currentUser.id) {
-            return 'You';
-        }
-        else {
+        self.seenBy = ko.observableArray([self.user.id] || []);
+        /**
+         * Returns the author as the actual user, not 'You'
+         **/
+        self.author = ko.pureComputed(function() {
             return self.user.fullname;
-        }
-    });
+        });
 
-    /**
-     * Returns true if the current user is the comment creator
-     **/
-    self.canDelete = ko.pureComputed(function() {
-        return self.user.id === currentUser.id;
-    });
-    /**
-     * Returns true if the comment is saved and the current user is the comment creator
-     **/
-    self.canEdit = ko.pureComputed(function() {
-        return !self.isDeleted() && self.saved() && self.user.id === currentUser.id;
-    });
-}
-/** Toggle the comment's save state **/
+        /**
+         * Returns 'You' if the current user is the commenter, else the commenter's name
+         */
+        self.getAuthor = ko.pureComputed(function() {
+            if (self.user.id === currentUser.id) {
+                return 'You';
+            } else {
+                return self.user.fullname;
+            }
+        });
+
+        /**
+         * Returns true if the current user is the comment creator
+         **/
+        self.canDelete = ko.pureComputed(function() {
+            return self.user.id === currentUser.id;
+        });
+        /**
+         * Returns true if the comment is saved and the current user is the comment creator
+         **/
+        self.canEdit = ko.pureComputed(function() {
+            return !self.isDeleted() && self.saved() && self.user.id === currentUser.id;
+        });
+    }
+    /** Toggle the comment's save state **/
 Comment.prototype.toggleSaved = function(save) {
     var self = this;
 
@@ -145,14 +144,14 @@ var Question = function(data, id) {
     self.properties = data.properties || {};
     self.match = data.match || '';
 
-    if ( self.required ) {
+    if (self.required) {
         self.value.extend({
             required: true
         });
     } else {
-      self.value.extend({
-        required: false
-      });
+        self.value.extend({
+            required: false
+        });
     }
 
     self.extra = {};
@@ -209,13 +208,13 @@ Question.prototype.addComment = function(save) {
 /**
  * Shows/hides the Question example
  **/
-Question.prototype.toggleExample = function(){
+Question.prototype.toggleExample = function() {
     this.showExample(!this.showExample());
 };
 /**
  * Shows/hides the Question uploader
  **/
-Question.prototype.toggleUploader = function(){
+Question.prototype.toggleUploader = function() {
     this.showUploader(!this.showUploader());
 };
 
@@ -251,11 +250,12 @@ var MetaSchema = function(params) {
 
     self.requiresApproval = params.requires_approval || false;
     self.fulfills = params.fulfills || [];
+    self.messages = params.messages || {};
 
     $.each(self.schema.pages, function(i, page) {
         var mapped = {};
         $.each(page.questions, function(qid, question) {
-            mapped[qid]  = new Question(question, qid);
+            mapped[qid] = new Question(question, qid);
         });
         self.schema.pages[i].questions = mapped;
     });
@@ -332,7 +332,7 @@ var Draft = function(params, metaSchema) {
             $.each(schema.pages, function(i, page) {
                 $.each(page.questions, function(qid, question) {
                     var q = self.schemaData[qid];
-                    if(q && !$osf.isBlank(q.value)) {
+                    if (q && !$osf.isBlank(q.value)) {
                         complete++;
                     }
                     total++;
@@ -345,18 +345,16 @@ var Draft = function(params, metaSchema) {
 };
 Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var self = this;
-    bootbox.confirm(
-        {
-            size: 'large',
-            title : language.registerConfirm,
-            message : $osf.joinPrompts(response.prompts),
-            callback: function(result) {
-                if (result) {
-                    confirm();
-                }
+    bootbox.confirm({
+        size: 'large',
+        title: language.registerConfirm,
+        message: $osf.joinPrompts(response.prompts),
+        callback: function(result) {
+            if (result) {
+                confirm();
             }
         }
-    );
+    });
 };
 Draft.prototype.preRegisterErrors = function(response, confirm) {
     bootbox.confirm(
@@ -365,7 +363,7 @@ Draft.prototype.preRegisterErrors = function(response, confirm) {
             'Before you continue...'
         ) + '<br />' + language.registerSkipAddons,
         function(result) {
-            if(result) {
+            if (result) {
                 confirm();
             }
         }
@@ -379,18 +377,16 @@ Draft.prototype.beforeRegister = function(data) {
     return $.getJSON(self.urls.before_register).then(function(response) {
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(response, self.preRegisterWarnings);
-        }
-        else if (response.prompts && response.prompts.length) {
+        } else if (response.prompts && response.prompts.length) {
             self.preRegisterPrompts(response, self.register.bind(self, data));
-        }
-        else {
+        } else {
             self.register(data);
         }
     }).always($osf.unblock);
 };
-Draft.prototype.onRegisterFail =  bootbox.alert.bind(null, {
-    title : 'Registration failed',
-    message : language.registerFail
+Draft.prototype.onRegisterFail = bootbox.alert.bind(null, {
+    title: 'Registration failed',
+    message: language.registerFail
 });
 Draft.prototype.register = function(data) {
     var self = this;
@@ -401,8 +397,7 @@ Draft.prototype.register = function(data) {
         .done(function(response) {
             if (response.status === 'initiated') {
                 window.location.assign(response.urls.registrations);
-            }
-            else if (response.status === 'error') {
+            } else if (response.status === 'error') {
                 self.onRegisterFail();
             }
         }).always($osf.unblock).fail(self.onRegisterFail);
@@ -440,18 +435,18 @@ var RegistrationEditor = function(urls, editorId) {
 
     self.currentPages = ko.computed(function() {
         var draft = self.draft();
-        if(!draft){
+        if (!draft) {
             return [];
         }
         var schema = draft.schema();
-        if(!schema) {
+        if (!schema) {
             return [];
         }
         return schema.pages;
     });
 
     self.lastSaveTime = ko.computed(function() {
-        if(!self.draft()) {
+        if (!self.draft()) {
             return null;
         }
         return self.draft().updated;
@@ -460,8 +455,7 @@ var RegistrationEditor = function(urls, editorId) {
         var t = self.lastSaveTime();
         if (t) {
             return t.toGMTString();
-        }
-        else {
+        } else {
             return 'never';
         }
     });
@@ -471,7 +465,7 @@ var RegistrationEditor = function(urls, editorId) {
         return draft && draft.isApproved;
     });
 
-    self.iterObject = $osf.iterObject;    
+    self.iterObject = $osf.iterObject;
 
     // TODO: better extensions system?
     self.extensions = {
@@ -490,26 +484,25 @@ RegistrationEditor.prototype.init = function(draft) {
     var metaSchema = draft.metaSchema;
 
     var schemaData = {};
-    if(draft) {
+    if (draft) {
         schemaData = draft.schemaData || {};
     }
 
     var questions = self.flatQuestions();
     $.each(questions, function(i, question) {
         var val = schemaData[question.id];
-        if(val) {
-            if(question.type === 'object') {
+        if (val) {
+            if (question.type === 'object') {
                 $.each(question.properties, function(prop, subQuestion) {
                     val = schemaData[question.id][prop];
-                    if(val) {
+                    if (val) {
                         subQuestion.value(val.value);
                         subQuestion.comments($.map(val.comments, function(data) {
                             return new Comment(data);
                         }));
                     }
                 });
-            }
-            else {
+            } else {
                 question.value(val.value);
                 question.comments($.map(val.comments, function(data) {
                     return new Comment(data);
@@ -554,7 +547,7 @@ RegistrationEditor.prototype.check = function() {
 
     var proceed = true;
     $.each(self.flatQuestions(), function(i, question) {
-        if ( question.required ) {
+        if (question.required) {
             var valid = question.value.isValid();
             proceed = proceed && valid;
         }
@@ -574,8 +567,7 @@ RegistrationEditor.prototype.check = function() {
                 }
             }
         });
-    }
-    else {
+    } else {
         window.location = self.draft().urls.register_page;
     }
 };
@@ -617,11 +609,10 @@ RegistrationEditor.prototype.nextQuestion = function() {
     var index = $osf.indexOf(questions, function(q) {
         return q.id === currentQuestion.id;
     });
-    if(index + 1 === questions.length) {
+    if (index + 1 === questions.length) {
         self.currentQuestion(questions.shift());
         self.viewComments();
-    }
-    else {
+    } else {
         self.currentQuestion(questions[index + 1]);
         self.viewComments();
     }
@@ -638,11 +629,10 @@ RegistrationEditor.prototype.previousQuestion = function() {
     var index = $osf.indexOf(questions, function(q) {
         return q.id === currentQuestion.id;
     });
-    if(index - 1 < 0){
+    if (index - 1 < 0) {
         self.currentQuestion(questions.pop());
         self.viewComments();
-    }
-    else {
+    } else {
         self.currentQuestion(questions[index - 1]);
         self.viewComments();
     }
@@ -668,62 +658,64 @@ RegistrationEditor.prototype.updateData = function(response) {
     draft.updated = new Date(response.updated);
     self.draft(draft);
 };
-// TODO: uncomment to allow submit for review
-// RegistrationEditor.prototype.submitForReview = function() {
-//     var self = this;
+RegistrationEditor.prototype.submitForReview = function() {
+    var self = this;
 
-//     var messages = self.draft().messages;
-//     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
-//         if(result) {
-//             $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {}).then(function() {
-//                 bootbox.dialog({
-//                     closeButton: false,
-//                     message: messages.afterSubmitForApproval,
-//                     title: 'Pre-Registration Prize Submission',
-//                     buttons: {
-//                         registrations: {
-//                             label: 'Return to registrations page',
-//                             className: 'btn-primary pull-right',
-//                             callback: function() {
-//                                 window.location.href = self.draft().urls.registrations;
-//                             }
-//                         }
-//                     }
-//                 });
-//             }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
-//         }
-//     });
-// };
-// RegistrationEditor.prototype.submit = function() {
-//     var self = this;
+    var draft = self.draft();
+    var metaSchema = draft.metaSchema;
+    var messages = metaSchema.messages;
+    var beforeSubmitForApprovalMessage = messages.beforeSubmitForApproval || '';
+    var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';
 
-//     var currentNode = window.contextVars.node;
-//     var currentUser = window.contextVars.currentUser;
-
-//     var messages = self.draft().messages;
-//     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
-//         if(result) {
-//             $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
-//                 node: currentNode,
-//                 auth: currentUser
-//             }).then(function() {
-//                 bootbox.dialog({
-//                     message: messages.afterSubmitForApproval,
-//                     title: 'Pre-Registration Prize Submission',
-//                     buttons: {
-//                         registrations: {
-//                             label: 'Return to registrations page',
-//                             className: 'btn-primary pull-right',
-//                             callback: function() {
-//                                 window.location.href = self.draft().urls.registrations;
-//                             }
-//                         }
-//                     }
-//                 });
-//             }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
-//         }
-//     });
-// };
+    bootbox.confirm(beforeSubmitForApprovalMessage, function(confirmed) {
+        if (confirmed) {
+            $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {}).then(function() {
+                bootbox.dialog({
+                    closeButton: false,
+                    message: afterSubmitForApprovalMessage,
+                    title: 'Pre-Registration Prize Submission',
+                    buttons: {
+                        registrations: {
+                            label: 'Return to registrations page',
+                            className: 'btn-primary pull-right',
+                            callback: function() {
+                                window.location.href = self.draft().urls.registrations;
+                            }
+                        }
+                    }
+                });
+            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+        }
+    });
+};
+RegistrationEditor.prototype.submit = function() {
+    var self = this;
+    var currentNode = window.contextVars.node;
+    var currentUser = window.contextVars.currentUser;
+    var messages = self.draft().messages;
+    bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
+        if (result) {
+            $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+                node: currentNode,
+                auth: currentUser
+            }).then(function() {
+                bootbox.dialog({
+                    message: messages.afterSubmitForApproval,
+                    title: 'Pre-Registration Prize Submission',
+                    buttons: {
+                        registrations: {
+                            label: 'Return to registrations page',
+                            className: 'btn-primary pull-right',
+                            callback: function() {
+                                window.location.href = self.draft().urls.registrations;
+                            }
+                        }
+                    }
+                });
+            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+        }
+    });
+};
 /**
  * Create a new draft
  **/
@@ -752,7 +744,7 @@ RegistrationEditor.prototype.save = function() {
     var data = {};
     $.each(schema.pages, function(i, page) {
         $.each(page.questions, function(qid, question) {
-            if(question.type === 'object'){
+            if (question.type === 'object') {
                 var value = {};
                 $.each(question.properties, function(prop, subQuestion) {
                     value[prop] = {
@@ -761,8 +753,7 @@ RegistrationEditor.prototype.save = function() {
                     };
                 });
                 data[qid] = value;
-            }
-            else {
+            } else {
                 data[qid] = {
                     value: question.value(),
                     comments: ko.toJS(question.comments())
@@ -771,10 +762,9 @@ RegistrationEditor.prototype.save = function() {
         });
     });
 
-    if (typeof self.draft().pk === 'undefined'){
+    if (typeof self.draft().pk === 'undefined') {
         self.create(self);
-    }
-    else{
+    } else {
         self.putSaveData({
             schema_name: metaSchema.name,
             schema_version: metaSchema.version,
@@ -868,7 +858,7 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
 
     bootbox.confirm('Are you sure you want to delete this draft registration?', function(confirmed) {
-        if(confirmed) {
+        if (confirmed) {
             $.ajax({
                 url: self.urls.delete.replace('{draft_pk}', draft.pk),
                 method: 'DELETE'
@@ -899,7 +889,7 @@ RegistrationManager.prototype.maybeWarn = function(draft) {
         window.location.href = draft.urls.edit;
     };
     var callback = function(confirmed) {
-        if(confirmed) {
+        if (confirmed) {
             redirect();
         }
     };

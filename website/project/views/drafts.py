@@ -31,11 +31,14 @@ autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'dra
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def submit_draft_for_review(auth, node, draft, *args, **kwargs):
-    draft.approval = DraftRegistrationApproval(
+    # TODO(samchrisinger) check that old approval is None or complete
+    approval = DraftRegistrationApproval(
         initiated_by=auth.user,
         end_date=None,
     )
-    draft.approval.ask(node.get_active_contributors)
+    approval.save()
+    draft.approval = approval
+    draft.approval.ask(node.active_contributors())
     draft.save()
 
     ret = project_utils.serialize_node(node, auth)

@@ -97,6 +97,10 @@ class MetaSchema(StoredObject):
     def fulfills(self):
         return self.schema.get('config', {}).get('fulfills', [])
 
+    @property
+    def messages(self):
+        return self.schema.get('config', {}).get('messages', {})
+
 def ensure_schema(schema, name, version=1):
     try:
         schema_obj = MetaSchema.find_one(
@@ -3610,7 +3614,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     @property
     def is_pending_review(self):
-        return self.approval.is_pending_review if (self.requires_approval and self.approval) else False
+        return self.approval.is_pending_approval if (self.requires_approval and self.approval) else False
 
     @property
     def is_approved(self):

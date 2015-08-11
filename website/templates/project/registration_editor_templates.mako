@@ -69,7 +69,7 @@
           <br />
           <div class="row">
             <div class="col-md-12">
-              <div class="form-group" data-bind="css: {has-success: $data.isComplete}">
+              <div class="form-group" data-bind="css: {has-success: $data.value.isValid}">
                 <span data-bind="with: $root.context($data)">
                   <span data-bind="if: $root.showValidation">
                     <p class="text-error" data-bind="validationMessage: $data.value"></p>

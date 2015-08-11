@@ -7,6 +7,7 @@ def serialize_meta_schema(meta_schema):
         'schema': meta_schema.schema,
         'fulfills': meta_schema.fulfills,
         'requires_approval': meta_schema.requires_approval,
+        'messages': meta_schema.messages
     }
 
 def serialize_draft_registration(draft, auth=None):
