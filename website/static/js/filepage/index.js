@@ -254,7 +254,7 @@ var FileViewPage = {
                             '       \<input onclick="this.select()" class="form-control" type="text" value="' + link + '" /\>',
                             '   \</div\>',
                             '   \<div id="embed" class="tab-pane fade"\>',
-                            '       \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to dynamically render an iFrame that is automatically sized appropriately."\>CSS Style, HTML & Script\<p/\>',
+                            '       \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to dynamically render an iFrame that is automatically sized appropriately."\>Dynamically Render iFrame with JavaScript\<p/\>',
                             '       \<textarea onclick="this.select()" class="form-control" \>' +
                                         style + '\n' +
                                         '\<div id="mfrIframe" class="mfr mfr-file"\>\</div\> \n',
@@ -263,7 +263,7 @@ var FileViewPage = {
                                         '   var mfrRender = new mfr.Render\("mfrIframe", "' + link + '"\);\n',
                                         '\</script\> ',
                             '       \</textarea\>',
-                            '       \<br/\> \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to directly embed the iFrame with custom sizing and scrolling enabled."\>Direct iFrame\<p/\>',
+                            '       \<br/\> \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to directly embed the iFrame with custom sizing and scrolling enabled."\>Direct iFrame with Fixed Height and Width\<p/\>',
                             '           \<textarea id="directIFrame" onclick="this.select()" class="form-control" \>'  +
                                             '\<iframe src="' + link + '" width="100%" scrolling="yes" height="100%" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen \>',
                             '           \</textarea\> \<br\>',
