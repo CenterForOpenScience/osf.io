@@ -8,6 +8,7 @@ var utils = require('js/share/utils');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 var charts = require('js/search_dashboard/charts');
 var ResultsWidget = require('js/search_dashboard/resultsWidget');
+var filterAndSearchWidget = require('js/search_dashboard/filterAndSearchWidget');
 var searchDashboard = require('js/search_dashboard/searchDashboard');
 
 var profileDashboard = {};
@@ -103,15 +104,17 @@ profileDashboard.view = function(ctrl) {
  * @return {m.component.controller} returns itself
  */
 profileDashboard.controller = function(params) {
+    var contributorLevelNames = ['contributors','contributorsName']
     var contributors = {
-        title: 'Contributers of '+ ctx.name + '\'s projects and components',
+        id: contributorLevelNames[0],
+        title: ctx.name + '\'s contributors',
         size: ['.col-md-6', 300],
-        row: 1,
-        levelNames: ['contributors','contributorsName'],
+        row: 2,
+        levelNames: contributorLevelNames,
+        aggregation: profileDashboard.contributorsAgg(),
         display: {
             dataReady : m.prop(true),
             displayWidget: charts.donutChart,
-            //title: 'Projects contributed to:',
             parser: profileDashboard.contributorsParser,
             callback: { onclick : function (key) {
                 var vm = this.vm;
@@ -128,31 +131,16 @@ profileDashboard.controller = function(params) {
                 widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
             }}
         },
-        aggregation: profileDashboard.contributorsAgg(),
-        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results'] //TODO give simple 'all' option
+        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'appliedFilters'] //TODO give simple 'all' option
     };
 
-    //var nodeType = {
-    //    title: 'Type',
-    //    size: ['.col-md-6', 260],
-    //    row: 1,
-    //    levelNames: ['nodeType'],
-    //    display: {
-    //        dataReady : m.prop(true),
-    //        displayWidget: charts.barChart,
-    //        parser: charts.barParser,
-    //        rotateAxis: true,
-    //        customColors: [], //by setting custom colors to an empty string, we get the default c3 colors
-    //    },
-    //    aggregation: profileDashboard.nodeTypeAgg(),
-    //    thisWidgetUpdates: ['Contributors', 'projectsByTimes', 'results']
-    //};
-
+    var projectLevelNames = ['projectsByTimes', 'projectsOverTime'];
     var projectsByTimes = {
+        id: projectLevelNames[0],
         title: ctx.name + '\'s projects and components over time',
         size: ['.col-md-6', 300],
-        row: 1,
-        levelNames: ['projectsByTimes', 'projectsOverTime'],
+        row: 2,
+        levelNames: projectLevelNames,
         display: {
             dataReady : m.prop(true),
             displayWidget: charts.timeseriesChart,
@@ -169,7 +157,7 @@ profileDashboard.controller = function(params) {
                     vm.tempData.projectByTimeTimeout = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
                         function(){
                             utils.removeFilter(vm,vm.tempData.projectByTimeTimeFilter, true);
-                            vm.tempData.projectByTimeTimeFilter = 'range:date_created:' + zoomWin[0].getTime() + ':' + zoomWin[1].getTime()
+                            vm.tempData.projectByTimeTimeFilter = 'range:date_created:' + zoomWin[0].getTime() + ':' + zoomWin[1].getTime();
                             widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
                             utils.updateFilter(vm,vm.tempData.projectByTimeTimeFilter,true);
                         },1000);
@@ -185,28 +173,57 @@ profileDashboard.controller = function(params) {
             }
         },
         aggregation: profileDashboard.projectsByTimesAgg(),
-        thisWidgetUpdates: ['contributors', 'results', 'projectsByTimes']
+        thisWidgetUpdates: ['contributors', 'results', 'projectsByTimes', 'appliedFilters']
+    };
+
+        //var nodeType = {
+    //    title: 'Type',
+    //    size: ['.col-md-6', 260],
+    //    row: 1,
+    //    levelNames: ['nodeType'],
+    //    display: {
+    //        dataReady : m.prop(true),
+    //        displayWidget: charts.barChart,
+    //        parser: charts.barParser,
+    //        rotateAxis: true,
+    //        customColors: [], //by setting custom colors to an empty string, we get the default c3 colors
+    //    },
+    //    aggregation: profileDashboard.nodeTypeAgg(),
+    //    thisWidgetUpdates: ['Contributors', 'projectsByTimes', 'results']
+    //};
+
+    var appliedFilters = {
+        id: 'appliedFilters',
+        title: 'Search and Filters',
+        size: ['.col-md-12'],
+        row: 1,
+        display: {
+            dataReady : m.prop(true),
+            displayWidget: filterAndSearchWidget.display
+        },
+        aggregation: null, //this displays no stats, so needs no aggregations
+        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'appliedFilters']
     };
 
     var results = {
+        id: 'results',
         title: ctx.name + '\'s public projects and components',
         size: ['.col-md-12'],
-        row: 2,
-        levelNames: ['results'],
+        row: 3,
         display: {
             dataReady : m.prop(true),
             displayWidget: ResultsWidget.display
         },
         aggregation: null, //this displays no stats, so needs no aggregations
-        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results']
+        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'appliedFilters']
     };
 
     this.searchSetup = {
         elasticURL: '/api/v1/search/',
         user: ctx.userId,
         tempData: {guidsToNames : {}}, //collaborators require a second level of query to get URL to names mappings
-        widgets : [contributors, projectsByTimes, results],
-        rows:2,
+        widgets : [contributors, projectsByTimes, results, appliedFilters],
+        rows: 3, //number of rows to draw
         requiredFilters: ['match:contributors.url:' + ctx.userId], //forces us to only find  projects TODO this might not find components...
         optionalFilters: ['match:_type:project', 'match:_type:component']
     };

@@ -208,6 +208,7 @@ Stats.controller = function (vm) {
     self.vm.graphs = {}; //holds actual c3 chart objects
     self.vm.statsData = {'charts': {}}; //holds data for charts
     self.vm.loadStats = true; //we want to turn stats on
+    self.vm.processStats = true;
     //request these querys/aggregations for charts
     self.vm.aggregations = {
         'shareTimeGraph' : Stats.sourcesByDatesAgg(),

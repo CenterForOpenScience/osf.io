@@ -6,6 +6,11 @@ var utils = require('js/share/utils');
 
 var widgetUtils = {};
 
+widgetUtils.timeSinceEpochInMsToMMYY = function(timeSinceEpochInMs) {
+    var d = new Date(timeSinceEpochInMs);
+    return (d.getDate()+1).toString() + '/' + (d.getMonth()+1).toString() + '/' + d.getFullYear().toString().substring(2);
+};
+
 /**
  * Checks if an update has been requested for this widget
  *

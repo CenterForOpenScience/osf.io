@@ -42,7 +42,7 @@ var SearchWidget = {
          * @return {m.component} display component
          */
         this.drawChart = function (widget, vm, data) {
-            if ((data.aggregations[widget.levelNames[0]] !== undefined) || (data[widget.levelNames[0]] !== undefined)) {
+            if ((data.aggregations[widget.id] !== undefined) || (widget.levelNames === undefined)) {
                 return widget.display.displayWidget(data, vm, widget);
             }
         };

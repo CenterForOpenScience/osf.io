@@ -25,11 +25,6 @@ function rgbToHex(rgb) {
     return  '#' + (0x1000000 + rgb).toString(16).substring(1);
 }
 
-function timeSinceEpochInMsToMMYY(timeSinceEpochInMs) {
-    var d = new Date(timeSinceEpochInMs);
-    return (d.getDate()+1).toString() + '/' + (d.getMonth()+1).toString() + '/' + d.getFullYear().toString().substring(2);
-}
-
 /**
  * Wraps and returns a c3 chart in a component
  * Only creates new component when an update to this widget has been requested
@@ -138,12 +133,16 @@ charts.barChart = function (rawData, vm, widget) {
             x: {
                 tick: {
                     format: function (d) {return ''; },
+                },
+                label: {
+                    text: widget.display.xLabel ? widget.display.xLabel : '',
+                    position: 'outer-center'
                 }
             },
             y: {
                 label: {
-                    text: 'Number of projects contributed to',
-                    position: 'outer-center'
+                    text: widget.display.yLabel ? widget.display.yLabel : '',
+                    position: 'outer-middle'
                 },
                 tick: {
                     format: function (x) {
@@ -190,10 +189,13 @@ charts.timeseriesChart = function (rawData, vm, widget) {
         },
         axis: {
             x: {
-                text: widget.display.xLabel ? widget.display.xLabel : '',
+                label: {
+                    text: widget.display.xLabel ? widget.display.xLabel : '',
+                    position: 'outer-center'
+                },
                 type: 'timeseries',
                 tick: {
-                    format: function (d) {return timeSinceEpochInMsToMMYY(d); }
+                    format: function (d) {return widgetUtils.timeSinceEpochInMsToMMYY(d); }
                 }
             },
             y: {

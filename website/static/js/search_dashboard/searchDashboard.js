@@ -24,7 +24,7 @@ searchDashboard.view = function (ctrl, params, children) {
     for(row = 1; row <= ctrl.rows; row++){
         grid.push(m('.row',{},ctrl.widgets.map(function(widget) {
             if (widget.row === row) {
-                return m.component(SearchWidgetPanel, {key: widget.levelNames[0], widget: widget, vm: ctrl.vm});
+                return m.component(SearchWidgetPanel, {key: widget.id, widget: widget, vm: ctrl.vm});
             }
         })));
     };
@@ -57,12 +57,11 @@ searchDashboard.controller = function (params) {
     self.vm.requiredFilters = params.requiredFilters || [];
     self.vm.aggregations = [];
     self.vm.widgetsToUpdate = [];
-    self.vm.widgetNames = [];
+    self.vm.widgetIds = [];
     if (self.widgets){
         self.widgets.forEach(function(widget){
             self.vm.aggregations.push(widget.aggregation);
-            self.vm.widgetNames.push(widget.levelNames[0]);
-            //self.vm.widgetsToUpdate.push(widget.levelNames[0]); //redraw all to start with TODO this is getting fucked with somewhere...
+            self.vm.widgetIds.push(widget.id);
         });
     }
     self.vm.chartHandles = [];
@@ -84,7 +83,7 @@ searchDashboard.controller = function (params) {
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var historyChanged = utils.updateHistory(self.vm);
-        if (historyChanged){ widgetUtils.signalWidgetsToUpdate(self.vm, self.vm.widgetNames);}
+        if (historyChanged){ widgetUtils.signalWidgetsToUpdate(self.vm, self.vm.widgetIds);}
     });
 };
 
