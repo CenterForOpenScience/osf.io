@@ -47,10 +47,7 @@ def archive_callback(dst):
     root_job.sent = True
     root_job.save()
     if root_job.success:
-        if dst.is_pending_embargo:
-            dst.embargo.ask(root.active_contributors())
-        else:  # requires approval
-            dst.registration_approval.ask(root.active_contributors())
+        dst.sanction.ask(root.active_contributors())
     else:
         archiver_utils.handle_archive_fail(
             ARCHIVER_UNCAUGHT_ERROR,
