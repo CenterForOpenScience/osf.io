@@ -30,18 +30,15 @@ def _url_val(val, obj, serializer, **kwargs):
 
 
 class HyperLinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
+    # Returns a list with a url and an optional hash containing additional meta information
 
     def __init__(self, view_name=None, **kwargs):
         assert view_name is not None, 'The `view_name` argument is required.'
         kwargs['read_only'] = True
         kwargs['source'] = '*'
-        self.count = kwargs.pop('count', None)
+        self.meta = kwargs.pop('meta', None)
         super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
 
-    def get_attribute(self, obj):
-        # We pass the object instance onto `to_representation`,
-        # not just the field attribute.
-        return obj
 
     def get_url(self, obj, view_name, request, format):
         """
@@ -77,7 +74,12 @@ class HyperLinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
 
         # Return the hyperlink, or error if incorrectly configured.
         try:
-            return [self.get_url(value, self.view_name, request, format), _rapply(self.count, _url_val, obj=value, serializer=self.parent)]
+            if self.meta is not None:
+                meta = {}
+                for key in self.meta:
+                    meta[key] = _rapply(self.meta.values()[0], _url_val, obj=value, serializer=self.parent)
+                self.meta = meta
+            return [self.get_url(value, self.view_name, request, format), self.meta]
         except NoReverseMatch:
             msg = (
                 'Could not resolve URL for hyperlinked relationship using '
