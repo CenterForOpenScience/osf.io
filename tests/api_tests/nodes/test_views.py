@@ -1018,23 +1018,44 @@ class TestContributorDetail(ApiTestCase):
     def setUp(self):
         super(TestContributorDetail, self).setUp()
         self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
 
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
-        self.public_url = '{}nodes/{}/contrbutors/{}'.format(API_BASE, self.public_project, self.user)
+        self.public_url = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.public_project, self.user._id)
 
         self.private_project = ProjectFactory(creator=self.user, is_public=False)
-        self.private_url = '{}nodes/{}/contrbutors/{}'.format(API_BASE, self.private_project, self.user)
+        self.private_url = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.private_project, self.user._id)
 
+    def test_get_public_node_user_detail(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.user._id)
 
+    def test_get_private_node_user_detail_contributor(self):
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.user._id)
 
-class TestNodeContributorUpdate(ApiTestCase):
-    def setUp(self):
-        super(TestNodeContributorUpdate, self).setUp()
+    def test_get_private_node_user_detail_non_contributor(self):
+        res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
-
-class TestNodeContributorDelete(ApiTestCase):
-    def setUp(self):
-        super(TestNodeContributorDelete, self).setUp()
+    def test_get_private_node_user_detail_not_logged_in(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+#
+#
+# class TestNodeContributorUpdate(ApiTestCase):
+#     def setUp(self):
+#         super(TestNodeContributorUpdate, self).setUp()
+#
+#
+# class TestNodeContributorDelete(ApiTestCase):
+#     def setUp(self):
+#         super(TestNodeContributorDelete, self).setUp()
 
 
 class TestNodeRegistrationList(ApiTestCase):
