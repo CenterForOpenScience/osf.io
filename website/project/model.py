@@ -1880,12 +1880,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         authors = []
 
         for citation in self.nonContributorCitations:
-            authors += [{"given": citation, "family" : u""}]
+            authors += [{"given": citation, "family": u""}]
 
         authors += [
-                contributor.csl_name  # method in auth/model.py which parses the names of authors
-                for contributor in self.visible_contributors
-            ]
+            contributor.csl_name  # method in auth/model.py which parses the names of authors
+            for contributor in self.visible_contributors
+        ]
 
         csl = {
             'id': self._id,
