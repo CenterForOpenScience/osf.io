@@ -29,6 +29,7 @@ from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
+from website.project.signals import contributor_added
 from website.project.model import (
     Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo,
@@ -268,6 +269,26 @@ class TestUser(OsfTestCase):
         master = UserFactory()
         dupe = UserFactory(merged_by=master)
         assert_false(dupe.is_active)
+
+    def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self):
+        user2 = UserFactory.build()
+        user2.save()
+
+        project = ProjectFactory(is_public=True)
+        # Both the master and dupe are contributors
+        project.add_contributor(user2, log=False)
+        project.add_contributor(self.user, log=False)
+        project.set_permissions(user=self.user, permissions=['read'])
+        project.set_permissions(user=user2, permissions=['read', 'write', 'admin'])
+        project.set_visible(user=self.user, visible=False)
+        project.set_visible(user=user2, visible=True)
+        project.save()
+        self.user.merge_user(user2)
+        self.user.save()
+
+        assert_true('admin' in project.permissions[self.user._id])
+        assert_true(self.user._id in project.visible_contributor_ids)
+        assert_false(project.is_contributor(user2))
 
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
@@ -1943,6 +1964,19 @@ class TestProject(OsfTestCase):
         assert_in(user2, self.project.contributors)
         assert_equal(self.project.logs[-1].action, 'contributor_added')
 
+    def test_add_contributor_sends_contributor_added_signal(self):
+        user = UserFactory()
+        contributors = [{
+            'user': user,
+            'visible': True,
+            'permissions': ['read', 'write']
+        }]
+        with capture_signals() as mock_signals:
+            self.project.add_contributors(contributors=contributors, auth=self.consolidate_auth)
+            self.project.save()
+            assert_in(user, self.project.contributors)
+            assert_equal(mock_signals.signals_sent(), set([contributor_added]))
+
     def test_add_unregistered_contributor(self):
         self.project.add_unregistered_contributor(
             email='foo@bar.com',
@@ -2724,6 +2758,15 @@ class TestTemplateNode(OsfTestCase):
         assert_equal(new.wiki_pages_current, {})
         assert_equal(new.wiki_pages_versions, {})
 
+    def test_user_who_makes_node_from_template_has_creator_permission(self):
+        project = ProjectFactory(is_public=True)
+        user = UserFactory()
+        auth = Auth(user)
+
+        templated = project.use_as_template(auth)
+
+        assert_equal(templated.get_permissions(user), ['read', 'write', 'admin'])
+
     def test_template_security(self):
         """Create a templated node from a node with public and private children
 
@@ -2746,7 +2789,7 @@ class TestTemplateNode(OsfTestCase):
         self.read.save()
 
         self.write = NodeFactory(creator=self.user, parent=self.project)
-        self.write.add_contributor(other_user, permissions=['read', 'write', ])
+        self.write.add_contributor(other_user, permissions=['read', 'write'])
         self.write.save()
 
         self.admin = NodeFactory(creator=self.user, parent=self.project)
@@ -2953,6 +2996,9 @@ class TestForkNode(OsfTestCase):
         user2_auth = Auth(user=user2)
         fork = self.project.fork_node(user2_auth)
         assert_true(fork)
+        # Forker has admin permissions
+        assert_equal(len(fork.contributors), 1)
+        assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
 
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)
@@ -3120,9 +3166,9 @@ class TestRegisterNode(OsfTestCase):
 
         # Share the project and some nodes
         user2 = UserFactory()
-        self.project.add_contributor(user2)
-        self.shared_component.add_contributor(user2)
-        self.shared_subproject.add_contributor(user2)
+        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.shared_component.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.shared_subproject.add_contributor(user2, permissions=('read', 'write', 'admin'))
 
         # Partial contributor registers the node
         registration = RegistrationFactory(project=self.project, user=user2)
@@ -3155,7 +3201,7 @@ class TestRegisterNode(OsfTestCase):
     def test_registered_user(self):
         # Add a second contributor
         user2 = UserFactory()
-        self.project.add_contributor(user2)
+        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
         # Second contributor registers project
         registration = RegistrationFactory(parent=self.project, user=user2)
         assert_equal(registration.registered_user, user2)

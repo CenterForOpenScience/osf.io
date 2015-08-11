@@ -16,7 +16,8 @@
                 "kwargs": {"sortable": false, "pluralized_node_type": "forks"}
             }'></div>
     % else:
-            <p class="m-md">There have been no forks of this project. Forking a project means you have created a copy of it into your dashboard, and can change that copy for your own purposes. You will be the only contributor to the forked project until you add others.</p>
+            <p class="m-md">This project has no forks. A fork is a copy of a project that you can change without
+            affecting the original project.</p>
     % endif
     </div>
         <div class="col-xs-3 col-sm-4">

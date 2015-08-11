@@ -82,8 +82,8 @@ var FolderPickerViewModel = oop.defclass({
             invalidCredOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
                     'this time. The credentials associated with this ' + self.addonName + ' account may no longer be valid.' +
-                    ' Try disconnecting and reconnecting the ' + self.addonName + 'account on your <a href="' +
-                    self.urls().settings + 'addons/">account settings page</a>.';
+                    ' Try disconnecting and reconnecting the ' + self.addonName + ' account on your <a href="' +
+                    self.urls().settings + '">account settings page</a>.';
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
@@ -102,7 +102,7 @@ var FolderPickerViewModel = oop.defclass({
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
-                return 'Disconnect ' + self.addonName + '.';
+                return 'Disconnected ' + self.addonName + '.';
             }),
             deauthorizeFail: ko.pureComputed(function() {
                 return 'Could not disconnect ' + self.addonName + ' account because of an error. Please try again later.';
@@ -277,7 +277,7 @@ var FolderPickerViewModel = oop.defclass({
             ret.resolve(response.result);
         });
         request.fail(function(xhr, textStatus, error) {
-            self.changeMessage(self.messages.cantRetrieveSettings(), 'text-warning');
+            self.changeMessage(self.messages.cantRetrieveSettings(), 'text-danger');
             Raven.captureMessage('Could not GET ' + self.addonName + 'settings', {
                 url: self.url,
                 textStatus: textStatus,
@@ -353,6 +353,11 @@ var FolderPickerViewModel = oop.defclass({
                     self._importAuthConfirm();
                     self.loadingImport(true);
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Import'
+                }
             }
         });
     },
@@ -396,6 +401,12 @@ var FolderPickerViewModel = oop.defclass({
                 if (confirmed) {
                     self._deauthorizeConfirm();
                     self.loadingImport(false);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Disconnect',
+                    className:'btn-danger'
                 }
             }
         });
@@ -451,7 +462,7 @@ var FolderPickerViewModel = oop.defclass({
             ajaxOptions: {
                 error: function(xhr, textStatus, error) {
                     self.loading(false);
-                    self.changeMessage(self.messages.connectError(), 'text-warning');
+                    self.changeMessage(self.messages.connectError(), 'text-danger');
                     Raven.captureMessage('Could not GET get ' + self.addonName + ' contents.', {
                         textStatus: textStatus,
                         error: error

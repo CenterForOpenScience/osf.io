@@ -98,13 +98,6 @@ def validate_social(value):
     validate_personal_site(value.get('personal'))
 
 
-def validate_email(item):
-    if not (item
-            and re.match(r'^.+@[^.].*\.[a-z]{2,10}$', item, re.IGNORECASE)
-            and item == item.strip().lower()):
-        raise ValidationError("Invalid Email")
-
-
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
     uid = session._get_current_object() and session.data.get('auth_user_id')
@@ -262,6 +255,15 @@ class User(GuidStoredObject, AddonModelMixin):
     #   }
     #   ...
     # }
+
+    # Time of last sent notification email to newly added contributors
+    # Format : {
+    #   <project_id>: {
+    #       'last_sent': time.time()
+    #   }
+    #   ...
+    # }
+    contributor_added_email_records = fields.DictionaryField(default=dict)
 
     # The user into which this account was merged
     merged_by = fields.ForeignField('user',
@@ -683,7 +685,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if email in self.emails:
             raise ValueError("Email already confirmed to this user.")
 
-        validate_email(email)
+        utils.validate_email(email)
 
         # If the unconfirmed email is already present, refresh the token
         if email in self.unconfirmed_emails:
@@ -721,11 +723,13 @@ class User(GuidStoredObject, AddonModelMixin):
         mails.send_mail(to_addr=self.username,
                         mail=mails.REMOVED_EMAIL,
                         user=self,
-                        removed_email=email)
+                        removed_email=email,
+                        security_addr='alternate email address ({})'.format(email))
         mails.send_mail(to_addr=email,
                         mail=mails.REMOVED_EMAIL,
                         user=self,
-                        removed_email=email)
+                        removed_email=email,
+                        security_addr='primary email address ({})'.format(self.username))
 
     def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.
@@ -1119,7 +1123,11 @@ class User(GuidStoredObject, AddonModelMixin):
 
     def merge_user(self, user):
         """Merge a registered user into this account. This user will be
-        a contributor on any project
+        a contributor on any project. if the registered user and this account
+        are both contributors of the same project. Then it will remove the
+        registered user and set this account to the highest permission of the two
+        and set this account to be visible if either of the two are visible on
+        the project.
 
         :param user: A User object to be merged.
         """
@@ -1203,12 +1211,27 @@ class User(GuidStoredObject, AddonModelMixin):
             # Skip dashboard node
             if node.is_dashboard:
                 continue
-            node.add_contributor(
-                contributor=self,
-                permissions=node.get_permissions(user),
-                visible=node.get_visible(user),
-                log=False,
-            )
+            # if both accounts are contributor of the same project
+            if node.is_contributor(self) and node.is_contributor(user):
+                if node.permissions[user._id] > node.permissions[self._id]:
+                    permissions = node.permissions[user._id]
+                else:
+                    permissions = node.permissions[self._id]
+                node.set_permissions(user=self, permissions=permissions)
+
+                visible1 = self._id in node.visible_contributor_ids
+                visible2 = user._id in node.visible_contributor_ids
+                if visible1 != visible2:
+                    node.set_visible(user=self, visible=True, log=True, auth=Auth(user=self))
+
+            else:
+                node.add_contributor(
+                    contributor=self,
+                    permissions=node.get_permissions(user),
+                    visible=node.get_visible(user),
+                    log=False,
+                )
+
             try:
                 node.remove_contributor(
                     contributor=user,

@@ -9,13 +9,13 @@
                 </a>
                 % if not is_registration:
                     <a data-bind="click: deauthorizeNode" class="text-danger pull-right addon-auth">
-                      Deauthorize
+                      Disconnect Account
                     </a>
                 % endif
             </span>
             <span data-bind="if: showImport">
                 <a data-bind="click: importAuth" class="text-primary pull-right addon-auth">
-                  Import Access Token
+                  Import Account from Profile
                 </a>
             </span>
         </small>
@@ -32,22 +32,26 @@
             {{currentBucket}}
           </a>
         </p>
-        <div class="btn-group"
-             data-bind="attr.disabled: creating">
+        <div data-bind="attr.disabled: creating">
           <button data-bind="visible: canChange, click: toggleSelect,
-                             css: {active: showSelect}" class="btn btn-sm btn-addon"><i class="icon-edit"></i> Change</button>
+                             css: {active: showSelect}" class="btn btn-primary">Change</button>
           <button data-bind="visible: showNewBucket, click: openCreateBucket,
-                             attr.disabled: creating" class="btn btn-sm btn-addon" id="newBucket">Create Bucket</button>
+                             attr.disabled: creating" class="btn btn-success" id="newBucket">Create Bucket</button>
         </div>
         <br />
         <br />
         <div class="row" data-bind="if: showSelect">
-          <div class="col-md-8">
+          <div class="form-group col-md-8">
             <select class="form-control" id="s3_bucket" name="s3_bucket"
                     data-bind="value: selectedBucket,
                                attr.disabled: !loadedBucketList(),
                                options: bucketList"> </select>
           </div>
+          ## Remove comments to enable user toggling of file upload encryption
+          ## <div class="col-md-3">
+          ##   <input type="checkbox" id="encryptUploads" name="encryptUploads"
+          ##         data-bind="checked: encryptUploads" />  Encrypt file uploads
+          ## </div>
           <div class="col-md-2">
             <button data-bind="click: selectBucket,
                                attr.disabled: !allowSelectBucket()"
@@ -55,7 +59,7 @@
               Save
             </button>
           </div>
-        </div>        
+        </div>
       </div>
       </div>
     </div>

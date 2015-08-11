@@ -96,7 +96,7 @@
             </div>
 
             <div>
-                <a class="btn btn-default" data-bind="click: addContent">
+                <a class="btn btn-success" data-bind="click: addContent">
                     Add another
                 </a>
             </div>
@@ -107,7 +107,7 @@
                         type="button"
                         class="btn btn-default"
                         data-bind="click: cancel"
-                    >Cancel</button>
+                    >Discard changes</button>
 
                 <button
                         type="submit"

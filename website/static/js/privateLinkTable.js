@@ -147,6 +147,12 @@ function ViewModel(url, nodeIsPublic) {
                     $osf.growl('Error:','Failed to delete the private link.');
                 });
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Remove',
+                    className:'btn-danger'
+                }
             }
         });
     };

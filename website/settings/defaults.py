@@ -241,6 +241,9 @@ DISK_SAVING_MODE = False
 # Add Contributors (most in common)
 MAX_MOST_IN_COMMON_LENGTH = 15
 
+# Seconds before another notification email can be sent to a contributor when added to a project
+CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
+
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None
 GOOGLE_SITE_VERIFICATION = None
