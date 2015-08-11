@@ -848,8 +848,18 @@ class TestNodeContributorAdd(ApiTestCase):
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
 
+        self.data_default = {
+            'id': self.user_two._id,
+            'bibliographic': True
+        }
+
+        self.data_user_three = {
+            'id': self.user_three._id,
+            'bibliographic': True
+        }
+
     def test_adds_contributor_public_project_admin(self):
-        res = self.app.post_json(self.public_url, {'id': self.user_two._id}, auth=self.user.auth)
+        res = self.app.post_json(self.public_url, self.data_default, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
@@ -860,24 +870,24 @@ class TestNodeContributorAdd(ApiTestCase):
         self.public_project.add_contributor(self.user_two, permissions=['read', 'write'], auth=Auth(self.user))
         self.public_project.reload()
 
-        res = self.app.post_json(self.public_url, {'id': self.user_three._id},
+        res = self.app.post_json(self.public_url, self.data_user_three,
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_adds_contributor_public_project_non_contributor(self):
-        res = self.app.post_json(self.public_url, {'id': self.user_two._id},
+        res = self.app.post_json(self.public_url, self.data_default,
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_adds_contributor_public_project_not_logged_in(self):
-        res = self.app.post_json(self.public_url, {'id': self.user_two._id}, expect_errors=True)
+        res = self.app.post_json(self.public_url, self.data_default, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
 
     def test_adds_contributor_private_project_admin(self):
-        res = self.app.post_json(self.private_url, {'id': self.user_two._id}, auth=self.user.auth)
+        res = self.app.post_json(self.private_url, self.data_default, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
@@ -910,10 +920,9 @@ class TestNodeContributorAdd(ApiTestCase):
         assert_in(self.user_two, self.private_project.contributors)
         assert_false(self.private_project.get_visible(self.user_two))
 
-    def test_adds_invalid_bibliographic_value_contributor_private_project_admin(self):
+    def test_adds_contributor_without_bibliographic_private_project_admin(self):
         data = {
             'id': self.user_two._id,
-            'bibliographic': 'invalid'
         }
         res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -921,7 +930,8 @@ class TestNodeContributorAdd(ApiTestCase):
     def test_adds_admin_contributor_private_project_admin(self):
         data = {
             'id': self.user_two._id,
-            'permission': 'admin'
+            'permission': 'admin',
+            'bibliographic': True
         }
         res = self.app.post_json(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
@@ -929,11 +939,13 @@ class TestNodeContributorAdd(ApiTestCase):
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
+        assert_equal(self.private_project.get_permission(self.user_two), ['read', 'write', 'admin'])
 
     def test_adds_write_contributor_private_project_admin(self):
         data = {
             'id': self.user_two._id,
-            'permission': 'write'
+            'permission': 'write',
+            'bibliographic': True
         }
         res = self.app.post_json(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
@@ -941,11 +953,13 @@ class TestNodeContributorAdd(ApiTestCase):
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
+        assert_equal(self.private_project.get_permission(self.user_two), ['read', 'write', 'admin'])
 
     def test_adds_read_contributor_private_project_admin(self):
         data = {
             'id': self.user_two._id,
-            'permission': 'read'
+            'permission': 'read',
+            'bibliographic': True
         }
         res = self.app.post_json(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
@@ -953,56 +967,51 @@ class TestNodeContributorAdd(ApiTestCase):
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
+        assert_equal(self.private_project.get_permission(self.user_two), ['read', 'write', 'admin'])
 
     def test_adds_invalid_permission_contributor_private_project_admin(self):
         data = {
             'id': self.user_two._id,
-            'permission': 'invalid'
+            'permission': 'invalid',
+            'bibliographic': True
         }
         res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    def test_adds_custom_valid_bibliographic_and_permission_contributor_private_project_admin(self):
-        data = {
-            'id': self.user_two._id,
-            'bibliographic': False,
-            'permission': 'admin'
-        }
-        res = self.app.post_json(self.private_url, data, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['id'], self.user_two._id)
-
-        self.private_project.reload()
-        assert_in(self.user_two, self.private_project.contributors)
-        assert_false(self.private_project.get_visible(self.user_two))
-
     def test_adds_already_existing_contributor_private_project_admin(self):
-        self.private_project.add_contributor(self.user_two, permissions=['read', 'write'], auth=Auth(self.user))
-        res = self.app.post_json(self.private_url, {'id': self.user_two._id},
+        self.private_project.add_contributor(self.user_two, auth=Auth(self.user), save=True)
+        self.private_project.reload()
+
+        res = self.app.post_json(self.private_url, self.data_default,
                                  auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_adds_non_existing_user_private_project_admin(self):
-        res = self.app.post_json(self.private_url, {'id': 'Fake'}, auth=self.user.auth, expect_errors=True)
+        data = {
+            'id': 'Fake',
+            'bibliographic': True
+        }
+        res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_adds_contributor_private_project_non_admin(self):
         self.private_project.add_contributor(self.user_two, permissions=['read', 'write'], auth=Auth(self.user))
-        res = self.app.post_json(self.private_url, {'id': self.user_three._id},
+        res = self.app.post_json(self.private_url, self.data_user_three,
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_adds_contributor_private_project_non_contributor(self):
-        res = self.app.post_json(self.private_url, {'id': self.user_two._id},
+        res = self.app.post_json(self.private_url, self.data_user_three,
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_adds_contributor_private_project_not_logged_in(self):
-        res = self.app.post_json(self.private_url, {'id': self.user_two._id}, expect_errors=True)
+        res = self.app.post_json(self.private_url, self.data_default, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+
 
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
