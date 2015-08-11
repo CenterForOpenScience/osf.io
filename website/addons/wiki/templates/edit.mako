@@ -111,7 +111,7 @@
               </div>
           </div>
 
-          % if can_edit:
+          % if has_permission_or_publicly_editable:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
@@ -347,16 +347,16 @@
 ${parent.javascript_bottom()}
 <script>
 
-    var canEdit = ${json.dumps(can_edit)};
-    var userCanEdit = ${json.dumps(user['can_edit'])};
+    var canEditBody = ${json.dumps(has_permission_or_publicly_editable)};
+    var isContributor = ${json.dumps(user['can_edit'])};
 
-    var canEditPageName = userCanEdit && ${json.dumps(
+    var canEditPageName = isContributor && ${json.dumps(
         wiki_id and wiki_name != 'home'
     )};
 
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
-        canEdit: canEdit,
+        canEdit: canEditBody,
         canEditPageName: canEditPageName,
         usePythonRender: ${json.dumps(use_python_render)},
         versionSettings: ${json.dumps(version_settings) | n},

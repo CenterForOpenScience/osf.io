@@ -222,7 +222,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     wiki_key = to_mongo_key(wiki_name)
     wiki_page = node.get_wiki_page(wiki_name)
     wiki_settings = node.get_addon('wiki')
-    can_edit = (
+    can_edit_body = (
         auth.logged_in
         and not node.is_registration
         and (
@@ -279,7 +279,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         content = ''
         use_python_render = False
 
-    if can_edit:
+    if can_edit_body:
         if wiki_key not in node.wiki_private_uuids:
             wiki_utils.generate_private_uuid(node, wiki_name)
         sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
@@ -305,7 +305,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'is_current': is_current,
         'version_settings': version_settings,
         'pages_current': _get_wiki_pages_current(node),
-        'can_edit': can_edit,
+        'has_permission_or_publicly_editable': can_edit_body,
         'category': node.category,
         'panels_used': panels_used,
         'num_columns': num_columns,
