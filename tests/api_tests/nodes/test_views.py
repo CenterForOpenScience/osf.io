@@ -854,7 +854,7 @@ class TestNodeContributorAdd(ApiTestCase):
         self.public_project.reload()
 
     def test_adds_contributor_public_project_non_admin(self):
-        self.public_project.add_contributor(self.user_two, permissions=['read', 'write'], auth=self.user.auth)
+        self.public_project.add_contributor(self.user_two, permissions=['read', 'write'], auth=Auth(self.user))
         self.public_project.reload()
 
         res = self.app.post_json(self.public_url, {'id': self.user_three._id},
@@ -920,7 +920,7 @@ class TestNodeContributorAdd(ApiTestCase):
 
 
     def test_adds_already_existing_contributor_private_project_admin(self):
-        self.private_project.add_contributor(self.user_three, permissions=['read', 'write'], auth=self.user.auth)
+        self.private_project.add_contributor(self.user_two, permissions=['read', 'write'], auth=Auth(self.user))
         res = self.app.post_json(self.private_url, {'id': self.user_two._id},
                                  auth=self.user.auth, expect_errors=True)
         self.private_project.reload()
@@ -932,7 +932,7 @@ class TestNodeContributorAdd(ApiTestCase):
 
 
     def test_adds_contributor_private_project_non_admin(self):
-        self.private_project.add_contributor(self.user_two, permissions=['read', 'write'], auth=self.user.auth)
+        self.private_project.add_contributor(self.user_two, permissions=['read', 'write'], auth=Auth(self.user))
         res = self.app.post_json(self.private_url, {'id': self.user_three._id},
                                  auth=self.user_two.auth, expect_errors=True)
         self.private_project.reload()
