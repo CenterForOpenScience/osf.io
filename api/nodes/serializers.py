@@ -106,7 +106,6 @@ class NodePointersSerializer(JSONAPISerializer):
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
     title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
                                                                          'points to')
-
     url = LinksField({'html': 'get_absolute_url'})
 
     def get_absolute_url(self, obj):
