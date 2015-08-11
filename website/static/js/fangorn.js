@@ -1527,13 +1527,12 @@ var FGItemButtons = {
                             m.component(FGButton, {
                                 onclick: function(event) {
                                     tb.modal.update(m('', [
-                                        m('h3.break-word', 'Confirm file check-out?'),
                                         m('p', 'This would mean ' +
                                             'other contributors cannot edit, delete or upload new versions of this file ' +
                                             'as long as it is checked-out. You can check it back in at anytime.')
                                     ]), m('', [
-                                        m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                                        m('span.tb-modal-btn.text-primary', {onclick: function() {
+                                        m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                                        m('span.btn.btn-warning', {onclick: function() {
                                             $osf.postJSON(
                                                  item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/rent/',
                                                 {}
@@ -1547,7 +1546,7 @@ var FGItemButtons = {
                                                 $osf.growl('Error', 'Unable to check-out file.');
                                             });
                                         }}, 'Check-out file')
-                                    ]));
+                                    ]), m('h3.break-word.modal-title', 'Confirm file check-out?'));
                                 },
                                 icon: 'fa fa-sign-out',
                                 className : 'text-warning'
@@ -1616,11 +1615,10 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function() {
                         tb.modal.update(m('', [
-                            m('h3.break-word', 'Check-in all OSF Storage files?'),
                             m('p', 'This will allow files in OSF Storage to be edited.')
                         ]), m('', [
-                            m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                            m('span.tb-modal-btn.text-primary', {onclick: function() {
+                            m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                            m('span.btn.btn-warning', {onclick: function() {
                                 $osf.postJSON(
                                      item.data.nodeApiUrl + 'osfstorage/return_all/',
                                     {}
@@ -1633,8 +1631,8 @@ var FGItemButtons = {
                                 }).fail(function(resp) {
                                     $osf.growl('Error', 'Unable to check-in OSF Storage. Make sure all files are checked-in, or checked-out by you.');
                                 });
-                            }}, 'Check-in all'),
-                        ]));
+                            }}, 'Check-in all')
+                        ]), m('h3.break-word.modal-title', 'Check-in all OSF Storage files?'));
                     },
                     icon: 'fa fa-sign-in',
                     className: 'text-warning'
@@ -1644,11 +1642,10 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function() {
                         tb.modal.update(m('', [
-                            m('h3.break-word', 'Check-out all OSF Storage files?'),
                             m('p', 'This will check-out all files in OSF Storage, preventing them from being edited by anyone but you. This does not prevent new files from being uploaded.')
                         ]), m('', [
-                            m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                            m('span.tb-modal-btn.text-primary', {onclick: function(){
+                            m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                            m('span.btn.btn-warning', {onclick: function(){
                                 $osf.postJSON(
                                     item.data.nodeApiUrl + 'osfstorage/rent_all/',
                                     {}
@@ -1661,8 +1658,8 @@ var FGItemButtons = {
                                 }).fail(function(resp) {
                                     $osf.growl('Error', 'Unable to check-out OSF Storage. Make sure all files are checked-in, or checked-out by you.');
                                 });
-                            }}, 'Check-out all'),
-                        ]));
+                            }}, 'Check-out all')
+                        ]), m('h3.break-word.modal-title', 'Check-out all OSF Storage files?'));
                     },
                     icon: 'fa fa-sign-out',
                     className: 'text-warning'
