@@ -18,7 +18,8 @@ ${self.on_submit()}
     <script type="text/javascript">
         $(document).ready(function() {
             $('#addonSettings${addon_short_name.capitalize()}').on('submit',
-                function(){
+                function(e){
+                    e.preventDefault();
                     AddonHelper.onSubmitSettings({self: this})
                 });
         });
