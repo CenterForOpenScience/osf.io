@@ -11,6 +11,7 @@ from website.settings import API_DOMAIN
 
 from tests.base import ApiTestCase, fake
 from tests.factories import (
+    AuthUserFactory,
     DashboardFactory,
     FolderFactory,
     NodeFactory,
@@ -832,6 +833,116 @@ class TestNodeContributorFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.basic_auth)
         assert_equal(len(res.json['data']), 1)
         assert_false(res.json['data'][0].get('bibliographic', None))
+
+
+class TestNodeContributorAdd(ApiTestCase):
+    def setUp(self):
+        super(TestNodeContributorAdd, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.user_three = AuthUserFactory()
+
+        self.private_project = ProjectFactory(creator=self.user, is_public=False)
+        self.private_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.private_project._id)
+
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
+        self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
+
+    def test_adds_contributor_public_project_admin(self):
+        res = self.app.post_json(self.public_url, {'id': self.user_two._id}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        self.project.reload()
+
+    def test_adds_contributor_public_project_non_admin(self):
+        self.public_project.add_contributor(self.user_two, permissions=['read', 'write'], auth=self.user.auth)
+        self.project.reload()
+
+        res = self.app.post_json(self.public_url, {'id': self.user_three._id},
+                                 auth=self.user_two.auth, expect_errors=True)
+        self.project.reload()
+
+
+    def test_adds_contributor_public_project_non_contributor(self):
+        res = self.app.post_json(self.public_url, {'id': self.user_two._id},
+                                 auth=self.user_two.auth, expect_errors=True)
+        self.project.reload()
+
+
+    def test_adds_contributor_public_project_not_logged_in(self):
+        res = self.app.post_json(self.public_url, {'id': self.user_two._id}, expect_errors=True)
+        self.project.reload()
+
+
+    def test_adds_bibliographic_contributor_private_project_admin(self):
+        res = self.app.post_json(self.private_url, {'id': self.user_two._id}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        self.project.reload()
+
+
+    def test_adds_non_bibliographic_contributor_private_project_admin(self):
+        res = self.app.post_json(self.private_url, {'id': self.user_two._id}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        self.project.reload()
+
+
+    def test_adds_invalid_bibliographic_value_contributor_private_project_admin(self):
+        res = self.app.post_json(self.private_url, {'id': self.user_two._id},
+                                 auth=self.user.auth, expect_errors=True)
+        self.project.reload()
+
+
+    def test_adds_admin_contributor_private_project_admin(self):
+        res = self.app.post_json(self.private_url, {'id': self.user_two._id}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        self.project.reload()
+
+
+    def test_adds_write_contributor_private_project_admin(self):
+        res = self.app.post_json(self.private_url, {'id': self.user_two._id}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        self.project.reload()
+
+
+    def test_adds_read_contributor_private_project_admin(self):
+        res = self.app.post_json(self.private_url, {'id': self.user_two._id}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        self.project.reload()
+
+
+    def test_adds_custom_bibliographic_and_permission_contributor_private_project_admin(self):
+        res = self.app.post_json(self.private_url, {'id': self.user_two._id}, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        self.project.reload()
+
+
+    def test_adds_already_existing_contributor_private_project_admin(self):
+        self.private_project.add_contributor(self.user_three, permissions=['read', 'write'], auth=self.user.auth)
+        res = self.app.post_json(self.private_url, {'id': self.user_two._id},
+                                 auth=self.user.auth, expect_errors=True)
+        self.project.reload()
+
+
+    def test_adds_non_existing_user_private_project_admin(self):
+        res = self.app.post_json(self.private_url, {'id': 'Fake'}, auth=self.user.auth, expect_errors=True)
+        self.project.reload()
+
+
+    def test_adds_contributor_private_project_non_admin(self):
+        self.private_project.add_contributor(self.user_two, permissions=['read', 'write'], auth=self.user.auth)
+        res = self.app.post_json(self.private_url, {'id': self.user_three._id},
+                                 auth=self.user_two.auth, expect_errors=True)
+        self.project.reload()
+
+
+    def test_adds_contributor_private_project_non_contributor(self):
+        res = self.app.post_json(self.private_url, {'id': self.user_two._id}, auth=self.user_two.auth, expect_errors=True)
+        self.project.reload()
+
+
+    def test_adds_contributor_private_project_not_logged_in(self):
+        res = self.app.post_json(self.private_url, {'id': self.user_two._id}, expect_errors=True)
+        self.project.reload()
+
 
 
 class TestNodeRegistrationList(ApiTestCase):
