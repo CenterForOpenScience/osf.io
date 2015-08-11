@@ -114,11 +114,11 @@ made
 
 <script type="text/html" id="tag_added">
 tagged
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> as <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> as <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 </script>
 
 <script type="text/html" id="tag_removed">
-removed tag <a class='tag' data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
+removed tag <a data-bind="attr: {href: '/search/?q=%22' + params.tag + '%22'}, text: params.tag"></a>
 from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
@@ -126,7 +126,7 @@ from
 <script type="text/html" id="edit_title">
 changed the title from <span class="overflow" data-bind="text: params.title_original"></span>
 to
-<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{{ params.title_new }}}</a>
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ params.title_new }}</a>
 </script>
 
 <script type="text/html" id="project_registered">
@@ -213,13 +213,13 @@ invisible on
 <script type="text/html" id="addon_file_copied">
   {{#if params.source.materialized.endsWith('/')}}
     copied <span class="overflow log-folder">{{ params.source.materialized }}</span> from {{ params.source.addon }} in
-    <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{{ params.source.node.title }}}</a>
+    <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
     to <span class="overflow log-folder">{{ params.destination.materialized }}</span> in {{ params.destination.addon }} in
     <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
   {{/if}}
   {{#ifnot params.source.materialized.endsWith('/')}}
     copied <a href="{{ params.source.url }}" class="overflow">{{ params.source.materialized }}</a> from {{ params.source.addon }} in
-    <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{{ params.source.node.title }}}</a>
+    <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
     to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
     <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
   {{/ifnot}}
@@ -228,13 +228,13 @@ invisible on
 <script type="text/html" id="addon_file_moved">
   {{#if params.source.materialized.endsWith('/')}}
   moved <span class="overflow">{{ params.source.materialized }}</span> from {{ params.source.addon }} in
-  <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{{ params.source.node.title }}}</a>
+  <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
   to <span class="overflow log-folder">{{ params.destination.materialized }}</span> in {{ params.destination.addon }} in
   <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
   {{/if}}
   {{#ifnot params.source.materialized.endsWith('/')}}
   moved <span class="overflow">{{ params.source.materialized }}</span> from {{ params.source.addon }} in
-  <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{{ params.source.node.title }}}</a>
+  <a class="log-node-title-link overflow" href="{{ params.source.node.url }}">{{ params.source.node.title }}</a>
   to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
   <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
   {{/ifnot}}

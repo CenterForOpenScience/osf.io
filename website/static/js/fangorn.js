@@ -355,8 +355,8 @@ function checkConflicts(tb, item, folder, cb) {
             tb.modal.update(m('', [
                     m('p', 'An item named "' + item.data.name + '" already exists in this location.')
                 ]), m('', [
-                    m('span.btn.btn-info', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
                 ]), m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
             );
@@ -763,7 +763,11 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         }
     }
     if (msgText !== 'Upload canceled.') {
-        $osf.growl('Error', msgText);
+        $osf.growl(
+            'Error',
+            'Unable to reach the provider, please try again later. If the ' +
+            'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.'
+            );
     }
     treebeard.options.uploadInProgress = false;
 }
@@ -872,7 +876,7 @@ function _removeEvent (event, items, col) {
         tb.modal.dismiss();
     }
     function runDelete(item) {
-        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');
+        tb.select('.modal-footer .btn-danger').html('<i> Deleting...</i>').removeClass('btn-danger').addClass('btn-default disabled');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
         url = url || waterbutler.buildTreeBeardDelete(item);

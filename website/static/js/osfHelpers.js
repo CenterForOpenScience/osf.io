@@ -625,7 +625,7 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
-    $(window).resize(debounce(fixAffixWidth, 80, true));
+    $(window).resize(debounce(fixAffixWidth, 20, true));
     $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
 };
 
@@ -754,7 +754,7 @@ var confirmDangerousAction = function (options) {
         message: ''
     };
 
-    var bootboxOptions = $.extend({}, defaults, options);
+    var bootboxOptions = $.extend(true, {}, defaults, options);
 
     bootboxOptions.message += [
         '<p>Type the following to continue: <strong>',

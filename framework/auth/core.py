@@ -256,6 +256,15 @@ class User(GuidStoredObject, AddonModelMixin):
     #   ...
     # }
 
+    # Time of last sent notification email to newly added contributors
+    # Format : {
+    #   <project_id>: {
+    #       'last_sent': time.time()
+    #   }
+    #   ...
+    # }
+    contributor_added_email_records = fields.DictionaryField(default=dict)
+
     # The user into which this account was merged
     merged_by = fields.ForeignField('user',
                                     default=None,
@@ -715,7 +724,7 @@ class User(GuidStoredObject, AddonModelMixin):
                         mail=mails.REMOVED_EMAIL,
                         user=self,
                         removed_email=email,
-                        security_addr='alternative email address ({})'.format(email))
+                        security_addr='alternate email address ({})'.format(email))
         mails.send_mail(to_addr=email,
                         mail=mails.REMOVED_EMAIL,
                         user=self,

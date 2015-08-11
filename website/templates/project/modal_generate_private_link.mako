@@ -2,7 +2,7 @@
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 data-bind="text:pageTitle"></h3>
+              <h3>Create a new link to share your project</h3>
             </div>
 
             <div class="modal-body">
