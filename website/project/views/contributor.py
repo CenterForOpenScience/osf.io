@@ -6,7 +6,7 @@ import itertools
 import time
 
 from flask import request
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework import forms
 from framework import status
@@ -16,6 +16,7 @@ from framework.auth.core import generate_confirm_token
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
 from framework.auth.signals import user_registered
+from framework.auth.utils import validate_email
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.sessions import session
@@ -33,7 +34,7 @@ from website.project.model import has_anonymous_link
 from website.project.signals import unreg_contributor_added, contributor_added
 from website.util import web_url_for, is_json_request
 from website.util.permissions import expand_permissions, ADMIN
-
+from website.util import sanitize
 
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
@@ -271,7 +272,7 @@ def project_removecontributor(auth, node, **kwargs):
     )
 
 
-def deserialize_contributors(node, user_dicts, auth):
+def deserialize_contributors(node, user_dicts, auth, validate=False):
     """View helper that returns a list of User objects from a list of
     serialized users (dicts). The users in the list may be registered or
     unregistered users.
@@ -286,6 +287,7 @@ def deserialize_contributors(node, user_dicts, auth):
     :param Node node: The node to add contributors to
     :param list(dict) user_dicts: List of serialized users in the format above.
     :param Auth auth:
+    :param bool validate: Whether to validate and sanitize fields (if necessary)
     """
 
     # Add the registered contributors
@@ -294,6 +296,16 @@ def deserialize_contributors(node, user_dicts, auth):
         fullname = contrib_dict['fullname']
         visible = contrib_dict['visible']
         email = contrib_dict.get('email')
+
+        if validate is True:
+            # Validate and sanitize inputs as needed. Email will raise error if invalid.
+            # TODO Edge case bug: validation and saving are performed in same loop, so all in list
+            # up to the invalid entry will be saved. (communicate to the user what needs to be retried)
+            fullname = sanitize.strip_html(fullname)
+            if not fullname:
+                raise ValidationValueError
+            if email is not None:
+                validate_email(email)  # Will raise a ValidationError if email invalid
 
         if contrib_dict['id']:
             contributor = User.load(contrib_dict['id'])
@@ -304,6 +316,7 @@ def deserialize_contributors(node, user_dicts, auth):
                     email=email)
                 contributor.save()
             except ValidationValueError:
+                ## FIXME: This suppresses an exception if ID not found & new validation fails; get_user will return None
                 contributor = get_user(email=email)
 
         # Add unclaimed record if necessary
@@ -344,7 +357,11 @@ def project_contributors_post(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Prepare input data for `Node::add_contributors`
-    contribs = deserialize_contributors(node, user_dicts, auth=auth)
+    try:
+        contribs = deserialize_contributors(node, user_dicts, auth=auth, validate=True)
+    except ValidationError:
+        return {'status': 400, 'message': 'One or more contributor entries may contain invalid data.'}, 400
+
     node.add_contributors(contributors=contribs, auth=auth)
     node.save()
 
@@ -355,9 +372,13 @@ def project_contributors_post(auth, node, **kwargs):
     for child_id in node_ids:
         child = Node.load(child_id)
         # Only email unreg users once
-        child_contribs = deserialize_contributors(
-            child, user_dicts, auth=auth
-        )
+        try:
+            child_contribs = deserialize_contributors(
+                child, user_dicts, auth=auth, validate=True
+            )
+        except ValidationError:
+            return {'status': 400, 'message': 'One or more contributor entries may contain invalid data.'}, 400
+
         child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
     # Reconnect listeners
@@ -713,10 +734,18 @@ def invite_contributor_post(node, **kwargs):
     """
     fullname = request.json.get('fullname').strip()
     email = request.json.get('email')
+    # Validate and sanitize inputs as needed. Email will raise error if invalid.
+    fullname = sanitize.strip_html(fullname)
     if email:
         email = email.lower().strip()
+        try:
+            validate_email(email)
+        except ValidationError:
+            return {'status': 400, 'message': 'Must provide a valid email address'}, 400
+
     if not fullname:
-        return {'status': 400, 'message': 'Must provide fullname'}, 400
+        return {'status': 400, 'message': 'Must provide full name'}, 400
+
     # Check if email is in the database
     user = get_user(email=email)
     if user:
