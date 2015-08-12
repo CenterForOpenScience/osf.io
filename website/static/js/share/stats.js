@@ -15,8 +15,7 @@ function donutGraph(data, vm) {
     return c3.generate({
         bindto: '#shareDonutGraph',
         size: {
-            height: 200,
-            width: 200
+            height: 200
         },
         data: data.charts.shareDonutGraph,
         donut: {
