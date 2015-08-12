@@ -22,7 +22,7 @@ var AddonHelper = (function() {
      * Submit add-on settings.
      */
     function onSubmitSettings(options) {
-        var $this = $(options.self);
+        var $this = $(this);
         var successUpdateMsg = options.successUpdateMsg || 'Setting updated';
         var failUpdateMsg = options.failUpdateMsg || 'Setting not updated';
 
