@@ -185,7 +185,7 @@ var Subject = {
     view: function(ctrl, params) {
         var subject = params.subject;
         var vm = params.vm;
-        return m('span', m('a.badge.pointer', {href: '#', onclick: function(){
+        return m('span', m('a.badge.pointer', {onclick: function(){
                 utils.updateFilter(vm, 'match:subjects:"' + subject + '"', true);
             }}, $.truncate(subject, {length: 50}), ' '
         ));
@@ -213,7 +213,7 @@ var Footer = {
         var result = params.result;
         var vm = params.vm;
         return m('div', [
-            m('span',
+            m('span.text-muted',
                 'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
                 vm.rawNormedLoaded() ?  m('span', [
                     m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
