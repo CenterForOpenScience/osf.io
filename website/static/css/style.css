@@ -407,6 +407,10 @@ a {
     max-height: 140px;
     overflow-y: hidden;
 }
+.table-hover {
+    word-break: break-all;
+
+}
 select {
     word-wrap: normal;
 }
