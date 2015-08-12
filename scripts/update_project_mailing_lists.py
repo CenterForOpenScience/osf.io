@@ -16,20 +16,29 @@ logger = logging.getLogger(__name__)
 def main(dry_run=True):
     updated_nodes = Node.find(Q('mailing_updated', 'eq', True))
     for node in updated_nodes:
-        migrate_node(node, dry_run)
+        update_node(node, dry_run)
 
 
-def migrate_node(node, dry_run=True):
-    result = True
+def update_node(node, dry_run=True):
+
+    # reload the node to ensure that it is current
+    node.reload()
+
+    # Reset mailing_updated now in case of another user update during this automated one
+    node.mailing_updated = False
     if not dry_run:
-        result = full_update(node)
-    if result:
-        logger.info('Successfully updated node {}'.format(node))
-        node.mailing_updated = False
+        node.save()
+
+    try:
+        if not dry_run:
+            full_update(node)
+    except Exception as err:
+        logger.error('Did not successfully update node {} due to {} being thrown'.format(node, err))
+        node.mailing_updated = True
         if not dry_run:
             node.save()
     else:
-        logger.error('Did not successfully update node {} due to an HTTP or connection error'.format(node))
+        logger.info('Successfully updated node {}'.format(node))
 
 
 if __name__ == '__main__':
