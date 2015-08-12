@@ -322,8 +322,8 @@ function inheritFromParent(item, parent, fields) {
 function _fangornResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus', ' '),
         togglePlus = m('i.fa.fa-plus', ' '),
-        rentedUser = m('i.fa.fa-sign-out[style="color: blue"]', ''),
-        rentedOther = m('i.fa.fa-sign-out[style="color: red"]', '');
+        rentedUser = m('i.fa.fa-sign-out[style="color: blue; font-size: 120%"]', ''),
+        rentedOther = m('i.fa.fa-sign-out[style="color: red; font-size: 120%"]', '');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder' && item.depth > 1) {
         if(!item.data.permissions.view){
@@ -336,7 +336,7 @@ function _fangornResolveToggle(item) {
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
         if (item.data.extra.renter !== '') {
-            if (item.data.extra.renter == window.contextVars.currentUser.id){
+            if (item.data.extra.renter === window.contextVars.currentUser.id){
                 return rentedUser;
             }
             return rentedOther;

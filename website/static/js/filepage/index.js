@@ -37,9 +37,9 @@ var FileViewPage = {
                 self.file.renter = resp.renter;
                 self.file.permission = resp.permission;
                 if ((self.file.renter !== '') && (self.file.renter !== self.context.userId)) {
-                $osf.growl('File is checked-out', 'This file has been checked-out by a <a href="/' + self.file.renter +
-                    '"> collaborator </a>. It needs to be checked back in before any changes can be made.');
-            }
+                    m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m.trust('<strong>File is checked-out.</strong> This file has been checked-out by a <a href="/' +
+                        self.file.renter +'"> collaborator</a>. It needs to be checked back in before any changes can be made. </div>')));
+                }
             }).fail(function(resp) {
             });
         };
