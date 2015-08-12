@@ -1,6 +1,7 @@
 """Tests related to retraction of public registrations"""
 
 import datetime
+import httplib as http
 
 import mock
 from nose.tools import *  # noqa
@@ -13,7 +14,7 @@ from tests.factories import (
 
 from modularodm.exceptions import ValidationValueError
 from framework.auth import Auth
-from framework.exceptions import PermissionsError
+from framework.exceptions import HTTPError, PermissionsError
 from website.exceptions import (
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     NodeStateError,
@@ -797,3 +798,25 @@ class RegistrationRetractionViewsTestCase(OsfTestCase):
         assert_true(mock_send.called)
         args, kwargs = mock_send.call_args
         assert_true(self.user.username in args)
+
+    def test_non_contributor_GET_approval_returns_HTTPError(self):
+        non_contributor = AuthUserFactory()
+        self.registration.retract_registration(self.user)
+        approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
+
+        approval_url = self.registration.web_url_for('node_registration_retraction_approve', token=approval_token)
+        res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
+        assert_equal(http.FORBIDDEN, res.status_code)
+        assert_true(self.registration.is_pending_retraction)
+        assert_false(self.registration.is_retracted)
+
+    def test_non_contributor_GET_disapproval_returns_HTTPError(self):
+        non_contributor = AuthUserFactory()
+        self.registration.retract_registration(self.user)
+        rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
+
+        disapproval_url = self.registration.web_url_for('node_registration_retraction_disapprove', token=rejection_token)
+        res = self.app.get(disapproval_url, auth=non_contributor.auth, expect_errors=True)
+        assert_equal(http.FORBIDDEN, res.status_code)
+        assert_true(self.registration.is_pending_retraction)
+        assert_false(self.registration.is_retracted)

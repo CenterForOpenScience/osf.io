@@ -1,5 +1,6 @@
 """Tests related to embargoes of registrations"""
 import datetime
+import httplib as http
 import json
 
 import mock
@@ -700,3 +701,37 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         self.project.reload()
         # Logs: Created, registered, embargo initiated
         assert_equal(len(self.project.logs), initial_project_logs + 1)
+
+    def test_non_contributor_GET_approval_returns_HTTPError(self):
+        non_contributor = AuthUserFactory()
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        self.registration.save()
+        assert_true(self.registration.is_pending_embargo)
+
+        approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
+        approval_url = self.registration.web_url_for('node_registration_embargo_approve', token=approval_token)
+
+        res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
+        assert_equal(http.FORBIDDEN, res.status_code)
+        assert_true(self.registration.is_pending_embargo)
+        assert_false(self.registration.embargo_end_date)
+
+    def test_non_contributor_GET_disapproval_returns_HTTPError(self):
+        non_contributor = AuthUserFactory()
+        self.registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        self.registration.save()
+        assert_true(self.registration.is_pending_embargo)
+
+        rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
+        approval_url = self.registration.web_url_for('node_registration_embargo_disapprove', token=rejection_token)
+
+        res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
+        assert_equal(http.FORBIDDEN, res.status_code)
+        assert_true(self.registration.is_pending_embargo)
+        assert_false(self.registration.embargo_end_date)

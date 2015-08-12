@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import httplib as http
 import mock
 import unittest  # noqa
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -11,7 +12,7 @@ from tests import factories
 
 from framework.mongo import handlers
 
-from website.project.model import Sanction, EmailApprovableSanction
+from website.project.model import Sanction, EmailApprovableSanction, ensure_schemas
 
 def valid_user():
     return factories.UserFactory(system_tags=['flag'])
@@ -198,3 +199,36 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         assert_true(mock_send.called)
         args, kwargs = mock_send.call_args
         assert_true(self.user.username in args)
+
+
+class TestRegistrationApproval(OsfTestCase):
+
+    def setUp(self):
+        super(TestRegistrationApproval, self).setUp()
+        ensure_schemas()
+        self.user = factories.AuthUserFactory()
+        self.registration = factories.RegistrationFactory(creator=self.user, archive=True)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_non_contributor_GET_approval_returns_HTTPError(self, mock_enqueue):
+        non_contributor = factories.AuthUserFactory()
+
+        approval_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
+        approval_url = self.registration.web_url_for('node_registration_approve', token=approval_token)
+
+        res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
+        assert_equal(http.FORBIDDEN, res.status_code)
+        assert_true(self.registration.is_pending_registration)
+        assert_false(self.registration.is_registration_approved)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_non_contributor_GET_disapproval_returns_HTTPError(self, mock_enqueue):
+        non_contributor = factories.AuthUserFactory()
+
+        rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
+        rejection_url = self.registration.web_url_for('node_registration_disapprove', token=rejection_token)
+
+        res = self.app.get(rejection_url, auth=non_contributor.auth, expect_errors=True)
+        assert_equal(http.FORBIDDEN, res.status_code)
+        assert_true(self.registration.is_pending_registration)
+        assert_false(self.registration.is_registration_approved)
