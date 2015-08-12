@@ -35,9 +35,11 @@
             </div>
         </div>
         <div class="row form-inline">
-            <div class="col-sm-6 form-group">
-                <input type="text" class="form-control" id="startPickerField">
-                <input type="text" class="form-control hidden" id="endPickerField">
+            <div class="col-sm-3">
+                <input type="text" class="form-control" id="startPickerField" placeholder="Select a date">
+            </div>
+            <div class="col-sm-3">
+                <input type="text" class="form-control hidden" id="endPickerField" placeholder="Select end date">
             </div>
         </div>
     </div>
@@ -45,7 +47,7 @@
         <div class="col-md-12">
             <div class="panel panel-default">
                  <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Statistics for ${node['title']}</h3>
+                    <h3 class="panel-title" data-bind="text: dataType() + ' for ' + nodeTitle"></h3>
                 </div>
                 <div class="panel-body">
                     <div class="piwikChart"></div>
@@ -57,7 +59,7 @@
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Components </h3>
+                    <h3 class="panel-title">Public components for ${node['title']} </h3>
                 </div>
                 <div class="panel-body">
                     <!-- ko if: children().length -->
@@ -76,11 +78,11 @@
                     <!-- /ko -->
                     <!-- ko if: renderChildren().length < children().length -->
                     <div class="text-center">
-                        <a data-bind="click: function() {renderMore('children')}">Load more...</a>
+                        <a data-bind="click: incrementChildrenLimit">Load more...</a>
                     </div>
                     <!-- /ko -->
                     <!-- ko ifnot: children().length -->
-                    <h4>This ${node['category'].lower()} does not have any components.</h4>
+                    <h4>This ${node['category'].lower()} does not have any components or none of the components are public.</h4>
                     <!-- /ko -->
                 </div>
             </div>
@@ -88,7 +90,7 @@
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Files</h3>
+                    <h3 class="panel-title">Files for ${node['title']}</h3>
                 </div>
                 <div class="panel-body">
                     <!-- ko if: files().length -->
@@ -107,11 +109,11 @@
                     <!-- /ko -->
                     <!-- ko if: renderFiles().length < files().length -->
                     <div class="text-center">
-                        <a data-bind="click: function() {renderMore('files')}">Load more...</a>
+                        <a data-bind="click: incrementFilesLimit">Load more...</a>
                     </div>
                     <!-- /ko -->
                     <!-- ko ifnot: files().length -->
-                    <h4>This ${node['category'].lower()} does not have any visited files.</h4>
+                    <h4>This ${node['category'].lower()} does not have any files or none of the files have been visited.</h4>
                     <!-- /ko -->
                 </div>
             </div>

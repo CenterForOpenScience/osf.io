@@ -34,8 +34,10 @@ var StatisticsViewModel = function() {
 
     var self = this;
 
-    var childrenRenderLimit = 0;
-    var filesRenderLimit = 0;
+    self.childrenRenderLimit = ko.observable(5);
+    self.filesRenderLimit = ko.observable(5);
+
+    self.nodeTitle = ctx.node.title;
 
     self.dates = [];
     self.dataType = ko.observable('Visits');
@@ -55,12 +57,12 @@ var StatisticsViewModel = function() {
         }
     });
 
-    self.method = ko.computed(function() {
+    self.method = function() {
         if (self.dataType() == 'Page Views' || self.dataType() == 'Unique Page Views'){
             return 'Actions.get'
         }
         return 'VisitsSummary.get'
-    });
+    };
 
     self.period = ko.observable('day');
     self.date = ko.observable(function() {
@@ -83,8 +85,21 @@ var StatisticsViewModel = function() {
         return 'Date Range: ' + dates[1] + ' <span class="fa fa-calendar"></span>';
     });
 
-    self.renderChildren = ko.observableArray();
-    self.renderFiles = ko.observableArray();
+    self.renderChildren = ko.computed(function(){
+        if(self.childrenRenderLimit() > self.children().length){
+            return self.children().slice(0);
+        } else {
+            return self.children().slice(0, self.childrenRenderLimit());
+        }
+
+    });
+    self.renderFiles = ko.computed(function(){
+        if(self.filesRenderLimit() > self.files().length){
+            return self.files().slice(0);
+        } else {
+            return self.files().slice(0, self.filesRenderLimit());
+        }
+    });
 
 
     self.currentPiwikParams = ko.computed(function() {
@@ -138,8 +153,7 @@ var StatisticsViewModel = function() {
         self.children(self.guidStatsItemize(nodeData['children']));
         self.files(self.guidStatsItemize(fileData['files']));
 
-        self.renderMore('children');
-        self.renderMore('files');
+
 
     };
 
@@ -239,7 +253,7 @@ var StatisticsViewModel = function() {
                 lineColor: '#204762',
                 fillColor: '#EEEEEE',
                 spotColor: '#337ab7',
-                width: '100%',
+                width: '100%'
             });
         }
     };
@@ -283,25 +297,12 @@ var StatisticsViewModel = function() {
 
     };
 
-    self.renderMore = function(type) {
-        if(type == 'children'){
-            childrenRenderLimit += 1;
-            if(childrenRenderLimit > self.children().length){
-                self.renderChildren(self.children().slice(0));
-            } else {
-                self.renderChildren(self.children().slice(0, childrenRenderLimit));
-            }
-        }
+    self.incrementChildrenLimit = function() {
+        self.childrenRenderLimit(self.childrenRenderLimit() + 5);
+    };
 
-        if(type == 'files') {
-            filesRenderLimit += 1;
-            if(filesRenderLimit > self.files().length){
-                self.renderFiles(self.files().slice(0));
-            } else {
-                self.renderFiles(self.files().slice(0, filesRenderLimit));
-            }
-        };
-
+    self.incrementFilesLimit = function() {
+        self.filesRenderLimit(self.filesRenderLimit() + 5);
     };
 
     self.changeDataType = function(dataTypeOption) {
@@ -326,9 +327,11 @@ var StatisticsViewModel = function() {
             startPicker.setEndRange(null);
             endPicker.setStartRange(null);
             endPicker.setEndRange(null);
+            $('#startPickerField').attr('placeholder', 'Select a date');
         });
         $('#dateRange').on('change', function() {
             $('#endPickerField').toggleClass('hidden');
+            $('#startPickerField').attr('placeholder', 'Select start date');
         });
         return self.getData();
     };
