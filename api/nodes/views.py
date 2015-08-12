@@ -45,7 +45,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
     serializer_class = NodeSerializer
-    ordering = ('-date_modified', )  # default ordering
+    ordering = ('-date_modified',)  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -363,6 +363,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
         return files
 
+
 class NodeLogList(generics.ListAPIView, NodeMixin):
     """ Recent Log Activity
 
@@ -381,9 +382,7 @@ class NodeLogList(generics.ListAPIView, NodeMixin):
     )
 
     def get_queryset(self):
-
-        log_id = [self.get_node()._id]
-        query = Q('__backrefs.logged.node.logs', 'in', log_id)
+        query = Q('__backrefs.logged.node.logs', 'qr', self.get_node()._id)
         logs = NodeLog.find(query).sort('_id')
         log_list = []
         for log in logs:

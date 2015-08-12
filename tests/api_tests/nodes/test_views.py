@@ -1422,7 +1422,7 @@ class TestNodeLogList(ApiTestCase):
     def test_private_project_in_logs(self):
         self.project = ProjectFactory()
         res = self.app.get(self.private_url, expect_errors=True)
-        self.project.add_contributor(self.user, permissions=['read', 'write'])
+        self.project.add_contribfutor(self.user, permissions=['read', 'write'])
         self.user_two.reload()
         assert_equal(res.status_code, 403)
 
