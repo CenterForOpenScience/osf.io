@@ -60,7 +60,6 @@ var COMPONENT = 'component';
 function setPermissions(permissions, nodeType) {
 
     var msgKey;
-    // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
     var isRegistration = window.contextVars.node.isRegistration;
 
     if (permissions === PUBLIC && isRegistration) { msgKey = 'makeRegistrationPublicWarning'; }
@@ -70,22 +69,34 @@ function setPermissions(permissions, nodeType) {
     else { msgKey = 'makeComponentPrivateWarning'; }
 
     var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
+    var buttonText = permissions === PUBLIC ? 'Make Public' : 'Make Private';
+
     var message = MESSAGES[msgKey];
 
     var confirmModal = function (message) {
-        bootbox.confirm({
+        bootbox.dialog({
             title: 'Warning',
             message: message,
-            callback: function(result) {
-                if (result) {
-                    osfHelpers.postJSON(
-                        URLS[urlKey],
-                        {permissions: permissions}
-                    ).done(function() {
-                        window.location.reload();
-                    }).fail(
-                        osfHelpers.handleJSONError
-                    );
+            buttons: {
+                cancel : {
+                    label : 'Cancel',
+                    className : 'btn-default',
+                    callback : function() {
+                    }
+                },
+                success: {
+                    label: buttonText,
+                    className: 'btn-primary',
+                    callback: function() {
+                        osfHelpers.postJSON(
+                            URLS[urlKey],
+                            {permissions: permissions}
+                        ).done(function() {
+                                window.location.reload();
+                        }).fail(
+                            osfHelpers.handleJSONError
+                        );
+                    }
                 }
             }
         });
@@ -188,9 +199,13 @@ var ProjectViewModel = function(data) {
         $('#nodeTitleEditable').editable($.extend({}, editableOptions, {
             name: 'title',
             title: 'Edit Title',
+            tpl: '<input type="text" maxlength="200">',
             validate: function (value) {
                 if ($.trim(value) === '') {
                     return 'Title cannot be blank.';
+                }
+                else if(value.length > 200){
+                    return 'Title cannot exceed 200 characters.';
                 }
             }
         }));
@@ -206,6 +221,7 @@ var ProjectViewModel = function(data) {
      * Add project to the Project Organizer.
      */
     self.addToDashboard = function() {
+        $('#addDashboardFolder').tooltip('hide');
         self.inDashboard(true);
         var jsonData = {
             'toNodeID': self.dashboard,
@@ -221,6 +237,7 @@ var ProjectViewModel = function(data) {
      * Remove project from the Project Organizer.
      */
     self.removeFromDashboard = function() {
+        $('#removeDashboardFolder').tooltip('hide');
         self.inDashboard(false);
         var deleteUrl = '/api/v1/folder/' + self.dashboard + '/pointer/' + self._id;
         $.ajax({url: deleteUrl, type: 'DELETE'})
@@ -300,6 +317,11 @@ var ProjectViewModel = function(data) {
             callback: function(confirmed) {
                 if (confirmed) {
                     self.createIdentifiers();
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Create'
                 }
             }
         });

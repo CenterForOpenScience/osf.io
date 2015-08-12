@@ -44,59 +44,74 @@
         </div><!-- end .form-group -->
         <!-- /ko -->
     </div> <!-- end .ob-search -->
-    <button type="submit" data-bind="visible: showSubmit(), html: submitText"
-            class="btn btn-primary pull-right" >
-    </button>
+    <button type="submit" data-bind="visible: showSubmit(), html: submitText,  attr: {class: btnClass}"> </button>
 </form>
 </template>
 
 ## The onboarding "register" widget
 <template id="osf-ob-register">
-<li class="ob-list-item list-group-item">
-    <div data-bind="click: toggle" class="ob-header pointer">
-        <h3 class="ob-heading list-group-item-heading">Register a project</h3>
-        <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
-            class="pointer ob-expand-icon fa-lg pull-right fa">
-        </i>
+<div class="m-b-sm panel panel-default ob-list-item">
+    <div data-bind="click: toggle" class="panel-heading clearfix pointer">
+        <h3 class="panel-title">Register a project</h3>
+        <div class="pull-right" >
+            <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
+        </div>
     </div><!-- end ob-header -->
 
-    <div data-bind="visible: isOpen()">
+    <div style="display:none;" class="panel-body">
         <div class="row">
             <div class="col-md-12" >
                 <osf-project-search
                 params="data: data,
                         onSubmit: onRegisterSubmit,
                         enableComponents: false,
-                        submitText: 'Continue registration...'">
+                        submitText: 'Continue registration'">
                 </osf-project-search>
             </div><!-- end col-md -->
         </div><!-- end row -->
     </div>
-</li> <!-- end .ob-list -->
+</div> <!-- end .ob-list -->
 </template>
 
+<template id="osf-ob-create">
+    <div id="obNewProject" class=" panel panel-default m-b-sm ob-list-item">
+        <div class="panel-heading clearfix pointer">
+            <h3 class="panel-title">Create a project</h3>
+           <div class="pull-right" >
+                <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
+           </div>
+        </div><!-- end ob-header -->
+        <div style="display:none" class="panel-body" id="obRevealNewProject">
+            <osf-project-create-form
+                params="data: nodes, hasFocus: focus">
+            </osf-project-create-form>
+        </div>
+    </div> <!-- end ob-list-item -->
+</template>
+
+
 <template id="osf-ob-uploader">
-<li class="ob-list-item list-group-item">
-    <div data-bind="click: toggle" class="ob-header pointer">
-        <h3 class="ob-heading list-group-item-heading">Upload file(s)</h3>
-        <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
-            class="pointer ob-expand-icon fa-lg pull-right fa">
-        </i>
+<div class="m-b-sm panel panel-default ob-list-item">
+    <div class="pointer panel-heading clearfix ">
+        <h3 class="panel-title">Upload file(s)</h3>
+        <div class="pull-right" >
+            <button class="btn btn-link project-toggle"><i class="fa fa-angle-up"></i></button>
+        </div>
     </div><!-- end ob-header -->
 
 
-    <div data-bind="visible: isOpen()">
+    <div class="panel-body">
         <div class="row">
             <div class="col-md-12">
                 <h4>1. Drop file (or click below)</h4>
 
                 <!-- Dropzone -->
-                <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="ob-dropzone ob-dropzone-box pull-left"></div>
+                <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="osf-box box-round ob-dropzone ob-dropzone-box osf-box box-round box-lt pull-left"></div>
 
                 <!-- File queue display -->
-                <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box pull-left">
-                    <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon" alt="File icon">
-                    <div data-bind="text: filename" class="ob-dropzone-filename"></div>
+                <div data-bind="visible: !enableUpload()" class="ob-dropzone-selected ob-dropzone-box osf-box box-round box-lt pull-left">
+                    <img data-bind="attr: {src: iconSrc()}" class="ob-dropzone-icon m-t-sm" alt="File icon">
+                    <div data-bind="text: filename" class="m-t-sm"></div>
                     <progress
                         data-bind="attr: {value: progress()}, visible: showProgress()"
                             class="ob-upload-progress" max="100"></progress>
@@ -112,15 +127,37 @@
                 <osf-project-search
                 params="data: data,
                         onSubmit: startUpload,
-                        onClear: clearMessages,
-                        onSelected: clearMessages,
-                        submitText: 'Upload'">
+                        onClear: showCreateAndUpload,
+                        onSelected: hideCreateAndUpload,
+                        submitText: 'Upload',
+                        btnClass: 'btn btn-success pull-right';
+                        ">
                 </osf-project-search>
             </div>
         </div><!-- end row -->
-        <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
+        <form data-bind="submit: submitCreateAndUpload, visible:createAndUpload">
+            <div class="row">
+                <div class="col-md-12">
+                    <h4> OR Upload to a new project</h4>
+                    <input class="form-control"
+                        type="text" name="title"
+                        maxlength="200"
+                        data-bind="value: newProjectName"
+                        placeholder="Enter a project name"
+                        style="font-size:16px"
+                    >
+                </div>
+            </div>
+            <div data-bind="html: message(), attr: {class: messageClass()}" ></div>
+            <div class="row">
+                <div class="col-md-12">
+                    <br>
+                    <button  class="btn btn-success pull-right" type="submit">Upload</button>
+                </div>
+            </div>
+        </form>
     </div>
-</li> <!-- end .ob-list -->
+</div> <!-- end .ob-list -->
 </template>
 
 <template id="osf-project-create-form">
@@ -132,6 +169,7 @@
             <input class="form-control"
                 type="text" name="title"
                 maxlength="200"
+                placeholder="Required"
                 data-bind="value: title, valueUpdate:'input', hasFocus: focus"
                 >
 
@@ -147,9 +185,12 @@
 ##            </select>
 ##            <br />
 
-            <label>Description (Optional)</label>
-            <textarea data-bind="value: description"class="form-control resize-vertical" name="description"
-                ></textarea>
+            <label>Description</label>
+            <textarea data-bind="value: description"
+                class="form-control resize-vertical"
+                name="description"
+                placeholder="Optional"
+               ></textarea>
             <br />
             <label>Template (Optional)</label>
             <span class="help-block">Start typing to search. Selecting project as template will duplicate its structure in the new project without importing the content of that project.</span>
@@ -166,15 +207,15 @@
 </template>
 
 <template id="osf-ob-goto">
-<li class="ob-list-item list-group-item">
-    <div data-bind="click: toggle" class="ob-header pointer">
-        <h3 class="ob-heading list-group-item-heading">Go to my project</h3>
-        <i data-bind="css: {' fa-plus': !isOpen(), ' fa-minus': isOpen()}"
-            class="pointer ob-expand-icon fa-lg pull-right fa">
-        </i>
+<div class="panel panel-default m-b-sm ob-list-item">
+    <div class="panel-heading clearfix pointer">
+        <h3 class="panel-title">Go to my project</h3>
+        <div class="pull-right" >
+            <button class="btn btn-link project-toggle"><i class="fa fa-angle-up"></i></button>
+        </div>
     </div><!-- end ob-header -->
-    <div class="row">
-        <div data-bind="visible: isOpen()">
+    <div class="row panel-body">
+        <div>
             <div class="col-md-12" >
 
                 <!-- ko if: data.length -->
@@ -193,5 +234,5 @@
             </div><!-- end col-md -->
         </div>
     </div><!-- end row -->
-</li> <!-- end .ob-list -->
+</div> <!-- end .ob-list -->
 </template>

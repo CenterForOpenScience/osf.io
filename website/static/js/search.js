@@ -46,8 +46,6 @@ var User = function(result){
     self.degree = result.degree;
     self.school = result.school;
     self.url = result.url;
-    self.wikiUrl = result.url+'wiki/';
-    self.filesUrl = result.url+'files/';
     self.user = result.user;
 
     $.ajax('/api/v1'+ result.url).success(function(data){
@@ -75,6 +73,7 @@ var ViewModel = function(params) {
     self.searching = ko.observable(false);
     self.resultsPerPage = ko.observable(10);
     self.categories = ko.observableArray([]);
+    self.shareCategory = ko.observable('');
     self.searchStarted = ko.observable(false);
     self.showSearch = true;
     self.showClose = false;
@@ -84,6 +83,13 @@ var ViewModel = function(params) {
     // Maintain compatibility with hiding search bar elsewhere on the site
     self.toggleSearch = function() {
     };
+
+    self.allCategories = ko.pureComputed(function(){
+        if(self.shareCategory()){
+            return self.categories().concat(self.shareCategory());
+        }
+        return self.categories().concat(new Category('SHARE', 0, 'SHARE'));
+    });
 
     self.totalCount = ko.pureComputed(function() {
         if (self.categories().length === 0 || self.categories()[0] === undefined) {
@@ -118,11 +124,17 @@ var ViewModel = function(params) {
     self.queryObject = ko.pureComputed(function(){
         var TITLE_BOOST = '4';
         var DESCRIPTION_BOOST = '1.2';
+        var JOB_SCHOOL_BOOST = '1';
+        var ALL_JOB_SCHOOL_BOOST = '0.125';
 
         var fields = [
             '_all',
             'title^' + TITLE_BOOST,
             'description^' + DESCRIPTION_BOOST,
+            'job^' + JOB_SCHOOL_BOOST,
+            'school^' + JOB_SCHOOL_BOOST,
+            'all_jobs^' + ALL_JOB_SCHOOL_BOOST,
+            'all_schools^' + ALL_JOB_SCHOOL_BOOST
         ];
         return {
             'query_string': {
@@ -178,7 +190,8 @@ var ViewModel = function(params) {
         }
     };
 
-    self.addTag = function(name) {
+    /** name of tag, action add or remove.*/
+    self.clickTag = function(name, action) {
         // To handle passing from template vs. in main html
         var tag = name;
 
@@ -190,8 +203,10 @@ var ViewModel = function(params) {
         var tagString = 'tags:("' + tag + '")';
 
         if (self.query().indexOf(tagString) === -1) {
-            if (self.query() !== '') {
+            if (self.query() !== '' && action === 'add') {
                 self.query(self.query() + ' AND ');
+            } else if (self.query() !== '' && action === 'remove') {
+                self.query(self.query() + ' NOT ');
             }
             self.query(self.query() + tagString);
             self.category(new Category('total', 0, 'Total'));
@@ -209,6 +224,11 @@ var ViewModel = function(params) {
 
     self.search = function(noPush, validate) {
 
+        // Check for NOTs and ANDs put spaces before the ones that don't have spaces
+        var query = self.query().replace(/\s?NOT tags:/g, ' NOT tags:');
+        query = query.replace(/\s?AND tags:/g, ' AND tags:');
+        self.query(query);
+
         var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
         var url = self.queryUrl + self.category().url();
 
@@ -219,6 +239,7 @@ var ViewModel = function(params) {
             self.tagMaxCount(1);
             self.results.removeAll();
             self.categories.removeAll();
+            self.shareCategory('');
 
             data.results.forEach(function(result){
                 if(result.category === 'user'){
@@ -229,7 +250,11 @@ var ViewModel = function(params) {
                         result.wikiUrl = result.url+'wiki/';
                         result.filesUrl = result.url+'files/';
                     }
+
                     self.results.push(result);
+                }
+                if(result.category === 'registration'){
+                    result.dateRegistered = new $osf.FormattableDate(result.date_registered);
                 }
             });
 
@@ -268,8 +293,9 @@ var ViewModel = function(params) {
             }
 
             $osf.postJSON('/api/v1/share/search/?count&v=1', jsonData).success(function(data) {
-                self.categories.push(new Category('SHARE', data.count, 'SHARE'));
+                self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
             });
+
         }).fail(function(response){
             self.totalResults(0);
             self.currentPage(0);

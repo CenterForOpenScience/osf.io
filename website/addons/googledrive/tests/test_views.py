@@ -69,8 +69,7 @@ class TestGoogleDriveAuthViews(OsfTestCase):
         res = self.app.get(url)
         assert_is_redirect(res)
 
-    @mock.patch('website.addons.googledrive.views.auth.flash')
-    def test_googledrive_oauth_finish_cancelled(self, mock_flash):
+    def test_googledrive_oauth_finish_cancelled(self):
         user_no_addon = AuthUserFactory()
         url = api_url_for(
             'googledrive_oauth_finish',
@@ -82,7 +81,6 @@ class TestGoogleDriveAuthViews(OsfTestCase):
         )
         res = self.app.get(url)
         assert_is_redirect(res)
-        mock_flash.assert_called_once()
 
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.userinfo')
     @mock.patch('website.addons.googledrive.views.auth.GoogleAuthClient.finish')
@@ -263,6 +261,14 @@ class TestGoogleDriveUtils(OsfTestCase):
         self.node_settings.save()
         # Log user in
         self.app.authenticate(*self.user.auth)
+
+        self.patcher = mock.patch('website.addons.googledrive.model.GoogleDriveUserSettings.fetch_access_token')
+        self.patcher.return_value = 'fakeaccesstoken'
+        self.patcher.start()
+
+    def tearDown(self):
+        super(TestGoogleDriveUtils, self).tearDown()
+        self.patcher.stop()
 
     def test_serialize_settings_helper_returns_correct_urls(self):
         result = serialize_settings(self.node_settings, self.user)

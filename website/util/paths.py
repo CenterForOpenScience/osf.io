@@ -35,7 +35,7 @@ def webpack_asset(path, asset_paths=asset_paths, debug=settings.DEBUG_MODE):
         return path
 
 
-def resolve_addon_path(config, file_name):
+def resolve_addon_path(addon_config, file_name):
     """Check for addon asset in source directory (e.g. website/addons/dropbox/static');
     if file is found, return path to webpack-built asset.
 
@@ -44,7 +44,7 @@ def resolve_addon_path(config, file_name):
     """
     source_path = os.path.join(
         settings.ADDON_PATH,
-        config.short_name,
+        addon_config.short_name,
         'static',
         file_name,
     )
@@ -54,7 +54,7 @@ def resolve_addon_path(config, file_name):
             'static',
             'public',
             'js',
-            config.short_name,
+            addon_config.short_name,
             file_name,
         )
     return None

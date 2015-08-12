@@ -38,6 +38,12 @@ var $osf = require('osfHelpers');
                             }
                         });
                     }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Remove',
+                        className:'btn-danger'
+                    }
                 }
             });
         });
@@ -56,34 +62,4 @@ var $osf = require('osfHelpers');
             }
         });
 
-        $('#figshareCreateFileSet').on('click', function() {
-            createFileSet();
-        });
-
     });
-
-    var createFileSet = function() {
-
-        var $elm = $('#addonSettingsFigshare');
-        var $select = $elm.find('select');
-
-        bootbox.prompt('Name your new file set', function(filesetName) {
-            if (filesetName && filesetName.trim() != '') {
-                $osf.postJSON(
-                    nodeApiUrl + 'figshare/new/fileset/',
-                    {name: filesetName}
-                ).done(function(response) {
-                    response.article_id = 'fileset_' + response.items[0].article_id;
-                    $select.append('<option value="' + response.article_id + '">' + filesetName + ':' + response.items[0].article_id + '</option>');
-                    $select.val(response.article_id);
-                    $('#figshareId').val(response.article_id)
-                    $('#figshareTitle').val(filesetName)
-                }).fail(function() {
-                    $('#addonSettingsFigshare').find('.addon-settings-message')
-                        .text('Could not create file set')
-                        .removeClass('text-success').addClass('text-danger')
-                        .fadeOut(100).fadeIn();
-                });
-            }
-        });
-    };
