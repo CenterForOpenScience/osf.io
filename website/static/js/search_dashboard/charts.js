@@ -32,7 +32,7 @@ function rgbToHex(rgb) {
  * @param {Object} c3ChartSetup: A fully setup c3 chart object
  * @param {Object} vm: vm of the searchDashboard
  * @param {Object} divID: id of the chart (name of widget)
- * @return {m.component object}  c3 chart wrapped in component
+ * @return {Object}  c3 chart wrapped in component
  */
 charts.c3Update = function(c3ChartSetup, vm, divID) {
     return m('div.c3-chart-padding', {id: divID,
@@ -66,7 +66,7 @@ charts.getChangedColumns = function(oldCols, newCols){
  * @param {Object} rawData: Data to populate chart after parsing raw data
  * @param {Object} vm: vm of the searchDashboard
  * @param {Object} widget: params of the widget that chart is being created for
- * @return {m.component object} c3 chart wrapped in component
+ * @return {Object} c3 chart wrapped in component
  */
 charts.donutChart = function (rawData, vm, widget) {
     var data = widget.display.parser(rawData, widget.levelNames, vm, widget);

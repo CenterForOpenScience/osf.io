@@ -6,17 +6,23 @@ var utils = require('js/share/utils');
 
 var widgetUtils = {};
 
+/**
+ * Return time since epoch (ms) in human readable format
+ *
+ * @param {string} timeSinceEpochInMs: the time since epoch in ms
+ * @return {string} human readable date
+ */
 widgetUtils.timeSinceEpochInMsToMMYY = function(timeSinceEpochInMs) {
     var d = new Date(timeSinceEpochInMs);
     return (d.getDate()+1).toString() + '/' + (d.getMonth()+1).toString() + '/' + d.getFullYear().toString().substring(2);
 };
 
 /**
- * Checks if an update has been requested for this widget
+ * Checks if an update has been requested for this widget. THIS IS NOT A PURE FUNCTION: vm.widgetsToUpdate is modified
  *
- * @param {string} name of widget to check
- * @vm {object} searchDashboard vm containing a list of widgets that need to be updated (vm.widgetsToUpdate)
- * @return {bool}  returns itself
+ * @param {string} widgetName: name of widget to check
+ * @param {object} vm: searchDashboard vm containing a list of widgets that need to be updated (vm.widgetsToUpdate)
+ * @return {bool}  returns true if it has, false if not.
  */
 widgetUtils.updateTriggered = function(widgetName, vm){
     if (vm.widgetsToUpdate.indexOf(widgetName) === -1){
@@ -29,8 +35,8 @@ widgetUtils.updateTriggered = function(widgetName, vm){
 /**
  * Adds the widget to the list of widgets that need to be updated (will actually update at next redraw)
  *
- * @param {object} searchDashboard vm containing a list of widgets that need to be updated (vm.widgetsToUpdate)
- * @param {string} list of widgets that need to be added to the list of widgets to update
+ * @param {object} vm: searchDashboard vm containing a list of widgets that need to be updated (vm.widgetsToUpdate)
+ * @param {string} widgetsToAdd: list of widgets that need to be added to the list of widgets to update
  * @return {bool}  returns itself
  */
 widgetUtils.signalWidgetsToUpdate = function(vm, widgetsToAdd){
@@ -40,8 +46,8 @@ widgetUtils.signalWidgetsToUpdate = function(vm, widgetsToAdd){
 /**
  * Concatenates too arrays and removes non-unique values
  *
- * @param {array} array to add to
- * @param {array} array to add
+ * @param {array} array1: array to add to
+ * @param {array} array2: array to add
  * @return {bool}  concatenation of the unique values of the two arrays
  */
 widgetUtils.concatUnique = function(array1, array2){
@@ -49,22 +55,28 @@ widgetUtils.concatUnique = function(array1, array2){
      return temp.filter(function(item, i, arr){ return arr.indexOf(item) === i; }); //make unique so we dont redraw widgets more than we have to
 };
 
+/**
+ * requests user information for guid's supplied, then builds map from guids to name, returns map.
+ * TODO: this could be made more generic, to just return user information which can then be processed in another function
+ *
+ * @param {array} guids: an array of guid's to request user information from
+ * @return {bool}  map of guids to name
+ */
 widgetUtils.mapGuidsToName = function(guids){
     var guidFilters = [];
     var newGuidMaps = {};
-    for(var guid in guids){
-        guidFilters.push('match:id:' + guids[guid]);
-    }
-    var tempvm = {};
-    tempvm.query = m.prop('*');
-    tempvm.optionalFilters = guidFilters;
-    tempvm.requiredFilters = ['match:category:user'];
-    tempvm.size = guids.length;
-    utils.buildQuery(tempvm);
+    $.map(guids, function(guid){
+        guidFilters.push('match:id:' + guid);
+    });
+    var guidQuery = {};
+    guidQuery.query = m.prop('*');
+    guidQuery.optionalFilters = guidFilters;
+    guidQuery.requiredFilters = ['match:category:user'];
+    guidQuery.size = guids.length;
     return m.request({
         method: 'post',
         background: true,
-        data: utils.buildQuery(tempvm),
+        data: utils.buildQuery(guidQuery),
         url: '/api/v1/search/'
     }).then(function (data) {
         data.results.forEach(function(user){
@@ -76,6 +88,13 @@ widgetUtils.mapGuidsToName = function(guids){
     });
 };
 
+/**
+ * Finds and returns the keys not present in an object.
+ *
+ * @param {array} keys: an array of keys to check against
+ * @param {object} object: The object to search through
+ * @return {array}  Missing keys from object, returns [] if nothing missing
+ */
 widgetUtils.keysNotInObject = function(keys, object){
     return $.map(keys, (function(key){
         if (object[key] === undefined){
@@ -84,17 +103,32 @@ widgetUtils.keysNotInObject = function(keys, object){
     }));
 };
 
+/**
+ * finds and returns and object from a list of objects whose id matches the given id.
+ *
+ * @param {array} listOfObjects: A array containing a set of objects to match the ide feild with
+ * @param {string} id: The id to match
+ * @return {Object}  matched object
+ */
 widgetUtils.getObjectById = function(listOfObjects,id){
     var obIndex = $.map(listOfObjects, function(obj, index) {
-        if (obj.levelNames[0] === id) {
+        if (obj.id === id) {
             return index;
         }
     });
     return listOfObjects[obIndex];
 };
 
+/**
+ * Get the key of the object whose value matches given value
+ *
+ * @param {Object} object: Object to search through
+ * @param {string/int} value: value to match to
+ * @return {Object}  matched object
+ */
 widgetUtils.getKeyFromValue = function(object,value){
-  for(var key in object){
+  var key;
+  for(key in object){
     if(object[key] === value){
       return key;
     }
@@ -102,8 +136,15 @@ widgetUtils.getKeyFromValue = function(object,value){
   return null;
 };
 
-widgetUtils.getGuidsToNamesMap = function(urls, widget, vm) {
-    var missingKeys = widgetUtils.keysNotInObject(urls, vm.tempData.guidsToNames); //check if we have the names for these urls
+/**
+ * Return a map of guids to full names. Or request this information and return false if not available.
+ *
+ * @param {Array} guids: a list of guids to return name mapping for
+ * @param {Object} widget: widget to flag readiness for //TODO remove need for widget, with request flags in vm
+ * @return {Object}  an object which whose keys are guids and values are full names
+ */
+widgetUtils.getGuidsToNamesMap = function(guids, widget, vm) {
+    var missingKeys = widgetUtils.keysNotInObject(guids, vm.tempData.guidsToNames); //check if we have the names for these urls
 
     if (missingKeys.length > 0) { //if we have missing keys then we have to add to the map between url and name
         widget.display.dataReady(false);

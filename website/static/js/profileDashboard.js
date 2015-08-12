@@ -109,7 +109,7 @@ profileDashboard.controller = function(params) {
         id: contributorLevelNames[0],
         title: ctx.name + '\'s contributors',
         size: ['.col-md-6', 300],
-        row: 2,
+        row: 1,
         levelNames: contributorLevelNames,
         aggregation: profileDashboard.contributorsAgg(),
         display: {
@@ -139,7 +139,7 @@ profileDashboard.controller = function(params) {
         id: projectLevelNames[0],
         title: ctx.name + '\'s projects and components over time',
         size: ['.col-md-6', 300],
-        row: 2,
+        row: 1,
         levelNames: projectLevelNames,
         display: {
             dataReady : m.prop(true),
@@ -196,7 +196,7 @@ profileDashboard.controller = function(params) {
         id: 'activeFilters',
         title: 'Active Filters',
         size: ['.col-md-12'],
-        row: 1,
+        row: 2,
         display: {
             dataReady : m.prop(true),
             displayWidget: filterAndSearchWidget.display

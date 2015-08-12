@@ -11,6 +11,14 @@ require('truncate');
 var ResultsWidget = {};
 
 var Results = {
+    /**
+     * view function for results component. Over-arching component to display all results
+     * Loads more results on click of 'more results' button
+     *
+     * @param {Object} ctrl: empty controller pasted in by mithril
+     * @param {Object} params: contains widget and vm information
+     * @return {Object}  initialised results component
+     */
     view: function(ctrl, params) {
         var vm = params.vm;
         var resultViews = $.map(vm.results || [], function(result, i) {
@@ -50,6 +58,13 @@ var Results = {
 };
 
 var Result = {
+    /**
+     * view function for result component. Component displays one result
+     *
+     * @param {Object} ctrl: empty controller pasted in by mithril
+     * @param {Object} params: contains result, widget and vm information
+     * @return {Object}  initialised result component
+     */
     view: function(ctrl, params) {
         return m( '.animated.fadeInUp', [
             m('div', [
@@ -73,6 +88,13 @@ var Result = {
 };
 
 var TitleBar = {
+    /**
+     * view function for TitleBar component. TitleBar contains description also
+     *
+     * @param {Object} ctrl: empty controller pasted in by mithril
+     * @param {Object} params: contains result, widget and vm information
+     * @return {Object}  initialised result component
+     */
     view: function(ctrl, params) {
         var result = params.result;
         var vm = params.vm;
@@ -99,10 +121,21 @@ var TitleBar = {
 
 /* Render the description of a single result. Will highlight the matched text */
 var Description = {
+    /**
+     * controller function for Description component. Initialises show state.
+     *
+     */
     controller: function() {
         var self = this;
         self.showAll = false;
     },
+    /**
+     * view function for Description component.
+     *
+     * @param {Object} ctrl: controller pasted in by mithril
+     * @param {Object} params: contains result, widget and vm information
+     * @return {Object}  initialised result component
+     */
     view: function(ctrl, params) {
         var result = params.result;
         if ((result.description || '').length > 350) {
@@ -120,10 +153,20 @@ var Description = {
 };
 
 var Contributors = {
+    /**
+     * controller function for contributors component. Initialises show state.
+     */
     controller: function() {
         var self = this;
         self.showAll = false;
     },
+    /**
+     * view function for Contributors component. This displays all individual contributor components
+     *
+     * @param {Object} ctrl: controller pasted in by mithril
+     * @param {Object} params: contains result, widget and vm information
+     * @return {Object}  initialised result component
+     */
     view: function(ctrl, params) {
         var result = params.result;
         var contributorViews = $.map(result.contributors, function(contributor, i) {
@@ -144,6 +187,13 @@ var Contributors = {
 };
 
 var Contributor = {
+    /**
+     * view function for an individual Contributors component.
+     *
+     * @param {Object} ctrl: controller pasted in by mithril
+     * @param {Object} params: contains result, widget and vm information
+     * @return {Object}  initialised contributor component
+     */
     view: function(ctrl, params) {
         var contributor = params.contributor;
         var index = params.index;
@@ -162,10 +212,20 @@ var Contributor = {
 };
 
 var Tags = {
+    /**
+     * controller function for tags component. Initialises show state.
+     */
     controller: function(vm) {
         var self = this;
         self.showAll = false;
     },
+    /**
+     * view function for tags component.
+     *
+     * @param {Object} ctrl: controller pasted in by mithril
+     * @param {Object} params: contains result, widget and vm information
+     * @return {Object}  initialised tags component
+     */
     view: function(ctrl, params){
         var result = params.result;
         var tagViews = $.map(result.tags || [], function(tag, i) {
@@ -184,6 +244,13 @@ var Tags = {
 };
 
 var Tag = {
+    /**
+     * view function for an individual tag component.
+     *
+     * @param {Object} ctrl: controller pasted in by mithril
+     * @param {Object} params: contains result, widget and vm information
+     * @return {Object}  initialised tag component
+     */
     view: function(ctrl, params) {
         var tag = params.tag;
         var vm = params.vm;

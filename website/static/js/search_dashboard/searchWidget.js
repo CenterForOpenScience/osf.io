@@ -21,8 +21,8 @@ var SearchWidget = {
     /**
      * View function for a search widget. Returns display widget if data ready, otherwise loading spinner
      *
-     * @param {Object} controller object automatically passed in by mithril
-     * @return {m.component object}  initialised searchWidget component
+     * @param {Object} ctrl: controller object automatically passed in by mithril
+     * @return {Object} m.component type object (initialised searchWidget component)
      */
     view: function (ctrl, params) {
         var loaded = params.vm.dataLoaded() && params.widget.display.dataReady;
