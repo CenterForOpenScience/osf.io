@@ -233,12 +233,12 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         return user
 
     # checks to make sure unique admin is removing own admin privilege
-    def set_contributor_permissions(self, node, permission, user, auth):
+    def set_user_permissions(self, node, permission, user, auth):
         permissions = self.get_permissions_list(permission)
         if user is not auth.user or self.has_multiple_admins(node):
             node.set_permissions(user, permissions=permissions, save=True)
         elif permission == 'admin':
-            node.set_permissions(user, permissions=permissions, save=True)
+            pass
         else:
             raise exceptions.ValidationError('{} is the only admin.'.format(user.username))
 
