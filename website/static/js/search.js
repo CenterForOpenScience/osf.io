@@ -117,6 +117,8 @@ var ViewModel = function(params) {
 
     self.queryObject = ko.pureComputed(function(){
         var TITLE_BOOST = '4';
+        var CONTRIBUTOR_WEIGHT = '3';
+        var TAG_WEIGHT = '2';
         var DESCRIPTION_BOOST = '1.2';
         var JOB_SCHOOL_BOOST = '1';
         var ALL_JOB_SCHOOL_BOOST = '0.125';
@@ -124,6 +126,8 @@ var ViewModel = function(params) {
         var fields = [
             '_all',
             'title^' + TITLE_BOOST,
+            'contributors^' + CONTRIBUTOR_WEIGHT,
+            'tags^' + TAG_WEIGHT,
             'description^' + DESCRIPTION_BOOST,
             'job^' + JOB_SCHOOL_BOOST,
             'school^' + JOB_SCHOOL_BOOST,
