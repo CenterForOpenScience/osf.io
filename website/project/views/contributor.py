@@ -303,7 +303,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             # up to the invalid entry will be saved. (communicate to the user what needs to be retried)
             fullname = sanitize.strip_html(fullname)
             if not fullname:
-                raise ValidationValueError('Full name field can not be empty (or contain only HTML)')
+                raise ValidationValueError('Full name field cannot be empty')
             if email is not None:
                 validate_email(email)  # Will raise a ValidationError if email invalid
 
@@ -744,7 +744,7 @@ def invite_contributor_post(node, **kwargs):
             return {'status': 400, 'message': e.message}, 400
 
     if not fullname:
-        return {'status': 400, 'message': 'Full name field can not be empty (or contain only HTML)'}, 400
+        return {'status': 400, 'message': 'Full name field cannot be empty'}, 400
 
     # Check if email is in the database
     user = get_user(email=email)
