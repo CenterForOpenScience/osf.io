@@ -218,28 +218,29 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     id = ser.CharField(read_only=True, source='_id')
 
     def update(self, instance, validated_data):
+        user = instance
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
         if 'permission' in validated_data and validated_data['permission'] != '':
-            self.set_contributor_permissions(node, validated_data['permission'], instance, auth)
+            self.set_user_permissions(node, validated_data['permission'], user, auth)
         try:
-            node.set_visible(instance, validated_data['bibliographic'], save=True)
+            node.set_visible(user, validated_data['bibliographic'], save=True)
         except ValueError as e:
             raise exceptions.ValidationError(e)
-        instance.permission = node.get_permissions(instance)[-1]
-        instance.bibliographic = node.get_visible(instance)
-        instance.node_id = node._id
-        return instance
+        user.permission = node.get_permissions(user)[-1]
+        user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
+        return user
 
     # checks to make sure unique admin is removing own admin privilege
-    def set_contributor_permissions(self, node, permission, contributor, auth):
+    def set_contributor_permissions(self, node, permission, user, auth):
         permissions = self.get_permissions_list(permission)
-        if contributor is not auth.user or self.has_multiple_admins(node):
-            node.set_permissions(contributor, permissions=permissions, save=True)
+        if user is not auth.user or self.has_multiple_admins(node):
+            node.set_permissions(user, permissions=permissions, save=True)
         elif permission == 'admin':
-            node.set_permissions(contributor, permissions=permissions, save=True)
+            node.set_permissions(user, permissions=permissions, save=True)
         else:
-            raise exceptions.ValidationError('{} is the only admin.'.format(contributor.username))
+            raise exceptions.ValidationError('{} is the only admin.'.format(user.username))
 
     # created due to issues node.admin_contributor_ids not working
     def has_multiple_admins(self, node):
