@@ -69,7 +69,7 @@
 
 <div class="col-sm-9">
     <div class="discussion">
-        % if comment is UNDEFINED:
+        % if not comment:
 
             <!-- All comments for Overview, Files and Wiki -->
             <h3>
@@ -103,7 +103,7 @@
             <a data-bind="visible: parentUrl, attr:{href: parentUrl()}"><h6><i class="fa fa-caret-up"></i> Parent comment</h6></a>
         % endif
         <div class="comment-list" data-bind="template: {name: 'commentTemplate', foreach: comments}"></div>
-        % if not comment is UNDEFINED:
+        % if comment:
             <div data-bind="if: comments().length == 1">
                 <span data-bind="foreach: comments">
                     <span data-bind="ifnot: shouldShow">
@@ -124,14 +124,9 @@
 
 ${parent.javascript_bottom()}
 <script>
-        % if comment is UNDEFINED:
-            window.contextVars.comment = {};
-        %else:
-            window.contextVars.comment = ${json.dumps(comment)};
-        % endif
-
-        window.contextVars.commentTarget = '${comment_target}';
-        window.contextVars.commentTargetId = ${json.dumps(comment_target_id)};
+    window.contextVars.comment = ${json.dumps(comment) if comment else {}};
+    window.contextVars.commentTarget = '${comment_target}';
+    window.contextVars.commentTargetId = ${json.dumps(comment_target_id)};
 </script>
 
 <script src=${"/static/public/js/discussions-page.js" | webpack_asset}></script>
