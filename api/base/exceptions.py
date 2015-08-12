@@ -1,6 +1,7 @@
 from rest_framework.exceptions import APIException
 from rest_framework import status
 
+
 #Custom Exceptions the Django Rest Framework does not support
 
 class Gone(APIException):

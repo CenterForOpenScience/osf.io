@@ -4,7 +4,7 @@ from nose.tools import *  # flake8: noqa
 from website.models import Node
 from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
-from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory
+from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory, AuthUserFactory
 
 
 class TestUsers(ApiTestCase):
@@ -398,3 +398,17 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         url = "/{}nodes/{}/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
+
+
+class TestDeactivatedUser(ApiTestCase):
+
+    def setUp(self):
+        super(TestDeactivatedUser, self).setUp()
+        self.user = AuthUserFactory()
+        self.user.is_disabled = True
+        self.user.save()
+
+    def test_return_deactivated_user(self):
+        self.url = '/{}users/{}/'.format(API_BASE, self.user._id)
+        res = self.app.get(self.url, auth=self.user.auth , expect_errors=True)
+        assert_equal(res.status_code, 410)
