@@ -109,8 +109,13 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         user = self.request.user
         auth = Auth(user)
         node = self.get_object()
-        node.remove_node(auth=auth)
-        node.save()
+        nodes = self.get_node().nodes
+        # If there are no children, then allow the node to be removed, otherwise give a 403 error.
+        if len(nodes) == 0:
+            node.remove_node(auth=auth)
+            node.save()
+        else:
+            raise PermissionDenied(detail='Any child components must be deleted prior to deleting this project.')
 
 
 class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
