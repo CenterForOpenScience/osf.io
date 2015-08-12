@@ -341,7 +341,7 @@ def update_file(file_node, index=None):
 
 @file_util.require_file_indexing
 @requires_search
-def update_file_from_content(file_node, content, index=Node):
+def update_file_from_content(file_node, content, index=None):
     """ Add file to elasticsearch with the given content.
 
     :param file_node: File Node to be updated.
@@ -350,6 +350,9 @@ def update_file_from_content(file_node, content, index=Node):
     :return: True if file was indexed.
     """
     index = index or INDEX
+
+    if not file_node.node.is_public:
+        return False
 
     if not file_util.is_indexed(file_node):
         return False
