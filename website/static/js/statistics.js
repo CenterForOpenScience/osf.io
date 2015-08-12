@@ -16,18 +16,16 @@ var $osf = require('js/osfHelpers');
 
 var ctx = window.contextVars;
 
-var guidStatsItem = function(guid, title, data) {
+var guidStatsItem = function(guid, title, data, dataType) {
     var self = this;
     self.guid = guid;
     self.title = title;
     self.data = data;
     self.total = ko.computed(function(){
-        var total = 0;
-        for(var i=0; i<self.data.length; i++){
-            total  += self.data[i];
+        if(dataType == 'Unique Visitors' || dataType == 'Unique Page Views'){
+            return d3.max(data);
         }
-
-        return total;
+        return d3.sum(data);
     });
 
 };
@@ -43,37 +41,31 @@ var StatisticsViewModel = function() {
     self.dataType = ko.observable('Visits');
     self.piwikDataType = ko.computed(function(){
         switch (self.dataType()){
-            case "Visits":
-                return "nb_visits";
+            case 'Visits':
+                return 'nb_visits';
 
-            case "Unique Visitors":
-                return "nb_uniq_visitors";
+            case 'Unique Visitors':
+                return 'nb_uniq_visitors';
 
-            case "Page Views":
-                return "nb_pageviews";
+            case 'Page Views':
+                return 'nb_pageviews';
 
-            case "Unique Page Views":
-                return "nb_uniq_pageviews";
+            case 'Unique Page Views':
+                return 'nb_uniq_pageviews';
         }
     });
 
     self.method = ko.computed(function() {
-        if (self.dataType() == "Page Views" || self.dataType() == "Unique Page Views"){
-            return "Actions.get"
+        if (self.dataType() == 'Page Views' || self.dataType() == 'Unique Page Views'){
+            return 'Actions.get'
         }
-        return "VisitsSummary.get"
+        return 'VisitsSummary.get'
     });
 
     self.period = ko.observable('day');
-
-    self.pikadayDate = ko.observable(moment().format('YYYY-MM-DD'));
-
-    self.date = ko.computed(function() {
-        var endDate = moment(self.pikadayDate());
-        var startDate = moment(endDate).subtract(30, 'days');
-
-        return startDate.format('YYYY-MM-DD') + ',' + endDate.format('YYYY-MM-DD');
-    });
+    self.date = ko.observable(function() {
+        return moment().subtract(30, 'days').format('YYYY-MM-DD') + ',' + moment().format('YYYY-MM-DD');
+    }());
 
     self.node = ko.observableArray([]);
     self.children = ko.observableArray([]);
@@ -85,7 +77,10 @@ var StatisticsViewModel = function() {
 
     self.dateButtonHTML = ko.computed(function(){
         var dates = self.date().split(',');
-        return dates[1] + ' <span class="fa fa-calendar"></span>';
+        if($('#dateRange').prop('checked')){
+            return 'Date Range: ' + dates[0] + ' to ' + dates[1] + ' <span class="fa fa-calendar"></span>';
+        }
+        return 'Date Range: ' + dates[1] + ' <span class="fa fa-calendar"></span>';
     });
 
     self.renderChildren = ko.observableArray();
@@ -98,24 +93,43 @@ var StatisticsViewModel = function() {
             method: self.method(),
             period: self.period(),
             date: self.date(),
-            files: nodeFiles
+            files: JSON.stringify(nodeFiles)
         }
     });
 
-    var picker = new pikaday({
-        field: document.getElementById('datePickerField'),
-        trigger: document.getElementById('datePickerButton'),
+    var startPicker = new pikaday({
+        field: document.getElementById('startPickerField'),
+        format: 'YYYY-MM-DD',
+        maxDate: moment().toDate(),
         onSelect: function(){
-            self.pikadayDate(picker.toString());
+            if($('#date').prop('checked')) {
+                var end = startPicker.getMoment();
+                var start = moment(end).subtract(30, 'days');
+
+                self.date(start.format('YYYY-MM-DD') + ',' + end.format('YYYY-MM-DD'));
+            }
+            startPicker.setStartRange(startPicker.getMoment().toDate());
+            endPicker.setStartRange(startPicker.getMoment().toDate());
+            endPicker.setMinDate(startPicker.getMoment().toDate());
+
+            if($('#dateRange').prop('checked') && endPicker.toString() != ''){
+                self.date(startPicker.toString() + ',' + endPicker.toString());
+            }
         }
     });
 
     var endPicker = new pikaday({
-        field: document.getElementById('endDatePickerField'),
-        trigger: document.getElementById('datePickerButton'),
+        field: document.getElementById('endPickerField'),
+        format: 'YYYY-MM-DD',
+        maxDate: moment().toDate(),
         onSelect: function(){
-            self.pikadayDate(endPicker.toString());
+            startPicker.setEndRange(endPicker.getMoment().toDate());
+            endPicker.setEndRange(endPicker.getMoment().toDate());
+
+            self.date(startPicker.toString() + ',' + endPicker.toString());
+
         }
+
     });
 
     self.formatStatistics = function(nodeData, fileData){
@@ -125,13 +139,13 @@ var StatisticsViewModel = function() {
         self.files(self.guidStatsItemize(fileData['files']));
 
         self.renderMore('children');
-        self.renderMore();
+        self.renderMore('files');
 
     };
 
     self.guidStatsItemize = function(data) {
         return data.map(function(item) {
-            return new guidStatsItem(item.node_id, item.title, self.piwikDataToArray(item.data));
+            return new guidStatsItem(item.node_id, item.title, self.piwikDataToArray(item.data), self.dataType());
         }).sort(function(a, b){
             return b.total() - a.total();
         });
@@ -176,6 +190,9 @@ var StatisticsViewModel = function() {
 
         c3.generate({
             bindto: '.piwikChart',
+            size: {
+                height: 400
+            },
             data: {
                 x: 'x',
                 columns: [
@@ -190,8 +207,7 @@ var StatisticsViewModel = function() {
                         format: '%Y-%m-%d',
                         culling: {
                             max: 5
-                        },
-                        rotate: 60
+                        }
                     },
                     padding: {
                         left: 0
@@ -211,23 +227,40 @@ var StatisticsViewModel = function() {
         });
     };
 
-    self.renderSparkLines = function() {
+    ko.bindingHandlers.sparkline = {
+        update: function(element, valueAccessor) {
+            var value = valueAccessor();
+            var guidStatsItem = ko.unwrap(value);
+
+            var sparkId = '#' + $(element).prop('id');
+
+            $(sparkId).sparkline( guidStatsItem.data,
+            {
+                lineColor: '#204762',
+                fillColor: '#EEEEEE',
+                spotColor: '#337ab7',
+                width: '100%',
+            });
+        }
+    };
+
+    self.redrawSparkLines = function() {
         for (var i = 0; i < self.renderChildren().length; i++) {
-            var guidItem = self.renderChildren()[i];
-            var sparkId = '#' + guidItem.guid + 'Spark';
+            var guidStatsItem = self.renderChildren()[i];
+            var sparkId = '#' + guidStatsItem.guid + 'Spark';
             $(sparkId).empty();
         }
 
         for (var i = 0; i < self.renderFiles().length; i++) {
-            var guidItem = self.renderFiles()[i];
-            var sparkId = '#' + guidItem.guid + 'Spark';
+            var guidStatsItem = self.renderFiles()[i];
+            var sparkId = '#' + guidStatsItem.guid + 'Spark';
             $(sparkId).empty();
         }
 
         for (var i = 0; i < self.renderChildren().length; i++) {
-            var guidItem = self.renderChildren()[i];
-            var sparkId = '#' + guidItem.guid + 'Spark';
-            $(sparkId).sparkline( guidItem.data,
+            var guidStatsItem = self.renderChildren()[i];
+            var sparkId = '#' + guidStatsItem.guid + 'Spark';
+            $(sparkId).sparkline( guidStatsItem.data,
             {
                 lineColor: '#204762',
                 fillColor: '#EEEEEE',
@@ -237,9 +270,9 @@ var StatisticsViewModel = function() {
         }
 
         for (var i = 0; i < self.renderFiles().length; i++) {
-            var guidItem = self.renderFiles()[i];
-            var sparkId = '#' + guidItem.guid + 'Spark';
-            $(sparkId).sparkline( guidItem.data,
+            var guidStatsItem = self.renderFiles()[i];
+            var sparkId = '#' + guidStatsItem.guid + 'Spark';
+            $(sparkId).sparkline( guidStatsItem.data,
             {
                 lineColor: '#204762',
                 fillColor: '#EEEEEE',
@@ -252,20 +285,23 @@ var StatisticsViewModel = function() {
 
     self.renderMore = function(type) {
         if(type == 'children'){
-            childrenRenderLimit += 5;
+            childrenRenderLimit += 1;
             if(childrenRenderLimit > self.children().length){
                 self.renderChildren(self.children().slice(0));
             } else {
                 self.renderChildren(self.children().slice(0, childrenRenderLimit));
             }
-        } else {
-            filesRenderLimit += 5;
+        }
+
+        if(type == 'files') {
+            filesRenderLimit += 1;
             if(filesRenderLimit > self.files().length){
                 self.renderFiles(self.files().slice(0));
             } else {
                 self.renderFiles(self.files().slice(0, filesRenderLimit));
             }
-        }
+        };
+
     };
 
     self.changeDataType = function(dataTypeOption) {
@@ -275,7 +311,6 @@ var StatisticsViewModel = function() {
     self.updateStats = function() {
         self.getData().then(function() {
             self.chart();
-            self.renderSparkLines();
         })
     };
 
@@ -285,6 +320,16 @@ var StatisticsViewModel = function() {
 
     //Load initial statistics: Visits
     self.init = function() {
+        $('#date').on('change', function() {
+            $('#endPickerField').toggleClass('hidden');
+            startPicker.setStartRange(null);
+            startPicker.setEndRange(null);
+            endPicker.setStartRange(null);
+            endPicker.setEndRange(null);
+        });
+        $('#dateRange').on('change', function() {
+            $('#endPickerField').toggleClass('hidden');
+        });
         return self.getData();
     };
 
@@ -296,9 +341,8 @@ function Statistics(selector) {
     self.viewModel.init().then(function() {
         $osf.applyBindings(self.viewModel, selector);
         self.viewModel.chart();
-        self.viewModel.renderSparkLines();
         $(window).resize($osf.debounce(function(){
-                self.viewModel.renderSparkLines();
+                self.viewModel.redrawSparkLines();
             }, 100, true));
 
     });

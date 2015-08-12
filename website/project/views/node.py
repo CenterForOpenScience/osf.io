@@ -767,7 +767,7 @@ def _view_project(node, auth, primary=False):
                 }
                 for meta in node.registered_meta or []
             ],
-            'files': [str(guid) for guid in OsfStorageGuidFile.find(Q('node', 'eq', node._id))],
+            'files': {str(guid_file): guid_file.get_file_name() for guid_file in OsfStorageGuidFile.find(Q('node', 'eq', node._id))},
             'registration_count': len(node.node__registrations),
             'is_fork': node.is_fork,
             'forked_from_id': node.forked_from._primary_key if node.is_fork else '',

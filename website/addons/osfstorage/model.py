@@ -469,6 +469,10 @@ class OsfStorageGuidFile(GuidFile):
     def file_url(self):
         return os.path.join('osfstorage', 'files', self.path.lstrip('/'))
 
+    def get_file_name(self):
+        file_node = OsfStorageFileNode.find_one(Q('_id', 'eq', self.path.lstrip('/')))
+        return file_node.name
+
     def get_download_path(self, version_idx):
         url = furl.furl('/{0}/'.format(self._id))
         url.args.update({
