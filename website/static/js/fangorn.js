@@ -321,7 +321,9 @@ function inheritFromParent(item, parent, fields) {
  */
 function _fangornResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus', ' '),
-        togglePlus = m('i.fa.fa-plus', ' ');
+        togglePlus = m('i.fa.fa-plus', ' '),
+        rentedUser = m('i.fa.fa-sign-out[style="color: blue"]', ''),
+        rentedOther = m('i.fa.fa-sign-out[style="color: red"]', '');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder' && item.depth > 1) {
         if(!item.data.permissions.view){
@@ -331,6 +333,14 @@ function _fangornResolveToggle(item) {
             return toggleMinus;
         }
         return togglePlus;
+    }
+    if (item.data.provider === 'osfstorage' && item.kind === 'file') {
+        if (item.data.extra.renter !== '') {
+            if (item.data.extra.renter == window.contextVars.currentUser.id){
+                return rentedUser;
+            }
+            return rentedOther;
+        }
     }
     return '';
 }
@@ -1117,16 +1127,6 @@ function _fangornTitleColumn(item, col) {
         return _connectCheckTemplate.call(this, item);
     }
     if (item.kind === 'file' && item.data.permissions.view) {
-        if (item.data.provider === 'osfstorage'){
-            if (item.data.extra.renter !== ''){
-              return m('span.fg-file-links',{
-                    onclick: function(event) {
-                        event.stopImmediatePropagation();
-                        gotoFileEvent.call(tb, item);
-                    }
-                }, item.data.name + ' (Checked-out)');
-            }
-        }
         return m('span.fg-file-links',{
             onclick: function(event) {
                 event.stopImmediatePropagation();
@@ -1137,11 +1137,6 @@ function _fangornTitleColumn(item, col) {
     if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
                 item.data.name);
-    }
-    if (item.data.provider === 'osfstorage' && item.kind === 'file'){
-        if (item.data.extra.renter !== ''){
-            return m('span', item.data.name + ' (Checked-out)');
-        }
     }
     return m('span', item.data.name);
 }
