@@ -158,6 +158,10 @@ registered
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
+<script type="text/html" id="project_registered_no_user">
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> registered
+</script>
+
 <script type="text/html" id="node_forked">
 created fork from
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>

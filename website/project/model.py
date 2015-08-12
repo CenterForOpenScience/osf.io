@@ -3447,9 +3447,6 @@ class RegistrationApproval(EmailApprovableSanction):
         register.set_privacy('public', auth, log=False)
         for child in register.get_descendants_recursive(lambda n: n.primary):
             child.set_privacy('public', auth, log=False)
-        for node in register.root.node_and_primary_descendants():
-            self._add_success_logs(node, user)
-            node.update_search()  # update search if public
         # Accounts for system actions where no `User` performs the final approval
         auth = Auth(user) if user else None
         registered_from.add_log(
@@ -3460,6 +3457,9 @@ class RegistrationApproval(EmailApprovableSanction):
             },
             auth=auth,
         )
+        for node in register.root.node_and_primary_descendants():
+            self._add_success_logs(node, user)
+            node.update_search()  # update search if public
         self.state = self.APPROVED
         self.save()
 
