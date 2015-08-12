@@ -1055,10 +1055,11 @@ class TestNodeContributorUpdate(ApiTestCase):
         self.user_two = AuthUserFactory()
 
         self.project = ProjectFactory(creator=self.user)
-        self.url_creator = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
-        self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_two._id)
         self.project.add_contributor(self.user_two, permissions=['read', 'write'], visible=True, save=True)
         self.project.reload()
+
+        self.url_creator = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
+        self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_two._id)
 
     def test_change_contributor_permissions(self):
         data = {
@@ -1211,14 +1212,89 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_true(self.project.get_visible(self.user_two))
 
 
-# class TestNodeContributorDelete(ApiTestCase):
-#     def setUp(self):
-#         super(TestNodeContributorDelete, self).setUp()
-#         self.user = AuthUserFactory()
-#         self.user_two = AuthUserFactory()
-#
-#         self.project = ProjectFactory(creator=self.user)
-#         self.project.add_contributor(self.user_two, permissions=['read', 'write'], visible=True, save=True)
+class TestNodeContributorDelete(ApiTestCase):
+    def setUp(self):
+        super(TestNodeContributorDelete, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.user_three = AuthUserFactory()
+
+        self.project = ProjectFactory(creator=self.user)
+        self.project.add_contributor(self.user_two, permissions=['read', 'write'], visible=True, save=True)
+        self.project.reload()
+
+        self.url_user = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
+        self.url_user_two = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_two._id)
+        self.url_user_three = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_three._id)
+
+    def test_remove_contributor_admin(self):
+        res = self.app.delete(self.url_user_two, auth=self.user.auth)
+        assert_equal(res.status_code, 204)
+
+        self.project.reload()
+        assert_not_in(self.user_two, self.project.contributors)
+
+    def test_remove_contributor_non_admin(self):
+        self.project.add_contributor(self.user_three, permissions=['read', 'write'], visible=True, save=True)
+        self.project.reload()
+
+        res = self.app.delete(self.url_user_three, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_in(self.user_three, self.project.contributors)
+
+    def test_remove_contributor_non_contributor(self):
+        res = self.app.delete(self.url_user_two, auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_in(self.user_two, self.project.contributors)
+
+    def test_remove_contributor_not_logged_in(self):
+        res = self.app.delete(self.url_user_two, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+        self.project.reload()
+        assert_in(self.user_two, self.project.contributors)
+
+    def test_remove_non_contributor_admin(self):
+        res = self.app.delete(self.url_user_three, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_remove_non_existing_user_admin(self):
+        url_user_fake = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, 'fake')
+        res = self.app.delete(url_user_fake, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_remove_self_contributor_not_unique_admin(self):
+        self.project.add_permission(self.user_two, 'admin', save=True)
+        self.project.reload()
+
+        res = self.app.delete(self.url_user, auth=self.user.auth)
+        assert_equal(res.status_code, 204)
+
+        self.project.reload()
+        assert_not_in(self.user, self.project.contributors)
+
+    def test_remove_self_contributor_unique_admin(self):
+        res = self.app.delete(self.url_user, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.project.reload()
+        assert_in(self.user, self.project.contributors)
+
+    def test_remove_only_bibliographic_contributor(self):
+        self.project.set_visible(self.user_two, False)
+
+        res = self.app.delete(self.url_user, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        self.project.reload()
+        assert_in(self.user, self.project.contributors)
 
 
 class TestNodeRegistrationList(ApiTestCase):
