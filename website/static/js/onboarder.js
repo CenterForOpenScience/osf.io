@@ -598,7 +598,7 @@ function OBUploaderViewModel(params) {
     self.dropzone = new Dropzone(self.selector, dropzoneOpts);
 
     if($osf.isIE()){
-        $("h4:contains(1. Drop file (or click below))").replaceWith("<h4>1. Click below to select file</h4>");
+        $('h4:contains(1. Drop file (or click below))').replaceWith('<h4>1. Click below to select file</h4>');
     }
 
     //stop user from leaving if file is staged for upload
