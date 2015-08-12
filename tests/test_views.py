@@ -15,6 +15,7 @@ from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 
 from modularodm import Q, fields
+from modularodm.exceptions import ValidationError
 from dateutil.parser import parse as parse_date
 
 from framework import auth
@@ -1668,6 +1669,36 @@ class TestAddingContributorViews(OsfTestCase):
 
         assert_false(res[2]['user'].is_registered)
         assert_true(res[2]['user']._id)
+
+    def test_deserialize_contributors_validates_fullname(self):
+        name = "<img src=1 onerror=console.log(1)>"
+        email = fake.email()
+        unreg_no_record = serialize_unregistered(name, email)
+        contrib_data = [unreg_no_record]
+        contrib_data[0]['permission'] = 'admin'
+        contrib_data[0]['visible'] = True
+
+        with assert_raises(ValidationError):
+            deserialize_contributors(
+                self.project,
+                contrib_data,
+                auth=Auth(self.creator),
+                validate=True)
+
+    def test_deserialize_contributors_validates_email(self):
+        name = fake.name()
+        email = "!@#$%%^&*"
+        unreg_no_record = serialize_unregistered(name, email)
+        contrib_data = [unreg_no_record]
+        contrib_data[0]['permission'] = 'admin'
+        contrib_data[0]['visible'] = True
+
+        with assert_raises(ValidationError):
+            deserialize_contributors(
+                self.project,
+                contrib_data,
+                auth=Auth(self.creator),
+                validate=True)
 
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_deserialize_contributors_sends_unreg_contributor_added_signal(self, _):
