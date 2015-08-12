@@ -1,0 +1,30 @@
+<span class="text-muted" data-bind="text: savedLicenseName">
+</span>
+<i class="text-muted fa fa-info-circle" data-bind="click: togglePreview"></i>
+<i class="text-muted fa fa-pencil" data-bind="click: editing.bind(null, true)">
+</i>
+<p data-bind="if: notification">
+    <span data-bind="text: notification, css: {'text-danger': error, 'text-success': success}"></span>
+</p>
+<span data-bind="if: showPreview">
+  <div class="panel panel-default">
+    <div class="panel-body">
+        <div class="col-md" data-bind="if: editing">
+            <div class="form-inline">
+                <div class="form-group">
+                    <label> Choose a license: </label>
+                    <select class="form-control" data-bind="options: licenses,
+                     optionsText: 'name',
+                     value: selectedLicense">
+                    </select>
+                    <button class="btn btn-success" data-bind="click: save">Save</button>
+                </div>
+            </div>
+        </div>
+        <div class="col-md" data-bind="if: showPreview">
+            <br />
+            <pre data-bind="text: selectedLicenseText" ></pre>
+        </div>
+    </div>
+  </div>
+</span>

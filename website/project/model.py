@@ -557,6 +557,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'title',
         'description',
         'category',
+        'license',
     ]
 
     _id = fields.StringField(primary=True)
@@ -598,6 +599,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     title = fields.StringField(validate=validate_title)
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
+
+    node_license = fields.DictionaryField()
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -659,6 +662,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pk(self):
         return self._id
+
+    @property
+    def license(self):
+        return self.node_license or {}
 
     @property
     def category_display(self):

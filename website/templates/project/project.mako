@@ -177,6 +177,12 @@
                     <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                     </p>
                 % endif
+                    <p>
+                      <span id="license">License:</span>                                   
+                      <license-picker params="saveUrl: '${node['update_url']}',
+                                              saveMethod: 'PUT'">
+                      </license-picker>
+                    </p>
             </div>
         </div>
 
