@@ -63,7 +63,7 @@ function before_change_permissions(item, permission){
             title: 'Make publicly editable',
             message: 'Are you sure you want to make the wiki of ' + title +
                 ' publicly editable? This will allow any logged in user to edit the content of this wiki. ' +
-                '<b>Note</b>: Users without write access will not be able to add or remove pages.',
+                '<b>Note</b>: Users without write access will not be able to add, delete, or rename pages.',
             callback: function(confirm) {
             if (confirm) {
                 change_permissions(item, permission);
