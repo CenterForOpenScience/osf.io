@@ -73,7 +73,7 @@ $(document).ready(function() {
         ).done(function() {
             $commentMsg.addClass('text-success');
             $commentMsg.text('Successfully updated settings.');
-            window.location.reload();
+            setTimeout(function(){window.location.reload();}, 100);
         }).fail(function() {
             bootbox.alert({
                 message: 'Could not set commenting configuration. Please try again.',
