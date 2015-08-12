@@ -180,7 +180,9 @@
                     <p>
                       <span id="license">License:</span>                                   
                       <license-picker params="saveUrl: '${node['update_url']}',
-                                              saveMethod: 'PUT'">
+                                              saveMethod: 'PUT',
+                                              license: window.contextVars.node.license,
+                                              saveLicenseKey: 'node_license'">
                       </license-picker>
                     </p>
             </div>

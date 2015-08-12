@@ -557,7 +557,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'title',
         'description',
         'category',
-        'license',
+        'node_license',
     ]
 
     _id = fields.StringField(primary=True)
@@ -666,6 +666,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def license(self):
         return self.node_license or {}
+
+    @property
+    def license_file_url(self):
+        if self.node_license.get('id') == 'OTHER':
+            return self.url + 'osfstorage/files/license.txt'
+        else:
+            return None
 
     @property
     def category_display(self):

@@ -15,9 +15,13 @@
                     <label> Choose a license: </label>
                     <select class="form-control" data-bind="options: licenses,
                      optionsText: 'name',
-                     value: selectedLicense">
+                     optionsValue: 'id',
+                     value: selectedLicenseId">
                     </select>
-                    <button class="btn btn-success" data-bind="click: save">Save</button>
+                    <button class="btn btn-success" data-bind="click: save,
+                                                               css: {
+                                                                 'disabled': disableSave
+                                                               }">Save</button>
                 </div>
             </div>
         </div>
