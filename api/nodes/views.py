@@ -22,7 +22,7 @@ class NodeMixin(object):
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self):
-        obj = get_object_or_error(Node, self.kwargs[self.node_lookup_url_kwarg])
+        obj = get_object_or_error(Node, self.kwargs[self.node_lookup_url_kwarg], "node")
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
         return obj
@@ -226,7 +226,8 @@ class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         pointer_lookup_url_kwarg = 'pointer_id'
-        pointer = get_object_or_error(Pointer, self.kwargs[pointer_lookup_url_kwarg])
+        pointer = get_object_or_error(Pointer, self.kwargs[pointer_lookup_url_kwarg], "node link")
+
         # May raise a permission denied
         self.check_object_permissions(self.request, pointer)
         return pointer

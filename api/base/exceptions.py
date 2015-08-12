@@ -1,5 +1,8 @@
+from django.utils import six
 from rest_framework.exceptions import APIException
 from rest_framework import status
+from rest_framework.exceptions import _force_text_recursive
+
 
 #Custom Exceptions the Django Rest Framework does not support
 
