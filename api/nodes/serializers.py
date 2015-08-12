@@ -164,7 +164,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.  '
                                                'Required due to issues with field defaulting to false.')
 
-    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], allow_blank=True, required=False,
+    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], required=False, allow_null=True,
                                  help_text='Highest permission the user has.  Blank input defaults write permission if '
                                            'user is being added and to current permission if user is being edited.')
     links = LinksField({
@@ -208,6 +208,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
             return ['read', 'write']
         elif permission == 'read':
             return ['read']
+        else:
+            return ['read', 'write']
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
@@ -218,22 +220,25 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     def update(self, instance, validated_data):
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
-        if 'permission' in validated_data:
+        if 'permission' in validated_data and validated_data['permission'] != '':
             self.set_contributor_permissions(node, validated_data['permission'], instance, auth)
         self.change_visibility(node, instance, validated_data['bibliographic'])
-
-        return self.context['view'].get_object()
+        instance.permission = node.get_permissions(instance)[-1]
+        instance.bibliographic = node.get_visible(instance)
+        instance.node_id = node._id
+        return instance
 
     # checks to make sure unique admin is removing own admin privilege
     def set_contributor_permissions(self, node, permission, contributor, auth):
         permissions = self.get_permissions_list(permission)
-        if self.has_multiple_admins(node) or contributor is not auth.user:
+        if not contributor is auth.user or self.has_multiple_admins(node):
             node.set_permissions(contributor, permissions=permissions, save=True)
         elif permission == 'admin':
             node.set_permissions(contributor, permissions=permissions, save=True)
         else:
             raise exceptions.ValidationError('{} is the only admin.'.format(contributor.username))
 
+    # created due to issues node.admin_contributor_ids not working
     def has_multiple_admins(self, node):
         has_admin = False
         for contributor in node.contributors:
@@ -243,10 +248,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
                 has_admin = True
         return False
 
-    # created due to lack of check for number of visible contributors in node object
     def change_visibility(self, node, contributor, bibliographic):
-        if not bibliographic and node.get_visible(contributor) and len(node.visible_contributors) < 2:
-            raise exceptions.ValidationError('{} is the only visible contributor.'.format(contributor.username))
         try:
             node.set_visible(contributor, bibliographic, save=True)
         except ValueError as e:

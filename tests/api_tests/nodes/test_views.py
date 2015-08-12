@@ -1062,7 +1062,6 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_permissions(self):
         data = {
-            'id': self.user_two._id,
             'permission': 'admin',
             'bibliographic': True
         }
@@ -1073,7 +1072,6 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user_two), ['read', 'write', 'admin'])
 
         data = {
-            'id': self.user_two._id,
             'permission': 'write',
             'bibliographic': True
         }
@@ -1084,7 +1082,6 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user_two), ['read', 'write'])
 
         data = {
-            'id': self.user_two._id,
             'permission': 'read',
             'bibliographic': True
         }
@@ -1096,7 +1093,6 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_bibliographic(self):
         data = {
-            'id': self.user_two._id,
             'bibliographic': False
         }
         res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
@@ -1106,7 +1102,6 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_false(self.project.get_visible(self.user_two))
 
         data = {
-            'id': self.user_two._id,
             'bibliographic': True
         }
         res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
@@ -1117,7 +1112,6 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_permission_and_bibliographic(self):
         data = {
-            'id': self.user_two._id,
             'permission': 'read',
             'bibliographic': False
         }
@@ -1130,8 +1124,8 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_not_change_contributor(self):
         data = {
-            'id': self.user_two._id,
-            'bibliographic': True
+            'bibliographic': True,
+            'permission': None
         }
         res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -1142,7 +1136,6 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_invalid_change_inputs_contributor(self):
         data = {
-            'id': self.user_two._id,
             'permission': 'invalid',
             'bibliographic': 'invalid'
         }
@@ -1156,7 +1149,6 @@ class TestNodeContributorUpdate(ApiTestCase):
         self.project.reload()
 
         data = {
-            'id': self.user._id,
             'permission': 'write',
             'bibliographic': True
         }
@@ -1179,11 +1171,10 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user), ['read', 'write', 'admin'])
 
     def test_remove_all_bibliographic_statuses_contributors(self):
-        self.project.set_visible(self.user_two, False)
+        self.project.set_visible(self.user_two, False, save=True)
         self.project.reload()
         
         data = {
-            'id': self.user._id,
             'bibliographic': False
         }
         res = self.app.put_json(self.url_creator, data, auth=self.user.auth, expect_errors=True)
@@ -1194,7 +1185,6 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_non_admin_auth(self):
         data = {
-            'id': self.user_two._id,
             'permission': 'read',
             'bibliographic': False
         }
@@ -1207,7 +1197,6 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_not_logged_in(self):
         data = {
-            'id': self.user_two._id,
             'permission': 'read',
             'bibliographic': False
         }
@@ -1222,14 +1211,14 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_true(self.project.get_visible(self.user_two))
 
 
-class TestNodeContributorDelete(ApiTestCase):
-    def setUp(self):
-        super(TestNodeContributorDelete, self).setUp()
-        self.user = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-
-        self.project = ProjectFactory(creator=self.user)
-        self.project.add_contributor(self.user_two, permissions=['read', 'write'], visible=True, save=True)
+# class TestNodeContributorDelete(ApiTestCase):
+#     def setUp(self):
+#         super(TestNodeContributorDelete, self).setUp()
+#         self.user = AuthUserFactory()
+#         self.user_two = AuthUserFactory()
+#
+#         self.project = ProjectFactory(creator=self.user)
+#         self.project.add_contributor(self.user_two, permissions=['read', 'write'], visible=True, save=True)
 
 
 class TestNodeRegistrationList(ApiTestCase):
