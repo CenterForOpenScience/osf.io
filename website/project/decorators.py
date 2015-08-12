@@ -54,8 +54,8 @@ def _inject_nodes(kwargs):
 
 
 def must_not_be_rejected(func):
-    """Ensures approval/disapproval requests can't reach Sanctions already
-    that have already been rejected.
+    """Ensures approval/disapproval requests can't reach Sanctions that have
+    already been rejected.
     """
 
     @functools.wraps(func)
