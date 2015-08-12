@@ -351,8 +351,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
 
     self.full = koHelpers.sanitizedObservable().extend({
         trimmed: true,
-        required: true,
-        message: 'Full Name Required'
+        required: true
     });
 
     self.given = koHelpers.sanitizedObservable().extend({trimmed: true});
@@ -583,7 +582,7 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return self.contents().length > 1;
     });
 
-    self.institutionObjectsEmpty = ko.computed(function(){
+    self.institutionObjectsEmpty = ko.pureComputed(function(){
         for (var i=0; i<self.contents().length; i++) {
             if (self.contents()[i].institutionObjectEmpty()) {
                 return true;
@@ -797,7 +796,7 @@ var SchoolViewModel = function() {
     var validated = ko.validatedObservable(self);
 
     //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
-    self.institutionObjectEmpty = ko.purecomputed(function() {
+    self.institutionObjectEmpty = ko.pureComputed(function() {
         return self.institution() && self.department() && self.degree();
      });
 
