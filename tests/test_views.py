@@ -1822,11 +1822,8 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_add_contributors_post_only_sends_one_email_to_registered_user(self, mock_send_mail):
         # Project has components
-        comp1, comp2 = NodeFactory(
-            creator=self.creator), NodeFactory(creator=self.creator)
-        self.project.nodes.append(comp1)
-        self.project.nodes.append(comp2)
-        self.project.save()
+        comp1 = NodeFactory(creator=self.creator, parent=self.project)
+        comp2 = NodeFactory(creator=self.creator, parent=self.project)
 
         # A registered user is added to the project AND its components
         user = UserFactory()
@@ -1849,6 +1846,34 @@ class TestAddingContributorViews(OsfTestCase):
 
         # send_mail should only have been called once
         assert_equal(mock_send_mail.call_count, 1)
+
+    @mock.patch('website.mails.send_mail')
+    def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self, mock_send_mail):
+        # Project has a component with a sub-component
+        component = NodeFactory(creator=self.creator, parent=self.project)
+        sub_component = NodeFactory(creator=self.creator, parent=component)
+
+        # A registered user is added to the project and the sub-component, but NOT the component
+        user = UserFactory()
+        user_dict = {
+            'id': user._id,
+            'fullname': user.fullname,
+            'email': user.username,
+            'permission': 'write',
+            'visible': True}
+
+        payload = {
+            'users': [user_dict],
+            'node_ids': [sub_component._primary_key]
+        }
+
+        # send request
+        url = self.project.api_url_for('project_contributors_post')
+        assert self.project.can_edit(user=self.creator)
+        self.app.post_json(url, payload, auth=self.creator.auth)
+
+        # send_mail is called for both the project and the sub-component
+        assert_equal(mock_send_mail.call_count, 2)
 
 
     @mock.patch('website.project.views.contributor.send_claim_email')

@@ -347,9 +347,8 @@ def project_contributors_post(auth, node, **kwargs):
     node.add_contributors(contributors=contribs, auth=auth)
     node.save()
 
-    # Disconnect listeners to avoid multiple invite or notification emails
+    # Disconnect listener to avoid multiple invite emails
     unreg_contributor_added.disconnect(finalize_invitation)
-    contributor_added.disconnect(notify_added_contributor)
 
     for child_id in node_ids:
         child = Node.load(child_id)
@@ -361,7 +360,7 @@ def project_contributors_post(auth, node, **kwargs):
         child.save()
     # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)
-    contributor_added.connect(notify_added_contributor)
+
     return {'status': 'success'}, 201
 
 
@@ -525,9 +524,11 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
 def notify_added_contributor(node, contributor, throttle=None):
     throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
 
-    # Exclude forks and templates because the user forking/templating the project
-    # gets added via 'add_contributor' but does not need to get notified
-    if contributor.is_registered and not node.template_node and not node.is_fork:
+    # Exclude forks and templates because the user forking/templating the project gets added
+    # via 'add_contributor' but does not need to get notified.
+    # Only email users for projects, or for components where they are not contributors on the parent node.
+    if (contributor.is_registered and not node.template_node and not node.is_fork
+            and not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
             timestamp = contributor_record.get('last_sent', None)
