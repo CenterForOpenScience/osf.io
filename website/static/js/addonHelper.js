@@ -27,9 +27,7 @@ var AddonHelper = (function() {
         var owner = $this.find('span[data-owner]').attr('data-owner');
         var msgElm = $this.find('.addon-settings-message');
 
-        var url = owner == 'user'
-            ? '/api/v1/settings/' + addon + '/'
-            : nodeApiUrl + addon + '/settings/';
+        var url = owner === 'user' ? '/api/v1/settings/' + addon + '/' : nodeApiUrl + addon + '/settings/';
 
         $osf.postJSON(
             url,
@@ -39,12 +37,12 @@ var AddonHelper = (function() {
                 .removeClass('text-danger').addClass('text-success')
                 .fadeOut(100).fadeIn();
         }).fail(function(response) {
-            var message = 'Error: ';
-            var response = JSON.parse(response.responseText);
+            var message = '';
+            response = JSON.parse(response.responseText);
             if (response && response.message) {
-                message += response.message;
+                message = response.message;
             } else {
-                message += 'Settings not updated.'
+                message = 'Settings not updated.';
             }
             msgElm.text(message)
                 .removeClass('text-success').addClass('text-danger')

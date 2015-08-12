@@ -34,13 +34,12 @@ from website.project.model import has_anonymous_link, get_pointer_parent, NodeUp
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
-from website.views import _render_nodes, find_dashboard
+from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
 
 logger = logging.getLogger(__name__)
-
 
 @must_be_valid_project
 @must_have_permission(WRITE)
@@ -52,10 +51,10 @@ def edit_node(auth, node, **kwargs):
     if edited_field == 'title':
         try:
             node.set_title(value, auth=auth)
-        except ValidationValueError:
+        except ValidationValueError as e:
             raise HTTPError(
                 http.BAD_REQUEST,
-                data=dict(message_long='Title cannot be blank.')
+                data=dict(message_long=e.message)
             )
     elif edited_field == 'description':
         node.set_description(value, auth=auth)
@@ -72,7 +71,6 @@ def edit_node(auth, node, **kwargs):
 def project_new(**kwargs):
     return {}
 
-
 @must_be_logged_in
 def project_new_post(auth, **kwargs):
     user = auth.user
@@ -83,9 +81,7 @@ def project_new_post(auth, **kwargs):
     category = data.get('category', 'project')
     template = data.get('template')
     description = strip_html(data.get('description'))
-
-    if not title or len(title) > 200:
-        raise HTTPError(http.BAD_REQUEST)
+    new_project = {}
 
     if template:
         original_node = Node.load(template)
@@ -106,10 +102,17 @@ def project_new_post(auth, **kwargs):
         )
 
     else:
-        project = new_node(category, title, user, description)
-
+        try:
+            project = new_node(category, title, user, description)
+        except ValidationValueError as e:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long=e.message)
+            )
+        new_project = _view_project(project, auth)
     return {
-        'projectUrl': project.url
+        'projectUrl': project.url,
+        'newNode': new_project['node'] if new_project else None
     }, http.CREATED
 
 
@@ -125,26 +128,12 @@ def project_new_from_template(auth, node, **kwargs):
 ##############################################################################
 # New Folder
 ##############################################################################
-
-
-@must_be_logged_in
-def folder_new(**kwargs):
-    node_id = kwargs['nid']
-    return_value = {}
-    if node_id is not None:
-        return_value = {'node_id': node_id}
-    return return_value
-
-
 @must_be_valid_project
 @must_be_logged_in
 def folder_new_post(auth, node, **kwargs):
     user = auth.user
 
     title = request.json.get('title')
-
-    if not title or len(title) > 200:
-        raise HTTPError(http.BAD_REQUEST)
 
     if not node.is_folder:
         raise HTTPError(http.BAD_REQUEST)
@@ -185,7 +174,6 @@ def add_folder(auth, **kwargs):
 # New Node
 ##############################################################################
 
-
 @must_be_valid_project
 @must_have_permission(WRITE)
 @must_not_be_registration
@@ -193,22 +181,30 @@ def project_new_node(auth, node, **kwargs):
     form = NewNodeForm(request.form)
     user = auth.user
     if form.validate():
-        node = new_node(
-            title=strip_html(form.title.data),
-            user=user,
-            category=form.category.data,
-            parent=node,
-        )
+        try:
+            new_component = new_node(
+                title=strip_html(form.title.data),
+                user=user,
+                category=form.category.data,
+                parent=node,
+            )
+        except ValidationValueError as e:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data=dict(message_long=e.message)
+            )
+
         message = (
             'Your component was created successfully. You can keep working on the component page below, '
-            'or return to the <u><a href="{url}">Project Page</a></u>.'
+            'or return to the <u><a href="{url}">project page</a></u>.'
         ).format(url=node.url)
-        status.push_status_message(message, 'info')
+        status.push_status_message(message, kind='info', trust=True)
 
         return {
             'status': 'success',
-        }, 201, None, node.url
+        }, 201, None, new_component.url
     else:
+        # TODO: This function doesn't seem to exist anymore?
         status.push_errors_to_status(form.errors)
     raise HTTPError(http.BAD_REQUEST, redirect_url=node.url)
 
@@ -274,7 +270,6 @@ def node_forks(auth, node, **kwargs):
 
 
 @must_be_valid_project
-@must_not_be_registration
 @must_be_logged_in
 @must_be_contributor
 def node_setting(auth, node, **kwargs):
@@ -291,8 +286,9 @@ def node_setting(auth, node, **kwargs):
             # inject the MakoTemplateLookup into the template context
             # TODO inject only short_name and render fully client side
             config['template_lookup'] = addon.config.template_lookup
+            config['addon_icon_url'] = addon.config.icon_url
             addon_enabled_settings.append(config)
-    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'])
+    addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
     ret['addons_available'] = sorted([
@@ -300,7 +296,7 @@ def node_setting(auth, node, **kwargs):
         for addon in settings.ADDONS_AVAILABLE
         if 'node' in addon.owners
         and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['node']
-    ], key=lambda addon: addon.full_name)
+    ], key=lambda addon: addon.full_name.lower())
 
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
@@ -363,7 +359,7 @@ def configure_comments(node, **kwargs):
 # View Project
 ##############################################################################
 
-@must_be_valid_project
+@must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
 def view_project(auth, node, **kwargs):
     primary = '/api/v1' not in request.path
@@ -475,7 +471,13 @@ def project_set_privacy(auth, node, **kwargs):
     if permissions is None:
         raise HTTPError(http.BAD_REQUEST)
 
-    node.set_privacy(permissions, auth)
+    try:
+        node.set_privacy(permissions, auth)
+    except NodeStateError as e:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short="Can't change privacy",
+            message_long=e.message
+        ))
 
     return {
         'status': 'success',
@@ -594,7 +596,7 @@ def component_remove(auth, node, **kwargs):
     message = '{} deleted'.format(
         node.project_or_component.capitalize()
     )
-    status.push_status_message(message)
+    status.push_status_message(message, kind='success', trust=False)
     parent = node.parent_node
     if parent and parent.can_view(auth):
         redirect_url = node.node__parent[0].url
@@ -698,7 +700,7 @@ def _view_project(node, auth, primary=False):
         for addon in node.get_addons():
             messages = addon.before_page_load(node, user) or []
             for message in messages:
-                status.push_status_message(message, dismissible=False)
+                status.push_status_message(message, kind='info', dismissible=False, trust=True)
     data = {
         'node': {
             'id': node._primary_key,
@@ -715,13 +717,20 @@ def _view_project(node, auth, primary=False):
             'update_url': node.api_url_for('update_node'),
             'in_dashboard': in_dashboard,
             'is_public': node.is_public,
+            'is_archiving': node.archiving,
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
             'is_registration': node.is_registration,
+            'is_retracted': node.is_retracted,
+            'pending_retraction': node.pending_retraction,
+            'retracted_justification': getattr(node.retraction, 'justification', None),
+            'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+            'pending_embargo': node.pending_embargo,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
+            'root_id': node.root._id,
             'registered_meta': [
                 {
                     'name_no_ext': from_mongo(meta),
@@ -890,6 +899,11 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
         'primary': primary,
         'is_registration': node.is_registration,
         'is_fork': node.is_fork,
+        'is_retracted': node.is_retracted,
+        'pending_retraction': node.pending_retraction,
+        'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
+        'pending_embargo': node.pending_embargo,
+        'archiving': node.archiving,
     }
 
     if node.can_view(auth):
@@ -903,10 +917,14 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
             'title': node.title,
             'category': node.category,
             'node_type': node.project_or_component,
+            'is_fork': node.is_fork,
             'is_registration': node.is_registration,
             'anonymous': has_anonymous_link(node, auth),
             'registered_date': node.registered_date.strftime('%Y-%m-%d %H:%M UTC')
             if node.is_registration
+            else None,
+            'forked_date': node.forked_date.strftime('%Y-%m-%d %H:%M UTC')
+            if node.is_fork
             else None,
             'nlogs': None,
             'ua_count': None,
@@ -936,7 +954,7 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
 
 
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(retractions_valid=True)
 def get_summary(auth, node, **kwargs):
     rescale_ratio = kwargs.get('rescale_ratio')
     if rescale_ratio is None and request.args.get('rescale_ratio'):
@@ -986,12 +1004,13 @@ def get_folder_pointers(auth, node, **kwargs):
 
 @must_be_contributor_or_public
 def get_forks(auth, node, **kwargs):
-    return _render_nodes(nodes=node.forks, auth=auth)
+    fork_list = sorted(node.forks, key=lambda fork: fork.forked_date, reverse=True)
+    return _render_nodes(nodes=fork_list, auth=auth)
 
 
 @must_be_contributor_or_public
 def get_registrations(auth, node, **kwargs):
-    registrations = node.node__registrations
+    registrations = [n for n in reversed(node.node__registrations) if not n.is_deleted]  # get all registrations, including archiving
     return _render_nodes(registrations, auth)
 
 
@@ -1018,7 +1037,8 @@ def project_generate_private_link_post(auth, node, **kwargs):
     if anonymous and has_public_node:
         status.push_status_message(
             'Anonymized view-only links <b>DO NOT</b> '
-            'anonymize contributors of public project or component.'
+            'anonymize contributors of public projects or components.',
+            trust=True
         )
 
     return new_link
@@ -1092,6 +1112,7 @@ def search_node(auth, **kwargs):
     nodes = Node.find(odm_query)
     count = nodes.count()
     pages = math.ceil(count / size)
+    validate_page_num(page, pages)
 
     return {
         'nodes': [

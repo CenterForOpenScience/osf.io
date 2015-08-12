@@ -2,6 +2,80 @@
 Changelog
 *********
 
+0.45.0 (2015-08-10)
+===================
+
+- S3: Uploads to S3 are encrypted.
+- S3: When creating a bucket, allow selecting bucket location.
+- UI fixes.
+
+0.44.0 (2015-07-29)
+===================
+
+- Add "View on" links to files stored in figshare, GitHub, and Google Drive.
+- API: Allow "me" to be used as a shortcut in URLs for the current authenticated user, e.g. "/users/me", "users/me/nodes/".
+- API: Bug fixes.
+- UI and language fixes.
+
+0.43.0 (2015-07-22)
+===================
+
+- Improved add-on user settings UI.
+- Improved wiki menu/table of contents (based on Treebeard).
+- More style changes for consistency with OSF Style Guidelines.
+- Many UI bug fixes.
+- Dev: Allow markup-safe rendering of mako files by passing ``trust=False`` parameter to OsfWebRenderer.
+
+0.42.6 (2015-07-14)
+===================
+
+- Enable parallel uploads for OSF Storage, figshare, Box.com, Dropbox, S3, and Google Drive.
+- Improve performance when uploading large files.
+
+0.42.0 (2015-07-13)
+===================
+
+- File renderer: Support for rendering .ppt, .pptx, .xlt, .svg, and many more formats.
+- Dataverse: Can select between different Dataverse repositories.
+- Site-wide style changes which implement the new OSF Style Guidelines (https://github.com/CenterForOpenScience/osf-style)
+- Improve look and feel of FAQ page.
+- Can upload files to a new project from the Dashboard.
+- Dev: Remove legacy API key-related code.
+- Dev: Fix spurious session creation.
+- Many UI bug fixes.
+
+0.41.0 (2015-06-24)
+===================
+
+- Updated landing page and navbar UI.
+- API: DELETE Node endpoint.
+- API: Add support for Sentry.
+- Dev: Add jshint to Travis builds.
+- Many UI bug fixes.
+
+0.40.0 (2015-06-22)
+===================
+
+- Registrations must be retracted rather than made private.
+- Registrations may be embargoed for up to four years. During this period, a
+registration remains private.
+- Addon files get archived when they are registered.
+
+0.39.0 (2015-06-15)
+===================
+
+- Many bug fixes and UI improvements. See
+https://github.com/CenterForOpenScience/osf.io/issues?page=1&q=milestone%3A0.39.0+is%3Aclosed
+for a list of closed PRs.
+
+0.38.0 (2015-06-07)
+===================
+
+- API v2 pre-release
+- Modular File Renderer as a service
+- File editing user interface improvements
+- Collaborative file editing for text files
+
 0.37.0 (2015-05-25)
 ===================
 

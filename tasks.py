@@ -44,7 +44,8 @@ else:
 def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
     from website.app import init_app
-    app = init_app(set_backends=True, routes=True, mfr=True)
+    app = init_app(set_backends=True, routes=True)
+    settings.API_SERVER_PORT = port
 
     if live:
         from livereload import Server
@@ -52,7 +53,16 @@ def server(host=None, port=5000, debug=True, live=False):
         server.watch(os.path.join(HERE, 'website', 'static', 'public'))
         server.serve(port=port)
     else:
-        app.run(host=host, port=port, debug=debug, extra_files=[settings.ASSET_HASH_PATH])
+        app.run(host=host, port=port, debug=debug, threaded=debug, extra_files=[settings.ASSET_HASH_PATH])
+
+
+@task
+def apiserver(port=8000, live=False):
+    """Run the API server."""
+    cmd = 'python manage.py runserver {}'.format(port)
+    if live:
+        cmd += ' livereload'
+    run(cmd, echo=True)
 
 
 SHELL_BANNER = """
@@ -163,6 +173,7 @@ def shell():
     # fallback to basic python shell
     code.interact(banner, local=context)
     return
+
 
 @task(aliases=['mongo'])
 def mongoserver(daemon=False, config=None):
@@ -305,9 +316,18 @@ def elasticsearch():
 
 @task
 def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
-    '''Migrate the search-enabled models.'''
+    """Migrate the search-enabled models."""
     from website.search_migration.migrate import migrate
     migrate(delete, index=index)
+
+@task
+def rebuild_search():
+    """Delete and recreate the index for elasticsearch"""
+    run("curl -s -XDELETE {uri}/{index}*".format(uri=settings.ELASTIC_URI,
+                                             index=settings.ELASTIC_INDEX))
+    run("curl -s -XPUT {uri}/{index}".format(uri=settings.ELASTIC_URI,
+                                          index=settings.ELASTIC_INDEX))
+    migrate_search()
 
 
 @task
@@ -315,6 +335,14 @@ def mailserver(port=1025):
     """Run a SMTP test server."""
     cmd = 'python -m smtpd -n -c DebuggingServer localhost:{port}'.format(port=port)
     run(bin_prefix(cmd), pty=True)
+
+
+@task
+def jshint():
+    """Run JSHint syntax check"""
+    js_folder = os.path.join(HERE, 'website', 'static', 'js')
+    cmd = 'jshint {}'.format(js_folder)
+    run(cmd, echo=True)
 
 
 @task(aliases=['flake8'])
@@ -331,6 +359,7 @@ def pip_install(req_file):
         cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
     return cmd
 
+
 @task(aliases=['req'])
 def requirements(addons=False, release=False, dev=False):
     """Install python dependencies.
@@ -341,9 +370,8 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --addons
         inv requirements --release
     """
-    if addons:
+    if release or addons:
         addon_requirements()
-    req_file = None
     # "release" takes precedence
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
@@ -384,24 +412,19 @@ def test_addons():
 
 @task
 def test(all=False, syntax=False):
-    """Alias of `invoke test_osf`.
+    """
+    Run unit tests: OSF (always), plus addons and syntax checks (optional)
     """
     if syntax:
         flake()
+        jshint()
+
+    test_osf()
 
     if all:
-        test_all()
-    else:
-        test_osf()
+        test_addons()
+        karma(single=True, browsers='PhantomJS')
 
-
-@task
-def test_all(syntax=False):
-    if syntax:
-        flake()
-    test_osf()
-    test_addons()
-    karma(single=True, browsers='PhantomJS')
 
 @task
 def karma(single=False, sauce=False, browsers=None):
@@ -460,6 +483,7 @@ def addon_requirements():
             except IOError:
                 pass
     print('Finished')
+
 
 @task
 def encryption(owner=None):
@@ -582,13 +606,12 @@ def analytics():
     import matplotlib
     matplotlib.use('Agg')
     init_app()
-    from scripts import metrics
     from scripts.analytics import (
         logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        metrics, logs, addons, comments, folders, links, watch, email_invites,
+        logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:
@@ -598,15 +621,9 @@ def analytics():
 @task
 def clear_sessions(months=1, dry_run=False):
     from website.app import init_app
-    init_app(routes=False, set_backends=True, mfr=False)
+    init_app(routes=False, set_backends=True)
     from scripts import clear_sessions
     clear_sessions.clear_sessions_relative(months=months, dry_run=dry_run)
-
-
-@task
-def clear_mfr_cache():
-    run('rm -rf {0}/*'.format(settings.MFR_TEMP_PATH), echo=True)
-    run('rm -rf {0}/*'.format(settings.MFR_CACHE_PATH), echo=True)
 
 
 # Release tasks
@@ -743,14 +760,13 @@ def bundle_certs(domain, cert_path):
     )
     run(cmd)
 
+
 @task
 def clean_assets():
     """Remove built JS files."""
     public_path = os.path.join(HERE, 'website', 'static', 'public')
     js_path = os.path.join(public_path, 'js')
-    mfr_path = os.path.join(public_path, 'mfr')
     run('rm -rf {0}'.format(js_path), echo=True)
-    run('rm -rf {0}'.format(mfr_path), echo=True)
 
 
 @task(aliases=['pack'])
@@ -771,6 +787,7 @@ def webpack(clean=False, watch=False, dev=False):
     command = ' '.join(args)
     run(command, echo=True)
 
+
 @task()
 def assets(dev=False, watch=False):
     """Install and build static assets."""
@@ -783,6 +800,7 @@ def assets(dev=False, watch=False):
     # on prod
     webpack(clean=False, watch=watch, dev=dev)
 
+
 @task
 def generate_self_signed(domain):
     """Generate self-signed SSL key and certificate.
@@ -792,6 +810,7 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
+
 
 @task
 def update_citation_styles():

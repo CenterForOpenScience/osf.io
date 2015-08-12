@@ -7,16 +7,20 @@ import logging
 import unittest
 import functools
 import datetime as dt
+from flask import g
 
 import blinker
 import httpretty
 from webtest_plus import TestApp
 
+import mock
 from faker import Factory
 from nose.tools import *  # noqa (PEP8 asserts)
 from pymongo.errors import OperationFailure
 from modularodm import storage
 
+
+from api.base.wsgi import application as django_app
 from framework.mongo import set_up_storage
 from framework.auth import User
 from framework.sessions.model import Session
@@ -26,7 +30,7 @@ from framework.mongo import database as database_proxy
 from framework.transactions import commands, messages, utils
 
 from website.project.model import (
-    ApiKey, Node, NodeLog, Tag, WatchConfig,
+    Node, NodeLog, Tag, WatchConfig,
 )
 from website import settings
 
@@ -39,7 +43,7 @@ from website.addons.base import AddonConfig
 
 # Just a simple app without routing set up or backends
 test_app = init_app(
-    settings_module='website.settings', routes=True, set_backends=False
+    settings_module='website.settings', routes=True, set_backends=False,
 )
 test_app.testing = True
 
@@ -60,7 +64,7 @@ for logger_name in SILENT_LOGGERS:
 fake = Factory.create()
 
 # All Models
-MODELS = (User, ApiKey, Node, NodeLog, NodeWikiPage,
+MODELS = (User, Node, NodeLog, NodeWikiPage,
           Tag, WatchConfig, Session, Guid)
 
 
@@ -89,7 +93,6 @@ class DbTestCase(unittest.TestCase):
     #        'node_settings': <AddonNodeSettingsBase instance>,
     #}
 
-
     # list of AddonConfig instances of injected addons
     __ADDONS_UNDER_TEST = []
 
@@ -108,6 +111,9 @@ class DbTestCase(unittest.TestCase):
         settings.PIWIK_HOST = None
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+
+        cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
+        settings.BCRYPT_LOG_ROUNDS = 1
 
         teardown_database(database=database_proxy._get_current_object())
         # TODO: With `database` as a `LocalProxy`, we should be able to simply
@@ -130,6 +136,7 @@ class DbTestCase(unittest.TestCase):
         settings.DB_NAME = cls._original_db_name
         settings.PIWIK_HOST = cls._original_piwik_host
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
+        settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
 
 class AppTestCase(unittest.TestCase):
@@ -141,10 +148,22 @@ class AppTestCase(unittest.TestCase):
         self.app = TestApp(test_app)
         self.context = test_app.test_request_context()
         self.context.push()
+        with self.context:
+            g._celery_tasks = []
 
     def tearDown(self):
         super(AppTestCase, self).tearDown()
-        self.context.pop()
+        with mock.patch('website.mailchimp_utils.get_mailchimp_api'):
+            self.context.pop()
+
+
+class ApiAppTestCase(unittest.TestCase):
+    """Base `TestCase` for OSF API tests that require the WSGI app (but no database).
+    """
+
+    def setUp(self):
+        super(ApiAppTestCase, self).setUp()
+        self.app = TestApp(django_app)
 
 
 class UploadTestCase(unittest.TestCase):
@@ -211,6 +230,14 @@ class MockRequestTestCase(unittest.TestCase):
 class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
+    teardown methods to be called correctly.
+    """
+    pass
+
+
+class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase):
+    """Base `TestCase` for tests that require both scratch databases and the OSF
+    API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
     pass
@@ -285,10 +312,15 @@ def assert_datetime_equal(dt1, dt2, allowance=500):
     assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
 
 
-def init_mock_addon(short_name, user_settings, node_settings):
+def init_mock_addon(short_name, user_settings=None, node_settings=None):
     """Add an addon to the settings, so that it is ready for app init
 
     This is used to inject addons into the application context for tests."""
+
+    #Importing within the function to prevent circular import problems.
+    import factories
+    user_settings = user_settings or factories.MockAddonUserSettings
+    node_settings = node_settings or factories.MockAddonNodeSettings
     settings.ADDONS_REQUESTED.append(short_name)
 
     addon_config = AddonConfig(

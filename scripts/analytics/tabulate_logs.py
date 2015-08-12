@@ -8,7 +8,6 @@ import datetime
 from cStringIO import StringIO
 
 import pymongo
-from dateutil.relativedelta import relativedelta
 
 from framework.mongo import database
 
@@ -16,16 +15,7 @@ from website import models
 from website.app import app, init_app
 
 from scripts.analytics import utils
-
-
-RESULTS_COLLECTION = 'logmetrics'
-TIME_OFFSET = relativedelta(days=1)
-NUM_ROWS = 20
-
-FILE_NAME = 'log-counts.csv'
-CONTENT_TYPE = 'text/css'
-NODE_ID = '95nv8'
-USER_ID = 'icpnw'
+from scripts.analytics import settings
 
 
 mapper = bson.Code('''function() {
@@ -46,15 +36,15 @@ def run_map_reduce(**kwargs):
     return database['nodelog'].map_reduce(
         mapper,
         reducer,
-        RESULTS_COLLECTION,
+        settings.TABULATE_LOGS_RESULTS_COLLECTION,
         **kwargs
     )
 
 
 def main():
-    node = models.Node.load(NODE_ID)
-    user = models.User.load(USER_ID)
-    cutoff = datetime.datetime.utcnow() - TIME_OFFSET
+    node = models.Node.load(settings.TABULATE_LOGS_NODE_ID)
+    user = models.User.load(settings.TABULATE_LOGS_USER_ID)
+    cutoff = datetime.datetime.utcnow() - settings.TABULATE_LOGS_TIME_OFFSET
     result = run_map_reduce(query={'date': {'$gt': cutoff}})
     sio = StringIO()
     utils.make_csv(
@@ -65,7 +55,7 @@ def main():
         ),
         ['name', 'count'],
     )
-    utils.send_file(app, FILE_NAME, CONTENT_TYPE, sio, node, user)
+    utils.send_file(app, settings.TABULATE_LOGS_FILE_NAME, settings.TABULATE_LOGS_CONTENT_TYPE, sio, node, user)
 
 
 if __name__ == '__main__':

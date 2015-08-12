@@ -22,7 +22,7 @@ STAFF_GUIDS = [
 ]
 
 def main():
-    init_app(set_backends=True, routes=False, mfr=False)
+    init_app(set_backends=True, routes=False)
     staff_registrations = defaultdict(list)
     users = [User.load(each) for each in STAFF_GUIDS]
     for registration in Node.find(Q('is_registration', 'eq', True) & Q('is_public', 'eq', True)):

@@ -72,7 +72,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             ret.resolve(data.accounts);
         });
         request.fail(function(xhr, textStatus, error) {
-            self.changeMessage(self.messages.updateAccountsError(), 'text-warning');
+            self.changeMessage(self.messages.updateAccountsError(), 'text-danger');
             Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
                 url: self.url,
                 textStatus: textStatus,
@@ -105,6 +105,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         window.oauthComplete = function(res) {
             // Update view model based on response
             self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
+            self.userHasAuth(true);
             self.importAuth.call(self);
         };
         window.open(self.urls().auth);
@@ -146,15 +147,29 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                             }
                         ),
                         value: self.accounts()[0].id,
-                        callback: (self.connectExistingAccount.bind(self))
+                        callback: function(accountId) {
+                            if (accountId) {
+                                self.connectExistingAccount.call(self, (accountId));
+                            }
+                        },
+                        buttons:{
+                            confirm:{
+                                label: 'Import'
+                            }
+                        }
                     });
                 } else {
                     bootbox.confirm({
-                        title: 'Import ' + self.addonName + ' Access Token?',
+                        title: 'Import ' + self.addonName + ' access token',
                         message: self.messages.confirmAuth(),
                         callback: function(confirmed) {
                             if (confirmed) {
                                 self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                            }
+                        },
+                        buttons:{
+                            confirm:{
+                                label:'Import'
                             }
                         }
                     });

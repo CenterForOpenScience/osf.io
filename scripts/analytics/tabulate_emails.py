@@ -7,21 +7,13 @@ import datetime
 import collections
 from cStringIO import StringIO
 
-from dateutil.relativedelta import relativedelta
-
 from framework.mongo import database
 
 from website import models
 from website.app import app, init_app
 
 from scripts.analytics import utils
-
-
-NODE_ID = '95nv8'  # Daily updates project
-USER_ID = 'icpnw'  # Josh
-FILE_NAME = 'daily-users.csv'
-CONTENT_TYPE = 'text/csv'
-TIME_DELTA = relativedelta(days=1)
+from scripts.analytics import settings
 
 
 def get_emails(query=None):
@@ -43,12 +35,12 @@ def get_emails_since(delta):
 
 
 def main():
-    node = models.Node.load(NODE_ID)
-    user = models.User.load(USER_ID)
-    emails = get_emails_since(TIME_DELTA)
+    node = models.Node.load(settings.TABULATE_EMAILS_NODE_ID)
+    user = models.User.load(settings.TABULATE_EMAILS_USER_ID)
+    emails = get_emails_since(settings.TABULATE_EMAILS_TIME_DELTA)
     sio = StringIO()
     utils.make_csv(sio, emails, ['affiliation', 'count'])
-    utils.send_file(app, FILE_NAME, CONTENT_TYPE, sio, node, user)
+    utils.send_file(app, settings.TABULATE_EMAILS_FILE_NAME, settings.TABULATE_EMAILS_CONTENT_TYPE, sio, node, user)
 
 
 if __name__ == '__main__':

@@ -10,7 +10,7 @@ var Paginator = require('js/paginator');
 var oop = require('js/oop');
 require('knockout.punches');
 
-var $osf = require('js/osfHelpers');  // Injects 'listing' binding hanlder to to Knockout
+var $osf = require('js/osfHelpers');  // Injects 'listing' binding handler to to Knockout
 var nodeCategories = require('json!built/nodeCategories.json');
 
 ko.punches.enableAll();  // Enable knockout punches
@@ -34,14 +34,23 @@ var Log = function(params) {
       * Given an item in self.contributors, return its anchor element representation.
       */
     self._asContribLink = function(person) {
-        return '<a class="contrib-link" href="/profile/' + person.id + '/">' + person.fullname + '</a>';
+        var fullnameText = $osf.htmlEscape(person.fullname);
+        return '<a class="contrib-link" href="/profile/' + person.id + '/">' + fullnameText + '</a>';
     };
 
     /**
       * Return whether a knockout template exists for the log.
       */
     self.hasTemplate = ko.computed(function() {
-        return $('script#' + self.action).length > 0;
+        if (!self.user) {
+            $('script#' + self.action + '_no_user').length > 0;
+        } else {
+            return $('script#' + self.action).length > 0;
+        }
+    });
+
+    self.hasUser = ko.pureComputed(function() {
+        return Boolean(self.user && self.user.fullname);
     });
 
     self.mapUpdates = function(key, item) {
@@ -71,7 +80,8 @@ var Log = function(params) {
                 if (person.registered) {
                     ret += self._asContribLink(person);
                 } else {
-                    ret += '<span>' + person.fullname + '</span>';
+                    var fullnameText = $osf.htmlEscape(person.fullname);
+                    ret += '<span>' + fullnameText + '</span>';
                 }
                 if (i < self.contributors.length - 1 && self.contributors.length > 2) {
                     ret += ', ';
@@ -83,9 +93,9 @@ var Log = function(params) {
         return ret;
     });
 
-    //helper function to strip the leading slash for file or folder in log template
-    self.stripLeadingSlash = function(path){
-        return path.replace(/^\//, '');
+    //helper function to strip the slash for file or folder in log template
+    self.stripSlash = function(path){
+        return path.replace(/(^\/)|(\/$)/g, '');
     };
 
     //helper funtion to determine the type for removing in log template
@@ -106,6 +116,7 @@ var LogsViewModel = oop.extend(Paginator, {
         self.loading = ko.observable(false);
         self.logs = ko.observableArray(logs);
         self.url = url;
+        self.anonymousUserName = '<em>A user</em>';
 
         self.tzname = ko.pureComputed(function() {
             var logs = self.logs();
@@ -119,19 +130,19 @@ var LogsViewModel = oop.extend(Paginator, {
     //send request to get more logs when the more button is clicked
     fetchResults: function(){
         var self = this;
-        self.loading(true);
+        self.loading(true); // show loading indicator
+
         return $.ajax({
             type: 'get',
             url: self.url,
             data:{
-                page: self.currentPage()
+                page: self.pageToGet()
             },
             cache: false
         }).done(function(response) {
-            self.loading(false);
             // Initialize LogViewModel
-            self.logs.removeAll();
             var logModelObjects = createLogs(response.logs); // Array of Log model objects
+            self.logs.removeAll();
             for (var i=0; i<logModelObjects.length; i++) {
                 self.logs.push(logModelObjects[i]);
             }
@@ -140,7 +151,7 @@ var LogsViewModel = oop.extend(Paginator, {
             self.addNewPaginators();
         }).fail(
             $osf.handleJSONError
-        ).fail(function() {
+        ).always( function (){
             self.loading(false);
         });
 
@@ -167,11 +178,11 @@ var createLogs = function(logData){
             nodeUrl: item.node.url,
             userFullName: item.user.fullname,
             userURL: item.user.url,
-            apiKey: item.api_key,
             params: item.params,
             nodeTitle: item.node.title,
             nodeDescription: item.params.description_new,
-            nodePath: item.node.path
+            nodePath: item.node.path,
+            user: item.user
         });
     });
     return mappedLogs;

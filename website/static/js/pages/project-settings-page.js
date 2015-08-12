@@ -16,26 +16,20 @@ var ctx = window.contextVars;
 var ProjectNotifications = require('js/notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 var notificationsURL = ctx.node.urls.api  + 'subscriptions/';
-$.ajax({
-    url: notificationsURL,
-    type: 'GET',
-    dataType: 'json'
-}).done(function(response) {
-    new ProjectNotifications(response);
-}).fail(function(xhr, status, error) {
-    $notificationsMsg.addClass('text-danger');
-    $notificationsMsg.text('Could not retrieve notification settings.');
-    Raven.captureMessage('Could not GET notification settings', {
-        url: notificationsURL, status: status, error: error
-    });
-});
-
-// Reusable function to fix affix widths to columns.
-function fixAffixWidth() {
-    $('.affix, .affix-top, .affix-bottom').each(function (){
-        var el = $(this);
-        var colsize = el.parent('.affix-parent').width();
-        el.outerWidth(colsize);
+// Need check because notifications settings don't exist on registration's settings page
+if ($('#grid').length) {
+    $.ajax({
+        url: notificationsURL,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        new ProjectNotifications(response);
+    }).fail(function(xhr, status, error) {
+        $notificationsMsg.addClass('text-danger');
+        $notificationsMsg.text('Could not retrieve notification settings.');
+        Raven.captureMessage('Could not GET notification settings', {
+            url: notificationsURL, status: status, error: error
+        });
     });
 }
 
@@ -51,16 +45,16 @@ $(document).ready(function() {
         });
     }
     var disableCategory = !window.contextVars.node.parentExists;
-    var categorySettingsVM = new ProjectSettings.NodeCategorySettings(
-        window.contextVars.node.category,
-        categories,
-        window.contextVars.node.urls.update,
-        disableCategory
-    );
-    ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
-
-    $(window).resize(function (){ fixAffixWidth(); });
-    $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
+    // need check because node category doesn't exist for registrations
+    if ($('#nodeCategorySettings').length) {
+        var categorySettingsVM = new ProjectSettings.NodeCategorySettings(
+            window.contextVars.node.category,
+            categories,
+            window.contextVars.node.urls.update,
+            disableCategory
+        );
+        ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
+    }
 
     $('#deleteNode').on('click', function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);
@@ -81,13 +75,23 @@ $(document).ready(function() {
             $commentMsg.text('Successfully updated settings.');
             window.location.reload();
         }).fail(function() {
-            bootbox.alert('Could not set commenting configuration. Please try again.');
+            bootbox.alert({
+                message: 'Could not set commenting configuration. Please try again.',
+                buttons:{
+                    ok:{
+                        label:'Close',
+                        className:'btn-default'
+                    }
+                }
+            });
         });
 
         return false;
 
     });
 
+    var checkedOnLoad = $('#selectAddonsForm input:checked');
+    var uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
 
     // Set up submission for addon selection form
     $('#selectAddonsForm').on('submit', function() {
@@ -106,12 +110,26 @@ $(document).ready(function() {
             dataType: 'json',
             success: function() {
                 msgElm.text('Settings updated').fadeIn();
+                checkedOnLoad = $('#selectAddonsForm input:checked');
+                uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
                 window.location.reload();
             }
         });
 
         return false;
 
+    });
+
+    /* Before closing the page, Check whether the newly checked addon are updated or not */
+    $(window).on('beforeunload',function() {
+      //new checked items but not updated
+      var checked = uncheckedOnLoad.filter('#selectAddonsForm input:checked');
+      //new unchecked items but not updated
+      var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
+
+      if(unchecked.length > 0 || checked.length > 0) {
+        return 'The changes on addon setting are not submitted!';
+      }
     });
 
     // Show capabilities modal on selecting an addon; unselect if user
@@ -123,16 +141,23 @@ $(document).ready(function() {
             var name = $that.attr('name');
             var capabilities = $('#capabilities-' + name).html();
             if (capabilities) {
-                bootbox.confirm(
-                    capabilities,
-                    function(result) {
+                bootbox.confirm({
+                    message: capabilities,
+                    callback: function(result) {
                         if (!result) {
                             $(that).attr('checked', false);
                         }
+                    },
+                    buttons:{
+                        confirm:{
+                            label:'Confirm'
+                        }
                     }
-                );
+               });
             }
         }
     });
 
 });
+
+

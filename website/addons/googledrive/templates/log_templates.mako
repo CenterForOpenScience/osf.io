@@ -7,7 +7,7 @@ Google Drive in
 
 <script type="text/html" id="googledrive_folder_created">
 created folder
-<span class="overflow log-folder">{{ stripLeadingSlash(decodeURIComponent(params.path)) }}</span> in
+<span class="overflow log-folder">{{ stripSlash(decodeURIComponent(params.path)) }}</span> in
 Google Drive in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -21,7 +21,7 @@ Google Drive in
 
 
 <script type="text/html" id="googledrive_file_removed">
-removed {{ pathType(params.path) }} <span class="overflow ">{{ decodeURIComponent(params.path) }}</span> from
+removed {{ pathType(params.path) }} <span class="overflow ">{{ stripSlash(decodeURIComponent(params.path)) }}</span> from
 Google Drive in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
@@ -37,6 +37,13 @@ linked Google Drive folder /<span class="overflow">{{ params.folder === '/' ? '(
 deauthorized the Google Drive addon for
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+<script type="text/html" id="googledrive_node_deauthorized">
+Google Drive addon for
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+    deauthorized
 </script>
 
 
