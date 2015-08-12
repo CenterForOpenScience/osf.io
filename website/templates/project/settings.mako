@@ -72,7 +72,7 @@
                     <div class="panel-heading clearfix">
                         <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                     </div>
-                    <div id="nodeCategorySettings" class="panel-body">
+                    <div id="nodeCategorySettings" class="panel-body scripted">
                         <h5>
                             Category: <select data-bind="attr.disabled: disabled,
                                                         options: categories,
@@ -80,27 +80,19 @@
                                                         optionsText: 'label',
                                                         value: selectedCategory"></select>
                         </h5>
-                        <div style="display: none" data-bind="visible: disableButtons()">
-
-                             <span class="help-block">
-                                A top-level project's category cannot be changed
-                            </span>
-                        </div>
-
-                        <div style="display: none" data-bind="visible: !disableButtons()">
-                            <button data-bind="visible : disable() css: {disabled: !dirty()},
-                                click: cancelUpdateCategory"
-                                class="btn btn-default">
-                                Cancel</button>
-
+                        <p data-bind="if: !disabled">
                             <button data-bind="css: {disabled: !dirty()},
-                                click: updateCategory"
-                                class="btn btn-primary">
-                                Change</button>
+                                               click: cancelUpdateCategory"
+                                    class="btn btn-default">Cancel</button>
+                            <button data-bind="css: {disabled: !dirty()},
+                                               click: updateCategory"
+                                    class="btn btn-primary">Change</button>
+                        </p>
+                        <span data-bind="css: messageClass, html: message"></span>
 
-                            <span data-bind="css: messageClass, html: message"></span>
-                        </div>
-
+                        <span data-bind="if: disabled" class="help-block">
+                            A top-level project's category cannot be changed
+                        </span>
                     </div>
 
                     % if 'admin' in user['permissions']:
