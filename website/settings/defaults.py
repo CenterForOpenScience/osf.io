@@ -283,5 +283,3 @@ MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
 
 ENABLE_ARCHIVER = True
-###########################
-REGISTRATION_APPROVAL_PERIOD = datetime.timedelta(days=2)

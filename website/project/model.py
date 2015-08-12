@@ -2784,7 +2784,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.set_privacy('private', Auth(user))
 
     def _initiate_approval(self, user):
-        end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_PERIOD
+        end_date = datetime.datetime.now() + settings.REGISTRATION_APPROVAL_TIME
         approval = RegistrationApproval(
             initiated_by=user,
             end_date=end_date,
@@ -3406,7 +3406,7 @@ class RegistrationApproval(EmailApprovableSanction):
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
 
-            approval_time_span = (24 * settings.REGISTRATION_APPROVAL_PERIOD.days) + (settings.REGISTRATION_APPROVAL_PERIOD.seconds / 60)
+            approval_time_span = (24 * settings.REGISTRATION_APPROVAL_TIME.days) + (settings.REGISTRATION_APPROVAL_TIME.seconds / 60)
 
             registration = Node.find_one(Q('registration_approval', 'eq', self))
 
