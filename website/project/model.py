@@ -1877,12 +1877,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         For details on this schema, see:
             https://github.com/citation-style-language/schema#csl-json-schema
         """
-        authors = []
 
-        for citation in self.nonContributorCitations:
-            authors += [{"given": citation, "family": u""}]
-
-        authors += [
+        authors = [
             contributor.csl_name  # method in auth/model.py which parses the names of authors
             for contributor in self.visible_contributors
         ]
