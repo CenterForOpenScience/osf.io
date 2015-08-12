@@ -18,6 +18,7 @@ SearchBar.view = function(ctrl) {
                     }
             }, [
                 m('img[src=/static/img/share-logo-icon.png]', {
+                    alt: 'SHARE logo image',
                     style: {
                         height: 'auto',
                         'max-width': '15%',
