@@ -869,7 +869,7 @@ class TestNodeContributorAdd(ApiTestCase):
         assert_equal(res.status_code, 400)
 
         self.private_project.reload()
-        assert_not_in(self.user_two, self.private_project.contributors())
+        assert_not_in(self.user_two, self.private_project.contributors)
 
     def test_adds_admin_contributor_private_project_admin(self):
         data = {
