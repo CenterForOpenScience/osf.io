@@ -11,6 +11,7 @@ from website.project.model import Node
 
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 def main(dry_run=True):
@@ -33,7 +34,10 @@ def update_node(node, dry_run=True):
         if not dry_run:
             full_update(node)
     except Exception as err:
-        logger.error('Did not successfully update node {} due to {} being thrown'.format(node, err))
+        logger.error(
+            'Unexpected error raised when updating list of '
+            'node {}. Continuing...'.format(node))
+        logger.exception(err)
         node.mailing_updated = True
         if not dry_run:
             node.save()

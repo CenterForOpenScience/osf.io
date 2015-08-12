@@ -306,12 +306,16 @@ def full_update(node):
 
         if 'list' in info.keys():
             info = info['list']
-            members = [member['address'] for member in members['items']]
+            members = {member['address']: member['subscribed'] for member in members['items']}
+
+            emails, unsubs = node.mailing_params['contributors'], node.mailing_unsubs
+
+            subscriptions = {email: email not in unsubs for email in emails}
 
             if info['name'] != ' Mailing List'.format(node.title):
                 update_title(node._id, node.title)
 
-            if members != node.mailing_params['contributors']:
+            if members != subscriptions:
                 match_members(**node.mailing_params)
 
         else:
