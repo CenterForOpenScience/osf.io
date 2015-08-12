@@ -9,7 +9,7 @@ require('truncate');
 
 var LoadingIcon = {
     view: function(ctrl) {
-        return m('img', {src: '/static/img/loading.gif'});
+        return m('img', {src: '/static/img/loading.gif', alt: 'loading spinner'});
     }
 };
 
@@ -228,7 +228,7 @@ var Footer = {
             m('span.pull-right', [
                 m('img', {src: vm.ProviderMap[result.shareProperties.source].favicon, alt: 'favicon for ' + result.shareProperties.source, style: {width: '16px', height: '16px'}}),
                 ' ',
-                m('a', {onclick: function() {utils.updateFilter(vm, 'shareProperties.source:' + result.shareProperties.source);}}, vm.ProviderMap[result.shareProperties.source].long_name),
+                m('a', {onclick: function() {utils.updateFilter(vm, 'match:shareProperties.source:' + result.shareProperties.source);}}, vm.ProviderMap[result.shareProperties.source].long_name),
                 m('br')
             ]),
             ctrl.showRawNormalized() ? m.component(RawNormalizedData, {result: ctrl.cleanResult(), missingError: ctrl.missingError()}) : '',
