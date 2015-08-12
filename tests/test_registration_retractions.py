@@ -300,7 +300,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_equal(num_of_approvals, 1)
 
     # Retraction#disapprove_retraction tests
-    def test_invalid_disapproval_token_raises_InvalidSanctionRejectionToken(self):
+    def test_invalid_rejection_token_raises_InvalidSanctionRejectionToken(self):
         self.registration.retract_registration(self.user)
         self.registration.save()
         assert_true(self.registration.is_pending_retraction)
@@ -310,15 +310,15 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         assert_true(self.registration.is_pending_retraction)
         assert_false(self.registration.is_retracted)
 
-    def test_non_admin_disapproval_token_raises_PermissionsError(self):
+    def test_non_admin_rejection_token_raises_PermissionsError(self):
         non_admin = UserFactory()
         self.registration.retract_registration(self.user)
         self.registration.save()
         assert_true(self.registration.is_pending_retraction)
 
-        disapproval_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
+        rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         with assert_raises(PermissionsError):
-            self.registration.retraction.disapprove_retraction(non_admin, disapproval_token)
+            self.registration.retraction.disapprove_retraction(non_admin, rejection_token)
         assert_true(self.registration.is_pending_retraction)
         assert_false(self.registration.is_retracted)
 
@@ -327,9 +327,9 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.save()
         self.registration.reload()
 
-        disapproval_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
+        rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         assert_equal(self.registration.retraction.state, Retraction.UNAPPROVED)
-        self.registration.retraction.disapprove_retraction(self.user, disapproval_token)
+        self.registration.retraction.disapprove_retraction(self.user, rejection_token)
         assert_true(self.registration.retraction.is_rejected)
 
     def test_disapproval_adds_to_parent_projects_log(self):
@@ -338,8 +338,8 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
         self.registration.save()
         self.registration.reload()
 
-        disapproval_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
-        self.registration.retraction.disapprove_retraction(self.user, disapproval_token)
+        rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
+        self.registration.retraction.disapprove_retraction(self.user, rejection_token)
         # Logs: Created, registered, retraction initiated, retraction cancelled
         assert_equal(len(self.registration.registered_from.logs), initial_project_logs + 2)
 
@@ -410,8 +410,8 @@ class RegistrationWithChildNodesRetractionModelTestCase(OsfTestCase):
             assert_true(node.is_pending_retraction)
 
         # Disapprove parent registration's retraction
-        disapproval_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
-        self.registration.retraction.disapprove_retraction(self.user, disapproval_token)
+        rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
+        self.registration.retraction.disapprove_retraction(self.user, rejection_token)
         assert_false(self.registration.is_pending_retraction)
         assert_false(self.registration.is_retracted)
         assert_true(self.registration.retraction.is_rejected)
@@ -608,9 +608,9 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_true(self.registration.is_pending_retraction)
         assert_equal(len(self.registration.retraction.approval_state), 2)
 
-        wrong_disapproval_token = self.registration.retraction.approval_state[user2._id]['rejection_token']
+        wrong_rejection_token = self.registration.retraction.approval_state[user2._id]['rejection_token']
         res = self.app.get(
-            self.registration.web_url_for('node_registration_retraction_disapprove', token=wrong_disapproval_token),
+            self.registration.web_url_for('node_registration_retraction_disapprove', token=wrong_rejection_token),
             auth=self.auth,
             expect_errors=True
         )
@@ -622,9 +622,9 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.save()
         assert_true(self.registration.is_pending_retraction)
 
-        disapproval_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
+        rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         res = self.app.get(
-            self.registration.web_url_for('node_registration_retraction_disapprove', token=disapproval_token),
+            self.registration.web_url_for('node_registration_retraction_disapprove', token=rejection_token),
             auth=self.auth,
         )
         self.registration.retraction.reload()

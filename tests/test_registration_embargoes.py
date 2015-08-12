@@ -210,7 +210,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_equal(num_of_approvals, 2)
 
     # Embargo#disapprove_embargo tests
-    def test_invalid_disapproval_token_raises_InvalidSanctionRejectionToken(self):
+    def test_invalid_rejection_token_raises_InvalidSanctionRejectionToken(self):
         self.registration.embargo_registration(
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
@@ -221,7 +221,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             self.registration.embargo.disapprove_embargo(self.user, fake.sentence())
         assert_true(self.registration.is_pending_embargo)
 
-    def test_non_admin_disapproval_token_raises_PermissionsError(self):
+    def test_non_admin_rejection_token_raises_PermissionsError(self):
         non_admin = UserFactory()
         self.registration.embargo_registration(
             self.user,
@@ -230,9 +230,9 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
 
-        disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
+        rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         with assert_raises(PermissionsError):
-            self.registration.embargo.disapprove_embargo(non_admin, disapproval_token)
+            self.registration.embargo.disapprove_embargo(non_admin, rejection_token)
         assert_true(self.registration.is_pending_embargo)
 
     def test_one_disapproval_cancels_embargo(self):
@@ -243,8 +243,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
 
-        disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
-        self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
+        rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
+        self.registration.embargo.disapprove_embargo(self.user, rejection_token)
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_false(self.registration.is_pending_embargo)
 
@@ -256,9 +256,9 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         self.registration.save()
 
-        disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
+        rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         registered_from = self.registration.registered_from
-        self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
+        self.registration.embargo.disapprove_embargo(self.user, rejection_token)
         # Logs: Created, registered, embargo initiated, embargo cancelled
         assert_equal(len(registered_from.logs), initial_project_logs + 2)
 
@@ -269,8 +269,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         self.registration.save()
 
-        disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
-        self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
+        rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
+        self.registration.embargo.disapprove_embargo(self.user, rejection_token)
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_true(self.registration.is_deleted)
 
@@ -282,8 +282,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         self.registration.save()
 
-        disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
-        self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
+        rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
+        self.registration.embargo.disapprove_embargo(self.user, rejection_token)
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_false(self.registration.is_deleted)
 
@@ -371,8 +371,8 @@ class RegistrationWithChildNodesEmbargoModelTestCase(OsfTestCase):
             assert_true(node.is_pending_embargo)
 
         # Disapprove parent registration's embargo
-        disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
-        self.registration.embargo.disapprove_embargo(self.user, disapproval_token)
+        rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
+        self.registration.embargo.disapprove_embargo(self.user, rejection_token)
         assert_false(self.registration.is_pending_embargo)
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
 
@@ -527,9 +527,9 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
 
-        wrong_disapproval_token = self.registration.embargo.approval_state[admin2._id]['rejection_token']
+        wrong_rejection_token = self.registration.embargo.approval_state[admin2._id]['rejection_token']
         res = self.app.get(
-            self.registration.web_url_for('node_registration_embargo_disapprove', token=wrong_disapproval_token),
+            self.registration.web_url_for('node_registration_embargo_disapprove', token=wrong_rejection_token),
             auth=self.user.auth,
             expect_errors=True
         )
@@ -546,9 +546,9 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         registration.save()
         assert_true(registration.is_pending_embargo)
 
-        disapproval_token = registration.embargo.approval_state[self.user._id]['rejection_token']
+        rejection_token = registration.embargo.approval_state[self.user._id]['rejection_token']
         res = self.app.get(
-            registration.web_url_for('node_registration_embargo_disapprove', token=disapproval_token),
+            registration.web_url_for('node_registration_embargo_disapprove', token=rejection_token),
             auth=self.user.auth,
         )
         registration.embargo.reload()
@@ -566,9 +566,9 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.registration.save()
         assert_true(self.registration.is_pending_embargo)
 
-        disapproval_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
+        rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
         res = self.app.get(
-            self.registration.web_url_for('node_registration_embargo_disapprove', token=disapproval_token),
+            self.registration.web_url_for('node_registration_embargo_disapprove', token=rejection_token),
             auth=self.user.auth,
         )
         self.registration.embargo.reload()
