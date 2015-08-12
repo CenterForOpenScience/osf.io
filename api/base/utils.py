@@ -20,7 +20,6 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
 
 
 def get_object_or_error(model_cls, query_or_pk, display_name=None):
-    # from rest_framework.compat import get_model_name
 
     display_name = display_name or ''
 
