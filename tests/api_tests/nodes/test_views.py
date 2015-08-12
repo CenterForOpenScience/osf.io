@@ -1417,7 +1417,6 @@ class TestNodeLogList(ApiTestCase):
         res = self.app.get(self.public_url, auth=self.basic_auth_two, expect_errors=True)
         self.project.reload()
         assert_equal(res.status_code, 200)
-        self.public_project.permissions = ['read']
 
     def test_private_project_in_logs(self):
         self.project = ProjectFactory()
@@ -1431,7 +1430,6 @@ class TestNodeLogList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.basic_auth_two, expect_errors=True)
         self.project.add_contributor(self.user, permissions=['read'])
         assert_equal(res.status_code, 403)
-        self.private_project.permissions = ['read']
 
     def test_private_log_in_read_only_contributor(self):
         self.project = ProjectFactory()
