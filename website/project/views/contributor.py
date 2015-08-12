@@ -303,7 +303,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             # up to the invalid entry will be saved. (communicate to the user what needs to be retried)
             fullname = sanitize.strip_html(fullname)
             if not fullname:
-                raise ValidationValueError
+                raise ValidationValueError('Full name field can not be empty (or contain only HTML)')
             if email is not None:
                 validate_email(email)  # Will raise a ValidationError if email invalid
 
@@ -359,8 +359,8 @@ def project_contributors_post(auth, node, **kwargs):
     # Prepare input data for `Node::add_contributors`
     try:
         contribs = deserialize_contributors(node, user_dicts, auth=auth, validate=True)
-    except ValidationError:
-        return {'status': 400, 'message': 'One or more contributor entries may contain invalid data.'}, 400
+    except ValidationError as e:
+        return {'status': 400, 'message': e.message}, 400
 
     node.add_contributors(contributors=contribs, auth=auth)
     node.save()
@@ -376,8 +376,8 @@ def project_contributors_post(auth, node, **kwargs):
             child_contribs = deserialize_contributors(
                 child, user_dicts, auth=auth, validate=True
             )
-        except ValidationError:
-            return {'status': 400, 'message': 'One or more contributor entries may contain invalid data.'}, 400
+        except ValidationError as e:
+            return {'status': 400, 'message': e.message}, 400
 
         child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
@@ -740,11 +740,11 @@ def invite_contributor_post(node, **kwargs):
         email = email.lower().strip()
         try:
             validate_email(email)
-        except ValidationError:
-            return {'status': 400, 'message': 'Must provide a valid email address'}, 400
+        except ValidationError as e:
+            return {'status': 400, 'message': e.message}, 400
 
     if not fullname:
-        return {'status': 400, 'message': 'Must provide full name'}, 400
+        return {'status': 400, 'message': 'Full name field can not be empty (or contain only HTML)'}, 400
 
     # Check if email is in the database
     user = get_user(email=email)

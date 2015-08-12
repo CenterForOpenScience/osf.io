@@ -1671,22 +1671,12 @@ class TestAddingContributorViews(OsfTestCase):
         assert_true(res[2]['user']._id)
 
     def test_deserialize_contributors_validates_fullname(self):
-        contrib = UserFactory()
-        unreg = UnregUserFactory()
         name = "<img src=1 onerror=console.log(1)>"
         email = fake.email()
         unreg_no_record = serialize_unregistered(name, email)
-        contrib_data = [
-            add_contributor_json(contrib),
-            serialize_unregistered(fake.name(), unreg.username),
-            unreg_no_record
-        ]
+        contrib_data = [unreg_no_record]
         contrib_data[0]['permission'] = 'admin'
-        contrib_data[1]['permission'] = 'write'
-        contrib_data[2]['permission'] = 'read'
         contrib_data[0]['visible'] = True
-        contrib_data[1]['visible'] = True
-        contrib_data[2]['visible'] = True
 
         with assert_raises(ValidationError):
             deserialize_contributors(
@@ -1696,23 +1686,12 @@ class TestAddingContributorViews(OsfTestCase):
                 validate=True)
 
     def test_deserialize_contributors_validates_email(self):
-        contrib = UserFactory()
-        unreg = UnregUserFactory()
         name = fake.name()
         email = "!@#$%%^&*"
         unreg_no_record = serialize_unregistered(name, email)
-        contrib_data = [
-            add_contributor_json(contrib),
-            serialize_unregistered(fake.name(), unreg.username),
-            unreg_no_record
-        ]
-
+        contrib_data = [unreg_no_record]
         contrib_data[0]['permission'] = 'admin'
-        contrib_data[1]['permission'] = 'write'
-        contrib_data[2]['permission'] = 'read'
         contrib_data[0]['visible'] = True
-        contrib_data[1]['visible'] = True
-        contrib_data[2]['visible'] = True
 
         with assert_raises(ValidationError):
             deserialize_contributors(
