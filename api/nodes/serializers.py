@@ -222,7 +222,10 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         node = self.context['view'].get_node()
         if 'permission' in validated_data and validated_data['permission'] != '':
             self.set_contributor_permissions(node, validated_data['permission'], instance, auth)
-        self.change_visibility(node, instance, validated_data['bibliographic'])
+        try:
+            node.set_visible(instance, validated_data['bibliographic'], save=True)
+        except ValueError as e:
+            raise exceptions.ValidationError(e)
         instance.permission = node.get_permissions(instance)[-1]
         instance.bibliographic = node.get_visible(instance)
         instance.node_id = node._id
@@ -231,7 +234,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     # checks to make sure unique admin is removing own admin privilege
     def set_contributor_permissions(self, node, permission, contributor, auth):
         permissions = self.get_permissions_list(permission)
-        if not contributor is auth.user or self.has_multiple_admins(node):
+        if contributor is not auth.user or self.has_multiple_admins(node):
             node.set_permissions(contributor, permissions=permissions, save=True)
         elif permission == 'admin':
             node.set_permissions(contributor, permissions=permissions, save=True)
@@ -247,12 +250,6 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
                     return True
                 has_admin = True
         return False
-
-    def change_visibility(self, node, contributor, bibliographic):
-        try:
-            node.set_visible(contributor, bibliographic, save=True)
-        except ValueError as e:
-            raise exceptions.ValidationError(e)
 
 
 class NodePointersSerializer(JSONAPISerializer):
