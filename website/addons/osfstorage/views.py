@@ -89,25 +89,14 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
-    dest_node = destination.node
-    node_addon = kwargs['node_addon']
-    file_name = source.name
-    source_node_id = source.node._id
-
     new_file_node, created = source.copy_under(destination, name=name), httplib.CREATED
-    update_search(dest_node, 'copy', node_addon, file_name, source_node_id, other_file_node=new_file_node)
-
+    handle_copy(source_file_node=source, new_file_node=new_file_node, source_node=source.node, dest_node=destination.node)
     return new_file_node.serialized(), created
 
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
-    dest_node = destination.node
-    node_addon = kwargs['node_addon']
-    file_name = source.name
-    source_node_id = source.node._id
-
-    update_search(dest_node, 'move', node_addon, file_name, source_node_id)
+    handle_move(file_node=source, source_node=source.node, dest_node=destination.node)
     return source.move_under(destination, name=name).serialized(), httplib.OK
 
 
@@ -184,7 +173,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
 
-    update_search(parent.node, 'create', parent.node_settings, name, None)
+    handle_update(file_node=file_node, node=parent.node)
     return {
         'status': 'success',
         'data': file_node.serialized(),
@@ -236,25 +225,31 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
     }
 
 
-@file_util.require_file_indexing
-def update_search(node, action, addon, file_name, source_node_id=None, other_file_node=None):
-    # deletion handled in OsfFileNode.delete
-    if action == 'delete':
+def handle_update(file_node, node):
+    if not node.is_public:
         return
 
-    file_node = addon.root_node.find_child_by_name(file_name)
     if not file_util.is_indexed(file_node):
         return
 
-    if action in ('create', 'update'):
-        node.update_search_file(file_node)
+    node.update_search_file(file_node)
 
-    if action in ('copy', ):
-        source_node = Node.load(source_node_id)
-        source_node.copy_search_file(file_node, other_file_node, node)
 
-    if action in ('move', ):
-        if not source_node_id:
-            raise ValueError('{} requires source_node_id'.format(action))
-        source_node = Node.load(source_node_id)
-        source_node.move_search_file(file_node, node)
+def handle_copy(source_file_node, new_file_node, source_node, dest_node):
+    if not dest_node.is_public:
+        return
+
+    if not file_util.is_indexed(new_file_node):
+        return
+
+    source_node.copy_search_file(file_node=source_file_node, new_file_node=new_file_node, dest_node=dest_node)
+
+
+def handle_move(file_node, source_node, dest_node):
+    if not file_util.is_indexed(file_node):
+        return
+
+    if not dest_node.is_public:
+        return
+
+    source_node.move_search_file(file_node, dest_node)
