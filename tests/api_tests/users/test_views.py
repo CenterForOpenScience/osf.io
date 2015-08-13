@@ -5,6 +5,7 @@ from website.models import Node
 from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
 from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory, AuthUserFactory
+from website.util.sanitize import strip_html
 
 
 class TestUsers(ApiTestCase):
@@ -91,7 +92,7 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         assert_equal(user_json['fullname'], self.user_one.fullname)
-        assert_equal(user_json['social_accounts']['twitter'], 'howtopizza')
+        assert_equal(user_json['twitter'], 'howtopizza')
 
     def test_get_incorrect_pk_user_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
@@ -392,7 +393,7 @@ class TestUserUpdate(ApiTestCase):
         self.user_one.given_name = 'Martin'
         self.user_one.family_name = 'King'
         self.user_one.suffix = 'Jr.'
-        self.user_one.social['github'] = 'userOnegitHub'
+        self.user_one.social['github'] = 'userOneGitHub'
         self.user_one.social['scholar'] = 'userOneScholar'
         self.user_one.social['personal'] = 'http://www.useronepersonalwebsite.com'
         self.user_one.social['twitter'] = 'userOneTwitter'
@@ -452,7 +453,7 @@ class TestUserUpdate(ApiTestCase):
             }
         ]
 
-        self.newGithub = 'newGithub'
+        self.newGitHub = 'newGitHub'
         self.newScholar = 'newScholar'
         self.newPersonal_website = 'http://www.newpersonalwebsite.com'
         self.newTwitter = 'newTwitter'
@@ -493,7 +494,7 @@ class TestUserUpdate(ApiTestCase):
             'given_name': self.new_given_name,
             'family_name': self.new_family_name,
             'suffix': self.new_suffix,
-            'github': self.newGithub,
+            'gitHub': self.newGitHub,
             'personal_website': self.newPersonal_website,
             'twitter': self.newTwitter,
             'linkedIn': self.newLinkedIn,
@@ -506,7 +507,7 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['given_name'], self.new_given_name)
         assert_equal(res.json['data']['family_name'], self.new_family_name)
         assert_equal(res.json['data']['suffix'], self.new_suffix)
-        assert_equal(res.json['data']['github'], self.newGithub)
+        assert_equal(res.json['data']['gitHub'], self.newGitHub)
         assert_equal(res.json['data']['personal_website'], self.newPersonal_website)
         assert_equal(res.json['data']['twitter'], self.newTwitter)
         assert_equal(res.json['data']['linkedIn'], self.newLinkedIn)
@@ -521,7 +522,7 @@ class TestUserUpdate(ApiTestCase):
             'given_name': self.new_given_name,
             'family_name': self.new_family_name,
             'suffix': self.new_suffix,
-            'github': self.newGithub,
+            'gitHub': self.newGitHub,
             'personal_website': self.newPersonal_website,
             'twitter': self.newTwitter,
             'linkedIn': self.newLinkedIn,
@@ -542,7 +543,7 @@ class TestUserUpdate(ApiTestCase):
             'given_name': self.new_given_name,
             'family_name': self.new_family_name,
             'suffix': self.new_suffix,
-            'github': self.newGithub,
+            'gitHub': self.newGitHub,
             'personal_website': self.newPersonal_website,
             'twitter': self.newTwitter,
             'linkedIn': self.newLinkedIn,
