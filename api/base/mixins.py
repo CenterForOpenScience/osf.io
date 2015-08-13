@@ -1,19 +1,12 @@
 from rest_framework.exceptions import ValidationError
+from collections import OrderedDict
+
 
 class IncludeParametersMixin(object):
 
-    def process_includes(self, include_parameters, data, serializer):
+    def check_includes(self, include_parameters, data):
         invalid_parameters = []
         for parameter in include_parameters:
-            contained = False
-            for element in data:
-                if contained:
-                    break
-                if parameter in element:
-                    contained = True
-            if not contained:
+            if parameter not in data.keys():
                 invalid_parameters.append(parameter)
-
-        if invalid_parameters:
-            raise ValidationError('{} are invalid parameters.'.format(invalid_parameters))
-        return data
+        raise ValidationError('{}'.format(invalid_parameters))

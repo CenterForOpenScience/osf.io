@@ -233,7 +233,7 @@ class JSONAPISerializer(ser.Serializer):
             base_view_classes = view_class.__class__.__bases__
             if IncludeParametersMixin not in base_view_classes:
                 raise ValidationError('Include query parameters are not supported in this request.')
-            data = view_class.process_includes(self.context['request'].query_params['include'].split(','), data, self)
+            view_class.check_includes(self.context['request'].query_params['include'].split(','), data)
         return data
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
