@@ -232,8 +232,7 @@ class JSONAPISerializer(ser.Serializer):
             base_view_classes = view_class.__class__.__bases__
             if IncludeParametersMixin not in base_view_classes:
                 raise ValidationError('Include query parameters are not supported in this request.')
-
-            super(view_class, self).process_includes(self.context['request'].query_params['include'].split(','))
+            view_class.process_includes(self.context['request'].query_params['include'].split(','))
         data = super(JSONAPISerializer, self).to_representation(obj)
         return data
 
