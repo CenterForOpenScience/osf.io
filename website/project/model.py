@@ -2155,7 +2155,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if message:
                 status.push_status_message(message, kind='info', trust=True)
 
-        self.mailing_updated = True
+        if self.mailing_enabled:
+            self.mailing_updated = True
 
         if log:
             self.add_log(
@@ -2334,7 +2335,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 while len(user.recently_added) > MAX_RECENT_LENGTH:
                     user.recently_added.pop()
 
-            self.mailing_updated = True
+            if self.mailing_enabled:
+                self.mailing_updated = True
 
             if not contrib_to_add.is_active:
                 self.mailing_unsubs.append(contrib_to_add)

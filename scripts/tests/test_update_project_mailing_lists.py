@@ -15,24 +15,29 @@ from framework.exceptions import HTTPError
 from scripts.update_project_mailing_lists import main, update_node
 
 
+class TestSingleProjectMailingListUpdate(OsfTestCase):
+
+    @mock.patch('scripts.update_project_mailing_lists.full_update')
+    def test_only_updated_project_is_called(self, mock_full_update):
+        other_nodes = [ProjectFactory() for i in range(10)]
+        node = ProjectFactory()
+
+        node.mailing_updated = True
+        node.save()
+
+        main(dry_run=False)
+        node.reload()
+
+        mock_full_update.assert_called_once_with(node)
+        assert_false(node.mailing_updated)
+
+
 class TestUpdateProjectMailingLists(OsfTestCase):
 
     def setUp(self):
         super(TestUpdateProjectMailingLists, self).setUp()
-        self.other_nodes = [ProjectFactory() for i in range(10)]
         self.creator = AuthUserFactory()
         self.node = ProjectFactory(creator=self.creator)
-
-    @mock.patch('scripts.update_project_mailing_lists.full_update')
-    def test_only_updated_project_is_checked(self, mock_full_update):
-        self.node.mailing_updated = True
-        self.node.save()
-
-        main(dry_run=False)
-        self.node.reload()
-
-        mock_full_update.assert_called_with(self.node)
-        assert_false(self.node.mailing_updated)
 
     def test_create_node_without_list_does_not_update(self):
         assert_false(self.node.mailing_updated)
@@ -44,6 +49,7 @@ class TestUpdateProjectMailingLists(OsfTestCase):
 
     def test_add_contributor_causes_update(self):
         user = UserFactory()
+        self.node.mailing_enabled = True
         self.node.add_contributor(user, save=True)
 
         self.node.reload()
@@ -52,8 +58,8 @@ class TestUpdateProjectMailingLists(OsfTestCase):
     def test_remove_contributor_causes_update(self):
         user = UserFactory()
         self.node.add_contributor(user)
-        self.node.mailing_updated = False
         self.node.save()
+        self.node.mailing_enabled = True
         self.node.remove_contributor(user, auth=Auth(self.creator), save=True)
 
         self.node.reload()
