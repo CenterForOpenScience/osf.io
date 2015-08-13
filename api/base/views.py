@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from .utils import absolute_reverse
 from api.users.serializers import UserSerializer
 
-from rest_framework.exceptions import APIException
+
 class Root(APIView):
     """
         Welcome to the V2 Open Science Framework API. With this API you can programatically access users,
@@ -52,14 +52,13 @@ class Root(APIView):
 
     """
 
-    action = 'list'
+    action = 'detail'
     def get(self, request, format=None):
         if request.user and not request.user.is_anonymous():
             user = request.user
             current_user = UserSerializer(user, context={'request': request}).data
         else:
             current_user = None
-        raise APIException(request.version)
         return Response({
             'meta': {
                 'message': 'Welcome to the OSF API.',
