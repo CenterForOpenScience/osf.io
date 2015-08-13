@@ -68,7 +68,6 @@ REST_FRAMEWORK = {
     'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.CustomClientContentNegotiation',
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework_json_api.renderers.JSONRenderer',
-        'rest_framework.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
