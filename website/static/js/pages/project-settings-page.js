@@ -74,6 +74,7 @@ $(document).ready(function() {
             $commentMsg.text('Successfully updated settings.');
             $commentMsg.addClass('text-success');
             if($osf.isSafari()){
+                //Safari can't update jquery style change before reloading. So delay is applied here
                 setTimeout(function(){window.location.reload();}, 100);
             } else {
                 window.location.reload();
@@ -118,6 +119,7 @@ $(document).ready(function() {
                 checkedOnLoad = $('#selectAddonsForm input:checked');
                 uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
                 if($osf.isSafari()){
+                    //Safari can't update jquery style change before reloading. So delay is applied here
                     setTimeout(function(){window.location.reload();}, 100);
                 } else {
                     window.location.reload();
