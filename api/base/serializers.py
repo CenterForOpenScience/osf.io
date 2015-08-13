@@ -227,13 +227,13 @@ class JSONAPISerializer(ser.Serializer):
         :param obj: Object to be serialized.
         :param envelope: Key for resource object.
         """
+        data = super(JSONAPISerializer, self).to_representation(obj)
         if 'include' in self.context['request'].query_params:
             view_class = self.context['view'] if 'view' in self.context else None
             base_view_classes = view_class.__class__.__bases__
             if IncludeParametersMixin not in base_view_classes:
                 raise ValidationError('Include query parameters are not supported in this request.')
-            view_class.process_includes(self.context['request'].query_params['include'].split(','))
-        data = super(JSONAPISerializer, self).to_representation(obj)
+            data = view_class.process_includes(self.context['request'].query_params['include'].split(','), data, self)
         return data
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
