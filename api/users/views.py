@@ -7,9 +7,13 @@ from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
+<<<<<<< Temporary merge branch 1
 from .permissions import ReadOnlyOrCurrentUser
+=======
 from django.contrib.auth.models import AnonymousUser
 from rest_framework.exceptions import PermissionDenied
+>>>>>>> Temporary merge branch 2
+
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -45,9 +49,11 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
+
     serializer_class = UserSerializer
     ordering = ('-date_registered')
 

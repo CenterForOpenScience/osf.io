@@ -385,23 +385,23 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
 class TestUserUpdate(ApiTestCase):
 
     def setUp(self):
-        ApiTestCase.setUp(self)
+        super(TestUserUpdate, self).setUp()
         self.user_one = UserFactory.build()
         self.user_one.set_password('justapoorboy')
         self.user_one.fullname = 'Martin Luther King Jr.'
         self.user_one.given_name = 'Martin'
         self.user_one.family_name = 'King'
         self.user_one.suffix = 'Jr.'
-        self.user_one.github = 'userOneGithub'
-        self.user_one.scholar = 'userOneScholar'
-        self.user_one.personal_website = 'http://www.useronepersonalwebsite.com'
-        self.user_one.twitter = 'userOneTwitter'
-        self.user_one.linkedIn = 'userOneLinkedIn'
-        self.user_one.impactStory = 'userOneImpactStory'
-        self.user_one.orcid = 'userOneOrcid'
-        self.user_one.researcherId = 'userOneResearcherId'
+        self.user_one.social['github'] = 'userOnegitHub'
+        self.user_one.social['scholar'] = 'userOneScholar'
+        self.user_one.social['personal'] = 'http://www.useronepersonalwebsite.com'
+        self.user_one.social['twitter'] = 'userOneTwitter'
+        self.user_one.social['linkedIn'] = 'userOneLinkedIn'
+        self.user_one.social['impactStory'] = 'userOneImpactStory'
+        self.user_one.social['orcid'] = 'userOneOrcid'
+        self.user_one.social['researcherId'] = 'userOneResearcherId'
 
-        self.user_one.employment_institutions = [
+        self.user_one.jobs = [
             {
                 'startYear': '1995',
                 'title': '',
