@@ -518,7 +518,7 @@ select {
     font-size:13px;
     padding:5px;
     border:1px solid transparent;
-    border-radius: 5px;
+    border-radius: 2px;
     cursor: pointer;
 }
 
