@@ -1595,7 +1595,7 @@ var FGItemButtons = {
                 }, 'Download as zip')
             );
         }
-        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit) {
+        if(item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit && (item.data.provider !== 'osfstorage' || (item.data.extra.renter === '' || item.data.extra.renter === window.contextVars.currentUser.id))) {
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function() {
