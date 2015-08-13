@@ -152,12 +152,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
     date_registered = ser.DateTimeField(read_only=True)
     gravatar_url = ser.CharField(read_only=True, help_text='URL for the icon used to identify the user. '
                                                            'Relies on http://gravatar.com ')
-    employment_institutions = ser.ListField(read_only=True, source='jobs', help_text='An array of dictionaries '
-                                                                                     'representing the places the '
-                                                                                     'user has worked')
-    educational_institutions = ser.ListField(read_only=True, source='schools',
-                                             help_text='An array of dictionaries representing the places the '
-                                                       'user has attended school')
     social_accounts = ser.DictField(read_only=True, source='social',
                                     help_text='A dictionary of various social media account dentifiers including '
                                               'an array of user-defined URLs')
@@ -185,20 +179,20 @@ class NodeContributorsSerializer(JSONAPISerializer):
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
-        user = get_object_or_404(User, validated_data['_id'])
+        contributor = get_object_or_404(User, validated_data['_id'])
         # Node object checks for contributor existence but can still change permissions anyway
-        if user in node.contributors:
-            raise exceptions.ValidationError('{} is already a validated contributor'.format(user.username))
+        if contributor in node.contributors:
+            raise exceptions.ValidationError('{} is already a validated contributor'.format(contributor.username))
 
         bibliographic = validated_data['bibliographic']
         permissions = self.get_permissions_list(validated_data['permission']) \
             if 'permission' in validated_data else ['read', 'write']
-        node.add_contributor(contributor=user, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+        node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
         node.reload()
-        user.permission = node.get_permissions(user)[-1]
-        user.bibliographic = node.get_visible(user)
-        user.node_id = node._id
-        return user
+        contributor.permission = node.get_permissions(contributor)[-1]
+        contributor.bibliographic = node.get_visible(contributor)
+        contributor.node_id = node._id
+        return contributor
 
     @staticmethod
     def get_permissions_list(permission):
@@ -218,29 +212,30 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     id = ser.CharField(read_only=True, source='_id')
 
     def update(self, instance, validated_data):
-        user = instance
+        contributor = instance
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
         if 'permission' in validated_data and validated_data['permission'] != '':
-            self.set_user_permissions(node, validated_data['permission'], user, auth)
+            self.set_contributor_permissions(node, validated_data['permission'], contributor, auth)
         try:
-            node.set_visible(user, validated_data['bibliographic'], save=True)
+            node.set_visible(contributor, validated_data['bibliographic'], save=True)
         except ValueError as e:
             raise exceptions.ValidationError(e)
-        user.permission = node.get_permissions(user)[-1]
-        user.bibliographic = node.get_visible(user)
-        user.node_id = node._id
-        return user
+        node.reload()
+        contributor.permission = node.get_permissions(contributor)[-1]
+        contributor.bibliographic = node.get_visible(contributor)
+        contributor.node_id = node._id
+        return contributor
 
     # checks to make sure unique admin is removing own admin privilege
-    def set_user_permissions(self, node, permission, user, auth):
+    def set_contributor_permissions(self, node, permission, contributor, auth):
         permissions = self.get_permissions_list(permission)
-        if user is not auth.user or self.has_multiple_admins(node):
-            node.set_permissions(user, permissions=permissions, save=True)
+        if contributor is not auth.user or self.has_multiple_admins(node):
+            node.set_permissions(contributor, permissions=permissions, save=True)
         elif permission == 'admin':
             pass
         else:
-            raise exceptions.ValidationError('{} is the only admin.'.format(user.username))
+            raise exceptions.ValidationError('{} is the only admin.'.format(contributor.username))
 
     # created due to issues node.admin_contributor_ids not working
     def has_multiple_admins(self, node):
