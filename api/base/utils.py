@@ -20,8 +20,7 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
 
 
 def get_object_or_error(model_cls, query_or_pk, display_name=None):
-
-    display_name = display_name or ''
+    display_name = display_name or None
 
     if isinstance(query_or_pk, basestring):
         query = Q('_id', 'eq', query_or_pk)
@@ -31,9 +30,16 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
     try:
         obj = model_cls.find_one(query)
         if getattr(obj, 'is_deleted', False) is True:
-            raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
-        if getattr(obj, 'is_active', None) is False:
-            raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
+            if display_name is None:
+                raise Gone
+            else:
+                raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
+        if hasattr(obj, 'is_active'):
+            if not getattr(obj, 'is_active', False):
+                if display_name is None:
+                    raise Gone
+                else:
+                    raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
         return obj
 
     except NoResultsFound:
