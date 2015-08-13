@@ -159,6 +159,21 @@ charts.barChart = function (rawData, vm, widget) {
     return charts.c3Update(chartSetup,vm, widget.levelNames[0]);
 };
 
+charts.getExtentFromTimeRangeFilter = function(vm, bounds){
+    var extent = null;
+    vm.requiredFilters.some(function(filterString) {
+        var filterParts = filterString.split('='); //remove lock qualifier if it exists
+        if (filterParts[1] !== undefined) {return; } //there is a lock, so do nothing with this filter
+
+        var parts = filterParts[0].split(':');
+        var type = parts[0];
+        if (type === 'range') { //TODO this assumes all range filters work on dates, better would be to check if field matches the 'date_created'
+            extent = [parts[2], parts[3]]; //also this will be the last range filter that is returned...
+        }
+    });
+    return extent;
+};
+
 /**
  * Creates a c3 timeseries chart component after parsing raw data
  *
@@ -170,6 +185,8 @@ charts.barChart = function (rawData, vm, widget) {
 charts.timeseriesChart = function (rawData, vm, widget) {
     var data = widget.display.parser(rawData, widget.levelNames, vm, widget);
     data.type = widget.display.type ? widget.display.type : 'area-spline';
+    var bounds = [data.columns[0][1], data.columns[0][data.columns[0].length-1]]; //get bounds of chart
+    var extent = charts.getExtentFromTimeRangeFilter(vm, bounds);
     var chartSetup = {
         bindto: '#' + widget.levelNames[0],
         size: {
@@ -184,7 +201,8 @@ charts.timeseriesChart = function (rawData, vm, widget) {
             },
             onbrush: widget.display.callback.onbrushOfSubgraph ? widget.display.callback.onbrushOfSubgraph.bind({
                 vm: vm,
-                widget: widget
+                widget: widget,
+                bounds: bounds,
             }) : undefined
         },
         axis: {
@@ -193,6 +211,7 @@ charts.timeseriesChart = function (rawData, vm, widget) {
                     text: widget.display.xLabel ? widget.display.xLabel : '',
                     position: 'outer-center'
                 },
+                extent: extent,
                 type: 'timeseries',
                 tick: {
                     format: function (d) {return widgetUtils.timeSinceEpochInMsToMMYY(d); }

@@ -156,9 +156,15 @@ profileDashboard.controller = function(params) {
                 onbrushOfSubgraph : function(zoomWin){
                     var vm = this.vm;
                     var widget = this.widget;
+                    var bounds = this.bounds;
                     clearTimeout(vm.tempData.projectByTimeTimeout); //stop constant redraws
                     vm.tempData.projectByTimeTimeout = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
                         function(){
+                            if ((zoomWin[0] <= bounds[0]) && (zoomWin[1] >= bounds[1])) {
+                                widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                                utils.removeFilter(vm,vm.tempData.projectByTimeTimeFilter, false);
+                                return;
+                            }
                             utils.removeFilter(vm,vm.tempData.projectByTimeTimeFilter, true);
                             vm.tempData.projectByTimeTimeFilter = 'range:date_created:' + zoomWin[0].getTime() + ':' + zoomWin[1].getTime();
                             widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
@@ -178,22 +184,6 @@ profileDashboard.controller = function(params) {
         aggregation: profileDashboard.projectsByTimesAgg(),
         thisWidgetUpdates: ['contributors', 'results', 'projectsByTimes', 'activeFilters']
     };
-
-        //var nodeType = {
-    //    title: 'Type',
-    //    size: ['.col-md-6', 260],
-    //    row: 1,
-    //    levelNames: ['nodeType'],
-    //    display: {
-    //        dataReady : m.prop(true),
-    //        displayWidget: charts.barChart,
-    //        parser: charts.barParser,
-    //        rotateAxis: true,
-    //        customColors: [], //by setting custom colors to an empty string, we get the default c3 colors
-    //    },
-    //    aggregation: profileDashboard.nodeTypeAgg(),
-    //    thisWidgetUpdates: ['Contributors', 'projectsByTimes', 'results']
-    //};
 
     var activeFilters = {
         id: 'activeFilters',
