@@ -1,7 +1,9 @@
 import collections
 import re
 
+from .mixins import IncludeParametersMixin
 from rest_framework import serializers as ser
+from rest_framework.exceptions import ValidationError
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 from django.core.urlresolvers import NoReverseMatch
@@ -225,6 +227,13 @@ class JSONAPISerializer(ser.Serializer):
         :param obj: Object to be serialized.
         :param envelope: Key for resource object.
         """
+        if 'include' in self.context['request'].query_params:
+            view_class = self.context['view'] if 'view' in self.context else None
+            base_view_classes = view_class.__class__.__bases__
+            if IncludeParametersMixin not in base_view_classes:
+                raise ValidationError('Include query parameters are not supported in this request.')
+
+            super(view_class, self).process_includes(self.context['request'].query_params['include'].split(','))
         data = super(JSONAPISerializer, self).to_representation(obj)
         return data
 

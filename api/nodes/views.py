@@ -9,6 +9,7 @@ from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
+from api.base.mixins import IncludeParametersMixin
 from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
@@ -28,7 +29,7 @@ class NodeMixin(object):
         return obj
 
 
-class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
+class NodeList(generics.ListCreateAPIView, ODMFilterMixin, IncludeParametersMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
