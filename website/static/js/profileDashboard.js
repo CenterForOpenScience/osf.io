@@ -65,7 +65,10 @@ profileDashboard.contributorsParser = function(rawData, levelNames, vm, widget){
     var i = 0;
     rawData.aggregations[levelNames[0]].buckets.forEach(
         function (bucket) {
-            if (bucket.key === ctx.userId){numProjects = bucket.doc_count; }
+            if (bucket.key === ctx.userId){
+                numProjects = bucket.doc_count;
+                return;
+            }
             if (bucket.doc_count) {
                 chartData.columns.push([vm.tempData.guidsToNames[bucket.key], bucket.doc_count]);
                 chartData.colors[vm.tempData.guidsToNames[bucket.key]] = hexColors[i];
