@@ -477,8 +477,8 @@ select {
     height:100px;
     overflow-y: auto;
 }
-#node-tags_tag {
-    outline: 0;
+#node-tags_tag:focus {
+    outline: 2px solid #DEF;
 }
 
 .tagsinput div {
