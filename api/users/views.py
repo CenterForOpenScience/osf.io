@@ -7,12 +7,9 @@ from api.base.utils import get_object_or_404
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
-<<<<<<< Temporary merge branch 1
 from .permissions import ReadOnlyOrCurrentUser
-=======
 from django.contrib.auth.models import AnonymousUser
 from rest_framework.exceptions import PermissionDenied
->>>>>>> Temporary merge branch 2
 
 
 class UserMixin(object):
