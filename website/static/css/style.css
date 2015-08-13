@@ -477,6 +477,9 @@ select {
     height:100px;
     overflow-y: auto;
 }
+#node-tags_tag {
+    outline: 0;
+}
 
 .tagsinput div {
     float: left;
