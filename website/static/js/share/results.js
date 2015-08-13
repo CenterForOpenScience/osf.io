@@ -175,7 +175,7 @@ var Subjects = {
         return m('span', [
             subjectViews.slice(0, 5),
             m('br'),
-            m('div', m('a', {href: '#', onclick: function() {ctrl.showAll = !ctrl.showAll;}},'See All'))
+            m('div', m('a', {onclick: function() {ctrl.showAll = !ctrl.showAll;}},'See All'))
         ]);
 
     }
