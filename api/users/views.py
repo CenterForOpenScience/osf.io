@@ -11,6 +11,8 @@ from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import ApiOAuth2ApplicationSerializer, UserSerializer
 from .permissions import OwnerOnly
+from django.contrib.auth.models import AnonymousUser
+from rest_framework.exceptions import PermissionDenied
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -22,11 +24,19 @@ class UserMixin(object):
 
     def get_user(self, check_permissions=True):
         key = self.kwargs[self.node_lookup_url_kwarg]
+        current_user = self.request.user
 
         if key == 'me':
-            return self.request.user
+            # TODO: change exception from PermissionDenied to NotAuthenticated/AuthenticationFailed
+            # TODO: for unauthorized users
+
+            if isinstance(current_user, AnonymousUser):
+                raise PermissionDenied
+            else:
+                return self.request.user
 
         obj = get_object_or_404(User, key)
+
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)

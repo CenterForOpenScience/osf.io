@@ -1,5 +1,4 @@
 <%
-    import json
     is_project = node['node_type'] == 'project'
 %>
 
@@ -30,10 +29,10 @@
                         % endif
 
                     % endif
-                        <li><a href="${node['url']}"  class="project-title"> ${node['title'] | n}  </a></li>
+                        <li><a href="${node['url']}"  class="project-title"> ${ node['title'] }  </a></li>
 
                     % if not node['is_retracted']:
-                        <li><a href="${node['url']}files/">Files</a></li>
+                        <li id="projectNavFiles"><a href="${node['url']}files/">Files</a></li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
 
