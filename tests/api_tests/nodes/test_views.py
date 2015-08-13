@@ -438,7 +438,7 @@ class TestNodeDetail(ApiTestCase):
     def test_node_has_pointers_link(self):
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['pointers']['links']['related']['href']
-        expected_url = self.public_url + 'pointers/'
+        expected_url = self.public_url + 'node_links/'
         assert_equal(urlparse(url).path, expected_url)
 
     def test_node_has_registrations_link(self):
@@ -609,7 +609,7 @@ class TestNodeUpdate(ApiTestCase):
         res = self.app.patch(url, {
             'is_public': False,
         }, auth=self.user.auth, expect_errors=True)
-        assert_true(res.json['data']['public'])
+        assert_true(res.json['data']['attributes']['public'])
         # TODO: Figure out why the validator isn't raising when attempting to write to a read-only field
         # assert_equal(res.status_code, 403)
 
@@ -946,7 +946,7 @@ class TestNodeChildCreate(ApiTestCase):
         }
 
     def test_creates_child_logged_out_user(self):
-        res = self.app.post_json(self.url, self.child, expect_errors=True)
+        res = self.app.post(self.url, self.child, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
@@ -956,11 +956,11 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(len(self.project.nodes), 0)
 
     def test_creates_child_logged_in_owner(self):
-        res = self.app.post_json(self.url, self.child, auth=self.user.auth)
+        res = self.app.post(self.url, self.child, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], self.child['title'])
-        assert_equal(res.json['data']['description'], self.child['description'])
-        assert_equal(res.json['data']['category'], self.child['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.child['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.child['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.child['category'])
 
         self.project.reload()
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
@@ -968,11 +968,11 @@ class TestNodeChildCreate(ApiTestCase):
     def test_creates_child_logged_in_write_contributor(self):
         self.project.add_contributor(self.user_two, permissions=['read', 'write'], auth=Auth(self.user), save=True)
 
-        res = self.app.post_json(self.url, self.child, auth=self.user_two.auth)
+        res = self.app.post(self.url, self.child, auth=self.user_two.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['title'], self.child['title'])
-        assert_equal(res.json['data']['description'], self.child['description'])
-        assert_equal(res.json['data']['category'], self.child['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.child['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.child['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.child['category'])
 
         self.project.reload()
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
@@ -981,14 +981,14 @@ class TestNodeChildCreate(ApiTestCase):
         self.project.add_contributor(self.user_two, permissions=['read'], auth=Auth(self.user), save=True)
         self.project.reload()
 
-        res = self.app.post_json(self.url, self.child, auth=self.user_two.auth, expect_errors=True)
+        res = self.app.post(self.url, self.child, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
         self.project.reload()
         assert_equal(len(self.project.nodes), 0)
 
     def test_creates_child_logged_in_non_contributor(self):
-        res = self.app.post_json(self.url, self.child, auth=self.user_two.auth, expect_errors=True)
+        res = self.app.post(self.url, self.child, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
         self.project.reload()
@@ -998,7 +998,7 @@ class TestNodeChildCreate(ApiTestCase):
         title = '<em>Cool</em> <strong>Project</strong>'
         description = 'An <script>alert("even cooler")</script> child'
 
-        res = self.app.post_json(self.url, {
+        res = self.app.post(self.url, {
             'title': title,
             'description': description,
             'category': 'project',
@@ -1009,9 +1009,9 @@ class TestNodeChildCreate(ApiTestCase):
         url = '/{}nodes/{}/'.format(API_BASE, child_id)
 
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json['data']['title'], strip_html(title))
-        assert_equal(res.json['data']['description'], strip_html(description))
-        assert_equal(res.json['data']['category'], 'project')
+        assert_equal(res.json['data']['attributes']['title'], strip_html(title))
+        assert_equal(res.json['data']['attributes']['description'], strip_html(description))
+        assert_equal(res.json['data']['attributes']['category'], 'project')
 
         self.project.reload()
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
