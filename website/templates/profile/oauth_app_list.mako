@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
-<%def name="title()">Registered Developer Applications</%def>
+<%def name="title()">Developer Applications</%def>
 <%def name="content()">
-<h2 class="page-header">Registered Developer Applications</h2>
+<h2 class="page-header">Developer Applications</h2>
 
 <div id="applicationListPage" class="row">
     <div class="col-sm-3 affix-parent">
@@ -9,12 +9,15 @@
     </div>
 
     <div class="col-sm-9 col-md-7">
-        <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-primary pull-right"><i class="fa fa-plus"></i> Register new</a>
+        <div class="row">
+            <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-primary pull-right"><i class="fa fa-plus"></i> Register new</a>
+        </div>
+
         <div id="appList">
 
-            <p data-bind="visible: (appData().length == 0)">You have not registered any applications that can connect to the OSF.</p>
+            <p data-bind="visible: (appData().length == 0)">You have not registered any applications that can connect to the OSF on behalf of other users.</p>
             <div id="if-apps" data-bind="visible: (appData().length > 0)">
-                <p>You have registered the following applications that can connect to the OSF:</p>
+                <p>You have registered the following applications that can connect to the OSF on behalf of other users:</p>
 
                 <table class="table table-condensed">
                     <thead>

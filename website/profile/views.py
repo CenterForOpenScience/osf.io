@@ -378,7 +378,7 @@ def user_notifications(auth, **kwargs):
 @must_be_logged_in
 def oauth_application_list(auth, **kwargs):
     """Return app creation page with list of known apps. API is responsible for tying list to current user."""
-    app_list_url = api_v2_url("users/{}/applications/".format(auth.user._id))
+    app_list_url = api_v2_url("applications/")
     return {
         "app_list_url": app_list_url
     }
@@ -387,7 +387,7 @@ def oauth_application_list(auth, **kwargs):
 @must_be_logged_in
 def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
-    app_list_url = api_v2_url("users/{}/applications/".format(auth.user._id))  # POST request to this url
+    app_list_url = api_v2_url("applications/")  # POST request to this url
     return {"app_list_url": app_list_url,
             "app_detail_url": ''}
 
@@ -408,7 +408,7 @@ def oauth_application_detail(auth, **kwargs):
     if record.active is False:
         raise HTTPError(http.GONE)
 
-    app_detail_url = api_v2_url("users/{}/applications/{}/".format(auth.user._id, client_id))  # Send request to this URL
+    app_detail_url = api_v2_url("applications/{}/".format(client_id))  # Send request to this URL
     return {"app_list_url": '',
             "app_detail_url": app_detail_url}
 

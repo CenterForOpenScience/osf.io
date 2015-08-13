@@ -14,6 +14,12 @@
 
 <h2 class="page-header">Application Detail</h2>
 
+<div class="row">
+    <div class="col-sm-12">
+        <div class="breadcrumb">&lt; <a href="${web_url_for('oauth_application_list')}">Return to list of registered applications</a></div>
+    </div>
+</div>
+
 <div id="applicationDetailPage" class="row">
     <div class="col-sm-3 affix-parent">
       <%include file="include/profile/settings_navpanel.mako"/>

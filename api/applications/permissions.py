@@ -1,5 +1,6 @@
-from website.models import ApiOAuth2Application
 from rest_framework import permissions
+
+from website.models import ApiOAuth2Application
 
 
 class OwnerOnly(permissions.BasePermission):
@@ -10,6 +11,3 @@ class OwnerOnly(permissions.BasePermission):
         """Not applied to all members of a queryset"""
         assert isinstance(obj, ApiOAuth2Application), "obj must be an ApiOAuth2Application, got {}".format(obj)
         return (obj.owner._id == request.user._id)
-
-    def has_permission(self, request, view):
-        return (view.kwargs.get('user_id', '') == request.user._id)
