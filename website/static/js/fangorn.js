@@ -1789,11 +1789,28 @@ var FGToolbar = {
         //multiple selection icons
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github') {
             var showDelete = false;
+            var showRent = true;
+            var showReturn = true;
+            var each, i, len;
             // Only show delete button if user has edit permissions on at least one selected file
-            for (var i = 0, len = items.length; i < len; i++) {
-                var each = items[i];
+            for (i = 0, len = items.length; i < len; i++) {
+                each = items[i];
                 if (each.data.permissions.edit && !each.data.isAddonRoot && !each.data.nodeType) {
                     showDelete = true;
+                    break;
+                }
+            }
+            for (i = 0, len = items.length; i < len; i++) {
+                each = items[i];
+                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (each.data.extra.renter === '' || each.data.extra.renter === window.contextVars.currentUser.id))) {
+                    showRent = false;
+                    break;
+                }
+            }
+            for (i = 0, len = items.length; i < len; i++) {
+                each = items[i];
+                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && each.data.extra.renter === window.contextVars.currentUser.id)) {
+                    showReturn = false;
                     break;
                 }
             }
@@ -1807,6 +1824,56 @@ var FGToolbar = {
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete Multiple')
+                );
+            }
+            if (showRent){
+                generalButtons.push(
+                    m.component(FGButton, {
+                        onclick: function() {
+                            for (var i = 0, len = items.length; i < len; i++) {
+                                var each = items[i];
+                                $osf.postJSON(
+                                     each.data.nodeApiUrl + 'osfstorage' + each.data.path +'/rent/',
+                                    {}
+                                ).done(function(resp) {
+                                    if (resp.status === 'success') {
+                                    } else {
+                                        $osf.growl('Error', 'Unable to check-out file.');
+                                    }
+                                }).fail(function(resp) { // jshint ignore:line
+                                    $osf.growl('Error', 'Unable to check-out file.');
+                                }); // jshint ignore:line
+                            }
+                            window.location.reload();
+                        },
+                        icon: 'fa fa-sign-out',
+                        className: 'text-warning'
+                    }, 'Check-out Multiple')
+                );
+            }
+            if (showReturn){
+                generalButtons.push(
+                    m.component(FGButton, {
+                        onclick: function() {
+                            for (var i = 0, len = items.length; i < len; i++) {
+                                var each = items[i];
+                                $osf.postJSON(
+                                     each.data.nodeApiUrl + 'osfstorage' + each.data.path +'/return/',
+                                    {}
+                                ).done(function(resp) {
+                                    if (resp.status === 'success') {
+                                    } else {
+                                        $osf.growl('Error', 'Unable to check-in file.');
+                                    }
+                                }).fail(function(resp) { // jshint ignore:line
+                                    $osf.growl('Error', 'Unable to check-in file.');
+                                }); // jshint ignore:line
+                            }
+                            window.location.reload();
+                        },
+                        icon: 'fa fa-sign-in',
+                        className: 'text-warning'
+                    }, 'Check-in Multiple')
                 );
             }
         }
