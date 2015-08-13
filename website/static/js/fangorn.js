@@ -188,8 +188,10 @@ function resolveIconView(item) {
         var template = m('span', { 'class' : iconType});
         return template;
     }
-    if (!item.data.permissions.view) {
-        return m('span', { 'class' : iconmap.private });
+    if (item.data.permissions){
+        if (!item.data.permissions.view) {
+            return m('span', { 'class' : iconmap.private });
+        }
     }
     if (item.data.isDashboard) {
         return returnView('collection');
