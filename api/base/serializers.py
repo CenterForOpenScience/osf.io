@@ -75,8 +75,9 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
             if self.meta is not None:
                 meta = {}
                 for key in self.meta:
-                    meta[key] = _rapply(self.meta.values()[0], _url_val, obj=value, serializer=self.parent)
+                    meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
                 self.meta = meta
+                raise exceptions.APIException(self.meta)
             return [self.get_url(value, self.view_name, request, format), self.meta]
         except NoReverseMatch:
             msg = (
