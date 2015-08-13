@@ -597,8 +597,9 @@ function OBUploaderViewModel(params) {
     };
     self.dropzone = new Dropzone(self.selector, dropzoneOpts);
 
+    //Drag & drop is non-functional in IE; change instructional header to indicate this to the user.
     if($osf.isIE()){
-        $('h4:contains(1. Drop file (or click below))').replaceWith('<h4>1. Click below to select file</h4>');
+        $('#obDropzone-header').replaceWith('<h4 id=\'obDropzone-header\'>1. Click below to select file</h4>');
     }
 
     //stop user from leaving if file is staged for upload
