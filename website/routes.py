@@ -853,7 +853,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.register.node_registration_retraction_approve,
-            OsfWebRenderer('error.mako', trust=False)
+            notemplate
         ),
         Rule(
             [
@@ -862,7 +862,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.register.node_registration_retraction_disapprove,
-            OsfWebRenderer('error.mako', trust=False)
+            notemplate
         ),
         Rule(
             [
@@ -871,7 +871,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.register.node_registration_embargo_approve,
-            OsfWebRenderer('error.mako', trust=False)
+            notemplate
         ),
         Rule(
             [
@@ -880,7 +880,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.register.node_registration_embargo_disapprove,
-            OsfWebRenderer('error.mako', trust=False)
+            notemplate
         ),
         Rule(
             [
@@ -889,7 +889,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.register.node_registration_approve,
-            OsfWebRenderer('error.mako', trust=False)
+            notemplate
         ),
         Rule(
             [
@@ -898,7 +898,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.register.node_registration_disapprove,
-            OsfWebRenderer('error.mako', trust=False)
+            notemplate
         ),
 
         Rule(
