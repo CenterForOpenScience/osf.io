@@ -1047,6 +1047,7 @@ class TestNodeContributorUpdate(ApiTestCase):
         }
         res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['permission'], 'admin')
 
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user_two), ['read', 'write', 'admin'])
@@ -1057,6 +1058,7 @@ class TestNodeContributorUpdate(ApiTestCase):
         }
         res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['permission'], 'write')
 
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user_two), ['read', 'write'])
@@ -1067,6 +1069,7 @@ class TestNodeContributorUpdate(ApiTestCase):
         }
         res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['permission'], 'read')
 
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user_two), ['read'])
@@ -1077,6 +1080,7 @@ class TestNodeContributorUpdate(ApiTestCase):
         }
         res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['bibliographic'], False)
 
         self.project.reload()
         assert_false(self.project.get_visible(self.user_two))
@@ -1086,6 +1090,7 @@ class TestNodeContributorUpdate(ApiTestCase):
         }
         res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['bibliographic'], True)
 
         self.project.reload()
         assert_true(self.project.get_visible(self.user_two))
@@ -1097,6 +1102,8 @@ class TestNodeContributorUpdate(ApiTestCase):
         }
         res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['permission'], 'read')
+        assert_equal(res.json['data']['bibliographic'], False)
 
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user_two), ['read'])
@@ -1104,11 +1111,13 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_not_change_contributor(self):
         data = {
-            'bibliographic': True,
-            'permission': None
+            'permission': None,
+            'bibliographic': True
         }
         res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['permission'], 'write')
+        assert_equal(res.json['data']['bibliographic'], True)
 
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user_two), ['read', 'write'])
@@ -1134,6 +1143,7 @@ class TestNodeContributorUpdate(ApiTestCase):
         }
         res = self.app.put_json(self.url_creator, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['permission'], 'write')
 
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user), ['read', 'write'])
