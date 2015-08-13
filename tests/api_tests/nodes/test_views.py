@@ -1473,12 +1473,12 @@ class TestNodePointersList(ApiTestCase):
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.pointer_project = ProjectFactory(is_public=False, creator=self.user)
         self.project.add_pointer(self.pointer_project, auth=Auth(self.user))
-        self.private_url = '/{}nodes/{}/pointers/'.format(API_BASE, self.project._id)
+        self.private_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.project._id)
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_project.add_pointer(self.public_pointer_project, auth=Auth(self.user))
-        self.public_url = '/{}nodes/{}/pointers/'.format(API_BASE, self.public_project._id)
+        self.public_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.public_project._id)
 
         self.user_two = AuthUserFactory()
 
@@ -1521,20 +1521,19 @@ class TestCreateNodePointer(ApiTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.pointer_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_url = '/{}nodes/{}/pointers/'.format(API_BASE, self.project._id)
+        self.private_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.project._id)
         self.private_payload = {'target_node_id': self.pointer_project._id}
-
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_url = '/{}nodes/{}/pointers/'.format(API_BASE, self.public_project._id)
+        self.public_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.public_project._id)
         self.public_payload = {'target_node_id': self.public_pointer_project._id}
-        self.fake_url = '/{}nodes/{}/pointers/'.format(API_BASE, 'fdxlq')
+        self.fake_url = '/{}nodes/{}/node_links/'.format(API_BASE, 'fdxlq')
         self.fake_payload = {'target_node_id': 'fdxlq'}
         self.point_to_itself_payload = {'target_node_id': self.public_project._id}
 
         self.user_two = AuthUserFactory()
         self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
-        self.user_two_url = '/{}nodes/{}/pointers/'.format(API_BASE, self.user_two_project._id)
+        self.user_two_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.user_two_project._id)
         self.user_two_payload = {'target_node_id': self.user_two_project._id}
 
     def test_creates_public_node_pointer_logged_out(self):
@@ -1715,7 +1714,7 @@ class TestNodePointerDetail(ApiTestCase):
         self.private_project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer = self.private_project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
-        self.private_url = '/{}nodes/{}/pointers/{}/'.format(API_BASE, self.private_project._id, self.pointer._id)
+        self.private_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.private_project._id, self.pointer._id)
 
         self.user_two = AuthUserFactory()
 
@@ -1724,7 +1723,7 @@ class TestNodePointerDetail(ApiTestCase):
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
                                                               auth=Auth(self.user),
                                                               save=True)
-        self.public_url = '/{}nodes/{}/pointers/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+        self.public_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
 
     def test_returns_public_node_pointer_detail_logged_out(self):
         res = self.app.get(self.public_url)
@@ -1764,7 +1763,7 @@ class TestDeleteNodePointer(ApiTestCase):
         self.project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
         self.pointer = self.project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
-        self.private_url = '/{}nodes/{}/pointers/{}'.format(API_BASE, self.project._id, self.pointer._id)
+        self.private_url = '/{}nodes/{}/node_links/{}'.format(API_BASE, self.project._id, self.pointer._id)
 
         self.user_two = AuthUserFactory()
 
@@ -1773,7 +1772,7 @@ class TestDeleteNodePointer(ApiTestCase):
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
                                                               auth=Auth(self.user),
                                                               save=True)
-        self.public_url = '/{}nodes/{}/pointers/{}'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+        self.public_url = '/{}nodes/{}/node_links/{}'.format(API_BASE, self.public_project._id, self.public_pointer._id)
 
     def test_deletes_public_node_pointer_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)
@@ -1813,7 +1812,6 @@ class TestDeleteNodePointer(ApiTestCase):
     def test_deletes_private_node_pointer_logged_in_non_contributor(self):
         res = self.app.delete(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-
 
     def test_return_deleted_public_node_pointer(self):
         res = self.app.delete(self.public_url, auth=self.user.auth)
