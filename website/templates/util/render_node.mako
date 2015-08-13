@@ -114,8 +114,16 @@
                         <span data-bind="ifnot:log.anonymous">
                             <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
                         </span>
-                        <!-- log actions are the same as their template name -->
-                        <span data-bind="template: {name: log.action, data: log}"></span>
+
+                        <!-- ko if: log.hasUser() -->
+                            <!-- log actions are the same as their template name -->
+                            <span data-bind="template: {name: log.action, data: log}"></span>
+                        <!-- /ko -->
+
+                        <!-- ko ifnot: log.hasUser() -->
+                            <!-- Log actions are the same as their template name  + no_user -->
+                            <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>
+                        <!-- /ko -->
                         </dd>
                 </dl><!-- end foreach logs -->
             </div>
