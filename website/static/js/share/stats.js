@@ -28,6 +28,13 @@ function donutGraph(data, vm) {
         },
         legend: {
             show: false
+        },
+        tooltip: {
+            format: {
+                value: function (value, ratio, id) {
+                    return Math.round(ratio * 100) + '%';
+                }
+            }
         }
     });
 }
