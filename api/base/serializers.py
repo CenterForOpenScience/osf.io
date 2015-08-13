@@ -45,9 +45,7 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
         Returns null if lookup value is None
         """
 
-        lookup_value = getattr(obj, self.lookup_field)
-
-        if lookup_value is None:
+        if getattr(obj, self.lookup_field) is None:
             return None
 
         return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
