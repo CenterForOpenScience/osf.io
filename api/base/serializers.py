@@ -211,16 +211,6 @@ class JSONAPISerializer(ser.Serializer):
         kwargs['child'] = cls()
         return JSONAPIListSerializer(*args, **kwargs)
 
-    # overrides Serializer
-    def to_representation(self, obj):
-        """Serialize to final representation.
-
-        :param obj: Object to be serialized.
-        :param envelope: Key for resource object.
-        """
-        data = super(JSONAPISerializer, self).to_representation(obj)
-        return data
-
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
         """After validation, scrub HTML from validated_data prior to saving (for create and update views)"""
