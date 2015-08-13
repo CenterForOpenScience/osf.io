@@ -11,6 +11,7 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from website.exceptions import NodeStateError
 
 
 class NodeMixin(object):
@@ -109,13 +110,12 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         user = self.request.user
         auth = Auth(user)
         node = self.get_object()
-        nodes = self.get_node().nodes
         # If there are no children, then allow the node to be removed, otherwise give a 403 error.
-        if len(nodes) == 0:
+        try:
             node.remove_node(auth=auth)
-            node.save()
-        else:
-            raise PermissionDenied(detail='Any child components must be deleted prior to deleting this project.')
+        except NodeStateError:
+            raise PermissionDenied()
+        node.save()
 
 
 class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
