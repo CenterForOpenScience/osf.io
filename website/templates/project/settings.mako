@@ -19,15 +19,15 @@
     <!-- Begin left column -->
     <div class="col-sm-3 affix-parent scrollspy">
 
-        % if user['has_read_permissions']:
+        % if 'write' in user['permissions']:
 
             <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="60" data-offset-bottom="263"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
-                        % if 'write' in user['permissions']:
-                            <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
+                        <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
 
+                        % if 'write' in user['permissions']:
                             <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
 
                             % if addon_enabled_settings:
@@ -41,9 +41,9 @@
                             <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                         % endif
 
-                        %if 'admin' in user['permissions'] or (discussions['enabled'] and user['has_read_permissions']):
+                        % if 'admin' in user['permissions'] or (discussions['enabled'] and user['has_read_permissions']):
                             <li><a href="#configureDiscussionsAnchor">Configure Email Discussions</a></li>
-                        %endif
+                        % endif
 
                     % endif
 

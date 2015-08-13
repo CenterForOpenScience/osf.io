@@ -83,14 +83,21 @@ def resubscribe_on_confirm(user):
 ###############################################################################
 
 
+def find_email(long_email):
+    email = re.search(r'<\S*>$', long_email).group(0)[1:-1]
+    return email
+
+
 def route_message(**kwargs):
     message = request.form
-    target_address = message['To']
-    node_id = re.search(r'[a-z0-9]*@', target_address).group(0)[:-1]
+    target = message['To']
+    if ' ' in target:
+        target = find_email(target)
+    node_id = re.search(r'[a-z0-9]*@', target).group(0)[:-1]
     sender_email = message['From']
     # allow for both "{email}" syntax and "{name} <{email}>" syntax
     if ' ' in sender_email:
-        sender_email = re.search(r'<\S*>$', sender_email).group(0)[1:-1]
+        sender_email = find_email(sender_email)
 
     sender = get_user(email=sender_email)
     if sender:
@@ -103,7 +110,7 @@ def route_message(**kwargs):
     mail_params = {
         'to_addr': sender_email,
         'mail': mails.DISCUSSIONS_EMAIL_REJECTED,
-        'target_address': target_address,
+        'target_address': target,
         'user': sender,
         'node_type': node.project_or_component if node else '',
         'node_url': node.absolute_url if node else '',
@@ -126,4 +133,4 @@ def route_message(**kwargs):
     if reason:
         mails.send_mail(reason=reason, **mail_params)
 
-    # Any logging code should go here, since at this point the email has passed verification
+    # Any logging code should go here, since by now we know the email was sent

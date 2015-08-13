@@ -73,13 +73,14 @@ class TestUpdateProjectMailingLists(OsfTestCase):
         assert_true(self.node.mailing_updated)
 
 
-@mock.patch('scripts.update_project_mailing_lists.full_update', mock.Mock(side_effect=HTTPError))
 class TestUpdateListFailure(OsfTestCase):
 
-    def test_error_sets_mailing_updated_back_to_true(self):
+    @mock.patch('scripts.update_project_mailing_lists.full_update', side_effect=HTTPError(400))
+    def test_error_sets_mailing_updated_back_to_true(self, mock_full_update):
         new_node = ProjectFactory()
 
         update_node(new_node, dry_run=False)
         new_node.reload()
 
+        mock_full_update.assert_called()
         assert_true(new_node.mailing_updated)

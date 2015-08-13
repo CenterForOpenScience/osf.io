@@ -38,7 +38,7 @@ def get_list(node_id):
         auth=('api', settings.MAILGUN_API_KEY),
     )
     if info.status_code != 200 and info.status_code != 404:
-        raise HTTPError(400)
+        raise HTTPError(info.status_code)
     info = json.loads(info.text)
 
     members = requests.get(
@@ -46,7 +46,7 @@ def get_list(node_id):
         auth=('api', settings.MAILGUN_API_KEY),
     )
     if members.status_code != 200 and members.status_code != 404:
-        raise HTTPError(400)
+        raise HTTPError(members.status_code)
     members = json.loads(members.text)
 
     return info, members
@@ -71,7 +71,7 @@ def create_list(node_id, title, url, contributors, unsubs):
         }
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        raise HTTPError(res.status_code)
 
     members_list = []
     for member in contributors:
@@ -94,7 +94,7 @@ def delete_list(node_id):
         auth=('api', settings.MAILGUN_API_KEY)
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        raise HTTPError(res.status_code)
 
 
 @require_project_mailing
@@ -111,7 +111,7 @@ def update_title(node_id, node_title):
         }
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        raise HTTPError(res.status_code)
 
 
 @require_project_mailing
@@ -129,7 +129,7 @@ def update_members(node_id, members):
         }
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        raise HTTPError(res.status_code)
 
 
 @require_project_mailing
@@ -143,7 +143,7 @@ def remove_member(node_id, email):
         auth=('api', settings.MAILGUN_API_KEY)
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        raise HTTPError(res.status_code)
 
 
 @require_project_mailing
@@ -159,7 +159,7 @@ def match_members(node_id, url, contributors, unsubs):
         auth=('api', settings.MAILGUN_API_KEY),
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        raise HTTPError(res.status_code)
 
     mailgun_members = json.loads(res.text)['items']
     members = {user: user not in unsubs for user in contributors}
@@ -204,7 +204,7 @@ def update_email(node_id, old_email, new_email):
         }
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        raise HTTPError(res.status_code)
 
 
 @require_project_mailing
@@ -222,7 +222,7 @@ def update_subscription(node_id, email, subscription):
         }
     )
     if res.status_code != 200:
-        raise HTTPError(400)
+        raise HTTPError(res.status_code)
 
 
 ###############################################################################
@@ -286,7 +286,7 @@ def send_message(node_id, node_title, message):
               'subject': message['subject'],
               'html': '<html>{}</html>'.format(message['text'])})
     if res.status_code != 200:
-        raise HTTPError(400)
+        raise HTTPError(res.status_code)
 
 
 ###############################################################################

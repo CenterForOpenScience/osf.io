@@ -215,6 +215,7 @@ def update_user(auth):
             for node in user.node__contributed:
                 if node.mailing_enabled:
                     node.mailing_updated = True
+                    node.save()
                     mailing_list.celery_update_email(node._id, user.email, username)
 
             user.username = username
