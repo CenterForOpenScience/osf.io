@@ -799,7 +799,7 @@ class TestNodeContributorAdd(ApiTestCase):
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
 
-        self.data_default = {
+        self.data_user_two = {
             'id': self.user_two._id,
             'bibliographic': True
         }
@@ -810,7 +810,7 @@ class TestNodeContributorAdd(ApiTestCase):
         }
 
     def test_adds_bibliographic_contributor_public_project_admin(self):
-        res = self.app.post_json(self.public_url, self.data_default, auth=self.user.auth)
+        res = self.app.post_json(self.public_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
@@ -846,7 +846,7 @@ class TestNodeContributorAdd(ApiTestCase):
         assert_not_in(self.user_three, self.public_project.contributors)
 
     def test_adds_contributor_public_project_not_logged_in(self):
-        res = self.app.post_json(self.public_url, self.data_default, expect_errors=True)
+        res = self.app.post_json(self.public_url, self.data_user_two, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
@@ -854,7 +854,7 @@ class TestNodeContributorAdd(ApiTestCase):
         assert_not_in(self.user_two, self.public_project.contributors)
 
     def test_adds_contributor_private_project_admin(self):
-        res = self.app.post_json(self.private_url, self.data_default, auth=self.user.auth)
+        res = self.app.post_json(self.private_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
@@ -941,7 +941,7 @@ class TestNodeContributorAdd(ApiTestCase):
         self.private_project.add_contributor(self.user_two, auth=Auth(self.user), save=True)
         self.private_project.reload()
 
-        res = self.app.post_json(self.private_url, self.data_default,
+        res = self.app.post_json(self.private_url, self.data_user_two,
                                  auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
@@ -974,7 +974,7 @@ class TestNodeContributorAdd(ApiTestCase):
         assert_not_in(self.user_three, self.private_project.contributors)
 
     def test_adds_contributor_private_project_not_logged_in(self):
-        res = self.app.post_json(self.private_url, self.data_default, expect_errors=True)
+        res = self.app.post_json(self.private_url, self.data_user_two, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
@@ -994,28 +994,37 @@ class TestContributorDetail(ApiTestCase):
         self.public_url = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.public_project, self.user._id)
 
         self.private_project = ProjectFactory(creator=self.user, is_public=False)
-        self.private_url = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.private_project, self.user._id)
+        self.private_url_base = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.private_project._id, '{}')
+        self.private_url = self.private_url_base.format(self.user._id)
 
-    def test_get_public_node_user_detail(self):
+    def test_get_public_contributor_detail(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['id'], self.user._id)
 
-    def test_get_private_node_user_detail_contributor(self):
+    def test_get_private_node_contributor_detail_contributor_auth(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['id'], self.user._id)
 
-    def test_get_private_node_user_detail_non_contributor(self):
+    def test_get_private_node_contributor_detail_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_get_private_node_user_detail_not_logged_in(self):
+    def test_get_private_node_contributor_detail_not_logged_in(self):
         res = self.app.get(self.private_url, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+
+    def test_get_private_node_non_contributor_detail_contributor_auth(self):
+        res = self.app.get(self.private_url_base.format(self.user_two._id), auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_private_node_invalid_user_detail_contributor_auth(self):
+        res = self.app.get(self.private_url_base.format('invalid'), auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
 
 class TestNodeContributorUpdate(ApiTestCase):
@@ -1131,7 +1140,6 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_admin_self_without_other_admin(self):
         data = {
-            'id': self.user._id,
             'permission': 'write',
             'bibliographic': True
         }
