@@ -46,5 +46,5 @@ djangorestframework==3.1.1
 django-rest-swagger==0.3.2
 
 # JSON API Formatting
-git+https://github.com/pattisdr/django-rest-framework-json-api.git@74f622ad8d492be65bd962a6dcb3dba09b73ef13
+git+https://github.com/pattisdr/django-rest-framework-json-api.git@b772225a5c53e4b2fce7c4382a025da7b1fc16eb
 
