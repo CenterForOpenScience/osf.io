@@ -57,9 +57,6 @@ REST_FRAMEWORK = {
     # DRF v3.1+
     'DEFAULT_PAGINATION_CLASS':
         'rest_framework_json_api.pagination.PageNumberPagination',
-    # older than DRF v3.1
-    'DEFAULT_PAGINATION_SERIALIZER_CLASS':
-        'rest_framework_json_api.pagination.PaginationSerializer',
     'DEFAULT_PARSER_CLASSES': (
         'rest_framework_json_api.parsers.JSONParser',
         'rest_framework.parsers.FormParser',
