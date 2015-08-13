@@ -269,6 +269,20 @@ class TestDiscussionsOnUserActions(OsfTestCase):
         assert_in(unreg, self.project.mailing_unsubs)
         mock_match_members.assert_called()
 
+    @mock.patch('website.project.model.mailing_list.celery_match_members')
+    def test_merge_contributor_into_other_user(self, mock_match_members):
+        other_user = UserFactory()
+        other_user.merge_user(self.user)
+
+        mock_match_members.assert_called()
+
+    @mock.patch('website.project.model.mailing_list.celery_match_members')
+    def test_merge_other_user_into_contributor_does_nothing(self, mock_match_members):
+        other_user = UserFactory()
+        self.user.merge_user(other_user)
+
+        mock_match_members.assert_not_called()
+
 
 class TestEmailRejections(OsfTestCase):
 
