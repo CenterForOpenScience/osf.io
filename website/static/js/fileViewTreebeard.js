@@ -39,7 +39,7 @@ function FileViewTreebeard(data) {
         onload: function(tree) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
-            $('.osf-panel-header.osf-panel-header-flex').show();
+            $('.panel-heading.osf-panel-header-flex').show();
             tb.select('.tb-header-row').hide();
 
         },
@@ -88,7 +88,9 @@ function FileViewTreebeard(data) {
                 item.css = 'fangorn-selected';
                 tb.multiselected([item]);
             }
-
+            if(item.data.permissions && !item.data.permissions.view){
+                item.css += ' tb-private-row';
+            }
             var defaultColumns = [
                 {
                     data: 'name',

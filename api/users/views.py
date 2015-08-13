@@ -1,5 +1,6 @@
 from rest_framework import generics, permissions as drf_permissions
 from modularodm import Q
+
 from website.models import User, Node
 from framework.auth.core import Auth
 from api.base.utils import get_object_or_404
@@ -7,19 +8,35 @@ from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
 from .permissions import ReadOnlyOrCurrentUser
-
+from django.contrib.auth.models import AnonymousUser
+from rest_framework.exceptions import PermissionDenied
 
 class UserMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
-    current URL. By default, fetches the user based on the pk kwarg.
+    current URL. By default, fetches the user based on the user_id kwarg.
     """
 
     serializer_class = UserSerializer
-    user_lookup_url_kwarg = 'user_id'
+    node_lookup_url_kwarg = 'user_id'
 
-    def get_user(self):
-        obj = get_object_or_404(User, self.kwargs[self.user_lookup_url_kwarg])
-        self.check_object_permissions(self.request, obj)
+    def get_user(self, check_permissions=True):
+        key = self.kwargs[self.node_lookup_url_kwarg]
+        current_user = self.request.user
+
+        if key == 'me':
+            # TODO: change exception from PermissionDenied to NotAuthenticated/AuthenticationFailed
+            # TODO: for unauthorized users
+
+            if isinstance(current_user, AnonymousUser):
+                raise PermissionDenied
+            else:
+                return self.request.user
+
+        obj = get_object_or_404(User, key)
+
+        if check_permissions:
+            # May raise a permission denied
+            self.check_object_permissions(self.request, obj)
         return obj
 
 
@@ -28,11 +45,9 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
     """
-
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-
     serializer_class = UserSerializer
     ordering = ('-date_registered')
 
@@ -68,14 +83,13 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
 
-
 class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     """Nodes belonging to a user.
-
     Return a list of nodes that the user contributes to. """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-    )
+    )    
 
     serializer_class = NodeSerializer
 

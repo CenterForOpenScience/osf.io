@@ -24,6 +24,7 @@ STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
+BCRYPT_LOG_ROUNDS = 12
 
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
@@ -65,6 +66,10 @@ ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
 SHARE_ELASTIC_URI = ELASTIC_URI
+SHARE_ELASTIC_INDEX = 'share'
+# For old indices
+SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
+
 # Sessions
 # TODO: Override SECRET_KEY in local.py in production
 COOKIE_NAME = 'osf'
@@ -236,6 +241,9 @@ DISK_SAVING_MODE = False
 # Add Contributors (most in common)
 MAX_MOST_IN_COMMON_LENGTH = 15
 
+# Seconds before another notification email can be sent to a contributor when added to a project
+CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
+
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None
 GOOGLE_SITE_VERIFICATION = None
@@ -258,6 +266,7 @@ EZID_PASSWORD = 'changeme'
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 
+USE_SHARE = True
 SHARE_REGISTRATION_URL = ''
 SHARE_API_DOCS_URL = ''
 

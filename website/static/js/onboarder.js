@@ -75,8 +75,8 @@ function initTypeahead(element, nodes, viewModel, params){
         templates: {
             suggestion: function(data) {
                 return '<p>' + data.value.name + '</p> ' +
-                        '<p><small class="ob-suggestion-date text-muted">' +
-                        'modified ' + data.value.dateModified.local + '</small></p>';
+                        '<p><small class="m-l-md text-muted">'+
+                                        'modified ' + data.value.dateModified.local + '</small></p>';
             }
         },
         source: substringMatcher(myProjects)
@@ -104,7 +104,7 @@ function serializeNode(node) {
         urls: {
             web: node.url,
             api: node.api_url,
-            register: node.url + 'register/',
+            register: node.url + 'register',
             files: node.url + 'files/',
             children: node.api_url + 'get_children/?permissions=write'
         }
@@ -137,7 +137,7 @@ ko.bindingHandlers.projectSearch = {
         }
         if (Array.isArray(nodesOrURL)) {
             var nodes = params.data;
-            // Compute relevant URLs for each search result
+            // Compute relevant URLs for each search result.
             initTypeahead(element, nodes, viewModel, params);
         } else if (typeof nodesOrURL === 'string') { // params.data is a URL
             var url = nodesOrURL;
@@ -183,6 +183,7 @@ function ProjectSearchViewModel(params) {
     self.showComponents = ko.observable(self.enableComponents);
     self.selectedProject = ko.observable(null);
     self.selectedComponent = ko.observable(null);
+    self.btnClass = params.btnClass || 'btn btn-primary pull-right';
     // The current user input. we store these so that we can show an error message
     // if the user clicks "Submit" when their selection isn't complete
     self.projectInput = ko.observable('');
@@ -669,4 +670,21 @@ function OBGoToViewModel(params) {
 ko.components.register('osf-ob-goto', {
     viewModel: OBGoToViewModel,
     template: {element: 'osf-ob-goto'}
+});
+
+
+function ProjectCreateViewModel(response) {
+    var self = this;
+    self.isOpen = ko.observable(false);
+    self.focus = ko.observable(false);
+    self.toggle = function() {
+        self.isOpen(!self.isOpen());
+        self.focus(self.isOpen());
+    };
+    self.nodes = response.data;
+}
+
+ko.components.register('osf-ob-create', {
+    viewModel: ProjectCreateViewModel,
+    template: {element: 'osf-ob-create'}
 });
