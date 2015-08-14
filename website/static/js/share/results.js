@@ -175,7 +175,7 @@ var Subjects = {
         return m('span', [
             subjectViews.slice(0, 5),
             m('br'),
-            m('div', m('a', {href: '#', onclick: function() {ctrl.showAll = !ctrl.showAll;}},'See All'))
+            m('div', m('a', {onclick: function() {ctrl.showAll = !ctrl.showAll;}},'See All'))
         ]);
 
     }
@@ -228,8 +228,11 @@ var Footer = {
             m('span.pull-right', [
                 m('img', {src: vm.ProviderMap[result.shareProperties.source].favicon, alt: 'favicon for ' + result.shareProperties.source, style: {width: '16px', height: '16px'}}),
                 ' ',
-                m('a', {onclick: function() {utils.updateFilter(vm, 'match:shareProperties.source:' + result.shareProperties.source);}}, vm.ProviderMap[result.shareProperties.source].long_name),
-                m('br')
+                m('a', {
+                    onclick: function() {utils.updateFilter(vm, 'match:shareProperties.source:' + result.shareProperties.source);}
+                }, vm.ProviderMap[result.shareProperties.source].long_name),
+                m('br'),
+                m('hr')
             ]),
             ctrl.showRawNormalized() ? m.component(RawNormalizedData, {result: ctrl.cleanResult(), missingError: ctrl.missingError()}) : '',
         ]);
