@@ -41,7 +41,7 @@ var StatisticsViewModel = function() {
 
     self.dates = [];
     self.dataType = ko.observable('Visits');
-    self.piwikDataType = ko.computed(function(){
+    self.piwikDataType = function(){
         switch (self.dataType()){
             case 'Visits':
                 return 'nb_visits';
@@ -55,7 +55,7 @@ var StatisticsViewModel = function() {
             case 'Unique Page Views':
                 return 'nb_uniq_pageviews';
         }
-    });
+    };
 
     self.method = function() {
         if (self.dataType() == 'Page Views' || self.dataType() == 'Unique Page Views'){
@@ -80,9 +80,9 @@ var StatisticsViewModel = function() {
     self.dateButtonHTML = ko.computed(function(){
         var dates = self.date().split(',');
         if($('#dateRange').prop('checked')){
-            return 'Date Range: ' + dates[0] + ' to ' + dates[1] + ' <span class="fa fa-calendar"></span>';
+            return 'Date: ' + dates[0] + ' to ' + dates[1] + ' <span class="fa fa-calendar"></span>';
         }
-        return 'Date Range: ' + dates[1] + ' <span class="fa fa-calendar"></span>';
+        return 'Date: ' + dates[1] + ' <span class="fa fa-calendar"></span>';
     });
 
     self.renderChildren = ko.computed(function(){
@@ -104,6 +104,7 @@ var StatisticsViewModel = function() {
 
     self.currentPiwikParams = ko.computed(function() {
         return {
+            nodeId: ctx.node.id,
             dataType: self.dataType(),
             method: self.method(),
             period: self.period(),
@@ -142,7 +143,6 @@ var StatisticsViewModel = function() {
             endPicker.setEndRange(endPicker.getMoment().toDate());
 
             self.date(startPicker.toString() + ',' + endPicker.toString());
-
         }
 
     });
@@ -152,8 +152,6 @@ var StatisticsViewModel = function() {
         self.node(self.guidStatsItemize(nodeData['node']));
         self.children(self.guidStatsItemize(nodeData['children']));
         self.files(self.guidStatsItemize(fileData['files']));
-
-
 
     };
 
@@ -183,13 +181,17 @@ var StatisticsViewModel = function() {
     self.getData = function() {
 
         return $.when(
-            $.get('http://localhost:7000/'+ ctx.node.id +'/nodeData', self.currentPiwikParams()),
-            $.get('http://localhost:7000/fileData', self.currentPiwikParams())
-        ).then(function(nodeData, fileData) {
-                self.formatStatistics(nodeData[0], fileData[0]);
+            $.get('http://localhost:7000/statistics', self.currentPiwikParams())
+        ).then(function(projectData) {
+                self.formatStatistics(projectData['node_data'], projectData['files_data']);
             },
             function(){
-                console.log(arguments)
+                /* Catch all until Tornadik specific error handlers implemented */
+                $osf.growl('Error', 'An error has occurred in retrieving project statistics.');
+                self.dates = [];
+                self.node([]);
+                self.children([]);
+                self.files([]);
             });
     };
 
@@ -298,7 +300,7 @@ var StatisticsViewModel = function() {
     };
 
     self.incrementChildrenLimit = function() {
-        self.childrenRenderLimit(self.childrenRenderLimit() + 5);
+        self.childrenRenderLimit(self.childrenRenderLimit() + 1);
     };
 
     self.incrementFilesLimit = function() {
@@ -319,7 +321,7 @@ var StatisticsViewModel = function() {
         self.updateStats();
     });
 
-    //Load initial statistics: Visits
+    /* Load initial statistics: Visits */
     self.init = function() {
         $('#date').on('change', function() {
             $('#endPickerField').toggleClass('hidden');
@@ -348,6 +350,11 @@ function Statistics(selector) {
                 self.viewModel.redrawSparkLines();
             }, 100, true));
 
+    }, function() {
+        $osf.applyBindings(self.viewModel, selector);
+        $('.panel-body').each(function(){
+            $(this).html('<h4 class="text-center text-danger">Error retrieving data</h4>')
+        })
     });
 
 }

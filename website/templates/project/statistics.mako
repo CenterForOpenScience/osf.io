@@ -35,10 +35,8 @@
             </div>
         </div>
         <div class="row form-inline">
-            <div class="col-sm-3">
+            <div class="col-sm-12">
                 <input type="text" class="form-control" id="startPickerField" placeholder="Select a date">
-            </div>
-            <div class="col-sm-3">
                 <input type="text" class="form-control hidden" id="endPickerField" placeholder="Select end date">
             </div>
         </div>
@@ -59,7 +57,7 @@
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Public components for ${node['title']} </h3>
+                    <h3 class="panel-title">Public Components of ${node['title']} </h3>
                 </div>
                 <div class="panel-body">
                     <!-- ko if: children().length -->
@@ -90,7 +88,7 @@
         <div class="col-md-6">
             <div class="panel panel-default">
                 <div class="panel-heading clearfix">
-                    <h3 class="panel-title">Files for ${node['title']}</h3>
+                    <h3 class="panel-title">Files of ${node['title']}</h3>
                 </div>
                 <div class="panel-body">
                     <!-- ko if: files().length -->
