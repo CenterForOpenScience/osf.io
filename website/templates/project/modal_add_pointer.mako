@@ -19,8 +19,18 @@
                         </div>
                     </div>
                     <div>
-                        <button class="btn btn-default" data-bind="click:searchAllProjects">Search all projects</button>
-                        <button class="btn btn-default" data-bind="click:searchMyProjects">Search my projects</button>
+                      <button class="btn btn-default"
+                          data-bind="click:searchAllProjects,
+                          text: searchAllProjectsSubmitText(),
+                          attr: {disabled: loadingResults()}">
+                          Search all projects
+                      </button>
+                      <button class="btn btn-default"
+                        data-bind="
+                        click: searchMyProjects,
+                        text: searchMyProjectsSubmitText(),
+                        attr: {disabled: loadingResults()}">
+                        Search my projects</button>
                     </div>
                 </form>
 
