@@ -113,6 +113,8 @@ class DbTestCase(unittest.TestCase):
         settings.PIWIK_HOST = None
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = False
+        cls._original_enable_project_mailing = settings.ENABLE_PROJECT_MAILING
+        settings.ENABLE_PROJECT_MAILING = False
 
         cls._original_bcrypt_log_rounds = settings.BCRYPT_LOG_ROUNDS
         settings.BCRYPT_LOG_ROUNDS = 1
@@ -138,6 +140,7 @@ class DbTestCase(unittest.TestCase):
         settings.DB_NAME = cls._original_db_name
         settings.PIWIK_HOST = cls._original_piwik_host
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = cls._original_enable_email_subscriptions
+        settings.ENABLE_PROJECT_MAILING = cls._original_enable_project_mailing
         settings.BCRYPT_LOG_ROUNDS = cls._original_bcrypt_log_rounds
 
 
@@ -203,20 +206,6 @@ class UploadTestCase(unittest.TestCase):
         settings.UPLOADS_PATH = cls._old_uploads_path
 
 
-class MockEmailDiscussionsCase(unittest.TestCase):
-    """
-    """
-    @classmethod
-    def setUpClass(cls):
-        super(MockEmailDiscussionsCase, cls).setUpClass()
-        settings.ENABLE_PROJECT_MAILING = False
-
-    @classmethod
-    def tearDownClass(cls):
-        super(MockEmailDiscussionsCase, cls).tearDownClass()
-        settings.ENABLE_PROJECT_MAILING = True
-
-
 methods = [
     httpretty.GET,
     httpretty.PUT,
@@ -254,8 +243,7 @@ class MockRequestTestCase(unittest.TestCase):
         httpretty.disable()
 
 
-class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase,
-                  MockEmailDiscussionsCase):
+class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
@@ -263,8 +251,7 @@ class OsfTestCase(DbTestCase, AppTestCase, UploadTestCase, MockRequestTestCase,
     pass
 
 
-class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase,
-                  MockEmailDiscussionsCase):
+class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCase):
     """Base `TestCase` for tests that require both scratch databases and the OSF
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.

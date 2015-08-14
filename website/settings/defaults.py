@@ -102,8 +102,9 @@ MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is
 ENABLE_EMAIL_SUBSCRIPTIONS = True
 MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
-# TODO: Override in local.py
+# Mailgun
 MAILGUN_API_KEY = None
+ENABLE_PROJECT_MAILING = True
 
 # TODO: Override in local.py in production
 UPLOADS_PATH = os.path.join(BASE_PATH, 'uploads')
