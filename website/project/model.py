@@ -604,8 +604,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
 
+    # Project Mailing
     mailing_enabled = fields.BooleanField(default=False, index=True)
+    # Used for cron update job
     mailing_updated = fields.BooleanField(default=False, index=True)
+    # list of users who have unsubscribed from mailing on this node
     mailing_unsubs = fields.ForeignField('user', list=True)
 
     wiki_pages_current = fields.DictionaryField()
@@ -1072,6 +1075,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if existing_dashboards.count() > 0:
                 raise NodeStateError("Only one dashboard allowed per user.")
 
+        # Set mailing attributes before save
         if first_save and not (getattr(self, 'parent', True) or self.is_registration):
             self.mailing_enabled = True
             self.mailing_updated = True
@@ -1085,6 +1089,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         saved_fields = super(Node, self).save(*args, **kwargs)
 
+        # Make actual mailing changes after save to ensure node id
         if self.mailing_enabled:
             if first_save:
                 mailing_list.celery_create_list(title=self.title, **self.mailing_params)
@@ -1588,11 +1593,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.can_edit(auth):
             raise PermissionsError('{0!r} does not have permission to modify this {1}'.format(auth.user, self.category or 'node'))
 
-        if self.mailing_enabled:
-            self.mailing_enabled = False
-            self.mailing_updated = True
-            mailing_list.celery_delete_list(self._id)
-
         #if this is a folder, remove all the folders that this is pointing at.
         if self.is_folder:
             for pointed in self.nodes_pointer:
@@ -1631,6 +1631,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 log_date=log_date,
                 save=True,
             )
+
+        if self.mailing_enabled:
+            self.mailing_enabled = False
+            self.mailing_updated = True
+            mailing_list.celery_delete_list(self._id)
 
         self.is_deleted = True
         self.deleted_date = date
@@ -2338,6 +2343,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.mailing_enabled:
                 self.mailing_updated = True
 
+            # Unsubscribe non-active users until they become active
             if not contrib_to_add.is_active:
                 self.mailing_unsubs.append(contrib_to_add)
 

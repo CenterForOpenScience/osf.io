@@ -58,11 +58,6 @@ class TestNewNodeMailingEnabled(OsfTestCase):
 
 class TestListCreation(OsfTestCase):
 
-    @classmethod
-    def setUpClass(cls):
-        super(TestListCreation, cls).setUpClass()
-        settings.ENABLE_PROJECT_MAILING = True
-
     @mock.patch('website.project.model.mailing_list.celery_create_list')
     def test_node_with_mailing_enabled_creates_discussions(self, mock_create_list):
         node = NodeFactory(mailing_enabled=True)
@@ -222,7 +217,7 @@ class TestDiscussionsOnUserActions(OsfTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, parent=None)
 
-    @mock.patch('website.profile.views.mailing_list.celery_update_email')
+    @mock.patch('website.profile.views.celery_update_email')
     def test_change_email(self, mock_update_email):
         new_email = 'new@newmail.new'
         self.user.emails.append(new_email)
@@ -240,7 +235,7 @@ class TestDiscussionsOnUserActions(OsfTestCase):
 
         mock_update_email.assert_called_with(self.project._id, self.user.email, new_email)
 
-    @mock.patch('website.profile.views.mailing_list.celery_update_email')
+    @mock.patch('website.profile.views.celery_update_email')
     def test_change_email_on_project_without_mailing_enabled(self, mock_update_email):
         self.project.mailing_enabled = False
         self.project.save()

@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
+
 """Create mailing lists for all top-level projects
 """
 
 import sys
 import logging
-
-from website.models import Node
-from website.app import init_app
-from website.project.mailing_list import create_list
-from website import settings
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -38,3 +35,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

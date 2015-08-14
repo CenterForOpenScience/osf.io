@@ -84,25 +84,24 @@ def resubscribe_on_confirm(user):
 
 
 def find_email(long_email):
-    email = re.search(r'<\S*>$', long_email).group(0)[1:-1]
-    return email
+    # allow for both "{email}" syntax and "{name} <{email}>" syntax
+    if ' ' in long_email:
+        email = re.search(r'<\S*>$', long_email).group(0)[1:-1]
+        return email
+    else:
+        return long_email
 
 
 def route_message(**kwargs):
+    """ Recieves messages sent through Mailgun, validates them, and warns the
+    user if they are not valid"""
     message = request.form
-    target = message['To']
-    if ' ' in target:
-        target = find_email(target)
+    target = find_email(message['To'])
     node_id = re.search(r'[a-z0-9]*@', target).group(0)[:-1]
-    sender_email = message['From']
-    # allow for both "{email}" syntax and "{name} <{email}>" syntax
-    if ' ' in sender_email:
-        sender_email = find_email(sender_email)
-
-    sender = get_user(email=sender_email)
-    if sender:
-        sender = sender if sender.is_active else None
     node = Node.load(node_id)
+
+    sender_email = find_email(message['From'])
+    sender = get_user(email=sender_email)
 
     user_is_admin = 'admin' in node.get_permissions(sender)\
         if sender and node else False

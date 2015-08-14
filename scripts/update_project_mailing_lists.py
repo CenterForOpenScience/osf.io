@@ -25,7 +25,7 @@ def update_node(node, dry_run=True):
     # reload the node to ensure that it is current
     node.reload()
 
-    # Reset mailing_updated now in case of another user update during this automated one
+    # Reset mailing_updated now in case of a user-change during this update
     node.mailing_updated = False
     if not dry_run:
         node.save()
