@@ -131,8 +131,8 @@ function ViewModel(url, nodeIsPublic) {
             'private_link_id': data.id
         };
         bootbox.confirm({
-            title: 'Remove view only link?',
-            message: 'Are you sure to remove this view only link?',
+            title: 'Remove view-only link?',
+            message: 'Are you sure you want to remove this view-only link?',
             callback: function(result) {
                 if(result) {
                     $.ajax({
