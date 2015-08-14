@@ -437,7 +437,7 @@ class TestNodeDetail(ApiTestCase):
 
     def test_node_has_pointers_link(self):
         res = self.app.get(self.public_url)
-        url = res.json['data']['relationships']['pointers']['links']['related']['href']
+        url = res.json['data']['relationships']['node_links']['links']['related']['href']
         expected_url = self.public_url + 'node_links/'
         assert_equal(urlparse(url).path, expected_url)
 
