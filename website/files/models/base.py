@@ -509,7 +509,7 @@ class FileVersion(StoredObject):
     #     'worker_url': '127.0.0.1',
     #     'worker_host': 'upload-service-1',
     # }
-    location = fields.DictionaryField(validate=utils.validate_location)
+    location = fields.DictionaryField(default=None, validate=utils.validate_location)
 
     # Dictionary containing raw metadata from upload service response
     # {

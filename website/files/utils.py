@@ -66,6 +66,8 @@ class _GenWrapper(object):
 
 
 def validate_location(value):
+    if value is None:
+        return  # Allow for None locations but not broken dicts
     from website.addons.osfstorage import settings
     for key in ('service', settings.WATERBUTLER_RESOURCE, 'object'):
         if key not in value:
