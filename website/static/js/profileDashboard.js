@@ -20,12 +20,12 @@ var ctx = window.contextVars;
  * @return {object} JSON elastic search aggregation
  */
 profileDashboard.contributorsAgg = function(){
-    var agg = {'contributors': utils.termsFilter('field', 'contributors.url')};
+    var agg = {'contributors': utils.termsFilter('field', 'contributors.url', undefined, undefined, 11)}; //11 because one contributor is the user
     return agg;
 };
 
 /**
- * Setups elastic aggregations to get type of node.
+ * Setups elastic aggregations to get type of node. //NOT USED CURRENTLY
  *
  * @return {object} JSON elastic search aggregation
  */
@@ -46,6 +46,12 @@ profileDashboard.projectsByTimesAgg = function() {
     return agg;
 };
 
+/**
+ * Parses the returned contributors information, it gets the conversion between guids and names if not present already
+ *
+ * @return {object} Parsed data for c3 objects
+ */
+
 profileDashboard.contributorsParser = function(rawData, levelNames, vm, widget){ //TODO to avoid all this dam hassle, user url and name should be concatenated as a searchable field in collaboarators...
     var urls = [];
     rawData.aggregations[levelNames[0]].buckets.forEach( //first find urls returned
@@ -54,7 +60,7 @@ profileDashboard.contributorsParser = function(rawData, levelNames, vm, widget){
         }
     );
     var guidToNamesMap = widgetUtils.getGuidsToNamesMap(urls, widget, vm);
-    if (!guidToNamesMap) {return; }
+    if (!guidToNamesMap) {return; } //return ti mithril and wait for this information if we dont have it
 
     var chartData = {};
     chartData.name = levelNames[0];
@@ -85,7 +91,7 @@ profileDashboard.contributorsParser = function(rawData, levelNames, vm, widget){
     } else {
         chartData.title = 'No Results';
     }
-    $('.c3-chart-arcs-title').text(chartData.title); //dynamically update chart title //TODO update when c3 issue #1058 resolved (dynamic update of title)
+    $('.c3-chart-arcs-title').text(chartData.title); //dynamically update chart title //TODO update (remove) when c3 issue #1058 resolved (dynamic update of title)
     return chartData;
 
 };
@@ -107,19 +113,20 @@ profileDashboard.view = function(ctrl) {
  * @return {m.component.controller} returns itself
  */
 profileDashboard.controller = function(params) {
-    var contributorLevelNames = ['contributors','contributorsName']
+    var contributorLevelNames = ['contributors','contributorsName'];
     var contributors = {
         id: contributorLevelNames[0],
-        title: ctx.name + '\'s contributors',
+        title: ctx.name + '\'s top 10 contributors',
         size: ['.col-md-6', 300],
         row: 1,
         levelNames: contributorLevelNames,
-        aggregation: profileDashboard.contributorsAgg(),
+        aggregation: {mainRequest: profileDashboard.contributorsAgg()},
         display: {
             dataReady : m.prop(true),
             displayWidget: charts.donutChart,
             parser: profileDashboard.contributorsParser,
             callback: { onclick : function (key) {
+                //bound information (this) from chart contains vm and widget
                 var vm = this.vm;
                 var widget = this.widget;
                 var name = key;
@@ -134,7 +141,8 @@ profileDashboard.controller = function(params) {
                 widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
             }}
         },
-        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'activeFilters'] //TODO give simple 'all' option
+        thisWidgetRequiresRequests: ['mainRequest', 'nameRequest'],
+        thisWidgetUpdates: ['all'] //TODO give simple 'all' option
     };
 
     var projectLevelNames = ['projectsByTimes', 'projectsOverTime'];
@@ -175,8 +183,9 @@ profileDashboard.controller = function(params) {
                 }
             }
         },
-        aggregation: profileDashboard.projectsByTimesAgg(),
-        thisWidgetUpdates: ['contributors', 'results', 'projectsByTimes', 'activeFilters']
+        aggregation: {mainRequest: profileDashboard.projectsByTimesAgg()},
+        thisWidgetRequiresRequests: ['mainRequest'],
+        thisWidgetUpdates: ['all']
     };
 
         //var nodeType = {
@@ -202,10 +211,12 @@ profileDashboard.controller = function(params) {
         row: 2,
         display: {
             dataReady : m.prop(true),
-            displayWidget: filterAndSearchWidget.display
+            displayWidget: filterAndSearchWidget.display,
+            callback: null //callbacks included in displayWidget
         },
         aggregation: null, //this displays no stats, so needs no aggregations
-        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'activeFilters']
+        thisWidgetRequiresRequests: ['mainRequest', 'nameRequest'],
+        thisWidgetUpdates: ['all']
     };
 
     var results = {
@@ -215,20 +226,26 @@ profileDashboard.controller = function(params) {
         row: 3,
         display: {
             dataReady : m.prop(true),
-            displayWidget: ResultsWidget.display
+            displayWidget: ResultsWidget.display,
+            callback: null //callbacks included in displayWidget
         },
         aggregation: null, //this displays no stats, so needs no aggregations
-        thisWidgetUpdates: ['contributors', 'projectsByTimes', 'results', 'activeFilters']
+        thisWidgetRequiresRequests: ['mainRequest'], //the names of elastic queries that this widget needs before data is ready
+        thisWidgetUpdates: ['all']
+    };
+
+    var mainRequest = {
+            elasticURL: '/api/v1/search/',
+            requiredFilters: ['match:contributors.url:' + ctx.userId + '=lock'],
+            optionalFilters: ['match:_type:project=lock', 'match:_type:component=lock'],
     };
 
     this.searchSetup = {
-        elasticURL: '/api/v1/search/',
+        requests: [mainRequest],
         user: ctx.userId,
-        tempData: {guidsToNames : {}}, //collaborators require a second level of query to get URL to names mappings
+        tempData: {guidsToNames : {}}, //collaborators require a second level of query to get URL to names mappings //TODO @bdyetton, this should no be exposed... remove from here
         widgets : [contributors, projectsByTimes, results, activeFilters],
-        rows: 3, //number of rows to draw
-        requiredFilters: ['match:contributors.url:' + ctx.userId + '=lock'],
-        optionalFilters: ['match:_type:project=lock', 'match:_type:component=lock']
+        rows: 3 //total number of rows to draw
     };
 };
 

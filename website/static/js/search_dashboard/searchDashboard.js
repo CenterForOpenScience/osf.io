@@ -50,43 +50,35 @@ searchDashboard.controller = function (params) {
     //search model state
     self.vm = searchDashboard.vm;
     self.vm.tempData = params.tempData;
-    self.vm.elasticURL = params.elasticURL;
-    self.vm.pageTitle = params.pageTitle;
-    self.vm.query =  params.query || m.prop('*');
-    self.vm.optionalFilters = params.optionalFilters || [];
-    self.vm.requiredFilters = params.requiredFilters || [];
-    self.vm.aggregations = [];
     self.vm.widgetsToUpdate = [];
     self.vm.widgetIds = [];
-    self.vm.requestFlags = {};
     if (self.widgets){
         self.widgets.forEach(function(widget){
-            self.vm.aggregations.push(widget.aggregation);
             self.vm.widgetIds.push(widget.id);
         });
     }
-    self.vm.chartHandles = [];
-    self.vm.rowHeights = {};
-    self.vm.loadStats = true;
+    //Build requests
+    self.vm.requests = {};
+    if (self.requests){
+        self.requests.forEach(function(req){
+            var aggregations = [];
+            self.widgets.forEach(function(widget){
+                if (widget.aggregation[req.id]){
+                    aggregations.push(widget.aggregation[req.id]);
+                }
+            });
+            var item = {};
+            item[req.id] = widgetUtils.buildRequest(req.id, req, aggregations);
+            self.vm.requests = $.extend(self.vm.requests, item);
+        });
+    }
+    self.vm.chartHandles = []; //TODO think about moving this...
     self.vm.results = null; //unused, only for backwards compatibility with utils TODO remove
-    self.vm.data = null;
-    self.vm.dataLoaded = m.prop(false);
-
-    self.vm.sort = m.prop($osf.urlParams().sort || 'Relevance');
-    self.vm.resultsLoading = m.prop(false);
-    self.vm.rawNormedLoaded = m.prop(false);
-    self.vm.sortMap = {
-        Date: 'providerUpdatedDateTime', //TODO should come in from profile
-        Relevance: null
-    };
-
-    utils.search(self.vm); //initial search to init charts, redraw called inside utils, and will update widgets...
 
     History.Adapter.bind(window, 'statechange', function(e) {
         var historyChanged = utils.updateHistory(self.vm);
         if (historyChanged){ widgetUtils.signalWidgetsToUpdate(self.vm, self.vm.widgetIds);}
     });
 };
-
 
 module.exports = searchDashboard;

@@ -35,20 +35,23 @@ widgetUtils.updateTriggered = function(widgetName, vm){
 /**
  * Adds the widget to the list of widgets that need to be updated (will actually update at next redraw)
  *
- * @param {object} vm: searchDashboard vm containing a list of widgets that need to be updated (vm.widgetsToUpdate)
- * @param {string} widgetsToAdd: list of widgets that need to be added to the list of widgets to update
- * @return {bool}  returns itself
+ * @param {Object} vm: searchDashboard vm containing a list of widgets that need to be updated (vm.widgetsToUpdate)
+ * @param {Array} widgetsToAdd: list of widgets that need to be added to the list of widgets to update
+ * @return {Bool}  returns itself
  */
 widgetUtils.signalWidgetsToUpdate = function(vm, widgetsToAdd){
+    if ($.inArray('all', widgetsToAdd) > -1){
+        vm.widgetsToUpdate = widgetUtils.concatUnique(vm.widgetsToUpdate, vm.widgetIds);
+    }
     vm.widgetsToUpdate = widgetUtils.concatUnique(vm.widgetsToUpdate, widgetsToAdd);
 };
 
 /**
  * Concatenates too arrays and removes non-unique values
  *
- * @param {array} array1: array to add to
- * @param {array} array2: array to add
- * @return {bool}  concatenation of the unique values of the two arrays
+ * @param {Array} array1: array to add to
+ * @param {Array} array2: array to add
+ * @return {Bool}  concatenation of the unique values of the two arrays
  */
 widgetUtils.concatUnique = function(array1, array2){
      var temp = array1.concat(array2);
@@ -62,7 +65,7 @@ widgetUtils.concatUnique = function(array1, array2){
  * @param {array} guids: an array of guid's to request user information from
  * @return {bool}  map of guids to name
  */
-widgetUtils.mapGuidsToName = function(guids){
+widgetUtils.nameRequest = function(guids){
     var guidFilters = [];
     var newGuidMaps = {};
     $.map(guids, function(guid){
@@ -141,6 +144,7 @@ widgetUtils.getKeyFromValue = function(object,value){
  *
  * @param {Array} guids: a list of guids to return name mapping for
  * @param {Object} widget: widget to flag readiness for //TODO remove need for widget, with request flags in vm
+ * @param {Object} vm: widget to flag readiness for
  * @return {Object}  an object which whose keys are guids and values are full names
  */
 widgetUtils.getGuidsToNamesMap = function(guids, widget, vm) {
@@ -152,7 +156,7 @@ widgetUtils.getGuidsToNamesMap = function(guids, widget, vm) {
             return false;
         }
         vm.requestFlags.nameRequest = true; //flag that we are requesting data
-        widgetUtils.mapGuidsToName(missingKeys).then(
+        widgetUtils.nameRequest(missingKeys).then(
             function (newGuids) {
                 vm.requestFlags.nameRequest = false; //flag that this request has finished
                 $.extend(vm.tempData.guidsToNames, newGuids);
@@ -164,6 +168,33 @@ widgetUtils.getGuidsToNamesMap = function(guids, widget, vm) {
         return false;
     }
     return vm.tempData.guidsToNames;
+};
+
+
+widgetUtils.missingRequests(vm, widget){
+    
+    widget.thisWidgetRequiresRequests.forEach(function(reqRequest){
+        if reqRequest in
+    });
+}
+
+/**
+//TODO
+ */
+widgetUtils.buildRequest = function(id, request, aggs){
+    var req =  {
+        id : id,
+        elasticURL: request.elasticURL,
+        query: request.query || m.prop('*'),
+        optionalFilters : request.optionalFilters || [],
+        requiredFilters : request.requiredFilters || [],
+        aggregations : aggs || [],
+        data: null,
+        complete: false,
+        sort: m.prop(request.sort || 'Relevance')
+    };
+    utils.search(req);
+    return req;
 };
 
 module.exports = widgetUtils;

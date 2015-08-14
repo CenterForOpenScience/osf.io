@@ -26,8 +26,8 @@ function rgbToHex(rgb) {
 }
 
 /**
- * Wraps and returns a c3 chart in a component
- * Only creates new component when an update to this widget has been requested
+ * Wraps and returns a c3 chart in a component, or updates already created chart
+ * Only updates when an update to this widget has been requested
  *
  * @param {Object} c3ChartSetup: A fully setup c3 chart object
  * @param {Object} vm: vm of the searchDashboard
@@ -42,13 +42,10 @@ charts.c3Update = function(c3ChartSetup, vm, divID) {
                             return vm.chartHandles[divID];
                         }
                         if (!widgetUtils.updateTriggered(divID,vm)) {return; }
-                        //var newCols = charts.getChangedColumns(vm.chartHandles[divID].columns,c3ChartSetup.data.columns);
-                        vm.chartHandles[divID].load({ //TODO unload only what is needed...
+                        vm.chartHandles[divID].load({
                             columns: c3ChartSetup.data.columns,
-                            unload: true//vm.chartHandles[divID].columns
+                            unload: true
                         });
-
-                        return;
                     }
             });
 };
@@ -106,7 +103,7 @@ charts.donutChart = function (rawData, vm, widget) {
  * @param {Object} rawData: Data to populate chart after parsing raw data
  * @param {Object} vm: vm of the searchDashboard
  * @param {Object} widget: params of the widget that chart is being created for
- * @return {m.component object} c3 chart wrapped in component
+ * @return {Object} c3 chart wrapped in component
  */
 charts.barChart = function (rawData, vm, widget) {
     var data = widget.display.parser(rawData, widget.levelNames, vm, widget);
@@ -159,24 +156,44 @@ charts.barChart = function (rawData, vm, widget) {
     return charts.c3Update(chartSetup,vm, widget.levelNames[0]);
 };
 
+charts.getZoomFromTimeRangeFilter = function(vm, bounds){
+    var zoom = null;
+    vm.requiredFilters.some(function(filterString) {
+        var filterParts = filterString.split('='); //remove lock qualifier if it exists
+        if (filterParts[1] !== undefined) {return; } //there is a lock, so do nothing with this filter
+
+        var parts = filterParts[0].split(':');
+        var type = parts[0];
+        if (type === 'range') { //TODO this assumes all range filters work on dates, better would be to check if field matches the 'date_created'
+            zoom = [parts[2], parts[3]]; //also this will be the last range filter that is returned...
+        }
+    });
+    return zoom;
+};
+
+
+
 /**
  * Creates a c3 timeseries chart component after parsing raw data
  *
  * @param {Object} rawData: Data to populate chart
  * @param {Object} vm: vm of the searchDashboard
  * @param {Object} widget: params of the widget that chart is being created for
- * @return {m.component object}  c3 chart wrapped in component
+ * @return {Object}  c3 chart wrapped in component
  */
 charts.timeseriesChart = function (rawData, vm, widget) {
     var data = widget.display.parser(rawData, widget.levelNames, vm, widget);
     data.type = widget.display.type ? widget.display.type : 'area-spline';
+    var bounds = [data.columns[0][1], data.columns[0][data.columns[0].length-1]]; //get bounds of chart
+    var zoom = charts.getZoomFromTimeRangeFilter(vm, bounds);
+    if (!zoom && vm.chartHandles[widget.id]) {vm.chartHandles[widget.id].unzoom(); }
     var chartSetup = {
         bindto: '#' + widget.levelNames[0],
         size: {
             height: widget.size[1]
         },
         data: data,
-        //TODO @bdyetton fix the aggregation that the subchart pulls from so it always has the global range results
+        //TODO @bdyetton Subchart should always show the global range (and all projects)
         subchart: {
             show: true,
             size: {
@@ -184,7 +201,8 @@ charts.timeseriesChart = function (rawData, vm, widget) {
             },
             onbrush: widget.display.callback.onbrushOfSubgraph ? widget.display.callback.onbrushOfSubgraph.bind({
                 vm: vm,
-                widget: widget
+                widget: widget,
+                bounds: bounds,
             }) : undefined
         },
         axis: {
@@ -193,6 +211,7 @@ charts.timeseriesChart = function (rawData, vm, widget) {
                     text: widget.display.xLabel ? widget.display.xLabel : '',
                     position: 'outer-center'
                 },
+                extent: zoom,
                 type: 'timeseries',
                 tick: {
                     format: function (d) {return widgetUtils.timeSinceEpochInMsToMMYY(d); }

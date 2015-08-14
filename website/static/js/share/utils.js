@@ -316,12 +316,13 @@ utils.termFilter = function (field, value) {
     return ret;
 };
 
-utils.termsFilter = function (field, value, minDocCount, exclustions) {
+utils.termsFilter = function (field, value, minDocCount, exclustions, numTermsReturned) {
     minDocCount = minDocCount || 0;
+    numTermsReturned = numTermsReturned || 0;
     exclustions = ('|'+ exclustions) || '';
     var ret = {'terms': {}};
     ret.terms[field] = value;
-    ret.terms.size = 0;
+    ret.terms.size = numTermsReturned;
     ret.terms.exclude = 'of|and|or' + exclustions;
     ret.terms.min_doc_count = minDocCount;
     return ret;
