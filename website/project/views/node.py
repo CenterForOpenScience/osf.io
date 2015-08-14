@@ -28,6 +28,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
+from website.tokens import process_token
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError
@@ -362,6 +363,12 @@ def configure_comments(node, **kwargs):
 @must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
 def view_project(auth, node, **kwargs):
+
+    # Handle tokens
+    encoded_token = request.args.get('token')
+    if encoded_token:
+        process_token(encoded_token, **kwargs)
+
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES

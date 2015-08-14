@@ -283,3 +283,5 @@ MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
 
 ENABLE_ARCHIVER = True
+
+JWT_SECRET = 'changeme'
