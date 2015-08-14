@@ -650,14 +650,14 @@ class TestNodeDelete(ApiTestCase):
         self.component = NodeFactory(parent=self.public_project, creator=self.user)
         res = self.app.delete_json(self.public_url, auth=self.user.auth, expect_errors=True)
         self.public_project.reload()
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 400)
         assert_equal(self.public_project.is_deleted, False)
 
     def test_fails_to_delete_private_project_node_with_child(self):
         self.component = NodeFactory(parent=self.project, creator=self.user)
         res = self.app.delete_json(self.private_url, auth=self.user.auth, expect_errors=True)
         self.project.reload()
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 400)
         assert_equal(self.project.is_deleted, False)
 
     def test_deletes_public_node_succeeds_as_owner(self):
