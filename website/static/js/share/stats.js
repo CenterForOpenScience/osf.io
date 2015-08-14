@@ -76,7 +76,7 @@ function timeGraph(data, vm) {
                     position: 'outer-center'
                 },
                 tick: {
-                    format: function (d) {return Stats.timeSinceEpochInMsToMMYY(d); }
+                    format: function (d) {return Stats.timeSinceEpochInMsToDDMMYY(d); }
                 }
             },
             y: {
@@ -127,7 +127,7 @@ Stats.sourcesByDatesAgg = function () {
 };
 
 /* Helper function for dealing with epoch times returned by elasticsearch */
-Stats.timeSinceEpochInMsToMMYY = function (timeSinceEpochInMs) {
+Stats.timeSinceEpochInMsToDDMMYY = function (timeSinceEpochInMs) {
     var d = new Date(timeSinceEpochInMs);
     return (d.getDate()+1).toString() + '/' + (d.getMonth()+1).toString() +
         '/' + d.getFullYear().toString().substring(2); 
