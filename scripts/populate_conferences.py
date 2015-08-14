@@ -325,6 +325,15 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'ESIP2015': {
+        'name': 'ESIP2015',
+        'info_url': 'http://esipfed.org/',
+        'logo_url': 'http://s30.postimg.org/m2uz2g4pt/ESIP.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+
 }
 
 
