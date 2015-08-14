@@ -351,25 +351,33 @@ class OsfStorageFileNode(StoredObject):
                 return
         raise errors.VersionNotFoundError
 
-    def delete(self, recurse=True):
+    def delete(self, recurse=True, skip_check=False):
+        if skip_check or self.check_delete():
+            trashed = OsfStorageTrashedFileNode()
+            trashed.renter = None
+            trashed._id = self._id
+            trashed.name = self.name
+            trashed.kind = self.kind
+            trashed.parent = self.parent
+            trashed.versions = self.versions
+            trashed.node_settings = self.node_settings
+
+            trashed.save()
+
+            if self.is_folder and recurse:
+                for child in self.children:
+                    child.delete(skip_check=True)
+
+            self.__class__.remove_one(self)
+            return True
+        return False
+
+    def check_delete(self):
         if self.renter is not None:
             return False
-        trashed = OsfStorageTrashedFileNode()
-        trashed.renter = None
-        trashed._id = self._id
-        trashed.name = self.name
-        trashed.kind = self.kind
-        trashed.parent = self.parent
-        trashed.versions = self.versions
-        trashed.node_settings = self.node_settings
-
-        trashed.save()
-
-        if self.is_folder and recurse:
+        if self.is_folder:
             for child in self.children:
-                child.delete()
-
-        self.__class__.remove_one(self)
+                return child.check_delete()
         return True
 
     def serialized(self, include_full=False):
@@ -393,6 +401,8 @@ class OsfStorageFileNode(StoredObject):
         return utils.copy_files(self, destination_parent.node_settings, destination_parent, name=name)
 
     def move_under(self, destination_parent, name=None):
+        if self.renter is not None:
+            return False
         self.name = name or self.name
         self.parent = destination_parent
         self._update_node_settings(save=True)
