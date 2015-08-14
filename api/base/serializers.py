@@ -36,6 +36,7 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
         kwargs['read_only'] = True
         kwargs['source'] = '*'
         self.meta = kwargs.pop('meta', None)
+        self.link_type = kwargs.pop('link_type', 'url')
         super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
 
     def get_url(self, obj, view_name, request, format):
@@ -70,7 +71,7 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
                 for key in self.meta:
                     meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
                 self.meta = meta
-            return [self.get_url(value, self.view_name, request, format), self.meta]
+            return {'url': self.get_url(value, self.view_name, request, format), 'meta': self.meta, 'link_type': self.link_type}
         except NoReverseMatch:
             msg = (
                 'Could not resolve URL for hyperlinked relationship using '
