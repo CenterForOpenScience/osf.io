@@ -2,7 +2,7 @@ import requests
 
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError, ParseError
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
@@ -12,6 +12,7 @@ from api.base.utils import get_object_or_404, waterbutler_url_for
 from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 from website.exceptions import NodeStateError
+from framework.exceptions import PermissionsError
 
 
 class NodeMixin(object):
@@ -114,7 +115,10 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         try:
             node.remove_node(auth=auth)
         except NodeStateError:
+            raise ParseError(detail="Any child components must be deleted prior to deleting this project.")
+        except PermissionsError:
             raise PermissionDenied()
+
         node.save()
 
 
