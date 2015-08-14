@@ -7,31 +7,26 @@ import sys
 import logging
 import requests
 
+from website.app import init_app
+from website.util import api_url_for
+from website.settings import MAILGUN_API_KEY, SHORT_DOMAIN, DOMAIN
+
 logger = logging.getLogger(__name__)
 
-def migrate_node(node, dry=False):
 
-    for user in node.contributors:
-        if not user.is_active:
-            logger.info('Unsubscribing user {} on node {} since it is not active'.format(user, node))
-            node.mailing_unsubs.append(user)
-
-    if not node.parent_node:
-        logger.info('Creating mailing list for node {}'.format(node))
-        node.mailing_enabled = True
-        if not dry:
-            create_list(title=node.title, **node.mailing_params)
-
-    if not dry:
-        node.save()
-
-
+# Warning: This script is not in a ready state.
 def main():
-    init_app(routes=False)
+    init_app()
     dry = 'dry' in sys.argv
-    for node in Node.find():
-        migrate_node(node, dry)
-        logger.info('Finished migrating node {0}'.format(node._id))
+    if not dry:
+        requests.post(
+            "https://api.mailgun.net/v3/routes",
+            auth=("api", MAILGUN_API_KEY),
+            data={"priority": 0,
+                  "description": "Project Mailing Route",
+                  "expression": "match_recipient('.*@{}')".format(SHORT_DOMAIN),
+                  "action": ["forward('{}api/v1/discussions/messages/')".format(DOMAIN), "stop()"]})
+    logger.info('Finished creating route')
 
 if __name__ == '__main__':
     main()
