@@ -535,6 +535,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'is_deleted',
         'wiki_pages_current',
         'is_retracted',
+        'node_license',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -665,14 +666,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def license(self):
-        return self.node_license or {}
+        node_license = self.node_license
+        if node_license.get('id') == 'OTHER':
+            node_license['url'] = self.license_file_url
+        return node_license
 
     @property
     def license_file_url(self):
-        if self.node_license.get('id') == 'OTHER':
-            return self.url + 'osfstorage/files/license.txt'
-        else:
-            return None
+        return self.url + 'osfstorage/files/license.txt'
 
     @property
     def category_display(self):

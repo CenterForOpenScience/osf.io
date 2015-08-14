@@ -50,7 +50,7 @@
                                     <span class="tag tag-med tag-container"
                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
                                         <span class="cloud-text">
-                                            {{name}}
+                                            {{oname}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag med"
                                            data-bind="click: $root.clickTag.bind($parentContext, name, 'remove')"></i>
@@ -71,6 +71,23 @@
                         </div>
                         <br />
                         <!-- /ko -->
+                        <div data-bind="if: showLicenses" class="row">
+                            <div class="col-md-12">
+                                <h4> Filter by License:</h4>
+                                <span data-bind="if: licenses">
+                                <ul class="nav nav-pills nav-stacked"
+                                    data-bind="foreach: {data: licenses, as: 'license'}">
+                                  <li data-bind="css: {'active': license.active(), 'disabled': !license.count()}">
+                                    <a data-bind="click: license.toggleActive">
+                                      {{license.name}}
+                                      <span data-bind="text: license.count" class="badge pull-right"></span>
+                                    </a>
+                                  </li>                                 
+                                </ul>
+                                </span>
+                            </div>
+                        </div>
+                        <br />
                     </div>
                     <!-- /ko -->
                     <div class="col-md-9">

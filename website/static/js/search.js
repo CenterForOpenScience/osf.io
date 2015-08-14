@@ -5,6 +5,7 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 require('bootstrap.growl');
 var History = require('exports?History!history');
+var licenses = require('list-of-licenses');
 
 var $osf = require('js/osfHelpers');
 // Enable knockout punches
@@ -34,6 +35,17 @@ var Tag = function(tagInfo){
     var self = this;
     self.name = tagInfo.key;
     self.count = tagInfo.doc_count;
+};
+
+var License = function(name, count) {
+
+    this.name = name;
+    this.count = ko.observable(count);
+    
+    this.active = ko.observable(false);
+};
+License.prototype.toggleActive = function() {
+    this.active(!this.active());
 };
 
 var User = function(result){
@@ -79,6 +91,29 @@ var ViewModel = function(params) {
     self.showClose = false;
     self.searchCSS = ko.observable('active');
     self.onSearchPage = true;
+
+    self.licenses = ko.observableArray(
+        $.map(licenses, function(license) {
+            var l = new License(license.name, 0);
+            l.active.subscribe(function() {
+                self.search();
+            });
+            return l;
+        })
+    );
+    self.licenseNames = ko.computed(function() {
+        return $.map(self.licenses() || {}, function(count, name) {
+            return name;
+        });
+    });
+    self.selectedLicenses = ko.pureComputed(function() {
+        return self.licenses().filter(function(license) {
+            return license.active();
+        });
+    });
+    self.showLicenses = ko.computed(function() {
+        return ['project', 'registration', 'component'].indexOf(self.category().name) >= 0;
+    });
 
     // Maintain compatibility with hiding search bar elsewhere on the site
     self.toggleSearch = function() {
@@ -147,14 +182,30 @@ var ViewModel = function(params) {
         };
     });
 
+    self.filters = function(){
+        var licenses = self.selectedLicenses();
+        if (licenses.length) {
+            return  {
+                terms: {
+                    'license.name': licenses
+                }
+            };
+        }
+        return null;
+    };
 
-    self.fullQuery = ko.pureComputed(function() {
-        return {
-            'filtered': {
-                'query': self.queryObject()
+    self.fullQuery = function(filters) {
+        var query = {
+            filtered: {
+                query: self.queryObject()
             }
         };
-    });
+        if (filters) {
+            query.filtered.filter = filters;
+        }
+
+        return query;
+    };
 
     self.sortCategories = function(a, b) {
         if(a.name === 'Total') {
@@ -229,7 +280,11 @@ var ViewModel = function(params) {
         query = query.replace(/\s?AND tags:/g, ' AND tags:');
         self.query(query);
 
-        var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
+        var jsonData = {
+            query: self.fullQuery(self.filters()),
+            from: self.currentIndex(), 
+            size: self.resultsPerPage()
+        };
         var url = self.queryUrl + self.category().url();
 
         $osf.postJSON(url, jsonData).success(function(data) {
@@ -240,6 +295,16 @@ var ViewModel = function(params) {
             self.results.removeAll();
             self.categories.removeAll();
             self.shareCategory('');
+
+            if ((data.aggs || {}).licenses)  {
+                var licenseCounts = self.licenses();
+                $.each(data.aggs.licenses, function(key, value) {
+                    licenseCounts.filter(function(l) {
+                        return l.name === key;
+                    })[0].count(value);
+                });
+                self.licenses(licenseCounts);
+            }            
 
             data.results.forEach(function(result){
                 if(result.category === 'user'){

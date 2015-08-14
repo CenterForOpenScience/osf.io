@@ -1,6 +1,7 @@
 var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
+var licenses = require('list-of-licenses');
 
 var $osf = require('js/osfHelpers');
 
@@ -27,9 +28,9 @@ var unpack = function(obj, path) {
 var template = require('raw!templates/license-picker.html');
 
 var defaultLicense = {
-    id: 'DEFAULT',
-    name: 'Default License',
-    text: 'TODO'
+    id: 'NONE',
+    name: 'None',
+    text: 'Copyright [year] [fullname]'
 };
 var otherLicense = {
     id: 'OTHER',
@@ -62,11 +63,12 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
 
     self.saveUrl = saveUrl || '';
     self.saveMethod = saveMethod || 'POST';
+    self.saveLicenseKey = saveLicenseKey || 'license';
 
     self.editing = ko.observable(false);
     self.previewing = ko.observable(false);
 
-    self.licenses = $.map(require('list-of-licenses'), function(value, key) {
+    self.licenses = $.map(licenses, function(value, key) {
         value.id = key;
         return value;
     });

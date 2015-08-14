@@ -86,22 +86,28 @@ def requires_search(func):
 
 
 @requires_search
-def get_counts(count_query, clean=True):
-    count_query['aggregations'] = {
+def get_aggregations(query, clean=True):
+    query['aggregations'] = {
         'counts': {
             'terms': {
                 'field': '_type',
             }
+        },
+        'licenses': {
+            'terms': {
+                'field': 'license.name'
+            }
         }
     }
 
-    res = es.search(index=INDEX, doc_type=None, search_type='count', body=count_query)
-
-    counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
-
-    counts['total'] = sum([val for val in counts.values()])
-    return counts
-
+    res = es.search(index=INDEX, doc_type=None, search_type='count', body=query)
+    return {
+        doc_type: {
+            item['key']: item['doc_count']
+            for item in agg['buckets']
+        }
+        for doc_type, agg in res['aggregations'].iteritems()
+    }
 
 @requires_search
 def get_tags(query, index):
@@ -133,17 +139,24 @@ def search(query, index=None, doc_type='_all'):
     """
     index = index or INDEX
     tag_query = copy.deepcopy(query)
-    count_query = copy.deepcopy(query)
+    aggs_query = copy.deepcopy(query)
 
     for key in ['from', 'size', 'sort']:
         try:
             del tag_query[key]
-            del count_query[key]
+            del aggs_query[key]
         except KeyError:
             pass
 
     tags = get_tags(tag_query, index)
-    counts = get_counts(count_query, index)
+    aggregations = get_aggregations(aggs_query, index)
+    counts = {
+        key: value
+        for key, value in aggregations['counts'].iteritems()
+        if key in ALIASES.keys()
+    }
+    counts['total'] = sum([val for val in counts.values()])
+    del aggregations['counts']
 
     # Run the real query and get the results
     raw_results = es.search(index=index, doc_type=doc_type, body=query)
@@ -152,6 +165,7 @@ def search(query, index=None, doc_type='_all'):
     return_value = {
         'results': format_results(results),
         'counts': counts,
+        'aggs': aggregations,
         'tags': tags,
         'typeAliases': ALIASES
     }
@@ -191,7 +205,8 @@ def format_result(result, parent_id=None):
         'category': result.get('category'),
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
-        'n_wikis': len(result['wikis'])
+        'n_wikis': len(result['wikis']),
+        'license': result.get('license'),
     }
 
     return formatted_result
@@ -279,6 +294,7 @@ def update_node(node, index=None):
             'wikis': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
+            'license': node.license,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
 
@@ -387,9 +403,19 @@ def create_index(index=None):
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 
-    es.indices.create(index, ignore=[400])
+    es.indices.create(index, ignore=[400])  # HTTP 400 if index already exists
     for type_ in document_types:
-        mapping = {'properties': {'tags': NOT_ANALYZED_PROPERTY}}
+        mapping = {
+            'properties': {
+                'tags': NOT_ANALYZED_PROPERTY,
+                'license': {
+                    'properties': {
+                        'name': NOT_ANALYZED_PROPERTY,
+                        'text': NOT_ANALYZED_PROPERTY
+                    }
+                }
+            }
+        }
         if type_ in project_like_types:
             analyzers = {field: ENGLISH_ANALYZER_PROPERTY
                          for field in analyzed_fields}
@@ -416,7 +442,6 @@ def create_index(index=None):
             }
             mapping['properties'].update(fields)
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
-
 
 @requires_search
 def delete_doc(elastic_document_id, node, index=None, category=None):
