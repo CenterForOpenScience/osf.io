@@ -53,7 +53,7 @@ $(document).ready(function() {
             window.contextVars.node.urls.update,
             disableCategory
         );
-        ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
+        $osf.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
     }
 
     $('#deleteNode').on('click', function() {
