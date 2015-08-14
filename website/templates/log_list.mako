@@ -29,7 +29,7 @@
                 </p>
                 <span data-bind="if: loading()">
                     <div class="spinner-loading-wrapper">
-		                <div class="logo-spin logo-lg "><img src="/static/img/logo_spin.png" alt="loader"> </div>
+		                <div class="logo-spin logo-xl"></div>
 	                	<p class="m-t-sm text-center"> Loading logs...  </p>
 	                </div>
                 </span>
