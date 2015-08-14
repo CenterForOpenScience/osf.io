@@ -1,6 +1,7 @@
 from nose.tools import *  # noqa
 from modularodm import Q
 from website.files import models
+from website.files import exceptions
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
@@ -76,6 +77,32 @@ class TestStoredFileNode(FilesTestCase):
         assert_equal(self.sfn.get_guid(), guid)
 
 class TestFileNodeObj(FilesTestCase):
+
+    def test_create(self):
+        with assert_raises(AssertionError):
+            TestFileNode.create()
+
+        with assert_raises(AssertionError):
+            models.File.create()
+
+        working = TestFile.create(name='myname')
+        assert_equals(working.is_file, True)
+        assert_equals(working.name, 'myname')
+        assert_equals(working.provider, 'test')
+
+    def test_get_or_create(self):
+        created = TestFile.get_or_create(self.node, 'Path')
+        created.name = 'kerp'
+        created.materialized_path = 'crazypath'
+        created.save()
+        found = TestFile.get_or_create(self.node, '/Path')
+
+        assert_equals(found.name, 'kerp')
+        assert_equals(found.materialized_path, 'crazypath')
+
+    def test_kind(self):
+        assert_equals(TestFile().kind, 'file')
+        assert_equals(TestFolder().kind, 'folder')
 
     def test_filter_build(self):
         qs = TestFile._filter(Q('test', 'eq', 'test'))
@@ -226,7 +253,21 @@ class TestFileNodeObj(FilesTestCase):
         pass
 
     def test_attr_passthrough(self):
-        pass
+        stored = models.StoredFileNode(
+            path='afile',
+            name='name',
+            is_file=True,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        )
+        stored.test = 'Foo'
+        stored.bar = ['wat']
+        wrapped = stored.wrapped()
+        wrapped.bar.append('wat')
+
+        assert_equal(stored.bar, wrapped.bar)
+        assert_equal(stored.test, wrapped.test)
 
     def test_repr(self):
         child = models.StoredFileNode(
@@ -244,7 +285,27 @@ class TestFileNodeObj(FilesTestCase):
 class TestFileObj(FilesTestCase):
 
     def test_get_version(self):
-        pass
+        v1 = models.FileVersion(identifier='1')
+        v2 = models.FileVersion(identifier='2')
+        v1.save()
+        v2.save()
+
+        file = models.StoredFileNode(
+            path='afile',
+            name='name',
+            is_file=True,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        ).wrapped()
+
+        file.versions.extend([v1, v2])
+
+        assert_equals(file.get_version('1'), v1)
+        assert_equals(file.get_version('2', required=True), v2)
+
+        with assert_raises(exceptions.VersionNotFoundError):
+            file.get_version('3', required=True)
 
     def test_update_version_metadata(self):
         pass
@@ -302,7 +363,6 @@ class TestFolderObj(FilesTestCase):
         assert_equal(len(list(self.parent.children)), 2)
 
     def test_delete(self):
-
         pass
 
     def test_append_file(self):
