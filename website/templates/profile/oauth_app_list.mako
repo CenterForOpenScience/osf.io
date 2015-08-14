@@ -9,7 +9,7 @@
     </div>
 
     <div class="col-sm-9 col-md-7">
-        <div class="row">
+        <div class="row m-b-sm">
             <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-primary pull-right"><i class="fa fa-plus"></i> Register new</a>
         </div>
 

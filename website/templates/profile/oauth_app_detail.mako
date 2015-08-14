@@ -14,11 +14,6 @@
 
 <h2 class="page-header">Application Detail</h2>
 
-<div class="row">
-    <div class="col-sm-12">
-        <div class="breadcrumb">&lt; <a href="${web_url_for('oauth_application_list')}">Return to list of registered applications</a></div>
-    </div>
-</div>
 
 <div id="applicationDetailPage" class="row">
     <div class="col-sm-3 affix-parent">
@@ -26,6 +21,13 @@
     </div>
 
     <div class="col-sm-9 col-md-7">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="breadcrumb">&lt; <a href="${web_url_for('oauth_application_list')}">Return to list of registered applications</a></div>
+            </div>
+        </div>
+
+
         <div id="appDetail" data-bind="with: appData()">
             <div id="app-keys" class="border-box text-right text-muted"
                  data-bind="visible: !$root.isCreateView()">
