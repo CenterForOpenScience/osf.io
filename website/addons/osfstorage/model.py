@@ -373,12 +373,13 @@ class OsfStorageFileNode(StoredObject):
         return False
 
     def check_delete(self):
+        can_delete = True
         if self.renter is not None:
             return False
         if self.is_folder:
             for child in self.children:
-                return child.check_delete()
-        return True
+                can_delete = child.check_delete()
+        return can_delete
 
     def serialized(self, include_full=False):
         """Build Treebeard JSON for folder or file.
