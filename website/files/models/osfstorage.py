@@ -90,7 +90,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return self.versions[version]
         except IndexError:
             if required:
-                raise exceptions.VersionNotFound(version)
+                raise exceptions.VersionNotFoundError(version)
             return None
 
 

@@ -2,5 +2,5 @@ class FileException(Exception):
     pass
 
 
-class VersionNotFound(FileException):
+class VersionNotFoundError(FileException):
     pass

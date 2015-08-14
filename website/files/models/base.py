@@ -139,6 +139,10 @@ class FileNode(object):
         """
         path = '/' + path.lstrip('/')
         try:
+            # Note: Possible race condition here
+            # Currently create then find is not super feasable as create would require a
+            # call to save which we choose not to call to avoid filling  the database
+            # with notfound/googlebot files/url. Raising 404 errors may roll back the transaction however
             return cls.find_one(
                 Q('node', 'eq', node) &
                 Q('path', 'eq', path)
@@ -254,6 +258,7 @@ class FileNode(object):
         """
         self.stored_object.save()
 
+    @property
     def kind(self):
         """Whether this FileNode is a file or folder as a string.
         Used for serialization and backwards compatability
@@ -375,7 +380,7 @@ class File(FileNode):
             if version.location == location:
                 version.update_metadata(metadata)
                 return
-        raise exceptions.VersionNotFound
+        raise exceptions.VersionNotFoundError(location)
 
     def generate_download_url(self, **kwargs):
         return util.waterbutler_url_for(
