@@ -137,7 +137,7 @@ def _render_conference_node(node, idx):
 
         download_url = node.web_url_for(
             'addon_view_or_download_file',
-            path=record.path,
+            path=record.path.strip('/'),
             provider='osfstorage',
             action='download',
             _absolute=True,
