@@ -330,7 +330,7 @@ def must_have_permission(permission):
     # Return decorator
     return wrapper
 
-def must_have_permission_or_public_wiki(func):
+def must_have_write_permission_or_public_wiki(func):
     """ Checks if user has write permission or wiki is public and publicly editable. """
     @functools.wraps(func)
     def wrapped(*args, **kwargs):

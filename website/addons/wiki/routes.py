@@ -122,15 +122,15 @@ api_routes = {
 
         # Edit Permissions | PUT
         Rule([
-            '/project/<pid>/wiki/permissions/<permissions>/',
-            '/project/<pid>/node/<nid>/wiki/permissions/<permissions>/',
+            '/project/<pid>/wiki/permissions/',
+            '/project/<pid>/node/<nid>/wiki/permissions/',
         ], 'put', views.edit_wiki_permissions, json_renderer),
 
         #Permissions Info for Settings Page | GET
         Rule(
             [
-                '/project/<pid>/wiki/permissions/',
-                '/project/<pid>/node/<nid>/wiki/permissions/'
+                '/project/<pid>/wiki/settings/',
+                '/project/<pid>/node/<nid>/wiki/settings/'
             ],
             'get',
             views.get_node_wiki_permissions,

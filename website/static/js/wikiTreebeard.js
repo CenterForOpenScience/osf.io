@@ -61,8 +61,8 @@ function before_change_permissions(item, permission){
     if(permission === 'public'){
         bootbox.confirm({
             title: 'Make publicly editable',
-            message: 'Are you sure you want to make the wiki of ' + title +
-                ' publicly editable? This will allow any logged in user to edit the content of this wiki. ' +
+            message: 'Are you sure you want to make the wiki of <b>' +title+
+                '</b> publicly editable? This will allow any logged in user to edit the content of this wiki. ' +
                 '<b>Note</b>: Users without write access will not be able to add, delete, or rename pages.',
             callback: function(confirm) {
             if (confirm) {
@@ -83,20 +83,20 @@ function change_permissions(item, permission) {
     var id = item.parent().data.node.id;
 
     $osf.putJSON(
-        build_path(item, permission), {}
+        build_path(item), {'permission': permission}
     ).done(function(){
         item.notify.update('Settings updated', 'notify-success', 1, 2000);
-        item.data.event.permission = permission;
+        item.data.select.permission = permission;
     }).fail(function() {
         item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
     });
 }
 
 // Helper to build path
-function build_path(item, permission) {
+function build_path(item) {
     var id = item.parent().data.node.id;
     var permissions_change_path = '/api/v1/project/'+ id +
-        '/wiki/permissions/' + permission + '/';
+        '/wiki/permissions/';
     return permissions_change_path;
 }
 
@@ -152,7 +152,7 @@ function ProjectWiki(data) {
                             return m('div[style="padding-left:5px"]',
                                         [m ('p', [
                                                 m('b', item.data.node.title + ': '),
-                                                m('span[class="text-warning"]', ' No configured projects.')]
+                                                m('span[class="text-warning"]', ' No configured projects')]
                                         )]
                             );
                         }
@@ -214,8 +214,8 @@ function ProjectWiki(data) {
                                     before_change_permissions(item, ev.target.value);
                                 }},
                                 [
-                                    m('option', {value: 'private', selected : item.data.event.permission === 'public' ? 'selected': ''}, 'Contributors (with write access)'),
-                                    m('option', {value: 'public', selected : item.data.event.permission === 'public' ? 'selected': '' }, 'All OSF users')
+                                    m('option', {value: 'private', selected : item.data.select.permission === 'public' ? 'selected': ''}, 'Contributors (with write access)'),
+                                    m('option', {value: 'public', selected : item.data.select.permission === 'public' ? 'selected': '' }, 'All OSF users')
                             ])
                         ]);
                     }

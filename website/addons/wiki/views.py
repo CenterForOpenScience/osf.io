@@ -22,7 +22,7 @@ from website.project.decorators import (
     must_have_addon, must_not_be_registration,
     must_be_valid_project,
     must_have_permission,
-    must_have_permission_or_public_wiki,
+    must_have_write_permission_or_public_wiki,
 )
 
 from website.exceptions import NodeStateError
@@ -113,7 +113,7 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
         'delete': node.api_url_for('project_wiki_delete', wname=name),
         'rename': node.api_url_for('project_wiki_rename', wname=name),
         'content': node.api_url_for('wiki_page_content', wname=name),
-        'set_permissions': node.api_url_for('edit_wiki_permissions', permissions='public'),
+        'set_permissions': node.api_url_for('edit_wiki_permissions'),
         'grid': node.api_url_for('project_wiki_grid_data', wname=name)
     }
     if additional_urls:
@@ -167,7 +167,7 @@ def wiki_widget(**kwargs):
 
 
 @must_be_valid_project
-@must_have_permission_or_public_wiki
+@must_have_write_permission_or_public_wiki
 @must_have_addon('wiki', 'node')
 def wiki_page_draft(wname, **kwargs):
     node = kwargs['node'] or kwargs['project']
@@ -222,7 +222,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
     wiki_key = to_mongo_key(wiki_name)
     wiki_page = node.get_wiki_page(wiki_name)
     wiki_settings = node.get_addon('wiki')
-    can_edit_body = (
+    can_edit = (
         auth.logged_in
         and not node.is_registration
         and (
@@ -279,7 +279,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         content = ''
         use_python_render = False
 
-    if can_edit_body:
+    if can_edit:
         if wiki_key not in node.wiki_private_uuids:
             wiki_utils.generate_private_uuid(node, wiki_name)
         sharejs_uuid = wiki_utils.get_sharejs_uuid(node, wiki_name)
@@ -305,7 +305,6 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
         'is_current': is_current,
         'version_settings': version_settings,
         'pages_current': _get_wiki_pages_current(node),
-        'has_permission_or_publicly_editable': can_edit_body,
         'category': node.category,
         'panels_used': panels_used,
         'num_columns': num_columns,
@@ -323,7 +322,7 @@ def project_wiki_view(auth, wname, path=None, **kwargs):
 
 
 @must_be_valid_project  # injects node or project
-@must_have_permission_or_public_wiki  # injects user
+@must_have_write_permission_or_public_wiki  # injects user
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit_post(auth, wname, **kwargs):
@@ -354,24 +353,32 @@ def project_wiki_edit_post(auth, wname, **kwargs):
 @must_have_permission('admin')
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def edit_wiki_permissions(node, auth, permissions, **kwargs):
+def edit_wiki_permissions(node, auth, **kwargs):
     wiki_settings = node.get_addon('wiki')
+    permissions = request.get_json().get('permission', None)
 
-    if not (permissions and wiki_settings):
-        raise HTTPError(http.BAD_REQUEST)
+    if not wiki_settings:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long='Cannot change wiki settings without a wiki'
+        ))
 
     if permissions == 'public':
         permissions = True
     elif permissions == 'private':
         permissions = False
     else:
-        raise HTTPError(http.BAD_REQUEST)
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short='Invalid request',
+            message_long='Permissions flag used is incorrect.'
+        ))
 
     try:
         wiki_settings.set_editing(permissions, auth, True)
-    except NodeStateError:
+    except NodeStateError as e:
         raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short="Can't change privacy."
+            message_short="Can't change privacy",
+            message_long=e.message
         ))
 
     return {
@@ -404,7 +411,7 @@ def project_wiki_id_page(auth, wid, **kwargs):
 
 
 @must_be_valid_project
-@must_have_permission_or_public_wiki
+@must_have_write_permission_or_public_wiki
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
 def project_wiki_edit(wname, **kwargs):

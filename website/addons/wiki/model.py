@@ -50,12 +50,15 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
         """
         node = self.owner
 
-        if permissions and node.is_public and not self.is_publicly_editable:
-            self.is_publicly_editable = True
+        if permissions and not self.is_publicly_editable:
+            if node.is_public:
+                self.is_publicly_editable = True
+            else:
+                raise NodeStateError('Private components cannot be made publicly editable.')
         elif not permissions and self.is_publicly_editable:
             self.is_publicly_editable = False
         else:
-            raise NodeStateError
+            raise NodeStateError('Desired permission change is the same as current setting.')
 
         if log:
             node.add_log(
@@ -91,9 +94,9 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
         """
         if permissions == 'private':
             if self.is_publicly_editable:
-                self.set_editing(False)
+                self.set_editing(False, log=False)
                 return (
-                    'The wiki of {name} is no longer publicly editable.'.format(
+                    'The wiki of {name} is now only editable by write contributors.'.format(
                         name=node.title,
                     )
                 )

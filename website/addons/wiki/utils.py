@@ -170,7 +170,6 @@ def serialize_wiki_settings(user, node_ids):
         assert node, '{} is not a valid Node.'.format(node_id)
 
         can_read = node.has_permission(user, 'read')
-        admin = node.has_permission(user, 'admin')
         include_wiki_settings = node.include_wiki_settings(user)
 
         if not include_wiki_settings:
@@ -180,7 +179,7 @@ def serialize_wiki_settings(user, node_ids):
 
         if node.admin_public_wiki(user):
             children.append({
-                'event': {
+                'select': {
                     'title': "permission",
                     'permission':
                         'public'
@@ -201,7 +200,7 @@ def serialize_wiki_settings(user, node_ids):
         item = {
             'node': {
                 'id': node_id,
-                'url': node.url if admin else '',
+                'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
             },
             'children': children,

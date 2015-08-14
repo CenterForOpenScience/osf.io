@@ -481,7 +481,7 @@ class TestViewHelpers(OsfTestCase):
         assert_equal(urls['delete'], self.project.api_url_for('project_wiki_delete', wname=self.wname))
         assert_equal(urls['rename'], self.project.api_url_for('project_wiki_rename', wname=self.wname))
         assert_equal(urls['content'], self.project.api_url_for('wiki_page_content', wname=self.wname))
-        assert_equal(urls['set_permissions'], self.project.api_url_for('edit_wiki_permissions', permissions='public'))
+        assert_equal(urls['set_permissions'], self.project.api_url_for('edit_wiki_permissions'))
 
 
 class TestWikiDelete(OsfTestCase):
@@ -1158,7 +1158,7 @@ class TestPublicWiki(OsfTestCase):
         assert_equal(node.logs[-1].action, 'made_wiki_public')
         # Try to set public when the wiki is already public
         with assert_raises(NodeStateError):
-            wiki.set_editing(True, self.consolidate_auth)
+            wiki.set_editing(True, self.consolidate_auth, False)
         # Turn off public editing
         wiki.set_editing(False, self.consolidate_auth, True)
         assert_false(wiki.is_publicly_editable)
@@ -1169,11 +1169,11 @@ class TestPublicWiki(OsfTestCase):
 
         # Try to set to private wiki already private
         with assert_raises(NodeStateError):
-            wiki.set_editing(False, self.consolidate_auth)
+            wiki.set_editing(False, self.consolidate_auth, False)
 
         # Try to set public when the project is private
         with assert_raises(NodeStateError):
-            wiki.set_editing(True, self.consolidate_auth)
+            wiki.set_editing(True, self.consolidate_auth, False)
 
     def test_serialize_wiki_settings(self):
         node = NodeFactory(parent=self.project, creator=self.user, is_public=True)
@@ -1188,7 +1188,7 @@ class TestPublicWiki(OsfTestCase):
             },
             'children': [
                 {
-                    'event': {
+                    'select': {
                         'title': 'permission',
                         'permission': 'public'
                     },

@@ -111,7 +111,7 @@
               </div>
           </div>
 
-          % if has_permission_or_publicly_editable:
+          % if user['can_edit_wiki_body']:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
@@ -347,8 +347,8 @@
 ${parent.javascript_bottom()}
 <script>
 
-    var canEditBody = ${json.dumps(has_permission_or_publicly_editable)};
-    var isContributor = ${json.dumps(user['can_edit'])};
+    var canEditBody = ${user['can_edit_wiki_body'] | sjson, n};
+    var isContributor = ${user['can_edit']  | sjson, n};
 
     var canEditPageName = isContributor && ${json.dumps(
         wiki_id and wiki_name != 'home'

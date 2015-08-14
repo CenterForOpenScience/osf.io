@@ -35,12 +35,12 @@ if ($('#grid').length) {
 
 //Initialize treebeard grid for wiki
 var ProjectWiki = require('js/wikiTreebeard.js');
-var wikiPermissionsURL = ctx.node.urls.api  + 'wiki/permissions/';
+var wikiSettingsURL = ctx.node.urls.api  + 'wiki/settings/';
 var $wikiMsg = $('#configureWikiMessage');
 
 if ($('#wgrid').length) {
     $.ajax({
-        url: wikiPermissionsURL,
+        url: wikiSettingsURL,
         type: 'GET',
         dataType: 'json'
     }).done(function(response) {
@@ -49,7 +49,7 @@ if ($('#wgrid').length) {
         $wikiMsg.addClass('text-danger');
         $wikiMsg.text('Could not retrieve wiki settings.');
         Raven.captureMessage('Could not GET wiki settings.', {
-            url: wikiPermissionsURL, status: status, error: error
+            url: wikiSettingsURL, status: status, error: error
         });
     });
 }
