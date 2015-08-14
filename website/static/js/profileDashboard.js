@@ -164,22 +164,27 @@ profileDashboard.controller = function(params) {
                 onbrushOfSubgraph : function(zoomWin){
                     var vm = this.vm;
                     var widget = this.widget;
+                    var bounds = this.bounds;
                     clearTimeout(vm.tempData.projectByTimeTimeout); //stop constant redraws
                     vm.tempData.projectByTimeTimeout = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
                         function(){
-                            utils.removeFilter(vm,vm.tempData.projectByTimeTimeFilter, true);
+                            if ((zoomWin[0] <= bounds[0]) && (zoomWin[1] >= bounds[1])){
+                                widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                                utils.removeFilter(vm, vm.tempData.projectByTimeTimeFilter, false);
+                            }
+                            utils.removeFilter(vm, vm.tempData.projectByTimeTimeFilter, true);
                             vm.tempData.projectByTimeTimeFilter = 'range:date_created:' + zoomWin[0].getTime() + ':' + zoomWin[1].getTime();
                             widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
-                            utils.updateFilter(vm,vm.tempData.projectByTimeTimeFilter,true);
+                            utils.updateFilter(vm, vm.tempData.projectByTimeTimeFilter,true);
                         },1000);
                 },
                 onclickOfLegend : function(item){
                     var vm = this.vm;
                     var widget = this.widget;
-                    utils.removeFilter(vm,vm.tempData.projectByTimeProjectFilter, true);
+                    utils.removeFilter(vm, vm.tempData.projectByTimeProjectFilter, true);
                     vm.tempData.projectByTimeProjectFilter = 'match:_type:' + item;
                     widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
-                    utils.updateFilter(vm,vm.tempData.projectByTimeProjectFilter,true);
+                    utils.updateFilter(vm, vm.tempData.projectByTimeProjectFilter,true);
                 }
             }
         },
