@@ -989,7 +989,7 @@ function showLegend() {
     });
     var repr = function (item) {
         return [
-            m('span', {
+            m('span[style="width:18px"]', {
                 className: item.icon
             }),
             '  ',
