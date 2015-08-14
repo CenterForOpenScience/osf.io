@@ -25,9 +25,12 @@
                 </div>
             </div>
         </div>
-        <div class="col-md" data-bind="if: showPreview">
+        <div class="col-md hidden-sm hidden-xs" data-bind="if: showPreview">
             <br />
             <pre data-bind="text: selectedLicenseText" ></pre>
+        </div>
+        <div class="col-md visible-sm visible-xs" data-bind="if: showPreview">
+            <a class="btn btn-default" data-bind="attr.href: selectedLicenseUrl" target="_blank">View Source</a>
         </div>
     </div>
   </div>

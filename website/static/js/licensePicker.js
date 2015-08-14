@@ -84,6 +84,9 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
     self.selectedLicenseText = ko.pureComputed(function() {
         return self.selectedLicense().text;
     });
+    self.selectedLicenseUrl = ko.pureComputed(function() {
+        return self.selectedLicense().url;
+    });
     /** 
      * Needed to track selected/saved license in the list of licenses
      **/     
