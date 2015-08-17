@@ -8,8 +8,7 @@ from flask import request
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound, ValidationValueError
 
-from framework import status
-from framework.exceptions import HTTPError, PermissionsError
+from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 
 from framework.status import push_status_message
@@ -20,15 +19,11 @@ from framework.auth.decorators import must_be_signed
 from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
 from website import settings
-from website.exceptions import (
-    InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
-    NodeStateError
-)
+from website.exceptions import NodeStateError
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
-    must_be_contributor, must_have_permission,
+    must_have_permission,
     must_not_be_registration, must_be_registration,
-    must_be_public_registration, must_not_be_rejected
 )
 from website.identifiers.model import Identifier
 from website.identifiers.metadata import datacite_metadata_for_node
