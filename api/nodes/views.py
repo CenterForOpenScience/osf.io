@@ -9,7 +9,7 @@ from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
+from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
@@ -167,7 +167,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListAPIView, NodeMixin):
+class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -193,39 +193,44 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
         children = [node for node in nodes if node.can_view(auth) and node.primary]
         return children
 
+    # overrides ListCreateAPIView
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(creator=user, parent=self.get_node())
 
-class NodePointersList(generics.ListCreateAPIView, NodeMixin):
-    """Pointers to other nodes.
 
-    Pointers are essentially aliases or symlinks: All they do is point to another node.
+class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
+    """Node Links to other nodes.
+
+    Node Links are essentially aliases or symlinks: All they do is point to another node.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
     )
 
-    serializer_class = NodePointersSerializer
+    serializer_class = NodeLinksSerializer
 
     def get_queryset(self):
         pointers = self.get_node().nodes_pointer
         return pointers
 
 
-class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
-    """Detail of a pointer to another node.
+class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
+    """Detail of a Node Link to another node.
 
-    Pointers are essentially aliases or symlinks: All they do is point to another node.
+    Node Links are essentially aliases or symlinks: All they do is point to another node.
     """
     permission_classes = (
         ContributorOrPublicForPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
-    serializer_class = NodePointersSerializer
+    serializer_class = NodeLinksSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):
-        pointer_lookup_url_kwarg = 'pointer_id'
+        pointer_lookup_url_kwarg = 'node_link_id'
         pointer = get_object_or_404(Pointer, self.kwargs[pointer_lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, pointer)
