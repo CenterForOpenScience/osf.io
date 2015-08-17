@@ -41,9 +41,9 @@
                 <div id="auth-grant">
                     <h3>Ask the user to grant authorization</h3>
                     <p>
-                        In order to request authorization, send a GET request with parameters added to the authorization URL
-                        <code>https://accounts.osf.io/oauth2/authorize</code> as specified in the table below.
-                        Insecure requests will be refused; be sure to use HTTPS.
+                        Redirect the user to the authorization URL
+                        <code>https://accounts.osf.io/oauth2/authorize</code>, as a GET request with the parameters
+                        specified in the table below. Insecure requests will be refused; be sure to use HTTPS.
                     </p>
 
                     <table class="table">
@@ -56,7 +56,7 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td>client id</td>
+                                <td>client_id</td>
                                 ## TODO: Add link (need to be in same branch as reg UI for weburlfor to work)
                                 <td>The client ID obtained when <a href="">registering</a> the application</td>
                                 <td>
@@ -103,7 +103,7 @@
                 <div id="access-token">
                     <h3>Exchanging authorization grant for tokens</h3>
                     <p>Send a POST request to the token grant URL <code>https://accounts.osf.io/oauth2/token</code>
-                        with the parameter values described below.</p>
+                        with the parameter values described below. Insecure requests will be refused; be sure to use HTTPS.</p>
                     <table class="table">
                         <thead>
                             <tr>
@@ -121,7 +121,7 @@
                                     expire 10 seconds after being issued.</td>
                             </tr>
                             <tr>
-                                <td>client id</td>
+                                <td>client_id</td>
                                 ## TODO: Add link (need to be in same branch as reg UI for weburlfor to work)
                                 <td>The client ID obtained when <a href="">registering</a> the application</td>
                                 <td>
@@ -130,7 +130,7 @@
                                 </td>
                             </tr>
                             <tr>
-                                <td>client secret</td>
+                                <td>client_secret</td>
                                 ## TODO: Add link (need to be in same branch as reg UI for weburlfor to work)
                                 <td>The client secret obtained when <a href="">registering</a> the application</td>
                                 <td>
@@ -168,7 +168,9 @@
                 <div id="refresh-token">
                     <h3>Refreshing expired tokens</h3>
                     <p>The access (bearer) token will expire after 1 hour (3600 seconds), after which time the refresh
-                        token must be used to acquire a new access token. </p>
+                        token must be used to acquire a new access token. Send a POST request to the token grant
+                        URL <code>https://accounts.osf.io/oauth2/token</code> with the parameter values described below.
+                        Insecure requests will be refused; be sure to use HTTPS.</p>
                     <table class="table">
                         <thead>
                             <tr>
@@ -179,12 +181,53 @@
                         </thead>
                         <tbody>
                             <tr>
-                                <td></td>
-                                <td></td>
-                                <td></td>
+                                <td>refresh_token</td>
+                                <td>The refresh token received when an access token was first issued.</td>
+                                <td>The refresh token that was issued when the user first authorized access. This token
+                                    never expires, and can be exchanged for new access tokens as needed.</td>
+                            </tr>
+                            <tr>
+                                <td>client_id</td>
+                                ## TODO: Add link (need to be in same branch as reg UI for weburlfor to work)
+                                <td>The client ID obtained when <a href="">registering</a> the application</td>
+                                <td>
+                                    Each application requesting access to the OSF on behalf of a user must register for a unique Client ID.
+                                    The value here must exactly match the client ID given in the application detail page for the registered Developer App.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>client_secret</td>
+                                ## TODO: Add link (need to be in same branch as reg UI for weburlfor to work)
+                                <td>The client secret obtained when <a href="">registering</a> the application</td>
+                                <td>
+                                    Each application requesting access to the OSF on behalf of a user must register in advance.
+                                    The value of client secret should remain secret (known only to the application owner),
+                                    and must exactly match the client secret given in the application detail page for the registered Developer App.
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>redirect_uri</td>
+                                ## TODO: Add link
+                                <td>The callback URL provided when <a href="">registering</a> the application.</td>
+                                <td>Where to redirect the user in order to respond after an authorization request.
+                                    Must exactly match the callback URL provided when registering the application.</td>
+                            </tr>
+                            <tr>
+                                <td>grant_type</td>
+                                <td><code>refresh_token</code></td>
+                                <td>Specify a value of <code>refresh_token</code>.</td>
                             </tr>
                         </tbody>
                     </table>
+
+                    <p>A successful request will yield a response such as the one shown below.</p>
+<pre>
+{
+    "token_type":"bearer",
+    "expires_in":3597,
+    "access_token":"ST-11-EiHKg0IqWvvC1MN0O50A-accounts.osf.io"
+}
+</pre>
                 </div>
             </div>
             <div id="webapp-flow" class="anchor row">
@@ -195,12 +238,22 @@
                 <a href="https://tools.ietf.org/html/rfc6749#section-1.3.1">RFC 6749</a>, the specification document for OAuth 2.0.</p>
 
                 <ol>
-                    <li>Request an authorization grant from the user</li>
-                    <li>Exchange the authorization grant for an access token</li>
-                    <li>Use the access token to make a request</li>
-                    <li>Use the refresh token when old access tokens have expired</li>
+                    <li>Request an authorization grant from the user: the user is directed to the authorization grant
+                        URL with parameters identifying the application and type of access desired. If the user approves
+                        access, the browser is redirected to the application callback URL (along with a unique, temporary
+                        code that the application can exchange for access). Use of the <em>state</em> parameter is highly
+                        recommended in this step as a way to discourage CSRF attacks.</li>
+                    <li>Exchange the authorization code for an access token: the application callback should parse the
+                        request URL to obtain the access code issued above. That code (along with a client secret known
+                        only to the application owner) can be exchanged for <em>access</em> and <em>refresh</em> tokens.
+                        This exchange must happen quickly- within ~10 seconds of the code being issued.</li>
+                    <li>Use the access token to make a request: the access token is provided alongside every request
+                        to the OSF, in a header of the form <code>Authorization: Bearer token_goes_here</code></li>
+                    <li>Use the refresh token when old access tokens have expired: OSF access tokens expire after one hour.
+                        The refresh token (plus client secret) can be exchanged for a new access token. Some client
+                        libraries can handle this refresh process automatically. Save the refresh token; it never expires,
+                        and will continue to provide access to a user's account unless the user chooses to revoke access.</li>
                 </ol>
-
             </div>
 
             <div id="scopes" class="anchor row">
@@ -215,6 +268,7 @@
                 If there are problems with the authorization grant request, the user will be redirected to the
                 registered callback URL with an added <code>error</code> parameter describing the failure reason.
 
+                ## TODO: Expand list based on @icereval's pending CAS changes.
                 <table class="table">
                     <thead>
                         <tr>
@@ -231,14 +285,13 @@
                         </tr>
                     </tbody>
                 </table>
-                ## TODO: Expand list based on @icereval's pending CAS changes.
             </div>
             <div id="tips" class="anchor row">
                 <h2>Helpful tips</h2>
                 ## TODO: Should we promote the testing server externally?
-                <p>We provide a <a href="https://staging.osf.io">staging server</a> that can be used for application testing purposes, to avoid making
-                Note that this server may behave slightly differently than the production environment, with new or modified features, or bugs that have not yet been fixed.
-                The OAuth 2.0 authorization grant request <a href="#quickstart">base URL</a> for the staging server is <code>https://staging-accounts.osf.io/</code>.</p>
+                <p>We provide a <a href="https://staging.osf.io">staging server</a> that can be used for application testing purposes.
+                Note that this server may behave slightly differently than the production environment, with new or modified features, or minor bugs.
+                The OAuth 2.0 <a href="#quickstart">base URL</a> for the staging server is <code>https://staging-accounts.osf.io/</code>.</p>
             </div>
         </div>
     </div>

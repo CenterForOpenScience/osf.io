@@ -189,7 +189,7 @@ def make_url_map(app):
         Rule('/developers/v1/oauth',
              'get',
              {},
-             OsfWebRenderer('public/pages/help/developers/v1_oauth.mako')
+             OsfWebRenderer('public/pages/help/developers/v1_oauth.mako', trust=False)
              ),
 
         Rule(
