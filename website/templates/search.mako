@@ -50,7 +50,7 @@
                                     <span class="tag tag-med tag-container"
                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
                                         <span class="cloud-text">
-                                            {{oname}}
+                                            {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag med"
                                            data-bind="click: $root.clickTag.bind($parentContext, name, 'remove')"></i>

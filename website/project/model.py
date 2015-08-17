@@ -667,13 +667,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def license(self):
         node_license = self.node_license
+        if not node_license and self.parent_node:
+            return self.parent_node.license
         if node_license.get('id') == 'OTHER':
             node_license['url'] = self.license_file_url
         return node_license
 
     @property
     def license_file_url(self):
-        return self.url + 'osfstorage/files/license.txt'
+        node_license = self.node_license
+        if not node_license and self.parent_node:
+            return self.parent_node.license_file_url
+        elif node_license.get('id') == 'OTHER':
+            return self.url + 'osfstorage/files/license.txt'
+        else:
+            return node_license.get('url')
 
     @property
     def category_display(self):
@@ -1669,6 +1677,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
+        forked.node_license = original.license
 
         # Forks default to private status
         forked.is_public = False
@@ -1755,6 +1764,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.node_license = original.license
 
         registered.save()
 
