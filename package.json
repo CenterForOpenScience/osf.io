@@ -52,7 +52,7 @@
     "treebeard": "git://github.com/caneruguz/treebeard.git#e050802ff2ef55714c663716a3796ee15eb4c9d4",
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
-    "webpack": "^1.7.2",
+    "webpack": "~1.7.2",
     "ws": "~0.4.32"
   },
   "devDependencies": {
