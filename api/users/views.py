@@ -93,7 +93,7 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-    )    
+    )
 
     serializer_class = NodeSerializer
 
