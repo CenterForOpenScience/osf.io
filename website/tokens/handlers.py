@@ -8,7 +8,6 @@ from framework import status
 from framework.flask import redirect
 
 from website.tokens.exceptions import UnsupportedSanctionHandlerKind, TokenError
-from website.project.decorators import must_not_be_rejected
 
 def registration_approval_handler(action, registration, registered_from):
     status.push_status_message({
@@ -47,7 +46,6 @@ SANCTION_HANDLERS = {
 }
 
 @must_be_logged_in
-@must_not_be_rejected
 def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     from website.models import Node, RegistrationApproval, Embargo, Retraction
 
@@ -64,6 +62,10 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
 
     sanction_id = payload.get('sanction_id', None)
     sanction = Model.load(sanction_id)
+    if sanction.is_rejected:
+        raise HTTPError(http.GONE, data=dict(
+            message_long="This registration has been rejected"
+        ))
     do_action = getattr(sanction, action, None)
     if do_action:
         registration = Node.find_one(Q(sanction.SHORT_NAME, 'eq', sanction))
