@@ -73,9 +73,9 @@ var ActiveFilters = {
      */
     view : function(ctrl, params) {
         var vm = params.vm;
-
-        var requiredFilters = removeLockedFilters(vm.requiredFilters);
-        var optionalFilters = removeLockedFilters(vm.optionalFilters);
+        var widget = params.widget;
+        var requiredFilters = removeLockedFilters(vm.requests[widget.display.reqRequests[0]].requiredFilters);
+        var optionalFilters = removeLockedFilters(vm.requests[widget.display.reqRequests[0]].optionalFilters);
 
         var numFilters = requiredFilters.length + optionalFilters.length;
         if (numFilters <= 0){
@@ -146,9 +146,9 @@ var Search = {
  * @param {Object} vm: view model for Search Dashboard
  * @return {Object}  widget: widget information for the filter and search widget
  */
-FilterAndSearchWidget.display = function(data, vm, widget){
+FilterAndSearchWidget.display = function(vm, widget){
     //results will always update regardless of callback location (no mapping)
-    return m.component(ActiveFilters,{data: data, vm: vm, widget: widget});
+    return m.component(ActiveFilters,{data: vm.requests.mainRequest, vm: vm, widget: widget});
 };
 
 module.exports = FilterAndSearchWidget;

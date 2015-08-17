@@ -3,7 +3,6 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('js/share/utils');
-//var async = require('async');
 
 var widgetUtils = {};
 
@@ -118,25 +117,6 @@ widgetUtils.getKeyFromValue = function(object,value){
     }
   }
   return null;
-};
-
-/**
-//TODO
- */
-widgetUtils.buildRequest = function(id, request, aggs){
-    var req =  {
-        id : id,
-        elasticURL: request.elasticURL,
-        query: request.query || m.prop('*'),
-        optionalFilters : request.optionalFilters || [],
-        requiredFilters : request.requiredFilters || [],
-        aggregations : aggs || [],
-        data: null,
-        complete: false,
-        sort: m.prop(request.sort),
-        sortField: request.sortField
-    };
-    return req;
 };
 
 module.exports = widgetUtils;

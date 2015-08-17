@@ -84,7 +84,7 @@ searchDashboard.controller = function (params) {
                     }
                 }
             }
-            self.vm.requests[request] = widgetUtils.buildRequest(request, self.vm.requests[request],aggregations);
+            self.vm.requests[request] = searchDashboard.buildRequest(request, self.vm.requests[request],aggregations);
         }
     }
     self.vm.chartHandles = []; //TODO think about moving this...
@@ -99,24 +99,48 @@ searchDashboard.controller = function (params) {
     searchDashboard.runRequests(self.vm, params.requestOrder);
 };
 
+searchDashboard.buildRequest = function(id, request, aggs){
+    var req =  {
+        id : id,
+        elasticURL: request.elasticURL,
+        query: request.query || m.prop('*'),
+        optionalFilters : request.optionalFilters || [],
+        requiredFilters : request.requiredFilters || [],
+        preRequest: request.preRequest,
+        postRequest: request.postRequest,
+        aggregations : aggs || [],
+        data: null,
+        formattedData: {},
+        complete: m.prop(false),
+        sort: m.prop(request.sort),
+        sortMap: request.sortMap
+    };
+    return req;
+};
+
 searchDashboard.runRequest = function(vm, request, data){
     if (request.preRequest) {
         request.preRequest.forEach(function (funcToRun) {
-            funcToRun(vm, request, data); //these are non pure functions...
+            request = funcToRun(request, data); //these are non pure functions...
         });
     }
+    request.complete(false);
     return m.request({
         method: 'post',
         background: true,
         data: utils.buildQuery(request),
         url: '/api/v1/search/'
     }).then(function (data) {
+        request.data = data;
         if (request.postRequest) {
             request.postRequest.forEach(function (funcToRun) {
-                funcToRun(vm, request, data);
+                request = funcToRun(request, data);
             });
         }
+        request.complete(true);
+        return data;
     });
+
 };
 
 searchDashboard.runRequests = function(vm, requestOrder){

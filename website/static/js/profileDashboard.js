@@ -52,7 +52,9 @@ profileDashboard.projectsByTimesAgg = function() {
  * @return {object} Parsed data for c3 objects
  */
 
-profileDashboard.contributorsParser = function(rawData, levelNames, vm){
+profileDashboard.contributorsParser = function(rawData, vm, levelNames){
+    var guidsToNames = vm.requests.nameRequest.formattedData;
+
     var chartData = {};
     chartData.name = levelNames[0];
     chartData.columns = [];
@@ -67,8 +69,8 @@ profileDashboard.contributorsParser = function(rawData, levelNames, vm){
                 return;
             }
             if (bucket.doc_count) {
-                chartData.columns.push([vm.tempData.guidsToNames[bucket.key], bucket.doc_count]);
-                chartData.colors[vm.tempData.guidsToNames[bucket.key]] = hexColors[i];
+                chartData.columns.push([guidsToNames[bucket.key], bucket.doc_count]);
+                chartData.colors[guidsToNames[bucket.key]] = hexColors[i];
                 i = i + 1;
             }
         }
@@ -114,7 +116,7 @@ profileDashboard.controller = function(params) {
         aggregations: {mainRequest: profileDashboard.contributorsAgg()},
         display: {
             reqRequests: ['mainRequest', 'nameRequest'], //these are the requests that need to have completed before we can update this widget
-            displayWidget: charts.donutChart,
+            displayComponent: charts.donutChart,
             parser: profileDashboard.contributorsParser, //this function is run by the display widget to format data for display
             callbacks: { onclick : function (key) {
                 //bound information (this) from chart contains vm and widget
@@ -143,8 +145,8 @@ profileDashboard.controller = function(params) {
         row: 1,
         levelNames: projectLevelNames,
         display: {
-            reqRequests : ['mainRequest'],
-            displayWidget: charts.timeseriesChart,
+            reqRequests : ['mainRequest'], //the first req requests data will be the 'rawData' input to any parser, other request data should be pulled from vm.requests
+            displayComponent: charts.timeseriesChart,
             parser: charts.twoLevelAggParser,
             yLabel: 'Number of Projects',
             xLabel: 'Time',
@@ -158,11 +160,12 @@ profileDashboard.controller = function(params) {
                     clearTimeout(vm.tempData.projectByTimeTimeout); //stop constant redraws
                     vm.tempData.projectByTimeTimeout = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
                         function(){
-                            if ((zoomWin[0] <= bounds[0]) && (zoomWin[1] >= bounds[1])){
-                                widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
-                                utils.removeFilter(vm, vm.tempData.projectByTimeTimeFilter, false);
+                            if ((zoomWin[0] <= bounds[0]) && (zoomWin[1] >= bounds[1])) {
+                                widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                                utils.removeFilter(vm,vm.tempData.projectByTimeTimeFilter, false);
+                                return;
                             }
-                            utils.removeFilter(vm, vm.tempData.projectByTimeTimeFilter, true);
+                            utils.removeFilter(vm,vm.tempData.projectByTimeTimeFilter, true);
                             vm.tempData.projectByTimeTimeFilter = 'range:date_created:' + zoomWin[0].getTime() + ':' + zoomWin[1].getTime();
                             widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
                             utils.updateFilter(vm, vm.tempData.projectByTimeTimeFilter,true);
@@ -191,7 +194,7 @@ profileDashboard.controller = function(params) {
         row: 2,
         display: {
             reqRequests : ['mainRequest'],
-            displayWidget: filterAndSearchWidget.display,
+            displayComponent: filterAndSearchWidget.display,
             callbacks: null, //callbacks included in displayWidget
             callbacksUpdate: ['all']
         }
@@ -204,7 +207,7 @@ profileDashboard.controller = function(params) {
         row: 3,
         display: {
             reqRequests : ['mainRequest'],
-            displayWidget: ResultsWidget.display,
+            displayComponent: ResultsWidget.display,
             callbacks: null, //callbacks included in displayWidget
             callbacksUpdate: ['all']
         }
@@ -216,32 +219,40 @@ profileDashboard.controller = function(params) {
             requiredFilters: ['match:contributors.url:' + ctx.userId + '=lock'],
             optionalFilters: ['match:_type:project=lock', 'match:_type:component=lock'],
             sort: 'Relevance',
-            sortFeild: 'TODO'
+            sortMap: {
+                Date: 'date_created',
+                Relevance: null
+            }
     };
 
     var nameRequest = {
             elasticURL: '/api/v1/search/',
             requiredFilters: ['match:category:user=lock'],
-            preRequest: [function(vm, data, query){ //functions to modify filters and query before request
+            preRequest: [function(requestIn, data){ //functions to modify filters and query before request
+                var request = $.extend({},requestIn);
                 var urls = [];
                 data.aggregations.contributors.buckets.forEach( //first find urls returned
                 function (bucket) {
                     urls.push(bucket.key);
                 });
-                var missingGuids = widgetUtils.keysNotInObject(urls, vm.tempData.guidsToNames); //TODO how do i get this here...
+                var missingGuids = widgetUtils.keysNotInObject(urls, request.formattedData);
                 var guidFilters = [];
                 $.map(missingGuids, function(guid){
                     guidFilters.push('match:id:' + guid);
                 });
-                query.optionalFilters = guidFilters;
-                query.size = missingGuids.length;
+                request.optionalFilters = guidFilters;
+                request.size = missingGuids.length;
+                return request;
             }],
-            postRequest: [function(vm, data){
+            postRequest: [function(requestIn, data){
+                var request = $.extend({}, requestIn);
                 var newGuidMaps = {};
                 data.results.forEach(function(user){
                     newGuidMaps[user.id] = user.user;
                 });
-                $.extend(vm.tempData.guidsToNames, newGuidMaps);
+                request.formattedData = $.extend(request.formattedData, newGuidMaps);
+                m.redraw(); //TODO solve bug, why does mithril not redraw on its own??? it should trigger after each 'then' chain has finished, and this manual redraw can then be removed...
+                return request;
             }]
     };
 
@@ -252,7 +263,8 @@ profileDashboard.controller = function(params) {
             nameRequest: nameRequest
         },
         requestOrder: [
-            ['mainRequest', 'nameRequest'] //run these in serial
+            ['mainRequest', 'nameRequest'], //run these in serial
+            //[] //this would be run in parallel
         ],
         widgets : {
             contributors: contributors,
@@ -264,7 +276,7 @@ profileDashboard.controller = function(params) {
             ['contributors', 'projectsByTimes'],
             ['results'],
             ['activeFilters']
-        ]
+        ],
     };
 };
 

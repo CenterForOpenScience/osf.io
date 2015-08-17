@@ -32,12 +32,6 @@ utils.formatNumber = function(num) {
     return num;
 };
 
-utils.loadingIcon = {
-    view: function(ctrl) {
-        return m('img', {src: '/static/img/loading.gif'});
-    }
-};
-
 /* This resets the state of the vm on error */
 utils.errorState = function(vm){
     vm.results = null;
@@ -60,19 +54,19 @@ utils.updateVM = function(vm, data) {
     }
     vm.time = data.time;
     vm.count = data.count;
-    //data.results.forEach(function(result) { //TODO @bdyetton to @fabianvf: results should be generic at this point... and only parsed at the final widget stage
-    //    result.title = utils.highlightField(result, 'title');
-    //    result.description = utils.highlightField(result, 'description');
-    //});
+    data.results.forEach(function(result) {
+        result.title = $osf.htmlDecode(result.title);
+        result.description = $osf.htmlDecode(result.description || '');
+    });
     vm.results.push.apply(vm.results, data.results);
-    vm.data = data; //TODO this is return data (results) for search widgets, make for all (i.e. inc. share)
-    vm.dataLoaded(true);
-    m.endComputation();
+    m.redraw();
+    $.map(callbacks, function(cb) {
+        cb();
+    });
 };
 
 /* Handles searching via the search API */
 utils.loadMore = function(vm) {
-    m.startComputation();
     var ret = m.deferred();
     if (vm.query().length === 0) {
         ret.resolve(null);
@@ -85,7 +79,7 @@ utils.loadMore = function(vm) {
             method: 'post',
             background: true,
             data: utils.buildQuery(vm),
-            url: vm.elasticURL
+            url: '/api/v1/share/search/'
         }).then(function (data) {
             vm.resultsLoading(false);
             ret.resolve(data);
@@ -99,7 +93,6 @@ utils.loadMore = function(vm) {
 
 /* Makes sure the state we are in is valid for searching, passes the work to loadMore if so */
 utils.search = function(vm) {
-    vm.dataLoaded(false);
     vm.showFooter = false;
     var ret = m.deferred();
     if (!vm.query() || vm.query().length === 0) {
@@ -110,51 +103,37 @@ utils.search = function(vm) {
         vm.optionalFilters = [];
         vm.requiredFilters = [];
         vm.sort('Relevance');
-        History.pushState({}, vm.pageTitle || $(document).find("title").text(), '?');
+        History.pushState({}, 'OSF | SHARE', '?');
         ret.resolve(null);
     } else if (vm.query().length === 0) {
         ret.resolve(null);
     } else {
+        vm.showStats = true;
         vm.page = 0;
         vm.results = [];
         if (utils.stateChanged(vm)) {
+            // TODO remove of range filter should update range on subgraph
             History.pushState({
                 optionalFilters: vm.optionalFilters,
                 requiredFilters: vm.requiredFilters,
                 query: vm.query(),
                 sort: vm.sort()
-            }, vm.pageTitle || $(document).find("title").text(), '?' + utils.buildURLParams(vm));
+            }, 'OSF | SHARE', '?' + utils.buildURLParams(vm));
         }
         utils.loadMore(vm)
             .then(function (data) {
-                if (vm.processStats) { //TODO remove after share stats moves to dashboard model
+                if (vm.loadStats) {
                     if (data.aggregations) {
                         utils.processStats(vm, data);
                     } else {
                         $osf.growl('Error', 'Could not load search statistics', 'danger');
                     }
+                    utils.updateVM(vm, data);
+                    ret.resolve(vm);
                 }
-                utils.updateVM(vm, data);
-                ret.resolve(vm);
             });
     }
-
     return ret.promise;
-};
-
-/* updates the current state when history changed. Should be bound to forward/back buttons callback */
-utils.updateHistory = function(vm){
-    var state = History.getState().data;
-    if (!utils.stateChanged(vm)){
-        return false;
-    }
-
-    vm.optionalFilters = state.optionalFilters;
-    vm.requiredFilters = state.requiredFilters;
-    vm.query(state.query);
-    vm.sort(state.sort);
-    utils.search(vm);
-    return true;
 };
 
 /* Checks to see if the state of the vm has changed */
@@ -187,13 +166,10 @@ utils.buildURLParams = function(vm){
 utils.buildQuery = function (vm) {
     var must = $.map(vm.requiredFilters, utils.parseFilter);
     var should = $.map(vm.optionalFilters, utils.parseFilter);
+    var size = vm.size || 10;
     var sort = {};
-    var size = 10;
-    if (vm.size !== undefined) {
-        size = vm.size;
-    }
 
-    if (vm.sortMap) {
+    if (vm.sortMap){
         if (vm.sortMap[vm.sort()]) {
             sort[vm.sortMap[vm.sort()]] = 'desc';
         }
@@ -206,8 +182,8 @@ utils.buildQuery = function (vm) {
                 'filter': utils.boolQuery(must, null, should)
             }
         },
-        'aggregations': vm.loadStats ? utils.buildStatsAggs(vm) : {},
-        'from': ((vm.page || 1) - 1) * 10,
+        'aggregations': utils.buildStatsAggs(vm),
+        'from': (vm.page - 1) * 10,
         'size': size,
         'sort': [sort],
         'highlight': {
@@ -233,17 +209,17 @@ utils.maybeQuashEvent = function (event) {
 };
 
 /* Adds a filter to the list of filters if it doesn't already exist */
-utils.updateFilter = function (vm, filter, required, suppressUpdate) {
+utils.updateFilter = function (vm, filter, required) {
     if (required && vm.requiredFilters.indexOf(filter) === -1) {
         vm.requiredFilters.push(filter);
     } else if (vm.optionalFilters.indexOf(filter) === -1 && !required) {
         vm.optionalFilters.push(filter);
     }
-    if (!suppressUpdate) utils.search(vm);
+    utils.search(vm);
 };
 
 /* Removes a filter from the list of filters */
-utils.removeFilter = function (vm, filter, suppressUpdate) {
+utils.removeFilter = function (vm, filter) {
     var reqIndex = vm.requiredFilters.indexOf(filter);
     var optIndex = vm.optionalFilters.indexOf(filter);
     if (reqIndex > -1) {
@@ -252,7 +228,7 @@ utils.removeFilter = function (vm, filter, suppressUpdate) {
     if (optIndex > -1) {
         vm.optionalFilters.splice(optIndex, 1);
     }
-    if (!suppressUpdate) utils.search(vm);
+    utils.search(vm);
 };
 
 /* Tests array equality */
@@ -310,20 +286,13 @@ utils.filteredQuery = function(query, filter) {
     return ret;
 };
 
-utils.termFilter = function (field, value) {
-    var ret = {'term': {}};
-    ret.term[field] = value;
-    return ret;
-};
-
-utils.termsFilter = function (field, value, minDocCount, exclustions, numTermsReturned) {
+/* Creates a terms filter (their names, not ours) */
+utils.termsFilter = function (field, value, minDocCount) {
     minDocCount = minDocCount || 0;
-    numTermsReturned = numTermsReturned || 0;
-    exclustions = ('|'+ exclustions) || '';
     var ret = {'terms': {}};
     ret.terms[field] = value;
-    ret.terms.size = numTermsReturned;
-    ret.terms.exclude = 'of|and|or' + exclustions;
+    ret.terms.size = 0;
+    ret.terms.exclude = 'of|and|or';
     ret.terms.min_doc_count = minDocCount;
     return ret;
 };
@@ -366,9 +335,8 @@ utils.dateHistogramFilter = function (field, gte, lte, interval) {
     lte = lte || new Date().getTime();
     gte = gte || 0;
 
-
     interval = interval || 'week';
-    return  {
+    return {
         'date_histogram': {
             'field': field,
             'interval': interval,
@@ -421,8 +389,7 @@ utils.queryFilter = function (query) {
  * @param {String} filterString A string representation of a filter dictionary
  */
 utils.parseFilter = function (filterString) {
-    var filterParts = filterString.split('='); //remove lock qualifier if it exists
-    var parts = filterParts[0].split(':');
+    var parts = filterString.split(':');
     var type = parts[0];
     var field = parts[1];
 
@@ -453,6 +420,7 @@ utils.processStats = function (vm, data) {
 utils.updateAggs = function (currentAgg, newAgg, globalAgg) {
     globalAgg = globalAgg || false;
 
+    //var returnAgg = currentAgg;
     if (currentAgg) {
         var returnAgg = $.extend({},currentAgg);
         if (returnAgg.all && globalAgg) {
@@ -473,8 +441,9 @@ utils.updateAggs = function (currentAgg, newAgg, globalAgg) {
 
 utils.buildStatsAggs = function (vm) {
     var currentAggs = {};
-    $.map(Object.keys(vm.aggregations), function (agg) {
-        currentAggs = utils.updateAggs(currentAggs, vm.aggregations[agg]);
+    if (vm.aggregations === undefined) {return []; }
+    $.map(vm.aggregations, function (agg) {
+        currentAggs = utils.updateAggs(currentAggs, agg);
     });
     return currentAggs;
 };

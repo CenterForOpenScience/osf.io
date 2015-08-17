@@ -29,18 +29,16 @@ var Results = {
         if (vm.results){
             len = vm.results.length;
         }
-        var maybeResults = function(results, loading) {
+        var maybeResults = function(results) {
             if (results.length > 0) {
                 return results;
-            } else if (!loading && results.length === 0) {
+            } else if (results.length === 0) {
                 return m('p', {class: 'text-muted'}, 'No results for this query');
-            } else {
-                return m('', [m.component(utils.loadingIcon), 'loading...']);
             }
         };
 
         return m('', [
-            m('.row', m('.col-md-12', maybeResults(resultViews, vm.resultsLoading()))),
+            m('.row', m('.col-md-12', maybeResults(resultViews))),
             m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
                 len > 0 && len < vm.count ?
                 m('a.btn.btn-md.btn-default', {

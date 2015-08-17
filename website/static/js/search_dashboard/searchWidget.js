@@ -25,27 +25,9 @@ var SearchWidget = {
      */
     view: function (ctrl, params) {
         var dataReady = params.widget.display.reqRequests.every(function(req){
-            return params.vm.requests[req].complete;
+            return params.vm.requests[req].complete();
         });//TODO fix so that display is a mithril component not a function
-        return m('div',{}, dataReady ? loadingIcon() : params.widget.display(params.widget, params.vm, params.vm.data));
-    },
-
-    /**
-     * controller function for a search widget.
-     *
-     * @return {m.component.controller}  returns itself
-     */
-    controller : function (params) {
-        /**
-         * Creates display component, and passes data to it.
-         *
-         * @return {m.component} display component
-         */
-        this.drawChart = function (widget, vm, data) {
-            if ((data.aggregations[widget.id] !== undefined) || (widget.levelNames === undefined)) {
-                return widget.display.displayWidget(data, vm, widget);
-            }
-        };
+        return m('div',{}, dataReady ? params.widget.display.displayComponent(params.vm, params.widget) : loadingIcon());
     }
 };
 

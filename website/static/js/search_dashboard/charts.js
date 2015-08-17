@@ -65,10 +65,10 @@ charts.getChangedColumns = function(oldCols, newCols){
  * @param {Object} widget: params of the widget that chart is being created for
  * @return {Object} c3 chart wrapped in component
  */
-charts.donutChart = function (rawData, vm, widget) {
-    var data = widget.display.parser(rawData, widget.levelNames, vm, widget);
+charts.donutChart = function (vm, widget) {
+    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, vm, widget.levelNames, widget);
     if (!widget.display.dataReady()) return;
-    data.onclick = widget.display.callback.onclick ? widget.display.callback.onclick.bind({
+    data.onclick = widget.display.callbacks.onclick ? widget.display.callbacks.onclick.bind({
         vm: vm,
         widget: widget
     }) : undefined;
@@ -82,11 +82,7 @@ charts.donutChart = function (rawData, vm, widget) {
         data: data,
         donut: {
             title: widget.display.title ? widget.display.title : data.title,
-            label: {
-                format: function (value, ratio, id) {
-                    return value; //Math.round(ratio * 100) + '%';
-                }
-            }
+            label: widget.display.labelFunc,
         },
         legend: {
             show: true,
@@ -105,10 +101,10 @@ charts.donutChart = function (rawData, vm, widget) {
  * @param {Object} widget: params of the widget that chart is being created for
  * @return {Object} c3 chart wrapped in component
  */
-charts.barChart = function (rawData, vm, widget) {
-    var data = widget.display.parser(rawData, widget.levelNames, vm, widget);
+charts.barChart = function (vm, widget) {
+    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, vm, widget.levelNames, widget);
     if (!widget.display.dataReady()) return;
-    data.onclick = widget.display.callback.onclick ? widget.display.callback.onclick.bind({
+    data.onclick = widget.display.callbacks.onclick ? widget.display.callbacks.onclick.bind({
         vm: vm,
         widget: widget
     }) : undefined;
@@ -181,11 +177,11 @@ charts.getZoomFromTimeRangeFilter = function(vm, bounds){
  * @param {Object} widget: params of the widget that chart is being created for
  * @return {Object}  c3 chart wrapped in component
  */
-charts.timeseriesChart = function (rawData, vm, widget) {
-    var data = widget.display.parser(rawData, widget.levelNames, vm, widget);
+charts.timeseriesChart = function (vm, widget) {
+    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, vm, widget.levelNames, widget);
     data.type = widget.display.type ? widget.display.type : 'area-spline';
     var bounds = [data.columns[0][1], data.columns[0][data.columns[0].length-1]]; //get bounds of chart
-    var zoom = charts.getZoomFromTimeRangeFilter(vm, bounds);
+    var zoom = charts.getZoomFromTimeRangeFilter(vm.requests.mainRequest, bounds);
     if (!zoom && vm.chartHandles[widget.id]) {vm.chartHandles[widget.id].unzoom(); }
     var chartSetup = {
         bindto: '#' + widget.levelNames[0],
@@ -199,7 +195,7 @@ charts.timeseriesChart = function (rawData, vm, widget) {
             size: {
                 height: 30
             },
-            onbrush: widget.display.callback.onbrushOfSubgraph ? widget.display.callback.onbrushOfSubgraph.bind({
+            onbrush: widget.display.callbacks.onbrushOfSubgraph ? widget.display.callbacks.onbrushOfSubgraph.bind({
                 vm: vm,
                 widget: widget,
                 bounds: bounds,
@@ -235,7 +231,7 @@ charts.timeseriesChart = function (rawData, vm, widget) {
         legend: {
             position: 'inset',
             item: {
-                onclick: widget.display.callback.onclickOfLegend ? widget.display.callback.onclickOfLegend.bind({
+                onclick: widget.display.callbacks.onclickOfLegend ? widget.display.callbacks.onclickOfLegend.bind({
                     vm: vm,
                     widget: widget
                 }) : undefined
@@ -299,21 +295,23 @@ charts.twoLevelAggParser = function (data, levelNames, vm, widget) {
         widget.display.customColors : charts.generateColors(data.aggregations[levelNames[0]].buckets.length);
     var i = 0;
     var xCol = [];
-    data.aggregations[levelNames[0]].buckets.forEach(
-        function (levelOneItem) {
-            chartData.colors[levelOneItem.key] = hexColors[i];
-            var column = [levelOneItem.key];
-            grouping.push(levelOneItem.key);
-            levelOneItem[levelNames[1]].buckets.forEach(function(levelTwoItem){
-                column.push(levelTwoItem.doc_count);
-                if (i === 0) {
-                    xCol.push(levelTwoItem.key);
-                }
-            });
-            chartData.columns.push(column);
-            i = i + 1;
-        }
-    );
+    if(data.aggregations[levelNames[0]]) {
+        data.aggregations[levelNames[0]].buckets.forEach(
+            function (levelOneItem) {
+                chartData.colors[levelOneItem.key] = hexColors[i];
+                var column = [levelOneItem.key];
+                grouping.push(levelOneItem.key);
+                levelOneItem[levelNames[1]].buckets.forEach(function (levelTwoItem) {
+                    column.push(levelTwoItem.doc_count);
+                    if (i === 0) {
+                        xCol.push(levelTwoItem.key);
+                    }
+                });
+                chartData.columns.push(column);
+                i = i + 1;
+            }
+        );
+    }
 
     chartData.groups.push(grouping);
     xCol.unshift('x');
