@@ -219,10 +219,10 @@ var renderActions = function(item, col) {
             css: 'btn btn-default btn-xs',
             tooltip: 'Download citations',
             config: function(elm, isInit, ctx) {
-                var text = self.getCitations(item).join('\n');
+                var text = '{\\rtf1\\ansi\n' + self.getCitations(item, true).join('\n') + '\n}';
                 $(elm).parent('a')
-                    .attr('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text))
-                    .attr('download', item.data.name + '-' + self.styleName + '.txt');
+                    .attr('href', 'data:text/enriched;charset=utf-8,' + encodeURIComponent(text))
+                    .attr('download', item.data.name + '-' + self.styleName + '.rtf');
             }
         });
     }
@@ -378,12 +378,48 @@ CitationGrid.prototype.getCitation = function(item) {
     return bibliography[item.data.csl.id];
 };
 
-CitationGrid.prototype.getCitations = function(folder) {
+CitationGrid.prototype.parseRTF = function(item) {
+    if (item.children.length) {
+        for (var i = 0; i < item.children.length; i++){
+            return self.parseRTF(item.childNodes[0])
+        }
+    }
+
+    var rtfCitation = item.outerHTML;
+
+    if (rtfCitation.includes('<span style="text-decoration:underline;”>')) {
+        rtfCitation = rtfCitation.replace('<span style="text-decoration:underline;”>', '\\ul ')
+            .replace('</span>', '\\ulnone ');
+    }
+
+    return rtfCitation.replace('<i>', '\\i ').replace('</i>', '\\i0 ')
+        .replace('<b>', '\\b ').replace('</b>', '\\b0 ')
+        .replace('<u>', '\\ul ').replace('</u>', '\\ulnone ');
+};
+
+CitationGrid.prototype.getRTFCitation = function(item) {
+    //Change HTML tags in each citation item to .rtf tags, for exporting
+    var citation = this.getBibliography(item.parent())[item.data.csl.id];
+    var htmlCitation = $.parseHTML(citation)[0];
+    var rtfCitation = '';
+
+    for(var i = 0; i < htmlCitation.childNodes.length; i++) {
+        rtfCitation += self.parseRTF(htmlCitation.childNodes[i])
+    }
+
+    return rtfCitation.replace('\n', '').trim() + '\\';
+};
+
+CitationGrid.prototype.getCitations = function(folder, rtf) {
     var self = this;
     return folder.children.filter(function(child) {
         return child.kind === 'file';
     }).map(function(child) {
-        return self.getCitation(child);
+        if (rtf) {
+            return self.getRTFCitation(child);
+        } else {
+            return self.getCitation(child);
+        }
     });
 };
 
