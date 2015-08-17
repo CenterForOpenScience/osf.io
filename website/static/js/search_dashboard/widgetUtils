@@ -3,6 +3,7 @@ var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
 var utils = require('js/share/utils');
+//var async = require('async');
 
 var widgetUtils = {};
 
@@ -58,38 +59,17 @@ widgetUtils.concatUnique = function(array1, array2){
      return temp.filter(function(item, i, arr){ return arr.indexOf(item) === i; }); //make unique so we dont redraw widgets more than we have to
 };
 
-/**
- * requests user information for guid's supplied, then builds map from guids to name, returns map.
- * TODO: this could be made more generic, to just return user information which can then be processed in another function
- *
- * @param {array} guids: an array of guid's to request user information from
- * @return {bool}  map of guids to name
- */
-widgetUtils.nameRequest = function(guids){
-    var guidFilters = [];
-    var newGuidMaps = {};
-    $.map(guids, function(guid){
-        guidFilters.push('match:id:' + guid);
-    });
-    var guidQuery = {};
-    guidQuery.query = m.prop('*');
-    guidQuery.optionalFilters = guidFilters;
-    guidQuery.requiredFilters = ['match:category:user'];
-    guidQuery.size = guids.length;
-    return m.request({
-        method: 'post',
-        background: true,
-        data: utils.buildQuery(guidQuery),
-        url: '/api/v1/search/'
-    }).then(function (data) {
-        data.results.forEach(function(user){
-            newGuidMaps[user.id] = user.user;
-        });
-        return newGuidMaps;
-    }, function (xhr, status, err) {
-        $osf.growl('Error','could not load names of collaborators','danger');
-    });
-};
+//widgetUtils.runRequests = function(vm, requests){
+//    requests.forEach(function(parallelRequest){
+//        if (Array.isArray(parallelRequest)){
+//            parallelRequest.forEach(function(serialRequest){
+//                    serialRequest
+//                }
+//            );
+//            return async.apply(widgetUtils.runRequest, vm, parallelRequest))
+//        }
+//    });
+//};
 
 /**
  * Finds and returns the keys not present in an object.
@@ -113,9 +93,10 @@ widgetUtils.keysNotInObject = function(keys, object){
  * @param {string} id: The id to match
  * @return {Object}  matched object
  */
-widgetUtils.getObjectById = function(listOfObjects,id){
+widgetUtils.getObjectById = function(listOfObjects,id, field){
+    field = field || 'id';
     var obIndex = $.map(listOfObjects, function(obj, index) {
-        if (obj.id === id) {
+        if (obj[field] === id) {
             return index;
         }
     });
@@ -140,45 +121,6 @@ widgetUtils.getKeyFromValue = function(object,value){
 };
 
 /**
- * Return a map of guids to full names. Or request this information and return false if not available.
- *
- * @param {Array} guids: a list of guids to return name mapping for
- * @param {Object} widget: widget to flag readiness for //TODO remove need for widget, with request flags in vm
- * @param {Object} vm: widget to flag readiness for
- * @return {Object}  an object which whose keys are guids and values are full names
- */
-widgetUtils.getGuidsToNamesMap = function(guids, widget, vm) {
-    var missingKeys = widgetUtils.keysNotInObject(guids, vm.tempData.guidsToNames); //check if we have the names for these urls
-
-    if (missingKeys.length > 0) { //if we have missing keys then we have to add to the map between url and name
-        widget.display.dataReady(false);
-        if (vm.requestFlags.nameRequest) { //a request has already been scheduled...
-            return false;
-        }
-        vm.requestFlags.nameRequest = true; //flag that we are requesting data
-        widgetUtils.nameRequest(missingKeys).then(
-            function (newGuids) {
-                vm.requestFlags.nameRequest = false; //flag that this request has finished
-                $.extend(vm.tempData.guidsToNames, newGuids);
-                widget.display.dataReady(true); //TODO move widget out of here somehow, its too coupled
-                m.redraw(); //cool, now we have the data we need, so lets try creating this chart again...
-                //note that other charts will not update because we haven't signaled there update
-            }
-        );
-        return false;
-    }
-    return vm.tempData.guidsToNames;
-};
-
-
-widgetUtils.missingRequests(vm, widget){
-    
-    widget.thisWidgetRequiresRequests.forEach(function(reqRequest){
-        if reqRequest in
-    });
-}
-
-/**
 //TODO
  */
 widgetUtils.buildRequest = function(id, request, aggs){
@@ -191,9 +133,9 @@ widgetUtils.buildRequest = function(id, request, aggs){
         aggregations : aggs || [],
         data: null,
         complete: false,
-        sort: m.prop(request.sort || 'Relevance')
+        sort: m.prop(request.sort),
+        sortField: request.sortField
     };
-    utils.search(req);
     return req;
 };
 

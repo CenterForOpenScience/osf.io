@@ -17,7 +17,6 @@ function loadingIcon(){
 }
 
 var SearchWidget = {
-//renders the c3 graph widget
     /**
      * View function for a search widget. Returns display widget if data ready, otherwise loading spinner
      *
@@ -25,8 +24,10 @@ var SearchWidget = {
      * @return {Object} m.component type object (initialised searchWidget component)
      */
     view: function (ctrl, params) {
-        var loaded = params.vm.dataLoaded() && params.widget.display.dataReady;
-        return m('div',{}, loaded ? ctrl.drawChart(params.widget, params.vm, params.vm.data) : loadingIcon());
+        var dataReady = params.widget.display.reqRequests.every(function(req){
+            return params.vm.requests[req].complete;
+        });//TODO fix so that display is a mithril component not a function
+        return m('div',{}, dataReady ? loadingIcon() : params.widget.display(params.widget, params.vm, params.vm.data));
     },
 
     /**

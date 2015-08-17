@@ -10,7 +10,7 @@ var Stats = {};
 
 function donutGraph(data, vm) {
     data.charts.shareDonutGraph.onclick = function (d) {
-        utils.updateFilter(vm, 'match:shareProperties.source:' + d.name, true);
+        utils.updateFilter(vm, 'match:shareProperties.source:' + d.name);
     };
     return c3.generate({
         bindto: '#shareDonutGraph',
@@ -28,10 +28,23 @@ function donutGraph(data, vm) {
         },
         legend: {
             show: false
+        },
+        tooltip: {
+            format: {
+                value: function (value, ratio, id) {
+                    return Math.round(ratio * 100) + '%';
+                }
+            }
         }
     });
 }
 
+/**
+ * Creates a c3 time graph from the parsed elasticsearch data
+ *
+ * @param {Object} data The formatted elasticsearch results
+ * @param {Object} vm The state of the view model
+ */
 function timeGraph(data, vm) {
     return c3.generate({
         bindto: '#shareTimeGraph',
@@ -63,7 +76,7 @@ function timeGraph(data, vm) {
                     position: 'outer-center'
                 },
                 tick: {
-                    format: function (d) {return Stats.timeSinceEpochInMsToMMYY(d); }
+                    format: function (d) {return Stats.timeSinceEpochInMsToDDMMYY(d); }
                 }
             },
             y: {
@@ -88,7 +101,10 @@ function timeGraph(data, vm) {
 
 /* Creates an Elasticsearch aggregation by source */
 Stats.sourcesAgg = {
-    sources: utils.termsFilter('field', '_type')
+    query: {match_all: {} },
+    aggregations: {
+        sources: utils.termsFilter('field', '_type')
+    }
 };
 
 /* Creates an Elasticsearch aggregation that breaks down sources by date (and number of things published on those dates) */
@@ -107,14 +123,14 @@ Stats.sourcesByDatesAgg = function () {
             }
         }
     };
-    return dateHistogramAgg;
+    return {aggregations: dateHistogramAgg};
 };
 
 /* Helper function for dealing with epoch times returned by elasticsearch */
-Stats.timeSinceEpochInMsToMMYY = function (timeSinceEpochInMs) {
-    var d = new Date(0);
-    d.setUTCSeconds(timeSinceEpochInMs / 1000);
-    return d.getMonth().toString() + '/' + d.getFullYear().toString().substring(2);
+Stats.timeSinceEpochInMsToDDMMYY = function (timeSinceEpochInMs) {
+    var d = new Date(timeSinceEpochInMs);
+    return (d.getMonth()+1).toString() + '/' + (d.getDate()+1).toString() +
+        '/' + d.getFullYear().toString().substring(2); 
 };
 
 /* Parses elasticsearch data so that it can be fed into a c3 donut graph */
@@ -153,10 +169,9 @@ Stats.shareTimeGraphParser = function (data) {
     var grouping = [];
     grouping.push('x');
     var hexColors = utils.generateColors(data.aggregations.sourcesByTimes.buckets.length);
-    var i = 0;
     var datesCol = [];
     data.aggregations.sourcesByTimes.buckets.forEach( //TODO @bdyetton what would be nice is a helper function to do this for any agg returned by elastic
-        function (source) {
+        function (source, i) {
             var total = 0;
             chartData.colors[source.key] = hexColors[i];
             var column = [source.key];
@@ -169,7 +184,6 @@ Stats.shareTimeGraphParser = function (data) {
                 }
             });
             chartData.columns.push(column);
-            i = i + 1;
         }
     );
     chartData.groups.push(grouping);
@@ -208,9 +222,8 @@ Stats.controller = function (vm) {
     self.vm.graphs = {}; //holds actual c3 chart objects
     self.vm.statsData = {'charts': {}}; //holds data for charts
     self.vm.loadStats = true; //we want to turn stats on
-    self.vm.processStats = true;
     //request these querys/aggregations for charts
-    self.vm.aggregations = {
+    self.vm.statsQueries = {
         'shareTimeGraph' : Stats.sourcesByDatesAgg(),
         'shareDonutGraph' : Stats.sourcesAgg
     };
@@ -223,7 +236,7 @@ Stats.controller = function (vm) {
 
     self.vm.totalCount = 0;
     self.vm.latestDate = undefined;
-    self.vm.dataLoaded = m.prop(false);
+    self.vm.statsLoaded = m.prop(false);
 
     self.drawGraph = function (divId, graphFunction) {
         return m('div', {id: divId, config: function (e, i) {

@@ -52,16 +52,7 @@ profileDashboard.projectsByTimesAgg = function() {
  * @return {object} Parsed data for c3 objects
  */
 
-profileDashboard.contributorsParser = function(rawData, levelNames, vm, widget){ //TODO to avoid all this dam hassle, user url and name should be concatenated as a searchable field in collaboarators...
-    var urls = [];
-    rawData.aggregations[levelNames[0]].buckets.forEach( //first find urls returned
-        function (bucket) {
-            urls.push(bucket.key);
-        }
-    );
-    var guidToNamesMap = widgetUtils.getGuidsToNamesMap(urls, widget, vm);
-    if (!guidToNamesMap) {return; } //return ti mithril and wait for this information if we dont have it
-
+profileDashboard.contributorsParser = function(rawData, levelNames, vm){
     var chartData = {};
     chartData.name = levelNames[0];
     chartData.columns = [];
@@ -100,7 +91,7 @@ profileDashboard.contributorsParser = function(rawData, levelNames, vm, widget){
 * View function for the profile dashboard
 *
 * @param {Object} ctrl: controller Object automatically passed in by mithril
-* @return {m.component object}  initialised searchDashboard component
+* @return {Object}  initialised searchDashboard component
 */
 profileDashboard.view = function(ctrl) {
     return m.component(searchDashboard, ctrl.searchSetup);
@@ -120,29 +111,28 @@ profileDashboard.controller = function(params) {
         size: ['.col-md-6', 300],
         row: 1,
         levelNames: contributorLevelNames,
-        aggregation: {mainRequest: profileDashboard.contributorsAgg()},
+        aggregations: {mainRequest: profileDashboard.contributorsAgg()},
         display: {
-            dataReady : m.prop(true),
+            reqRequests: ['mainRequest', 'nameRequest'], //these are the requests that need to have completed before we can update this widget
             displayWidget: charts.donutChart,
-            parser: profileDashboard.contributorsParser,
-            callback: { onclick : function (key) {
+            parser: profileDashboard.contributorsParser, //this function is run by the display widget to format data for display
+            callbacks: { onclick : function (key) {
                 //bound information (this) from chart contains vm and widget
                 var vm = this.vm;
                 var widget = this.widget;
                 var name = key;
                 if (key.name) {name = key.name; }
-                //utils.removeFilter(vm,vm.tempData.contributerFilter, true); //uncomment to overwrite last filter
-                vm.tempData.contributerFilter = 'match:contributors.url:' + widgetUtils.getKeyFromValue(this.vm.tempData.guidsToNames, name);
+                //utils.removeFilter(vm,vm.tempData.contributorFilter, true); //uncomment to overwrite last filter
+                vm.tempData.contributorsFilter = 'match:contributors.url:' + widgetUtils.getKeyFromValue(this.vm.tempData.guidsToNames, name);
                 utils.updateFilter(
                     vm,
-                    vm.tempData.contributerFilter,
+                    vm.tempData.contributorsFilter,
                     true
                 );
                 widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
-            }}
-        },
-        thisWidgetRequiresRequests: ['mainRequest', 'nameRequest'],
-        thisWidgetUpdates: ['all'] //TODO give simple 'all' option
+            }},
+            callbacksUpdate: ['all']
+        }
     };
 
     var projectLevelNames = ['projectsByTimes', 'projectsOverTime'];
@@ -153,14 +143,14 @@ profileDashboard.controller = function(params) {
         row: 1,
         levelNames: projectLevelNames,
         display: {
-            dataReady : m.prop(true),
+            reqRequests : ['mainRequest'],
             displayWidget: charts.timeseriesChart,
             parser: charts.twoLevelAggParser,
             yLabel: 'Number of Projects',
             xLabel: 'Time',
             type: 'area',
             customColors: [], //by setting custom colors to an empty string, we get the default c3 colors
-            callback: {
+            callbacks: {
                 onbrushOfSubgraph : function(zoomWin){
                     var vm = this.vm;
                     var widget = this.widget;
@@ -169,12 +159,12 @@ profileDashboard.controller = function(params) {
                     vm.tempData.projectByTimeTimeout = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
                         function(){
                             if ((zoomWin[0] <= bounds[0]) && (zoomWin[1] >= bounds[1])){
-                                widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                                widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
                                 utils.removeFilter(vm, vm.tempData.projectByTimeTimeFilter, false);
                             }
                             utils.removeFilter(vm, vm.tempData.projectByTimeTimeFilter, true);
                             vm.tempData.projectByTimeTimeFilter = 'range:date_created:' + zoomWin[0].getTime() + ':' + zoomWin[1].getTime();
-                            widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                            widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
                             utils.updateFilter(vm, vm.tempData.projectByTimeTimeFilter,true);
                         },1000);
                 },
@@ -183,31 +173,16 @@ profileDashboard.controller = function(params) {
                     var widget = this.widget;
                     utils.removeFilter(vm, vm.tempData.projectByTimeProjectFilter, true);
                     vm.tempData.projectByTimeProjectFilter = 'match:_type:' + item;
-                    widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                    widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
                     utils.updateFilter(vm, vm.tempData.projectByTimeProjectFilter,true);
                 }
-            }
+            },
+            callbacksUpdate: ['all']
         },
-        aggregation: {mainRequest: profileDashboard.projectsByTimesAgg()},
-        thisWidgetRequiresRequests: ['mainRequest'],
-        thisWidgetUpdates: ['all']
+        aggregations: {
+            mainRequest: profileDashboard.projectsByTimesAgg()
+        }
     };
-
-        //var nodeType = {
-    //    title: 'Type',
-    //    size: ['.col-md-6', 260],
-    //    row: 1,
-    //    levelNames: ['nodeType'],
-    //    display: {
-    //        dataReady : m.prop(true),
-    //        displayWidget: charts.barChart,
-    //        parser: charts.barParser,
-    //        rotateAxis: true,
-    //        customColors: [], //by setting custom colors to an empty string, we get the default c3 colors
-    //    },
-    //    aggregation: profileDashboard.nodeTypeAgg(),
-    //    thisWidgetUpdates: ['Contributors', 'projectsByTimes', 'results']
-    //};
 
     var activeFilters = {
         id: 'activeFilters',
@@ -215,13 +190,11 @@ profileDashboard.controller = function(params) {
         size: ['.col-md-12'],
         row: 2,
         display: {
-            dataReady : m.prop(true),
+            reqRequests : ['mainRequest'],
             displayWidget: filterAndSearchWidget.display,
-            callback: null //callbacks included in displayWidget
-        },
-        aggregation: null, //this displays no stats, so needs no aggregations
-        thisWidgetRequiresRequests: ['mainRequest', 'nameRequest'],
-        thisWidgetUpdates: ['all']
+            callbacks: null, //callbacks included in displayWidget
+            callbacksUpdate: ['all']
+        }
     };
 
     var results = {
@@ -230,27 +203,68 @@ profileDashboard.controller = function(params) {
         size: ['.col-md-12'],
         row: 3,
         display: {
-            dataReady : m.prop(true),
+            reqRequests : ['mainRequest'],
             displayWidget: ResultsWidget.display,
-            callback: null //callbacks included in displayWidget
-        },
-        aggregation: null, //this displays no stats, so needs no aggregations
-        thisWidgetRequiresRequests: ['mainRequest'], //the names of elastic queries that this widget needs before data is ready
-        thisWidgetUpdates: ['all']
+            callbacks: null, //callbacks included in displayWidget
+            callbacksUpdate: ['all']
+        }
     };
 
     var mainRequest = {
             elasticURL: '/api/v1/search/',
+            size: 10,
             requiredFilters: ['match:contributors.url:' + ctx.userId + '=lock'],
             optionalFilters: ['match:_type:project=lock', 'match:_type:component=lock'],
+            sort: 'Relevance',
+            sortFeild: 'TODO'
+    };
+
+    var nameRequest = {
+            elasticURL: '/api/v1/search/',
+            requiredFilters: ['match:category:user=lock'],
+            preRequest: [function(vm, data, query){ //functions to modify filters and query before request
+                var urls = [];
+                data.aggregations.contributors.buckets.forEach( //first find urls returned
+                function (bucket) {
+                    urls.push(bucket.key);
+                });
+                var missingGuids = widgetUtils.keysNotInObject(urls, vm.tempData.guidsToNames); //TODO how do i get this here...
+                var guidFilters = [];
+                $.map(missingGuids, function(guid){
+                    guidFilters.push('match:id:' + guid);
+                });
+                query.optionalFilters = guidFilters;
+                query.size = missingGuids.length;
+            }],
+            postRequest: [function(vm, data){
+                var newGuidMaps = {};
+                data.results.forEach(function(user){
+                    newGuidMaps[user.id] = user.user;
+                });
+                $.extend(vm.tempData.guidsToNames, newGuidMaps);
+            }]
     };
 
     this.searchSetup = {
-        requests: [mainRequest],
         user: ctx.userId,
-        tempData: {guidsToNames : {}}, //collaborators require a second level of query to get URL to names mappings //TODO @bdyetton, this should no be exposed... remove from here
-        widgets : [contributors, projectsByTimes, results, activeFilters],
-        rows: 3 //total number of rows to draw
+        requests : {
+            mainRequest: mainRequest,
+            nameRequest: nameRequest
+        },
+        requestOrder: [
+            ['mainRequest', 'nameRequest'] //run these in serial
+        ],
+        widgets : {
+            contributors: contributors,
+            projectsByTimes: projectsByTimes,
+            results: results,
+            activeFilters: activeFilters
+        },
+        rowMap: [
+            ['contributors', 'projectsByTimes'],
+            ['results'],
+            ['activeFilters']
+        ]
     };
 };
 

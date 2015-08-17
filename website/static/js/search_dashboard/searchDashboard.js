@@ -20,17 +20,28 @@ var searchDashboard = {};
  */
 searchDashboard.view = function (ctrl, params, children) {
     var grid = [];
-    var row;
-    for(row = 1; row <= ctrl.rows; row++){
-        grid.push(m('.row',{},ctrl.widgets.map(function(widget) {
-            if (widget.row === row) {
-                return m.component(SearchWidgetPanel, {key: widget.id, widget: widget, vm: ctrl.vm});
-            }
+    params.rowMap.forEach(function(row) {
+        grid.push(m('.row', {}, row.map(function (widgetName) {
+            return m.component(SearchWidgetPanel, {
+                key: widgetName,
+                widget: ctrl.vm.widgets[widgetName],
+                vm: ctrl.vm
+            });
         })));
-    };
+    });
     return m('.col-lg-12', {} ,grid);
 
 };
+
+searchDashboard.returnRow = function(widgetNames, vm){
+    widgetNames.map(function(widgetName){
+        return m.component(SearchWidgetPanel, {
+            key: vm.widgets[widgetName].id,
+            widget: vm.widgets[widgetName],
+            vm: vm});
+    });
+};
+
 
 searchDashboard.vm = {};
 
@@ -51,26 +62,30 @@ searchDashboard.controller = function (params) {
     self.vm = searchDashboard.vm;
     self.vm.tempData = params.tempData;
     self.vm.widgetsToUpdate = [];
+    self.vm.widgets = params.widgets;
     self.vm.widgetIds = [];
-    if (self.widgets){
-        self.widgets.forEach(function(widget){
-            self.vm.widgetIds.push(widget.id);
-        });
+    for (var widget in self.vm.widgets) {
+        if (self.vm.widgets.hasOwnProperty(widget)) {
+            self.vm.widgetIds.push(widget);
+        }
     }
+
     //Build requests
-    self.vm.requests = {};
-    if (self.requests){
-        self.requests.forEach(function(req){
+    self.vm.requests = params.requests;
+    for (var request in self.vm.requests) {
+        if (self.vm.requests.hasOwnProperty(request)) {
             var aggregations = [];
-            self.widgets.forEach(function(widget){
-                if (widget.aggregation[req.id]){
-                    aggregations.push(widget.aggregation[req.id]);
+            for (var widget in self.vm.widgets) {
+                if (self.vm.widgets.hasOwnProperty(widget)) {
+                    if(self.vm.widgets[widget].aggregations) {
+                        if (self.vm.widgets[widget].aggregations[request]) {
+                            aggregations.push(self.vm.widgets[widget].aggregations[request]);
+                        }
+                    }
                 }
-            });
-            var item = {};
-            item[req.id] = widgetUtils.buildRequest(req.id, req, aggregations);
-            self.vm.requests = $.extend(self.vm.requests, item);
-        });
+            }
+            self.vm.requests[request] = widgetUtils.buildRequest(request, self.vm.requests[request],aggregations);
+        }
     }
     self.vm.chartHandles = []; //TODO think about moving this...
     self.vm.results = null; //unused, only for backwards compatibility with utils TODO remove
@@ -78,6 +93,43 @@ searchDashboard.controller = function (params) {
     History.Adapter.bind(window, 'statechange', function(e) {
         var historyChanged = utils.updateHistory(self.vm);
         if (historyChanged){ widgetUtils.signalWidgetsToUpdate(self.vm, self.vm.widgetIds);}
+    });
+
+    //run dat shit
+    searchDashboard.runRequests(self.vm, params.requestOrder);
+};
+
+searchDashboard.runRequest = function(vm, request, data){
+    if (request.preRequest) {
+        request.preRequest.forEach(function (funcToRun) {
+            funcToRun(vm, request, data); //these are non pure functions...
+        });
+    }
+    return m.request({
+        method: 'post',
+        background: true,
+        data: utils.buildQuery(request),
+        url: '/api/v1/search/'
+    }).then(function (data) {
+        if (request.postRequest) {
+            request.postRequest.forEach(function (funcToRun) {
+                funcToRun(vm, request, data);
+            });
+        }
+    });
+};
+
+searchDashboard.runRequests = function(vm, requestOrder){
+    requestOrder.forEach(function(parallelReqs){
+        searchDashboard.recursiveRequest(vm, parallelReqs);
+    });
+};
+
+searchDashboard.recursiveRequest = function(vm, requests, data){
+    if (requests.length <= 0) {return; }
+    var thisLevelReq = requests.shift();
+    searchDashboard.runRequest(vm, vm.requests[thisLevelReq], data).then(function(newData){
+        searchDashboard.recursiveRequest(vm, requests, newData);
     });
 };
 
