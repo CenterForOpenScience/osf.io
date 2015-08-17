@@ -678,17 +678,6 @@ def _should_show_wiki_widget(node, user):
     else:
         return has_wiki
 
-def _can_edit_wiki(node, auth):
-
-    wiki = node.get_addon('wiki')
-    if wiki and not node.is_registration and auth.logged_in:
-        return (
-            node.has_permission(auth.user, 'write')
-            or wiki.is_publicly_editable
-        )
-    return False
-
-
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
@@ -790,7 +779,6 @@ def _view_project(node, auth, primary=False):
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
-            'can_edit_wiki_body': _can_edit_wiki(node, auth),
             'has_read_permissions': node.has_permission(user, 'read'),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
