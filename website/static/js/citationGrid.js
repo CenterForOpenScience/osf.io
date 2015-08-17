@@ -379,9 +379,10 @@ CitationGrid.prototype.getCitation = function(item) {
 };
 
 CitationGrid.prototype.parseRTF = function(item) {
+    var self = this;
     if (item.children.length) {
         for (var i = 0; i < item.children.length; i++){
-            return self.parseRTF(item.childNodes[i])
+            return self.parseRTF(item.childNodes[i]);
         }
     }
 
@@ -399,12 +400,13 @@ CitationGrid.prototype.parseRTF = function(item) {
 
 CitationGrid.prototype.getRTFCitation = function(item) {
     //Change HTML tags in each citation item to .rtf tags, for exporting
+    var self = this;
     var citation = this.getBibliography(item.parent())[item.data.csl.id];
     var htmlCitation = $.parseHTML(citation)[0];
     var rtfCitation = '';
 
     for(var i = 0; i < htmlCitation.childNodes.length; i++) {
-        rtfCitation += self.parseRTF(htmlCitation.childNodes[i])
+        rtfCitation += self.parseRTF(htmlCitation.childNodes[i]);
     }
 
     return rtfCitation.replace('\n', '').trim() + '\\';
