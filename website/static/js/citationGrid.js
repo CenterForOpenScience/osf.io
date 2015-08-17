@@ -381,7 +381,7 @@ CitationGrid.prototype.getCitation = function(item) {
 CitationGrid.prototype.parseRTF = function(item) {
     if (item.children.length) {
         for (var i = 0; i < item.children.length; i++){
-            return self.parseRTF(item.childNodes[0])
+            return self.parseRTF(item.childNodes[i])
         }
     }
 
