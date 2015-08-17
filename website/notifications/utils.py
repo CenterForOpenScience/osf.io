@@ -32,6 +32,15 @@ class NotificationsDict(dict):
         d_to_use['messages'].extend(messages)
 
 
+def find_subscription_type(subscription):
+    """Somewhat robust subscription finder, until something is a subset"""
+    subs_available = list(constants.USER_SUBSCRIPTIONS_AVAILABLE.keys())
+    subs_available.extend(list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys()))
+    for available in subs_available:
+        if available in subscription:
+            return available
+
+
 def to_subscription_key(uid, event):
     """Build the Subscription primary key for the given guid and event"""
     return str(uid + '_' + event)

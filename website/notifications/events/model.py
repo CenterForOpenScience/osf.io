@@ -47,7 +47,11 @@ class Event(object):
 
     @classmethod
     def parse_event(cls, user, node, event, **kwargs):
-        """Call correct event class for parsing."""
+        """Call correct event class for parsing.
+
+        This makes a compromise between the type_action format of the
+        waterbutler return and the TypeAction of the class names.
+        """
         kind = ''.join(event.split('_'))
         if kind in cls.registry:
             return cls.registry[kind](user, node, event, **kwargs)

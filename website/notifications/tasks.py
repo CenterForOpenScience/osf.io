@@ -17,9 +17,9 @@ from website import mails
 
 @celery_app.task(name='notify.send_users_email', max_retries=0)
 def send_users_email(send_type):
-    """
-    Finds pending Emails and amalgamates them into a single Email
-    :param user_id: User id to send mails to.
+    """Find pending Emails and amalgamates them into a single Email.
+
+    :param send_type
     :return:
     """
     grouped_emails = get_users_emails(send_type)
@@ -45,8 +45,8 @@ def send_users_email(send_type):
 
 
 def get_users_emails(send_type):
-    """
-    Get all emails that need to be sent
+    """Get all emails that need to be sent.
+
     :param send_type: from NOTIFICATION_TYPES
     :return: [{
                 'user_id': 'se8ea',
@@ -87,8 +87,8 @@ def get_users_emails(send_type):
 
 
 def group_by_node(notifications):
-    """
-    Takes list of notifications and groups by node.
+    """Take list of notifications and group by node.
+
     :param notifications: List of stored email notifications
     :return:
     """
@@ -99,8 +99,8 @@ def group_by_node(notifications):
 
 
 def remove_notifications(email_notification_ids=None):
-    """
-    Removes emails that were sent
+    """Remove sent emails.
+
     :param email_notification_ids:
     :return:
     """

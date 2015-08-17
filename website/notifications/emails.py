@@ -10,8 +10,8 @@ from website.util import web_url_for
 
 
 def notify(event, user, node, timestamp, **context):
-    """
-    Retrieves appropriate ***subscription*** and passes user list to store_emails
+    """Retrieve appropriate ***subscription*** and passe user list
+
     :param event: event that triggered the notification
     :param user: user who triggered notification
     :param node: instance of Node
@@ -20,7 +20,7 @@ def notify(event, user, node, timestamp, **context):
         target_user: used with comment_replies
     :return: List of user ids notifications were sent to
     """
-    event_type = "_".join(event.split("_")[-2:])  # tests indicate that this should work with no underscores
+    event_type = utils.find_subscription_type(event)
     subscriptions = compile_subscriptions(node, event_type, event)
     sent_users = []
     target_user = context.get('target_user', None)
@@ -44,9 +44,9 @@ def notify(event, user, node, timestamp, **context):
 
 
 def store_emails(recipient_ids, notification_type, event, user, node, timestamp, **context):
-    """
-    Stores notification emails and calls function to check for previous celery tasks
-     of user and notification.
+    """Store notification emails
+
+    Emails are sent via celery beat as digests
     :param recipient_ids: List of user ids to send mail to.
     :param notification_type: from constants.Notification_types
     :param event: event that triggered notification
@@ -82,8 +82,8 @@ def store_emails(recipient_ids, notification_type, event, user, node, timestamp,
 
 
 def compile_subscriptions(node, event_type, event=None, level=0):
-    """
-    Recurse through node and parents for subscriptions.
+    """Recurse through node and parents for subscriptions.
+
     :param node: current node
     :param event_type: Generally node_subscriptions_available
     :param event: Particular event such a file_updated that has specific file subs

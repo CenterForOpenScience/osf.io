@@ -151,7 +151,7 @@ CONFERENCE_FAILED = Mail(
     subject='Open Science Framework Error: No files attached',
 )
 
-DIGEST = Mail('digest', subject='OSF Email Digest')
+DIGEST = Mail('digest', subject='OSF Email Digest')  # Subject
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
 
 PENDING_RETRACTION_ADMIN = Mail(

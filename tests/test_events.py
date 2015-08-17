@@ -3,12 +3,19 @@ import mock
 from nose.tools import *
 from collections import OrderedDict
 
-from website.notifications.events.model import *
-from website.notifications.events.utils import *
+from website.notifications.events.model import (
+    Event, FileAdded, FileRemoved, FolderCreated, FileUpdated,
+    AddonFileCopied, AddonFileMoved)
+
+from website.notifications.events import utils
 
 from framework.auth import Auth
 from tests import factories
 from tests.base import OsfTestCase
+
+
+email_transactional = 'email_transactional'
+email_digest = 'email_digest'
 
 
 class TestEventNotImplemented(OsfTestCase):
@@ -79,7 +86,7 @@ class TestListOfFiles(OsfTestCase):
 
     def test_list_of_files(self):
         files = []
-        list_of_files(self.tree, files)
+        utils.list_of_files(self.tree, files)
         assert_equal(['e', 'f', 'c', 'd'], files)
 
     def tearDown(self):
@@ -99,34 +106,34 @@ class TestParseEvent(OsfTestCase):
     def test_get_file_updated(self):
         """Event gets FileUpdated from file_updated"""
         event = Event.parse_event(self.user, self.node, 'file_updated', payload=file_payload)
-        self.assertIsInstance(event, FileUpdated)
+        assert_is_instance(event, FileUpdated)
 
     def test_get_file_added(self):
         """Event gets FileAdded from file_added"""
         event = Event.parse_event(self.user, self.node, 'file_added', payload=file_payload)
-        self.assertIsInstance(event, FileAdded)
+        assert_is_instance(event, FileAdded)
 
     def test_get_file_removed(self):
         """Event gets FileRemoved from file_removed"""
         event = Event.parse_event(self.user, self.node, 'file_removed', payload=file_deleted_payload)
-        self.assertIsInstance(event, FileRemoved)
+        assert_is_instance(event, FileRemoved)
 
     def test_get_folder_created(self):
         """Event gets FolderCreated from folder_created"""
         event = Event.parse_event(self.user, self.node, 'folder_created', payload=folder_created_payload)
-        self.assertIsInstance(event, FolderCreated)
+        assert_is_instance(event, FolderCreated)
 
     def test_get_file_moved(self):
         """Event gets AddonFileMoved from addon_file_moved"""
         file_moved_payload = file_move_payload(self.node, self.node)
         event = Event.parse_event(self.user, self.node, 'addon_file_moved', payload=file_moved_payload)
-        self.assertIsInstance(event, AddonFileMoved)
+        assert_is_instance(event, AddonFileMoved)
 
     def test_get_file_copied(self):
         """Event gets AddonFileCopied from addon_file_copied"""
         file_copied_payload = file_copy_payload(self.node, self.node)
         event = Event.parse_event(self.user, self.node, 'addon_file_copied', payload=file_copied_payload)
-        self.assertIsInstance(event, AddonFileCopied)
+        assert_is_instance(event, AddonFileCopied)
 
     def tearDown(self):
         pass
@@ -535,10 +542,12 @@ class TestCategorizeUsers(OsfTestCase):
         self.sub.save()
         self.private_sub.none.append(self.user_3)
         self.private_sub.save()
-        moved, warn, removed = categorize_users(self.event.user, self.event.event_type, self.event.source_node,
-                                                self.event.event_type, self.event.node)
-        assert_equal({'email_transactional': [], 'email_digest': [self.user_3._id], 'none': []}, warn)
-        assert_equal({'email_transactional': [self.user_1._id], 'email_digest': [], 'none': []}, moved)
+        moved, warn, removed = utils.categorize_users(
+            self.event.user, self.event.event_type, self.event.source_node,
+            self.event.event_type, self.event.node
+        )
+        assert_equal({email_transactional: [], email_digest: [self.user_3._id], 'none': []}, warn)
+        assert_equal({email_transactional: [self.user_1._id], email_digest: [], 'none': []}, moved)
         # print (warn, moved, removed)
 
     def test_moved_user(self):
@@ -551,19 +560,23 @@ class TestCategorizeUsers(OsfTestCase):
         self.sub.save()
         self.private_sub.email_transactional.append(self.user_3)
         self.private_sub.save()
-        moved, warn, removed = categorize_users(self.event.user, self.event.event_type, self.event.source_node,
-                                                self.event.event_type, self.event.node)
-        assert_equal({'email_transactional': [], 'email_digest': [], 'none': []}, warn)
-        assert_equal({'email_transactional': [self.user_3._id], 'email_digest': [], 'none': []}, moved)
+        moved, warn, removed = utils.categorize_users(
+            self.event.user, self.event.event_type, self.event.source_node,
+            self.event.event_type, self.event.node
+        )
+        assert_equal({email_transactional: [], email_digest: [], 'none': []}, warn)
+        assert_equal({email_transactional: [self.user_3._id], email_digest: [], 'none': []}, moved)
 
     def test_remove_user(self):
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
         self.file_sub.email_transactional.append(self.user_3)
         self.file_sub.save()
-        moved, warn, removed = categorize_users(self.event.user, self.event.event_type, self.event.source_node,
-                                                self.event.event_type, self.event.node)
-        assert_equal({'email_transactional': [self.user_3._id], 'email_digest': [], 'none': []}, removed)
+        moved, warn, removed = utils.categorize_users(
+            self.event.user, self.event.event_type, self.event.source_node,
+            self.event.event_type, self.event.node
+        )
+        assert_equal({email_transactional: [self.user_3._id], email_digest: [], 'none': []}, removed)
 
     def tearDown(self):
         pass
