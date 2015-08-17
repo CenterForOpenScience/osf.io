@@ -8,6 +8,7 @@ from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 from tests.factories import AuthUserFactory
 
+from website.util import permissions
 from website.addons.osfstorage.tests import factories
 from website.addons.osfstorage.tests.utils import StorageTestCase
 
@@ -284,6 +285,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             settings.WATERBUTLER_RESOURCE: 'osf',
             'object': 'd07kja',
         }, metadata={'size': 400})
+
         self.user.reload()
         self.node.reload()
         assert_equal(400, self.user_addon.storage_usage)
@@ -308,8 +310,6 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(0, self.node_addon.storage_usage)
 
     def test_update_storage_usage_ignorable(self):
-        intial_usage_user = self.user_addon.storage_usage
-        intial_usage_node = self.node_addon.storage_usage
         child = self.node_settings.root_node.append_file('Test')
 
         child.create_version(self.user, {
@@ -319,8 +319,8 @@ class TestOsfstorageFileNode(StorageTestCase):
         }, metadata={'size': 400}, ignore_size=True)
         self.user.reload()
         self.node.reload()
-        assert_equal(intial_usage_user, self.user_addon.storage_usage)
-        assert_equal(intial_usage_node, self.node_addon.storage_usage)
+        assert_equal(0, self.user_addon.storage_usage)
+        assert_equal(0, self.node_addon.storage_usage)
 
         child.create_version(self.user, {
             'service': 'cloud',
@@ -329,22 +329,32 @@ class TestOsfstorageFileNode(StorageTestCase):
         }, metadata={'size': 800}, ignore_size=True)
         self.user.reload()
         self.node.reload()
-        assert_equal(intial_usage_user, self.user_addon.storage_usage)
-        assert_equal(intial_usage_node, self.node_addon.storage_usage)
+        assert_equal(0, self.user_addon.storage_usage)
+        assert_equal(0, self.node_addon.storage_usage)
 
         # Size ignored versions should remain size ignored
         self.user_addon.calculate_storage_usage(save=True)
         self.node_addon.calculate_storage_usage(save=True)
         self.user.reload()
         self.node.reload()
-        assert_equal(intial_usage_user, self.user_addon.storage_usage)
-        assert_equal(intial_usage_node, self.node_addon.storage_usage)
+        assert_equal(0, self.user_addon.storage_usage)
+        assert_equal(0, self.node_addon.storage_usage)
 
         child.delete()
         self.user.reload()
         self.node.reload()
-        assert_equal(intial_usage_user, self.user_addon.storage_usage)
-        assert_equal(intial_usage_node, self.node_addon.storage_usage)
+        assert_equal(0, self.user_addon.storage_usage)
+        assert_equal(0, self.node_addon.storage_usage)
+
+        # Deleted should still respect ignore
+        assert_equal(0, self.user_addon.calculate_storage_usage(deleted=True))
+        assert_equal(0, self.node_addon.calculate_storage_usage(deleted=True))
+
+        assert_equal(0, self.user_addon.calculate_storage_usage(ignored=True))
+        assert_equal(0, self.node_addon.calculate_storage_usage(ignored=True))
+
+        assert_equal(1200, self.user_addon.calculate_storage_usage(ignored=True, deleted=True))
+        assert_equal(1200, self.node_addon.calculate_storage_usage(ignored=True, deleted=True))
 
     def test_can_ignore_ignore_size(self):
         child = self.node_settings.root_node.append_file('Test')
@@ -366,12 +376,8 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(300, self.user_addon.storage_usage)
         assert_equal(300, self.node_addon.storage_usage)
 
-        self.user_addon.calculate_storage_usage(save=True, all=True)
-        self.node_addon.calculate_storage_usage(save=True, all=True)
-        self.user.reload()
-        self.node.reload()
-        assert_equal(700, self.user_addon.storage_usage)
-        assert_equal(700, self.node_addon.storage_usage)
+        assert_equal(700, self.user_addon.calculate_storage_usage(ignored=True))
+        assert_equal(700, self.node_addon.calculate_storage_usage(ignored=True))
 
     def test_materialized_path(self):
         child = self.node_settings.root_node.append_file('Test')
@@ -564,6 +570,122 @@ class TestUserSettingsModel(StorageTestCase):
         self.user_addon.warning_last_sent = datetime.datetime(2012, 1, 1)
         self.user_addon.send_warning_email()
         assert_equals(mock_email.call_count, 2)
+
+    def test_collaborative_usage(self):
+        usera = self.user.get_addon('osfstorage')
+        userb = AuthUserFactory().get_addon('osfstorage')
+        self.project.add_contributor(userb.owner, save=True)
+        child = self.node_settings.root_node.append_file('Test')
+
+        userb.owner.reload()
+
+        #Should always be the same
+        assert_equal(userb.calculate_collaborative_usage(), usera.calculate_collaborative_usage())
+
+        child.create_version(usera.owner, {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd077f2',
+        }, metadata={'size': 300})
+
+        assert_equal(userb.calculate_collaborative_usage(), usera.calculate_collaborative_usage())
+
+        child.create_version(userb.owner, {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd071f2',
+        }, metadata={'size': 800})
+
+        assert_equal(1100, usera.calculate_collaborative_usage())
+        assert_equal(1100, userb.calculate_collaborative_usage())
+
+        child.create_version(usera.owner, {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd077f2',
+        }, metadata={'size': 300})
+
+        # Above is a duplicate
+        assert_equal(1100, usera.calculate_collaborative_usage())
+        assert_equal(1100, userb.calculate_collaborative_usage())
+
+        assert_equal(1400, usera.calculate_collaborative_usage(dedup=False))
+        assert_equal(1400, userb.calculate_collaborative_usage(dedup=False))
+
+        child.create_version(usera.owner, {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd077adkfj',
+        }, metadata={'size': 800}, ignore_size=True)
+
+        assert_equal(1100, userb.calculate_collaborative_usage())
+        assert_equal(1100, usera.calculate_collaborative_usage())
+
+        assert_equal(1900, userb.calculate_collaborative_usage(ignored=True))
+        assert_equal(1900, usera.calculate_collaborative_usage(ignored=True))
+
+        assert_equal(2200, userb.calculate_collaborative_usage(ignored=True, dedup=False))
+        assert_equal(2200, usera.calculate_collaborative_usage(ignored=True, dedup=False))
+
+    def test_collab_vs_user(self):
+        usera = self.user.get_addon('osfstorage')
+        userb = AuthUserFactory().get_addon('osfstorage')
+        self.project.add_contributor(userb.owner, save=True)
+        child = self.node_settings.root_node.append_file('Test')
+
+        userb.owner.reload()
+
+        child.create_version(usera.owner, {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd077adkfj',
+        }, metadata={'size': 800})
+
+        child.create_version(usera.owner, {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd0dk',
+        }, metadata={'size': 400})
+
+        assert_equal(usera.calculate_storage_usage(), userb.calculate_collaborative_usage())
+
+    def test_cant_save_user_settings_with_nondefaults(self):
+        with assert_raises(AssertionError):
+            self.user_addon.calculate_storage_usage(ignored=True, save=True)
+        with assert_raises(AssertionError):
+            self.user_addon.calculate_storage_usage(deleted=True, save=True)
+        with assert_raises(AssertionError):
+            self.user_addon.calculate_storage_usage(dedup=False, save=True)
+        with assert_raises(AssertionError):
+            self.user_addon.calculate_storage_usage(dedup=False, ignored=True, deleted=True, save=True)
+
+    def test_cant_save_node_settings_with_nondefaults(self):
+        with assert_raises(AssertionError):
+            self.node_addon.calculate_storage_usage(ignored=True, save=True)
+        with assert_raises(AssertionError):
+            self.node_addon.calculate_storage_usage(deleted=True, save=True)
+        with assert_raises(AssertionError):
+            self.node_addon.calculate_storage_usage(dedup=False, save=True)
+        with assert_raises(AssertionError):
+            self.node_addon.calculate_storage_usage(dedup=False, ignored=True, deleted=True, save=True)
+
+    def test_read_permissions_not_included(self):
+        usera = self.user.get_addon('osfstorage')
+        userb = AuthUserFactory().get_addon('osfstorage')
+        self.project.add_contributor(userb.owner, save=True)
+        child = self.node_settings.root_node.append_file('Test')
+
+        userb.owner.reload()
+
+        child.create_version(usera.owner, {
+            'service': 'cloud',
+            settings.WATERBUTLER_RESOURCE: 'osf',
+            'object': 'd077adkfj',
+        }, metadata={'size': 800})
+
+        assert_equal(usera.calculate_storage_usage(), userb.calculate_collaborative_usage())
+        self.project.set_permissions(userb.owner, [permissions.READ], save=True)
+        assert_equal(0, userb.calculate_collaborative_usage())
 
 
 class TestNodeSettingsModel(StorageTestCase):

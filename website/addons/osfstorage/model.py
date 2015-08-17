@@ -124,30 +124,58 @@ class OsfStorageUserSettings(AddonUserSettingsBase):
 
         self.calculate_storage_usage(save=True)
 
-    def calculate_storage_usage(self, save=False, all=False):
+    def calculate_storage_usage(self, dedup=True, ignored=False, deleted=False, save=False):
         """Calculate the storage being used by this user
 
         :param bool save: Save the collected value to the user object
-        :param bool all: Collect all sizes ignoring "ignore_size"
+        :param bool dedup: Deduplicate based on object location aka sha256
+        :param bool deleted: Whether or not to take deleted files/versions into account
+        :param bool ignored: Whether or not to take versions where ignore_size == True into account
         :rtype: int
+        :raises AssertionError: If save is True and other kwargs are specified
         :returns: The total collected storage usaging of this user in bytes
         """
         q = Q('creator', 'eq', self.owner)
 
-        if not all:
+        if not ignored:
             q &= Q('ignore_size', 'eq', False)
+
+        if not deleted:
+            q &= Q('deleted', 'eq', False)
+
+        dedupper = (lambda x: {e.location_hash: e for e in x}.values()) if dedup else iter
 
         usage = sum(
             version.size
             for version in
-            OsfStorageFileVersion.find(q)
+            dedupper(OsfStorageFileVersion.find(q))
         )
 
         if save:
+            assert dedup and not (ignored or deleted), 'Can only save if dedup is True and ignored and deleted are False'
             self.storage_usage = usage
             self.save()
 
         return usage
+
+    def calculate_collaborative_usage(self, dedup=True, ignored=False, deleted=False):
+        """Collects the collaborative usage of the given user
+        Defined as the total usage of all nodes were they have >= write access
+        :param bool ignored: Passed to OsfStorageNodeSettings.calculate_storage_usage
+        :param bool deleted: Passed to OsfStorageNodeSettings.calculate_storage_usage
+        :rtype: int
+        """
+        node_settings = [
+            node.get_addon('osfstorage')
+            for node in self.owner.node__contributed
+            if node.can_edit(user=self.owner)  # Only include nodes with write access or >
+        ]
+        return sum(
+            # Recurse is false to avoid hitting the same nodes
+            # Dont save as recurse is false
+            ns.calculate_storage_usage(dedup=dedup, ignored=ignored, deleted=deleted)
+            for ns in node_settings
+        )
 
     def __repr__(self):
         return '<{}({!r}, Using {:.2f}%)>'.format(self.__class__.__name__, self.owner, self.storage_usage / self.storage_limit * 100)
@@ -158,14 +186,9 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     has_auth = True
 
     root_node = fields.ForeignField('OsfStorageFileNode')
-    file_tree = fields.ForeignField('OsfStorageFileTree')
 
     # The current storage being used by this user (in osfstorage) in bytes
     storage_usage = fields.IntegerField(default=0)
-
-    # Temporary field to mark that a record has been migrated by the
-    # migrate_from_oldels scripts
-    _migrated_from_old_models = fields.BooleanField(default=False)
 
     @property
     def folder_name(self):
@@ -244,25 +267,57 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             },
         )
 
-    def calculate_storage_usage(self, save=False, all=False):
+    def calculate_storage_usage(self, dedup=True, ignored=False, deleted=False, recurse=False, save=False):
         """Calculate the storage being used by this node
 
         :param bool save: Save the collected value to the node object
-        :param bool all: Collect all sizes ignoring "ignore_size"
+        :param bool dedup: Deduplicate based on object location aka sha256
+        :param bool recurse: Whether or not to recurse into child nodes
+        :param bool deleted: Whether or not to take deleted files/versions into account
+        :param bool ignored: Whether or not to take versions where ignore_size == True into account
         :rtype: int
         :returns: The total collected storage usaging of this node in bytes
+        :raises AssertionError: If save is True and other kwargs are specified
         """
+        dedupper = (lambda x: {e.location_hash: e for e in x}.values()) if dedup else iter
+
         versions = sum([
             # Must iterate over the list to actually load versions
             # Otherwise they are strings
-            [x for x in file_node.versions] for
+            [x for x in dedupper(file_node.versions)] for
             file_node in
             OsfStorageFileNode.find(Q('node_settings', 'eq', self))
         ], [])
 
-        usage = sum(version.size for version in versions if all or not version.ignore_size)
+        if deleted:
+            versions.extend(sum([
+                # Must iterate over the list to actually load versions
+                # Otherwise they are strings
+                [x for x in dedupper(file_node.versions)] for
+                file_node in
+                OsfStorageTrashedFileNode.find(Q('node_settings', 'eq', self))
+            ], []))
+
+        usage = sum(
+            version.size
+            for version in versions
+            if (deleted or not version.deleted)
+            and (ignored or not version.ignore_size)
+        )
+
+        if recurse:
+            usage += sum(
+                node.get_addon('osfstorage').calculate_storage_usage(
+                    ignored=ignored,
+                    deleted=deleted,
+                    recurse=recurse,
+                    save=save
+                )
+                for node in self.owner.nodes
+            )
 
         if save:
+            assert dedup and not (ignored or deleted), 'Can only save if dedup is True and ignored and deleted are False'
             self.storage_usage = usage
             self.save()
 
@@ -460,6 +515,7 @@ class OsfStorageFileNode(StoredObject):
         if metadata:
             version.update_metadata(metadata)
 
+        version._find_duplicates(save=False)
         version._find_matching_archive(save=False)
 
         # No if guards, rely on ignore_size on the version
@@ -497,10 +553,11 @@ class OsfStorageFileNode(StoredObject):
         trashed.save()
 
         for version in self.versions:
-            version.update_storage_usage(deleted=True, save=True)
-            version.update_storage_usage(of=self.node_settings, deleted=True)
+            version.deleted = True
             # Dont include deleted versions in future calculations
-            version.ignore_size = True
+            version.update_storage_usage(save=True)
+            version.update_storage_usage(of=self.node_settings)
+
             version.save()
 
         if self.is_folder and recurse:
@@ -591,8 +648,15 @@ class OsfStorageFileVersion(StoredObject):
     # exists on the backend
     date_modified = fields.DateTimeField()
 
+    # If this version's parent FileNode has been deleted
+    deleted = fields.BooleanField(default=False)
+    # Indicates if this file version has a duplicate elsewhere in the database
+    # If one variant's has_duplicate is True then all has_duplicates will be True
+    # duplicates are defined as have the same value for object and creator
+    has_duplicate = fields.BooleanField(default=False)
     # If set to True the size of this version will be ignored
     # when calculating the the storage usage of both nodes and users
+    # IE Files that are part of a registration or provided pro bono
     ignore_size = fields.BooleanField(default=False)
 
     @property
@@ -622,7 +686,7 @@ class OsfStorageFileVersion(StoredObject):
             self.date_modified = parse_date(self.metadata['modified'], ignoretz=True)
         self.save()
 
-    def update_storage_usage(self, of=None, deleted=False, save=True):
+    def update_storage_usage(self, of=None, save=True):
         """Increments or decrements the `storage_usage` attribute of `of`
         :param modm.StoredObject of: The model to be updated, if `None` defaults to self.creator's osfstorage addon
         :param bool deleted: Increment if True decrement if False
@@ -632,8 +696,20 @@ class OsfStorageFileVersion(StoredObject):
         if self.ignore_size:
             return
 
+        # If there are non-deleted duplicates dont update anything
+        if self.has_duplicate:
+            dups = self.__class__.find(
+                Q('_id', 'ne', self._id) &
+                Q('deleted', 'eq', False) &
+                Q('ignore_size', 'eq', False) &
+                Q('creator', 'eq', self.creator) &
+                Q('location.object', 'eq', self.location_hash)
+            )
+            if dups.count() > 0:
+                return
+
         of = of or self.creator.get_addon('osfstorage')
-        if deleted:
+        if self.deleted:
             of.storage_usage -= self.size
         else:
             of.storage_usage += self.size
@@ -671,6 +747,24 @@ class OsfStorageFileVersion(StoredObject):
             self.save()
         return True
 
+    def _find_duplicates(self, save=True):
+        dups = self.__class__.find(
+            Q('_id', 'ne', self._id) &
+            Q('deleted', 'eq', False) &
+            Q('ignore_size', 'eq', False) &
+            Q('creator', 'eq', self.creator) &
+            Q('location.object', 'eq', self.location_hash)
+        )
+        if dups.count() < 1:
+            return
+        # If there is only one other duplicate it's flag
+        # has not been set
+        if dups.count() == 1:
+            dups[0].has_duplicate = True
+            dups[0].save()
+        self.has_duplicate = True
+        if save:
+            self.save()
 
 @unique_on(['node', 'path'])
 class OsfStorageGuidFile(GuidFile):
