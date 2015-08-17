@@ -47,6 +47,7 @@
     </div>
   </div>
 
+<!-- The osf-logo spinner here is from mfr code base -->
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
         <div id="externalView" class="col-sm-9"></div>
