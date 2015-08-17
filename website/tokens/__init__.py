@@ -11,12 +11,12 @@ from website.tokens.exceptions import TokenHandlerNotFound
 class TokenHandler(object):
 
     ACTION_MAP = {
-        'registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'approve'),
-        'registration_rejection': functools.partial(handlers.sanction_handler, 'registration', 'reject'),
-        'embargo_approval': functools.partial(handlers.sanction_handler, 'embargo', 'approve'),
-        'embargo_rejection': functools.partial(handlers.sanction_handler, 'embargo', 'reject'),
-        'retraction_approval': functools.partial(handlers.sanction_handler, 'retraction', 'approve'),
-        'retraction_rejection': functools.partial(handlers.sanction_handler, 'retraction', 'reject')
+        'approve_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'approve'),
+        'reject_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'reject'),
+        'approve_embargo': functools.partial(handlers.sanction_handler, 'embargo', 'approve'),
+        'reject_embargo': functools.partial(handlers.sanction_handler, 'embargo', 'reject'),
+        'approve_retraction': functools.partial(handlers.sanction_handler, 'retraction', 'approve'),
+        'reject_retraction': functools.partial(handlers.sanction_handler, 'retraction', 'reject')
     }
 
     def __init__(self, encoded_token=None, payload=None):
@@ -39,12 +39,12 @@ class TokenHandler(object):
     @classmethod
     def from_string(cls, encoded_token):
         payload = TokenHandler.decode(encoded_token)
-        return cls(raw_token=encoded_token, payload=payload)
+        return cls(encoded_token=encoded_token, payload=payload)
 
     @classmethod
     def from_token(cls, payload):
         encoded_token = TokenHandler.encode(payload)
-        return cls(raw_token=encoded_token, payload=payload)
+        return cls(encoded_token=encoded_token, payload=payload)
 
     def process(self):
         action = self.payload.get('action', None)

@@ -2920,7 +2920,8 @@ class Sanction(StoredObject):
     APPROVED = 'approved'
     REJECTED = 'rejected'
 
-    DISPLAY_NAME = 'sanction'
+    DISPLAY_NAME = 'Sanction'
+    SHORT_NAME = 'sanction'
 
     APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this {DISPLAY_NAME}'
     APPROVAL_INVALID_TOKEN_MESSAGE = 'Invalid approval token provided for this {DISPLAY_NAME}.'
@@ -2972,14 +2973,14 @@ class Sanction(StoredObject):
                     {
                         'user_id': user._id,
                         'sanction_id': self._id,
-                        'action': 'approve_{}'.format(self.DISPLAY_NAME)
+                        'action': 'approve_{}'.format(self.SHORT_NAME)
                     }
                 ),
                 'rejection_token': TokenHandler.encode(
                     {
                         'user_id': user._id,
                         'sanction_id': self._id,
-                        'action': 'reject_{}'.format(self.DISPLAY_NAME)
+                        'action': 'reject_{}'.format(self.SHORT_NAME)
                     }
                 ),
             }
@@ -3124,14 +3125,15 @@ class Embargo(EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
 
     COMPLETED = 'completed'
-    DISPLAY_NAME = 'embargo'
+    DISPLAY_NAME = 'Embargo'
+    SHORT_NAME = 'embargo'
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_ADMIN
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/embargo/approve/{token}/'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/embargo/disapprove/{token}/'
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
 
     initiated_by = fields.ForeignField('user', backref='embargoed')
     for_existing_registration = fields.BooleanField(default=False)
@@ -3257,14 +3259,15 @@ class Embargo(EmailApprovableSanction):
 class Retraction(EmailApprovableSanction):
     """Retraction object for public registrations."""
 
-    DISPLAY_NAME = 'retraction'
+    DISPLAY_NAME = 'Retraction'
+    SHORT_NAME = 'retraction'
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_ADMIN
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/retraction/approve/{token}/'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/retraction/disapprove/{token}/'
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
 
     initiated_by = fields.ForeignField('user', backref='initiated')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
@@ -3377,14 +3380,15 @@ class Retraction(EmailApprovableSanction):
 
 class RegistrationApproval(EmailApprovableSanction):
 
-    DISPLAY_NAME = 'registration approval'
+    DISPLAY_NAME = 'Registration Approval'
+    SHORT_NAME = 'registration_approval'
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/registration/approve/{token}/'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/registration/disapprove/{token}/'
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
 
     initiated_by = fields.ForeignField('user', backref='registration_approved')
 
