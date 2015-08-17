@@ -72,6 +72,9 @@ var ViewModel = function(selector, settings) {
         return (self.bucketList().length > 0 || self.loadedBucketList()) && (!self.loading());
     });
 
+    self.saveButtonText = ko.pureComputed (function(){
+        return self.loading()? 'Saving': 'Save';
+    });
 };
 
 ViewModel.prototype.toggleSelect = function() {

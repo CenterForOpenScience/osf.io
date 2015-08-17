@@ -1631,57 +1631,48 @@ class TestNode(OsfTestCase):
             self.node.set_visible(user=self.user, visible=False, auth=None)
             assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
+    def test_contributor_manage_visibility(self):
 
-class TestNodeLicense(OsfTestCase):
+        reg_user1 = UserFactory()
+        #This makes sure manage_contributors uses set_visible so visibility for contributors is added before visibility
+        #for other contributors is removed ensuring there is always at least one visible contributor
+        self.node.add_contributor(contributor=self.user, permissions=['read', 'write','admin'], auth=self.auth)
+        self.node.add_contributor(contributor=reg_user1, permissions=['read', 'write','admin'], auth=self.auth)
 
-    def setUp(self):
-        super(TestNodeLicense, self).setUp()
-        # Create project with component
-        self.user = UserFactory()
-        self.auth = Auth(user=self.user)
-        self.parent = ProjectFactory(creator=self.user, node_license={
-            'name': 'MIT License',
-            'text': 'blah, blah blah',
-            'url': 'http://opensource.org/licenses/MIT',
-        })
-        self.node = NodeFactory(creator=self.user, parent=self.parent)
-
-    def test_forked_node_inherits_forked_from_license(self):
-        fork = self.parent.fork_node(self.auth)
-        assert_equal(fork.license, self.parent.license)
-
-    def test_components_inherit_parent_license(self):
-        assert_equal(self.node.license, self.parent.license)
-
-    def test_component_inherits_closest_ancestor_license(self):
-        child = NodeFactory(parent=self.node)
-        child2 = NodeFactory(parent=child)
-        no_license =  {
-            'name': 'No License',
-            'text': 'No license.'
-        }        
-        child.node_license = no_license
-        child.save()
-        assert_equal(child2.license, no_license)
-
-    def test_license_file_url_points_to_osfstorage_file_if_OTHER(self):
-        node = NodeFactory(node_license={'id': 'OTHER'})    
-        assert_equal(
-            node.license_file_url,
-            '/{0}/osfstorage/files/license.txt'.format(node._id)            
+        self.node.manage_contributors(
+            user_dicts=[
+                    {'id': self.user._id, 'permission': 'admin', 'visible': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'visible': False},
+                ],
+            auth=self.auth,
+            save=True
+        )
+        self.node.manage_contributors(
+            user_dicts=[
+                    {'id': self.user._id, 'permission': 'admin', 'visible': False},
+                    {'id': reg_user1._id, 'permission': 'admin', 'visible': True},
+            ],
+            auth=self.auth,
+            save=True
         )
 
-    def test_license_property_injects_url_if_OTHER(self):
-        node = NodeFactory(node_license={'id': 'OTHER'})
-        assert_equal(node.license['url'], node.license_file_url)
+        assert_equal(len(self.node.visible_contributor_ids),1)
 
-    def test_license_property_uses_url_if_not_OTHER(self):
-        assert_equal(self.parent.license['url'], 'http://opensource.org/licenses/MIT')
-
-    def test_registration_inherits_registered_from_license(self):
-        reg = RegistrationFactory(project=self.parent)
-        assert_equal(reg.license, self.parent.license)
-        
+    def test_contributor_set_visibility_validation(self):
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        self.node.add_contributors(
+                        [
+                {'user': reg_user1, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': False},
+            ]
+        )
+        print(self.node.visible_contributor_ids)
+        with assert_raises(ValueError) as e:
+            self.node.set_visible(user=reg_user1, visible=False, auth=None)
+            self.node.set_visible(user=self.user, visible=False, auth=None)
+            assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
 class TestNodeTraversals(OsfTestCase):
 
