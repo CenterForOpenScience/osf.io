@@ -247,7 +247,7 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
 
     def test_get_404_path_users_user_id_me_unauthorized_user(self):
         url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth= self.user_two.auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_get_200_path_users_user_id_user_logged_in(self):
@@ -387,170 +387,94 @@ class TestUserUpdate(ApiTestCase):
 
     def setUp(self):
         super(TestUserUpdate, self).setUp()
-        self.user_one = UserFactory.build()
-        self.user_one.set_password('justapoorboy')
-        self.user_one.fullname = 'Martin Luther King Jr.'
-        self.user_one.given_name = 'Martin'
-        self.user_one.family_name = 'King'
-        self.user_one.suffix = 'Jr.'
-        self.user_one.social['github'] = 'userOneGitHub'
-        self.user_one.social['scholar'] = 'userOneScholar'
-        self.user_one.social['personal'] = 'http://www.useronepersonalwebsite.com'
-        self.user_one.social['twitter'] = 'userOneTwitter'
-        self.user_one.social['linkedIn'] = 'userOneLinkedIn'
-        self.user_one.social['impactStory'] = 'userOneImpactStory'
-        self.user_one.social['orcid'] = 'userOneOrcid'
-        self.user_one.social['researcherId'] = 'userOneResearcherId'
-
-        self.user_one.jobs = [
-            {
-                'startYear': '1995',
-                'title': '',
-                'startMonth': 1,
-                'endMonth': None,
-                'endYear': None,
-                'ongoing': False,
-                'department': '',
-                'institution': 'Waffle House'
+        self.user_one = AuthUserFactory.build(
+            fullname='Martin Luther King Jr.',
+            given_name='Martin',
+            middle_names='Luther',
+            family_name='King',
+            suffix='Jr.',
+            social={
+                'github': 'userOneGitHub',
+                'scholar': 'userOneScholar',
+                'personal': 'http://www.useronepersonalwebsite.com',
+                'twitter': 'userOneTwitter',
+                'linkedIn': 'userOneLinkedIn',
+                'impactStory': 'userOneImpactStory',
+                'orcid': 'userOneOrcid',
+                'researcherId': 'userOneResearcherId',
             }
-        ]
-        self.user_one.save()
-        self.auth_one = (self.user_one.username, 'justapoorboy')
+        )
         self.user_one_url = "/v2/users/{}/".format(self.user_one._id)
 
-        self.user_two = UserFactory.build()
-        self.user_two.set_password('justapoorboy')
+        self.user_two = AuthUserFactory()
         self.user_two.save()
-        self.auth_two = (self.user_two.username, 'justapoorboy')
 
-        self.new_fullname = 'el-Hajj Malik el-Shabazz'
-        self.new_given_name = 'Malcolm'
-        self.new_family_name = 'X'
-        self.new_suffix = 'Sr.'
-        self.new_employment_institutions = [
-            {
-                'startYear': '1982',
-                'title': '',
-                'startMonth': 1,
-                'endMonth': 4,
-                'endYear': 1999,
-                'ongoing': True,
-                'department': 'department of revolution',
-                'institution': 'IHop'
-            }
-        ]
-
-        self.new_educational_institutions = [
-            {
-                "startYear": '',
-                "degree": '',
-                "startMonth": None,
-                "endMonth": None,
-                "endYear": '2000',
-                "ongoing": False,
-                "department": 'Mom',
-                "institution": 'Heeyyyy'
-            }
-        ]
-
-        self.newGitHub = 'newGitHub'
-        self.newScholar = 'newScholar'
-        self.newPersonal_website = 'http://www.newpersonalwebsite.com'
-        self.newTwitter = 'newTwitter'
-        self.newLinkedIn = 'newLinkedIn'
-        self.newImpactStory = 'newImpactStory'
-        self.newOrcid = 'newOrcid'
-        self.newResearcherId = 'newResearcherId'
+        self.new_user_one_data = {
+            'id': self.user_one._id,
+            'fullname': 'el-Hajj Malik el-Shabazz',
+            'given_name': 'Malcolm',
+            'middle_names': 'Malik el-Shabazz',
+            'family_name': 'X',
+            'suffix': 'Sr.',
+            'gitHub': 'newGitHub',
+            'scholar': 'newScholar',
+            'personal_website': 'http://www.newpersonalwebsite.com',
+            'twitter': 'http://www.newpersonalwebsite.com',
+            'linkedIn': 'newLinkedIn',
+            'impactStory': 'newImpactStory',
+            'orcid': 'newOrcid',
+            'researcherId': 'newResearcherId',
+        }
 
     def test_patch_user_logged_out(self):
         res = self.app.patch_json(self.user_one_url, {
-            'fullname': self.new_fullname,
+            'fullname': self.new_user_one_data['fullname'],
         }, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
-
-    def test_patch_user_read_only_field(self):
-        # Logged in user updates their user information via patch
-        res = self.app.patch_json(self.user_one_url, {
-            'employment_institutions': self.new_employment_institutions,
-            'educational_institutions': self.new_educational_institutions,
-            'fullname': self.new_fullname,
-
-        }, auth=self.auth_one)
-        print res
-        assert_equal(res.status_code, 200)
-        assert_not_equal(res.json['data']['employment_institutions'], self.new_employment_institutions)
-        assert_not_equal(res.json['data']['educational_institutions'], self.new_educational_institutions)
-        # assert_equal(res.json['data']['employment_institutions'], self.user_one.employment_institutions)
-        assert_equal(res.json['data']['fullname'], self.new_fullname)
 
     def test_put_user_logged_in(self):
         # Logged in user updates their user information via patch
-        res = self.app.put_json(self.user_one_url, {
-            'id': self.user_one._id,
-            'fullname': self.new_fullname,
-            'given_name': self.new_given_name,
-            'family_name': self.new_family_name,
-            'suffix': self.new_suffix,
-            'gitHub': self.newGitHub,
-            'personal_website': self.newPersonal_website,
-            'twitter': self.newTwitter,
-            'linkedIn': self.newLinkedIn,
-            'impactStory': self.newImpactStory,
-            'orcid': self.newOrcid,
-            'researcherId': self.newResearcherId,
-        }, auth=self.auth_one)
+        res = self.app.put_json(self.user_one_url, self.new_user_one_data, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['fullname'], self.new_fullname)
-        assert_equal(res.json['data']['given_name'], self.new_given_name)
-        assert_equal(res.json['data']['family_name'], self.new_family_name)
-        assert_equal(res.json['data']['suffix'], self.new_suffix)
-        assert_equal(res.json['data']['gitHub'], self.newGitHub)
-        assert_equal(res.json['data']['personal_website'], self.newPersonal_website)
-        assert_equal(res.json['data']['twitter'], self.newTwitter)
-        assert_equal(res.json['data']['linkedIn'], self.newLinkedIn)
-        assert_equal(res.json['data']['impactStory'], self.newImpactStory)
-        assert_equal(res.json['data']['orcid'], self.newOrcid)
-        assert_equal(res.json['data']['researcherId'], self.newResearcherId)
+        assert_equal(res.json['data']['fullname'], self.new_user_one_data['fullname'])
+        assert_equal(res.json['data']['given_name'], self.new_user_one_data['given_name'])
+        assert_equal(res.json['data']['middle_names'], self.new_user_one_data['middle_names'])
+        assert_equal(res.json['data']['family_name'], self.new_user_one_data['family_name'])
+        assert_equal(res.json['data']['suffix'], self.new_user_one_data['suffix'])
+        assert_equal(res.json['data']['gitHub'], self.new_user_one_data['gitHub'])
+        assert_equal(res.json['data']['personal_website'], self.new_user_one_data['personal_website'])
+        assert_equal(res.json['data']['twitter'], self.new_user_one_data['twitter'])
+        assert_equal(res.json['data']['linkedIn'], self.new_user_one_data['linkedIn'])
+        assert_equal(res.json['data']['impactStory'], self.new_user_one_data['impactStory'])
+        assert_equal(res.json['data']['orcid'], self.new_user_one_data['orcid'])
+        assert_equal(res.json['data']['researcherId'], self.new_user_one_data['researcherId'])
+        self.user_one.reload()
+        assert_equal(self.user_one.fullname, self.new_user_one_data['fullname'])
+        assert_equal(self.user_one.given_name, self.new_user_one_data['given_name'])
+        assert_equal(self.user_one.middle_names, self.new_user_one_data['middle_names'])
+        assert_equal(self.user_one.family_name, self.new_user_one_data['family_name'])
+        assert_equal(self.user_one.suffix, self.new_user_one_data['suffix'])
+        assert_equal(self.user_one.social['github'], self.new_user_one_data['gitHub'])
+        assert_equal(self.user_one.social['personal'], self.new_user_one_data['personal_website'])
+        assert_equal(self.user_one.social['twitter'], self.new_user_one_data['twitter'])
+        assert_equal(self.user_one.social['linkedIn'], self.new_user_one_data['linkedIn'])
+        assert_equal(self.user_one.social['impactStory'], self.new_user_one_data['impactStory'])
+        assert_equal(self.user_one.social['orcid'], self.new_user_one_data['orcid'])
+        assert_equal(self.user_one.social['researcherId'], self.new_user_one_data['researcherId'])
 
     def test_put_user_logged_out(self):
-        res = self.app.put_json(self.user_one_url, {
-            'id': self.user_one._id,
-            'fullname': self.new_fullname,
-            'given_name': self.new_given_name,
-            'family_name': self.new_family_name,
-            'suffix': self.new_suffix,
-            'gitHub': self.newGitHub,
-            'personal_website': self.newPersonal_website,
-            'twitter': self.newTwitter,
-            'linkedIn': self.newLinkedIn,
-            'impactStory': self.newImpactStory,
-            'orcid': self.newOrcid,
-            'researcherId': self.newResearcherId,
-        }, expect_errors=True)
+        res = self.app.put_json(self.user_one_url, self.new_user_one_data, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
 
-    def test_put_user_not_logged_in(self):
+    def test_put_wrong_user(self):
         # User tries to update someone else's user information via put
-        res = self.app.put_json(self.user_one_url, {
-            'id': self.user_one._id,
-            'fullname': self.new_fullname,
-            'given_name': self.new_given_name,
-            'family_name': self.new_family_name,
-            'suffix': self.new_suffix,
-            'gitHub': self.newGitHub,
-            'personal_website': self.newPersonal_website,
-            'twitter': self.newTwitter,
-            'linkedIn': self.newLinkedIn,
-            'impactStory': self.newImpactStory,
-            'orcid': self.newOrcid,
-            'researcherId': self.newResearcherId,
-        }, auth=self.auth_two, expect_errors=True)
+        res = self.app.put_json(self.user_one_url, self.new_user_one_data, auth=self.user_two.auth, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
@@ -559,12 +483,15 @@ class TestUserUpdate(ApiTestCase):
     def test_patch_wrong_user(self):
         # User tries to update someone else's user information via patch
         res = self.app.patch_json(self.user_one_url, {
-            'fullname': self.new_fullname,
-        }, auth=self.auth_two, expect_errors=True)
+            'fullname': self.new_user_one_data['fullname'],
+        }, auth=self.user_two.auth, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
         assert_equal(res.status_code, 403)
+        self.user_one.reload()
+        assert_not_equal(self.user_one.fullname, self.new_user_one_data['fullname'])
+
 
     def test_update_user_sanitizes_html_properly(self):
         """Post request should update resource, and any HTML in fields should be stripped"""
@@ -573,7 +500,7 @@ class TestUserUpdate(ApiTestCase):
         res = self.app.patch_json(self.user_one_url, {
             'fullname': bad_fullname,
             'family_name': bad_family_name,
-        }, auth=self.auth_one)
+        }, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['fullname'], strip_html(bad_fullname))
         assert_equal(res.json['data']['family_name'], strip_html(bad_family_name))
