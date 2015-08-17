@@ -30,15 +30,12 @@ def count_user_logs(user, query=None):
 
 
 def get_depth_users(users):
-    rows = [
-        (user.fullname, user.username, count_user_logs(user))
-        for user in users
-    ]
-    return [
-        row
-        for row in rows
-        if row[2] >= LOG_THRESHOLD
-    ]
+    rows = []
+    for user in users:
+        log_count = count_user_logs(user)
+        if log_count >= LOG_THRESHOLD:
+            rows.append((user.fullname, user.username, log_count))
+    return rows
 
 
 def main():
