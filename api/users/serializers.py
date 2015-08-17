@@ -18,7 +18,7 @@ class UserSerializer(JSONAPISerializer):
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-    gravatar_url = ser.CharField(required=False, read_only=True, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
+    gravatar_url = ser.URLField(required=False, read_only=True, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
     gitHub = ser.CharField(required=False, source='social.github', allow_blank=True, help_text='GitHub Handle')
