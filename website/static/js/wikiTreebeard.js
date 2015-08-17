@@ -59,18 +59,22 @@ function openAncestors (tb, item) {
 function before_change_permissions(item, permission){
     var title = item.parent().data.node.title;
     if(permission === 'public'){
-        bootbox.confirm({
+        bootbox.dialog({
             title: 'Make publicly editable',
             message: 'Are you sure you want to make the wiki of <b>' +title+
                 '</b> publicly editable? This will allow any logged in user to edit the content of this wiki. ' +
                 '<b>Note</b>: Users without write access will not be able to add, delete, or rename pages.',
-            callback: function(confirm) {
-            if (confirm) {
-                change_permissions(item, permission);
+            buttons: {
+                cancel : {
+                    label : 'Cancel',
+                    className : 'btn-default',
+                    callback : function() {item.notify.update('', 'notify-primary', 1, 10);}
+                },
+                success: {
+                    label: 'Apply',
+                    className: 'btn-primary',
+                    callback: function() {change_permissions(item, permission);}
                 }
-            else {
-                item.notify.update('', 'notify-primary', 1, 10);
-            }
             }
         });
     }
