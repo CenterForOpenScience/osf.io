@@ -224,3 +224,5 @@ OSFSTORAGE_USAGE_WARNING = Mail(
     'osfstorage_usage_warning',
     subject='Low on OSF storage space'
 )
+
+EMPTY = Mail('empty', subject='A message from an OSF script')
