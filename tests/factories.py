@@ -23,10 +23,9 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
-from website.oauth.models import ExternalAccount
-from website.oauth.models import ExternalProvider
+from website.oauth.models import ApiOAuth2Application, ExternalAccount, ExternalProvider
 from website.project.model import (
-    Comment, Embargo, Node, NodeLog,  ApiOAuth2Application, Pointer, PrivateLink, Retraction, Tag, WatchConfig,
+    Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, Retraction, Tag, WatchConfig,
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver import utils as archiver_utils

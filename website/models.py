@@ -7,12 +7,12 @@ from framework.guid.model import Guid, BlacklistGuid
 from framework.sessions.model import Session
 
 from website.project.model import (
-    ApiOAuth2Application, Node, NodeLog,
+    Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData, Retraction,
     Embargo,
 )
-from website.oauth.models import ExternalAccount
+from website.oauth.models import ApiOAuth2Application, ExternalAccount
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
 from website.conferences.model import Conference, MailRecord

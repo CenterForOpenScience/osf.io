@@ -1,31 +1,27 @@
 # -*- coding: utf-8 -*-
 import functools
-import os
-import re
 import urllib
-import uuid
 import logging
 import datetime
 import urlparse
 from collections import OrderedDict
-import warnings
 
+import os
+import re
+import warnings
 import pytz
 from flask import request
 from django.core.urlresolvers import reverse
-
 from modularodm import Q
 from modularodm import fields
-from modularodm.validators import MaxLengthValidator, URLValidator
+from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
-
 from api.base.utils import absolute_reverse
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
-from framework.auth import cas
 from framework.auth import get_user, User, Auth
 from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
@@ -39,7 +35,6 @@ from framework.analytics import (
 from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
-
 from website import language, settings, security
 from website.util import web_url_for
 from website.util import api_url_for
@@ -264,71 +259,6 @@ class Comment(GuidStoredObject):
 
         if save:
             self.save()
-
-
-class ApiOAuth2Application(StoredObject):
-    """Registration and key for user-created OAuth API applications"""
-    _id = fields.StringField(
-        primary=True,
-        default=lambda: str(ObjectId())
-    )
-
-    # Client ID and secret. Use separate ID field so ID format doesn't have to be restricted to database internals.
-    client_id = fields.StringField(default=lambda: uuid.uuid4().hex,  # Not *guaranteed* unique, but very unlikely
-                                   unique=True,
-                                   index=True)
-    client_secret = fields.StringField(default=generate_client_secret)
-
-    active = fields.BooleanField(default=True,  # Set to False if application is deactivated
-                                 index=True)
-
-    owner = fields.ForeignField('User',
-                                backref='created',
-                                index=True,
-                                required=True)
-
-    # User-specified application descriptors
-    name = fields.StringField(index=True, required=True)
-    description = fields.StringField(required=False)
-
-    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
-                                        editable=False)
-
-    home_url = fields.StringField(required=True,
-                                  validate=URLValidator())
-    callback_url = fields.StringField(required=True,
-                                      validate=URLValidator())
-
-    def deactivate(self):
-        """
-        Deactivate an ApiOAuth2Application
-
-        Does not delete the database record, but revokes all tokens and sets a flag that hides this instance from API
-        """
-        client = cas.get_client()
-        # Will raise a CasHttpError if deletion fails, which will also stop setting of active=False.
-        resp = client.revoke_application_tokens(self.client_id, self.client_secret)  # noqa
-
-        self.active = False
-        self.save()
-        return True
-
-    @property
-    def url(self):
-        return '/settings/applications/{}/'.format(self.client_id)
-
-    @property
-    def absolute_url(self):
-        return urlparse.urljoin(settings.DOMAIN, self.url)
-
-    # Properties used by Django and DRF "Links: self" field
-    @property
-    def absolute_api_v2_url(self):
-        return absolute_reverse('applications:application-detail', kwargs={'client_id': self.client_id})
-
-    # used by django and DRF
-    def get_absolute_url(self):
-        return self.absolute_api_v2_url
 
 
 @unique_on(['params.node', '_id'])
