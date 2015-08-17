@@ -71,7 +71,8 @@ var FileViewPage = {
         });
 
         $(document).on('fileviewpage:download', function() {
-            window.location = self.file.urls.content;
+            //Remove mode=render for download count incrementation
+            window.location = self.file.urls.content.replace('&mode=render', '');
             return false;
         });
 
