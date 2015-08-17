@@ -5,34 +5,14 @@ var licenses = require('list-of-licenses');
 
 var $osf = require('js/osfHelpers');
 
-/**
- * Fetch deep object properties using a path string
- *
- * @param {Object} obj:
- * @param {string} path: formatted like: 'top.middle.bottom'
- *
- * Example usage:
- * var obj = {foo: {baz: 'bar'}};
- * unpack(obj, 'foo.baz') // == 'bar'
- **/
-var unpack = function(obj, path) {
-    var parts = path.split('.');
-    var key = parts.unshift();
-    var value = obj[key];
-    if (parts.length && value) {
-        return unpack(value, parts.join('.'));
-    }
-    return value;
-};
-
 var template = require('raw!templates/license-picker.html');
 
-var defaultLicense = {
+var DEFAULT_LICENSE = {
     id: 'NONE',
     name: 'None',
     text: 'Copyright [year] [fullname]'
 };
-var otherLicense = {
+var OTHER_LICENSE = {
     id: 'OTHER',
     name: 'Other',
     text: 'Please see the "license.txt" uploaded in this project\'s OSF Storage'
@@ -72,22 +52,22 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
         value.id = key;
         return value;
     });
-    self.licenses.unshift(defaultLicense);
-    self.licenses.push(otherLicense);
+    self.licenses.unshift(DEFAULT_LICENSE);
+    self.licenses.push(OTHER_LICENSE);
 
-    self.savedLicense = ko.observable(license || defaultLicense);
+    self.savedLicense = ko.observable(license || DEFAULT_LICENSE);
     self.savedLicenseName = ko.pureComputed(function() {
         return self.savedLicense().name;
     });
 
-    self.selectedLicense = ko.observable(license || defaultLicense);
+    self.selectedLicense = ko.observable(license || DEFAULT_LICENSE);
     self.selectedLicenseText = ko.pureComputed(function() {
         return self.selectedLicense().text;
     });
     self.selectedLicenseUrl = ko.pureComputed(function() {
         return self.selectedLicense().url;
     });
-    /** 
+    /** ;
      * Needed to track selected/saved license in the list of licenses
      **/     
     self.selectedLicenseId = ko.computed({
@@ -131,6 +111,21 @@ LicensePicker.prototype.togglePreview = function() {
 
     self.previewing(!self.previewing());
 };
+LicensePicker.prototype.onSaveSuccess = function(selectedLicense) {
+    var self = this;
+
+    self.error(false);
+    self.editing(false);
+    self.previewing(false);
+    self.savedLicense(selectedLicense);
+    self.notification('License updated successfully.');
+};
+LicensePicker.prototype.onSaveFail = function() {
+    var self = this;
+
+    self.notification('There was a problem updating your license. Please try again.');
+    self.error(true);
+};
 /**
  * Save the currently selected license, updating the UI on success/fail
  **/
@@ -143,32 +138,28 @@ LicensePicker.prototype.save = function() {
     var selectedLicense = self.selectedLicense();
     payload[self.saveLicenseKey] = selectedLicense;
     var save = function() {
-        $.ajax({
+        return $.ajax({
             url: self.saveUrl,
             method: self.saveMethod,
             contentType: 'application/json',
             data: JSON.stringify(payload)
-        }).done(function(response) {
-            self.error(false);
-            self.editing(false);
-            self.previewing(false);
-            self.savedLicense(selectedLicense);
-            self.notification('License updated successfully.');
-        }).fail(function() {
-            self.notification('There was a problem updating your license. Please try again.');
-            self.error(true);
-        });
+        }).done(self.onSaveSuccess.bind(self, selectedLicense)).fail(self.onSaveFail.bind(self));
     };
-    if (license.id === otherLicense.id) {
+    if (license.id === OTHER_LICENSE.id) {
+        var ret = $.Deferred();
         bootbox.confirm(
             'You have opted to use your own license. It is your responsiblity to upload and maintain a license file named "license.txt" and to upload that file into the OSF Storage of this project.',
             function(confirmed) {
                 if (confirmed) {
-                    save();
+                    save().then(ret.resolve);
+                }
+                else {
+                    ret.reject();
                 }
             });
+        return ret.promise();
     } else {
-        save();
+        return save();
     }
 };
 

@@ -4,7 +4,7 @@ var assert = require('chai').assert;
 var $ = require('jquery');
 
 var utils = require('./utils');
-var nodeControl = require('../nodeControl');
+var nodeControl = require('js/nodeControl');
 
 var nodeData = {
     node: {
