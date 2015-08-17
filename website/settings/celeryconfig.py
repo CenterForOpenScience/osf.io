@@ -9,7 +9,8 @@ BROKER_URL = 'amqp://'
 CELERY_RESULT_BACKEND = 'amqp://'
 
 # CELERYBEAT_SCHEDULE_FILENAME = 'celeryconfig.py'
-# Setting up a scheduler
+# Setting up a scheduler, essentially replaces an
+#  independent cronjob
 CELERYBEAT_SCHEDULE = {
     '5-minute-emails': {
         'task': 'notify.send_users_email',

@@ -25,10 +25,9 @@ class _EventMeta(type):
 
 @add_metaclass(_EventMeta)
 class Event(object):
-    """
-    Base notification class for building notification events and messages.
-    - abstract methods set methods that must be defined by subclasses.
+    """Base event class for notification.
 
+    - abstract methods set methods that must be defined by subclasses.
     To use this interface you must use the class as a Super (inherited).
      - Implement property methods in subclasses
      - All subclasses must be in this file for the meta class to list them
@@ -36,6 +35,7 @@ class Event(object):
       - event (the type of event from _SUBSCRIPTIONS_AVAILABLE or specific cases)
       - class
       example: event = file_added, class = FileAdded
+     - Call Event.parse_event() with the correct event name
     """
 
     def __init__(self, user, node, action):
@@ -47,16 +47,16 @@ class Event(object):
 
     @classmethod
     def parse_event(cls, user, node, event, **kwargs):
-        """If there is a class that matches the event then it returns that instance"""
+        """Call correct event class for parsing."""
         kind = ''.join(event.split('_'))
         if kind in cls.registry:
             return cls.registry[kind](user, node, event, **kwargs)
         raise TypeError
 
     def perform(self):
-        """Calls emails.notify to notify users of an action"""
+        """Call emails.notify to notify users of an action"""
         emails.notify(
-            event=self.event,
+            event=self.event_type,
             user=self.user,
             node=self.node,
             timestamp=self.timestamp,
@@ -67,18 +67,21 @@ class Event(object):
 
     @property
     def text_message(self):
+        """String: build a plain text message."""
         raise NotImplementedError
 
     @property
     def html_message(self):
+        """String: build an html message."""
         raise NotImplementedError
 
     @property
     def url(self):
+        """String: build a url for the message."""
         raise NotImplementedError
 
     @property
-    def event(self):
+    def event_type(self):
         """String
 
         Examples:
@@ -106,7 +109,7 @@ class FileEvent(Event):
 
     @property
     def text_message(self):
-        """Most basic message without html tags. For future use"""
+        """Most basic message without html tags. For future use."""
         f_type, action = self.action.split('_')
         return '{action} {f_type} "{name}".'.format(
             action=action,
@@ -115,12 +118,13 @@ class FileEvent(Event):
         )
 
     @property
-    def event(self):
+    def event_type(self):
+        """Most basic event type."""
         return "file_updated"
 
     @property
     def waterbutler_id(self):
-        """Waterbutler's file id for the file in question"""
+        """Waterbutler's file id for the file in question."""
         return self.payload['metadata']['path'].strip('/')
 
     @property
@@ -139,7 +143,7 @@ class FileAdded(FileEvent):
     """Actual class called when a file is added"""
 
     @property
-    def event(self):
+    def event_type(self):
         return '{}_file_updated'.format(self.waterbutler_id)
 
 
@@ -147,7 +151,7 @@ class FileUpdated(FileEvent):
     """Actual class called when a file is updated"""
 
     @property
-    def event(self):
+    def event_type(self):
         return '{}_file_updated'.format(self.waterbutler_id)
 
 
@@ -162,9 +166,7 @@ class FolderCreated(FileEvent):
 
 
 class ComplexFileEvent(FileEvent):
-    """
-    Parent class for move and copy files. Exists because simpler interactions aren't quite enough
-    """
+    """ Parent class for move and copy files."""
     def __init__(self, user, node, event, payload=None):
         super(ComplexFileEvent, self).__init__(user, node, event, payload=payload)
 
@@ -223,8 +225,7 @@ class ComplexFileEvent(FileEvent):
         return self.payload['destination']['path'].strip('/')
 
     @property
-    def event(self):
-        """Sets event to be passed as well as the source event."""
+    def event_type(self):
         if self.payload['destination']['kind'] != u'folder':
             return '{}_file_updated'.format(self.waterbutler_id)  # file
 
@@ -239,20 +240,28 @@ class ComplexFileEvent(FileEvent):
 
 
 class AddonFileMoved(ComplexFileEvent):
-    """
-    Actual class called when a file is moved
-    Specific methods for handling moving files
-    """
+    """Actual class called when a file is moved."""
+
     def perform(self):
-        """Sends a message to users who are removed from the file's subscription when it is moved"""
+        """Format and send messages to different user groups.
+
+        Users fall into three categories: moved, warned, and removed
+        - Moved users are users with subscriptions on the new node.
+        - Warned users are users without subscriptions on the new node, but
+          they do have permissions
+        - Removed users are told that they do not have permissions on the
+          new node and their subscription has been removed.
+        This will be **much** more useful when individual files have their
+         own subscription.
+        """
         # Do this is the two nodes are the same, no one needs to know specifics of permissions
         if self.node == self.source_node:
             super(AddonFileMoved, self).perform()
             return
         # File
         if self.payload['destination']['kind'] != u'folder':
-            moved, warn, rm_users = event_utils.categorize_users(self.user, self.event, self.source_node,
-                                                                 self.event, self.node)
+            moved, warn, rm_users = event_utils.categorize_users(self.user, self.event_type, self.source_node,
+                                                                 self.event_type, self.node)
             warn_message = '{} Your component-level subscription was not transferred.'.format(self.html_message)
             remove_message = ('{} Your subscription has been removed'
                               ' due to insufficient permissions in the new component.').format(self.html_message)
@@ -273,7 +282,7 @@ class AddonFileMoved(ComplexFileEvent):
                               ' due to insufficient permissions in the new component.').format(self.html_message)
 
         # Move the document from one subscription to another because the old one isn't needed
-        utils.move_subscription(rm_users, self.event, self.source_node, self.event, self.node)
+        utils.move_subscription(rm_users, self.event_type, self.source_node, self.event_type, self.node)
         # Notify each user
         for notification in NOTIFICATION_TYPES:
             if notification == 'none':
@@ -321,19 +330,22 @@ class AddonFileMoved(ComplexFileEvent):
 
 
 class AddonFileCopied(ComplexFileEvent):
-    """
-    Actual class called when a file is copied
-    Specific methods for handling a copy file event.
-    """
+    """Actual class called when a file is copied"""
     def perform(self):
-        """Warns people that they won't have a subscription to the new copy of the file."""
+        """Format and send messages to different user groups.
+
+        This is similar to the FileMoved perform method. The main
+         difference is the moved and earned user groups are added
+         together because they both don't have a subscription to a
+         newly copied file.
+        """
         remove_message = self.html_message + ' You do not have permission in the new component.'
         if self.node == self.source_node:
             super(AddonFileCopied, self).perform()
             return
         if self.payload['destination']['kind'] != u'folder':
-            moved, warn, rm_users = event_utils.categorize_users(self.user, self.event, self.source_node,
-                                                                 self.event, self.node)
+            moved, warn, rm_users = event_utils.categorize_users(self.user, self.event_type, self.source_node,
+                                                                 self.event_type, self.node)
         else:
             files = event_utils.get_file_subs_from_folder(self.addon, self.user, self.payload['destination']['kind'],
                                                           self.payload['destination']['path'],

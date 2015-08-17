@@ -261,8 +261,10 @@ def format_user_subscriptions(user):
     """ Format user-level subscriptions (e.g. comment replies across the OSF) for user settings page"""
     user_subs_available = list(constants.USER_SUBSCRIPTIONS_AVAILABLE.keys())
     subscriptions = [
-        serialize_event(user, subscription,
-                        event_description=user_subs_available.pop(user_subs_available.index(getattr(subscription, 'event_name'))))
+        serialize_event(
+            user, subscription,
+            event_description=user_subs_available.pop(user_subs_available.index(getattr(subscription, 'event_name')))
+        )
         for subscription in get_all_user_subscriptions(user)
         if getattr(subscription, 'event_name') in user_subs_available
     ]
@@ -271,7 +273,7 @@ def format_user_subscriptions(user):
 
 
 def format_file_subscription(user, node_id, path, provider):
-    """Formats a single file event"""
+    """Format a single file event"""
     node = Node.load(node_id)
     wb_path = path.lstrip('/')
     for subscription in get_all_node_subscriptions(user, node):

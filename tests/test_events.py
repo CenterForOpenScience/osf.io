@@ -39,7 +39,7 @@ class TestEventNotImplemented(OsfTestCase):
 
     @raises(NotImplementedError)
     def test_event(self):
-        event = self.event.event
+        event = self.event.event_type
 
 
 class TestListOfFiles(OsfTestCase):
@@ -148,7 +148,7 @@ class TestFileUpdated(OsfTestCase):
         self.event = Event.parse_event(self.user2, self.project, 'file_updated', payload=file_payload)
 
     def test_info_formed_correct(self):
-        assert_equal('{}_file_updated'.format(wb_path), self.event.event)
+        assert_equal('{}_file_updated'.format(wb_path), self.event.event_type)
         assert_equal('updated file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
         assert_equal('updated file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
 
@@ -178,7 +178,7 @@ class TestFileAdded(OsfTestCase):
         self.event = Event.parse_event(self.user2, self.project, 'file_added', payload=file_payload)
 
     def test_info_formed_correct(self):
-        assert_equal('{}_file_updated'.format(wb_path), self.event.event)
+        assert_equal('{}_file_updated'.format(wb_path), self.event.event_type)
         assert_equal('added file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
         assert_equal('added file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
         print self.event.text_message
@@ -209,7 +209,7 @@ class TestFileRemoved(OsfTestCase):
         self.event = Event.parse_event(self.user2, self.project, 'file_removed', payload=file_deleted_payload)
 
     def test_info_formed_correct(self):
-        assert_equal('file_updated', self.event.event)
+        assert_equal('file_updated', self.event.event_type)
         assert_equal('removed file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
         assert_equal('removed file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
 
@@ -239,7 +239,7 @@ class TestFolderCreated(OsfTestCase):
         self.event = Event.parse_event(self.user2, self.project, 'folder_created', payload=folder_created_payload)
 
     def test_info_formed_correct(self):
-        assert_equal('file_updated', self.event.event)
+        assert_equal('file_updated', self.event.event_type)
         assert_equal('created folder "<b>Three/</b>".', self.event.html_message)
         assert_equal('created folder "Three/".', self.event.text_message)
 
@@ -356,7 +356,7 @@ class TestFileMoved(OsfTestCase):
 
     def test_info_formed_correct(self):
         """Move Event: Ensures data is correctly formatted"""
-        assert_equal('{}_file_updated'.format(wb_path), self.event.event)
+        assert_equal('{}_file_updated'.format(wb_path), self.event.event_type)
         # assert_equal('moved file "<b>{}</b>".', self.event.html_message)
         # assert_equal('created folder "Three/".', self.event.text_message)
 
@@ -450,7 +450,7 @@ class TestFileCopied(OsfTestCase):
 
     def test_info_correct(self):
         """Move Event: Ensures data is correctly formatted"""
-        assert_equal('{}_file_updated'.format(wb_path), self.event.event)
+        assert_equal('{}_file_updated'.format(wb_path), self.event.event_type)
         assert_equal(('copied file "<b>One/Paper13.txt</b>" from OSF Storage'
                       ' in Consolidate to "<b>Two/Paper13.txt</b>" in OSF'
                       ' Storage in Consolidate.'), self.event.html_message)
@@ -535,8 +535,8 @@ class TestCategorizeUsers(OsfTestCase):
         self.sub.save()
         self.private_sub.none.append(self.user_3)
         self.private_sub.save()
-        moved, warn, removed = categorize_users(self.event.user, self.event.event, self.event.source_node,
-                                                self.event.event, self.event.node)
+        moved, warn, removed = categorize_users(self.event.user, self.event.event_type, self.event.source_node,
+                                                self.event.event_type, self.event.node)
         assert_equal({'email_transactional': [], 'email_digest': [self.user_3._id], 'none': []}, warn)
         assert_equal({'email_transactional': [self.user_1._id], 'email_digest': [], 'none': []}, moved)
         # print (warn, moved, removed)
@@ -551,8 +551,8 @@ class TestCategorizeUsers(OsfTestCase):
         self.sub.save()
         self.private_sub.email_transactional.append(self.user_3)
         self.private_sub.save()
-        moved, warn, removed = categorize_users(self.event.user, self.event.event, self.event.source_node,
-                                                self.event.event, self.event.node)
+        moved, warn, removed = categorize_users(self.event.user, self.event.event_type, self.event.source_node,
+                                                self.event.event_type, self.event.node)
         assert_equal({'email_transactional': [], 'email_digest': [], 'none': []}, warn)
         assert_equal({'email_transactional': [self.user_3._id], 'email_digest': [], 'none': []}, moved)
 
@@ -561,8 +561,8 @@ class TestCategorizeUsers(OsfTestCase):
         self.project.save()
         self.file_sub.email_transactional.append(self.user_3)
         self.file_sub.save()
-        moved, warn, removed = categorize_users(self.event.user, self.event.event, self.event.source_node,
-                                                self.event.event, self.event.node)
+        moved, warn, removed = categorize_users(self.event.user, self.event.event_type, self.event.source_node,
+                                                self.event.event_type, self.event.node)
         assert_equal({'email_transactional': [self.user_3._id], 'email_digest': [], 'none': []}, removed)
 
     def tearDown(self):
