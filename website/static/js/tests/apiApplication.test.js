@@ -9,29 +9,7 @@ var testUtils = require('./utils');
 
 var apiApp = require('js/apiApplication.js');
 
-describe('apiApplicationsViewModels', () => {
-    describe('ApplicationsList', () => {
-        // TODO: Write tests
-        beforeEach(()=>{
-            var vm = apiApp.ApplicationsListViewModel();
-        });
-
-
-
-    });
-
-    describe('ApplicationsDetail', () => {
-        var vm;
-        // TODO: Write tests
-        beforeEach(() => {
-            vm = apiApp._ApplicationDetailViewModel();
-        });
-    });
-});
-
-
 describe('apiApplicationsInternals', () => {
-
     describe('ApplicationData', () => {
         var vmd;
         // Sample data returned by an API call
@@ -84,26 +62,4 @@ describe('apiApplicationsInternals', () => {
         });
 
     });
-
-   describe('ApplicationDataClient', () => {
-
-   });
 });
-
-
-// TODO Tests to write:
-/*
-
-1. ApplicationData correctly initializes when given API values
-
-2. ApplicationData correctly serializes to a certain format
-
-3. ApplicationDataClient correctly performs various types of requests for list and detail, incl when given an appData object
-
-4. ViewModel won't submit if data is invalid
-
-5. Deletion returns a certain kind of response
-
-
-
- */
