@@ -3132,8 +3132,8 @@ class Embargo(EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_EMBARGO_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
     initiated_by = fields.ForeignField('user', backref='embargoed')
     for_existing_registration = fields.BooleanField(default=False)
@@ -3266,8 +3266,8 @@ class Retraction(EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_RETRACTION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
     initiated_by = fields.ForeignField('user', backref='initiated')
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
@@ -3387,8 +3387,8 @@ class RegistrationApproval(EmailApprovableSanction):
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
 
     VIEW_URL_TEMPLATE = VIEW_PROJECT_URL_TEMPLATE
-    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
-    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}/'
+    APPROVE_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
+    REJECT_URL_TEMPLATE = settings.DOMAIN + 'project/{node_id}/?token={token}'
 
     initiated_by = fields.ForeignField('user', backref='registration_approved')
 
