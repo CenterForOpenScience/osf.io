@@ -29,12 +29,12 @@
                 </p>
                 <span data-bind="if: loading()">
                     <div class="spinner-loading-wrapper">
-		                <div class="logo-spin logo-lg "><img src="/static/img/logo_spin.png" alt="loader"> </div>
+		                <div class="logo-spin logo-xl"></div>
 	                	<p class="m-t-sm text-center"> Loading logs...  </p>
 	                </div>
                 </span>
                 <p data-bind="if: !logs().length && !loading()" class="help-block">
-                    No logs to show. Click the watch icon (<i class="fa fa-eye"></i>) icon on a
+                    No logs to show. Click the watch icon (<i class="fa fa-eye"></i>) on a
                     project's page to get activity updates here.
                 </p>
                 <span data-bind="if: !loading()">

@@ -11,11 +11,11 @@
         <div class="row">
             <div class="col-md-12">
                 <div class="row m-t-md">
-                    <!-- ko if: categories().length > 0-->
+                    <!-- ko if: allCategories().length > 0-->
                     <div class="col-md-3">
                         <div class="row">
                             <div class="col-md-12">
-                                <ul class="nav nav-pills nav-stacked" data-bind="foreach: categories">
+                                <ul class="nav nav-pills nav-stacked" data-bind="foreach: allCategories">
 
                                     <!-- ko if: $parent.category().name === name -->
                                             <li class="active">
@@ -236,6 +236,9 @@
     </script>
     <script type="text/html" id="registration">
         <h4><a data-bind="attr.href: url">{{ title }}</a>  (<!-- ko if: is_retracted --><span class="text-danger">Retracted</span> <!-- /ko -->Registration)</h4>
+
+        <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
+
         <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
 
         <!-- ko if: contributors.length > 0 -->

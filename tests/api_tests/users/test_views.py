@@ -4,17 +4,15 @@ from nose.tools import *  # flake8: noqa
 from website.models import Node
 from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
-from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory
+from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory, AuthUserFactory
 
 
 class TestUsers(ApiTestCase):
 
     def setUp(self):
         super(TestUsers, self).setUp()
-        self.user_one = UserFactory.build()
-        self.user_one.save()
-        self.user_two = UserFactory.build()
-        self.user_two.save()
+        self.user_one = AuthUserFactory()
+        self.user_two = AuthUserFactory()
 
     def tearDown(self):
         super(TestUsers, self).tearDown()
@@ -74,15 +72,11 @@ class TestUserDetail(ApiTestCase):
 
     def setUp(self):
         super(TestUserDetail, self).setUp()
-        self.user_one = UserFactory.build()
-        self.user_one.set_password('justapoorboy')
+        self.user_one = AuthUserFactory()
         self.user_one.social['twitter'] = 'howtopizza'
         self.user_one.save()
-        self.auth_one = (self.user_one.username, 'justapoorboy')
-        self.user_two = UserFactory.build()
-        self.user_two.set_password('justapoorboy')
-        self.user_two.save()
-        self.auth_two = (self.user_two.username, 'justapoorboy')
+
+        self.user_two = AuthUserFactory()
 
     def tearDown(self):
         super(TestUserDetail, self).tearDown()
@@ -107,7 +101,7 @@ class TestUserDetail(ApiTestCase):
 
     def test_get_incorrect_pk_user_not_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
-        res = self.app.get(url, auth=self.auth_one)
+        res = self.app.get(url, auth=self.user_one.auth)
         user_json = res.json['data']
         assert_not_equal(user_json['fullname'], self.user_one.fullname)
         assert_equal(user_json['fullname'], self.user_two.fullname)
@@ -117,15 +111,11 @@ class TestUserNodes(ApiTestCase):
 
     def setUp(self):
         super(TestUserNodes, self).setUp()
-        self.user_one = UserFactory.build()
-        self.user_one.set_password('justapoorboy')
+        self.user_one = AuthUserFactory()
         self.user_one.social['twitter'] = 'howtopizza'
         self.user_one.save()
-        self.auth_one = (self.user_one.username, 'justapoorboy')
-        self.user_two = UserFactory.build()
-        self.user_two.set_password('justapoorboy')
-        self.user_two.save()
-        self.auth_two = (self.user_two.username, 'justapoorboy')
+
+        self.user_two = AuthUserFactory()
         self.public_project_user_one = ProjectFactory(title="Public Project User One",
                                                       is_public=True,
                                                       creator=self.user_one)
@@ -154,7 +144,7 @@ class TestUserNodes(ApiTestCase):
 
     def test_authorized_in_gets_200(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one)
+        res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
 
     def test_anonymous_gets_200(self):
@@ -164,7 +154,7 @@ class TestUserNodes(ApiTestCase):
 
     def test_get_projects_logged_in(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one)
+        res = self.app.get(url, auth=self.user_one.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
@@ -191,7 +181,7 @@ class TestUserNodes(ApiTestCase):
 
     def test_get_projects_logged_in_as_different_user(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_two._id)
-        res = self.app.get(url, auth=self.auth_one)
+        res = self.app.get(url, auth=self.user_one.auth)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
@@ -207,20 +197,15 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
 
     def setUp(self):
         super(TestUserRoutesNodeRoutes, self).setUp()
-        self.user_one = UserFactory.build()
-        self.user_one.set_password('justapoorboy')
+        self.user_one = AuthUserFactory()
         self.user_one.social['twitter'] = 'howtopizza'
-        self.user_one.save()
-        self.auth_one = (self.user_one.username, 'justapoorboy')
-        self.user_two = UserFactory.build()
-        self.user_two.set_password('justapoorboy')
-        self.user_two.save()
-        self.auth_two = (self.user_two.username, 'justapoorboy')
+        self.user_two = AuthUserFactory()
         self.public_project_user_one = ProjectFactory(title="Public Project User One", is_public=True, creator=self.user_one)
         self.private_project_user_one = ProjectFactory(title="Private Project User One", is_public=False, creator=self.user_one)
         self.public_project_user_two = ProjectFactory(title="Public Project User Two", is_public=True, creator=self.user_two)
         self.private_project_user_two = ProjectFactory(title="Private Project User Two", is_public=False, creator=self.user_two)
         self.deleted_project_user_one = FolderFactory(title="Deleted Project User One", is_public=False, creator=self.user_one, is_deleted=True)
+
         self.folder = FolderFactory()
         self.deleted_folder = FolderFactory(title="Deleted Folder User One", is_public=False, creator=self.user_one, is_deleted=True)
         self.dashboard = DashboardFactory()
@@ -229,42 +214,54 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         super(TestUserRoutesNodeRoutes, self).tearDown()
         Node.remove()
 
-    def test_path_Users_User_id_Nodes_user_not_logged_in(self):  #~WORK
-        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url)
-        node_json = res.json['data']
+    def test_get_200_path_users_me_userone_logged_in(self):
+        url = "/{}users/me/".format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
 
-        ids = [each['id'] for each in node_json]
-        assert_in(self.public_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.public_project_user_two._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.deleted_project_user_one._id, ids)
+    def test_get_200_path_users_me_usertwo_logged_in(self):
+        url = "/{}users/me/".format(API_BASE)
+        res = self.app.get(url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
 
-    def test_get_404_path_users_user_id_user_not_logged_in(self):
-        url = "/{}users/{}/".format(API_BASE, self.private_project_user_two._id)
-        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+    def test_get_403_path_users_me_no_user(self):
+        # TODO: change expected exception from 403 to 401 for unauthorized users
+
+        url = "/{}users/me/".format(API_BASE)
+        res = self.app.get(url, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_get_404_path_users_user_id_me_user_logged_in(self):
+        url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_get_404_path_nodes_me_user_logged_in(self):
-        url = "/{}nodes/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+    def test_get_404_path_users_user_id_me_no_user(self):
+        url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_users_user_id_me_unauthorized_user(self):
+        url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth= self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_get_200_path_users_user_id_user_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one)
+        res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
 
-    def test_get_200_path_users_me_user_logged_in(self):
-        url = "/{}users/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one)
+    def test_get_200_path_users_user_id_no_user(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_two._id)
+        res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
-    def test_path_users_me_nodes_user_logged_in(self):
-        url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one)
+    def test_get_200_path_users_user_id_unauthorized_user(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_two._id)
+        res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
 
         ids = {each['id'] for each in res.json['data']}
@@ -276,14 +273,12 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         assert_not_in(self.deleted_folder._id, ids)
         assert_not_in(self.deleted_project_user_one._id, ids)
 
-    def test_path_users_user_id_nodes_user_logged_in(self):
-        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one)
+    def test_get_200_path_users_me_nodes_user_logged_in(self):
+        url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
 
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
+        ids = {each['id'] for each in res.json['data']}
         assert_in(self.public_project_user_one._id, ids)
         assert_in(self.private_project_user_one._id, ids)
         assert_not_in(self.public_project_user_two._id, ids)
@@ -292,47 +287,96 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         assert_not_in(self.deleted_folder._id, ids)
         assert_not_in(self.deleted_project_user_one._id, ids)
 
-    def test_get_404_path_users_user_id_me_user_logged_in(self):
-        url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
-        assert_equal(res.status_code, 404)
+    def test_get_403_path_users_me_nodes_no_user(self):
+        # TODO: change expected exception from 403 to 401 for unauthorized users
 
-    def test_get_404_path_users_user_id_me_user_not_logged_in(self):
-        url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        url = "/{}users/me/nodes/".format(API_BASE)
+        res = self.app.get(url, expect_errors=True)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_get_200_path_users_user_id_nodes_user_logged_in(self):
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+
+        ids = {each['id'] for each in res.json['data']}
+        assert_in(self.public_project_user_one._id, ids)
+        assert_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
+
+    def test_get_200_path_users_user_id_nodes_no_user(self):
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+
+        # an anonymous/unauthorized user can only see the public projects user_one contributes to.
+        ids = {each['id'] for each in res.json['data']}
+        assert_in(self.public_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
+
+    def test_get_200_path_users_user_id_unauthorized_user(self):
+        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+
+        # an anonymous/unauthorized user can only see the public projects user_one contributes to.
+        ids = {each['id'] for each in res.json['data']}
+        assert_in(self.public_project_user_one._id, ids)
+        assert_not_in(self.private_project_user_one._id, ids)
+        assert_not_in(self.public_project_user_two._id, ids)
+        assert_not_in(self.private_project_user_two._id, ids)
+        assert_not_in(self.folder._id, ids)
+        assert_not_in(self.deleted_folder._id, ids)
+        assert_not_in(self.deleted_project_user_one._id, ids)
 
     def test_get_404_path_users_user_id_nodes_me_user_logged_in(self):
         url = "/{}users/{}/nodes/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        res = self.app.get(url, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_get_404_path_users_user_id_nodes_me_user_not_logged_in(self):
+    def test_get_404_path_users_user_id_nodes_me_unauthorized_user(self):
         url = "/{}users/{}/nodes/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
+        res = self.app.get(url, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_users_user_id_nodes_me_no_user(self):
+        url = "/{}users/{}/nodes/me/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_nodes_me_user_logged_in(self):
+        url = "/{}nodes/me/".format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_get_404_path_nodes_me_no_user(self):
+        url = "/{}nodes/me/".format(API_BASE)
+        res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 404)
 
     def test_get_404_path_nodes_user_id_user_logged_in(self):
         url = "/{}nodes/{}/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
+        res = self.app.get(url, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_get_404_path_nodes_user_id_user_not_logged_in(self):
+    def test_get_404_path_nodes_user_id_unauthorized_user(self):
         url = "/{}nodes/{}/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
+        res = self.app.get(url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_get_404_path_nodes_me_user_not_logged_in(self):
-        url = "/{}nodes/me/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.auth_two, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    def test_get_404_path_users_me_no_user(self):
-        url = "/users/me/".format(API_BASE)
+    def test_get_404_path_nodes_user_id_no_user(self):
+        url = "/{}nodes/{}/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 404)
-
-    def test_get_400_path_nodes_me_no_user(self):
-        url = "/nodes/me/".format(API_BASE)
-        res = self.app.get(url, auth=self.auth_one, expect_errors=True)
         assert_equal(res.status_code, 404)

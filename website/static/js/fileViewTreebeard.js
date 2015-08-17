@@ -88,7 +88,9 @@ function FileViewTreebeard(data) {
                 item.css = 'fangorn-selected';
                 tb.multiselected([item]);
             }
-
+            if(item.data.permissions && !item.data.permissions.view){
+                item.css += ' tb-private-row';
+            }
             var defaultColumns = [
                 {
                     data: 'name',
