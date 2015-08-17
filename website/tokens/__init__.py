@@ -1,8 +1,9 @@
+import httplib as http
 import functools
-
 import jwt
+from flask import request
 
-from framework.auth.decorators import must_be_logged_in
+from framework.exceptions import HTTPError
 
 from website import settings
 from website.tokens import handlers
@@ -42,7 +43,7 @@ class TokenHandler(object):
         return cls(encoded_token=encoded_token, payload=payload)
 
     @classmethod
-    def from_token(cls, payload):
+    def from_payload(cls, payload):
         encoded_token = TokenHandler.encode(payload)
         return cls(encoded_token=encoded_token, payload=payload)
 
@@ -50,23 +51,34 @@ class TokenHandler(object):
         action = self.payload.get('action', None)
         handler = self.ACTION_MAP.get(action)
         if handler:
-            handler(self.payload, self.encoded_token)
+            return handler(self.payload, self.encoded_token)
         else:
             raise TokenHandlerNotFound(action=action)
 
+def process_token_or_pass(func):
+    """Parse encoded token and run attached handlers (if any).
 
-@must_be_logged_in
-def process_token(encoded_token, **kwargs):
+    Note: this method may cause redirects, 4XX status codes, and other
+    potentially unexpected behavior. If there's a token attached to the
+    URL you are developing or debugging (i.e. ?token=SOME_TOKEN), this
+    method may be intercepting/short-circuting your view logic.
+    """
 
-    SUCCESS_MSG_MAP = {
-        'approve_registration_approval': 'Your Registration approval has been accepted.',
-        'reject_registration_approval': 'Your disapproval has been accepted and the registration has been cancelled.',
-        'approve_embargo': 'Your Embargo approval has been accepted.',
-        'reject_embargo': 'Your disapproval has been accepted and the embargo has been cancelled.',
-        'approve_retraction': 'Your Retraction approval has been accepted.',
-        'reject_retraction': 'Your disapproval has been accepted and the retraction has been cancelled.'
-    }
-    token = TokenHandler.from_string(encoded_token)
-    token.process()
-
-    return  SUCCESS_MSG_MAP.get(token.payload['action'], 'Your request has been accepted.')
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+        encoded_token = request.args.get('token')
+        if encoded_token:
+            token = TokenHandler.from_string(encoded_token)
+            try:
+                return token.process()
+            except TokenHandlerNotFound as e:
+                raise HTTPError(
+                    http.BAD_REQUEST,
+                    data={
+                        'message_short': 'Invalid Token',
+                        'message_long': 'No token handler for action: {} found'.format(e.action)
+                    }
+                )
+            return token.process()
+        return func(*args, **kwargs)
+    return wrapper

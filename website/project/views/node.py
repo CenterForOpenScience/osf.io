@@ -14,13 +14,12 @@ from framework.mongo import StoredObject
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo.utils import from_mongo, get_or_http_error
-from framework.flask import redirect
 
 from website import language
 
 from website.util import paths
 from website.util import rubeus
-from website.exceptions import NodeStateError, InvalidSanctionApprovalToken, InvalidSanctionRejectionToken
+from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
     must_be_contributor_or_public,
@@ -29,7 +28,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
-from website.tokens import process_token
+from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError
@@ -363,31 +362,8 @@ def configure_comments(node, **kwargs):
 
 @must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
+@process_token_or_pass
 def view_project(auth, node, **kwargs):
-
-    # Handle Sanction related tokens
-    encoded_token = request.args.get('token')
-    if encoded_token:
-        try:
-            success_message = process_token(encoded_token, **kwargs)
-        except InvalidSanctionRejectionToken as e:
-            raise HTTPError(http.BAD_REQUEST, data={
-                'message_short': e.message_short,
-                'message_long': e.message_long
-            })
-        except InvalidSanctionApprovalToken as e:
-            raise HTTPError(http.BAD_REQUEST, data={
-                'message_short': e.message_short,
-                'message_long': e.message_long
-            })
-        except PermissionsError as e:
-            raise HTTPError(http.BAD_REQUEST, data={
-                'message_short': 'Unauthorized access',
-                'message_long': e.message
-            })
-        status.push_status_message(success_message, kind='success', trust=False)
-        return redirect(node.web_url_for('view_project'))
-
 
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)

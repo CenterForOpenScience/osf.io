@@ -1,3 +1,5 @@
+from website.tokens.exceptions import TokenError
+
 class OSFError(Exception):
     """Base class for exceptions raised by the Osf application"""
     pass
@@ -15,18 +17,18 @@ class NodeStateError(NodeError):
     """
     pass
 
-class SanctionTokenError(NodeError):
+class SanctionTokenError(TokenError):
     """Base class for errors arising from the user of a sanction token."""
     pass
 
-class InvalidSanctionRejectionToken(SanctionTokenError):
+class InvalidSanctionRejectionToken(TokenError):
     """Raised if a Sanction subclass disapproval token submitted is invalid
      or associated with another admin authorizer
     """
     message_short = "Invalid Token"
     message_long = "This disapproval link is invalid. Are you logged into the correct account?"
 
-class InvalidSanctionApprovalToken(SanctionTokenError):
+class InvalidSanctionApprovalToken(TokenError):
     """Raised if a Sanction subclass approval token submitted is invalid
      or associated with another admin authorizer
     """
