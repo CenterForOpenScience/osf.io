@@ -58,9 +58,15 @@ class TokenHandler(object):
 @must_be_logged_in
 def process_token(encoded_token, **kwargs):
 
+    SUCCESS_MSG_MAP = {
+        'approve_registration_approval': 'Your Registration approval has been accepted.',
+        'reject_registration_approval': 'Your disapproval has been accepted and the registration has been cancelled.',
+        'approve_embargo': 'Your Embargo approval has been accepted.',
+        'reject_embargo': 'Your disapproval has been accepted and the embargo has been cancelled.',
+        'approve_retraction': 'Your Retraction approval has been accepted.',
+        'reject_retraction': 'Your disapproval has been accepted and the retraction has been cancelled.'
+    }
     token = TokenHandler.from_string(encoded_token)
-    try:
-        token.process()
-    # TODO(hrybacki): expand this exception
-    except Exception:
-        pass
+    token.process()
+
+    return  SUCCESS_MSG_MAP.get(token.payload['action'], 'Your request has been accepted.')

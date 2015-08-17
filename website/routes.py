@@ -846,60 +846,61 @@ def make_url_map(app):
             project_views.register.node_registration_retraction_get,
             OsfWebRenderer('project/retract_registration.mako', trust=False)
         ),
-        Rule(
-            [
-                '/project/<pid>/retraction/approve/<token>/',
-                '/project/<pid>/node/<nid>/retraction/approve/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_retraction_approve,
-            notemplate
-        ),
-        Rule(
-            [
-                '/project/<pid>/retraction/disapprove/<token>/',
-                '/project/<pid>/node/<nid>/retraction/disapprove/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_retraction_disapprove,
-            notemplate
-        ),
-        Rule(
-            [
-                '/project/<pid>/embargo/approve/<token>/',
-                '/project/<pid>/node/<nid>/embargo/approve/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_embargo_approve,
-            notemplate
-        ),
-        Rule(
-            [
-                '/project/<pid>/embargo/disapprove/<token>/',
-                '/project/<pid>/node/<nid>/embargo/disapprove/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_embargo_disapprove,
-            notemplate
-        ),
-        Rule(
-            [
-                '/project/<pid>/registration/approve/<token>/',
-                '/project/<pid>/node/<nid>/registration/approve/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_approve,
-            notemplate
-        ),
-        Rule(
-            [
-                '/project/<pid>/registration/disapprove/<token>/',
-                '/project/<pid>/node/<nid>/registration/disapprove/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_disapprove,
-            notemplate
-        ),
+        # TODO(hrybacki): Delete after removing views and updating tests
+        # Rule(
+        #     [
+        #         '/project/<pid>/retraction/approve/<token>/',
+        #         '/project/<pid>/node/<nid>/retraction/approve/<token>/',
+        #     ],
+        #     'get',
+        #     project_views.register.node_registration_retraction_approve,
+        #     notemplate
+        # ),
+        # Rule(
+        #     [
+        #         '/project/<pid>/retraction/disapprove/<token>/',
+        #         '/project/<pid>/node/<nid>/retraction/disapprove/<token>/',
+        #     ],
+        #     'get',
+        #     project_views.register.node_registration_retraction_disapprove,
+        #     notemplate
+        # ),
+        # Rule(
+        #     [
+        #         '/project/<pid>/embargo/approve/<token>/',
+        #         '/project/<pid>/node/<nid>/embargo/approve/<token>/',
+        #     ],
+        #     'get',
+        #     project_views.register.node_registration_embargo_approve,
+        #     notemplate
+        # ),
+        # Rule(
+        #     [
+        #         '/project/<pid>/embargo/disapprove/<token>/',
+        #         '/project/<pid>/node/<nid>/embargo/disapprove/<token>/',
+        #     ],
+        #     'get',
+        #     project_views.register.node_registration_embargo_disapprove,
+        #     notemplate
+        # ),
+        # Rule(
+        #     [
+        #         '/project/<pid>/registration/approve/<token>/',
+        #         '/project/<pid>/node/<nid>/registration/approve/<token>/',
+        #     ],
+        #     'get',
+        #     project_views.register.node_registration_approve,
+        #     notemplate
+        # ),
+        # Rule(
+        #     [
+        #         '/project/<pid>/registration/disapprove/<token>/',
+        #         '/project/<pid>/node/<nid>/registration/disapprove/<token>/',
+        #     ],
+        #     'get',
+        #     project_views.register.node_registration_disapprove,
+        #     notemplate
+        # ),
 
         Rule(
             '/ids/<category>/<path:value>/',
