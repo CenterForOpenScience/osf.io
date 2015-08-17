@@ -86,6 +86,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
 
+
 class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     """Nodes belonging to a user.
     Return a list of nodes that the user contributes to. """
