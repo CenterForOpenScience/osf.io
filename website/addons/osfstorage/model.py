@@ -339,12 +339,23 @@ class OsfStorageFileNode(StoredObject):
             'path': self.path,
             'name': self.name,
             'kind': self.kind,
-            'size': self.versions[-1].size if self.versions else None,
-            'version': len(self.versions),
-            'downloads': self.get_download_count(),
         }
+
         if include_full:
             data['fullPath'] = self.materialized_path()
+
+        if self.is_folder:
+            return data
+
+        version = self.get_version()
+
+        data.update({
+            'version': len(self.versions),
+            'downloads': self.get_download_count(),
+            'size': version.size if version else None,
+            'contentType': version.content_type if version else None,
+            'modified': version.date_modified.isoformat() if version and version.date_modified else None,
+        })
         return data
 
     def copy_under(self, destination_parent, name=None):
