@@ -52,34 +52,15 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
         return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
 
     def to_representation(self, value):
-        request = self.context.get('request', None)
-        format = self.context.get('format', None)
+        url = super(HyperlinkedIdentityFieldWithMeta, self).to_representation(value)
 
-        assert request is not None, (
-            "`%s` requires the request in the serializer"
-            " context. Add `context={'request': request}` when instantiating "
-            "the serializer." % self.__class__.__name__
-        )
+        if self.meta is not None:
+            meta = {}
+            for key in self.meta:
+                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+            self.meta = meta
 
-        if format and self.format and self.format != format:
-            format = self.format
-
-        # Return the hyperlink, or error if incorrectly configured.
-        try:
-            if self.meta is not None:
-                meta = {}
-                for key in self.meta:
-                    meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
-                self.meta = meta
-            return {'url': self.get_url(value, self.view_name, request, format), 'meta': self.meta, 'link_type': self.link_type}
-        except NoReverseMatch:
-            msg = (
-                'Could not resolve URL for hyperlinked relationship using '
-                'view name "%s". You may have failed to include the related '
-                'model in your API, or incorrectly configured the '
-                '`lookup_field` attribute on this field.'
-            )
-            raise ImproperlyConfigured(msg % self.view_name)
+        return {'url': url, 'meta': self.meta, 'link_type': self.link_type}
 
 
 class LinksField(ser.Field):
