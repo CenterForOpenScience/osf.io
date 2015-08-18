@@ -788,7 +788,6 @@ class TestNodeContributorFiltering(ApiTestCase):
         assert_equal(len(res.json['data']), 1)
         assert_false(res.json['data'][0].get('bibliographic', None))
 
-
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
         super(TestNodeRegistrationList, self).setUp()
@@ -1216,7 +1215,7 @@ class TestNodeFilesList(ApiTestCase):
         mock_res.status_code = 418
         mock_res.json.return_value = {}
         mock_waterbutler_request.return_value = mock_res
-        res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
 

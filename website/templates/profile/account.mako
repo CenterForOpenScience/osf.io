@@ -11,7 +11,7 @@
 <%def name="content()">
     <% from website import settings %>
     <div id="accountSettings">
-        <h2 class="page-header">Account Settings</h2>
+        <h2 class="page-header">Settings</h2>
         <div class="row">
             <div class="col-md-3 affix-parent">
               <%include file="include/profile/settings_navpanel.mako" args="current_page='account'"/>
