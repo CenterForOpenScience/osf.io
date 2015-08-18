@@ -20,7 +20,10 @@ class TestTokenHandler(OsfTestCase):
             'field_x': 'xyzert'
         }
         self.secret = settings.JWT_SECRET
-        self.encoded_token = jwt.encode(self.payload, self.secret, algorithm='HS256')
+        self.encoded_token = jwt.encode(
+            self.payload,
+            self.secret,
+            algorithm=settings.JWT_ALGORITHM)
 
     def test_encode(self):
         assert_equal(TokenHandler.encode(self.payload), self.encoded_token)
