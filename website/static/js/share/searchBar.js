@@ -17,13 +17,14 @@ SearchBar.view = function(ctrl) {
                         'text-align': 'center'
                     }
             }, [
-                m('img[src=/static/img/share-logo-icon.png]', {
+                m('img', {
+                    src: '/static/img/share-logo-icon.png',
+                    alt: 'SHARE logo image',
                     style: {
                         height: 'auto',
                         'max-width': '15%',
                         '-webkit-animation-duration': '3s'
                     },
-                    // class: 'animated pulse'
                 }),
                 m('span.about-share-header', 'SHARE'),
                 m('div', {style: {color: 'darkgrey'}}, m('p.readable', [

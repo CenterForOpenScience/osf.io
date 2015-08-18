@@ -53,7 +53,7 @@ $(document).ready(function() {
             window.contextVars.node.urls.update,
             disableCategory
         );
-        ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
+        $osf.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
     }
 
     $('#deleteNode').on('click', function() {
@@ -71,9 +71,15 @@ $(document).ready(function() {
             ctx.node.urls.api + 'settings/comments/',
             {commentLevel: commentLevel}
         ).done(function() {
-            $commentMsg.addClass('text-success');
             $commentMsg.text('Successfully updated settings.');
-            window.location.reload();
+            $commentMsg.addClass('text-success');
+            if($osf.isSafari()){
+                //Safari can't update jquery style change before reloading. So delay is applied here
+                setTimeout(function(){window.location.reload();}, 100);
+            } else {
+                window.location.reload();
+            }
+
         }).fail(function() {
             bootbox.alert({
                 message: 'Could not set commenting configuration. Please try again.',
@@ -112,7 +118,12 @@ $(document).ready(function() {
                 msgElm.text('Settings updated').fadeIn();
                 checkedOnLoad = $('#selectAddonsForm input:checked');
                 uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
-                window.location.reload();
+                if($osf.isSafari()){
+                    //Safari can't update jquery style change before reloading. So delay is applied here
+                    setTimeout(function(){window.location.reload();}, 100);
+                } else {
+                    window.location.reload();
+                }
             }
         });
 

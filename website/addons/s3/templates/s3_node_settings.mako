@@ -54,7 +54,8 @@
           ## </div>
           <div class="col-md-2">
             <button data-bind="click: selectBucket,
-                               attr.disabled: !allowSelectBucket()"
+                               attr.disabled: !allowSelectBucket(),
+                               text: saveButtonText"
                     class="btn btn-success">
               Save
             </button>

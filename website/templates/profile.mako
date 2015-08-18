@@ -35,7 +35,7 @@
         </span>
         <span class="edit-profile-settings">
             % if user['is_profile']:
-                <a href="/settings/">Edit your profile</a>
+                <a href="/settings/"><i class="fa fa-pencil m-r-xs"></i> Edit your profile</a>
             % endif
         </span>
     </div>

@@ -23,8 +23,8 @@ var ActiveFiltersHeader = {
     view: function(ctrl, params) {
         var vm = params.vm;
 
-        return m('.sidebar-header',  ['Active filters:',
-            (vm.optionalFilters.length > 0 || vm.requiredFilters.length > 0) ? m('a', {
+        return m('.sidebar-header', (vm.optionalFilters.length > 0 || vm.requiredFilters.length > 0) ? ['Active filters:',
+             m('a', {
                 style: {
                     'float': 'right'
                 }, onclick: function(event){
@@ -32,7 +32,8 @@ var ActiveFiltersHeader = {
                     vm.requiredFilters = [];
                     utils.search(vm);
                     }
-            }, ['Clear ', m('i.fa.fa-close')]) : []]);
+            }, ['Clear ', m('i.fa.fa-close')])
+        ]:[]);
     }
 };
 
@@ -83,7 +84,7 @@ var Provider = {
         var checked = (vm.optionalFilters.concat(vm.requiredFilters).indexOf('match:shareProperties.source:' + provider.short_name) > -1) ? 'in-filter' : '';
 
         return m('li',
-            m('.provider-filter.break-word', {
+            m('a.provider-filter.break-word', {
                 'class': checked,
                 onclick: function(cb){
                     if (checked === 'in-filter') {

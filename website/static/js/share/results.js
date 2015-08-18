@@ -7,6 +7,12 @@ var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 require('truncate');
 
+var LoadingIcon = {
+    view: function(ctrl) {
+        return m('img', {src: '/static/img/loading.gif', alt: 'loading spinner'});
+    }
+};
+
 var Results = {
     view: function(ctrl, params) {
         var vm = params.vm;
@@ -26,7 +32,7 @@ var Results = {
             } else if (!loading && results.length === 0) {
                 return m('p', {class: 'text-muted'}, 'No results for this query');
             } else {
-                return m('', [m.component(utils.loadingIcon), 'loading...']);
+                return m('', [m.component(LoadingIcon), 'loading...']);
             }
         };
 
@@ -44,6 +50,7 @@ var Results = {
                 }, 'More') : [])
             ))
         ]);
+    };
 
     }
 };
@@ -92,18 +99,19 @@ var TitleBar = {
 var Description = {
     controller: function(vm) {
         var self = this;
-        self.showAll = false;
+        self.showAll = m.prop(false);
     },
     view: function(ctrl, params) {
         var result = params.result;
+        var showOnClick = function() {
+            ctrl.showAll(!ctrl.showAll());
+        };
         if ((result.description || '').length > 350) {
-            return m('p.readable.pointer', {
-                onclick: function() {
-                    ctrl.showAll = !ctrl.showAll;
-                    }
-                },
-                ctrl.showAll ? result.description : $.truncate(result.description, {length: 350})
-            );
+            return m('', [
+                m('p.readable.pointer', {onclick: showOnClick},
+                    ctrl.showAll() ? result.description : $.truncate(result.description, {length: 350})
+                ),
+                m('a.sr-only', {href: '#', onclick: showOnClick}, ctrl.showAll() ? 'See less' : 'See more')]);
         } else {
             return m('p.readable', result.description);
         }
@@ -142,6 +150,7 @@ var Contributor = {
         return m('span', [
             m('span', index !== 0 ? ' · ' : ''),
             m('a', {
+                href: '#',
                 onclick: function() {
                     utils.updateFilter(vm, 'match:contributors.familyName:' + contributor.familyName, true);
                     utils.updateFilter(vm, 'match:contributors.givenName:' + contributor.givenName, true);
@@ -177,7 +186,7 @@ var Subject = {
     view: function(ctrl, params) {
         var subject = params.subject;
         var vm = params.vm;
-        return m('span', m('.badge.pointer', {onclick: function(){
+        return m('span', m('a.badge.pointer', {onclick: function(){
                 utils.updateFilter(vm, 'match:subjects:"' + subject + '"', true);
             }}, $.truncate(subject, {length: 50}), ' '
         ));
@@ -205,7 +214,7 @@ var Footer = {
         var result = params.result;
         var vm = params.vm;
         return m('div', [
-            m('span',
+            m('span.text-muted',
                 'Released on ' + new $osf.FormattableDate(result.providerUpdatedDateTime).local,
                 vm.rawNormedLoaded() ?  m('span', [
                     m('span', {style: {'margin-right': '5px', 'margin-left': '5px'}}, ' | '),
@@ -220,8 +229,11 @@ var Footer = {
             m('span.pull-right', [
                 m('img', {src: vm.ProviderMap[result.shareProperties.source].favicon, alt: 'favicon for ' + result.shareProperties.source, style: {width: '16px', height: '16px'}}),
                 ' ',
-                m('a', {onclick: function() {utils.updateFilter(vm, 'shareProperties.source:' + result.shareProperties.source);}}, vm.ProviderMap[result.shareProperties.source].long_name),
-                m('br')
+                m('a', {
+                    onclick: function() {utils.updateFilter(vm, 'match:shareProperties.source:' + result.shareProperties.source);}
+                }, vm.ProviderMap[result.shareProperties.source].long_name),
+                m('br'),
+                m('hr')
             ]),
             ctrl.showRawNormalized() ? m.component(RawNormalizedData, {result: ctrl.cleanResult(), missingError: ctrl.missingError()}) : '',
         ]);
