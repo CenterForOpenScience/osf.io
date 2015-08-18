@@ -11,7 +11,7 @@ from website.tokens.exceptions import TokenHandlerNotFound
 
 class TokenHandler(object):
 
-    ACTION_MAP = {
+    HANDLERS = {
         'approve_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'approve'),
         'reject_registration_approval': functools.partial(handlers.sanction_handler, 'registration', 'reject'),
         'approve_embargo': functools.partial(handlers.sanction_handler, 'embargo', 'approve'),
@@ -61,7 +61,7 @@ class TokenHandler(object):
 
     def process(self):
         action = self.payload.get('action', None)
-        handler = self.ACTION_MAP.get(action)
+        handler = self.HANDLERS.get(action)
         if handler:
             return handler(self.payload, self.encoded_token)
         else:
