@@ -214,7 +214,7 @@ class TestRegistrationApproval(OsfTestCase):
         non_contributor = factories.AuthUserFactory()
 
         approval_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
-        approval_url = self.registration.web_url_for('node_registration_approve', token=approval_token)
+        approval_url = self.registration.web_url_for('view_project', token=approval_token)
 
         res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
         assert_equal(http.FORBIDDEN, res.status_code)
@@ -226,7 +226,7 @@ class TestRegistrationApproval(OsfTestCase):
         non_contributor = factories.AuthUserFactory()
 
         rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
-        rejection_url = self.registration.web_url_for('node_registration_disapprove', token=rejection_token)
+        rejection_url = self.registration.web_url_for('view_project', token=rejection_token)
 
         res = self.app.get(rejection_url, auth=non_contributor.auth, expect_errors=True)
         assert_equal(http.FORBIDDEN, res.status_code)
