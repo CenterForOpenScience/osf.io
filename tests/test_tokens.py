@@ -45,13 +45,13 @@ class TestTokenHandler(OsfTestCase):
         self.payload['action'] = 'not a handler'
         token = TokenHandler.from_payload(self.payload)
         with assert_raises(TokenHandlerNotFound):
-            token.process()
+            token.to_response()
 
     @mock.patch('website.tokens.handlers.sanction_handler')
     def test_token_process_with_valid_action(self, mock_handler):
         self.payload['action'] = 'approve_registration_approval'
         token = TokenHandler.from_payload(self.payload)
-        token.process()
+        token.to_response()
         assert_true(
             mock_handler.called_with(
                 'registration',

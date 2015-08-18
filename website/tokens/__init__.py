@@ -59,7 +59,7 @@ class TokenHandler(object):
         encoded_token = TokenHandler.encode(payload)
         return cls(encoded_token=encoded_token, payload=payload)
 
-    def process(self):
+    def to_response(self):
         action = self.payload.get('action', None)
         handler = self.HANDLERS.get(action)
         if handler:
@@ -80,9 +80,9 @@ def process_token_or_pass(func):
     def wrapper(*args, **kwargs):
         encoded_token = request.args.get('token')
         if encoded_token:
-            token = TokenHandler.from_string(encoded_token)
+            handler = TokenHandler.from_string(encoded_token)
             try:
-                return token.process()
+                return handler.to_response()
             except TokenHandlerNotFound as e:
                 raise HTTPError(
                     http.BAD_REQUEST,
@@ -91,6 +91,5 @@ def process_token_or_pass(func):
                         'message_long': 'No token handler for action: {} found'.format(e.action)
                     }
                 )
-            return token.process()
         return func(*args, **kwargs)
     return wrapper

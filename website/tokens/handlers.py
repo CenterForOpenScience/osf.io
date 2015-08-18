@@ -11,7 +11,7 @@ from website.tokens.exceptions import UnsupportedSanctionHandlerKind, TokenError
 
 def registration_approval_handler(action, registration, registered_from):
     status.push_status_message({
-        'approve': 'Your Registration approval has been accepted.',
+        'approve': 'Your registration approval has been accepted.',
         'reject': 'Your disapproval has been accepted and the registration has been cancelled.',
     }[action], kind='success', trust=False)
     if action == 'approve':
@@ -21,7 +21,7 @@ def registration_approval_handler(action, registration, registered_from):
 
 def embargo_handler(action, registration, registered_from):
     status.push_status_message({
-        'approve': 'Your Embargo approval has been accepted.',
+        'approve': 'Your embargo approval has been accepted.',
         'reject': 'Your disapproval has been accepted and the embargo has been cancelled.',
     }[action], kind='success', trust=False)
     if action == 'approve':
@@ -31,7 +31,7 @@ def embargo_handler(action, registration, registered_from):
 
 def retraction_handler(action, registration, registered_from):
     status.push_status_message({
-        'approve': 'Your Retraction approval has been accepted.',
+        'approve': 'Your retraction approval has been accepted.',
         'reject': 'Your disapproval has been accepted and the retraction has been cancelled.'
     }[action], kind='success', trust=False)
     if action == 'approve':
