@@ -22,6 +22,7 @@ var Results = {
     view: function(ctrl, params) {
         var vm = params.vm;
         var results = params.request.data.results;
+        var count = params.request.data.counts.total
         var resultViews = $.map(results || [], function(result, i) {
             return m.component(Result, {result: result, vm: vm, widget: params.widget });
         });
@@ -37,7 +38,7 @@ var Results = {
         return m('', [
             m('.row', m('.col-md-12', maybeResults(resultViews))),
             m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
-                results.length > 0 ?
+                results.length > 0  && results.length < count ?
                 m('a.btn.btn-md.btn-default', {
                     onclick: function(){
                         searchUtils.paginateRequests(vm, []);

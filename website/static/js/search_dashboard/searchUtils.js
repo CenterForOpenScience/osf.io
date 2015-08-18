@@ -56,7 +56,11 @@ searchUtils.runRequest = function(vm, request, data) {
             data: searchUtils.buildQuery(request),
             url: '/api/v1/search/'
         }).then(function (data) {
+            var oldData = request.data;
             request.data = data;
+            if (oldData !== null && request.page > 0) { //Add old results back on for pagination, but what about if we want to drop all results???
+                request.data.results = oldData.results.concat(request.data.results);
+            }
             if (request.postRequest) {
                 request.postRequest.forEach(function (funcToRun) {
                     request = funcToRun(request, data);
@@ -111,77 +115,6 @@ searchUtils.paginateRequests = function(vm, requests){
         }
     });
     searchUtils.runRequests(vm);
-};
-
-/* Handles searching via the search API */
-searchUtils.loadMore = function(vm) {
-    var ret = m.deferred();
-    if (vm.query().length === 0) {
-        ret.resolve(null);
-    } else {
-        var page = vm.page++ * 10;
-        var sort = vm.sortMap[vm.sort()] || null;
-
-        vm.resultsLoading(true);
-        m.request({
-            method: 'post',
-            background: true,
-            data: searchUtils.buildQuery(vm),
-            url: '/api/v1/share/search/'
-        }).then(function (data) {
-            vm.resultsLoading(false);
-            ret.resolve(data);
-        }, function (xhr, status, err) {
-            ret.reject(xhr, status, err);
-            searchUtils.errorState.call(this, vm);
-        });
-    }
-    return ret.promise;
-};
-
-/* Makes sure the state we are in is valid for searching, passes the work to loadMore if so */
-searchUtils.search = function(vm) {
-    vm.showFooter = false;
-    var ret = m.deferred();
-    if (!vm.query() || vm.query().length === 0) {
-        vm.query = m.prop('');
-        vm.results = null;
-        vm.showFooter = true;
-        vm.showStats = false;
-        vm.optionalFilters = [];
-        vm.requiredFilters = [];
-        vm.sort('Relevance');
-        History.pushState({}, 'OSF | SHARE', '?');
-        ret.resolve(null);
-    } else if (vm.query().length === 0) {
-        ret.resolve(null);
-    } else {
-        vm.showStats = true;
-        vm.page = 0;
-        vm.results = [];
-        if (searchUtils.stateChanged(vm)) {
-            // TODO remove of range filter should update range on subgraph
-            History.pushState({
-                optionalFilters: vm.optionalFilters,
-                requiredFilters: vm.requiredFilters,
-                query: vm.query(),
-                sort: vm.sort()
-            }, 'OSF | SHARE', '?' + searchUtils.buildURLParams(vm));
-        }
-        searchUtils.loadMore(vm)
-            .then(function (data) {
-                if (vm.loadStats) {
-                    if (data.aggregations) {
-                        searchUtils.processStats(vm, data);
-                    } else {
-                        $osf.growl('Error', 'Could not load search statistics', 'danger');
-                    }
-                    searchUtils.updateVM(vm, data);
-                    ret.resolve(vm);
-                }
-            });
-    }
-    return ret.promise;
 };
 
 /* updates the current state when history changed. Should be bound to forward/back buttons callback */
@@ -246,7 +179,7 @@ searchUtils.buildQuery = function (vm) {
             }
         },
         'aggregations': searchUtils.buildAggs(vm),
-        'from': ((vm.page || 1) - 1) * 10,
+        'from': vm.page * size,
         'size': size,
         'sort': [sort],
         'highlight': { //TODO generalize

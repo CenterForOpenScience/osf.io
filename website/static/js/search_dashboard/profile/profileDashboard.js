@@ -214,11 +214,11 @@ profileDashboard.controller = function(params) {
 
     var mainRequest = {
             elasticURL: '/api/v1/search/',
-            size: 2,
+            size: 5,
             page: 0,
             requiredFilters: ['match:contributors.url:' + ctx.userId + '=lock'],
             optionalFilters: ['match:_type:project=lock', 'match:_type:component=lock'],
-            sort: 'Relevance',
+            sort: 'Date',
             sortMap: {
                 Date: 'date_created',
                 Relevance: null
