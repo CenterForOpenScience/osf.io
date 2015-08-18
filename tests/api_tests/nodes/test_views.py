@@ -1350,7 +1350,6 @@ class TestNodeLogList(ApiTestCase):
         super(TestNodeLogList, self).setUp()
         self.user = AuthUserFactory()
         self.password = fake.password()
-
         self.non_contrib = AuthUserFactory()
         self.user_two = AuthUserFactory()
         self.project = ProjectFactory()
@@ -1401,10 +1400,6 @@ class TestNodeLogList(ApiTestCase):
         (len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['action'], 'project_created')
 
-    def test_return_logs_private_project_details(self):
-        self.project = ProjectFactory()
-        res = self.app.get(self.private_url, auth=self.basic_auth, expect_errors=True)
-
     def test_return_public_log_list_logged_in_user(self):
         self.project = ProjectFactory()
         res = self.app.get(self.url, auth=self.non_contrib)
@@ -1421,7 +1416,7 @@ class TestNodeLogList(ApiTestCase):
         assert_in(self.public._id, ids)
         assert_in(self.private._id, ids)
 
-    def test_return_private_log_logged_in_non_contributor(self):
+    def test_return_private_node_log_logged_in_non_contributor(self):
         self.project = ProjectFactory()
         res = self.app.get(self.url, auth=self.non_contrib.auth)
         ids = [each['id'] for each in res.json['data']]
@@ -1434,7 +1429,7 @@ class TestNodeLogList(ApiTestCase):
         self.project.save()
         res = self.app.get(self.public_url, auth=self.basic_auth, expect_errors=True)
         self.project.reload()
-        assert_equal(res.status_code, 500)
+        assert_equal(res.status_code, 403)
 
     def test_private_project_in_logs(self):
         self.project = ProjectFactory()
@@ -1455,9 +1450,3 @@ class TestNodeLogList(ApiTestCase):
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
-
-
-
-
-
-

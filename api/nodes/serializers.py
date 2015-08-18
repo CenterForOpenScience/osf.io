@@ -30,6 +30,9 @@ class NodeSerializer(JSONAPISerializer):
             'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
             'count': 'get_node_count',
         },
+        'logs': {
+            'related': Link('nodes:node-logs', kwargs={'node_id': '<pk>'})
+        },
         'contributors': {
             'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
             'count': 'get_contrib_count',
@@ -45,9 +48,6 @@ class NodeSerializer(JSONAPISerializer):
         'files': {
             'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
         },
-        'logs': {
-            'related': Link('nodes:node-logs', kwargs={'node_id': '<pk>'})
-        },
         'parent': {
             'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
         }
@@ -61,10 +61,10 @@ class NodeSerializer(JSONAPISerializer):
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
-                                        'to everyone. Private nodes require explicit read '
-                                        'permission. Write and admin access are the same for '
-                                        'public and private nodes. Administrators on a parent '
-                                        'node have implicit read permissions for all child nodes',
+                                                            'to everyone. Private nodes require explicit read '
+                                                            'permission. Write and admin access are the same for '
+                                                            'public and private nodes. Administrators on a parent '
+                                                            'node have implicit read permissions for all child nodes',
                               )
     # TODO: finish me
 
@@ -134,6 +134,7 @@ class NodeSerializer(JSONAPISerializer):
 
 
 class NodeLinksSerializer(JSONAPISerializer):
+
     id = ser.CharField(read_only=True, source='_id')
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
     title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
@@ -169,6 +170,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 
 
 class NodeFilesSerializer(JSONAPISerializer):
+
     id = ser.CharField(read_only=True, source='_id')
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
@@ -197,7 +199,6 @@ class NodeFilesSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
-
 
 class NodeLogSerializer(JSONAPISerializer):
     date = ser.DateTimeField(read_only=True)
