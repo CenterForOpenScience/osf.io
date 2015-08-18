@@ -9,7 +9,7 @@ from api.users.serializers import UserSerializer
 class Root(APIView):
     """
         Welcome to the V2 Open Science Framework API. With this API you can programatically access users,
-        projects, components, and files from the [Open Science Framework]("https://osf.io/"). The Open Science
+        projects, components, and files from the [Open Science Framework](https://osf.io/). The Open Science
         Framework is a website that integrates with the scientist's daily workflow. OSF helps document and archive
         study designs, materials, and data. OSF facilitates sharing of materials and data within a research group
         or between groups. OSF also facilitates transparency of research and provides a network design that details
@@ -24,7 +24,7 @@ class Root(APIView):
         Collections can be filtered by adding a query parameter in the form:
 
             filter[<fieldname>]=<matching information>
-        For example, if you were trying to find [Lise Meitner]("http://en.wikipedia.org/wiki/Lise_Meitner"):
+        For example, if you were trying to find [Lise Meitner](http://en.wikipedia.org/wiki/Lise_Meitner):
 
             /users?filter[fullname]=meitn
         You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.
