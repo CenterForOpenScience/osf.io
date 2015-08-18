@@ -23,7 +23,7 @@
     <div class="col-sm-9 col-md-7">
         <div class="row">
             <div class="col-sm-12">
-                <div class="breadcrumb">&lt; <a href="${web_url_for('oauth_application_list')}">Return to list of registered applications</a></div>
+                <div class="breadcrumb"><i class="fa fa-angle-double-left"></i> <a href="${web_url_for('oauth_application_list')}">Return to list of registered applications</a></div>
             </div>
         </div>
 
