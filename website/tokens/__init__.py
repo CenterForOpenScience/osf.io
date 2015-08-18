@@ -30,12 +30,15 @@ class TokenHandler(object):
         return jwt.encode(
             payload,
             settings.JWT_SECRET,
-            algorithm='HS256'
+            algorithm=settings.JWT_ALGORITHM
         )
 
     @staticmethod
     def decode(encoded_token):
-        return jwt.decode(encoded_token, settings.JWT_SECRET, algorithms=['HS256'])
+        return jwt.decode(
+            encoded_token,
+            settings.JWT_SECRET,
+            algorithms=[settings.JWT_ALGORITHM])
 
     @classmethod
     def from_string(cls, encoded_token):
