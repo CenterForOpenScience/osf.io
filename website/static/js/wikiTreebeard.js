@@ -100,7 +100,7 @@ function change_permissions(item, permission) {
 function build_path(item) {
     var id = item.parent().data.node.id;
     var permissions_change_path = '/api/v1/project/'+ id +
-        '/wiki/permissions/';
+        '/wiki/settings/';
     return permissions_change_path;
 }
 

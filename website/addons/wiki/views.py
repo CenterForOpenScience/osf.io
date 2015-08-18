@@ -113,7 +113,7 @@ def _get_wiki_api_urls(node, name, additional_urls=None):
         'delete': node.api_url_for('project_wiki_delete', wname=name),
         'rename': node.api_url_for('project_wiki_rename', wname=name),
         'content': node.api_url_for('wiki_page_content', wname=name),
-        'set_permissions': node.api_url_for('edit_wiki_permissions'),
+        'settings': node.api_url_for('edit_wiki_settings'),
         'grid': node.api_url_for('project_wiki_grid_data', wname=name)
     }
     if additional_urls:
@@ -354,7 +354,7 @@ def project_wiki_edit_post(auth, wname, **kwargs):
 @must_have_permission('admin')
 @must_not_be_registration
 @must_have_addon('wiki', 'node')
-def edit_wiki_permissions(node, auth, **kwargs):
+def edit_wiki_settings(node, auth, **kwargs):
     wiki_settings = node.get_addon('wiki')
     permissions = request.get_json().get('permission', None)
 

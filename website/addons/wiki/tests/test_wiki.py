@@ -481,7 +481,7 @@ class TestViewHelpers(OsfTestCase):
         assert_equal(urls['delete'], self.project.api_url_for('project_wiki_delete', wname=self.wname))
         assert_equal(urls['rename'], self.project.api_url_for('project_wiki_rename', wname=self.wname))
         assert_equal(urls['content'], self.project.api_url_for('wiki_page_content', wname=self.wname))
-        assert_equal(urls['set_permissions'], self.project.api_url_for('edit_wiki_permissions'))
+        assert_equal(urls['settings'], self.project.api_url_for('edit_wiki_settings'))
 
 
 class TestWikiDelete(OsfTestCase):
