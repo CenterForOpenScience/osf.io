@@ -462,7 +462,6 @@ class TestUserUpdate(ApiTestCase):
             'gitHub': 'even_newer_github',
             'suffix': 'The Millionth'
         }, auth=self.user_one.auth)
-        res = self.app.get(self.user_one_url)
         self.user_one.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['fullname'], 'new_fullname')
@@ -488,7 +487,6 @@ class TestUserUpdate(ApiTestCase):
             'fullname': 'new_fullname',
             'suffix': 'The Millionth'
         }, auth=self.user_one.auth)
-        # res = self.app.get(self.user_one_url)
         self.user_one.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['fullname'], 'new_fullname')
@@ -515,7 +513,6 @@ class TestUserUpdate(ApiTestCase):
             'gitHub': 'even_newer_github',
             'suffix': 'The Millionth'
         }, auth=self.user_one.auth)
-        res = self.app.get(self.user_one_url)
         self.user_one.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['fullname'], 'new_fullname')
