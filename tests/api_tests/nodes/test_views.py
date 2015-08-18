@@ -19,9 +19,13 @@ from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
 <<<<<<< HEAD
+<<<<<<< HEAD
     NodeLogFactory,
 =======
 >>>>>>> 250891eba173d7605a079e44874f332a52ca4900
+=======
+    NodeLogFactory,
+>>>>>>> develop
     UserFactory,
     AuthUserFactory
 )
@@ -1458,6 +1462,7 @@ class TestNodeLogList(ApiTestCase):
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
+
 
 
 
