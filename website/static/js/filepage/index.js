@@ -71,12 +71,8 @@ var FileViewPage = {
         });
 
         $(document).on('fileviewpage:download', function() {
-            //Remove mode=render for download count incrementation
-            if (self.file.urls.content.contains('?mode=render')){
-                window.location = self.file.urls.content.replace('mode=render&', '');
-            } else {
-                window.location = self.file.urls.content.replace('&mode=render', '');
-            }
+            //replace mode=render with action=download for download count incrementation
+            window.location = self.file.urls.content.replace('mode=render', 'action=download');
             return false;
         });
 
