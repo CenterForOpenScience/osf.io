@@ -7,7 +7,7 @@ var $osf = require('js/osfHelpers');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 
 require('c3/c3.css');
-require('../../css/search_widget.css');
+require('css/search_widget.css');
 
 //This module contains a bunch of generic charts and parsers for formating the correct data for them
 
@@ -60,14 +60,12 @@ charts.getChangedColumns = function(oldCols, newCols){
 /**
  * Creates a c3 donut chart component
  *
- * @param {Object} rawData: Data to populate chart after parsing raw data
  * @param {Object} vm: vm of the searchDashboard
  * @param {Object} widget: params of the widget that chart is being created for
  * @return {Object} c3 chart wrapped in component
  */
 charts.donutChart = function (vm, widget) {
-    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, vm, widget.levelNames, widget);
-    if (!widget.display.dataReady()) return;
+    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, widget.levelNames, vm, widget);
     data.onclick = widget.display.callbacks.onclick ? widget.display.callbacks.onclick.bind({
         vm: vm,
         widget: widget
@@ -82,7 +80,7 @@ charts.donutChart = function (vm, widget) {
         data: data,
         donut: {
             title: widget.display.title ? widget.display.title : data.title,
-            label: widget.display.labelFunc,
+            label: {format: widget.display.labelFormat || undefined}
         },
         legend: {
             show: true,
@@ -94,16 +92,14 @@ charts.donutChart = function (vm, widget) {
 };
 
 /**
- * Creates a c3 histogram chart component
+ * Creates a c3 histogram chart component //NOT USED, UNTESTED!
  *
- * @param {Object} rawData: Data to populate chart after parsing raw data
  * @param {Object} vm: vm of the searchDashboard
  * @param {Object} widget: params of the widget that chart is being created for
  * @return {Object} c3 chart wrapped in component
  */
 charts.barChart = function (vm, widget) {
-    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, vm, widget.levelNames, widget);
-    if (!widget.display.dataReady()) return;
+    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, widget.levelNames, vm, widget);
     data.onclick = widget.display.callbacks.onclick ? widget.display.callbacks.onclick.bind({
         vm: vm,
         widget: widget
@@ -167,18 +163,15 @@ charts.getZoomFromTimeRangeFilter = function(vm, bounds){
     return zoom;
 };
 
-
-
 /**
  * Creates a c3 timeseries chart component after parsing raw data
  *
- * @param {Object} rawData: Data to populate chart
  * @param {Object} vm: vm of the searchDashboard
  * @param {Object} widget: params of the widget that chart is being created for
  * @return {Object}  c3 chart wrapped in component
  */
 charts.timeseriesChart = function (vm, widget) {
-    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, vm, widget.levelNames, widget);
+    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, widget.levelNames, vm, widget);
     data.type = widget.display.type ? widget.display.type : 'area-spline';
     var bounds = [data.columns[0][1], data.columns[0][data.columns[0].length-1]]; //get bounds of chart
     var zoom = charts.getZoomFromTimeRangeFilter(vm.requests.mainRequest, bounds);
@@ -189,7 +182,6 @@ charts.timeseriesChart = function (vm, widget) {
             height: widget.size[1]
         },
         data: data,
-        //TODO @bdyetton Subchart should always show the global range (and all projects)
         subchart: {
             show: true,
             size: {
@@ -236,6 +228,9 @@ charts.timeseriesChart = function (vm, widget) {
                     widget: widget
                 }) : undefined
             }
+        },
+        padding:{
+            right: 15
         },
         tooltip: {
             grouped: false

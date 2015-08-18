@@ -4,8 +4,8 @@ var pd = require('pretty-data').pd;
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
-var icon = require('js/iconmap')
-var utils = require('js/share/utils');
+var icon = require('js/iconmap');
+var searchUtils = require('js/search_dashboard/searchUtils');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 require('truncate');
 var ResultsWidget = {};
@@ -21,14 +21,11 @@ var Results = {
      */
     view: function(ctrl, params) {
         var vm = params.vm;
-        var resultViews = $.map(vm.results || [], function(result, i) {
+        var results = params.request.data.results;
+        var resultViews = $.map(results || [], function(result, i) {
             return m.component(Result, {result: result, vm: vm, widget: params.widget });
         });
 
-        var len = 0;
-        if (vm.results){
-            len = vm.results.length;
-        }
         var maybeResults = function(results) {
             if (results.length > 0) {
                 return results;
@@ -40,13 +37,10 @@ var Results = {
         return m('', [
             m('.row', m('.col-md-12', maybeResults(resultViews))),
             m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
-                len > 0 && len < vm.count ?
+                results.length > 0 ?
                 m('a.btn.btn-md.btn-default', {
                     onclick: function(){
-                        utils.loadMore(vm)
-                            .then(function(data) {
-                                utils.updateVM(vm, data);
-                            });
+                        searchUtils.paginateRequests(vm, []);
                     }
                 }, 'More') : [])
             ))
@@ -106,8 +100,8 @@ var TitleBar = {
                 'class': icon.projectIcons[nodeType],
                 title: nodeType,
                 onclick: function() {
-                    utils.updateFilter(vm, 'match:_type:' + nodeType, true);
-                    widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                    widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
+                    searchUtils.updateFilter(vm, [], 'match:_type:' + nodeType, true);
                 }}
             ),
             m('a[href=' + result.url + ']', ((result.title || 'No title provided'))),
@@ -201,8 +195,8 @@ var Contributor = {
             m('span', index !== 0 ? ' · ' : ''),
             m('a', {
                 onclick: function() {
-                    utils.updateFilter(vm, 'match:contributors.url:' + contributor.url, true);
-                    widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                    widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
+                    searchUtils.updateFilter(vm, [], 'match:contributors.url:' + contributor.url, true);
                 }
             }, contributor.fullname)
         ]);
@@ -254,8 +248,8 @@ var Tag = {
         var vm = params.vm;
         var widget = params.widget;
         return m('span', m('.badge.pointer.m-t-xs', {onclick: function(){
-                utils.updateFilter(vm, 'match:tags:' + tag, true);
-                widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
+                searchUtils.updateFilter(vm, [], 'match:tags:' + tag, true);
             }}, $.truncate(tag, {length: 50}), ' '
         ));
     }
@@ -277,9 +271,9 @@ var Footer = {
     }
 };
 
-ResultsWidget.display = function(data, vm, widget){
+ResultsWidget.display = function(vm, widget){
     //results will always update regardless of callback location (no mapping)
-    return m.component(Results,{data: data, vm: vm, widget: widget});
+    return m.component(Results,{request: vm.requests.mainRequest, vm: vm, widget: widget});
 };
 
 module.exports = ResultsWidget;

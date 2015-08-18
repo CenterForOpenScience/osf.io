@@ -4,12 +4,14 @@ var c3 = require('c3');
 var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
-var utils = require('js/share/utils');
+var searchUtils = require('js/search_dashboard/searchUtils');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 var charts = require('js/search_dashboard/charts');
-var ResultsWidget = require('js/search_dashboard/resultsWidget');
-var filterAndSearchWidget = require('js/search_dashboard/filterAndSearchWidget');
-var searchDashboard = require('js/search_dashboard/searchDashboard');
+var SearchDashboard = require('js/search_dashboard/searchDashboard');
+
+var ResultsWidget = require('./resultsWidget');
+var FilterWidget = require('./FilterWidget');
+
 
 var profileDashboard = {};
 
@@ -20,7 +22,7 @@ var ctx = window.contextVars;
  * @return {object} JSON elastic search aggregation
  */
 profileDashboard.contributorsAgg = function(){
-    var agg = {'contributors': utils.termsFilter('field', 'contributors.url', undefined, undefined, 11)}; //11 because one contributor is the user
+    var agg = {'contributors': searchUtils.termsFilter('field', 'contributors.url', undefined, undefined, 11)}; //11 because one contributor is the user
     return agg;
 };
 
@@ -30,7 +32,7 @@ profileDashboard.contributorsAgg = function(){
  * @return {object} JSON elastic search aggregation
  */
 profileDashboard.nodeTypeAgg = function(){
-    var agg = {'nodeType': utils.termsFilter('field','_type', 0, 'user')};
+    var agg = {'nodeType': searchUtils.termsFilter('field','_type', 0, 'user')};
     return agg;
 };
 
@@ -41,8 +43,8 @@ profileDashboard.nodeTypeAgg = function(){
  */
 profileDashboard.projectsByTimesAgg = function() {
     var dateRegistered = new Date(ctx.date_registered); //get current time
-    var agg = {'projectsByTimes': utils.termsFilter('field','_type', 1, 'user')};
-    agg.projectsByTimes.aggregations = {'projectsOverTime': utils.dateHistogramFilter('date_created',dateRegistered.getTime(),undefined,'day')};
+    var agg = {'projectsByTimes': searchUtils.termsFilter('field','_type', 1, 'user')};
+    agg.projectsByTimes.aggregations = {'projectsOverTime': searchUtils.dateHistogramFilter('date_created',dateRegistered.getTime(),undefined,'day')};
     return agg;
 };
 
@@ -52,7 +54,7 @@ profileDashboard.projectsByTimesAgg = function() {
  * @return {object} Parsed data for c3 objects
  */
 
-profileDashboard.contributorsParser = function(rawData, vm, levelNames){
+profileDashboard.contributorsParser = function(rawData, levelNames, vm){
     var guidsToNames = vm.requests.nameRequest.formattedData;
 
     var chartData = {};
@@ -96,7 +98,7 @@ profileDashboard.contributorsParser = function(rawData, vm, levelNames){
 * @return {Object}  initialised searchDashboard component
 */
 profileDashboard.view = function(ctrl) {
-    return m.component(searchDashboard, ctrl.searchSetup);
+    return m.component(SearchDashboard, ctrl.searchSetup);
 };
 
 /**
@@ -111,27 +113,25 @@ profileDashboard.controller = function(params) {
         id: contributorLevelNames[0],
         title: ctx.name + '\'s top 10 contributors',
         size: ['.col-md-6', 300],
-        row: 1,
         levelNames: contributorLevelNames,
         aggregations: {mainRequest: profileDashboard.contributorsAgg()},
         display: {
             reqRequests: ['mainRequest', 'nameRequest'], //these are the requests that need to have completed before we can update this widget
             displayComponent: charts.donutChart,
+            labelFormat: function(value, ratio){return value; },
             parser: profileDashboard.contributorsParser, //this function is run by the display widget to format data for display
             callbacks: { onclick : function (key) {
                 //bound information (this) from chart contains vm and widget
                 var vm = this.vm;
                 var widget = this.widget;
+                var request = vm.requests.mainRequest;
+                var guidsToNames = vm.requests.nameRequest.formattedData;
                 var name = key;
                 if (key.name) {name = key.name; }
-                //utils.removeFilter(vm,vm.tempData.contributorFilter, true); //uncomment to overwrite last filter
-                vm.tempData.contributorsFilter = 'match:contributors.url:' + widgetUtils.getKeyFromValue(this.vm.tempData.guidsToNames, name);
-                utils.updateFilter(
-                    vm,
-                    vm.tempData.contributorsFilter,
-                    true
-                );
-                widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
+                //utils.removeFilter(vm, widget.filters.contributorsFilter, true); //uncomment to overwrite last filter
+                widget.filters.contributorsFilter = 'match:contributors.url:' + widgetUtils.getKeyFromValue(guidsToNames, name);
+                widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
+                searchUtils.updateFilter(vm, [request], widget.filters.contributorsFilter, true);
             }},
             callbacksUpdate: ['all']
         }
@@ -142,7 +142,6 @@ profileDashboard.controller = function(params) {
         id: projectLevelNames[0],
         title: ctx.name + '\'s projects and components over time',
         size: ['.col-md-6', 300],
-        row: 1,
         levelNames: projectLevelNames,
         display: {
             reqRequests : ['mainRequest'], //the first req requests data will be the 'rawData' input to any parser, other request data should be pulled from vm.requests
@@ -156,33 +155,35 @@ profileDashboard.controller = function(params) {
                 onbrushOfSubgraph : function(zoomWin){
                     var vm = this.vm;
                     var widget = this.widget;
+                    var request = vm.requests.mainRequest;
                     var bounds = this.bounds;
-                    clearTimeout(vm.tempData.projectByTimeTimeout); //stop constant redraws
-                    vm.tempData.projectByTimeTimeout = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
+                    clearTimeout(widget.projectByTimeTimeout); //stop constant redraws
+                    widget.projectByTimeTimeout = setTimeout( //update chart with new dates after some delay (1s) to stop repeated requests
                         function(){
                             if ((zoomWin[0] <= bounds[0]) && (zoomWin[1] >= bounds[1])) {
-                                widgetUtils.signalWidgetsToUpdate(vm, widget.thisWidgetUpdates);
-                                utils.removeFilter(vm,vm.tempData.projectByTimeTimeFilter, false);
+                                widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
+                                searchUtils.removeFilter(vm, [request],widget.filters.rangeFilter, false);
                                 return;
                             }
-                            utils.removeFilter(vm,vm.tempData.projectByTimeTimeFilter, true);
-                            vm.tempData.projectByTimeTimeFilter = 'range:date_created:' + zoomWin[0].getTime() + ':' + zoomWin[1].getTime();
+                            searchUtils.removeFilter(vm, [request],widget.filters.rangeFilter, true);
+                            widget.filters.rangeFilter = 'range:date_created:' + zoomWin[0].getTime() + ':' + zoomWin[1].getTime();
                             widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
-                            utils.updateFilter(vm, vm.tempData.projectByTimeTimeFilter,true);
+                            searchUtils.updateFilter(vm, [request], widget.filters.rangeFilter,true);
                         },1000);
                 },
                 onclickOfLegend : function(item){
                     var vm = this.vm;
                     var widget = this.widget;
-                    utils.removeFilter(vm, vm.tempData.projectByTimeProjectFilter, true);
-                    vm.tempData.projectByTimeProjectFilter = 'match:_type:' + item;
+                    var request = vm.requests.mainRequest;
+                    searchUtils.removeFilter(vm, [request], widget.filters.typeFilter, true);
+                    widget.filters.typeFilter = 'match:_type:' + item;
                     widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
-                    utils.updateFilter(vm, vm.tempData.projectByTimeProjectFilter,true);
+                    searchUtils.updateFilter(vm, [request], widget.filters.typeFilter ,true);
                 }
             },
             callbacksUpdate: ['all']
         },
-        aggregations: {
+        aggregations: { //aggregations can be attached to any request, just specify name.
             mainRequest: profileDashboard.projectsByTimesAgg()
         }
     };
@@ -191,10 +192,9 @@ profileDashboard.controller = function(params) {
         id: 'activeFilters',
         title: 'Active Filters',
         size: ['.col-md-12'],
-        row: 2,
         display: {
             reqRequests : ['mainRequest'],
-            displayComponent: filterAndSearchWidget.display,
+            displayComponent: FilterWidget.display,
             callbacks: null, //callbacks included in displayWidget
             callbacksUpdate: ['all']
         }
@@ -204,7 +204,6 @@ profileDashboard.controller = function(params) {
         id: 'results',
         title: ctx.name + '\'s public projects and components',
         size: ['.col-md-12'],
-        row: 3,
         display: {
             reqRequests : ['mainRequest'],
             displayComponent: ResultsWidget.display,
@@ -215,7 +214,8 @@ profileDashboard.controller = function(params) {
 
     var mainRequest = {
             elasticURL: '/api/v1/search/',
-            size: 10,
+            size: 2,
+            page: 0,
             requiredFilters: ['match:contributors.url:' + ctx.userId + '=lock'],
             optionalFilters: ['match:_type:project=lock', 'match:_type:component=lock'],
             sort: 'Relevance',
@@ -226,34 +226,36 @@ profileDashboard.controller = function(params) {
     };
 
     var nameRequest = {
-            elasticURL: '/api/v1/search/',
-            requiredFilters: ['match:category:user=lock'],
-            preRequest: [function(requestIn, data){ //functions to modify filters and query before request
-                var request = $.extend({},requestIn);
-                var urls = [];
-                data.aggregations.contributors.buckets.forEach( //first find urls returned
+        elasticURL: '/api/v1/search/',
+        requiredFilters: ['match:category:user=lock'],
+        preRequest: [function (requestIn, data) { //functions to modify filters and query before request
+            var request = $.extend({}, requestIn);
+            var urls = [];
+            data.aggregations.contributors.buckets.forEach( //first find urls returned
                 function (bucket) {
                     urls.push(bucket.key);
                 });
-                var missingGuids = widgetUtils.keysNotInObject(urls, request.formattedData);
-                var guidFilters = [];
-                $.map(missingGuids, function(guid){
-                    guidFilters.push('match:id:' + guid);
-                });
-                request.optionalFilters = guidFilters;
-                request.size = missingGuids.length;
-                return request;
-            }],
-            postRequest: [function(requestIn, data){
-                var request = $.extend({}, requestIn);
-                var newGuidMaps = {};
-                data.results.forEach(function(user){
-                    newGuidMaps[user.id] = user.user;
-                });
-                request.formattedData = $.extend(request.formattedData, newGuidMaps);
-                m.redraw(); //TODO solve bug, why does mithril not redraw on its own??? it should trigger after each 'then' chain has finished, and this manual redraw can then be removed...
-                return request;
-            }]
+            var missingGuids = widgetUtils.keysNotInObject(urls, request.formattedData);
+            if (missingGuids.length === 0){
+                return false; //by returning false we do not run request.
+            }
+            var guidFilters = [];
+            $.map(missingGuids, function (guid) {
+                guidFilters.push('match:id:' + guid);
+            });
+            request.optionalFilters = guidFilters;
+            request.size = missingGuids.length;
+            return request;
+        }],
+        postRequest: [function (requestIn, data) {
+            var request = $.extend({}, requestIn);
+            var newGuidMaps = {};
+            data.results.forEach(function (user) {
+                newGuidMaps[user.id] = user.user;
+            });
+            request.formattedData = $.extend(request.formattedData, newGuidMaps);
+            return request;
+        }]
     };
 
     this.searchSetup = {
@@ -263,8 +265,8 @@ profileDashboard.controller = function(params) {
             nameRequest: nameRequest
         },
         requestOrder: [
-            ['mainRequest', 'nameRequest'], //run these in serial
-            //[] //this would be run in parallel
+            ['mainRequest', 'nameRequest'], //run these two in serial
+            //[] //this would be run in parallel with the two above
         ],
         widgets : {
             contributors: contributors,
@@ -274,8 +276,8 @@ profileDashboard.controller = function(params) {
         },
         rowMap: [
             ['contributors', 'projectsByTimes'],
+            ['activeFilters'],
             ['results'],
-            ['activeFilters']
         ],
     };
 };

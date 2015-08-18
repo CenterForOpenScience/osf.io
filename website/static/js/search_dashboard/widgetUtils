@@ -1,8 +1,6 @@
 'use strict';
 var $ = require('jquery');
-var m = require('mithril');
 var $osf = require('js/osfHelpers');
-var utils = require('js/share/utils');
 
 var widgetUtils = {};
 
@@ -37,11 +35,11 @@ widgetUtils.updateTriggered = function(widgetName, vm){
  *
  * @param {Object} vm: searchDashboard vm containing a list of widgets that need to be updated (vm.widgetsToUpdate)
  * @param {Array} widgetsToAdd: list of widgets that need to be added to the list of widgets to update
- * @return {Bool}  returns itself
  */
 widgetUtils.signalWidgetsToUpdate = function(vm, widgetsToAdd){
     if ($.inArray('all', widgetsToAdd) > -1){
         vm.widgetsToUpdate = widgetUtils.concatUnique(vm.widgetsToUpdate, vm.widgetIds);
+        return;
     }
     vm.widgetsToUpdate = widgetUtils.concatUnique(vm.widgetsToUpdate, widgetsToAdd);
 };
@@ -58,18 +56,6 @@ widgetUtils.concatUnique = function(array1, array2){
      return temp.filter(function(item, i, arr){ return arr.indexOf(item) === i; }); //make unique so we dont redraw widgets more than we have to
 };
 
-//widgetUtils.runRequests = function(vm, requests){
-//    requests.forEach(function(parallelRequest){
-//        if (Array.isArray(parallelRequest)){
-//            parallelRequest.forEach(function(serialRequest){
-//                    serialRequest
-//                }
-//            );
-//            return async.apply(widgetUtils.runRequest, vm, parallelRequest))
-//        }
-//    });
-//};
-
 /**
  * Finds and returns the keys not present in an object.
  *
@@ -78,11 +64,11 @@ widgetUtils.concatUnique = function(array1, array2){
  * @return {array}  Missing keys from object, returns [] if nothing missing
  */
 widgetUtils.keysNotInObject = function(keys, object){
-    return $.map(keys, (function(key){
+    return $.map(keys, function(key){
         if (object[key] === undefined){
             return key;
         }
-    }));
+    });
 };
 
 /**
@@ -92,7 +78,7 @@ widgetUtils.keysNotInObject = function(keys, object){
  * @param {string} id: The id to match
  * @return {Object}  matched object
  */
-widgetUtils.getObjectById = function(listOfObjects,id, field){
+widgetUtils.getObjectById = function(listOfObjects, id, field){
     field = field || 'id';
     var obIndex = $.map(listOfObjects, function(obj, index) {
         if (obj[field] === id) {
@@ -109,7 +95,7 @@ widgetUtils.getObjectById = function(listOfObjects,id, field){
  * @param {string/int} value: value to match to
  * @return {Object}  matched object
  */
-widgetUtils.getKeyFromValue = function(object,value){
+widgetUtils.getKeyFromValue = function(object, value){
   var key;
   for(key in object){
     if(object[key] === value){

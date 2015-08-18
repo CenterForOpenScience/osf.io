@@ -4,10 +4,10 @@ var pd = require('pretty-data').pd;
 var $ = require('jquery');
 var m = require('mithril');
 var $osf = require('js/osfHelpers');
-var utils = require('js/share/utils');
+var searchUtils = require('js/search_dashboard/searchUtils');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 require('truncate');
-var FilterAndSearchWidget = {};
+var FilterWidget = {};
 
 var fieldMappings = {
     '_type' : 'Type is ',
@@ -34,15 +34,12 @@ function fieldValueMappings(field, value, vm, widget){ //TODO would like to refa
         fieldPretty = fieldMappings[field[0]];
     } else if (field[0] === 'contributors' && field[1] === 'url') {
         var url = value.replace(/\//g, '');
-        var urlToNameMapper = widgetUtils.getGuidsToNamesMap([url], widget, vm);
-        if (urlToNameMapper) {
-            value = urlToNameMapper[url];
-        }
+        var urlToNameMapper = vm.requests.nameRequest.formattedData;
+        value = urlToNameMapper[url];
         fieldPretty = fieldMappings[field[0]];
         return value + fieldPretty;
     } else {
         fieldPretty = fieldMappings[field[0]];
-
     }
     return fieldPretty + value;
 }
@@ -116,8 +113,8 @@ var Filter = {
         return m('render-filter.m-t-xs.m-b-xs', [
             m('a.m-r-xs.m-l-xs', {
                 onclick: function(event){
-                    utils.removeFilter(vm, searchFilter);
-                    widgetUtils.signalWidgetsToUpdate(vm, params.widget.thisWidgetUpdates);
+                    searchUtils.removeFilter(vm,[], searchFilter);
+                    widgetUtils.signalWidgetsToUpdate(vm, params.widget.display.callbacksUpdate);
                 }
             }, [fieldValueMappings(field, value, vm, widget), m('i.fa.fa-close.m-r-xs.m-l-xs')]),
             m('.badge.pointer',  isLastFilter ? ('') : (required ? 'AND' : 'OR'))
@@ -126,29 +123,15 @@ var Filter = {
 };
 
 /**
- * View function of Filter component
- *
- * @param {Object} ctrl: passed by mithril, emtpy controller for object
- * @param {Object} params: mithril passed arg with vm, filter and widget information
- * @return {Object}  div for display of filter
- */
-var Search = {
-    view: function(ctrl, params){
-        return null; //TODO
-    }    
-};
-
-/**
  * Entry point for this widget, returns instantiated ActiveFilters and Search Widget
- * TODO @bdyetton this is actually unnecessary ;level of wrapping, components could be created in the search widget class
+ * TODO @bdyetton this is actually unnecessary level of wrapping, components could be created in the search widget class
  *
- * @param {Object} data: data to populate widget with (not used by this function)
  * @param {Object} vm: view model for Search Dashboard
- * @return {Object}  widget: widget information for the filter and search widget
+ * @return {Object} widget: widget information for the filter and search widget
  */
-FilterAndSearchWidget.display = function(vm, widget){
+FilterWidget.display = function(vm, widget){
     //results will always update regardless of callback location (no mapping)
     return m.component(ActiveFilters,{data: vm.requests.mainRequest, vm: vm, widget: widget});
 };
 
-module.exports = FilterAndSearchWidget;
+module.exports = FilterWidget;

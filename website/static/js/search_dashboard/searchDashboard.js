@@ -8,7 +8,7 @@ var $osf = require('js/osfHelpers');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 var SearchWidgetPanel = require('js/search_dashboard/searchWidget');
 var History = require('exports?History!history');
-var utils = require('js/share/utils');
+var searchUtils = require('js/search_dashboard/searchUtils');
 var searchDashboard = {};
 
 /**
@@ -60,6 +60,7 @@ searchDashboard.controller = function (params) {
 
     //search model state
     self.vm = searchDashboard.vm;
+    self.vm.requestOrder = params.requestOrder;
     self.vm.tempData = params.tempData;
     self.vm.widgetsToUpdate = [];
     self.vm.widgets = params.widgets;
@@ -67,6 +68,7 @@ searchDashboard.controller = function (params) {
     for (var widget in self.vm.widgets) {
         if (self.vm.widgets.hasOwnProperty(widget)) {
             self.vm.widgetIds.push(widget);
+            self.vm.widgets[widget].filters = {};
         }
     }
 
@@ -91,16 +93,16 @@ searchDashboard.controller = function (params) {
     self.vm.results = null; //unused, only for backwards compatibility with utils TODO remove
 
     History.Adapter.bind(window, 'statechange', function(e) {
-        var historyChanged = utils.updateHistory(self.vm);
+        var historyChanged = searchUtils.updateHistory(self.vm);
         if (historyChanged){ widgetUtils.signalWidgetsToUpdate(self.vm, self.vm.widgetIds);}
     });
 
     //run dat shit
-    searchDashboard.runRequests(self.vm, params.requestOrder);
+    searchUtils.runRequests(self.vm);
 };
 
 searchDashboard.buildRequest = function(id, request, aggs){
-    var req =  {
+    return {
         id : id,
         elasticURL: request.elasticURL,
         query: request.query || m.prop('*'),
@@ -109,52 +111,14 @@ searchDashboard.buildRequest = function(id, request, aggs){
         preRequest: request.preRequest,
         postRequest: request.postRequest,
         aggregations : aggs || [],
+        size: request.size,
+        page: request.page,
         data: null,
         formattedData: {},
         complete: m.prop(false),
         sort: m.prop(request.sort),
         sortMap: request.sortMap
     };
-    return req;
-};
-
-searchDashboard.runRequest = function(vm, request, data){
-    if (request.preRequest) {
-        request.preRequest.forEach(function (funcToRun) {
-            request = funcToRun(request, data); //these are non pure functions...
-        });
-    }
-    request.complete(false);
-    return m.request({
-        method: 'post',
-        background: true,
-        data: utils.buildQuery(request),
-        url: '/api/v1/search/'
-    }).then(function (data) {
-        request.data = data;
-        if (request.postRequest) {
-            request.postRequest.forEach(function (funcToRun) {
-                request = funcToRun(request, data);
-            });
-        }
-        request.complete(true);
-        return data;
-    });
-
-};
-
-searchDashboard.runRequests = function(vm, requestOrder){
-    requestOrder.forEach(function(parallelReqs){
-        searchDashboard.recursiveRequest(vm, parallelReqs);
-    });
-};
-
-searchDashboard.recursiveRequest = function(vm, requests, data){
-    if (requests.length <= 0) {return; }
-    var thisLevelReq = requests.shift();
-    searchDashboard.runRequest(vm, vm.requests[thisLevelReq], data).then(function(newData){
-        searchDashboard.recursiveRequest(vm, requests, newData);
-    });
 };
 
 module.exports = searchDashboard;

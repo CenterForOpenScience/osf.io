@@ -5,7 +5,7 @@ var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 
-require('../../css/search_widget.css');
+require('css/search_widget.css');
 
 function loadingIcon(){
     return m('.spinner-loading-wrapper', [
@@ -59,7 +59,7 @@ var searchWidgetPanel = {
     },
 
     /**
-     * controller function for a search widget pannel. Initialises component.
+     * controller function for a search widget panel. Initialises component.
      *
      * @return {m.component.controller}  returns itself
      */
