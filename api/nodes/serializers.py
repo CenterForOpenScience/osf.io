@@ -25,12 +25,27 @@ class NodeSerializer(JSONAPISerializer):
                                                'a user tag')
 
     url = LinksField({'html': 'get_absolute_url'})
-    children = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'}, link_type='related')
-    contributors = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'}, link_type='related')
-    node_links = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-pointers', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}, link_type='related')
-    registrations = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk', lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'}, link_type='related')
+
+    children = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk',
+                                                lookup_url_kwarg='node_id', meta={'count': 'get_node_count'},
+                                                link_type='related')
+
+    contributors = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk',
+                                                    lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'},
+                                                    link_type='related')
+
+    node_links = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-pointers', lookup_field='pk',
+                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'},
+                                                  link_type='related')
+
+    registrations = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk',
+                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'},
+                                                     link_type='related')
+
     files = ser.HyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')
-    parent = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-detail', lookup_field='parent_id', lookup_url_kwarg='node_id', link_type='self')
+
+    parent = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-detail', lookup_field='parent_id',
+                                              lookup_url_kwarg='node_id', link_type='self')
 
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
