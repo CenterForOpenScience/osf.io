@@ -1,7 +1,7 @@
 from rest_framework.negotiation import DefaultContentNegotiation
 
 
-class CustomClientContentNegotiation(DefaultContentNegotiation):
+class JSONAPIContentNegotiation(DefaultContentNegotiation):
 
     def select_renderer(self, request, renderers, format_suffix=None):
         """
