@@ -35,7 +35,7 @@ def retraction_handler(action, registration, registered_from):
         'reject': 'Your disapproval has been accepted and the retraction has been cancelled.'
     }[action], kind='success', trust=False)
     if action == 'approve':
-        return redirect(registered_from.registered_from.web_url_for('view_project'))
+        return redirect(registered_from.web_url_for('view_project'))
     elif action == 'reject':
         return redirect(registration.web_url_for('view_project'))
 
@@ -62,6 +62,13 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
 
     sanction_id = payload.get('sanction_id', None)
     sanction = Model.load(sanction_id)
+
+    if not sanction:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Bad request',
+            'message_long': 'There is no sanction associated with this token'
+        })
+
     if sanction.is_rejected:
         raise HTTPError(http.GONE, data=dict(
             message_long="This registration has been rejected"
@@ -78,7 +85,7 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
                 'message_long': e.message_long
             })
         except PermissionsError as e:
-            raise HTTPError(http.BAD_REQUEST, data={
+            raise HTTPError(http.UNAUTHORIZED, data={
                 'message_short': 'Unauthorized access',
                 'message_long': e.message
             })

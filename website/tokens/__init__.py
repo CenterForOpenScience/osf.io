@@ -42,7 +42,16 @@ class TokenHandler(object):
 
     @classmethod
     def from_string(cls, encoded_token):
-        payload = TokenHandler.decode(encoded_token)
+        try:
+            payload = TokenHandler.decode(encoded_token)
+        except jwt.DecodeError as e:
+            raise HTTPError(
+                http.BAD_REQUEST,
+                data={
+                    'message_short': 'Bad request',
+                    'message_long': e.message
+                }
+            )
         return cls(encoded_token=encoded_token, payload=payload)
 
     @classmethod
