@@ -625,7 +625,7 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
-    $(window).resize(debounce(fixAffixWidth, 80, true));
+    $(window).resize(debounce(fixAffixWidth, 20, true));
     $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
 };
 
@@ -702,6 +702,14 @@ var _confirmationString = function() {
 var isIE = function(userAgent) {
     userAgent = userAgent || navigator.userAgent;
     return userAgent.indexOf('MSIE ') > -1 || userAgent.indexOf('Trident/') > -1;
+};
+
+/**
+*  Helper function to judge if the user browser is Safari
+*/
+var isSafari = function(userAgent) {
+    userAgent = userAgent || navigator.userAgent;
+    return (userAgent.search('Safari') >= 0 && userAgent.search('Chrome') < 0);
 };
 
 /**
@@ -793,5 +801,6 @@ module.exports = window.$.osf = {
     initializeResponsiveAffix: initializeResponsiveAffix,
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
-    isIE: isIE
+    isIE: isIE,
+    isSafari:isSafari
 };

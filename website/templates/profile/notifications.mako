@@ -8,7 +8,7 @@
 
 <%def name="content()">
 <% from website import settings%>
-<h2 class="page-header">Notifications</h2>
+<h2 class="page-header">Settings</h2>
 
 <div id="notificationSettings" class="row">
     <div class="col-sm-3 affix-parent">
@@ -48,7 +48,7 @@
                 <form id="selectNotifications" class="osf-treebeard-minimal">
                     <div id="grid">
                         <div class="spinner-loading-wrapper">
-                            <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+                            <div class="logo-spin logo-lg"></div>
                             <p class="m-t-sm fg-load-message"> Loading notification settings... </p>
                         </div>
                     </div>
