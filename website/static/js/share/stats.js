@@ -90,6 +90,9 @@ function timeGraph(data, vm) {
                 }
             }
         },
+        padding: {
+          right: 15
+        },
         legend: {
             show: false
         },
