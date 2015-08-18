@@ -1,5 +1,7 @@
+import mock
 from nose.tools import *  # noqa
 from modularodm import Q
+from website.files import utils
 from website.files import models
 from website.files import exceptions
 
@@ -304,14 +306,84 @@ class TestFileObj(FilesTestCase):
         assert_equals(file.get_version('1'), v1)
         assert_equals(file.get_version('2', required=True), v2)
 
+        assert_is(file.get_version('3'), None)
+
         with assert_raises(exceptions.VersionNotFoundError):
             file.get_version('3', required=True)
 
     def test_update_version_metadata(self):
-        pass
+        v1 = models.FileVersion(identifier='1')
+        v1.save()
 
-    def test_touch(self):
-        pass
+        file = models.StoredFileNode(
+            path='afile',
+            name='name',
+            is_file=True,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        ).wrapped()
+
+        file.versions.append(v1)
+        file.update_version_metadata(None, {'size': 1337})
+
+        with assert_raises(exceptions.VersionNotFoundError):
+            file.update_version_metadata('3', {})
+
+        assert_equal(v1.size, 1337)
+
+    @mock.patch('website.files.models.base.requests.get')
+    def test_touch(self, mock_requests):
+        file = models.StoredFileNode(
+            path='afile',
+            name='name',
+            is_file=True,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        ).wrapped()
+
+        mock_requests.return_value = mock.Mock(status_code=400)
+        assert_is(file.touch(), None)
+
+        mock_response = mock.Mock(status_code=200)
+        mock_response.json.return_value = {
+            'data': {
+                'name': 'fairly',
+                'size': 0xDEADBEEF,
+                'materialized': 'ephemeral',
+            }
+        }
+        mock_requests.return_value = mock_response
+
+        v = file.touch()
+        assert_equals(v.size, 0xDEADBEEF)
+        assert_equals(len(file.versions), 0)
+
+    @mock.patch('website.files.models.base.requests.get')
+    def test_touch_catching(self, mock_requests):
+        file = models.StoredFileNode(
+            path='afile',
+            name='name',
+            is_file=True,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        ).wrapped()
+
+        mock_response = mock.Mock(status_code=200)
+        mock_response.json.return_value = {
+            'data': {
+                'name': 'fairly',
+                'size': 0xDEADBEEF,
+                'materialized': 'ephemeral',
+            }
+        }
+        mock_requests.return_value = mock_response
+
+        v = file.touch(revision='foo')
+        assert_equals(len(file.versions), 1)
+        assert_is(file.touch(revision='foo'), v)
 
     def test_download_url(self):
         pass
@@ -376,5 +448,42 @@ class TestFolderObj(FilesTestCase):
         pass
 
 
+class TestUtils(FilesTestCase):
+
+    def test_genwrapper_repr(self):
+        wrapped = models.FileNode.find()
+        assert_true(isinstance(wrapped, utils._GenWrapper))
+        assert_in(wrapped.mqs.__repr__(), wrapped.__repr__())
+
+    def test_genwrapper_getattr(self):
+        with assert_raises(AttributeError) as e:
+            models.FileNode.find().test
+        assert_equal(e.exception.message, "'_GenWrapper' object has no attribute 'test'")
+
+
 class TestFileVersion(FilesTestCase):
     pass
+
+
+class TestSubclasses(FilesTestCase):
+
+    @mock.patch.object(models.File, 'touch')
+    def test_s3file(self, mock_touch):
+        file = models.S3File.create(
+            path='afile2',
+            name='child2',
+            is_file=True,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        )
+
+        file.touch()
+        file.touch(version='foo')
+        file.touch(version='zyzz', bar='baz')
+
+        mock_touch.assert_has_calls([
+            mock.call(revision=None),
+            mock.call(revision='foo'),
+            mock.call(revision='zyzz', bar='baz'),
+        ])

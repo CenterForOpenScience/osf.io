@@ -42,7 +42,7 @@ class _GenWrapper(object):
         return (x.wrapped() for x in self.mqs)
 
     def __repr__(self):
-        return '<website.files.utils._GenWrapper({})>'.format(self.mqs)
+        return '<website.files.utils._GenWrapper({!r})>'.format(self.mqs)
 
     def __getitem__(self, x):
         """__getitem__ does not default to __getattr__
