@@ -1359,12 +1359,12 @@ class TestNodeLogList(ApiTestCase):
         self.add = ProjectFactory(is_added=True)
         self.basic_auth = (self.project.creator.username, self.password)
         self.basic_auth_two = (self.project.creator.username, self.password)
-
         self.url = '/{}nodes/'.format(API_BASE)
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = '/{}nodes/{}/logs/'.format(API_BASE, self.private_project._id)
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/{}nodes/{}/logs/'.format(API_BASE, self.public_project._id)
+
 
     def assert_datetime_equal(dt1, dt2, allowance=500):
         assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
@@ -1377,18 +1377,18 @@ class TestNodeLogList(ApiTestCase):
         (len(res.json['data']), 1)
         assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['date'], "%Y-%m-%dT%H:%M:%S.%f"),
                               self.public_project.logs[0].date)
-        assert_equal(res.json['data'][0]['id'], self.public_project.logs[0]._id)
+        # assert_equal(res.json['data'][0]['id'], self.public_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.public_project.logs[0].action)
         assert_equal(res.json['data'][0]['version'], self.public_project._version)
         assert_equal(res.json['data'][0]['name'], self.public_project.logs[0]._name)
 
     def test_log_create_on_private_project(self):
         self.project = ProjectFactory()
-        res = self.app.get(self.private_url, auth=self.basic_auth_two)
-        assert_equal(res.status_code, 200)
+        res = self.app.get(self.private_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 403)
         assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['date'], "%Y-%m-%dT%H:%M:%S.%f"),
                               self.private_project.logs[0].date)
-        assert_equal(res.json['data'][0]['id'], self.private_project.logs[0]._id)
+        # assert_equal(res.json['data'][0]['id'], self.private_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.private_project.logs[0].action)
         assert_equal(res.json['data'][0]['version'], self.private_project.logs[0]._version)
         assert_equal(res.json['data'][0]['name'], self.private_project.logs[0]._name)
@@ -1423,26 +1423,9 @@ class TestNodeLogList(ApiTestCase):
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
 
-    def test_user_can_not_access_logs_on_private_project(self):
-        self.project = ProjectFactory()
-        self.project.add_contributor(self.user_two, permissions=['read'])
-        self.project.save()
-        res = self.app.get(self.public_url, auth=self.basic_auth, expect_errors=True)
-        self.project.reload()
+    def test_return_private_contributor_list_log_logged_in_non_contributor(self):
+        res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-
-    def test_private_project_in_logs(self):
-        self.project = ProjectFactory()
-        res = self.app.get(self.private_url, auth=self.basic_auth)
-        self.project.add_contribfutor(self.user, permissions=['read', 'write'])
-        self.user_two.reload()
-        assert_equal(res.status_code, 403)
-
-    def test_private_log_in_non_contributor(self):
-        self.project = ProjectFactory()
-        res = self.app.get(self.private_url, auth=self.basic_auth)
-        self.project.add_contributor(self.user, permissions=['read'])
-        assert_equal(res.status_code, 200)
 
     def test_return_public_node_log_list_logged_out_user(self):
         res = self.app.get(self.url)
@@ -1450,3 +1433,4 @@ class TestNodeLogList(ApiTestCase):
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
+
