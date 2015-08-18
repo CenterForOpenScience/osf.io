@@ -356,7 +356,7 @@ CitationGrid.prototype.makeBibliography = function(folder, format) {
         })
     );
     if (!format) {
-        format = 'html'
+        format = 'html';
     }
     var citeproc = citations.makeCiteproc(this.styleXml, data, format);
     var bibliography = citeproc.makeBibliography();
