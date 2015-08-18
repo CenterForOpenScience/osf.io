@@ -9,11 +9,7 @@ from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_404, waterbutler_url_for
-<<<<<<< HEAD
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer, NodeLogSerializer
-=======
-from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
->>>>>>> 250891eba173d7605a079e44874f332a52ca4900
+from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer, NodeLogSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 from website.project.model import NodeLog
 
@@ -49,7 +45,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
     serializer_class = NodeSerializer
-    ordering = ('-date_modified',)  # default ordering
+    ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
