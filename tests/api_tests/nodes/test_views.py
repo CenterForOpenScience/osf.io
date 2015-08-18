@@ -1455,6 +1455,7 @@ class TestNodeLogList(ApiTestCase):
         ids = [each['id'] for each in res.json['data']]
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
+    
 
 
 
