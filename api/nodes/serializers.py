@@ -34,7 +34,7 @@ class NodeSerializer(JSONAPISerializer):
             'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
             'count': 'get_contrib_count',
         },
-        'pointers': {
+        'node_links': {
             'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
             'count': 'get_pointers_count',
         },
@@ -133,14 +133,19 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 
+<<<<<<< HEAD
 class NodePointersSerializer(JSONAPISerializer):
+=======
+class NodeLinksSerializer(JSONAPISerializer):
+
+>>>>>>> 250891eba173d7605a079e44874f332a52ca4900
     id = ser.CharField(read_only=True, source='_id')
-    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
-    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
+    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
+    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
                                                                          'points to')
 
     class Meta:
-        type_ = 'pointers'
+        type_ = 'node_links'
 
     links = LinksField({
         'html': 'get_absolute_url',
@@ -162,7 +167,7 @@ class NodePointersSerializer(JSONAPISerializer):
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
         except ValueError:
-            raise exceptions.ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
+            raise exceptions.ValidationError('Node Link to node {} already in list'.format(pointer_node._id))
 
     def update(self, instance, validated_data):
         pass

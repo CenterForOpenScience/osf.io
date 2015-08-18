@@ -138,10 +138,8 @@ class TestContributorViews(OsfTestCase):
         component.add_contributor(contributor_1, auth=self.auth)
         component.save()
         project_2 = ProjectFactory(creator=self.user)
-        project_2.add_contributor(contributor_1, auth=self.auth)
         url = project_2.api_url_for('get_most_in_common_contributors')
         res = self.app.get(url, auth=self.user.auth)
-        project_2.reload()
         res_contribs = res.json['contributors']
         assert_equal(len(res.json['contributors']), 2)
         assert_equal(contributor_1._id, res_contribs[0]['id'])
