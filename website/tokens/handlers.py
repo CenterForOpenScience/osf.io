@@ -39,25 +39,16 @@ def retraction_handler(action, registration, registered_from):
     elif action == 'reject':
         return redirect(registration.web_url_for('view_project'))
 
-SANCTION_HANDLERS = {
-    'registration': registration_approval_handler,
-    'embargo': embargo_handler,
-    'retraction': retraction_handler,
-}
-
 @must_be_logged_in
 def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     from website.models import Node, RegistrationApproval, Embargo, Retraction
 
-    Model = None
-
-    if kind == 'registration':
-        Model = RegistrationApproval
-    elif kind == 'embargo':
-        Model = Embargo
-    elif kind == 'retraction':
-        Model = Retraction
-    else:
+    Model = {
+        'registration': RegistrationApproval,
+        'embargo': Embargo,
+        'retraction': Retraction
+    }.get(kind, None)
+    if not Model:
         raise UnsupportedSanctionHandlerKind
 
     sanction_id = payload.get('sanction_id', None)
@@ -83,4 +74,8 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
                 'message_long': e.message
             })
         sanction.save()
-        return SANCTION_HANDLERS[kind](action, registration, registered_from)
+        return {
+            'registration': registration_approval_handler,
+            'embargo': embargo_handler,
+            'retraction': retraction_handler,
+        }[kind](action, registration, registered_from)
