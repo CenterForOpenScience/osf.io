@@ -1630,44 +1630,48 @@ class TestNode(OsfTestCase):
             self.node.set_visible(user=self.user, visible=False, auth=None)
             assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
-    @mock.patch('website.project.signals.after_create_registration')
-    def test_register_node_propagates_schema_and_data_to_children(self, mock_signal):
-        root = ProjectFactory(creator=self.user)
-        c1 = ProjectFactory(creator=self.user, parent=root)
-        ProjectFactory(creator=self.user, parent=c1)
+    def test_contributor_manage_visibility(self):
 
-        ensure_schemas()
-        meta_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 1)
+        reg_user1 = UserFactory()
+        #This makes sure manage_contributors uses set_visible so visibility for contributors is added before visibility
+        #for other contributors is removed ensuring there is always at least one visible contributor
+        self.node.add_contributor(contributor=self.user, permissions=['read', 'write','admin'], auth=self.consolidate_auth)
+        self.node.add_contributor(contributor=reg_user1, permissions=['read', 'write','admin'], auth=self.consolidate_auth)
+
+        self.node.manage_contributors(
+            user_dicts=[
+                    {'id': self.user._id, 'permission': 'admin', 'visible': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'visible': False},
+                ],
+            auth=self.consolidate_auth,
+            save=True
         )
-        data = {'some': 'data'}
-        reg = root.register_node(meta_schema, self.consolidate_auth, data)
-        r1 = reg.nodes[0]
-        r1a = r1.nodes[0]
-        for r in [reg, r1, r1a]:
-            assert_equal(r.registered_meta, data)
-            assert_equal(r.registered_schema, meta_schema)
+        self.node.manage_contributors(
+            user_dicts=[
+                    {'id': self.user._id, 'permission': 'admin', 'visible': False},
+                    {'id': reg_user1._id, 'permission': 'admin', 'visible': True},
+            ],
+            auth=self.consolidate_auth,
+            save=True
+        )
 
-    def test_create_draft_registration(self):
-        ensure_schemas()
-        proj = ProjectFactory()
-        user = proj.creator
-        schema = MetaSchema.find()[0]
-        data = {'some': 'data'}
-        draft = proj.create_draft_registration(user, schema, data)
-        assert_equal(user, draft.initiator)
-        assert_equal(schema, draft.registration_schema)
-        assert_equal(data, draft.registration_metadata)
-        
-    def test_create_draft_registration_adds_to_draft_registrations_list(self):
-        ensure_schemas()
-        proj = ProjectFactory()
-        user = proj.creator
-        schema = MetaSchema.find()[0]
-        data = {'some': 'data'}
-        draft = proj.create_draft_registration(user, schema, data)
-        assert_equal(proj.draft_registrations[0], draft)
+        assert_equal(len(self.node.visible_contributor_ids),1)
+
+    def test_contributor_set_visibility_validation(self):
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        self.node.add_contributors(
+                        [
+                {'user': reg_user1, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': False},
+            ]
+        )
+        print(self.node.visible_contributor_ids)
+        with assert_raises(ValueError) as e:
+            self.node.set_visible(user=reg_user1, visible=False, auth=None)
+            self.node.set_visible(user=self.user, visible=False, auth=None)
+            assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
 class TestNodeTraversals(OsfTestCase):
 
@@ -3797,6 +3801,7 @@ class TestPrivateLink(OsfTestCase):
         node = NodeFactory(project=project)
         link.nodes.extend([project, node])
         link.save()
+        assert_equal(link.node_scale(node), -40)
 
 class TestDraftRegistration(OsfTestCase):
 

@@ -2,7 +2,20 @@
 Changelog
 *********
 
-0.45.0 (unreleased)
+0.46.0 (2015-08-17)
+===================
+
+- Send email notification when user is added to a project.
+- Condense large contributor lists on the Project Overview page; make them expand/collapse-able.
+- SHARE: Major refactor: Query formatting and aggregations done client-side;
+add initial code for displaying raw and normalized documents.
+- SHARE: Search uses latest version of SHARE Schema.
+- APIv2: Add functionality for creating components.
+- APIv2: Fix bugs with the /me/ shorthand in URLs.
+- Add dates to registrations in search results.
+- Many UI consistency fixes.
+
+0.45.0 (2015-08-10)
 ===================
 
 - S3: Uploads to S3 are encrypted.

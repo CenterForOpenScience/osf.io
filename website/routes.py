@@ -410,9 +410,12 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/explore/activity/', 'get', discovery_views.activity,
-             OsfWebRenderer('public/pages/active_nodes.mako')),
-
+        Rule(
+            '/explore/activity/',
+            'get',
+            discovery_views.activity,
+            OsfWebRenderer('public/pages/active_nodes.mako', trust=False)
+        ),
     ])
 
     ### Auth ###

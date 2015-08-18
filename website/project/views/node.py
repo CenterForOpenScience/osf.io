@@ -1031,7 +1031,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
     if anonymous and has_public_node:
         status.push_status_message(
             'Anonymized view-only links <b>DO NOT</b> '
-            'anonymize contributors of public project or component.',
+            'anonymize contributors of public projects or components.',
             trust=True
         )
 

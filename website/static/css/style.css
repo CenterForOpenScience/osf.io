@@ -407,6 +407,10 @@ a {
     max-height: 140px;
     overflow-y: hidden;
 }
+.table-hover {
+    word-break: break-all;
+
+}
 select {
     word-wrap: normal;
 }
@@ -414,14 +418,23 @@ select {
 .tag:hover
 {
     background-color: #337ab7;
+    color: #E0EBF3;
 }
-.tag:hover > .tag-text
+.tag:hover > .tag-text, .tag:hover > a
 {
     color: #E0EBF3;
 }
 .tag:hover > .remove-tag
 {
     visibility: visible;
+/* to make the center of the x not transparent */
+    background: -moz-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 35%, rgba(255,255,255,1) 44%, rgba(255,255,255,1) 53%, rgba(255,255,255,0) 64%, rgba(255,255,255,0) 72%); /* FF3.6+ */
+    background: -webkit-gradient(radial, center center, 0px, center center, 100%, color-stop(35%,rgba(255,255,255,1)), color-stop(44%,rgba(255,255,255,1)), color-stop(53%,rgba(255,255,255,1)), color-stop(64%,rgba(255,255,255,0)), color-stop(72%,rgba(255,255,255,0))); /* Chrome,Safari4+ */
+    background: -webkit-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 35%,rgba(255,255,255,1) 44%,rgba(255,255,255,1) 53%,rgba(255,255,255,0) 64%,rgba(255,255,255,0) 72%); /* Chrome10+,Safari5.1+ */
+    background: -o-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 35%,rgba(255,255,255,1) 44%,rgba(255,255,255,1) 53%,rgba(255,255,255,0) 64%,rgba(255,255,255,0) 72%); /* Opera 12+ */
+    background: -ms-radial-gradient(center, ellipse cover,  rgba(255,255,255,1) 35%,rgba(255,255,255,1) 44%,rgba(255,255,255,1) 53%,rgba(255,255,255,0) 64%,rgba(255,255,255,0) 72%); /* IE10+ */
+    background: radial-gradient(ellipse at center,  rgba(255,255,255,1) 35%,rgba(255,255,255,1) 44%,rgba(255,255,255,1) 53%,rgba(255,255,255,0) 64%,rgba(255,255,255,0) 72%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#00ffffff',GradientType=1 ); /* IE6-9 fallback on horizontal gradient */
 }
 .tag-big
 {
@@ -468,6 +481,9 @@ select {
     height:100px;
     overflow-y: auto;
 }
+#node-tags_tag:focus {
+    outline: 2px solid #DEF;
+}
 
 .tagsinput div {
     float: left;
@@ -494,7 +510,7 @@ select {
     color: #000;
     text-decoration:none;
     font-size: 11px;
-
+    vertical-align: top;
 }
 
 .tag {
@@ -506,7 +522,7 @@ select {
     font-size:13px;
     padding:5px;
     border:1px solid transparent;
-    border-radius: 5px;
+    border-radius: 2px;
     cursor: pointer;
 }
 
@@ -560,13 +576,13 @@ button.close {
     cursor: pointer;
 }
 .toggle-height-gradient {
-    background: -moz-linear-gradient(top,  rgba(30,87,153,0) 0%, rgba(255,255,255,1) 100%); /* FF3.6+ */
-    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(30,87,153,0)), color-stop(100%,rgba(255,255,255,1))); /* Chrome,Safari4+ */
-    background: -webkit-linear-gradient(top,  rgba(30,87,153,0) 0%,rgba(255,255,255,1) 100%); /* Chrome10+,Safari5.1+ */
-    background: -o-linear-gradient(top,  rgba(30,87,153,0) 0%,rgba(255,255,255,1) 100%); /* Opera 11.10+ */
-    background: -ms-linear-gradient(top,  rgba(30,87,153,0) 0%,rgba(255,255,255,1) 100%); /* IE10+ */
-    background: linear-gradient(to bottom,  rgba(30,87,153,0) 0%,rgba(255,255,255,1) 100%); /* W3C */
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#001e5799', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
+    background: -moz-linear-gradient(top,  rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%); /* FF3.6+ */
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgba(255,255,255,0)), color-stop(100%,rgba(255,255,255,1))); /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(top,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 100%); /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(top,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 100%); /* Opera 11.10+ */
+    background: -ms-linear-gradient(top,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 100%); /* IE10+ */
+    background: linear-gradient(to bottom,  rgba(255,255,255,0) 0%,rgba(255,255,255,1) 100%); /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
     width: 100%;
     height: 30px;
     position: absolute;

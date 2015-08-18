@@ -72,6 +72,9 @@ var ViewModel = function(selector, settings) {
         return (self.bucketList().length > 0 || self.loadedBucketList()) && (!self.loading());
     });
 
+    self.saveButtonText = ko.pureComputed (function(){
+        return self.loading()? 'Saving': 'Save';
+    });
 };
 
 ViewModel.prototype.toggleSelect = function() {
@@ -346,7 +349,7 @@ ViewModel.prototype.openCreateBucket = function() {
                     var bucketLocation = $('#bucketLocation').val();
 
                     if (!bucketName) {
-                        var errorMessage = $('bucketModalErrorMessage');
+                        var errorMessage = $('#bucketModalErrorMessage');
                         errorMessage.text('Bucket name cannot be empty');
                         errorMessage[0].classList.add('text-danger');
                         return false;

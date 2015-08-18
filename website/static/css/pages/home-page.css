@@ -171,3 +171,7 @@ font-weight: bold;
         width: 220px;
     }
 }
+
+#signInForm {
+    clear:left;
+}

@@ -72,7 +72,7 @@
                     <div class="panel-heading clearfix">
                         <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                     </div>
-                    <div id="nodeCategorySettings" class="panel-body">
+                    <div id="nodeCategorySettings" class="panel-body scripted">
                         <h5>
                             Category: <select data-bind="attr.disabled: disabled,
                                                         options: categories,
@@ -210,8 +210,8 @@
                     </div>
                     <form id="notificationSettings" class="osf-treebeard-minimal">
                         <div id="grid">
-                            <div class="notifications-loading">
-                                <i class="fa fa-spinner notifications-spin"></i>
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
                                 <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
                             </div>
                         </div>

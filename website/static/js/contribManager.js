@@ -274,6 +274,8 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                     'error'
                 )
             );
+        } else {
+            self.messages([]);
         }
     });
 
