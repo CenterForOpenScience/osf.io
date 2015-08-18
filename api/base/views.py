@@ -23,7 +23,7 @@ class Root(APIView):
         ###Filtering
         Collections can be filtered by adding a query parameter in the form:
 
-            filter[<fieldname>]=<matching information>;
+            filter[<fieldname>]=<matching information>
         For example, if you were trying to find [Lise Meitner]("http://en.wikipedia.org/wiki/Lise_Meitner"):
 
             /users?filter[fullname]=meitn
