@@ -582,7 +582,6 @@ class TestUserUpdate(ApiTestCase):
         self.user_one.reload()
         assert_not_equal(self.user_one.fullname, self.new_user_one_data['fullname'])
 
-
     def test_update_user_sanitizes_html_properly(self):
         """Post request should update resource, and any HTML in fields should be stripped"""
         bad_fullname = 'Malcolm <strong>X</strong>'
