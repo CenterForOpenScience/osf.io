@@ -30,7 +30,7 @@ def _url_val(val, obj, serializer, **kwargs):
 
 
 class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
-    # Returns a list with a url and an optional hash containing additional meta information
+    """Returns a dict with a url and optional meta information/link_type."""
 
     def __init__(self, view_name=None, **kwargs):
         kwargs['read_only'] = True
