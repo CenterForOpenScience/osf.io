@@ -217,7 +217,7 @@ class TestAddonLogs(OsfTestCase):
             'signature': signature,
         }
 
-    @mock.patch('website.notifications.events.model.FileAdded.perform')
+    @mock.patch('website.notifications.events.files.FileAdded.perform')
     def test_add_log(self, mock_perform):
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
