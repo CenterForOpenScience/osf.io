@@ -33,4 +33,4 @@ class InvalidSanctionApprovalToken(TokenError):
      or associated with another admin authorizer
     """
     message_short = "Invalid Token"
-    message_long = "This disapproval link is invalid. Are you logged into the correct account?"
+    message_long = "This approval link is invalid. Are you logged into the correct account?"
