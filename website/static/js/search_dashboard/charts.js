@@ -25,6 +25,26 @@ function rgbToHex(rgb) {
     return  '#' + (0x1000000 + rgb).toString(16).substring(1);
 }
 
+charts.timeSeries = {
+    view: function(ctrl, params){
+        var vm = params.vm;
+        var widget = params.widget;
+        var parsedData = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, widget.levelNames, vm, widget);
+        var chartSetup = charts.timeSeriesChart(parsedData, vm, widget);
+        return charts.updateC3(vm, chartSetup, widget.id);
+    }
+};
+
+charts.donut = {
+    view: function(ctrl, params){
+        var vm = params.vm;
+        var widget = params.widget;
+        var parsedData = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, widget.levelNames, vm, widget);
+        var chartSetup = charts.donutChart(parsedData, vm, widget);
+        return charts.updateC3(vm, chartSetup, widget.id);
+    }
+};
+
 /**
  * Wraps and returns a c3 chart in a component, or updates already created chart
  * Only updates when an update to this widget has been requested
@@ -34,7 +54,7 @@ function rgbToHex(rgb) {
  * @param {Object} divID: id of the chart (name of widget)
  * @return {Object}  c3 chart wrapped in component
  */
-charts.c3Update = function(c3ChartSetup, vm, divID) {
+charts.updateC3 = function(vm, c3ChartSetup, divID) {
     return m('div.c3-chart-padding', {id: divID,
                     config: function(element, isInit, context){
                         if (!isInit) {
@@ -64,16 +84,15 @@ charts.getChangedColumns = function(oldCols, newCols){
  * @param {Object} widget: params of the widget that chart is being created for
  * @return {Object} c3 chart wrapped in component
  */
-charts.donutChart = function (vm, widget) {
-    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, widget.levelNames, vm, widget);
+charts.donutChart = function (data, vm, widget) {
     data.onclick = widget.display.callbacks.onclick ? widget.display.callbacks.onclick.bind({
         vm: vm,
         widget: widget
     }) : undefined;
     data.type = 'donut';
 
-    var chartSetup = {
-        bindto: '#' + widget.levelNames[0],
+    return {
+        bindto: '#' + widget.id,
         size: {
             height: widget.size[1]
         },
@@ -88,7 +107,6 @@ charts.donutChart = function (vm, widget) {
             item : {onclick: data.onclick}
         }
     };
-    return charts.c3Update(chartSetup,vm, widget.levelNames[0]);
 };
 
 /**
@@ -98,16 +116,15 @@ charts.donutChart = function (vm, widget) {
  * @param {Object} widget: params of the widget that chart is being created for
  * @return {Object} c3 chart wrapped in component
  */
-charts.barChart = function (vm, widget) {
-    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, widget.levelNames, vm, widget);
+charts.barChart = function (data, vm, widget) {
     data.onclick = widget.display.callbacks.onclick ? widget.display.callbacks.onclick.bind({
         vm: vm,
         widget: widget
     }) : undefined;
     data.type = 'bar';
 
-    var chartSetup = {
-        bindto: '#' + widget.levelNames[0],
+    return {
+        bindto: '#' + widget.id,
         size: {
             height: widget.size[1],
         },
@@ -145,7 +162,6 @@ charts.barChart = function (vm, widget) {
             rotated: true
         }
     };
-    return charts.c3Update(chartSetup,vm, widget.levelNames[0]);
 };
 
 charts.getZoomFromTimeRangeFilter = function(vm, bounds){
@@ -170,14 +186,11 @@ charts.getZoomFromTimeRangeFilter = function(vm, bounds){
  * @param {Object} widget: params of the widget that chart is being created for
  * @return {Object}  c3 chart wrapped in component
  */
-charts.timeseriesChart = function (vm, widget) {
-    var data = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, widget.levelNames, vm, widget);
+charts.timeSeriesChart = function (data, vm, widget) {
     data.type = widget.display.type ? widget.display.type : 'area-spline';
-    var bounds = [data.columns[0][1], data.columns[0][data.columns[0].length-1]]; //get bounds of chart
-    var zoom = charts.getZoomFromTimeRangeFilter(vm.requests.mainRequest, bounds);
-    if (!zoom && vm.chartHandles[widget.id]) {vm.chartHandles[widget.id].unzoom(); }
-    var chartSetup = {
-        bindto: '#' + widget.levelNames[0],
+    if (!data.zoom && vm.chartHandles[widget.id]) {vm.chartHandles[widget.id].unzoom(); }
+    return {
+        bindto: '#' + widget.id,
         size: {
             height: widget.size[1]
         },
@@ -190,7 +203,7 @@ charts.timeseriesChart = function (vm, widget) {
             onbrush: widget.display.callbacks.onbrushOfSubgraph ? widget.display.callbacks.onbrushOfSubgraph.bind({
                 vm: vm,
                 widget: widget,
-                bounds: bounds,
+                bounds: data.bounds,
             }) : undefined
         },
         axis: {
@@ -199,7 +212,7 @@ charts.timeseriesChart = function (vm, widget) {
                     text: widget.display.xLabel ? widget.display.xLabel : '',
                     position: 'outer-center'
                 },
-                extent: zoom,
+                extent: data.zoom,
                 type: 'timeseries',
                 tick: {
                     format: function (d) {return widgetUtils.timeSinceEpochInMsToMMYY(d); }
@@ -236,7 +249,6 @@ charts.timeseriesChart = function (vm, widget) {
             grouped: false
         }
     };
-    return charts.c3Update(chartSetup, vm, widget.levelNames[0]);
 };
 
 /**
@@ -244,7 +256,7 @@ charts.timeseriesChart = function (vm, widget) {
  *
  * @param {Object} data: raw elastic aggregation Data to parse
  * @param {Object} levelNames: names of each level (one in this case)
- * @return {m.component object}  parsed data
+ * @return {Object}  parsed data
  */
 charts.singleLevelAggParser = function (data, levelNames, vm, widget) {
     var chartData = {};
@@ -275,7 +287,7 @@ charts.singleLevelAggParser = function (data, levelNames, vm, widget) {
  *
  * @param {Object} data: raw elastic aggregation Data to parse
  * @param {Object} levelNames: names of each level (two in this case)
- * @return {m.component object}  parsed data
+ * @return {Object}  parsed data
  */
 charts.twoLevelAggParser = function (data, levelNames, vm, widget) {
     var chartData = {};
@@ -311,17 +323,10 @@ charts.twoLevelAggParser = function (data, levelNames, vm, widget) {
     chartData.groups.push(grouping);
     xCol.unshift('x');
     chartData.columns.unshift(xCol);
+    chartData.bounds = [chartData.columns[0][1], chartData.columns[0][chartData.columns[0].length-1]]; //get bounds of chart
+    chartData.zoom = charts.getZoomFromTimeRangeFilter(vm.requests.mainRequest, chartData.bounds); //TODO the request name should not be here...
     return chartData;
 };
-
-charts.populateMissingBuckets = function(chartData){
-    var newChartData = $.extend({},chartData);
-    var lengthOfCols = $.map(chartData.columns, function(item){
-        return item.length;
-    });
-    Math.max(lengthOfCols);
-
-}
 
 /**
  * Returns a requested number of unique complementary colors

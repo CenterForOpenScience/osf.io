@@ -8,9 +8,8 @@ var icon = require('js/iconmap');
 var searchUtils = require('js/search_dashboard/searchUtils');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 require('truncate');
-var ResultsWidget = {};
 
-var Results = {
+var ResultsWidget = {
     /**
      * view function for results component. Over-arching component to display all results
      * Loads more results on click of 'more results' button
@@ -21,10 +20,11 @@ var Results = {
      */
     view: function(ctrl, params) {
         var vm = params.vm;
-        var results = params.request.data.results;
-        var count = params.request.data.counts.total
+        var results = params.vm.requests.mainRequest.data.results;
+        var totalResults = params.vm.requests.mainRequest.data.counts.total;
+        var widget = params.widget;
         var resultViews = $.map(results || [], function(result, i) {
-            return m.component(Result, {result: result, vm: vm, widget: params.widget });
+            return m.component(Result, {result: result, vm: vm, widget: widget });
         });
 
         var maybeResults = function(results) {
@@ -38,7 +38,7 @@ var Results = {
         return m('', [
             m('.row', m('.col-md-12', maybeResults(resultViews))),
             m('.row', m('.col-md-12', m('div', {style: {display: 'block', margin: 'auto', 'text-align': 'center'}},
-                results.length > 0  && results.length < count ?
+                results.length > 0  && results.length < totalResults ?
                 m('a.btn.btn-md.btn-default', {
                     onclick: function(){
                         searchUtils.paginateRequests(vm, []);
@@ -271,11 +271,6 @@ var Footer = {
             ]),
         ]);
     }
-};
-
-ResultsWidget.display = function(vm, widget){
-    //results will always update regardless of callback location (no mapping)
-    return m.component(Results,{request: vm.requests.mainRequest, vm: vm, widget: widget});
 };
 
 module.exports = ResultsWidget;

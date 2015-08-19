@@ -78,10 +78,13 @@ profileDashboard.contributorsParser = function(rawData, levelNames, vm){
         }
     );
     if (numProjects > 0) {
-        if (numProjects > 1){
+        if (numProjects > 1) {
             chartData.title = numProjects.toString() + ' projects & components';
         } else {
             chartData.title = numProjects.toString() + ' project or component';
+        }
+        if (chartData.columns.length === 0){
+            chartData.title = chartData.title + ' with no collaborators';
         }
     } else {
         chartData.title = 'No Results';
@@ -117,7 +120,7 @@ profileDashboard.controller = function(params) {
         aggregations: {mainRequest: profileDashboard.contributorsAgg()},
         display: {
             reqRequests: ['mainRequest', 'nameRequest'], //these are the requests that need to have completed before we can update this widget
-            displayComponent: charts.donutChart,
+            component: charts.donut,
             labelFormat: function(value, ratio){return value; },
             parser: profileDashboard.contributorsParser, //this function is run by the display widget to format data for display
             callbacks: { onclick : function (key) {
@@ -145,7 +148,7 @@ profileDashboard.controller = function(params) {
         levelNames: projectLevelNames,
         display: {
             reqRequests : ['mainRequest'], //the first req requests data will be the 'rawData' input to any parser, other request data should be pulled from vm.requests
-            displayComponent: charts.timeseriesChart,
+            component: charts.timeSeries,
             parser: charts.twoLevelAggParser,
             yLabel: 'Number of Projects',
             xLabel: 'Time',
@@ -194,7 +197,7 @@ profileDashboard.controller = function(params) {
         size: ['.col-md-12'],
         display: {
             reqRequests : ['mainRequest'],
-            displayComponent: FilterWidget.display,
+            component: FilterWidget,
             callbacks: null, //callbacks included in displayWidget
             callbacksUpdate: ['all']
         }
@@ -206,7 +209,7 @@ profileDashboard.controller = function(params) {
         size: ['.col-md-12'],
         display: {
             reqRequests : ['mainRequest'],
-            displayComponent: ResultsWidget.display,
+            component: ResultsWidget,
             callbacks: null, //callbacks included in displayWidget
             callbacksUpdate: ['all']
         }
@@ -271,8 +274,8 @@ profileDashboard.controller = function(params) {
         widgets : {
             contributors: contributors,
             projectsByTimes: projectsByTimes,
-            results: results,
-            activeFilters: activeFilters
+            activeFilters: activeFilters,
+            results: results
         },
         rowMap: [
             ['contributors', 'projectsByTimes'],

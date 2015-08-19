@@ -158,7 +158,7 @@ var SearchWidget = {
                     )
                 ]),
                 m('.panel-body', {style: ctrl.hidden() ? 'display:none' : ''},
-                    dataReady ? params.widget.display.displayComponent(params.vm, params.widget) : loadingIcon())
+                    dataReady ? m.component(params.widget.display.component, params) : loadingIcon())
             ])
         );
     },

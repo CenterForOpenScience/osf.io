@@ -7,7 +7,6 @@ var $osf = require('js/osfHelpers');
 var searchUtils = require('js/search_dashboard/searchUtils');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 require('truncate');
-var FilterWidget = {};
 
 var fieldMappings = {
     '_type' : 'Type is ',
@@ -60,7 +59,7 @@ function removeLockedFilters(filters) {
 }
 
 
-var ActiveFilters = {
+var FilterWidget = {
     /**
      * View function of ActiveFilters component
      *
@@ -120,18 +119,6 @@ var Filter = {
             m('.badge.pointer',  isLastFilter ? ('') : (required ? 'AND' : 'OR'))
         ]);
     }
-};
-
-/**
- * Entry point for this widget, returns instantiated ActiveFilters and Search Widget
- * TODO @bdyetton this is actually unnecessary level of wrapping, components could be created in the search widget class
- *
- * @param {Object} vm: view model for Search Dashboard
- * @return {Object} widget: widget information for the filter and search widget
- */
-FilterWidget.display = function(vm, widget){
-    //results will always update regardless of callback location (no mapping)
-    return m.component(ActiveFilters,{data: vm.requests.mainRequest, vm: vm, widget: widget});
 };
 
 module.exports = FilterWidget;
