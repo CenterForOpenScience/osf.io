@@ -471,12 +471,6 @@ footer {
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
 }
 
-@media (min-width: 992px) {
-    .container {
-        width: 1170px !important;
-    }
-}
-
 @media (min-width: 992px) and (max-width: 1199px) {
     .student-image .quote {
         min-height: 100px;
