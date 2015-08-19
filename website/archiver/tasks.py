@@ -202,7 +202,7 @@ def archive_addon(addon_short_name, job_pk, stat_result):
 @logged('archive_node')
 def archive_node(results, job_pk):
     """First use the results of #stat_node to check disk usage of the
-    initated registration, then either fail the registration or
+    initiated registration, then either fail the registration or
     create a celery.group group of subtasks to archive addons
 
     :param results: results from the #stat_addon subtasks spawned in #stat_node
