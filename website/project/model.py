@@ -3038,6 +3038,9 @@ class Sanction(StoredObject):
         self.state = Sanction.REJECTED
         self._on_reject(user, token)
 
+    def forcibly_reject(self):
+        self.state = Sanction.REJECTED
+
     def _notify_authorizer(self, user):
         pass
 
