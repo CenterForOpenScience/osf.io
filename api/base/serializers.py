@@ -215,7 +215,7 @@ class JSONAPISerializer(ser.Serializer):
         assert type_ is not None, 'Must define Meta.type_'
         ret = collections.OrderedDict()
         ret['id'] = ''
-        ret['type'] = ''
+        ret['type'] = type_
         ret['attributes'] = {}
         ret['relationships'] = {}
         ret['links'] = {}
@@ -236,8 +236,8 @@ class JSONAPISerializer(ser.Serializer):
             elif field.field_name == 'links':
                 ret['links'] = field.to_representation(attribute)
             else:
-                from rest_framework.exceptions import APIException
                 ret['attributes'][field.field_name] = field.to_representation(attribute)
+
         data = {}
 
         if envelope:
