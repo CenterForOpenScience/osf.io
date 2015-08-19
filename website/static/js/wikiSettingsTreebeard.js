@@ -7,9 +7,29 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var Fangorn = require('js/fangorn');
 require('../css/fangorn.css');
-var PN = require('js/notificationsTreebeard.js');
 
-// TODO: Move shared code from notificationsTreebeard and other modules to a unified place
+// TODO: Move 'resolveToggle' to a central location
+function resolveToggle(item) {
+    var toggleMinus = m('i.fa.fa-minus', ' '),
+        togglePlus = m('i.fa.fa-plus', ' ');
+
+    if (item.children.length > 0) {
+        if (item.open) {
+            return toggleMinus;
+        }
+        return togglePlus;
+    }
+    item.open = true;
+    return '';
+}
+
+function expandOnLoad() {
+    var tb = this;  // jshint ignore: line
+    for (var i = 0; i < tb.treeData.children.length; i++) {
+        var parent = tb.treeData.children[i];
+        tb.updateFolder(null, parent);
+    }
+}
 
 function beforeChangePermissions(item, permission){
     var title = item.parent().data.node.title;
@@ -66,7 +86,7 @@ function ProjectWiki(data) {
         divID: 'wgrid',
         filesData: data,
         rowHeight : 33,         // user can override or get from .tb-row height
-        resolveToggle: PN.resolveToggle,
+        resolveToggle: resolveToggle,
         paginate : false,       // Whether the applet starts with pagination or not.
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
@@ -195,7 +215,7 @@ function ProjectWiki(data) {
         }
     };
     var wgrid = new Treebeard(tbOptions);
-    PN.expandOnLoad.call(wgrid.tbController);
+    expandOnLoad.call(wgrid.tbController);
 }
 
 module.exports = ProjectWiki;
