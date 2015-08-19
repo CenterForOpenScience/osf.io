@@ -21,7 +21,7 @@ from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
-from website.notifications.events import signals as event_signals
+from website.notifications.events.files import file_updated
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
@@ -300,7 +300,7 @@ def create_waterbutler_log(payload, **kwargs):
 
         node_addon.create_waterbutler_log(auth, action, metadata)
 
-    event_signals.file_updated.send(user=user, node=node, event_type=action, payload=payload)
+    file_updated(None, user=user, node=node, event_type=action, payload=payload)
 
     return {'status': 'success'}
 

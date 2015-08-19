@@ -22,12 +22,12 @@ from website.notifications.constants import NOTIFICATION_TYPES
 from website.models import Node
 from website.project.model import NodeLog
 from website.notifications.events import utils as event_utils
-from website.notifications.events.signals import file_updated
+from website.notifications.events.signals import file_updated as signal
 from website.notifications import utils
 
 
-@file_updated.connect
-def addon_file_updated(self, user=None, node=None, event_type=None, payload=None):
+@signal.connect
+def file_updated(self, user=None, node=None, event_type=None, payload=None):
     if event_type not in event_register:
         raise TypeError
     event = event_register[event_type](user, node, event_type, payload=payload)

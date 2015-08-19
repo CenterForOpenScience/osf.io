@@ -75,8 +75,8 @@ def categorize_users(user, source_event, source_node, event, node):
     :return: Moved, to be warned, and removed users.
     """
     remove = utils.users_to_remove(source_event, source_node, node)
-    source_node_subs = compile_subscriptions(source_node, '_'.join(source_event.split('_')[-2:]))
-    new_subs = compile_subscriptions(node, '_'.join(source_event.split('_')[-2:]), event)
+    source_node_subs = compile_subscriptions(source_node, utils.find_subscription_type(source_event))
+    new_subs = compile_subscriptions(node, utils.find_subscription_type(source_event), event)
     warn = {key: [] for key in constants.NOTIFICATION_TYPES}
     move = {key: [] for key in constants.NOTIFICATION_TYPES}
 
