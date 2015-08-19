@@ -5,7 +5,6 @@ from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
-
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively."""
     if isinstance(d, collections.Mapping):
@@ -15,7 +14,6 @@ def _rapply(d, func, *args, **kwargs):
         }
     else:
         return func(d, *args, **kwargs)
-
 
 def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
@@ -27,6 +25,40 @@ def _url_val(val, obj, serializer, **kwargs):
         return getattr(serializer, val)(obj)
     else:
         return val
+
+
+class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
+    """Returns a dict with a url and optional meta information/link_type."""
+
+    def __init__(self, view_name=None, **kwargs):
+        kwargs['read_only'] = True
+        kwargs['source'] = '*'
+        self.meta = kwargs.pop('meta', None)
+        self.link_type = kwargs.pop('link_type', 'url')
+        super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
+
+    def get_url(self, obj, view_name, request, format):
+        """
+        Given an object, return the URL that hyperlinks to the object.
+
+        Returns null if lookup value is None
+        """
+
+        if getattr(obj, self.lookup_field) is None:
+            return None
+
+        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+
+    def to_representation(self, value):
+        url = super(HyperlinkedIdentityFieldWithMeta, self).to_representation(value)
+
+        if self.meta is not None:
+            meta = {}
+            for key in self.meta:
+                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+            self.meta = meta
+
+        return {'url': url, 'meta': self.meta, 'link_type': self.link_type}
 
 
 class LinksField(ser.Field):
@@ -70,14 +102,12 @@ class LinksField(ser.Field):
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
-
 def _tpl(val):
     """Return value within ``< >`` if possible, else return ``None``."""
     match = _tpl_pattern.match(val)
     if match:
         return match.groups()[0]
     return None
-
 
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
@@ -146,7 +176,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
     def to_representation(self, data):
         # Don't envelope when serializing collection
         return [
-            self.child.to_representation(item, envelope=None) for item in data
+            self.child.to_representation(item) for item in data
         ]
 
 
@@ -160,25 +190,6 @@ class JSONAPISerializer(ser.Serializer):
     def many_init(cls, *args, **kwargs):
         kwargs['child'] = cls()
         return JSONAPIListSerializer(*args, **kwargs)
-
-    # overrides Serializer
-    def to_representation(self, obj, envelope='data'):
-        """Serialize to final representation.
-
-        :param obj: Object to be serialized.
-        :param envelope: Key for resource object.
-        """
-        ret = {}
-        meta = getattr(self, 'Meta', None)
-        type_ = getattr(meta, 'type_', None)
-        assert type_ is not None, 'Must define Meta.type_'
-        data = super(JSONAPISerializer, self).to_representation(obj)
-        data['type'] = type_
-        if envelope:
-            ret[envelope] = data
-        else:
-            ret = data
-        return ret
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):

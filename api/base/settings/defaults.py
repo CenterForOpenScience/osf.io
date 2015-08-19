@@ -51,21 +51,26 @@ RAVEN_CONFIG = {
 }
 
 REST_FRAMEWORK = {
-    'PAGE_SIZE': 10,
-
-    # Order is important here because of a bug in rest_framework_swagger. For now,
-    # rest_framework.renderers.JSONRenderer needs to be first, at least until
-    # https://github.com/marcgibbons/django-rest-swagger/issues/271 is resolved.
+    'PAGINATE_BY': 10,
+    'PAGINATE_BY_PARAM': 'page_size',
+    'MAX_PAGINATE_BY': 100,
+    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
+    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
+    'ORDERING_PARAM': 'sort',
+    'DEFAULT_VERSION': '2.0',
+    # DRF v3.1+
+    'DEFAULT_PAGINATION_CLASS':
+        'rest_framework_json_api.pagination.PageNumberPagination',
+    'DEFAULT_PARSER_CLASSES': (
+        'rest_framework_json_api.parsers.JSONParser',
+        'rest_framework.parsers.FormParser',
+        'rest_framework.parsers.MultiPartParser'
+    ),
+    'DEFAULT_CONTENT_NEGOTIATION_CLASS': 'api.base.content_negotiation.JSONAPIContentNegotiation',
     'DEFAULT_RENDERER_CLASSES': (
-        'rest_framework.renderers.JSONRenderer',
-        'api.base.renderers.JSONAPIRenderer',
+        'rest_framework_json_api.renderers.JSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
-    'DEFAULT_VERSIONING_CLASS': 'rest_framework.versioning.AcceptHeaderVersioning',
-    'DEFAULT_VERSION': '2.0',
-    'DEFAULT_FILTER_BACKENDS': ('api.base.filters.ODMOrderingFilter',),
-    'DEFAULT_PAGINATION_CLASS': 'api.base.pagination.JSONAPIPagination',
-    'ORDERING_PARAM': 'sort',
     'DEFAULT_AUTHENTICATION_CLASSES': (
         # Custom auth classes
         'api.base.authentication.drf.OSFBasicAuthentication',
