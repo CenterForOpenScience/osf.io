@@ -6,7 +6,7 @@ from nose.tools import *  # noqa
 from tests.base import OsfTestCase
 
 from website import settings
-from website.tokens import TokenHandler
+from website.tokens import decode, encode, TokenHandler
 from website.tokens.exceptions import TokenHandlerNotFound
 
 
@@ -26,10 +26,10 @@ class TestTokenHandler(OsfTestCase):
             algorithm=settings.JWT_ALGORITHM)
 
     def test_encode(self):
-        assert_equal(TokenHandler.encode(self.payload), self.encoded_token)
+        assert_equal(encode(self.payload), self.encoded_token)
 
     def test_decode(self):
-        assert_equal(TokenHandler.decode(self.encoded_token), self.payload)
+        assert_equal(decode(self.encoded_token), self.payload)
 
     def test_from_string(self):
         token = TokenHandler.from_string(self.encoded_token)

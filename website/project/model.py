@@ -38,7 +38,7 @@ from framework.sentry import log_exception
 from framework.transactions.context import TokuTransaction
 from framework.utils import iso8601format
 
-from website import language, mails, settings
+from website import language, mails, settings, tokens
 from website.util import web_url_for
 from website.util import api_url_for
 from website.util import sanitize
@@ -46,7 +46,6 @@ from website.exceptions import (
     NodeStateError,
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
 )
-from website.tokens import TokenHandler
 from website.citations.utils import datetime_to_csl
 from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
@@ -2969,14 +2968,14 @@ class Sanction(StoredObject):
         if valid and user._id not in self.approval_state:
             self.approval_state[user._id] = {
                 'has_approved': approved,
-                'approval_token': TokenHandler.encode(
+                'approval_token': tokens.encode(
                     {
                         'user_id': user._id,
                         'sanction_id': self._id,
                         'action': 'approve_{}'.format(self.SHORT_NAME)
                     }
                 ),
-                'rejection_token': TokenHandler.encode(
+                'rejection_token': tokens.encode(
                     {
                         'user_id': user._id,
                         'sanction_id': self._id,

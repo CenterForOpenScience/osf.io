@@ -25,25 +25,10 @@ class TokenHandler(object):
         self.encoded_token = encoded_token
         self.payload = payload
 
-    @staticmethod
-    def encode(payload):
-        return jwt.encode(
-            payload,
-            settings.JWT_SECRET,
-            algorithm=settings.JWT_ALGORITHM
-        )
-
-    @staticmethod
-    def decode(encoded_token):
-        return jwt.decode(
-            encoded_token,
-            settings.JWT_SECRET,
-            algorithms=[settings.JWT_ALGORITHM])
-
     @classmethod
     def from_string(cls, encoded_token):
         try:
-            payload = TokenHandler.decode(encoded_token)
+            payload = decode(encoded_token)
         except jwt.DecodeError as e:
             raise HTTPError(
                 http.BAD_REQUEST,
@@ -56,7 +41,7 @@ class TokenHandler(object):
 
     @classmethod
     def from_payload(cls, payload):
-        encoded_token = TokenHandler.encode(payload)
+        encoded_token = encode(payload)
         return cls(encoded_token=encoded_token, payload=payload)
 
     def to_response(self):
@@ -66,6 +51,7 @@ class TokenHandler(object):
             return handler(self.payload, self.encoded_token)
         else:
             raise TokenHandlerNotFound(action=action)
+
 
 def process_token_or_pass(func):
     """Parse encoded token and run attached handlers (if any).
@@ -93,3 +79,18 @@ def process_token_or_pass(func):
                 )
         return func(*args, **kwargs)
     return wrapper
+
+
+def encode(payload):
+    return jwt.encode(
+        payload,
+        settings.JWT_SECRET,
+        algorithm=settings.JWT_ALGORITHM
+    )
+
+
+def decode(encoded_token):
+    return jwt.decode(
+        encoded_token,
+        settings.JWT_SECRET,
+        algorithms=[settings.JWT_ALGORITHM])

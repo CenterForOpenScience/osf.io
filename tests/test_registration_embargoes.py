@@ -16,12 +16,12 @@ from modularodm.exceptions import ValidationValueError
 from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
+from website import tokens
 from website.models import Embargo, Node
 from website.project.model import ensure_schemas
-from website.tokens import TokenHandler
 
 
-DUMMY_TOKEN = TokenHandler.encode({
+DUMMY_TOKEN = tokens.encode({
     'dummy': 'token'
 })
 
@@ -43,7 +43,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             self.valid_embargo_end_date,
             for_existing_registration=True
         )
-        self.assertEqual(Embargo.find().count(), initial_count + 1)
+        assert_equal(Embargo.find().count(), initial_count + 1)
 
     def test__initiate_embargo_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
@@ -66,7 +66,7 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
             self.valid_embargo_end_date,
             for_existing_registration=True,
         )
-        self.assertEqual(Embargo.find().count(), initial_count + 1)
+        assert_equal(Embargo.find().count(), initial_count + 1)
 
     # Backref tests
     def test_embargo_initiator_has_backref(self):

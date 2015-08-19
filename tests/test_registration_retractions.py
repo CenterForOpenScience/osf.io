@@ -16,12 +16,12 @@ from modularodm.exceptions import ValidationValueError
 from framework.auth import Auth
 from framework.exceptions import HTTPError, PermissionsError
 
+from website import tokens
 from website.exceptions import (
     InvalidSanctionApprovalToken, InvalidSanctionRejectionToken,
     NodeStateError,
 )
 from website.models import Retraction
-from website.tokens import TokenHandler
 
 
 class RegistrationRetractionModelsTestCase(OsfTestCase):
@@ -43,7 +43,7 @@ class RegistrationRetractionModelsTestCase(OsfTestCase):
     def test_initiate_retraction_saves_retraction(self):
         initial_count = Retraction.find().count()
         self.registration._initiate_retraction(self.user)
-        self.assertEqual(Retraction.find().count(), initial_count + 1)
+        assert_equal(Retraction.find().count(), initial_count + 1)
 
     def test__initiate_retraction_does_not_create_tokens_for_unregistered_admin(self):
         unconfirmed_user = UnconfirmedUserFactory()
@@ -506,7 +506,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         self.approval_token = self.registration.retraction.approval_state[self.user._id]['approval_token']
         self.rejection_token = self.registration.retraction.approval_state[self.user._id]['rejection_token']
         self.corrupt_token = fake.sentence()
-        self.token_without_sanction = TokenHandler.encode({
+        self.token_without_sanction = tokens.encode({
             'action': 'approve_retraction',
             'user_id': self.user._id,
             'sanction_id': 'invalid id'
