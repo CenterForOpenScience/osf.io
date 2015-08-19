@@ -173,7 +173,7 @@ limit maxfiles 16384 16384
 limit maxproc 2048 2048
 ```
 
-Then create or edit either `~./bash_profile` or `/etc/profile` to include the following:
+Then create or edit either `~/.bash_profile` or `/etc/profile` to include the following:
 
 `ulimit -n 2048`
 

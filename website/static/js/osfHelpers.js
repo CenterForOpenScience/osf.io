@@ -732,6 +732,14 @@ var isIE = function(userAgent) {
 };
 
 /**
+*  Helper function to judge if the user browser is Safari
+*/
+var isSafari = function(userAgent) {
+    userAgent = userAgent || navigator.userAgent;
+    return (userAgent.search('Safari') >= 0 && userAgent.search('Chrome') < 0);
+};
+
+/**
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
@@ -821,5 +829,6 @@ module.exports = window.$.osf = {
     initializeResponsiveAffix: initializeResponsiveAffix,
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
-    isIE: isIE
+    isIE: isIE,
+    isSafari:isSafari
 };

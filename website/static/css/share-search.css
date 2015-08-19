@@ -137,11 +137,8 @@ stroke: #BAB5B5;
 
 .provider-footer {
     -moz-column-count: 2;
-    -moz-column-gap: 2.5em;
     -webkit-column-count: 2;
-    -webkit-column-gap: 2.5em;
     column-count: 2;
-    column-gap: 2.5em;
     list-style-type: none;
 }
 
