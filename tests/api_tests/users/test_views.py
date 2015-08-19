@@ -379,10 +379,12 @@ class TestDeactivatedUser(ApiTestCase):
     def setUp(self):
         super(TestDeactivatedUser, self).setUp()
         self.user = AuthUserFactory()
+
+    def test_deactivated_user_returns_410_response(self):
+        url = '/{}users/{}/'.format(API_BASE, self.user._id)
+        res = self.app.get(url, auth=self.user.auth , expect_errors=False)
+        assert_equal(res.status_code, 200)
         self.user.is_disabled = True
         self.user.save()
-
-    def test_return_deactivated_user(self):
-        self.url = '/{}users/{}/'.format(API_BASE, self.user._id)
-        res = self.app.get(self.url, auth=self.user.auth , expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth , expect_errors=True)
         assert_equal(res.status_code, 410)
