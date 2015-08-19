@@ -213,12 +213,7 @@ class JSONAPISerializer(ser.Serializer):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
-        ret = collections.OrderedDict()
-        ret['id'] = ''
-        ret['type'] = type_
-        ret['attributes'] = {}
-        ret['relationships'] = {}
-        ret['links'] = {}
+        ret = collections.OrderedDict([('id', ''), ('type', type_), ('attributes', {}), ('relationships', {}), ('links', {})])
 
         fields = [field for field in self.fields.values() if not field.write_only]
 
