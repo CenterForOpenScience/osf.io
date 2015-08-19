@@ -168,10 +168,8 @@ class NodeFilesSerializer(JSONAPISerializer):
         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
         'related': {
             'href': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
-                        query_kwargs={'path': '<path>', 'provider': '<provider>'}),
-            'meta': {
-                'self_methods': 'valid_self_link_methods'
-            }
+                    query_kwargs={'path': '<path>', 'provider': '<provider>'}),
+            'meta': {'self_methods': 'valid_self_link_methods'}
         }
     })
 
@@ -191,3 +189,4 @@ class NodeFilesSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
+
