@@ -8,7 +8,7 @@ from api.users.serializers import UserSerializer
 def root(request, format=None):
     if request.user and not request.user.is_anonymous():
         user = request.user
-        current_user = UserSerializer(user).data
+        current_user = UserSerializer(user, context={'request': request}).data
     else:
         current_user = None
     return Response({
