@@ -1369,11 +1369,11 @@ class TestNodeLogList(ApiTestCase):
         assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
 
     def test_log_create_on_public_project(self):
-        # self.project = ProjectFactory()
+        self.project = ProjectFactory()
         datetime.datetime.strptime('2015-07-28 21:06:34.965114', '%Y-%m-%d %H:%M:%S.%f')
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        # (len(res.json['data']), 1)
+        (len(res.json['data']), 1)
         assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['date'], "%Y-%m-%dT%H:%M:%S.%f"),
                               self.public_project.logs[0].date)
         assert_equal(res.json['data'][0]['action'], self.public_project.logs[0].action)
