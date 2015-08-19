@@ -7,6 +7,7 @@ from modularodm import Q
 from framework.tasks import app as celery_app
 from framework.mongo import database as db
 from framework.auth.core import User
+from framework.sentry import log_exception
 
 from framework.transactions.context import TokuTransaction
 
@@ -28,7 +29,7 @@ def send_users_email(send_type):
     for group in grouped_emails:
         user = User.load(group['user_id'])
         if not user:
-            # Log exception
+            log_exception()
             continue
         info = group['info']
         notification_ids = [message['_id'] for message in info]

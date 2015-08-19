@@ -1240,7 +1240,7 @@ class TestSendDigest(OsfTestCase):
         d2.save()
         d3 = factories.NotificationDigestFactory(
             user_id=user2._id,
-            send_type='email_transactiona;',
+            send_type='email_transactional',
             timestamp=timestamp,
             message='Hello, but this should not appear',
             node_lineage=[project._id]
