@@ -519,6 +519,7 @@ function OBUploaderViewModel(params) {
             };
         },
 
+        clickable: '#obDropzone',
         url: '/', // specified per upload
         autoProcessQueue: false,
         createImageThumbnails: false,
@@ -595,6 +596,11 @@ function OBUploaderViewModel(params) {
         }
     };
     self.dropzone = new Dropzone(self.selector, dropzoneOpts);
+
+    //Drag & drop is non-functional in IE; change instructional header to indicate this to the user.
+    if($osf.isIE()){
+        $('#obDropzone-header').replaceWith('<h4 id=\'obDropzone-header\'>1. Click below to select file</h4>');
+    }
 
     //stop user from leaving if file is staged for upload
     $(window).on('beforeunload', function() {

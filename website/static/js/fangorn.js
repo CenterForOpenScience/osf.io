@@ -188,8 +188,10 @@ function resolveIconView(item) {
         var template = m('span', { 'class' : iconType});
         return template;
     }
-    if (!item.data.permissions.view) {
-        return m('span', { 'class' : iconmap.private });
+    if (item.data.permissions){
+        if (!item.data.permissions.view) {
+            return m('span', { 'class' : iconmap.private });
+        }
     }
     if (item.data.isDashboard) {
         return returnView('collection');
@@ -1406,14 +1408,12 @@ var FGInput = {
         var placeholder = args.placeholder || '';
         var id = args.id || '';
         var helpTextId = args.helpTextId || '';
-        var onclick = args.onclick || noop;
         var onkeypress = args.onkeypress || noop;
         var value = args.value ? '[value="' + args.value + '"]' : '';
         return m('span', [
             m('input' + value, {
                 'id' : id,
                 className: 'tb-header-input' + extraCSS,
-                onclick: onclick,
                 onkeypress: onkeypress,
                 'data-toggle':  tooltipText ? 'tooltip' : '',
                 'title':  tooltipText,

@@ -3,6 +3,11 @@ var m = require('mithril');
 
 module.exports = {
     view: function(data, repr, opts) {
+        if(data[0].label){
+            data.sort(function(a, b) {
+                return a.label.localeCompare(b.label);
+            });
+        }
         return [
             m('div', {
                 className: 'legend-grid'

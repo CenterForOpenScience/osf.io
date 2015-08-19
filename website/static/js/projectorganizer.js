@@ -187,7 +187,7 @@ function saveExpandState(item, callback) {
         expandUrl = item.apiURL + 'expand/';
         postAction = $osf.postJSON(expandUrl, {});
         postAction.done(function () {
-            item.expand = false;
+            item.expand = true;
             if (callback !== undefined) {
                 callback();
             }
@@ -989,7 +989,7 @@ function showLegend() {
     });
     var repr = function (item) {
         return [
-            m('span', {
+            m('span[style="width:18px"]', {
                 className: item.icon
             }),
             '  ',
