@@ -1,9 +1,11 @@
 import collections
 import re
 
+from django.utils import six
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
+
 
 
 def _rapply(d, func, *args, **kwargs):
@@ -35,6 +37,7 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
         kwargs['read_only'] = True
         kwargs['source'] = '*'
         self.meta = kwargs.pop('meta', None)
+        self.link_type = kwargs.pop('link_type', None)
         super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
 
     def get_url(self, obj, view_name, request, format):
@@ -52,13 +55,15 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
     def to_representation(self, value):
         url = super(HyperlinkedIdentityFieldWithMeta, self).to_representation(value)
 
-        if self.meta is not None:
+        if self.meta is None:
+            return {'links': {self.link_type: url}}
+        else:
             meta = {}
             for key in self.meta:
                 meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
             self.meta = meta
 
-        return {'url': url, 'meta': self.meta}
+            return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
 
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
@@ -182,6 +187,11 @@ class JSONAPIListSerializer(ser.ListSerializer):
         ]
 
 
+# def to_representation(self, instance):
+#         """
+#         Object instance -> Dict of primitive datatypes.
+#         """
+
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
     allows for enveloping of both single resources and collections.
@@ -200,30 +210,36 @@ class JSONAPISerializer(ser.Serializer):
         :param obj: Object to be serialized.
         :param envelope: Key for resource object.
         """
-        ret = {}
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
+        ret = collections.OrderedDict()
+        ret['id'] = ''
+        ret['type'] = ''
+        ret['attributes'] = {}
+        ret['relationships'] = {}
+        ret['links'] = {}
 
-        attributes = super(JSONAPISerializer, self).to_representation(obj)
-        top_level = {
-            'id': attributes.get('id'),
-            'links': attributes.get('links'),
-            'relationships': attributes.get('relationships')
-        }
-        for i in top_level.keys():
-            attributes.pop(i, None)
-        data = collections.OrderedDict((
-            ('id', top_level['id']),
-            ('type', type_),
-            ('attributes', attributes),
-            ('links', top_level['links']),
-            ('relationships', top_level['relationships'])))
-        if envelope:
-            ret[envelope] = data
-        else:
-            ret = data
-        return ret
+        fields = [field for field in self.fields.values() if not field.write_only]
+
+        for field in fields:
+            attribute = field.get_attribute(obj)
+
+            if attribute is None:
+                # We skip `to_representation` for `None` values so that
+                # fields do not have to explicitly deal with that case.
+                ret[field.field_name] = None
+            elif isinstance(field, ser.HyperlinkedIdentityField):
+                ret['relationships'][field.field_name] = field.to_representation(attribute)
+            elif field.field_name == 'id':
+                ret['id'] = field.to_representation(attribute)
+            elif field.field_name == 'links':
+                ret['links'] = field.to_representation(attribute)
+            else:
+                from rest_framework.exceptions import APIException
+                ret['attributes'][field.field_name] = field.to_representation(attribute)
+
+        return {'data': ret}
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
