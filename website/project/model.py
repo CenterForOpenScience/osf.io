@@ -3100,9 +3100,8 @@ class EmailApprovableSanction(Sanction):
 
     def _send_approval_request_email(self, user, template, context):
         mails.send_mail(
-            self.initiated_by.username,
+            user,
             template,
-            user=user,
             **context
         )
 
