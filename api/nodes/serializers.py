@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField
+from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, HyperlinkedIdentityFieldWithMeta
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -36,78 +36,26 @@ class NodeSerializer(JSONAPISerializer):
                                                             'public and private nodes. Administrators on a parent '
                                                             'node have implicit read permissions for all child nodes',
                               )
-    # children = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk',
-    #                                             lookup_url_kwarg='node_id', meta={'count': 'get_node_count'},
-    #                                             link_type='related')
-    #
-    # contributors = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk',
-    #                                                 lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'},
-    #                                                 link_type='related')
-    #
-    # node_links = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-pointers', lookup_field='pk',
-    #                                               lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'},
-    #                                               link_type='related')
-    #
-    # registrations = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk',
-    #                                                  lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'},
-    #                                                  link_type='related')
-    #
-    # files = ser.HyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id')
-    #
-    # parent = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-detail', lookup_field='parent_id',
-    #                                           lookup_url_kwarg='node_id', link_type='self')
-    relationships = LinksField({
-        'children': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_node_count'
-                    }
-                }
-            },
-        },
-        'contributors': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_contrib_count'
-                    }
-                }
-            },
-        },
-        'pointers': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_pointers_count'
-                    }
-                }
-            },
-        },
-        'registrations': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_registration_count'
-                    }
-                }
-            },
-        },
-        'files': {
-            'links': {
-                'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
-            }
-        },
-        'parent': {
-            'links': {
-                'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
-            }
-        }
-    })
+
+    children = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk', link_type= 'related',
+                                                lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
+
+    contributors = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk', link_type= 'related',
+                                                    lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
+
+    node_links = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-pointers', lookup_field='pk', link_type= 'related',
+                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})
+
+    registrations = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk', link_type= 'related',
+                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})
+
+    files = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id',
+                                             link_type='related')
+
+    parent = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-detail', lookup_field='parent_id', link_type= 'self',
+                                              lookup_url_kwarg='node_id')
+
+
 
     # TODO: finish me
     class Meta:
