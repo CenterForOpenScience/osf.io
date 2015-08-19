@@ -1,0 +1,42 @@
+/*
+ * Typography Classes
+ */
+
+h1, h2, h3, h4, h1 small {
+  font-weight: 300;
+}
+
+/* Font Weights */
+@for $i from 1 to 6 {
+  .f-w-#{nth($sizes, $i)} {
+    font-weight: nth($weights, $i);
+  }
+}
+
+.link-solid,
+.link-solid:hover {
+  border-bottom: 1px solid #337AB7;
+  text-decoration: none;
+}
+
+.link-dashed,
+.link-dashed:hover {
+  border-bottom: 1px dashed #337AB7;
+  text-decoration: none;
+}
+
+.text-smaller {
+  font-size: 0.9em;
+}
+
+.text-bigger {
+  font-size: 1.1em;
+}
+
+.osf-editable {
+  border-bottom: 1px dotted $color-grey;
+}
+.osf-editable:hover {
+  cursor: pointer;
+  background-color: #f8f8f8;
+}

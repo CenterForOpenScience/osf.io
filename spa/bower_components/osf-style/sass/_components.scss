@@ -1,0 +1,135 @@
+/*
+ * Components specific to OSF
+ */
+
+ /* Box shadow */
+.box-shadow-xs {
+    box-shadow: 0px 0px 10px 0px rgba(0,0,0,0.3);
+}
+
+.box-shadow-sm {
+    box-shadow: 0px 0px 7px 2px rgba(0,0,0,0.3);
+}
+
+.box-shadow-md {
+    box-shadow: 0px 0px 10px 3px rgba(0,0,0,0.3);
+}
+
+.box-shadow-lg {
+    box-shadow: 0px 0px 15px 5px rgba(0,0,0,0.3);
+}
+
+.box-shadow-xl {
+    box-shadow: 0px 0px 20px 6px rgba(0,0,0,0.4);
+}
+
+/* LOADER */
+.logo-spin {
+  -webkit-animation: spin 3s infinite linear, opacity 3s infinite linear;
+  animation: spin 3s infinite linear, opacity 3s infinite linear;
+  display: inline-block;
+}
+
+@for $i from 1 to 6 {
+  .logo-spin.logo-#{nth($sizes, $i) img} {
+    width: unquote(nth($margins, $i)*2 + 'px');
+  }
+}
+
+// Set spin animation for the log
+@mixin spin-animation($startDegree, $endDegree, $animation-name){
+  @keyframes  #{$animation-name} {
+    from {
+      transform: rotate($startDegree);
+    }
+    to {
+      transform: rotate($endDegree);
+    }
+  }
+}
+
+@include spin-animation(0deg, 360deg,"spin");
+
+// opacity change animation, Start, Middle, End
+@mixin opacity-animation($start, $middle, $end, $animation-name){
+  @keyframes #{$animation-name} {
+    0% {
+      opacity : $start
+    }
+    50% {
+      opacity: $middle
+    }
+    100% {
+      opacity: $end
+    }
+  }
+}  
+
+@include opacity-animation(0.1, 1, 0.1,"opacity");
+
+/* OSF BOX */
+
+.osf-box {
+  border: 1px solid #eee;
+  border-radius: 0;
+  background-color: #ffffff;
+}
+.box-round {
+  border-radius: 5px;
+}
+.osf-box-lt {
+  background-color: $color-hover;
+  color: $color-grey;
+}
+.osf-box-dk {
+  background-color: $color-select;
+  color: white;
+}
+
+
+/* PROJECT NAVIGATION */
+.osf-project-navbar {
+  position: fixed;
+  width: 100%;
+  left: 0;
+  top: 43px;
+  background-color: #EEE;
+  z-index: 99;
+  box-shadow: 0 0 9px -1px #838383;
+  border-radius: 0;
+  border: none;
+  min-height: 40px;
+}
+.osf-project-navbar li>a {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  font-size: 15px;
+}
+
+.osf-project-navbar .navbar-nav li>a:hover {
+  background-color: #DADADA;
+}
+
+.osf-project-navbar li.active,
+.osf-project-navbar li.active a:hover,
+.osf-project-navbar li:hover{
+  background-color: #337AB7;
+}
+
+.osf-project-navbar li.active a {
+  color: white;
+}
+
+.osf-project-navbar a.project-title {
+  font-weight: 300;
+  font-size: 20px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+
+/* Form Inputs */
+.noresize {
+  resize: none;
+}

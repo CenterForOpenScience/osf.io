@@ -1,0 +1,26 @@
+@import '_variables';
+@import '_colors';
+@import '_layout';
+@import '_typography';
+@import '_bootstrap';
+@import '_components';
+
+.theme-dropdown .dropdown-menu {
+  position: static;
+  display: block;
+  margin-bottom: 20px;
+}
+
+.theme-showcase > p > .btn {
+  margin: 5px 0;
+}
+
+.theme-showcase .navbar .container {
+  width: auto;
+  color: blue;
+}
+
+.osf-selected {
+    background-color: $color-select;
+    color: white;
+}

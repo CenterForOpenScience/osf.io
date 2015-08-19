@@ -1,0 +1,67 @@
+/* Search bar */
+.search-label-placeholder {
+    position:absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    font-size: 20px;
+    color: #738EA2;
+    font-weight: 300;
+    visibility: hidden;
+}
+
+.osf-search {
+    padding: 10px 0;
+    background: #B8ECC0;
+    position: fixed;
+    width: 100%;
+    box-shadow: 0 0 9px -2px #464545;
+    left: 0;
+    top: 50px;
+    z-index: 1030; /* Should not less than 1030 */
+}
+
+.osf-search-input {
+    background: none;
+    border: none;
+    box-shadow: none;
+    border-bottom: 1px dotted #FFF;
+    border-radius: 0;
+    padding: 0 0;
+    font-size: 20px;
+    color: #214762;
+    font-weight: 300;
+}
+.osf-search-input:focus {
+    outline : 0 !important;
+    box-shadow: none;
+    border-bottom: 1px dotted #FFF;
+}
+.osf-search-btn {
+    color: #214762;
+    background: rgba(0, 0, 0, 0);
+}
+
+.osf-search-btn:hover {
+    color: #738EA2;
+}
+
+
+#searchPageFullBar::-webkit-input-placeholder {
+   color: #738EA2;
+}
+
+#searchPageFullBar:-moz-placeholder { /* Firefox 18- */
+   color: #738EA2;
+}
+
+#searchPageFullBar::-moz-placeholder {  /* Firefox 19+ */
+   color: #738EA2;
+}
+
+#searchPageFullBar:-ms-input-placeholder {
+   color: #738EA2;
+}
+#searchControls>.row {
+    padding-top: 60px;
+}

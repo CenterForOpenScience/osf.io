@@ -1,0 +1,31 @@
+/*
+ * OSF Color Palette
+ */
+
+$color-blue : #204762;
+$color-hover: #E0EBF3;
+$color-light: #EEEEEE;
+$color-alt: #B8ECBF;
+$color-select: #337AB7;
+$color-grey: #333333;
+
+.bg-color-blue {
+  background-color: $color-blue;
+}
+.bg-color-hover {
+  background-color: $color-hover;
+}
+.bg-color-light {
+  background-color: $color-light;
+}
+.bg-color-alt {
+  background-color: $color-alt;
+}
+.bg-color-select {
+   background-color: $color-select;
+}
+.bg-color-grey {
+    background-color: $color-grey;
+}
+
+

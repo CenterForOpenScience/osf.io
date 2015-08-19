@@ -1,0 +1,62 @@
+
+/*
+ * Layout and Sizing Classes
+ */
+.container-full {
+  width: 100%;
+}
+
+/* Build Margins */
+@for $i from 1 to 6 {
+  .m-t-#{nth($sizes, $i)} {
+    margin-top: unquote(nth($margins, $i) + 'px');
+  }
+  .m-b-#{nth($sizes, $i)} {
+    margin-bottom: unquote(nth($margins, $i) + 'px');
+  }
+  .m-l-#{nth($sizes, $i)} {
+    margin-left: unquote(nth($margins, $i) + 'px');
+  }
+  .m-r-#{nth($sizes, $i)} {
+    margin-right: unquote(nth($margins, $i) + 'px');
+  }
+  .m-#{nth($sizes, $i)} {
+    margin: unquote(nth($margins, $i) + 'px');
+  }
+  .m-v-#{nth($sizes, $i)} {
+    margin-top: unquote(nth($margins, $i) + 'px');
+    margin-bottom: unquote(nth($margins, $i) + 'px');
+  }
+  .m-h-#{nth($sizes, $i)} {
+    margin-left: unquote(nth($margins, $i) + 'px');
+    margin-right: unquote(nth($margins, $i) + 'px');
+  }
+}
+
+/* Build paddings */
+@for $i from 1 to 6 {
+  .p-t-#{nth($sizes, $i)} {
+    padding-top: unquote(nth($margins, $i) + 'px');
+  }
+  .p-b-#{nth($sizes, $i)} {
+    padding-bottom: unquote(nth($margins, $i) + 'px');
+  }
+  .p-l-#{nth($sizes, $i)} {
+    padding-left: unquote(nth($margins, $i) + 'px');
+  }
+  .p-r-#{nth($sizes, $i)} {
+    padding-right: unquote(nth($margins, $i) + 'px');
+  }
+  .p-#{nth($sizes, $i)} {
+    padding: unquote(nth($margins, $i) + 'px');
+  }
+  .p-v-#{nth($sizes, $i)} {
+    padding-top: unquote(nth($margins, $i) + 'px');
+    padding-bottom: unquote(nth($margins, $i) + 'px');
+  }
+  .p-h-#{nth($sizes, $i)} {
+    padding-left: unquote(nth($margins, $i) + 'px');
+    padding-right: unquote(nth($margins, $i) + 'px');
+  }
+}
+

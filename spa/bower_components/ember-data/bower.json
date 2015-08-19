@@ -1,0 +1,14 @@
+{
+  "name": "ember-data",
+  "version": "1.13.8",
+  "main": "ember-data.js",
+  "dependencies": {
+    "ember": ">= 1.8.1 < 2.0.0"
+  },
+  "ignore": [
+    "**/*_configuration.js",
+    "ember-data-setup.js",
+    "docs",
+    "**/*.html"
+  ]
+}

@@ -51,7 +51,7 @@ TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
 
 SPA_CONFIG = {
-    'template_lookup': TemplateLookup(directories=[os.path.join(BASE_PATH, 'static/spa')]),
+    'template_lookup': TemplateLookup(directories=[os.path.join(BASE_PATH, 'static/public/spa')]),
     'root_template': 'index.html',
 }
 

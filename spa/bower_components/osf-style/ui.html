@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>OSF Style & UI Guidelines</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="bower_components/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="vendor/prism/prism.css" rel="stylesheet" />
+    <!-- OSF style -->
+    <link href="css/base.css" rel="stylesheet">
+    <!-- Guidelines style -->
+    <link href="page.css" rel="stylesheet">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+    <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
+    <![endif]-->
+</head>
+
+<body role="document" class="m-b-lg">
+
+<nav class="navbar osf-navbar navbar-fixed-top">
+    <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+            <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="fa fa-bars fa-lg fa-inverse"></span>
+            </button>
+
+            <a class="navbar-brand" href="index.html">OSF Style Guide </span></a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+            <ul class="nav navbar-nav">
+                <li><a href="index.html">Home<span class="sr-only">(current)</span></a></li>
+                <li><a href="style.html">Style Guide</a></li>
+                <li class="active"><a href="ui.html">UI Guide </a></li>
+                <li><a href="ally.html">Accessibility </a></li>
+                <li><a href="js.html">Javascript</a></li>
+            </ul>
+            <div class="navbar-form navbar-right">
+                <button id="openGithub" role="button" class="btn btn-info"><i class="fa fa-github"></i> Open in Github</button>
+            </div>
+
+
+        </div><!-- /.navbar-collapse -->
+    </div><!-- /.container-fluid -->
+</nav>
+
+
+
+<div class="container-full style-header">
+    <div id="top" class="container theme-showcase" >
+        <div class="jumbotron">
+            <h1>UI Guide</h1>
+        </div>
+    </div>
+</div>
+
+<div class="nav-rows container m-t-xl">
+    <div class="row">
+        <div class="col-xs-12 col-sm-9">
+
+            <!--COMPONENTS PAGE-->
+            <div id="components" class=" theme-showcase" >
+
+            <div class="page-header m-t-xl">
+                <h2 id="ui"> UI Examples </h2>
+            </div>
+
+                <h3 id="auto-save"> Autosave Example </h3>
+                <div class="row">
+                    <div class="col-xs-12 m-b-lg">
+                        <h4 class="m-t-lg"> Continous Save with a continuously changed document (i.e. Wiki) </h4>
+                        <p>Have save time information and button just in case. Similar to Google Docs.  </p>
+                        <div class="osf-box p-lg">
+                            <div style="border-bottom:1px solid #ccc" class="text-right p-xs">
+                                <span class="text-muted">Last Saved: 2 minutes ago.</span> <button class="btn btn-sm btn-success">Save</button>
+                            </div>
+                        </div>
+
+                        <h4 class="m-t-lg"> Save on Input control change  </h4>
+                        <p>Show change alert that disappears after about 3 seconds. </p>
+                        <div class="osf-box p-lg">
+                            <div class="row">
+                                <div class="col-xs-6">
+                                    <input type="text" class="form-control" value="Name here">
+                                </div>
+                                <div class="col-xs-6">
+                                    <span class="text-success">Changes saved!</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="m-t-md m-b-md p-md osf-box-lt">
+                            <h4> When you should NOT autosave: </h4>
+                            <ul>
+                                <li>If the edit is highly sensitive, never autosave. The extra step of saving adds a level of security.</li>
+                                <li>If the edit is going to be public immediately think about implications. The step to save gives users a moment to revise.</li>
+                                <li>When intermediate changes being applied would alter the layout or page. For example selecting to hide certain elements in a settings page should not hide those immediately and move the page around, resulting in the user losing location. </li>
+                                <li>When one edit is related to another edit that is yet to be made. I.e. when the edit is not independent.</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+
+                <h3 id="feedback"> Feedback Examples </h3>
+                <div class="row">
+                    <div class="col-xs-12 m-b-lg">
+                        <h4 id="form-validation" class="m-t-lg">Form validation</h4>
+                        <p>Use existing Bootstrap style to communicate errors related to forms. Don't use Growl notifications. <a href="http://getbootstrap.com/css/#forms-control-validation">Learn more here</a>. </p>
+                        <div class="osf-box p-lg">
+                            <div class="form-group has-error">
+                                <label for="inputHelpBlock">Input with help text</label>
+                                <input type="text" id="inputHelpBlock" class="form-control" aria-describedby="helpBlock">
+                                <span id="helpBlock" class="help-block">A block of help text that breaks onto a new line and may extend beyond one line.</span>
+                            </div>
+                        </div>
+                        <pre><code class="language-markup">
+&lt;div class="form-group has-error"&gt;
+    &lt;label for="inputHelpBlock"&gt;Input with help text&lt;/label&gt;
+    &lt;input type="text" id="inputHelpBlock" class="form-control" aria-describedby="helpBlock"&gt;
+    &lt;span id="helpBlock" class="help-block"&gt;A block of help text that breaks onto a new line and may extend beyond one line.&lt;/span&gt;
+&lt;/div&gt;
+                        </code></pre>
+
+                        <h4 id="error-reporting" class="m-t-lg">Error Reporting</h4>
+                        <p>Site related errors should use Growl style error reporting. OSF uses <a href="https://github.com/ifightcrime/bootstrap-growl/">Bootstrap Growl</a> plugin to display messages. The advantage of this library is that is builds on top of bootstrap design and utilizes alert boxes, which means it already complies with the style guide.</p>
+
+                        <div class="osf-box-lt p-lg">
+                            <h4>Which feedback to use when? </h4>
+                            <table class="table">
+                                <thead>
+                                <tr>
+                                    <th>Action examples</th>
+                                    <th>Feedback type</th>
+                                    <th>Auto vs manual dismiss</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                    <td>
+                                        <h5> Mundane Success Events</h5>
+                                        <p>Events that user expects to happen and occurs frequently.</p>
+                                        <ul>
+                                            <li>Page loaded successfully</li>
+                                            <li>Login was successful</li>
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        Does not need feedback
+                                    </td>
+                                    <td>N/A</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <h5>Expected but critical success events</h5>
+                                        <p>Events that the user expects to succeed but it's success is important</p>
+                                        <ul>
+                                            <li>File uploaded successfully</li>
+                                            <li>File deleted successfully</li>
+                                            <li>Wiki changes are saved</li>
+
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        Use text with "text-success" within the vicinity of the action elements.. i.e: <span class="text-success">Files uploaded!</span>
+                                    </td>
+                                    <td>Auto dismiss</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <h5>Not critical error events</h5>
+                                        <p>Errors that are caused by events that will try to repeat action or are not breaking.</p>
+                                        <ul>
+                                            <li>Dropbox files could not be loaded</li>
+                                            <li>Collaborative editing is not available at the moment</li>
+
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        Use text with "text-danger" within the vicinity of the action elements. i.e: <span class="text-danger">Dropbox files could not be loaded!</span>
+                                    </td>
+                                    <td>Auto dismiss</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <h5>Input Errors</h5>
+                                        <p>Validation or input requirement errors that need the user to correct the error before moving on.</p>
+                                        <ul>
+                                            <li>First name is required</li>
+                                            <li>Please enter DELETE to remove this item.</li>
+                                            <li>This user name already exists</li>
+
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        Use text with "text-danger" using the form validation error example above. If not using a form place near input field. See example in Validation section above.
+                                    </td>
+                                    <td>Dismiss when user fixes error or cancels.</td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <h5>Critical Errors</h5>
+                                        <p>Errors that break the user workflow and may result in problems, mainly due to connectivity</p>
+                                        <ul>
+                                            <li>Profile settings could not be saved!</li>
+                                            <li>File did not upload</li>
+                                            <li>Wiki changes cannot be saved at the moment</li>
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        Use Growl box error
+                                    </td>
+                                    <td>Manual dismiss</td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+
+                        <div class="alert alert-danger m-t-lg"><b>Never use Javascript alerts!</b> (except for onunload events).</div>
+
+                    </div>
+
+                </div>
+
+                <h3 id="options">Buttons and Toggles </h3>
+                <h4 id="button-state" class="m-t-lg">Button State Feedback</h4>
+                <div class="m-b-md p-md osf-box box-round">
+                    <div class="row">
+                        <div class="col-xs-4">
+                            <h5>Regular Button</h5>
+                            <button class="btn btn-success">Save</button>
+                        </div>
+                        <div class="col-xs-4">
+                            <h5>Active State Button</h5>
+                            <button class="btn btn-default"><i class="text-muted">Saving...</i></button>
+                        </div>
+                        <div class="col-xs-4">
+                            <h5>Disabled State Button</h5>
+                            <button class="btn btn-default disabled"><span class="text-muted">Save</span></button>
+                        </div>
+                    </div>
+                </div>
+
+                        <pre><code class="language-markup">
+&lt;h5&gt;Regular Button&lt;/h5&gt;
+&lt;button class="btn btn-success"&gt;Save&lt;/button&gt;
+
+&lt;h5&gt;Active State Button&lt;/h5&gt;
+&lt;button class="btn btn-default"&gt;&lt;i class="text-muted"&gt;Saving...&lt;/i&gt;&lt;/button&gt;
+
+&lt;h5&gt;Disabled State Button&lt;/h5&gt;
+&lt;button class="btn btn-default disabled"&gt;&lt;span class="text-muted"&gt;Save&lt;/span&gt;&lt;/button&gt;
+
+                        </code></pre>
+
+                <h4 class="m-t-lg">Do not hide submit buttons if the button is not yet available and show save buttons if save is possible</h4>
+                <div class="m-b-md p-md osf-box box-round">
+                    <div class="row">
+                        <div class="col-xs-4">
+                            <h5 class="text-success"> Do this if action item is not possible (waiting for selection): </h5>
+                            <button class="btn btn-default">Cancel</button>
+                            <button class="btn btn-default disabled">Save</button>
+                        </div>
+                        <div class="col-xs-4">
+                            <h5 class="text-success"> Do this if action item is available but there are validation errors: </h5>
+                            <span class="text-danger">Please correct errors above and try saving again.</span>
+                            <button class="btn btn-default">Cancel</button>
+                            <button class="btn btn-success">Save</button>
+                        </div>
+                        <div class="col-xs-4">
+                            <h5 class="text-danger"> Don't do this: </h5>
+                            <button class="btn btn-default">Cancel</button>
+                            <span class="text-muted"> Submit button becomes visible magically later</span>
+                        </div>
+                    </div>
+                </div>
+
+                <p> Often you will give users the opportunity to make a selection to either immediately save an option or to save together with the rest of the form. Follow these guidelines when making your decision about which component to use:</p>
+                <div class="row">
+                    <div class="col-xs-12 m-b-lg">
+                        <h4 class="m-t-lg">Selection between on or off states.</h4>
+                        <p>Do not use single flip-flop buttons that show the current state. You can however use the action verbs and utilize a single button this way.</p>
+                        <div class="m-b-md p-md osf-box box-round">
+                            <div class="row">
+                                <div class="col-xs-4">
+                                    <h5 class="text-success">Do this:</h5>
+                                    <button class="btn btn-success"><i class="fa fa-eye"></i> Show</button>
+                                    <button class="btn btn-default"><i class="fa fa-eye-slash"></i> Hide</button>
+                                </div>
+                                <div class="col-xs-4">
+                                    <h5 class="text-danger">Don't do this:</h5>
+                                    <button class="btn btn-success"><i class="fa fa-eye"></i></button>
+                                    <button class="btn btn-default"><i class="fa fa-eye-slash"></i></button>
+                                </div>
+                                <div class="col-xs-4">
+                                    <h5 class="text-danger">Don't do this:</h5>
+                                    <select class="form-control">
+                                        <option>Show</option>
+                                        <option>Hide</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 class="m-t-xl">UI specific toggle with more than 2 states</h4>
+                        <p>If there is a UI component that shows more than 2 states and it's effects are immediate (such as toggling views) use a button group with a disabled button as label. This shows the user that these view changes belong together and work in a similar way.</p>
+                        <div class="m-b-md p-md osf-box box-round">
+                            <div class="row">
+                                <div class="col-xs-6">
+                                    <h5 class="text-success">Do this:</h5>
+                                    <div class="btn-group">
+                                        <button class="btn btn-default disabled">Show:</button>
+                                        <button class="btn btn-default">Peview</button>
+                                        <button class="btn btn-primary">Edit</button>
+                                        <button class="btn btn-primary">Compare</button>
+                                    </div>
+                                </div>
+                                <div class="col-xs-6">
+                                    <h5 class="text-danger">Don't do this:</h5>
+                                    <button class="btn btn-default">Preview</button>
+                                    <button class="btn btn-primary">Edit</button>
+                                    <button class="btn btn-primary">Compare</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 class="m-t-xl">Inline selection with multiple states without using Select</h4>
+                        <p>If for some reason you need to have users choose from multiple options that are not part of a UI change but still needs to be part of a toolbar you can use split button drop downs from Bootstrap.</p>
+                        <div class="row">
+                            <div class="col-xs-9">
+                                <!-- Split button -->
+                                <div class="btn-group m-b-lg">
+                                    <button type="button" class="btn btn-default">Detailed Options</button>
+                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+                                        <span class="caret"></span>
+                                        <span class="sr-only">Toggle Dropdown</span>
+                                    </button>
+                                    <ul class="dropdown-menu" role="menu">
+                                        <li class="active">
+                                            <a href="#">
+                                                <div>Selected option</div>
+                                                <div class="text-smaller">With some more details here.</div>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="#">
+                                                <div>Options can take HTML</div>
+                                                <div class="text-smaller">Make <b>Bold</b> or <i>Italic</i>.</div>
+                                            </a>
+                                        </li>
+                                        <li><a href="#">Something else here</a></li>
+                                        <li class="divider"></li>
+                                        <li><a href="#">Separated link</a></li>
+                                    </ul>
+                                </div>
+
+                                 <pre><code class="language-markup">
+ &lt;div class="btn-group m-b-lg"&gt;
+     &lt;button type="button" class="btn btn-default"&gt;Detailed Options&lt;/button&gt;
+     &lt;button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false"&gt;
+         &lt;span class="caret"&gt;&lt;/span&gt;
+         &lt;span class="sr-only"&gt;Toggle Dropdown&lt;/span&gt;
+     &lt;/button&gt;
+     &lt;ul class="dropdown-menu" role="menu"&gt;
+         &lt;li class="active"&gt;
+             &lt;a href="#"&gt;
+                 &lt;div&gt;Selected option&lt;/div&gt;
+                 &lt;div class="text-smaller"&gt;With some more details here.&lt;/div&gt;
+             &lt;/a&gt;
+         &lt;/li&gt;
+         &lt;li&gt;
+             &lt;a href="#"&gt;
+                 &lt;div&gt;Options can take HTML&lt;/div&gt;
+                 &lt;div class="text-smaller"&gt;Make &lt;b&gt;Bold&lt;/b&gt; or &lt;i&gt;Italic&lt;/i&gt;.&lt;/div&gt;
+             &lt;/a&gt;
+         &lt;/li&gt;
+         &lt;li&gt;&lt;a href="#"&gt;Something else here&lt;/a&gt;&lt;/li&gt;
+         &lt;li class="divider"&gt;&lt;/li&gt;
+         &lt;li&gt;&lt;a href="#"&gt;Separated link&lt;/a&gt;&lt;/li&gt;
+     &lt;/ul&gt;
+ &lt;/div&gt;
+                                 </code></pre>
+
+
+                            </div>
+                            <div class="col-xs-3">
+                                <a href=" http://getbootstrap.com/components/#btn-dropdowns-split" class="btn btn-sm btn-default"> Bootstrap Documentation </a>
+                            </div>
+                        </div>
+
+
+
+                        <h4 id="alphabetize" class="m-t-xl" id="alphabetize">When to Alphabetize?</h4>
+                        <p> When using drop downs, think carefully about the ordering of the options. Is the a hierarchical, or temporal order to the options that could be used to order them? Are they're certain options that users should see before others, assuming they are scanning down the list [this is actually just good practice whether they are using drop downs, check boxes, or radical buttons]? If none of these apply, then the drop down options should be in alphabetical order.</p>
+                        <div class="m-b-md p-md osf-box box-round">
+                            <div class="row">
+                                <div class="col-xs-4">
+                                    <p>Alphabetize general and equal structures like country names:</p>
+                                    <select class="form-control">
+                                        <option>Adipiscing</option>
+                                        <option>Amet</option>
+                                        <option>Consectetur</option>
+                                        <option>Dolor</option>
+                                        <option>Elit</option>
+                                        <option>Ipsum</option>
+                                        <option>Lorem</option>
+                                        <option>Mauris</option>
+                                        <option>Sit</option>
+                                    </select>
+                                </div>
+                                <div class="col-xs-4">
+                                    <p>Don't alphabetize order and hierarchy</p>
+                                    <select class="form-control">
+                                        <option>Read</option>
+                                        <option>Read & Write</option>
+                                        <option selected>Administrator</option>
+                                    </select>
+                                </div>
+                                <div class="col-xs-4">
+                                    <p>Break alphabetical order in favor of common uses</p>
+                                    <select class="form-control">
+                                        <option>Select Person</option>
+                                        <option>Me</option>
+                                        <option>Ally</option>
+                                        <option>Carlos</option>
+                                        <option>Jamal</option>
+                                        <option>Kim</option>
+                                        <option>Zach</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 id="inputs-forms" class="m-t-xl">Input Elements in Forms</h4>
+                        <p>If the input changes are not part of a UI element, use regular form standards. Below is a general guideline about what forms to use</p>
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td>
+                                        Multiple items can be selected and there are less than 6 items per group
+                                    </td>
+                                    <td>
+                                        <a href="http://getbootstrap.com/css/#checkboxes-and-radios"> Default Stacked Checkboxes</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Single item can be selected and there are less than 6 items per group
+                                    </td>
+                                    <td>
+                                        <a href="http://getbootstrap.com/css/#checkboxes-and-radios">Default Stacked radio buttons</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Multiple items can be selected and there are more than 6 items in a group
+                                    </td>
+                                    <td>
+                                        <a href="http://getbootstrap.com/css/#selects"> Multiple Select</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        Single item can be selected and there are more than 6 items in a group
+                                    </td>
+                                    <td>
+                                        <a href="http://getbootstrap.com/css/#selects">Default Select </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <div class="osf-box-lt p-lg">
+                            <h4> More tips:</h4>
+                            <ul>
+                                <li>If the individual items are shorter than ~10 characters, keep your checkboxes and radio buttons inline (if you have space).</li>
+                                <li>If the individual items are longer, keep each checkbox or radio button in its own line.</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+
+                <hr>
+                <h3 id="modals">Modals </h3>
+                <h4>When should you use modals?</h4>
+                <p class="m-t-lg"> Modals should be used in rare instances when the content needs to be in full focus of the user because</p>
+                <ul>
+                    <li> they are making an important decision.</li>
+                    <li> they are making a breaking change.</li>
+                    <li> they need to read critical information.</li>
+                </ul>
+
+                <p class="m-t-lg">When adding modals consider these questions:</p>
+                <ul>
+                    <li>Is the user going to expect a modal in this type of operation?</li>
+                    <li>Is the modal going to hide content that will still be needed</li>
+                    <li>Is this modal important enough? Can it be added within the page?</li>
+                    <li> How many modals are there in this work flow?</li>
+                    <li>Modals are easily dismissed so if the action is very important (i.e. new registration) create a multi page workflow instead. </li>
+                </ul>
+
+                <h4 class="m-t-lg">What to watch out for with modals</h4>
+                <p>When adding modals also be cognizant of these implementation practices:</p>
+                <ul>
+                    <li>Always include a dismiss icon on the right top corner</li>
+                    <li>Phrase the words in terms of the action, i.e. don't use "OK" if possible, use "I agree", or other verb.</li>
+                    <li>Modals should not include too much text. If your modal needs to scroll in regular screens, look for a different method.</li>
+                    <li>Check modal headers for narrow screen sizes by trying long names if the header is populated dynamically.</li>
+                </ul>
+
+
+                <hr>
+                <h3 id="tooltips">Using Tooltips</h3>
+                <p>Tooltips are a method where hovering over an element provides additional information in a hovering text element. It's an addition to the default <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Global_attributes/title">"title" html attribute </a>and default browser behavior.</p>
+                <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="right" title="Tooltip on right">Tooltip on right</button>
+                <p>The implementation and styling of tooltip should be exactly as <a href="http://getbootstrap.com/javascript/#tooltips">standard bootstrap</a>. Hovering over items is not always intutitive so don't use tooltips unless necessary.</p>
+                <h4> USE with items that users are expected to move their mouse to</h4>
+                <div class="m-b-md p-md osf-box-lt box-round">
+                    <div class="row">
+                        <div class="col-xs-6">
+                            <h5 class="text-success"> Do this: </h5>
+                            <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="right" title="Click to show the Side bar ">Show</button>
+                        </div>
+                        <div class="col-xs-6">
+                            <h5 class="text-danger">Don't do this (hint: hover on "item"):</h5>
+                            Some of these <span data-toggle="tooltip" data-placement="right" title="Click on the rows to see what actions are available.">rows</span> are editable.
+                        </div>
+                    </div>
+                </div>
+
+                <h4>USE if the tooltip text is in fact longer and useful.</h4>
+                <div class="m-b-md p-md osf-box-lt box-round">
+                    <div class="row">
+                        <div class="col-xs-6">
+                            <h5 class="text-success"> Do this: </h5>
+                            <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="right" title="Click to make your project viewable by anyone with or without an OSF account.">Make Public</button>
+                        </div>
+                        <div class="col-xs-6">
+                            <h5 class="text-danger">Don't do this: </h5>
+                            <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="right" title="Click to add collaborator.">Add Collaborator</button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <hr>
+                <h3 id="reading">Further Reading </h3>
+                <p>Resources below will give you good ideas about general UI principles. If the contents differ from guidance in this document remember that the Style Guide should be applied in OSF. </p>
+                <ul>
+                    <li>
+                        <b>Good UI </b> <a href="https://www.goodui.org/">https://www.goodui.org/</a>
+                    </li>
+                    <li>
+                        <b>IOS Design Basics</b> <a href="https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/MobileHIG/index.html">https://developer.apple.com/library/ios/documentation/UserExperience/Conceptual/MobileHIG/index.html</a>
+                    </li>
+                    <li>
+                        <b>Android Design Guides </b> <a href="https://developer.android.com/design/index.html">https://developer.android.com/design/index.html</a>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+        <div id="side-menu" class="col-sm-3 hidden-xs">
+            <ul class="nav nav-pills nav-stacked m-t-xl" data-spy="affix" data-offset-top="350" data-offset-bottom="200">
+                <li >
+                    <a href="#ui">UI Exampless</a>
+                    <ul class="nav subnav" >
+                        <li><a href="#auto-save">Auto Save</a></li>
+                        <li><a href="#form-validation">Form Validation</a></li>
+                        <li><a href="#error-reporting">Error Reporting</a></li>
+                        <li><a href="#button-state">Buttons and Toggles</a></li>
+                        <li><a href="#alphabetize">Alphabetize</a></li>
+                        <li><a href="#inputs-forms">Input in Forms</a></li>
+                        <li><a href="#modals">Modals</a></li>
+                        <li><a href="#tooltips">Tooltips</a></li>
+                        <li><a href="#reading">Further Reading</a></li>
+
+                    </ul>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap core JavaScript
+================================================== -->
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
+<script src="vendor/prism/prism.js"></script>
+<script src="script.js"></script>
+
+
+</body>
+</html>
