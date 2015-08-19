@@ -599,9 +599,11 @@ var ListViewModel = function(ContentModel, urls, modes) {
         }
         return true;
     });
-    self.hasMultiple = ko.computed(function() {
-        return self.contents().length > 1;
+
+    self.contentsLength = ko.computed(function() {
+        return self.contents().length;
     });
+
 
     self.hasValidProperty(true);
 
@@ -675,9 +677,11 @@ ListViewModel.prototype.removeContent = function(content) {
     var idx = this.contents().indexOf(content);
     //  If there is more then one model, then delete it.  If there is only one, then delete it and add another.
     this.contents.splice(idx, 1);
-    if (this.self.contents().length === 1) {
+    if (!this.contentsLength()) {
         this.contents.push(new this.ContentModel(this));
     }
+
+
     this.changeMessage(
         'Institution Removed',
         'text-danger',
@@ -756,7 +760,7 @@ var JobViewModel = function() {
 
     //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
     self.institutionObjectEmpty = ko.pureComputed(function() {
-        return self.institution() && self.department() && self.title();
+        return !self.institution() && !self.department() && !self.title();
     }, self);
 
     self.isValid = ko.computed(function() {
@@ -797,7 +801,7 @@ var SchoolViewModel = function() {
 
     //In addition to normal knockout field checks, check to see if institution is not filled out when other fields are
     self.institutionObjectEmpty = ko.pureComputed(function() {
-        return self.institution() && self.department() && self.degree();
+        return !self.institution() && !self.department() && !self.degree();
      });
 
     self.isValid = ko.computed(function() {
