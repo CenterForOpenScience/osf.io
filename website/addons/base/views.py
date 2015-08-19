@@ -21,12 +21,15 @@ from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
-from website.notifications.events.files import file_updated
+from website.notifications.events import signals as file_signals
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 from website.project.utils import serialize_node
+
+# import so that associated listener is instantiated and gets emails
+from website.notifications.events.files import FileEvent  # noqa
 
 
 @decorators.must_have_permission('write')
@@ -300,7 +303,7 @@ def create_waterbutler_log(payload, **kwargs):
 
         node_addon.create_waterbutler_log(auth, action, metadata)
 
-    file_updated(None, user=user, node=node, event_type=action, payload=payload)
+    file_signals.file_updated.send(user=user, node=node, event_type=action, payload=payload)
 
     return {'status': 'success'}
 
