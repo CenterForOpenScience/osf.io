@@ -29,7 +29,7 @@ def _url_val(val, obj, serializer, **kwargs):
         return val
 
 
-class LinksFieldWIthSelfLink(ser.Field):
+class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
     If the object to be serialized implements `get_absolute_url`, then the return value
     of that method is used for the `self` link.
@@ -68,11 +68,6 @@ class LinksFieldWIthSelfLink(ser.Field):
             ret['self'] = obj.get_absolute_url()
         return ret
 
-
-class LinksField(LinksFieldWIthSelfLink):
-    def to_representation(self, obj):
-        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
-        return ret
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
