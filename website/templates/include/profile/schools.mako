@@ -17,7 +17,7 @@
 
                     <div class="well well-sm sort-handle">
                         <span>Position {{ $index() + 1 }}</span>
-                        <span data-bind="visible: $parent.hasMultiple()">
+                        <span data-bind="visible: $parent.contentsLength() > 1">
                             [ drag to reorder ]
                         </span>
                         <a
