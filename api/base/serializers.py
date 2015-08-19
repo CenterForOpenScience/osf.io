@@ -28,6 +28,37 @@ def _url_val(val, obj, serializer, **kwargs):
     else:
         return val
 
+class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
+    """Returns a dict with a url and optional meta information."""
+
+    def __init__(self, view_name=None, **kwargs):
+        kwargs['read_only'] = True
+        kwargs['source'] = '*'
+        self.meta = kwargs.pop('meta', None)
+        super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
+
+    def get_url(self, obj, view_name, request, format):
+        """
+        Given an object, return the URL that hyperlinks to the object.
+
+        Returns null if lookup value is None
+        """
+
+        if getattr(obj, self.lookup_field) is None:
+            return None
+
+        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+
+    def to_representation(self, value):
+        url = super(HyperlinkedIdentityFieldWithMeta, self).to_representation(value)
+
+        if self.meta is not None:
+            meta = {}
+            for key in self.meta:
+                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+            self.meta = meta
+
+        return {'url': url, 'meta': self.meta}
 
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
