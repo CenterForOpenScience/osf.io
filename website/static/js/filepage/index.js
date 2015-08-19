@@ -162,41 +162,22 @@ var FileViewPage = {
         //This code was abstracted into a panel toggler at one point
         //it was removed and shoved here due to issues with mithrils caching and interacting
         //With other non-mithril components on the page
-        var panels;
+        ctrl.enableEditing();
+        var panels, shown;
         if (ctrl.editor) {
-            panels = [ctrl.editor, ctrl.revisions];
+            panels = [ctrl.editor];
         } else {
-            panels = [ctrl.revisions];
+            panels = [];
         }
 
-        var shown = panels.reduce(function(accu, panel) {
-            return accu + (panel.selected ? 1 : 0);
-        }, 0);
-
-        var panelsShown = shown + (ctrl.mfrIframeParent.is(':visible') ? 1 : 0);
+        var panelsShown = ((ctrl.editor && ctrl.editor.selected) ? 1 : 0) + (ctrl.mfrIframeParent.is(':visible') ? 1 : 0);
         var mfrIframeParentLayout;
         var fileViewPanelsLayout;
 
-        if (panelsShown === 3) {
-            // view | edit | revisions
-            mfrIframeParentLayout = 'col-sm-4';
-            fileViewPanelsLayout = 'col-sm-8';
-        } else if (panelsShown === 2) {
-            if (ctrl.mfrIframeParent.is(':visible')) {
-                if (ctrl.revisions.selected) {
-                    // view | revisions
-                    mfrIframeParentLayout = 'col-sm-8';
-                    fileViewPanelsLayout = 'col-sm-4';
-                } else {
-                    // view | edit
-                    mfrIframeParentLayout = 'col-sm-6';
-                    fileViewPanelsLayout = 'col-sm-6';
-                }
-            } else {
-                // edit | revisions
-                mfrIframeParentLayout = '';
-                fileViewPanelsLayout = 'col-sm-12';
-            }
+        if (panelsShown === 2) {
+            // view | edit 
+            mfrIframeParentLayout = 'col-sm-6';
+            fileViewPanelsLayout = 'col-sm-6';
         } else {
             // view
             if (ctrl.mfrIframeParent.is(':visible')) {
@@ -226,8 +207,8 @@ var FileViewPage = {
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
-            m('.btn-group.btn-group-sm.m-t-xs', [
-                m('.btn.btn-default.disabled', 'Toggle view: ')
+            m('.btn-group.btn-group-sm.m-t-xs' + (ctrl.editor ? '.btn-group' : ''), [
+               ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null
             ].concat(
                 m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
@@ -235,6 +216,7 @@ var FileViewPage = {
                         // atleast one button must remain enabled.
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
+                            ctrl.revisions.selected = false;
                         }
                     }
                 }, 'View')
@@ -244,15 +226,32 @@ var FileViewPage = {
                         onclick: function(e) {
                             e.preventDefault();
                             // atleast one button must remain enabled.
-                            if (!panel.selected || panelsShown > 1) {
+                            if ((!panel.selected || panelsShown > 1)) {
                                 panel.selected = !panel.selected;
+                                ctrl.revisions.selected = false;
                             }
                         }
                     }, panel.title);
                 })
-            ))
+            )),
+            m('.btn-group.m-t-xs', [
+                m('.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
+                    if (ctrl.mfrIframeParent.is(':visible')){
+                        ctrl.mfrIframeParent.toggle();
+                        ctrl.revisions.selected = true;
+                    }
+                    if (ctrl.editor && ctrl.editor.selected) {
+                        ctrl.revisions.selected = true;
+                        ctrl.editor.selected = false;
+                    }
+                }}, 'Revisions')
+            ])
         ]));
-
+        if (ctrl.revisions.selected){
+            return m('.file-view-page', m('.panel-toggler', [
+                m('.row', ctrl.revisions)
+            ]));
+        }
         return m('.file-view-page', m('.panel-toggler', [
             m('.row', panels.map(function(pane, index) {
                 ctrl.triggerResize();
