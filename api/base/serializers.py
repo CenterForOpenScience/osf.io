@@ -1,8 +1,8 @@
 import collections
 import re
 
-from django.utils import six
 from rest_framework import serializers as ser
+from rest_framework.fields import SkipField
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
@@ -223,7 +223,10 @@ class JSONAPISerializer(ser.Serializer):
         fields = [field for field in self.fields.values() if not field.write_only]
 
         for field in fields:
-            attribute = field.get_attribute(obj)
+            try:
+                attribute = field.get_attribute(obj)
+            except SkipField:
+                continue
 
             if attribute is None:
                 # We skip `to_representation` for `None` values so that
