@@ -3495,7 +3495,7 @@ class RegistrationApproval(EmailApprovableSanction):
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
-                'node': registered_from._id,
+                'node': register,
                 'registration_approval_id': self._id,
             },
             auth=Auth(user),
