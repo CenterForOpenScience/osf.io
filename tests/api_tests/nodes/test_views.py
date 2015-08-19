@@ -1369,14 +1369,13 @@ class TestNodeLogList(ApiTestCase):
         assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
 
     def test_log_create_on_public_project(self):
-        self.project = ProjectFactory()
-        datetime.datetime.strptime('2015-07-28 21:06:34.965114','%Y-%m-%d %H:%M:%S.%f')
+        # self.project = ProjectFactory()
+        datetime.datetime.strptime('2015-07-28 21:06:34.965114', '%Y-%m-%d %H:%M:%S.%f')
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        (len(res.json['data']), 1)
+        # (len(res.json['data']), 1)
         assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['date'], "%Y-%m-%dT%H:%M:%S.%f"),
                               self.public_project.logs[0].date)
-        # assert_equal(res.json['data'][0]['id'], self.public_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.public_project.logs[0].action)
         assert_equal(res.json['data'][0]['version'], self.public_project._version)
         assert_equal(res.json['data'][0]['name'], self.public_project.logs[0]._name)
@@ -1387,10 +1386,17 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['date'], "%Y-%m-%dT%H:%M:%S.%f"),
                               self.private_project.logs[0].date)
-        # assert_equal(res.json['data'][0]['id'], self.private_project.logs[0]._id)
+        assert_equal(res.json['data'][5]['id'], self.private_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.private_project.logs[0].action)
         assert_equal(res.json['data'][0]['version'], self.private_project.logs[0]._version)
         assert_equal(res.json['data'][0]['name'], self.private_project.logs[0]._name)
+
+    def test_public_project_created(self):
+        self.project = ProjectFactory()
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        (len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['action'], 'project_created')
 
     def test_private_project_created(self):
         self.project = ProjectFactory()
@@ -1399,36 +1405,76 @@ class TestNodeLogList(ApiTestCase):
         (len(res.json['data']), 1)
         assert_equal(res.json['data'][0]['action'], 'project_created')
 
-    def test_return_public_log_list_logged_in_user(self):
+    def test_return_public_log_tag_added(self):
         self.project = ProjectFactory()
-        res = self.app.get(self.url)
+        res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        ids = [each['id'] for each in res.json['data']]
-        assert_in(self.public._id, ids)
-        assert_not_in(self.private._id, ids)
+        assert_in(self.public_project.logs[0].TAG_ADDED, 'tag_added')
 
-    def test_return_private_log_logged_in_contributor(self):
-        res = self.app.get(self.url)
-        assert_equal(res.status_code, 200)
-        ids = [each['id'] for each in res.json['data']]
-        assert_in(self.public._id, ids)
-        assert_not_in(self.private._id, ids)
-
-    def test_return_private_node_log_logged_in_non_contributor(self):
+    def test_return_private_log_tag_added(self):
         self.project = ProjectFactory()
-        res = self.app.get(self.url, auth=self.non_contrib.auth)
-        ids = [each['id'] for each in res.json['data']]
-        assert_in(self.public._id, ids)
-        assert_not_in(self.private._id, ids)
-
-    def test_return_private_contributor_list_log_logged_in_non_contributor(self):
-        res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-    def test_return_public_node_log_list_logged_out_user(self):
-        res = self.app.get(self.url)
+        res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        ids = [each['id'] for each in res.json['data']]
-        assert_in(self.public._id, ids)
-        assert_not_in(self.private._id, ids)
+        assert_in(self.private_project.logs[0].TAG_ADDED, 'tag_added')
+
+    def test_return_public_log_tag_removed(self):
+        self.project = ProjectFactory()
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_in(self.public_project.logs[0].TAG_REMOVED, 'tag_removed')
+
+    def test_return_private_log_tag_removed(self):
+        self.project = ProjectFactory()
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in(self.private_project.logs[0].TAG_REMOVED, 'tag_removed')
+
+    def test_return_public_log_edit_title(self):
+        self.project = ProjectFactory()
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_in(self.public_project.logs[0].EDITED_TITLE, 'edit_title')
+
+    def test_return_private_log_edit_title(self):
+        self.project = ProjectFactory()
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in(self.private_project.logs[0].EDITED_TITLE, 'edit_title')
+
+    def test_return_public_log_contributor_removed(self):
+        self.project = ProjectFactory()
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_in(self.public_project.logs[0].CONTRIB_REMOVED, 'contributor_removed')
+
+    def test_return_private_log_contributor_removed(self):
+        self.project = ProjectFactory()
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in(self.private_project.logs[0].CONTRIB_REMOVED, 'contributor_removed')
+
+    def test_return_public_log_contributor_added(self):
+        self.project = ProjectFactory()
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_in(self.public_project.logs[0].CONTRIB_ADDED, 'contributor_added')
+
+    def test_return_private_log_contributor_added(self):
+        self.project = ProjectFactory()
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in(self.private_project.logs[0].CONTRIB_ADDED, 'contributor_added')
+
+    def test_return_public_log_made_public(self):
+        self.project = ProjectFactory()
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_in(self.public_project.logs[0].MADE_PUBLIC, 'made_public')
+
+    def test_return_private_log_made_private(self):
+        self.project = ProjectFactory()
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_in(self.public_project.logs[0].MADE_PRIVATE, 'made_private')
+
 
