@@ -1,11 +1,10 @@
 Hello ${user.fullname},
 
 % if is_initiator:
-You initiated a registration of your project ${project_name}.
+You initiated a registration of your project ${project_name}. The pending registration can be viewed here: ${registration_link}.
 % else:
-${initiated_by} has initiated a registration of your project ${project_name}.
+${initiated_by} has initiated a registration of your project ${project_name}. The pending registration can be viewed here: ${registration_link}.
 % endif 
-The pending registration can be viewed here: ${registration_link}.
 
 To approve this registration, click the following link: ${approval_link}
 
