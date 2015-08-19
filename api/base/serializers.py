@@ -4,8 +4,6 @@ import re
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
-from django.core.urlresolvers import NoReverseMatch
-from django.core.exceptions import ImproperlyConfigured
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively."""
