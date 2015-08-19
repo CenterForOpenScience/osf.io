@@ -575,18 +575,6 @@ footer {
     .student-image .main {
         font-size: 1.0em !important;
     }
-    .sign-in .btn-group {
-        width: 90%;
-        padding-left: 5%;
-    }
-    .sign-in .btn {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    #formLogin {
-        padding: 0;
-        width: 100%;
-    }
     .grey-pullout {
         padding-bottom: 90px;
     }
