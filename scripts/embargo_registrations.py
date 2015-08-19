@@ -32,6 +32,12 @@ def main(dry_run=True):
                 .format(embargo._id, parent_registration._id)
             )
             if not dry_run:
+                if parent_registration.is_deleted:
+                    # Clean up any registration failures during archiving
+                    embargo.forcibly_reject()
+                    embargo.save()
+                    continue
+
                 with TokuTransaction():
                     try:
                         embargo.state = models.Embargo.APPROVED
@@ -61,6 +67,12 @@ def main(dry_run=True):
                 .format(embargo._id, parent_registration._id)
             )
             if not dry_run:
+                if parent_registration.is_deleted:
+                    # Clean up any registration failures during archiving
+                    embargo.forcibly_reject()
+                    embargo.save()
+                    continue
+
                 with TokuTransaction():
                     try:
                         parent_registration.set_privacy('public')

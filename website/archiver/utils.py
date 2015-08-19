@@ -70,6 +70,8 @@ def handle_archive_fail(reason, src, dst, user, result):
         send_archiver_size_exceeded_mails(src, user, result)
     else:  # reason == ARCHIVER_UNCAUGHT_ERROR
         send_archiver_uncaught_error_mails(src, user, result)
+    dst.root.sanction.forcibly_reject()
+    dst.root.sanction.save()
     dst.root.delete_registration_tree(save=True)
 
 
