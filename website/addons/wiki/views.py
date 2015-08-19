@@ -375,7 +375,7 @@ def edit_wiki_settings(node, auth, **kwargs):
         ))
 
     try:
-        wiki_settings.set_editing(permissions, auth, True)
+        wiki_settings.set_editing(permissions, auth, log=True)
     except NodeStateError as e:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_short="Can't change privacy",

@@ -24,20 +24,8 @@ of <a class = "log-node-title-link overflow" data-bind="text:nodeTitle, attr: {h
 publicly editable
 </script>
 
-<script type="text/html" id="made_wiki_public_no_user">
-wiki of
-<a class = "log-node-title-link overflow" data-bind="text:nodeTitle, attr: {href: nodeUrl}"></a>
-made publicly editable
-</script>
-
 <script type="text/html" id="made_wiki_private">
 made the wiki
 of <a class = "log-node-title-link overflow" data-bind="text:nodeTitle, attr: {href: nodeUrl}"></a>
 privately editable
-</script>
-
-<script type="text/html" id="made_wiki_private_no_user">
-wiki of
-<a class = "log-node-title-link overflow" data-bind="text:nodeTitle, attr: {href: nodeUrl}"></a>
-made privately editable
 </script>

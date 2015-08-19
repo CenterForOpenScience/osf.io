@@ -34,7 +34,7 @@ if ($('#grid').length) {
 }
 
 //Initialize treebeard grid for wiki
-var ProjectWiki = require('js/wikiTreebeard.js');
+var ProjectWiki = require('js/wikiSettingsTreebeard.js');
 var wikiSettingsURL = ctx.node.urls.api  + 'wiki/settings/';
 var $wikiMsg = $('#configureWikiMessage');
 

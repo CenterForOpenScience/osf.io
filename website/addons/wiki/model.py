@@ -42,7 +42,7 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
     def set_editing(self, permissions, auth=None, log=False):
         """Set the editing permissions for this node.
 
-        :param auth: All the auth informtion including user, API key
+        :param auth: All the auth information including user, API key
         :param bool permissions: True = publicly editable
         :param bool save: Whether to save the privacy change
         :param bool log: Whether to add a NodeLog for the privacy change
@@ -94,7 +94,7 @@ class AddonWikiNodeSettings(AddonNodeSettingsBase):
         """
         if permissions == 'private':
             if self.is_publicly_editable:
-                self.set_editing(False, log=False)
+                self.set_editing(permissions=False, log=False)
                 return (
                     'The wiki of {name} is now only editable by write contributors.'.format(
                         name=node.title,

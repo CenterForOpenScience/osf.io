@@ -7,56 +7,11 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var Fangorn = require('js/fangorn');
 require('../css/fangorn.css');
+var PN = require('js/notificationsTreebeard.js');
 
+// TODO: Move shared code from notificationsTreebeard and other modules to a unified place
 
-// TODO: Refactor out shared utility code between this module, folder picker, and fangorn.js
-function resolveToggle(item) {
-    var toggleMinus = m('i.fa.fa-minus', ' '),
-        togglePlus = m('i.fa.fa-plus', ' ');
-
-    if (item.children.length > 0) {
-        if (item.open) {
-            return toggleMinus;
-        }
-        return togglePlus;
-    }
-    item.open = true;
-    return '';
-}
-
-function expandOnLoad() {
-    var tb = this;  // jshint ignore: line
-    for (var i = 0; i < tb.treeData.children.length; i++) {
-        var parent = tb.treeData.children[i];
-        tb.updateFolder(null, parent);
-        expandChildren(tb, parent.children);
-    }
-}
-
-
-function expandChildren(tb, children) {
-    var openParent = false;
-    for (var i = 0; i < children.length; i++) {
-        var child = children[i];
-        var parent = children[i].parent();
-        if (child.children.length > 0) {
-            expandChildren(tb, child.children);
-        }
-    }
-    if (openParent) {
-        openAncestors(tb, children[0]);
-    }
-}
-
-function openAncestors (tb, item) {
-    var parent = item.parent();
-    if(parent && parent.id > 0) {
-        tb.updateFolder(null, parent);
-        openAncestors(tb, parent);
-    }
-}
-
-function before_change_permissions(item, permission){
+function beforeChangePermissions(item, permission){
     var title = item.parent().data.node.title;
     if(permission === 'public'){
         bootbox.dialog({
@@ -73,21 +28,21 @@ function before_change_permissions(item, permission){
                 success: {
                     label: 'Apply',
                     className: 'btn-primary',
-                    callback: function() {change_permissions(item, permission);}
+                    callback: function() {changePermissions(item, permission);}
                 }
             }
         });
     }
     else {
-        change_permissions(item, permission);
+        changePermissions(item, permission);
     }
 }
 
-function change_permissions(item, permission) {
+function changePermissions(item, permission) {
     var id = item.parent().data.node.id;
 
-    $osf.putJSON(
-        build_path(item), {'permission': permission}
+    return $osf.putJSON(
+        buildPermissionsURL(item), {'permission': permission}
     ).done(function(){
         item.notify.update('Settings updated', 'notify-success', 1, 2000);
         item.data.select.permission = permission;
@@ -97,11 +52,11 @@ function change_permissions(item, permission) {
 }
 
 // Helper to build path
-function build_path(item) {
+function buildPermissionsURL(item) {
     var id = item.parent().data.node.id;
-    var permissions_change_path = '/api/v1/project/'+ id +
+    var permissionsChangePath = '/api/v1/project/'+ id +
         '/wiki/settings/';
-    return permissions_change_path;
+    return permissionsChangePath;
 }
 
 function ProjectWiki(data) {
@@ -111,7 +66,7 @@ function ProjectWiki(data) {
         divID: 'wgrid',
         filesData: data,
         rowHeight : 33,         // user can override or get from .tb-row height
-        resolveToggle: resolveToggle,
+        resolveToggle: PN.resolveToggle,
         paginate : false,       // Whether the applet starts with pagination or not.
         paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
         uploads : false,         // Turns dropzone on/off.
@@ -215,7 +170,7 @@ function ProjectWiki(data) {
                         return  m('div[style="padding-right:10px"]',
                             [m('select.form-control', {
                                 onchange: function(ev) {
-                                    before_change_permissions(item, ev.target.value);
+                                    beforeChangePermissions(item, ev.target.value);
                                 }},
                                 [
                                     m('option', {value: 'private', selected : item.data.select.permission === 'public' ? 'selected': ''}, 'Contributors (with write access)'),
@@ -240,7 +195,7 @@ function ProjectWiki(data) {
         }
     };
     var wgrid = new Treebeard(tbOptions);
-    expandOnLoad.call(wgrid.tbController);
+    PN.expandOnLoad.call(wgrid.tbController);
 }
 
 module.exports = ProjectWiki;
