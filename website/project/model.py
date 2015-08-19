@@ -1360,7 +1360,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ]
 
     def node_and_primary_descendants(self):
-        """Gets and return an iterator for a node and all of its primary (non-pointer) descendants.
+        """Return an iterator for a node and all of its primary (non-pointer) descendants.
 
         :param node Node: target Node
         """
@@ -3059,7 +3059,7 @@ class EmailApprovableSanction(Sanction):
     #     'reject': [REJECT_URL],
     #   }
     # }
-    stashed_urls = fields.DictionaryField()
+    stashed_urls = fields.DictionaryField(default=dict)
 
     @staticmethod
     def _format_or_empty(template, context):
