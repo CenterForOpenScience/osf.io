@@ -86,8 +86,7 @@
 
         % if not node['is_retracted']:
            % if not node['is_pending_registration']:
-              <div>
-               class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.</div>
+              <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.</div>
 
            % else:
               <div class="alert alert-info">This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this project</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
