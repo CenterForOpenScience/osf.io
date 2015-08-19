@@ -44,6 +44,7 @@ webcolors==1.4
 Django==1.8
 djangorestframework==3.1.1
 django-rest-swagger==0.3.2
+pyjwt==1.4.0
 
 # JSON API Formatting
 git+https://github.com/pattisdr/django-rest-framework-json-api.git@11d9747c2cdeda89240f8086a211b48394f95144
