@@ -604,7 +604,6 @@ var ListViewModel = function(ContentModel, urls, modes) {
         return self.contents().length;
     });
 
-
     self.hasValidProperty(true);
 
     /** Determine if any of the models in the list are dirty
@@ -680,7 +679,6 @@ ListViewModel.prototype.removeContent = function(content) {
     if (!this.contentsLength()) {
         this.contents.push(new this.ContentModel(this));
     }
-
 
     this.changeMessage(
         'Institution Removed',
