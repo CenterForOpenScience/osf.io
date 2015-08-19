@@ -6,7 +6,6 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 
 var widgetUtils = require('js/search_dashboard/widgetUtils');
-var SearchWidgetPanel = require('js/search_dashboard/searchWidget');
 var History = require('exports?History!history');
 var searchUtils = require('js/search_dashboard/searchUtils');
 var searchDashboard = {};
@@ -18,11 +17,11 @@ var searchDashboard = {};
  * @param {Object} ctrl: controller object automatically passed in by mithril
  * @return {m.component object}  initialised searchDashboard component
  */
-searchDashboard.view = function (ctrl, params, children) {
+searchDashboard.view = function (ctrl, params) {
     var grid = [];
     params.rowMap.forEach(function(row) {
         grid.push(m('.row', {}, row.map(function (widgetName) {
-            return m.component(SearchWidgetPanel, {
+            return m.component(SearchWidget, {
                 key: widgetName,
                 widget: ctrl.vm.widgets[widgetName],
                 vm: ctrl.vm
@@ -35,7 +34,7 @@ searchDashboard.view = function (ctrl, params, children) {
 
 searchDashboard.returnRow = function(widgetNames, vm){
     widgetNames.map(function(widgetName){
-        return m.component(SearchWidgetPanel, {
+        return m.component(SearchWidget, {
             key: vm.widgets[widgetName].id,
             widget: vm.widgets[widgetName],
             vm: vm});
@@ -119,6 +118,57 @@ searchDashboard.buildRequest = function(id, request, aggs){
         sort: m.prop(request.sort),
         sortMap: request.sortMap
     };
+};
+
+require('css/search_widget.css');
+
+function loadingIcon(){
+    return m('.spinner-loading-wrapper', [
+            m('.logo-spin.text-center', [
+                m('img[src=/static/img/logo_spin.png][alt=loader]')
+            ]),
+            m('p.m-t-sm.fg-load-message', ' Loading... ')
+        ]);
+}
+
+var SearchWidget = {
+    /**
+     * View function for a search widget panel. Returns search widget nicely wrapped in panel with minimize actions.
+     *
+     * @param {Object} ctrl: controller object automatically passed in by mithril
+     * @param {Object} params: params containing vm
+     * @return {object}  initialised SearchWidget component
+     */
+    view : function (ctrl, params) {
+        var dataReady = params.widget.display.reqRequests.every(function(req){
+            return params.vm.requests[req].complete();
+        });
+
+        return m(params.widget.size[0], {},
+            m('.panel.panel-default', {}, [
+                m('.panel-heading clearfix', {},[
+                    m('h3.panel-title',params.widget.title),
+                    m('.pull-right', {},
+                        m('a.widget-expand', {onclick: function () {
+                                ctrl.hidden(!ctrl.hidden());
+                                m.redraw(true);
+                            }},
+                            ctrl.hidden() ? m('i.fa.fa-angle-up') : m('i.fa.fa-angle-down')
+                        )
+                    )
+                ]),
+                m('.panel-body', {style: ctrl.hidden() ? 'display:none' : ''},
+                    dataReady ? params.widget.display.displayComponent(params.vm, params.widget) : loadingIcon())
+            ])
+        );
+    },
+
+    /**
+     * controller function for a search widget panel. Initialises component.
+     */
+    controller : function(params) {
+        this.hidden = m.prop(false);
+    }
 };
 
 module.exports = searchDashboard;
