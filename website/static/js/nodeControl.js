@@ -72,6 +72,7 @@ function setPermissions(permissions, nodeType) {
     var buttonText = permissions === PUBLIC ? 'Make Public' : 'Make Private';
 
     var message = MESSAGES[msgKey];
+
     var confirmModal = function (message) {
         bootbox.dialog({
             title: 'Warning',

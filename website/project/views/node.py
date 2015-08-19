@@ -301,12 +301,11 @@ def node_setting(auth, node, **kwargs):
     ], key=lambda addon: addon.full_name.lower())
 
     ret['addons_enabled'] = addons_enabled
-    ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
-
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-
     ret['addon_js'] = collect_node_config_js(node.get_addons())
+
+    ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
 
     ret['comments'] = {
         'level': node.comment_level,
