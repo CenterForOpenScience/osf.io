@@ -1360,7 +1360,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ]
 
     def node_and_primary_descendants(self):
-        """Gets an iterator for a node and all of its primary (non-pointer) descendants
+        """Gets and return an iterator for a node and all of its primary (non-pointer) descendants.
 
         :param node Node: target Node
         """
@@ -2806,7 +2806,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         approval = self._initiate_approval(user)
 
-        # TODO(hrybacki): Figureo ut why this is being called twice (only in tests maybe)
         self.registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_INITIATED,
             params={
