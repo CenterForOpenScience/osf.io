@@ -37,7 +37,7 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
         kwargs['read_only'] = True
         kwargs['source'] = '*'
         self.meta = kwargs.pop('meta', None)
-        self.link_type = kwargs.pop('link_type', None)
+        self.link_type = kwargs.pop('link_type', 'url')
         super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
 
     def get_url(self, obj, view_name, request, format):
@@ -238,8 +238,13 @@ class JSONAPISerializer(ser.Serializer):
             else:
                 from rest_framework.exceptions import APIException
                 ret['attributes'][field.field_name] = field.to_representation(attribute)
+        data = {}
 
-        return {'data': ret}
+        if envelope:
+            data[envelope] = ret
+        else:
+            data = ret
+        return ret
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
