@@ -217,8 +217,10 @@ searchUtils.updateFilter = function (vm, requests, filter, required) {
     requests.forEach(function(request) {
         if (required && request.requiredFilters.indexOf(filter) === -1) {
             request.requiredFilters.push(filter);
+            request.page = 0;
         } else if (request.optionalFilters.indexOf(filter) === -1 && !required) {
             request.optionalFilters.push(filter);
+            request.page = 0;
         }
     });
     searchUtils.runRequests(vm);
@@ -239,9 +241,11 @@ searchUtils.removeFilter = function (vm, requests, filter) {
         var optIndex = request.optionalFilters.indexOf(filter);
         if (reqIndex > -1) {
             request.requiredFilters.splice(reqIndex, 1);
+            request.page = 0; //reset the page will reset the results.
         }
         if (optIndex > -1) {
             request.optionalFilters.splice(optIndex, 1);
+            request.page = 0;
         }
     });
     searchUtils.runRequests(vm);

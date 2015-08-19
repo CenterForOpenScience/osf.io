@@ -99,6 +99,7 @@ var TitleBar = {
         return m('span', {}, [
             m('div.m-xs', {
                 'class': icon.projectIcons[nodeType],
+                style: 'cursor:pointer',
                 title: nodeType,
                 onclick: function() {
                     widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
