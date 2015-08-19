@@ -3102,6 +3102,7 @@ class EmailApprovableSanction(Sanction):
         mails.send_mail(
             user,
             template,
+            user=user,
             **context
         )
 
