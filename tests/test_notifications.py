@@ -844,9 +844,6 @@ class TestCompileSubscriptions(OsfTestCase):
         subs = emails.compile_subscriptions(node5, 'file_updated')
         assert_equal(subs, {'email_transactional': [], 'email_digest': [self.user_1._id], 'none': []})
 
-    def tearDown(self):
-        pass
-
 
 class TestMoveSubscription(OsfTestCase):
     def setUp(self):

@@ -93,9 +93,6 @@ class TestListOfFiles(OsfTestCase):
         utils.list_of_files(self.tree, files)
         assert_equal(['e', 'f', 'c', 'd'], files)
 
-    def tearDown(self):
-        pass
-
 
 class TestEventExists(OsfTestCase):
     # Add all possible called events here to ensure that the Event class can
@@ -138,9 +135,6 @@ class TestEventExists(OsfTestCase):
         event = event_register['addon_file_copied'](self.user, self.node, 'addon_file_copied', payload=file_copied_payload)
         assert_is_instance(event, AddonFileCopied)
 
-    def tearDown(self):
-        pass
-
 
 class TestSignalEvent(OsfTestCase):
     def setUp(self):
@@ -149,15 +143,12 @@ class TestSignalEvent(OsfTestCase):
         self.auth = Auth(user=self.user)
         self.node = factories.ProjectFactory(creator=self.user)
 
-    # @mock.patch('website.notifications.events.files.FileAdded.perform')
-    def test_event_signal(self):  # , mock_perform):
+    @mock.patch('website.notifications.events.files.FileAdded.perform')
+    def test_event_signal(self, mock_perform):
         signals.file_updated.send(
             user=self.user, node=self.node, event_type='file_added', payload=file_payload
         )
-        # assert_true(mock_perform.called)
-
-    def tearDown(self):
-        pass
+        assert_true(mock_perform.called)
 
 
 class TestFileUpdated(OsfTestCase):
@@ -187,9 +178,6 @@ class TestFileUpdated(OsfTestCase):
         # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
         assert_true(mock_notify.called)
 
-    def tearDown(self):
-        pass
-
 
 class TestFileAdded(OsfTestCase):
     def setUp(self):
@@ -217,9 +205,6 @@ class TestFileAdded(OsfTestCase):
         self.event.perform()
         # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
         assert_true(mock_notify.called)
-
-    def tearDown(self):
-        pass
 
 
 class TestFileRemoved(OsfTestCase):
@@ -250,9 +235,6 @@ class TestFileRemoved(OsfTestCase):
         # notify('exd', 'file_updated', 'user', self.project, datetime.utcnow())
         assert_true(mock_notify.called)
 
-    def tearDown(self):
-        pass
-
 
 class TestFolderCreated(OsfTestCase):
     def setUp(self):
@@ -280,9 +262,6 @@ class TestFolderCreated(OsfTestCase):
     def test_folder_added(self, mock_notify):
         self.event.perform()
         assert_true(mock_notify.called)
-
-    def tearDown(self):
-        pass
 
 
 class TestFolderFileRenamed(OsfTestCase):
@@ -442,9 +421,6 @@ class TestFileMoved(OsfTestCase):
         self.file_sub.save()
         self.event.perform()
         assert_equal(1, mock_store.call_count)
-
-    def tearDown(self):
-        pass
 
 
 class TestFileCopied(OsfTestCase):
@@ -620,9 +596,6 @@ class TestCategorizeUsers(OsfTestCase):
             self.event.event_type, self.event.node
         )
         assert_equal({email_transactional: [self.user_3._id], email_digest: [], 'none': []}, removed)
-
-    def tearDown(self):
-        pass
 
 wb_path = u'5581cb50a24f710b0f4623f9'
 materialized = u'/One/Paper13.txt'
