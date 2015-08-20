@@ -3100,7 +3100,7 @@ class EmailApprovableSanction(Sanction):
 
     def _send_approval_request_email(self, user, template, context):
         mails.send_mail(
-            self.initiated_by.username,
+            user,
             template,
             user=user,
             **context
@@ -3183,7 +3183,7 @@ class Embargo(EmailApprovableSanction):
             'node_id': registration._id
         }
 
-    def _approve_url_context(self, user_id):
+    def _approval_url_context(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
             registration = Node.find_one(Q('embargo', 'eq', self))
@@ -3498,7 +3498,7 @@ class RegistrationApproval(EmailApprovableSanction):
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
-                'node': registered_from._id,
+                'node': register._id,
                 'registration_approval_id': self._id,
             },
             auth=Auth(user),

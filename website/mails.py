@@ -105,7 +105,8 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         login=login,
         username=username,
         password=password,
-        mail_server=mail_server)
+        mail_server=mail_server
+    )
 
     if settings.USE_CELERY:
         return mailer.apply_async(kwargs=kwargs, link=callback)
