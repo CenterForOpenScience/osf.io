@@ -428,7 +428,7 @@ class TestUserUpdate(ApiTestCase):
         super(TestUserUpdate, self).tearDown()
 
     def test_patch_user_logged_out(self):
-        res = self.app.patch_json(self.user_one_url, {
+        res = self.app.patch_json_api(self.user_one_url, {
             'fullname': self.new_user_one_data['fullname'],
         }, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
@@ -438,24 +438,24 @@ class TestUserUpdate(ApiTestCase):
 
     def test_patch_user_without_required_field(self):
         # PATCH does not require required fields
-        res = self.app.patch_json(self.user_one_url, {
+        res = self.app.patch_json_api(self.user_one_url, {
             'family_name': self.new_user_one_data['family_name'],
         }, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['family_name'], self.new_user_one_data['family_name'])
+        assert_equal(res.json['data']['attributes']['family_name'], self.new_user_one_data['family_name'])
         self.user_one.reload()
         assert_equal(self.user_one.family_name, self.new_user_one_data['family_name'])
 
     def test_put_user_without_required_field(self):
         # PUT requires all required fields
-        res = self.app.put_json(self.user_one_url, {
+        res = self.app.put_json_api(self.user_one_url, {
             'family_name': self.new_user_one_data['family_name'],
         }, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_partial_patch_user_logged_in(self):
         # Test to make sure new fields are patched and old fields stay the same
-        res = self.app.patch_json(self.user_one_url, {
+        res = self.app.patch_json_api(self.user_one_url, {
             'id': self.user_one._id,
             'fullname': 'new_fullname',
             'gitHub': 'even_newer_github',
@@ -481,32 +481,32 @@ class TestUserUpdate(ApiTestCase):
 
     def test_partial_patch_user_logged_in(self):
         # Test to make sure new fields are patched and old fields stay the same
-        res = self.app.patch_json(self.user_one_url, {
+        res = self.app.patch_json_api(self.user_one_url, {
             'id': self.user_one._id,
             'fullname': 'new_fullname',
             'suffix': 'The Millionth'
         }, auth=self.user_one.auth)
         self.user_one.reload()
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['fullname'], 'new_fullname')
-        assert_equal(res.json['data']['suffix'], 'The Millionth')
-        assert_equal(res.json['data']['gitHub'], self.user_one.social['github'])
-        assert_equal(res.json['data']['given_name'], self.user_one.given_name)
-        assert_equal(res.json['data']['middle_names'], self.user_one.middle_names)
-        assert_equal(res.json['data']['family_name'], self.user_one.family_name)
-        assert_equal(res.json['data']['personal_website'], self.user_one.social['personal'])
-        assert_equal(res.json['data']['twitter'], self.user_one.social['twitter'])
-        assert_equal(res.json['data']['linkedIn'], self.user_one.social['linkedIn'])
-        assert_equal(res.json['data']['impactStory'], self.user_one.social['impactStory'])
-        assert_equal(res.json['data']['orcid'], self.user_one.social['orcid'])
-        assert_equal(res.json['data']['researcherId'], self.user_one.social['researcherId'])
+        assert_equal(res.json['data']['attributes']['fullname'], 'new_fullname')
+        assert_equal(res.json['data']['attributes']['suffix'], 'The Millionth')
+        assert_equal(res.json['data']['attributes']['gitHub'], self.user_one.social['github'])
+        assert_equal(res.json['data']['attributes']['given_name'], self.user_one.given_name)
+        assert_equal(res.json['data']['attributes']['middle_names'], self.user_one.middle_names)
+        assert_equal(res.json['data']['attributes']['family_name'], self.user_one.family_name)
+        assert_equal(res.json['data']['attributes']['personal_website'], self.user_one.social['personal'])
+        assert_equal(res.json['data']['attributes']['twitter'], self.user_one.social['twitter'])
+        assert_equal(res.json['data']['attributes']['linkedIn'], self.user_one.social['linkedIn'])
+        assert_equal(res.json['data']['attributes']['impactStory'], self.user_one.social['impactStory'])
+        assert_equal(res.json['data']['attributes']['orcid'], self.user_one.social['orcid'])
+        assert_equal(res.json['data']['attributes']['researcherId'], self.user_one.social['researcherId'])
         assert_equal(self.user_one.fullname, 'new_fullname')
         assert_equal(self.user_one.suffix, 'The Millionth')
         assert_equal(self.user_one.social['github'], self.user_one.social['github'])
 
     def test_partial_put_user_logged_in(self):
         # Test to make sure new fields are patched and old fields stay the same
-        res = self.app.put_json(self.user_one_url, {
+        res = self.app.put_json_api(self.user_one_url, {
             'id': self.user_one._id,
             'fullname': 'new_fullname',
             'gitHub': 'even_newer_github',
@@ -514,32 +514,32 @@ class TestUserUpdate(ApiTestCase):
         }, auth=self.user_one.auth)
         self.user_one.reload()
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['fullname'], 'new_fullname')
-        assert_equal(res.json['data']['suffix'], 'The Millionth')
-        assert_equal(res.json['data']['gitHub'], 'even_newer_github')
-        assert_equal(res.json['data']['given_name'], self.user_one.given_name)
-        assert_equal(res.json['data']['middle_names'], self.user_one.middle_names)
-        assert_equal(res.json['data']['family_name'], self.user_one.family_name)
+        assert_equal(res.json['data']['attributes']['fullname'], 'new_fullname')
+        assert_equal(res.json['data']['attributes']['suffix'], 'The Millionth')
+        assert_equal(res.json['data']['attributes']['gitHub'], 'even_newer_github')
+        assert_equal(res.json['data']['attributes']['given_name'], self.user_one.given_name)
+        assert_equal(res.json['data']['attributes']['middle_names'], self.user_one.middle_names)
+        assert_equal(res.json['data']['attributes']['family_name'], self.user_one.family_name)
         assert_equal(self.user_one.fullname, 'new_fullname')
         assert_equal(self.user_one.suffix, 'The Millionth')
         assert_equal(self.user_one.social['github'], 'even_newer_github')
 
     def test_put_user_logged_in(self):
         # Logged in user updates their user information via put
-        res = self.app.put_json(self.user_one_url, self.new_user_one_data, auth=self.user_one.auth)
+        res = self.app.put_json_api(self.user_one_url, self.new_user_one_data, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['fullname'], self.new_user_one_data['fullname'])
-        assert_equal(res.json['data']['given_name'], self.new_user_one_data['given_name'])
-        assert_equal(res.json['data']['middle_names'], self.new_user_one_data['middle_names'])
-        assert_equal(res.json['data']['family_name'], self.new_user_one_data['family_name'])
-        assert_equal(res.json['data']['suffix'], self.new_user_one_data['suffix'])
-        assert_equal(res.json['data']['gitHub'], self.new_user_one_data['gitHub'])
-        assert_equal(res.json['data']['personal_website'], self.new_user_one_data['personal_website'])
-        assert_equal(res.json['data']['twitter'], self.new_user_one_data['twitter'])
-        assert_equal(res.json['data']['linkedIn'], self.new_user_one_data['linkedIn'])
-        assert_equal(res.json['data']['impactStory'], self.new_user_one_data['impactStory'])
-        assert_equal(res.json['data']['orcid'], self.new_user_one_data['orcid'])
-        assert_equal(res.json['data']['researcherId'], self.new_user_one_data['researcherId'])
+        assert_equal(res.json['data']['attributes']['fullname'], self.new_user_one_data['fullname'])
+        assert_equal(res.json['data']['attributes']['given_name'], self.new_user_one_data['given_name'])
+        assert_equal(res.json['data']['attributes']['middle_names'], self.new_user_one_data['middle_names'])
+        assert_equal(res.json['data']['attributes']['family_name'], self.new_user_one_data['family_name'])
+        assert_equal(res.json['data']['attributes']['suffix'], self.new_user_one_data['suffix'])
+        assert_equal(res.json['data']['attributes']['gitHub'], self.new_user_one_data['gitHub'])
+        assert_equal(res.json['data']['attributes']['personal_website'], self.new_user_one_data['personal_website'])
+        assert_equal(res.json['data']['attributes']['twitter'], self.new_user_one_data['twitter'])
+        assert_equal(res.json['data']['attributes']['linkedIn'], self.new_user_one_data['linkedIn'])
+        assert_equal(res.json['data']['attributes']['impactStory'], self.new_user_one_data['impactStory'])
+        assert_equal(res.json['data']['attributes']['orcid'], self.new_user_one_data['orcid'])
+        assert_equal(res.json['data']['attributes']['researcherId'], self.new_user_one_data['researcherId'])
         self.user_one.reload()
         assert_equal(self.user_one.fullname, self.new_user_one_data['fullname'])
         assert_equal(self.user_one.given_name, self.new_user_one_data['given_name'])
@@ -555,7 +555,7 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(self.user_one.social['researcherId'], self.new_user_one_data['researcherId'])
 
     def test_put_user_logged_out(self):
-        res = self.app.put_json(self.user_one_url, self.new_user_one_data, expect_errors=True)
+        res = self.app.put_json_api(self.user_one_url, self.new_user_one_data, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
@@ -563,7 +563,7 @@ class TestUserUpdate(ApiTestCase):
 
     def test_put_wrong_user(self):
         # User tries to update someone else's user information via put
-        res = self.app.put_json(self.user_one_url, self.new_user_one_data, auth=self.user_two.auth, expect_errors=True)
+        res = self.app.put_json_api(self.user_one_url, self.new_user_one_data, auth=self.user_two.auth, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
         # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
         # a little better
@@ -571,7 +571,7 @@ class TestUserUpdate(ApiTestCase):
 
     def test_patch_wrong_user(self):
         # User tries to update someone else's user information via patch
-        res = self.app.patch_json(self.user_one_url, {
+        res = self.app.patch_json_api(self.user_one_url, {
             'fullname': self.new_user_one_data['fullname'],
         }, auth=self.user_two.auth, expect_errors=True)
         # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
@@ -585,13 +585,13 @@ class TestUserUpdate(ApiTestCase):
         """Post request should update resource, and any HTML in fields should be stripped"""
         bad_fullname = 'Malcolm <strong>X</strong>'
         bad_family_name = 'X <script>alert("is")</script> a cool name'
-        res = self.app.patch_json(self.user_one_url, {
+        res = self.app.patch_json_api(self.user_one_url, {
             'fullname': bad_fullname,
             'family_name': bad_family_name,
         }, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['fullname'], strip_html(bad_fullname))
-        assert_equal(res.json['data']['family_name'], strip_html(bad_family_name))
+        assert_equal(res.json['data']['attributes']['fullname'], strip_html(bad_fullname))
+        assert_equal(res.json['data']['attributes']['family_name'], strip_html(bad_family_name))
 
 
 class TestDeactivatedUser(ApiTestCase):
