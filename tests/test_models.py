@@ -1631,6 +1631,49 @@ class TestNode(OsfTestCase):
             self.node.set_visible(user=self.user, visible=False, auth=None)
             assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
+    def test_contributor_manage_visibility(self):
+
+        reg_user1 = UserFactory()
+        #This makes sure manage_contributors uses set_visible so visibility for contributors is added before visibility
+        #for other contributors is removed ensuring there is always at least one visible contributor
+        self.node.add_contributor(contributor=self.user, permissions=['read', 'write','admin'], auth=self.consolidate_auth)
+        self.node.add_contributor(contributor=reg_user1, permissions=['read', 'write','admin'], auth=self.consolidate_auth)
+
+        self.node.manage_contributors(
+            user_dicts=[
+                    {'id': self.user._id, 'permission': 'admin', 'visible': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'visible': False},
+                ],
+            auth=self.consolidate_auth,
+            save=True
+        )
+        self.node.manage_contributors(
+            user_dicts=[
+                    {'id': self.user._id, 'permission': 'admin', 'visible': False},
+                    {'id': reg_user1._id, 'permission': 'admin', 'visible': True},
+            ],
+            auth=self.consolidate_auth,
+            save=True
+        )
+
+        assert_equal(len(self.node.visible_contributor_ids),1)
+
+    def test_contributor_set_visibility_validation(self):
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        self.node.add_contributors(
+                        [
+                {'user': reg_user1, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': False},
+            ]
+        )
+        print(self.node.visible_contributor_ids)
+        with assert_raises(ValueError) as e:
+            self.node.set_visible(user=reg_user1, visible=False, auth=None)
+            self.node.set_visible(user=self.user, visible=False, auth=None)
+            assert_equal(e.exception.message, 'Must have at least one visible contributor')
+
 class TestNodeTraversals(OsfTestCase):
 
     def setUp(self):
@@ -1659,6 +1702,25 @@ class TestNodeTraversals(OsfTestCase):
         assert_equal(len(descendants), 2)  # two immediate children
         assert_equal(len(descendants[0][1]), 1)  # only one visible child of comp1
         assert_equal(len(descendants[1][1]), 0)  # don't auto-include comp2's children
+
+    def test_delete_registration_tree(self):
+        proj = NodeFactory()
+        NodeFactory(parent=proj)
+        comp2 = NodeFactory(parent=proj)
+        NodeFactory(parent=comp2)
+        reg = RegistrationFactory(project=proj)
+        reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
+        reg.delete_registration_tree(save=True)
+        assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
+
+    def test_delete_registration_tree_deletes_backrefs(self):
+        proj = NodeFactory()
+        NodeFactory(parent=proj)
+        comp2 = NodeFactory(parent=proj)
+        NodeFactory(parent=comp2)
+        reg = RegistrationFactory(project=proj)
+        reg.delete_registration_tree(save=True)
+        assert_false(proj.node__registrations)
 
     def test_get_descendants_recursive(self):
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
@@ -2517,8 +2579,7 @@ class TestProject(OsfTestCase):
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
-        assert_false(registration.embargo_end_date)
-        assert_true(registration.pending_embargo)
+        assert_true(registration.is_pending_embargo)
 
         func = lambda: registration.set_privacy('public', auth=self.consolidate_auth)
         assert_raises(NodeStateError, func)
@@ -2531,19 +2592,16 @@ class TestProject(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         registration.save()
-        assert_false(registration.embargo_end_date)
-        assert_true(registration.pending_embargo)
+        assert_true(registration.is_pending_embargo)
 
         approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
         registration.embargo.approve_embargo(self.user, approval_token)
-        assert_true(registration.embargo_end_date)
-        assert_false(registration.pending_embargo)
+        assert_false(registration.is_pending_embargo)
 
         registration.set_privacy('public', auth=self.consolidate_auth)
         registration.save()
-        assert_false(registration.embargo_end_date)
-        assert_false(registration.pending_embargo)
-        assert_equal(registration.embargo.state, Embargo.CANCELLED)
+        assert_false(registration.is_pending_embargo)
+        assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_true(registration.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
 
@@ -3097,11 +3155,8 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(registration.creator, self.user)
 
     def test_logs(self):
-        # Registered node has all logs except the Project Registered log
+        # Registered node has all logs except for registration approval initiated
         assert_equal(self.registration.logs, self.project.logs[:-1])
-
-    def test_registration_log(self):
-        assert_equal(self.project.logs[-1].action, 'project_registered')
 
     def test_tags(self):
         assert_equal(self.registration.tags, self.project.tags)

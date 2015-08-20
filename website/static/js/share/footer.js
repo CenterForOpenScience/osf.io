@@ -2,53 +2,46 @@ var m = require('mithril');
 var utils = require('./utils');
 var MESSAGES = JSON.parse(require('raw!./messages.json'));
 
-var Footer = {};
-
-Footer.view = function(ctrl) {
-    return m('', [
-        m('.col-xs-12.col-lg-10.col-lg-offset-1',
-            m('ul.provider-footer',
-                {
-                    style: {
-                        'list-style-type': 'none'
-                    }
-                },
-                ctrl.renderProviders()
-            )
-        ),
-        m('.row', m('.col-md-12', {style: 'padding-top: 30px;'}, m('span', m.trust(MESSAGES.ABOUTSHARE))))
-    ]);
+var Footer = {
+    view: function(ctrl, params) {
+        return m('', [
+            m('.row', m('.col-xs-12.col-lg-10.col-lg-offset-1', m.component(ProviderList, params))),
+            m('.row', m('.col-md-12', {style: {paddingTop: '30px'}}, m('span', m.trust(MESSAGES.ABOUTSHARE))))
+        ]);
+    }
 };
 
-Footer.controller = function(vm) {
-    var self = this;
-    self.vm = vm;
+var ProviderList = {
+    view: function(ctrl, params) {
+        var vm = params.vm;
+        return m('ul.provider-footer', vm.showFooter ? $.map(vm.sortProviders(), function(provider, index) {
+            return m.component(Provider, {vm: vm, provider: provider});
+        }) : null);
+    }
+};
 
-    self.renderProvider = function(result, index) {
-
-        return m('li.provider-filter', {
-                onclick: function(cb){
-                    self.vm.query(self.vm.query() === '' ? '*' : self.vm.query());
-                    self.vm.showFooter = false;
-                    utils.updateFilter(self.vm, 'source:' + result.short_name);
-                }
-            },
-            m('', [
-                m('img', {
-                    src: result.favicon,
-                    style: {
-                        width: '16px',
-                        height: '16px'
+var Provider = {
+    view: function(ctrl, params) {
+        var vm = params.vm;
+        var provider = params.provider;
+        return m(
+            'li.provider-filter', [
+                m('a.provider-filter', {
+                    href: '#',
+                    onclick: function(cb){
+                        vm.query(vm.query() === '' ? '*' : vm.query());
+                        vm.showFooter = false;
+                        utils.updateFilter(vm, 'match:shareProperties.source:' + provider.short_name);
                     }
-                }), ' ',
-                result.long_name]
-             )
-        );
-    };
-
-    self.renderProviders = function() {
-        return self.vm.showFooter ? $.map(self.vm.sortProviders(), self.renderProvider) : null;
-    };
+                }, [
+                    m('img.provider-favicon', {
+                        src: provider.favicon,
+                        alt: 'favicon for ' + provider.long_name
+                    }), ' ',
+                    provider.long_name
+                ])
+        ]);
+    }
 };
 
 module.exports = Footer;
