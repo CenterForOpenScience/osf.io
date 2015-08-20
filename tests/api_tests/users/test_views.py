@@ -264,6 +264,7 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
         res = self.app.get(url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], self.user_two._id)
 
         ids = {each['id'] for each in res.json['data']}
         assert_in(self.public_project_user_one._id, ids)
@@ -327,7 +328,7 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         assert_not_in(self.deleted_folder._id, ids)
         assert_not_in(self.deleted_project_user_one._id, ids)
 
-    def test_get_200_path_users_user_id_unauthorized_user(self):
+    def test_get_200_path_users_user_id_nodes_unauthorized_user(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth=self.user_two.auth)
         assert_equal(res.status_code, 200)
@@ -593,3 +594,19 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['fullname'], strip_html(bad_fullname))
         assert_equal(res.json['data']['family_name'], strip_html(bad_family_name))
+
+
+class TestDeactivatedUser(ApiTestCase):
+
+    def setUp(self):
+        super(TestDeactivatedUser, self).setUp()
+        self.user = AuthUserFactory()
+
+    def test_deactivated_user_returns_410_response(self):
+        url = '/{}users/{}/'.format(API_BASE, self.user._id)
+        res = self.app.get(url, auth=self.user.auth , expect_errors=False)
+        assert_equal(res.status_code, 200)
+        self.user.is_disabled = True
+        self.user.save()
+        res = self.app.get(url, auth=self.user.auth , expect_errors=True)
+        assert_equal(res.status_code, 410)

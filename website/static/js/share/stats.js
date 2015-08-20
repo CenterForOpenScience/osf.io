@@ -90,6 +90,9 @@ function timeGraph(data, vm) {
                 }
             }
         },
+        padding: {
+          right: 15
+        },
         legend: {
             show: false
         },
@@ -129,7 +132,7 @@ Stats.sourcesByDatesAgg = function () {
 /* Helper function for dealing with epoch times returned by elasticsearch */
 Stats.timeSinceEpochInMsToMMDDYY = function (timeSinceEpochInMs) {
     var d = new Date(timeSinceEpochInMs);
-    return (d.getMonth()+1).toString() + '/' + (d.getDate()+1).toString() + '/' + d.getFullYear().toString().substring(2);
+    return (d.getMonth()+1).toString() + '/' + d.getDate().toString() + '/' + d.getFullYear().toString().substring(2);
 };
 
 /* Parses elasticsearch data so that it can be fed into a c3 donut graph */
