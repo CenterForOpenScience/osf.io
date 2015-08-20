@@ -3100,7 +3100,7 @@ class EmailApprovableSanction(Sanction):
 
     def _send_approval_request_email(self, user, template, context):
         mails.send_mail(
-            self.initiated_by.username,
+            user,
             template,
             user=user,
             **context
@@ -3498,7 +3498,7 @@ class RegistrationApproval(EmailApprovableSanction):
         registered_from.add_log(
             action=NodeLog.REGISTRATION_APPROVAL_CANCELLED,
             params={
-                'node': register,
+                'node': register._id,
                 'registration_approval_id': self._id,
             },
             auth=Auth(user),
