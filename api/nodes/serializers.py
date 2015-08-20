@@ -4,7 +4,6 @@ from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
-from ast import literal_eval
 
 class NodeTag(object):
     def __init__(self, tag):
