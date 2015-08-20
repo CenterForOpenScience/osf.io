@@ -46,8 +46,8 @@
                    <span class="text-muted"
                          data-bind="html:  $root.showSecret() ? clientSecret : '&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;'"></span>
                     <a class="btn btn-default btn-xs m-l-sm " data-bind="click: $root.toggleDisplay">
-                        <span data-bind="visible: $root.showSecret()"><i class="fa fa-eye-slash"></i> Show</span>
-                        <span data-bind="visible: !$root.showSecret()"><i class="fa fa-eye"></i> Hide</span>
+                        <span data-bind="visible: $root.showSecret()"><i class="fa fa-eye-slash"></i> Hide</span>
+                        <span data-bind="visible: !$root.showSecret()"><i class="fa fa-eye"></i> Show</span>
                     </a>
                 </p>
             </div>
