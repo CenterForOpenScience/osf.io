@@ -237,4 +237,4 @@ WELCOME = Mail(
 )
 
 
-EMPTY = Mail('empty', subject='Message from an OSF script')
+EMPTY = Mail('empty', subject='${subject}')
