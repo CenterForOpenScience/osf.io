@@ -5,6 +5,7 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 var $osf = require('./osfHelpers');
 var clipboard = require('./clipboard');
+require('js/osfToggleHeight');
 
 require('bootstrap-editable');
 
@@ -146,6 +147,7 @@ function ViewModel(url, nodeIsPublic) {
         clipboard(target[0]);
         $tr.find('.remove-private-link').tooltip();
         setupEditable(elm, data);
+        $('.private-link-list').osfToggleHeight({height: 25});
     };
 
 }
