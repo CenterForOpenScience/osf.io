@@ -5,10 +5,12 @@ from framework.auth.core import Auth
 from rest_framework import exceptions
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
+
 class NodeTag(object):
     def __init__(self, tag):
         assert tag is not None
         self._id = tag
+
 
 class NodeTagField(ser.Field):
 
@@ -19,6 +21,7 @@ class NodeTagField(ser.Field):
 
     def to_internal_value(self, data):
         return data
+
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
