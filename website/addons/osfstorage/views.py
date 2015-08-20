@@ -257,7 +257,7 @@ def osfstorage_rented(file_node, auth, **kwargs):
     permission = 'read'
     if kwargs['node'].has_permission(auth.user, permissions.ADMIN):
         permission = 'admin'
-    return {'renter': file_node.rented,
+    return {'renter': file_node.renter._id if file_node.renter else '',
             'permission': permission}
 
 @must_have_permission(permissions.ADMIN)

@@ -241,12 +241,6 @@ class OsfStorageFileNode(StoredObject):
     def node(self):
         return self.node_settings.owner
 
-    @property
-    def rented(self):
-        if self.renter:
-            return self.renter._id
-        return ''
-
     def rent(self, renter):
         self.renter = renter
         self.save()

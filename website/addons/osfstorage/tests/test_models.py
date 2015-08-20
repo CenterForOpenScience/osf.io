@@ -337,14 +337,14 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(to_move.name, 'Tuna')
         assert_equal(moved.parent, move_to)
 
-    def test_rent(self):
+    def test_rent_and_return(self):
         name_user = self.user._id
-        self.node_settings.root_node.rent(self.user)
-        assert_equal(name_user, self.node_settings.root_node.rented)
+        folder = self.node_settings.root_node
+        folder.rent(self.user)
+        assert_equal(name_user, folder.renter._id if folder.renter else '')
 
-    def test_return_rent(self):
         self.node_settings.root_node.return_rent()
-        assert_equal('', self.node_settings.root_node.rented)
+        assert_equal('', folder.renter._id if folder.renter else '')
 
     @unittest.skip
     def test_move_folder(self):
