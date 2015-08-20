@@ -84,7 +84,7 @@ function ProjectNotifications(data) {
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         divID: 'grid',
         filesData: data,
-        resolveRows : function notificationResolveRows(item){
+        resolveRows: function notificationResolveRows(item){
             var columns = [];
             var iconcss = '';
             // check if should not get icon

@@ -5,7 +5,6 @@ var bootbox = require('bootbox');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
-var Fangorn = require('js/fangorn');
 require('../css/fangorn.css');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
@@ -71,7 +70,7 @@ function ProjectWiki(data) {
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         filesData: data,
         divID: 'wgrid',
-        resolveRows : function wikiResolveRows(item){
+        resolveRows: function wikiResolveRows(item){
             var columns = [];
             var iconcss = '';
             // check if should not get icon
@@ -105,7 +104,6 @@ function ProjectWiki(data) {
                     sortInclude : false,
                     custom : function() {
                         return 'Who can edit';
-
                     }
                 },
                 {
