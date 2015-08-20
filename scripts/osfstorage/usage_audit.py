@@ -76,14 +76,14 @@ def main(send_email=False):
 
     for collection, limit in ((users, USER_LIMIT), (projects, PROJECT_LIMIT)):
         for item, (used, deleted) in filter(filter_factory(limit), collection.items()):
-            line = '{!r} has exceeded the limit {:.2f}GBs ({}b) with {:.2f}GBs ({}b) used and {:.2f}GBs ({}b) deleted.'.format(item, limit, limit / GBs, used / GBs, used, deleted / GBs, deleted)
+            line = '{!r} has exceeded the limit {:.2f}GBs ({}b) with {:.2f}GBs ({}b) used and {:.2f}GBs ({}b) deleted.'.format(item, limit / GBs, limit, used / GBs, used, deleted / GBs, deleted)
             logger.info(line)
             lines.append(line)
 
     if lines:
         if send_email:
             logger.info('Sending email...'.format(len(lines)))
-            mails.send_mail('support@osf.io', mails.EMPTY, body='\n'.join(lines))
+            mails.send_mail('support@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit')
         else:
             logger.info('send_email is False, not sending email'.format(len(lines)))
         logger.info('{} offending projects and users found'.format(len(lines)))
