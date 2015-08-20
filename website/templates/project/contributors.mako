@@ -136,7 +136,7 @@
                             </div>
                         </td>
                         <td class="col-sm-4">
-                           <ul class="private-link-list narrow-list list-overflow" data-bind="foreach: nodesList, attr: {id: 'private-link-list-' + $index() }">
+                           <ul class="private-link-list narrow-list" data-bind="foreach: nodesList, attr: {id: 'private-link-list-' + $index() }">
                                <li data-bind="style:{marginLeft: $data.scale}">
                                   <span data-bind="getIcon: $data.category"></span>
                                   <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
