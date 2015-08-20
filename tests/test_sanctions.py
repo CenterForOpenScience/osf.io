@@ -197,8 +197,12 @@ class TestEmailApprovableSanction(SanctionsTestCase):
     def test__notify_non_authorizer(self, mock_send):
         self.sanction._notify_non_authorizer(self.user)
         assert_true(mock_send.called)
-        args, kwargs = mock_send.call_args
-        assert_true(self.user.username in args)
+        mock_send.assert_called_with(
+            self.user,
+            self.sanction.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,
+            user=self.user,
+            **{}
+        )
 
     @mock.patch('website.mails.send_mail')
     def test_ask(self, mock_send):
