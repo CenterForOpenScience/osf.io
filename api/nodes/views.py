@@ -308,12 +308,15 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             'waterbutler_type': 'file',
             'item_type': item['kind'],
         }
-
-        if file_item['item_type'] != 'folder':
-            file_item['content_type'] = item['contentType']
-            file_item['modified'] = item['modified']
-            file_item['size'] = item['size']
-            file_item['extra'] = item['extra']
+        if file_item['item_type'] == 'folder':
+            file_item['metadata'] = {}
+        else:
+            file_item['metadata'] = {
+                'content_type': item['contentType'],
+                'modified': item['modified'],
+                'size': item['size'],
+                'extra': item['extra'],
+            }
         return file_item
 
     def get_queryset(self):
