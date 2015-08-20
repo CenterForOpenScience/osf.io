@@ -3298,7 +3298,7 @@ class Retraction(EmailApprovableSanction):
             'node_id': registration._id
         }
 
-    def _approve_url_context(self, user_id):
+    def _approval_url_context(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
             registration = Node.find_one(Q('retraction', 'eq', self))
