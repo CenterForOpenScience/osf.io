@@ -118,6 +118,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'size': None,
             u'modified': None,
             u'contentType': None,
+            u'renter': '',
         })
 
         version = file.create_version(
@@ -141,6 +142,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             'size': 1234,
             'modified': None,
             'contentType': 'text/plain',
+            'renter': '',
         })
 
         date = datetime.datetime.now()
@@ -158,6 +160,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             'size': 1234,
             'modified': date.isoformat(),
             'contentType': 'text/plain',
+            'renter': '',
         })
 
     def test_get_child_by_name(self):
@@ -338,13 +341,12 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(moved.parent, move_to)
 
     def test_rent_and_return(self):
-        name_user = self.user._id
         folder = self.node_settings.root_node
         folder.rent(self.user)
-        assert_equal(name_user, folder.renter._id if folder.renter else '')
+        assert_equal(self.user, folder.renter)
 
         self.node_settings.root_node.return_rent()
-        assert_equal('', folder.renter._id if folder.renter else '')
+        assert_equal(None, folder.renter)
 
     @unittest.skip
     def test_move_folder(self):
