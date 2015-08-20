@@ -200,6 +200,28 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         args, kwargs = mock_send.call_args
         assert_true(self.user.username in args)
 
+    @mock.patch('website.mails.send_mail')
+    def test_ask(self, mock_send):
+        group = [self.user]
+        for i in range(5):
+            u = factories.UserFactory()
+            group.append(u)
+        self.sanction.ask(group)
+        authorizer = group.pop(0)
+        mock_send.assert_any_call(
+            authorizer.username,
+            self.sanction.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,
+            user=authorizer,
+            **{}
+        )
+        for user in group:
+            mock_send.assert_any_call(
+                user.username,
+                self.sanction.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,
+                user=user,
+                **{}
+            )
+
 
 class TestRegistrationApproval(OsfTestCase):
 

@@ -17,7 +17,7 @@ Embargo for
 
 <script type="text/html" id="embargo_cancelled">
 cancelled embargo of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="embargo_completed">
@@ -43,7 +43,7 @@ approved retraction of
 
 <script type="text/html" id="retraction_cancelled">
 cancelled retraction of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="retraction_initiated">
@@ -59,7 +59,7 @@ initiated registration of
 
 <script type="text/html" id="registration_cancelled">
 cancelled registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="registration_approved">
