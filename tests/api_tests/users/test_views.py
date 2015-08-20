@@ -4,7 +4,7 @@ from nose.tools import *  # flake8: noqa
 from website.models import Node
 from tests.base import ApiTestCase
 from api.base.settings.defaults import API_BASE
-from tests.factories import UserFactory, ProjectFactory, FolderFactory, DashboardFactory, AuthUserFactory
+from tests.factories import ProjectFactory, FolderFactory, DashboardFactory, AuthUserFactory
 from website.util.sanitize import strip_html
 
 
@@ -266,15 +266,6 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
-        ids = {each['id'] for each in res.json['data']}
-        assert_in(self.public_project_user_one._id, ids)
-        assert_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.public_project_user_two._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.deleted_folder._id, ids)
-        assert_not_in(self.deleted_project_user_one._id, ids)
-
     def test_get_200_path_users_me_nodes_user_logged_in(self):
         url = "/{}users/me/nodes/".format(API_BASE, self.user_one._id)
         res = self.app.get(url, auth=self.user_one.auth)
@@ -389,19 +380,22 @@ class TestUserUpdate(ApiTestCase):
     def setUp(self):
         super(TestUserUpdate, self).setUp()
 
-        self.user_one = AuthUserFactory.build()
-        self.user_one.fullname = 'Martin Luther King Jr.'
-        self.user_one.given_name = 'Martin'
-        self.user_one.family_name = 'King'
-        self.user_one.suffix = 'Jr.'
-        self.user_one.social['github'] = 'userOneGithub'
-        self.user_one.social['scholar'] = 'userOneScholar'
-        self.user_one.social['personal'] = 'http://www.useronepersonalwebsite.com'
-        self.user_one.social['twitter'] = 'userOneTwitter'
-        self.user_one.social['linkedIn'] = 'userOneLinkedIn'
-        self.user_one.social['impactStory'] = 'userOneImpactStory'
-        self.user_one.social['orcid'] = 'userOneOrcid'
-        self.user_one.social['researcherId'] = 'userOneResearcherId'
+        self.user_one = AuthUserFactory.build(
+            fullname='Martin Luther King Jr.',
+            given_name='Martin',
+            family_name='King',
+            suffix='Jr.',
+            social=dict(
+                github='userOneGithub',
+                scholar='userOneScholar',
+                personal='http://www.useronepersonalwebsite.com',
+                twitter='userOneTwitter',
+                linkedIn='userOneLinkedIn',
+                impactStory='userOneImpactStory',
+                orcid='userOneOrcid',
+                researcherId='userOneResearcherId'
+            )
+        )
         self.user_one.save()
 
         self.user_one_url = "/v2/users/{}/".format(self.user_one._id)
