@@ -52,17 +52,6 @@ var AddonPermissionsTable = {
                 }
             });
     });
-
-    $('#' + addonShortName + '-more').on('click', function (event) {
-        $('#' + addonShortName + '-header').removeClass('table-less');
-        $('#' + addonShortName + '-more').hide();
-        $('#' + addonShortName + '-less').show();
-    });
-    $('#' + addonShortName + '-less').on('click', function (event) {
-        $('#' + addonShortName + '-header').addClass('table-less');
-        $('#' + addonShortName + '-less').hide();
-        $('#' + addonShortName + '-more').show();
-    });
     }
 };
 
