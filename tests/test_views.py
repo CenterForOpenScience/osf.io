@@ -552,26 +552,13 @@ class TestProjectViews(OsfTestCase):
             self.project._primary_key)
         self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
         self.project.reload()
-        archiver_utils.archive_success(self.project.node__registrations[0], self.project.creator)
         # A registration was added to the project's registration list
         assert_equal(len(self.project.node__registrations), 1)
         # A log event was saved
-        assert_equal(self.project.logs[-1].action, "project_registered")
+        assert_equal(self.project.logs[-1].action, "registration_initiated")
         # Most recent node is a registration
         reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)
-
-    @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_template_make_public_creates_public_registration(self, mock_enquque):
-        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
-            self.project._primary_key)
-        self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
-        self.project.reload()
-        # Most recent node is a registration
-        reg = Node.load(self.project.node__registrations[-1])
-        assert_true(reg.is_registration)
-        # The registration created is public
-        assert_true(reg.is_public)
 
     @mock.patch('website.archiver.tasks.archive.si')
     def test_register_template_with_embargo_creates_embargo(self, mock_archive):
@@ -592,8 +579,7 @@ class TestProjectViews(OsfTestCase):
         # The registration created is not public
         assert_false(reg.is_public)
         # The registration is pending an embargo that has not been approved
-        assert_true(reg.pending_embargo)
-        assert_false(reg.embargo_end_date)
+        assert_true(reg.is_pending_embargo)
 
     def test_register_template_page_with_invalid_template_name(self):
         url = self.project.web_url_for('node_register_template_page', template='invalid')
