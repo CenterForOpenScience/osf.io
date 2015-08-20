@@ -8,7 +8,7 @@ from ast import literal_eval
 
 class NodeTag(object):
     def __init__(self, tag):
-        assert object is not None
+        assert tag is not None
         self._id = tag
 
 class NodeTagField(ser.Field):
