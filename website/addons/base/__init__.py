@@ -592,11 +592,10 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
     def get_nodes_with_oauth_grants(self, external_account):
         # Generator of nodes which have grants for this external account
-        return (
-            Node.load(node_id)
-            for node_id, grants in self.oauth_grants.iteritems()
-            if external_account._id in grants.keys()
-        )
+        for node_id, grants in self.oauth_grants.iteritems():
+            node = Node.load(node_id)
+            if external_account._id in grants.keys() and not node.is_deleted:
+                yield node
 
     def get_attached_nodes(self, external_account):
         for node in self.get_nodes_with_oauth_grants(external_account):
@@ -1027,7 +1026,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -1053,7 +1052,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         else:
             message = (
                 u'{addon} authorization not copied to forked {category}. You may '
-                u'authorize this fork on the <a href="{url}">Settings</a> '
+                u'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                 u'page.'
             ).format(
                 addon=self.config.full_name,

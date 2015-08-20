@@ -1,3 +1,5 @@
+from rest_framework.exceptions import APIException
+from rest_framework import status
 
 def jsonapi_exception_handler(exc, context):
     """
@@ -12,3 +14,9 @@ def jsonapi_exception_handler(exc, context):
         else:
             response.data = {'errors': [{'detail': response.data}]}
     return response
+
+
+# Custom Exceptions the Django Rest Framework does not support
+class Gone(APIException):
+    status_code = status.HTTP_410_GONE
+    default_detail = ('The requested resource is no longer available.')

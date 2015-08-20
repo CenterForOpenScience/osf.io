@@ -381,7 +381,7 @@ ko.bindingHandlers.anchorScroll = {
                 // get location of the target
                 var target = $item.attr('href');
                 // if target has a scrollbar scroll it, otherwise scroll the page
-                if ( $element.get(0).scrollHeight > $element.height() ) {
+                if ( $element.get(0).scrollHeight > $element.innerHeight() ) {
                     offset = $(target).position();
                     $element.scrollTop(offset.top - buffer);
                 } else {
@@ -617,7 +617,7 @@ ko.bindingHandlers.listing = {
 
 /* Responsive Affix for side nav */
 var fixAffixWidth = function() {
-    $('.affix, .affix-top, .affix-bottom').each(function (){
+    $('.osf-affix').each(function (){
         var el = $(this);
         var colsize = el.parent('.affix-parent').width();
         el.outerWidth(colsize);
@@ -625,7 +625,7 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
-    $(window).resize(debounce(fixAffixWidth, 80, true));
+    $(window).resize(debounce(fixAffixWidth, 20, true));
     $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
 };
 
@@ -705,6 +705,14 @@ var isIE = function(userAgent) {
 };
 
 /**
+*  Helper function to judge if the user browser is Safari
+*/
+var isSafari = function(userAgent) {
+    userAgent = userAgent || navigator.userAgent;
+    return (userAgent.search('Safari') >= 0 && userAgent.search('Chrome') < 0);
+};
+
+/**
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
@@ -747,14 +755,14 @@ var confirmDangerousAction = function (options) {
             },
             success: {
                 label: 'Confirm',
-                className: 'btn-success',
+                className: 'btn-danger',
                 callback: handleConfirmAttempt
             }
         },
         message: ''
     };
 
-    var bootboxOptions = $.extend({}, defaults, options);
+    var bootboxOptions = $.extend(true, {}, defaults, options);
 
     bootboxOptions.message += [
         '<p>Type the following to continue: <strong>',
@@ -793,5 +801,6 @@ module.exports = window.$.osf = {
     initializeResponsiveAffix: initializeResponsiveAffix,
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
-    isIE: isIE
+    isIE: isIE,
+    isSafari:isSafari
 };

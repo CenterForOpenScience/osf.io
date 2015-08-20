@@ -11,6 +11,7 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
+from website.models import Retraction
 
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
@@ -262,7 +263,7 @@ class TestRegistrationRetractions(SearchTestCase):
 
         # Retract registration
         self.registration.retract_registration(self.user, '')
-        self.registration.retraction.state = 'retracted'
+        self.registration.retraction.state = Retraction.APPROVED
         self.registration.retraction.save()
         self.registration.save()
         self.registration.update_search()

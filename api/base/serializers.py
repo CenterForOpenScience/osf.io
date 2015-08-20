@@ -75,15 +75,15 @@ class LinksField(ser.Field):
         links = LinksField({
             'html': 'absolute_url',
             'children': {
-                'related': Link('nodes:node-children', pk='<pk>'),
+                'related': Link('nodes:node-children', node_id='<pk>'),
                 'count': 'get_node_count'
             },
             'contributors': {
-                'related': Link('nodes:node-contributors', pk='<pk>'),
+                'related': Link('nodes:node-contributors', node_id='<pk>'),
                 'count': 'get_contrib_count'
             },
             'registrations': {
-                'related': Link('nodes:node-registrations', pk='<pk>'),
+                'related': Link('nodes:node-registrations', node_id='<pk>'),
                 'count': 'get_registration_count'
             },
         })

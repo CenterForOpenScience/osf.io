@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 import furl
-
 from modularodm import Q
 from rest_framework.reverse import reverse
+from api.base.exceptions import Gone
 from rest_framework.exceptions import NotFound
 from modularodm.exceptions import NoResultsFound
 
@@ -18,16 +18,31 @@ def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     return url
 
 
-def get_object_or_404(model_cls, query_or_pk):
+def get_object_or_error(model_cls, query_or_pk, display_name=None):
+    display_name = display_name or None
+
     if isinstance(query_or_pk, basestring):
         query = Q('_id', 'eq', query_or_pk)
     else:
         query = query_or_pk
+
     try:
-        return model_cls.find_one(query)
+        obj = model_cls.find_one(query)
+        if getattr(obj, 'is_deleted', False) is True:
+            if display_name is None:
+                raise Gone
+            else:
+                raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
+        if hasattr(obj, 'is_active'):
+            if not getattr(obj, 'is_active', False):
+                if display_name is None:
+                    raise Gone
+                else:
+                    raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
+        return obj
+
     except NoResultsFound:
         raise NotFound
-
 
 def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=None, **query):
     """Reverse URL lookup for WaterButler routes

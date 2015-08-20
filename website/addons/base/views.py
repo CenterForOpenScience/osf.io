@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import json
 import uuid
 import httplib
 import functools
@@ -441,6 +440,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         'provider': guid_file.provider,
         'file_path': guid_file.waterbutler_path,
         'panels_used': ['edit', 'view'],
+        'private': getattr(node_addon, 'is_private', False),
         'sharejs_uuid': sharejs_uuid,
         'urls': {
             'files': node.web_url_for('collect_file_trees'),
@@ -448,10 +448,11 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
             'sharejs': wiki_settings.SHAREJS_URL,
             'mfr': settings.MFR_SERVER_URL,
             'gravatar': get_gravatar(auth.user, 25),
+            'external': getattr(guid_file, 'external_url', None)
         },
         # Note: must be called after get_or_start_render. This is really only for github
         'size': size,
-        'extra': json.dumps(getattr(guid_file, 'extra', {})),
+        'extra': getattr(guid_file, 'extra', {}),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
         'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),

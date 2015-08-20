@@ -14,12 +14,17 @@ var oop = require('js/oop');
 var nodeApiUrl = window.contextVars.node.urls.api;
 var nodeId = window.contextVars.node.id;
 
+var SEARCH_ALL_SUBMIT_TEXT = 'Search all projects';
+var SEARCH_MY_PROJECTS_SUBMIT_TEXT = 'Search my projects';
+
 var AddPointerViewModel = oop.extend(Paginator, {
     constructor: function(nodeTitle) {
         this.super.constructor.call(this);
         var self = this;
         this.nodeTitle = nodeTitle;
         this.submitEnabled = ko.observable(true);
+        this.searchAllProjectsSubmitText = ko.observable(SEARCH_ALL_SUBMIT_TEXT);
+        this.searchMyProjectsSubmitText = ko.observable(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
 
         this.query = ko.observable();
         this.results = ko.observableArray();
@@ -29,6 +34,7 @@ var AddPointerViewModel = oop.extend(Paginator, {
         this.includePublic = ko.observable(true);
         this.searchWarningMsg = ko.observable('');
         this.submitWarningMsg = ko.observable('');
+        this.loadingResults = ko.observable(false);
 
         this.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
@@ -41,11 +47,13 @@ var AddPointerViewModel = oop.extend(Paginator, {
     searchAllProjects: function() {
         this.includePublic(true);
         this.pageToGet(0);
+        this.searchAllProjectsSubmitText('Searching...');
         this.fetchResults();
     },
     searchMyProjects: function() {
         this.includePublic(false);
         this.pageToGet(0);
+        this.searchMyProjectsSubmitText('Searching...');
         this.fetchResults();
     },
     fetchResults: function() {
@@ -54,6 +62,9 @@ var AddPointerViewModel = oop.extend(Paginator, {
         self.searchWarningMsg('');
 
         if (self.query()) {
+            self.results([]); // clears page for spinner
+            self.loadingResults(true); // enables spinner
+
             osfHelpers.postJSON(
                 '/api/v1/search/node/', {
                     query: self.query(),
@@ -71,11 +82,17 @@ var AddPointerViewModel = oop.extend(Paginator, {
                 self.addNewPaginators();
             }).fail(function(xhr) {
                     self.searchWarningMsg(xhr.responseJSON && xhr.responseJSON.message_long);
+            }).always( function (){
+                self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
+                self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
+                self.loadingResults(false);
             });
         } else {
             self.results([]);
             self.currentPage(0);
             self.totalPages(0);
+            self.searchAllProjectsSubmitText(SEARCH_ALL_SUBMIT_TEXT);
+            self.searchMyProjectsSubmitText(SEARCH_MY_PROJECTS_SUBMIT_TEXT);
         }
     },
     addTips: function(elements) {
