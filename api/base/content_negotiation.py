@@ -6,7 +6,7 @@ class JSONAPIContentNegotiation(DefaultContentNegotiation):
     def select_renderer(self, request, renderers, format_suffix=None):
         """
         If 'application/json' in acceptable media types, use the first renderer in
-        DEFAULT_RENDERER_CLASSES which should be 'rest_framework_json_api.renderers.JSONRenderer'.
+        DEFAULT_RENDERER_CLASSES which should be 'api.base.renderers.JSONAPIRenderer'.
         Media_type "application/vnd.api+json".  Otherwise, use default select_renderer.
         Returns a tuple (renderer, media_type).
         """
