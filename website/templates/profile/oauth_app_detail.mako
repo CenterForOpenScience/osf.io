@@ -29,23 +29,26 @@
 
 
         <div id="appDetail" data-bind="with: appData()">
-            <div id="app-keys" class="border-box text-right text-muted"
+            <div id="app-keys" class="border-box text-right"
                  data-bind="visible: !$root.isCreateView()">
-                <p><span><strong>Client ID</strong>:</span>
-                    <i class="fa fa-info-circle"
-                       data-bind="tooltip: {title: 'The unique identifier for the application. May be seen publicly by others.',
-                                            placement: 'left'}"></i><br>
-                    <span data-bind="text: clientId"></span></p>
-                <p><span><strong>Client secret</strong>: </span>
-                    <i class="fa fa-info-circle" data-bind="tooltip: {title:'The client secret is known only to you and the OSF. Do not display or expose this information.',
-                                                            placement: 'left'}"
-                       title=""></i>
-                    <a class="btn btn-default btn-sm m-l-sm" data-bind="click: $root.toggleDisplay">
-                        <span data-bind="visible: $root.showSecret()"><i class="fa fa-eye-slash"></i> Hide</span>
-                        <span data-bind="visible: !$root.showSecret()"><i class="fa fa-eye"></i> Show</span>
+                <p><strong>Client ID</strong>
+                   <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title: 'The unique identifier for the application. May be seen publicly by others.',
+                                                                      placement: 'bottom'}"></i>
+                </p>
+                <p><span class="text-muted" data-bind="text: clientId"></span></p>
+
+                <p><strong class="m-b-sm">Client secret</strong>
+                    <i class="fa fa-info-circle text-muted"
+                       data-bind="tooltip: {title:'The client secret is known only to you and the OSF. Do not display or expose this information.',
+                                            placement: 'bottom'}"></i>
+                </p>
+                <p>
+                   <span class="text-muted"
+                         data-bind="html:  $root.showSecret() ? clientSecret : '&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;'"></span>
+                    <a class="btn btn-default btn-xs m-l-sm " data-bind="click: $root.toggleDisplay">
+                        <span data-bind="visible: $root.showSecret()"><i class="fa fa-eye-slash"></i> Show</span>
+                        <span data-bind="visible: !$root.showSecret()"><i class="fa fa-eye"></i> Hide</span>
                     </a>
-                    <br>
-                   <span data-bind="text: clientSecret, visible: $root.showSecret()"></span>
                 </p>
             </div>
             <div id="app-fields">
