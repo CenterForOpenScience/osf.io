@@ -147,7 +147,8 @@ function ViewModel(url, nodeIsPublic) {
         clipboard(target[0]);
         $tr.find('.remove-private-link').tooltip();
         setupEditable(elm, data);
-        $('.private-link-list').osfToggleHeight({height: 25});
+        $('.private-link-list').osfToggleHeight({height: 50});
+        $('.toggle-height-gradient').css('left', '0');
     };
 
 }
