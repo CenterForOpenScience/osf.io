@@ -7,7 +7,6 @@ from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
 
-
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively."""
     if isinstance(d, collections.Mapping):

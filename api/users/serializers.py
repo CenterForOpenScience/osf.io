@@ -28,7 +28,6 @@ class UserSerializer(JSONAPISerializer):
     nodes = HyperlinkedIdentityFieldWithMeta(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')
 
-
     class Meta:
         type_ = 'users'
 

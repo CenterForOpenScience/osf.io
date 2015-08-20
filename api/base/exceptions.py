@@ -13,6 +13,7 @@ def jsonapi_exception_handler(exc, context):
             response.data = {'errors': [response.data]}
         else:
             response.data = {'errors': [{'detail': response.data}]}
+
     return response
 
 

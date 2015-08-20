@@ -16,4 +16,3 @@ class JSONAPIContentNegotiation(DefaultContentNegotiation):
             return (renderers[0], renderers[0].media_type)
 
         return DefaultContentNegotiation.select_renderer(self, request, renderers)
-
