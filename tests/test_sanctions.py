@@ -209,14 +209,16 @@ class TestEmailApprovableSanction(SanctionsTestCase):
         self.sanction.ask(group)
         authorizer = group.pop(0)
         mock_send.assert_any_call(
-            authorizer,
+            authorizer.username,
             self.sanction.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,
+            user=authorizer,
             **{}
         )
         for user in group:
             mock_send.assert_any_call(
-                user,
+                user.username,
                 self.sanction.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,
+                user=user,
                 **{}
             )
 
