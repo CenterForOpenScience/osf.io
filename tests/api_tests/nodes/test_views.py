@@ -567,7 +567,7 @@ class TestNodeUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
         # Test creator writing to public field (supposed to be read-only)
         res = self.app.patch_json(url, {
-            'public': False,
+            'is_public': False,
         }, auth=self.user.auth, expect_errors=True)
         assert_true(res.json['data']['public'])
         # TODO: Figure out why the validator isn't raising when attempting to write to a read-only field
