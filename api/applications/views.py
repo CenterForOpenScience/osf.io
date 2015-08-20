@@ -12,7 +12,7 @@ from framework.auth import cas
 from website.models import ApiOAuth2Application
 
 from api.base.filters import ODMFilterMixin
-from api.base.utils import get_object_or_404
+from api.base.utils import get_object_or_error
 from api.applications.permissions import OwnerOnly
 from api.applications.serializers import ApiOAuth2ApplicationSerializer
 
@@ -66,9 +66,9 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        obj = get_object_or_404(ApiOAuth2Application,
-                                Q('client_id', 'eq', self.kwargs['client_id']) &
-                                Q('active', 'eq', True))
+        obj = get_object_or_error(ApiOAuth2Application,
+                                  Q('client_id', 'eq', self.kwargs['client_id']) &
+                                  Q('active', 'eq', True))
 
         self.check_object_permissions(self.request, obj)
         return obj
