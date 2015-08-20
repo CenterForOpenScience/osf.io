@@ -9,6 +9,8 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
+require('js/osfToggleHeight');
+
 
 var AddonPermissionsTable = {
     init: function(addonShortName, addonFullname) {
@@ -51,7 +53,8 @@ var AddonPermissionsTable = {
                     }
                 }
             });
-    });
+        });
+        $('#' + addonShortName + '-header').osfToggleHeight({height: 140});
     }
 };
 
