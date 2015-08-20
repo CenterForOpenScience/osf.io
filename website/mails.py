@@ -232,3 +232,6 @@ WELCOME = Mail(
     'welcome',
     subject='Welcome to the Open Science Framework'
 )
+
+
+EMPTY = Mail('empty', subject='Message from an OSF script')
