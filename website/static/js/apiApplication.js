@@ -237,6 +237,9 @@ var ApplicationDetailViewModel = oop.defclass({
         this.message = ko.observable();
         this.messageClass = ko.observable();
 
+        // Control display of client secret (on detail page)
+        this.showSecret = ko.observable(false);
+
         // // If no detail url provided, render view as though it was a creation form. Otherwise, treat as READ/UPDATE.
         this.apiDetailUrl = ko.observable(urls.apiDetailUrl);
         this.isCreateView = ko.computed(function () {
@@ -373,18 +376,22 @@ var ApplicationDetailViewModel = oop.defclass({
     },
     changeMessage: function (text, css, timeout) {
         // Display messages near save button. Overlaps with profile.js.
-    this.message(text);
-    var cssClass = css || 'text-info';
-    this.messageClass(cssClass);
-    if (timeout) {
-        // Reset message after timeout period
-        setTimeout(function () {
-                this.message('');
-                this.messageClass('text-info');
-            }.bind(this),
-            timeout
-        );
-    }}
+        this.message(text);
+        var cssClass = css || 'text-info';
+        this.messageClass(cssClass);
+        if (timeout) {
+            // Reset message after timeout period
+            setTimeout(function () {
+                    this.message('');
+                    this.messageClass('text-info');
+                }.bind(this),
+                timeout
+            );
+    }},
+    toggleDisplay: function () {
+        // Toggle display of client secret on detail view page
+        this.showSecret(!this.showSecret());
+    }
 });
 
 

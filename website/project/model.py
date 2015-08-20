@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import functools
 import itertools
 import os
 import re
@@ -52,7 +51,6 @@ from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
 from website.project import signals as project_signals
-from website.security import random_string
 
 logger = logging.getLogger(__name__)
 
@@ -75,8 +73,6 @@ def has_anonymous_link(node, auth):
         for link in node.private_links_active
         if link.key == view_only_link
     )
-
-generate_client_secret = functools.partial(random_string, length=40)
 
 
 class MetaSchema(StoredObject):

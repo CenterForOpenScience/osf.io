@@ -3,6 +3,7 @@
 import abc
 import logging
 import datetime
+import functools
 import httplib as http
 import urlparse
 import uuid
@@ -24,7 +25,7 @@ from framework.mongo.utils import unique_on
 from framework.sessions import session
 from website import settings
 from website.oauth.utils import PROVIDER_LOOKUP
-from website.project.model import generate_client_secret
+from website.security import random_string
 from website.util import web_url_for
 
 from api.base.utils import absolute_reverse
@@ -33,6 +34,8 @@ logger = logging.getLogger(__name__)
 
 OAUTH1 = 1
 OAUTH2 = 2
+
+generate_client_secret = functools.partial(random_string, length=40)
 
 
 @unique_on(['provider', 'provider_id'])

@@ -16,8 +16,7 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
 
     owner = ser.CharField(help_text="The id of the user who owns this application",
                           read_only=True,  # Don't let user register an application in someone else's name
-                          source='owner._id'
-                          )
+                          source='owner._id')
 
     name = ser.CharField(help_text="A short, descriptive name for this application",
                          required=True)

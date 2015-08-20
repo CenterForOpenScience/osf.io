@@ -31,11 +31,25 @@
         <div id="appDetail" data-bind="with: appData()">
             <div id="app-keys" class="border-box text-right text-muted"
                  data-bind="visible: !$root.isCreateView()">
-                <p><span><strong>Client ID</strong>:</span> <br><span data-bind="text: clientId"></span></p>
-                <p><span><strong>Client secret</strong>:</span> <br><span data-bind="text: clientSecret"></span></p>
+                <p><span><strong>Client ID</strong>:</span>
+                    <i class="fa fa-info-circle"
+                       data-bind="tooltip: {title: 'The unique identifier for the application. May be seen publicly by others.',
+                                            placement: 'left'}"></i><br>
+                    <span data-bind="text: clientId"></span></p>
+                <p><span><strong>Client secret</strong>: </span>
+                    <i class="fa fa-info-circle" data-bind="tooltip: {title:'The client secret is known only to you and the OSF. Do not display or expose this information.',
+                                                            placement: 'left'}"
+                       title=""></i>
+                    <a class="btn btn-default btn-sm m-l-sm" data-bind="click: $root.toggleDisplay">
+                        <span data-bind="visible: $root.showSecret()"><i class="fa fa-eye-slash"></i> Hide</span>
+                        <span data-bind="visible: !$root.showSecret()"><i class="fa fa-eye"></i> Show</span>
+                    </a>
+                    <br>
+                   <span data-bind="text: clientSecret, visible: $root.showSecret()"></span>
+                </p>
             </div>
             <div id="app-fields">
-                <!-- TODO: Add revoke/ reset buttons -->
+                ## TODO: Add revoke/ reset buttons
                 <form role="form" data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}">
                     <div class="form-group">
                         <label>Application name</label>
@@ -91,6 +105,12 @@
         apiListUrl: ${ app_list_url | sjson, n },
         apiDetailUrl: ${ app_detail_url | sjson, n }
     };
+
+    // Make sure to display tooltips correctly
+    $(document).ready(function(){
+        $('[data-toggle="tooltip"]').tooltip();
+    });
+
 </script>
 <script src=${"/static/public/js/profile-settings-applications-detail-page.js" | webpack_asset}></script>
 </%def>

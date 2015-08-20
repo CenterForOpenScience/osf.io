@@ -2,6 +2,7 @@ from rest_framework import serializers as ser
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
+
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'fullname',
@@ -41,6 +42,7 @@ class UserSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
+
 
 class ContributorSerializer(UserSerializer):
 

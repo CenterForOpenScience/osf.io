@@ -13,8 +13,8 @@ from website.models import ApiOAuth2Application
 
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_404
-from .permissions import OwnerOnly
-from .serializers import ApiOAuth2ApplicationSerializer
+from api.applications.permissions import OwnerOnly
+from api.applications.serializers import ApiOAuth2ApplicationSerializer
 
 
 class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):

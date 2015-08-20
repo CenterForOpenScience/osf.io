@@ -10,10 +10,13 @@
 
     <div class="col-sm-9 col-md-7">
         <div class="row m-b-sm">
-            <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-primary pull-right"><i class="fa fa-plus"></i> Register new</a>
+            <div class="col-sm-12 col-md-12">
+                <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-primary pull-right"><i class="fa fa-plus"></i> Register new</a>
+            </div>
         </div>
 
         <div id="appList">
+            <p>The OSF allows third-party web applications to connect to the OSF on behalf of other users, via the OAuth 2.0 web application flow.</p>
 
             <p data-bind="visible: (appData().length == 0)">You have not registered any applications that can connect to the OSF on behalf of other users.</p>
             <div id="if-apps" data-bind="visible: (appData().length > 0)">
