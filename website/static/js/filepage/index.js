@@ -160,7 +160,8 @@ var FileViewPage = {
             });
         });
         $(document).on('fileviewpage:download', function() {
-            window.location = self.file.urls.content;
+            //replace mode=render with action=download for download count incrementation
+            window.location = self.file.urls.content.replace('mode=render', 'action=download');
             return false;
         });
 

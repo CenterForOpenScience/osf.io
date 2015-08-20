@@ -14,12 +14,12 @@
     </h4>
 
     <!-- ko foreach: accounts -->
+    <a data-bind="click: $root.askDisconnect" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
     <div class="m-h-lg">
         <table class="table table-hover">
             <thead>
                 <tr class="user-settings-addon-auth">
                     <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr.href: dataverseUrl"><em>{{ dataverseHost }}</em></a></th>
-                    <th><a data-bind="click: $root.askDisconnect" class="text-danger pull-right default-authorized-by">Disconnect Account</a></th>
                 </tr>
             </thead>
             <!-- ko if: connectedNodes().length > 0 -->

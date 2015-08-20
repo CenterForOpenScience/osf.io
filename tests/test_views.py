@@ -15,6 +15,7 @@ from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 
 from modularodm import Q, fields
+from modularodm.exceptions import ValidationError
 from dateutil.parser import parse as parse_date
 
 from framework import auth
@@ -551,26 +552,13 @@ class TestProjectViews(OsfTestCase):
             self.project._primary_key)
         self.app.post_json(url, {'registrationChoice': 'Make registration public immediately'}, auth=self.auth)
         self.project.reload()
-        archiver_utils.archive_success(self.project.node__registrations[0], self.project.creator)
         # A registration was added to the project's registration list
         assert_equal(len(self.project.node__registrations), 1)
         # A log event was saved
-        assert_equal(self.project.logs[-1].action, "project_registered")
+        assert_equal(self.project.logs[-1].action, "registration_initiated")
         # Most recent node is a registration
         reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)
-
-    @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_template_make_public_creates_public_registration(self, mock_enquque):
-        url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
-            self.project._primary_key)
-        self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
-        self.project.reload()
-        # Most recent node is a registration
-        reg = Node.load(self.project.node__registrations[-1])
-        assert_true(reg.is_registration)
-        # The registration created is public
-        assert_true(reg.is_public)
 
     @mock.patch('website.archiver.tasks.archive.si')
     def test_register_template_with_embargo_creates_embargo(self, mock_archive):
@@ -591,8 +579,7 @@ class TestProjectViews(OsfTestCase):
         # The registration created is not public
         assert_false(reg.is_public)
         # The registration is pending an embargo that has not been approved
-        assert_true(reg.pending_embargo)
-        assert_false(reg.embargo_end_date)
+        assert_true(reg.is_pending_embargo)
 
     def test_register_template_page_with_invalid_template_name(self):
         url = self.project.web_url_for('node_register_template_page', template='invalid')
@@ -1669,6 +1656,36 @@ class TestAddingContributorViews(OsfTestCase):
         assert_false(res[2]['user'].is_registered)
         assert_true(res[2]['user']._id)
 
+    def test_deserialize_contributors_validates_fullname(self):
+        name = "<img src=1 onerror=console.log(1)>"
+        email = fake.email()
+        unreg_no_record = serialize_unregistered(name, email)
+        contrib_data = [unreg_no_record]
+        contrib_data[0]['permission'] = 'admin'
+        contrib_data[0]['visible'] = True
+
+        with assert_raises(ValidationError):
+            deserialize_contributors(
+                self.project,
+                contrib_data,
+                auth=Auth(self.creator),
+                validate=True)
+
+    def test_deserialize_contributors_validates_email(self):
+        name = fake.name()
+        email = "!@#$%%^&*"
+        unreg_no_record = serialize_unregistered(name, email)
+        contrib_data = [unreg_no_record]
+        contrib_data[0]['permission'] = 'admin'
+        contrib_data[0]['visible'] = True
+
+        with assert_raises(ValidationError):
+            deserialize_contributors(
+                self.project,
+                contrib_data,
+                auth=Auth(self.creator),
+                validate=True)
+
     @mock.patch('website.project.views.contributor.mails.send_mail')
     def test_deserialize_contributors_sends_unreg_contributor_added_signal(self, _):
         unreg = UnregUserFactory()
@@ -1765,11 +1782,8 @@ class TestAddingContributorViews(OsfTestCase):
     @mock.patch('website.mails.send_mail')
     def test_add_contributors_post_only_sends_one_email_to_registered_user(self, mock_send_mail):
         # Project has components
-        comp1, comp2 = NodeFactory(
-            creator=self.creator), NodeFactory(creator=self.creator)
-        self.project.nodes.append(comp1)
-        self.project.nodes.append(comp2)
-        self.project.save()
+        comp1 = NodeFactory(creator=self.creator, parent=self.project)
+        comp2 = NodeFactory(creator=self.creator, parent=self.project)
 
         # A registered user is added to the project AND its components
         user = UserFactory()
@@ -1792,6 +1806,34 @@ class TestAddingContributorViews(OsfTestCase):
 
         # send_mail should only have been called once
         assert_equal(mock_send_mail.call_count, 1)
+
+    @mock.patch('website.mails.send_mail')
+    def test_add_contributors_post_sends_email_if_user_not_contributor_on_parent_node(self, mock_send_mail):
+        # Project has a component with a sub-component
+        component = NodeFactory(creator=self.creator, parent=self.project)
+        sub_component = NodeFactory(creator=self.creator, parent=component)
+
+        # A registered user is added to the project and the sub-component, but NOT the component
+        user = UserFactory()
+        user_dict = {
+            'id': user._id,
+            'fullname': user.fullname,
+            'email': user.username,
+            'permission': 'write',
+            'visible': True}
+
+        payload = {
+            'users': [user_dict],
+            'node_ids': [sub_component._primary_key]
+        }
+
+        # send request
+        url = self.project.api_url_for('project_contributors_post')
+        assert self.project.can_edit(user=self.creator)
+        self.app.post_json(url, payload, auth=self.creator.auth)
+
+        # send_mail is called for both the project and the sub-component
+        assert_equal(mock_send_mail.call_count, 2)
 
 
     @mock.patch('website.project.views.contributor.send_claim_email')
