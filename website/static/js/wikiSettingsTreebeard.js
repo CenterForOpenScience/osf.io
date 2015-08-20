@@ -7,21 +7,7 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var Fangorn = require('js/fangorn');
 require('../css/fangorn.css');
-
-// TODO: Move 'resolveToggle' to a central location
-function resolveToggle(item) {
-    var toggleMinus = m('i.fa.fa-minus', ' '),
-        togglePlus = m('i.fa.fa-plus', ' ');
-
-    if (item.children.length > 0) {
-        if (item.open) {
-            return toggleMinus;
-        }
-        return togglePlus;
-    }
-    item.open = true;
-    return '';
-}
+var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
@@ -82,37 +68,9 @@ function buildPermissionsURL(item) {
 function ProjectWiki(data) {
 
     //  Treebeard version
-    var tbOptions = {
-        divID: 'wgrid',
+    var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         filesData: data,
-        rowHeight : 33,         // user can override or get from .tb-row height
-        resolveToggle: resolveToggle,
-        paginate : false,       // Whether the applet starts with pagination or not.
-        paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
-        uploads : false,         // Turns dropzone on/off.
-        resolveIcon : Fangorn.Utils.resolveIconView,
-        hideColumnTitles: true,
-        columnTitles : function wikiColumnTitles(item, col) {
-            return [
-                {
-                    title: 'Project',
-                    width: '60%',
-                    sortType : 'text',
-                    sort : false
-                },
-                {
-                    title: 'Editing Toggle',
-                    width : '40%',
-                    sort : false
-
-                }
-            ];
-        },
-        ontogglefolder : function (item){
-            var containerHeight = this.select('#tb-tbody').height();
-            this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
-            this.redraw();
-        },
+        divID: 'wgrid',
         resolveRows : function wikiResolveRows(item){
             var columns = [];
             var iconcss = '';
@@ -170,18 +128,8 @@ function ProjectWiki(data) {
             }
 
             return columns;
-        },
-        sortButtonSelector : {
-            up : 'i.fa.fa-chevron-up',
-            down : 'i.fa.fa-chevron-down'
-        },
-        showFilter : false,     // Gives the option to filter by showing the filter box.
-        allowMove : false,       // Turn moving on or off.
-        hoverClass : 'fangorn-hover',
-        resolveRefreshIcon : function() {
-          return m('i.fa.fa-refresh.fa-spin');
         }
-    };
+    });
     var wgrid = new Treebeard(tbOptions);
     expandOnLoad.call(wgrid.tbController);
 }
