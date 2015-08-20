@@ -30,7 +30,7 @@ def _url_val(val, obj, serializer, **kwargs):
         return val
 
 class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
-    """Returns a dict with a url and optional meta information."""
+    """Returns a nested dict with url and optional meta information: """
 
     def __init__(self, view_name=None, **kwargs):
         kwargs['read_only'] = True
@@ -102,7 +102,6 @@ class LinksField(ser.Field):
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
         return ret
-
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
 
@@ -185,11 +184,6 @@ class JSONAPIListSerializer(ser.ListSerializer):
             self.child.to_representation(item, envelope=None) for item in data
         ]
 
-
-# def to_representation(self, instance):
-#         """
-#         Object instance -> Dict of primitive datatypes.
-#         """
 
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
