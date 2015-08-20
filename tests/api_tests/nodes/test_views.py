@@ -570,8 +570,6 @@ class TestNodeUpdate(ApiTestCase):
             'public': False,
         }, auth=self.user.auth, expect_errors=True)
         assert_true(res.json['data']['public'])
-        # Currently Django Rest Framework returns a 200 when read only data is passed via patch.
-        assert_equal(res.status_code, 200)
 
     def test_partial_update_public_project_logged_out(self):
         res = self.app.patch_json(self.public_url, {'title': self.new_title}, expect_errors=True)
