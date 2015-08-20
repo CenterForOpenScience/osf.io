@@ -1703,6 +1703,25 @@ class TestNodeTraversals(OsfTestCase):
         assert_equal(len(descendants[0][1]), 1)  # only one visible child of comp1
         assert_equal(len(descendants[1][1]), 0)  # don't auto-include comp2's children
 
+    def test_delete_registration_tree(self):
+        proj = NodeFactory()
+        NodeFactory(parent=proj)
+        comp2 = NodeFactory(parent=proj)
+        NodeFactory(parent=comp2)
+        reg = RegistrationFactory(project=proj)
+        reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
+        reg.delete_registration_tree(save=True)
+        assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
+
+    def test_delete_registration_tree_deletes_backrefs(self):
+        proj = NodeFactory()
+        NodeFactory(parent=proj)
+        comp2 = NodeFactory(parent=proj)
+        NodeFactory(parent=comp2)
+        reg = RegistrationFactory(project=proj)
+        reg.delete_registration_tree(save=True)
+        assert_false(proj.node__registrations)
+
     def test_get_descendants_recursive(self):
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
@@ -2560,8 +2579,7 @@ class TestProject(OsfTestCase):
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
-        assert_false(registration.embargo_end_date)
-        assert_true(registration.pending_embargo)
+        assert_true(registration.is_pending_embargo)
 
         func = lambda: registration.set_privacy('public', auth=self.auth)
         assert_raises(NodeStateError, func)
@@ -2574,19 +2592,16 @@ class TestProject(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         registration.save()
-        assert_false(registration.embargo_end_date)
-        assert_true(registration.pending_embargo)
+        assert_true(registration.is_pending_embargo)
 
         approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
         registration.embargo.approve_embargo(self.user, approval_token)
-        assert_true(registration.embargo_end_date)
-        assert_false(registration.pending_embargo)
+        assert_false(registration.is_pending_embargo)
 
         registration.set_privacy('public', auth=self.auth)
         registration.save()
-        assert_false(registration.embargo_end_date)
-        assert_false(registration.pending_embargo)
-        assert_equal(registration.embargo.state, Embargo.CANCELLED)
+        assert_false(registration.is_pending_embargo)
+        assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_true(registration.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
 
@@ -3140,11 +3155,8 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(registration.creator, self.user)
 
     def test_logs(self):
-        # Registered node has all logs except the Project Registered log
+        # Registered node has all logs except for registration approval initiated
         assert_equal(self.registration.logs, self.project.logs[:-1])
-
-    def test_registration_log(self):
-        assert_equal(self.project.logs[-1].action, 'project_registered')
 
     def test_tags(self):
         assert_equal(self.registration.tags, self.project.tags)

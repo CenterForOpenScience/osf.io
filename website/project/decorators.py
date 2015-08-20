@@ -53,6 +53,24 @@ def _inject_nodes(kwargs):
     kwargs['parent'], kwargs['node'] = _kwargs_to_nodes(kwargs)
 
 
+def must_not_be_rejected(func):
+    """Ensures approval/disapproval requests can't reach Sanctions that have
+    already been rejected.
+    """
+
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+
+        node = get_or_http_error(Node, kwargs.get('nid', kwargs.get('pid')), allow_deleted=True)
+        if node.sanction and node.sanction.is_rejected:
+            raise HTTPError(http.GONE, data=dict(
+                message_long="This registration has been rejected"
+            ))
+
+        return func(*args, **kwargs)
+
+    return wrapped
+
 def must_be_valid_project(func=None, retractions_valid=False):
     """ Ensures permissions to retractions are never implicitly granted. """
 

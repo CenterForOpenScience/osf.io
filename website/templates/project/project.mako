@@ -32,7 +32,7 @@
                     <div class="btn-group">
                     % if not node["is_public"]:
                         <button class='btn btn-default disabled'>Private</button>
-                        % if 'admin' in user['permissions'] and not node['pending_embargo']:
+                        % if 'admin' in user['permissions'] and not node['is_pending_embargo']:
                             <a class="btn btn-default" data-bind="click: makePublic">Make Public</a>
                         % endif
                     % else:
@@ -223,7 +223,7 @@
             <div class="panel-body">
                 <div id="treeGrid">
                     <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-xl"></div>
+                        <div class="logo-spin logo-lg"></div>
                          <p class="m-t-sm fg-load-message"> Loading files...  </p>
                     </div>
                 </div>

@@ -46,7 +46,7 @@
 
         % if not registered:
             <button id="register-submit" class="btn btn-primary" data-bind="visible:$root.continueFlag, focus:$root.continueFlag">
-                Register Now
+                Continue
             </button>
         % endif
 

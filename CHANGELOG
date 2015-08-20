@@ -2,7 +2,7 @@
 Changelog
 *********
 
-0.46.0 (unreleased)
+0.46.0 (2015-08-17)
 ===================
 
 - Send email notification when user is added to a project.
