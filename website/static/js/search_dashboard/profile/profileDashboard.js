@@ -7,10 +7,11 @@ var $osf = require('js/osfHelpers');
 var searchUtils = require('js/search_dashboard/searchUtils');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 var charts = require('js/search_dashboard/charts');
+var FilterWidget = require('js/search_dashboard/FilterWidget');
 var SearchDashboard = require('js/search_dashboard/searchDashboard');
 
+//Custom widgets...
 var ResultsWidget = require('./resultsWidget');
-var FilterWidget = require('./FilterWidget');
 
 
 var profileDashboard = {};
@@ -199,7 +200,31 @@ profileDashboard.controller = function(params) {
             reqRequests : ['mainRequest'],
             component: FilterWidget,
             callbacks: null, //callbacks included in displayWidget
-            callbacksUpdate: ['all']
+            callbacksUpdate: ['all'],
+            filterParsers: {
+                range: function(field, value){
+                    if (field[0] === 'date_created') {
+                        var valueOut = widgetUtils.timeSinceEpochInMsToMMYY(parseInt(value[0])) +
+                            ' to ' + widgetUtils.timeSinceEpochInMsToMMYY(parseInt(value[1]));
+                        return 'Data created is ' + valueOut;
+                    }
+                    return value + ' ' + field;
+                },
+                match: function(field, value, vm){
+                    var fieldMappings = {
+                        '_type' : 'Type is ',
+                        'contributors': ' is a Contributor',
+                        'tags': 'Tags contain '
+                    };
+                    if (field[0] === 'contributors' && field[1] === 'url') {
+                        var url = value[0].replace(/\//g, '');
+                        var urlToNameMapper = vm.requests.nameRequest.formattedData;
+                        var valueOut = urlToNameMapper[url];
+                        return valueOut + fieldMappings[field[0]];
+                    }
+                    return fieldMappings[field[0]];
+                }
+            }
         }
     };
 
@@ -216,6 +241,7 @@ profileDashboard.controller = function(params) {
     };
 
     var mainRequest = {
+            id: 'mainRequest',
             elasticURL: '/api/v1/search/',
             size: 5,
             page: 0,
@@ -229,6 +255,7 @@ profileDashboard.controller = function(params) {
     };
 
     var nameRequest = {
+        id: 'nameRequest',
         elasticURL: '/api/v1/search/',
         requiredFilters: ['match:category:user=lock'],
         preRequest: [function (requestIn, data) { //functions to modify filters and query before request

@@ -8,41 +8,6 @@ var searchUtils = require('js/search_dashboard/searchUtils');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 require('truncate');
 
-var fieldMappings = {
-    '_type' : 'Type is ',
-    'contributors': ' is a Contributor',
-    'date_created': 'Data Created is ',
-    'tags': 'Tags contain '
-};
-
-/**
- * Removes any filters containing the '=lock' extension
- *
- * @param {Array} field: array containing the names of elastic field that is being filtered
- * @param {String/Int} value: filter parameters in string or int form
- * @param {Object} vm: Search Dashboard vm
- * @param {Object} widget: filter and search widget, so flag can be set for searching
- * @return {string}  Array of filters with locked filters removed
- */
-function fieldValueMappings(field, value, vm, widget){ //TODO would like to refactor so the widget is not required here...
-    var fieldPretty = '';
-    if (field[0] === 'date_created') {
-        var valueParts = value.split(':');
-        value = widgetUtils.timeSinceEpochInMsToMMYY(parseInt(valueParts[0])) +
-            ' to ' + widgetUtils.timeSinceEpochInMsToMMYY(parseInt(valueParts[1]));
-        fieldPretty = fieldMappings[field[0]];
-    } else if (field[0] === 'contributors' && field[1] === 'url') {
-        var url = value.replace(/\//g, '');
-        var urlToNameMapper = vm.requests.nameRequest.formattedData;
-        value = urlToNameMapper[url];
-        fieldPretty = fieldMappings[field[0]];
-        return value + fieldPretty;
-    } else {
-        fieldPretty = fieldMappings[field[0]];
-    }
-    return fieldPretty + value;
-}
-
 /**
  * Removes any filters containing the '=lock' extension
  *
@@ -57,7 +22,6 @@ function removeLockedFilters(filters) {
             }
     });
 }
-
 
 var FilterWidget = {
     /**
@@ -107,15 +71,16 @@ var Filter = {
         var isLastFilter = params.isLastFilter;
         var widget = params.widget;
         var filterParts = searchFilter.split(':');
-        var field = filterParts[1].split('.');
-        var value = filterParts.slice(2).join(':');
+        var fields = filterParts[1].split('.');
+        var values = filterParts.slice(2);
+
         return m('render-filter.m-t-xs.m-b-xs', [
             m('a.m-r-xs.m-l-xs', {
                 onclick: function(event){
                     searchUtils.removeFilter(vm,[], searchFilter);
                     widgetUtils.signalWidgetsToUpdate(vm, params.widget.display.callbacksUpdate);
                 }
-            }, [fieldValueMappings(field, value, vm, widget), m('i.fa.fa-close.m-r-xs.m-l-xs')]),
+            }, widget.display.filterParsers[filterParts[0]](fields, values, vm, widget), m('i.fa.fa-close.m-r-xs.m-l-xs')),
             m('.badge.pointer',  isLastFilter ? ('') : (required ? 'AND' : 'OR'))
         ]);
     }

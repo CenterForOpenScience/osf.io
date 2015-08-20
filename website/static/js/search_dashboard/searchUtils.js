@@ -10,25 +10,9 @@ var searchUtils = {};
 
 var tags = ['div', 'i', 'b', 'sup', 'p', 'span', 'sub', 'bold', 'strong', 'italic', 'a', 'small'];
 
-/* Removes certain HTML tags from the source */
-searchUtils.scrubHTML = function(text) { //TODO move, this is for share, and should go in a 'share utils' file
-    tags.forEach(function(tag) {
-        text = text.replace(new RegExp('<' + tag + '>', 'g'), '');
-        text = text.replace(new RegExp('</' + tag + '>', 'g'), '');
-    });
-    return text;
-};
-
-/* */
-searchUtils.formatNumber = function(num) {
-    while (/(\d+)(\d{3})/.test(num.toString())){
-        num = num.toString().replace(/(\d+)(\d{3})/, '$1'+','+'$2');
-    }
-    return num;
-};
-
 /* This resets the state of the vm on error */
 searchUtils.errorState = function(vm){
+    //TODO remove queries, sorts, and non-locked filters from all requests
     m.redraw(true);
     $osf.growl('Error', 'invalid query');
 };
@@ -36,7 +20,7 @@ searchUtils.errorState = function(vm){
 searchUtils.runRequest = function(vm, request, data) {
     var ret = m.deferred();
     var runRequest = true;
-    if (request.preRequest) { //TODO look at m.deferred
+    if (request.preRequest) {
         runRequest = request.preRequest.every(function (funcToRun) {
             var returnedRequest = funcToRun(request, data);
             if (!returnedRequest) {
@@ -72,11 +56,14 @@ searchUtils.runRequest = function(vm, request, data) {
             ret.reject(xhr, status, err);
             searchUtils.errorState.call(this, vm);
         });
-    };
+    }
     return ret.promise;
 };
 
 searchUtils.runRequests = function(vm){
+    if (searchUtils.hasRequestStateChanged(vm)) {
+        searchUtils.pushRequestsToHistory(vm);
+    }
     vm.requestOrder.forEach(function(parallelReqs){
         searchUtils.recursiveRequest(vm, parallelReqs);
     });
@@ -118,42 +105,75 @@ searchUtils.paginateRequests = function(vm, requests){
 };
 
 /* updates the current state when history changed. Should be bound to forward/back buttons callback */
-searchUtils.updateHistory = function(vm){
-    var state = History.getState().data;
-    if (!searchUtils.stateChanged(vm)){
-        return false;
+searchUtils.updateRequestsFromHistory = function(vm){
+    var state = History.getState().data.requests;
+    for (var request in vm.requests) {
+        if (vm.requests.hasOwnProperty(request) && state.hasOwnProperty(request)) {
+            vm.requests[request].optionalFilters = state[request].optionalFilters;
+            vm.requests[request].requiredFilters = state[request].requiredFilters;
+            vm.requests[request].query(state[request].query);
+            vm.requests[request].sort(state[request].sort);
+        }
     }
-
-    vm.optionalFilters = state.optionalFilters;
-    vm.requiredFilters = state.requiredFilters;
-    vm.query(state.query);
-    vm.sort(state.sort);
     searchUtils.runRequests(vm);
-    return true;
+};
+
+searchUtils.pushRequestsToHistory = function(vm){
+    History.pushState(
+        {requests: vm.requests},
+        document.getElementsByTagName("title")[0].innerHTML,
+        '?' + searchUtils.buildURLParams(vm)
+    );
 };
 
 /* Checks to see if the state of the vm has changed */
-searchUtils.stateChanged = function (vm) {
+searchUtils.hasRequestStateChanged = function (vm) {
+    for (var request in vm.requests) {
+        if (vm.requests.hasOwnProperty(request)) {
+            var stateChanged = searchUtils.hasRequestStateChanged(vm, vm.requests[request]);
+            if (stateChanged) {
+                return true;
+            }
+        }
+    }
+    return false;
+};
+
+searchUtils.hasRequestStateChanged = function (vm, currentRequest){
     var state = History.getState().data;
-    return !(state.query === vm.query() && state.sort === vm.sort() &&
-            searchUtils.arrayEqual(state.optionalFilters, vm.optionalFilters) &&
-            searchUtils.arrayEqual(state.requiredFilters, vm.requiredFilters));
+    if (state.requests) {
+        if (state.requests.hasOwnProperty(currentRequest.id)) {
+            var oldRequest = state.requests[currentRequest.id];
+            var isEqual = (oldRequest.query === currentRequest.query() && oldRequest.sort === currentRequest.sort() &&
+            searchUtils.arrayEqual(oldRequest.optionalFilters, currentRequest.optionalFilters) &&
+            searchUtils.arrayEqual(oldRequest.requiredFilters, currentRequest.requiredFilters));
+            if (isEqual) {
+                return false;
+            }
+        }
+    }
+    return true;
 };
 
 /* Turns the vm state into a nice-ish to look at representation that can be stored in a URL */
 searchUtils.buildURLParams = function(vm){
     var d = {};
-    if (vm.query()) {
-        d.q = vm.query();
-    }
-    if (vm.requiredFilters.length > 0) {
-        d.required = vm.requiredFilters.join('|');
-    }
-    if (vm.optionalFilters.length > 0) {
-        d.optional = vm.optionalFilters.join('|');
-    }
-    if (vm.sort()) {
-        d.sort = vm.sort();
+    for (var request in vm.requests) {
+        if (vm.requests.hasOwnProperty(request)) {
+            d[request] = {};
+            if (vm.requests[request].query()) {
+                d[request].q = vm.requests[request].query();
+            }
+            if (vm.requests[request].requiredFilters.length > 0) {
+                d[request].required = vm.requests[request].requiredFilters.join('|');
+            }
+            if (vm.requests[request].optionalFilters.length > 0) {
+                d[request].optional = vm.requests[request].optionalFilters.join('|');
+            }
+            if (vm.requests[request].sort()) {
+                d[request].sort = vm.requests[request].sort();
+            }
+        }
     }
     return $.param(d);
 };
@@ -182,7 +202,7 @@ searchUtils.buildQuery = function (vm) {
         'from': vm.page * size,
         'size': size,
         'sort': [sort],
-        'highlight': { //TODO generalize
+        'highlight': { //TODO work out what this does and generalize
             'fields': {
                 'title': {'fragment_size': 2000},
                 'description': {'fragment_size': 2000},
@@ -191,17 +211,6 @@ searchUtils.buildQuery = function (vm) {
         }
     };
 
-};
-
-searchUtils.maybeQuashEvent = function (event) { //TODO work out why this is needed
-    if (event !== undefined) {
-        try {
-            event.preventDefault();
-            event.stopPropagation();
-        } catch (e) {
-            window.event.cancelBubble = true;
-        }
-    }
 };
 
 /* Adds a filter to the list of filters if it doesn't already exist */
@@ -254,40 +263,6 @@ searchUtils.removeFilter = function (vm, requests, filter) {
 /* Tests array equality */
 searchUtils.arrayEqual = function (a, b) {
     return $(a).not(b).length === 0 && $(b).not(a).length === 0;
-};
-
-/* Loads the raw and normalized data for a specific result */
-searchUtils.loadRawNormalized = function(result){
-    var source = encodeURIComponent(result.shareProperties.source);
-    var docID = encodeURIComponent(result.shareProperties.docID);
-    return m.request({
-        method: 'GET',
-        url: 'api/v1/share/documents/' + source + '/' + docID + '/',
-        unwrapSuccess: function(data) {
-            var unwrapped = {};
-            var normed = JSON.parse(data.normalized);
-            var allRaw = JSON.parse(data.raw);
-            unwrapped.normalized = JSON.parse(data.normalized);
-            unwrapped.raw = allRaw.doc;
-            unwrapped.rawfiletype = allRaw.filetype;
-            unwrapped.normalized = normed;
-
-            return unwrapped;
-        },
-        unwrapError: function(response, xhr) {
-            var error = {};
-            error.rawfiletype = 'json';
-            error.normalized = 'Normalized data not found.';
-            error.raw = '"Raw data not found."';
-            if (xhr.status >= 500) {
-                Raven.captureMessage('SHARE Raw and Normalized API Internal Server Error.', {
-                    textStatus: status
-                });
-            }
-
-            return error;
-        }
-    });
 };
 
 /**

@@ -92,8 +92,11 @@ searchDashboard.controller = function (params) {
     self.vm.results = null; //unused, only for backwards compatibility with utils TODO remove
 
     History.Adapter.bind(window, 'statechange', function(e) {
-        var historyChanged = searchUtils.updateHistory(self.vm);
-        if (historyChanged){ widgetUtils.signalWidgetsToUpdate(self.vm, self.vm.widgetIds);}
+        var historyChanged = searchUtils.hasRequestStateChanged(self.vm);
+        if (historyChanged){
+            widgetUtils.signalWidgetsToUpdate(self.vm, self.vm.widgetIds);
+            searchUtils.updateRequestsFromHistory(self.vm);
+        }
     });
 
     //run dat shit
