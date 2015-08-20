@@ -237,7 +237,6 @@ class JSONAPISerializer(ser.Serializer):
                 ret['attributes'][field.field_name] = field.to_representation(attribute)
 
         data = {}
-        from rest_framework.exceptions import APIException
         if envelope:
             data[envelope] = ret
         else:
