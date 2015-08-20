@@ -23,13 +23,13 @@ var ActiveFiltersHeader = {
     view: function(ctrl, params) {
         var vm = params.vm;
 
-        return m('.sidebar-header', (vm.optionalFilters.length > 0 || vm.requiredFilters.length > 0) ? ['Active filters:',
+        return m('.sidebar-header', (vm.userDefinedORFilters.length > 0 || vm.userDefinedANDFilters.length > 0) ? ['Active filters:',
              m('a', {
                 style: {
                     'float': 'right'
                 }, onclick: function(event){
-                    vm.optionalFilters = [];
-                    vm.requiredFilters = [];
+                    vm.userDefinedORFilters = [];
+                    vm.userDefinedANDFilters = [];
                     utils.search(vm);
                     }
             }, ['Clear ', m('i.fa.fa-close')])
@@ -41,7 +41,7 @@ var ActiveFiltersHeader = {
 var ActiveFilters = {
     view: function(ctrl, params){
         var vm = params.vm;
-        var filters = vm.optionalFilters.concat(vm.requiredFilters);
+        var filters = vm.userDefinedORFilters.concat(vm.userDefinedANDFilters);
 
         return (filters.length > 0) ? m('ul.unstyled',
             $.map(filters, function(filter){
@@ -81,7 +81,7 @@ var Provider = {
     view: function(ctrl, params) {
         var vm = params.vm;
         var provider = params.provider;
-        var checked = (vm.optionalFilters.concat(vm.requiredFilters).indexOf('match:shareProperties.source:' + provider.short_name) > -1) ? 'in-filter' : '';
+        var checked = (vm.userDefinedORFilters.concat(vm.userDefinedANDFilters).indexOf('match:shareProperties.source:' + provider.short_name) > -1) ? 'in-filter' : '';
 
         return m('li',
             m('a.provider-filter.break-word', {

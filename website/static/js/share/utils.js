@@ -100,8 +100,8 @@ utils.search = function(vm) {
         vm.results = null;
         vm.showFooter = true;
         vm.showStats = false;
-        vm.optionalFilters = [];
-        vm.requiredFilters = [];
+        vm.userDefinedORFilters = [];
+        vm.userDefinedANDFilters = [];
         vm.sort('Relevance');
         History.pushState({}, 'OSF | SHARE', '?');
         ret.resolve(null);
@@ -114,8 +114,8 @@ utils.search = function(vm) {
         if (utils.stateChanged(vm)) {
             // TODO remove of range filter should update range on subgraph
             History.pushState({
-                optionalFilters: vm.optionalFilters,
-                requiredFilters: vm.requiredFilters,
+                optionalFilters: vm.userDefinedORFilters,
+                requiredFilters: vm.userDefinedANDFilters,
                 query: vm.query(),
                 sort: vm.sort()
             }, 'OSF | SHARE', '?' + utils.buildURLParams(vm));
@@ -140,8 +140,8 @@ utils.search = function(vm) {
 utils.stateChanged = function (vm) {
     var state = History.getState().data;
     return !(state.query === vm.query() && state.sort === vm.sort() &&
-            utils.arrayEqual(state.optionalFilters, vm.optionalFilters) &&
-            utils.arrayEqual(state.requiredFilters, vm.requiredFilters));
+            utils.arrayEqual(state.userDefinedORFilters, vm.userDefinedORFilters) &&
+            utils.arrayEqual(state.userDefinedANDFilters, vm.userDefinedANDFilters));
 };
 
 /* Turns the vm state into a nice-ish to look at representation that can be stored in a URL */
@@ -150,11 +150,11 @@ utils.buildURLParams = function(vm){
     if (vm.query()) {
         d.q = vm.query();
     }
-    if (vm.requiredFilters.length > 0) {
-        d.required = vm.requiredFilters.join('|');
+    if (vm.userDefinedANDFilters.length > 0) {
+        d.required = vm.userDefinedANDFilters.join('|');
     }
-    if (vm.optionalFilters.length > 0) {
-        d.optional = vm.optionalFilters.join('|');
+    if (vm.userDefinedORFilters.length > 0) {
+        d.optional = vm.userDefinedORFilters.join('|');
     }
     if (vm.sort()) {
         d.sort = vm.sort();
@@ -164,8 +164,8 @@ utils.buildURLParams = function(vm){
 
 /* Builds the elasticsearch query that will be POSTed to the search API */
 utils.buildQuery = function (vm) {
-    var must = $.map(vm.requiredFilters, utils.parseFilter);
-    var should = $.map(vm.optionalFilters, utils.parseFilter);
+    var must = $.map(vm.userDefinedANDFilters, utils.parseFilter);
+    var should = $.map(vm.userDefinedORFilters, utils.parseFilter);
     var sort = {};
 
     if (vm.sortMap[vm.sort()]) {
@@ -207,23 +207,23 @@ utils.maybeQuashEvent = function (event) {
 
 /* Adds a filter to the list of filters if it doesn't already exist */
 utils.updateFilter = function (vm, filter, required) {
-    if (required && vm.requiredFilters.indexOf(filter) === -1) {
-        vm.requiredFilters.push(filter);
-    } else if (vm.optionalFilters.indexOf(filter) === -1 && !required) {
-        vm.optionalFilters.push(filter);
+    if (required && vm.userDefinedANDFilters.indexOf(filter) === -1) {
+        vm.userDefinedANDFilters.push(filter);
+    } else if (vm.userDefinedORFilters.indexOf(filter) === -1 && !required) {
+        vm.userDefinedORFilters.push(filter);
     }
     utils.search(vm);
 };
 
 /* Removes a filter from the list of filters */
 utils.removeFilter = function (vm, filter) {
-    var reqIndex = vm.requiredFilters.indexOf(filter);
-    var optIndex = vm.optionalFilters.indexOf(filter);
+    var reqIndex = vm.userDefinedANDFilters.indexOf(filter);
+    var optIndex = vm.userDefinedORFilters.indexOf(filter);
     if (reqIndex > -1) {
-        vm.requiredFilters.splice(reqIndex, 1);
+        vm.userDefinedANDFilters.splice(reqIndex, 1);
     }
     if (optIndex > -1) {
-        vm.optionalFilters.splice(optIndex, 1);
+        vm.userDefinedORFilters.splice(optIndex, 1);
     }
     utils.search(vm);
 };

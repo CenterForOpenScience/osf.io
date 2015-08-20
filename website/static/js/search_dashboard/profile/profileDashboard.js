@@ -222,7 +222,7 @@ profileDashboard.controller = function(params) {
                         var valueOut = urlToNameMapper[url];
                         return valueOut + fieldMappings[field[0]];
                     }
-                    return fieldMappings[field[0]];
+                    return fieldMappings[field[0]] + value;
                 }
             }
         }
@@ -245,8 +245,8 @@ profileDashboard.controller = function(params) {
             elasticURL: '/api/v1/search/',
             size: 5,
             page: 0,
-            requiredFilters: ['match:contributors.url:' + ctx.userId + '=lock'],
-            optionalFilters: ['match:_type:project=lock', 'match:_type:component=lock'],
+            dashboardDefinedANDFilters: ['match:contributors.url:' + ctx.userId],
+            dashboardDefinedORFilters: ['match:_type:project', 'match:_type:component'],
             sort: 'Date',
             sortMap: {
                 Date: 'date_created',
@@ -257,7 +257,7 @@ profileDashboard.controller = function(params) {
     var nameRequest = {
         id: 'nameRequest',
         elasticURL: '/api/v1/search/',
-        requiredFilters: ['match:category:user=lock'],
+        dashboardDefinedANDFilters: ['match:category:user'],
         preRequest: [function (requestIn, data) { //functions to modify filters and query before request
             var request = $.extend({}, requestIn);
             var urls = [];
@@ -273,7 +273,7 @@ profileDashboard.controller = function(params) {
             $.map(missingGuids, function (guid) {
                 guidFilters.push('match:id:' + guid);
             });
-            request.optionalFilters = guidFilters;
+            request.userDefinedORFilters = guidFilters;
             request.size = missingGuids.length;
             return request;
         }],
@@ -290,6 +290,11 @@ profileDashboard.controller = function(params) {
 
     this.searchSetup = {
         user: ctx.userId,
+        loadingIcon: function() {
+            return m('.spinner-loading-wrapper', [m('.logo-spin.text-center',
+                m('img[src=/static/img/logo_spin.png][alt=loader]')),
+                m('p.m-t-sm.fg-load-message', ' Loading... ')]);
+        },
         requests : {
             mainRequest: mainRequest,
             nameRequest: nameRequest

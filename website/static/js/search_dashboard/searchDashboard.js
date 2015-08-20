@@ -59,6 +59,7 @@ searchDashboard.controller = function (params) {
 
     //search model state
     self.vm = searchDashboard.vm;
+    self.vm.loadingIcon = params.loadingIcon || function(){return m('div',' Loading... '); };
     self.vm.requestOrder = params.requestOrder;
     self.vm.tempData = params.tempData;
     self.vm.widgetsToUpdate = [];
@@ -92,7 +93,7 @@ searchDashboard.controller = function (params) {
     self.vm.results = null; //unused, only for backwards compatibility with utils TODO remove
 
     History.Adapter.bind(window, 'statechange', function(e) {
-        var historyChanged = searchUtils.hasRequestStateChanged(self.vm);
+        var historyChanged = searchUtils.hasRequestsStateChanged(self.vm);
         if (historyChanged){
             widgetUtils.signalWidgetsToUpdate(self.vm, self.vm.widgetIds);
             searchUtils.updateRequestsFromHistory(self.vm);
@@ -108,8 +109,10 @@ searchDashboard.buildRequest = function(id, request, aggs){
         id : id,
         elasticURL: request.elasticURL,
         query: request.query || m.prop('*'),
-        optionalFilters : request.optionalFilters || [],
-        requiredFilters : request.requiredFilters || [],
+        userDefinedANDFilters : [],
+        userDefinedORFilters : [],
+        dashboardDefinedANDFilters: request.dashboardDefinedANDFilters || [],
+        dashboardDefinedORFilters: request.dashboardDefinedORFilters || [],
         preRequest: request.preRequest,
         postRequest: request.postRequest,
         aggregations : aggs || [],
@@ -124,15 +127,6 @@ searchDashboard.buildRequest = function(id, request, aggs){
 };
 
 require('css/search_widget.css');
-
-function loadingIcon(){
-    return m('.spinner-loading-wrapper', [
-            m('.logo-spin.text-center', [
-                m('img[src=/static/img/logo_spin.png][alt=loader]')
-            ]),
-            m('p.m-t-sm.fg-load-message', ' Loading... ')
-        ]);
-}
 
 var SearchWidget = {
     /**
@@ -161,7 +155,7 @@ var SearchWidget = {
                     )
                 ]),
                 m('.panel-body', {style: ctrl.hidden() ? 'display:none' : ''},
-                    dataReady ? m.component(params.widget.display.component, params) : loadingIcon())
+                    dataReady ? m.component(params.widget.display.component, params) : params.vm.loadingIcon())
             ])
         );
     },

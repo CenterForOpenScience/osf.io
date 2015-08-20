@@ -8,21 +8,6 @@ var searchUtils = require('js/search_dashboard/searchUtils');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 require('truncate');
 
-/**
- * Removes any filters containing the '=lock' extension
- *
- * @param {Array} filters: Array of filters to removed locked filters from
- * @return {Array}  Array of filters with locked filters removed
- */
-function removeLockedFilters(filters) {
-    return filters.filter(function(filt){
-        var filtParts = filt.split('=');
-            if (filtParts[1] === undefined){ //no lock, so ok to return
-                return filtParts[0];
-            }
-    });
-}
-
 var FilterWidget = {
     /**
      * View function of ActiveFilters component
@@ -34,25 +19,27 @@ var FilterWidget = {
     view : function(ctrl, params) {
         var vm = params.vm;
         var widget = params.widget;
-        var requiredFilters = removeLockedFilters(vm.requests[widget.display.reqRequests[0]].requiredFilters);
-        var optionalFilters = removeLockedFilters(vm.requests[widget.display.reqRequests[0]].optionalFilters);
+        var ANDFilters = vm.requests[widget.display.reqRequests[0]].userDefinedANDFilters;
+        var ORFilters = vm.requests[widget.display.reqRequests[0]].userDefinedORFilters;
 
-        var numFilters = requiredFilters.length + optionalFilters.length;
+        var numFilters = ANDFilters.length + ORFilters.length;
         if (numFilters <= 0){
             return m('p', {class: 'text-muted'}, 'No filters applied');
         }
 
-        var requiredFilterViews = $.map(requiredFilters, function(searchFilter, i) {
+        var requiredFilterViews = $.map(ANDFilters, function(searchFilter, i) {
             var isLastFilter = (i + 1 === numFilters);
-            return m.component(Filter, $.extend({filter: searchFilter, isLastFilter: isLastFilter, required: true}, params));
+            return m.component(Filter, $.extend({},params,{key: searchFilter, filter: searchFilter, isLastFilter: isLastFilter, required: true}));
         });
 
-        var optionalFilterViews = $.map(optionalFilters, function(searchFilter, i) {
-            var isLastFilter = (i + 1 + requiredFilters.length === numFilters);
-            return m.component(Filter, $.extend({filter: searchFilter, isLastFilter: isLastFilter, required: false}, params));
+        var optionalFilterViews = $.map(ORFilters, function(searchFilter, i) {
+            var isLastFilter = (i + 1 + ANDFilters.length === numFilters);
+            return m.component(Filter, $.extend({},params,{key: searchFilter, filter: searchFilter, isLastFilter: isLastFilter, required: false}));
         });
-
-        return m('div', {}, requiredFilterViews.concat(optionalFilterViews));
+        var filtersToDisp = requiredFilterViews.concat(optionalFilterViews);
+        console.log(filtersToDisp.length);
+        var ret = m('div', {}, filtersToDisp);
+        return ret;
     }
 };
 
@@ -74,11 +61,11 @@ var Filter = {
         var fields = filterParts[1].split('.');
         var values = filterParts.slice(2);
 
-        return m('render-filter.m-t-xs.m-b-xs', [
+        return m('render-filter.m-t-xs.m-b-xs', {}, [
             m('a.m-r-xs.m-l-xs', {
                 onclick: function(event){
-                    searchUtils.removeFilter(vm,[], searchFilter);
                     widgetUtils.signalWidgetsToUpdate(vm, params.widget.display.callbacksUpdate);
+                    searchUtils.removeFilter(vm,[], searchFilter);
                 }
             }, widget.display.filterParsers[filterParts[0]](fields, values, vm, widget), m('i.fa.fa-close.m-r-xs.m-l-xs')),
             m('.badge.pointer',  isLastFilter ? ('') : (required ? 'AND' : 'OR'))

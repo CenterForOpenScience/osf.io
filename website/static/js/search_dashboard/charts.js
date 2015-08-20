@@ -166,7 +166,7 @@ charts.barChart = function (data, vm, widget) {
 
 charts.getZoomFromTimeRangeFilter = function(vm, bounds){
     var zoom = null;
-    vm.requiredFilters.some(function(filterString) {
+    vm.userDefinedANDFilters.some(function(filterString) {
         var filterParts = filterString.split('='); //remove lock qualifier if it exists
         if (filterParts[1] !== undefined) {return; } //there is a lock, so do nothing with this filter
 

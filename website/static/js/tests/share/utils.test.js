@@ -26,8 +26,8 @@ describe('share/utils', () => {
         },
         resultsLoading: resultsLoadingSpy,
         query: function(){return query;},
-        optionalFilters: [],
-        requiredFilters: []
+        userDefinedORFilters: [],
+        userDefinedANDFilters: []
     };
 
     describe('#loadMore', () => {
@@ -87,31 +87,31 @@ describe('share/utils', () => {
     describe('#buildURLParams', () => {
 
         afterEach(() => {
-            vm.optionalFilters = [];
-            vm.requiredFilters = [];
+            vm.userDefinedORFilters = [];
+            vm.userDefinedANDFilters = [];
             query = '';
             sort = 'sort';
         });
 
         it('builds url parameters of the form ?q=&required=&optional&sort=', () => {
             query = '1';
-            vm.requiredFilters.push('2');
-            vm.optionalFilters.push('3');
+            vm.userDefinedANDFilters.push('2');
+            vm.userDefinedORFilters.push('3');
             sort = '4';
             assert.equal('q=1&required=2&optional=3&sort=4', utils.buildURLParams(vm));
         });
 
         it('doesn\'t display parameters unless they have meaningful values', () => {
             query = '1';
-            vm.requiredFilters.push('2');
+            vm.userDefinedANDFilters.push('2');
             sort = '4';
             assert.equal('q=1&required=2&sort=4', utils.buildURLParams(vm));
 
-            vm.optionalFilters.push('3');
-            vm.requiredFilters = [];
+            vm.userDefinedORFilters.push('3');
+            vm.userDefinedANDFilters = [];
             assert.equal('q=1&optional=3&sort=4', utils.buildURLParams(vm));
 
-            vm.requiredFilters.push('2');
+            vm.userDefinedANDFilters.push('2');
             sort = null;
             assert.equal('q=1&required=2&optional=3', utils.buildURLParams(vm));
 
@@ -131,8 +131,8 @@ describe('share/utils', () => {
             query = '';
         });
         afterEach(() => {
-            vm.optionalFilters = [];
-            vm.requiredFilters = [];
+            vm.userDefinedORFilters = [];
+            vm.userDefinedANDFilters = [];
         });
 
         it('creates a match_all query when the query is empty or *', () => {
@@ -154,8 +154,8 @@ describe('share/utils', () => {
         });
 
         it('creates match query filters for required filters', () => {
-            vm.requiredFilters.push('_all:1');
-            vm.requiredFilters.push('_all:2');
+            vm.userDefinedANDFilters.push('_all:1');
+            vm.userDefinedANDFilters.push('_all:2');
             var built = utils.buildQuery(vm);
 
             assert.equal('bool', Object.keys(built.query.filtered.filter)[0]);
@@ -166,8 +166,8 @@ describe('share/utils', () => {
         });
 
         it('creates a list of should filters for the optional filters', () => {
-            vm.requiredFilters.push('_all:1');
-            vm.requiredFilters.push('_all:2');
+            vm.userDefinedANDFilters.push('_all:1');
+            vm.userDefinedANDFilters.push('_all:2');
             var built = utils.buildQuery(vm);
 
             $.map(built.query.filtered.filter.bool.should, function (item) {
@@ -186,30 +186,30 @@ describe('share/utils', () => {
 
         after(() => {
             utils.search.restore();
-            vm.requiredFilters = [];
-            vm.optionalFilters = [];
+            vm.userDefinedANDFilters = [];
+            vm.userDefinedORFilters = [];
         });
 
         it('adds filters to the optionalFilters unless it is already there or it is required', () => {
             utils.updateFilter(vm, 'test');
-            assert.deepEqual(['test'], vm.optionalFilters);
+            assert.deepEqual(['test'], vm.userDefinedORFilters);
 
             utils.updateFilter(vm, 'test');
-            assert.deepEqual(['test'], vm.optionalFilters);
+            assert.deepEqual(['test'], vm.userDefinedORFilters);
 
             utils.updateFilter(vm, 'test', true);
-            assert.deepEqual(['test'], vm.optionalFilters);
+            assert.deepEqual(['test'], vm.userDefinedORFilters);
         });
 
         it('adds filters to the required filters only if required is true and the filter is not already there', () => {
             utils.updateFilter(vm, 'test', true);
-            assert.deepEqual(['test'], vm.requiredFilters);
+            assert.deepEqual(['test'], vm.userDefinedANDFilters);
 
             utils.updateFilter(vm, 'test', true);
-            assert.deepEqual(['test'], vm.requiredFilters);
+            assert.deepEqual(['test'], vm.userDefinedANDFilters);
 
             utils.updateFilter(vm, 'toast');
-            assert.deepEqual(['test'], vm.requiredFilters);
+            assert.deepEqual(['test'], vm.userDefinedANDFilters);
         });
 
     });
@@ -228,15 +228,15 @@ describe('share/utils', () => {
         it('removes filters from optional and required', () => {
             utils.updateFilter(vm, 'test');
             utils.updateFilter(vm, 'test', true);
-            assert.deepEqual(['test'], vm.optionalFilters);
-            assert.deepEqual(['test'], vm.requiredFilters);
+            assert.deepEqual(['test'], vm.userDefinedORFilters);
+            assert.deepEqual(['test'], vm.userDefinedANDFilters);
 
             utils.removeFilter(vm, 'test');
-            assert.deepEqual([], vm.optionalFilters);
-            assert.deepEqual([], vm.requiredFilters);
+            assert.deepEqual([], vm.userDefinedORFilters);
+            assert.deepEqual([], vm.userDefinedANDFilters);
             utils.removeFilter(vm, 'test');
-            assert.deepEqual([], vm.optionalFilters);
-            assert.deepEqual([], vm.requiredFilters);
+            assert.deepEqual([], vm.userDefinedORFilters);
+            assert.deepEqual([], vm.userDefinedANDFilters);
         });
 
     });

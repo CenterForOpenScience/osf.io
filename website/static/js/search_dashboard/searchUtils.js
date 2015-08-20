@@ -14,7 +14,9 @@ var tags = ['div', 'i', 'b', 'sup', 'p', 'span', 'sub', 'bold', 'strong', 'itali
 searchUtils.errorState = function(vm){
     //TODO remove queries, sorts, and non-locked filters from all requests
     m.redraw(true);
-    $osf.growl('Error', 'invalid query');
+    if (vm.errorHandeler) {
+        vm.errorHandeler(vm);
+    }
 };
 
 searchUtils.runRequest = function(vm, request, data) {
@@ -61,10 +63,10 @@ searchUtils.runRequest = function(vm, request, data) {
 };
 
 searchUtils.runRequests = function(vm){
-    if (searchUtils.hasRequestStateChanged(vm)) {
+    if (searchUtils.hasRequestsStateChanged(vm)) {
         searchUtils.pushRequestsToHistory(vm);
     }
-    vm.requestOrder.forEach(function(parallelReqs){
+    vm.requestOrder.forEach(function(parallelReqs){ //TODO move into if state chaged, so only requests when nessary
         searchUtils.recursiveRequest(vm, parallelReqs);
     });
 };
@@ -109,8 +111,8 @@ searchUtils.updateRequestsFromHistory = function(vm){
     var state = History.getState().data.requests;
     for (var request in vm.requests) {
         if (vm.requests.hasOwnProperty(request) && state.hasOwnProperty(request)) {
-            vm.requests[request].optionalFilters = state[request].optionalFilters;
-            vm.requests[request].requiredFilters = state[request].requiredFilters;
+            vm.requests[request].userDefinedORFilters = state[request].userDefinedORFilters;
+            vm.requests[request].userDefinedANDFilters = state[request].userDefinedANDFilters;
             vm.requests[request].query(state[request].query);
             vm.requests[request].sort(state[request].sort);
         }
@@ -127,7 +129,7 @@ searchUtils.pushRequestsToHistory = function(vm){
 };
 
 /* Checks to see if the state of the vm has changed */
-searchUtils.hasRequestStateChanged = function (vm) {
+searchUtils.hasRequestsStateChanged = function (vm) {
     for (var request in vm.requests) {
         if (vm.requests.hasOwnProperty(request)) {
             var stateChanged = searchUtils.hasRequestStateChanged(vm, vm.requests[request]);
@@ -145,8 +147,8 @@ searchUtils.hasRequestStateChanged = function (vm, currentRequest){
         if (state.requests.hasOwnProperty(currentRequest.id)) {
             var oldRequest = state.requests[currentRequest.id];
             var isEqual = (oldRequest.query === currentRequest.query() && oldRequest.sort === currentRequest.sort() &&
-            searchUtils.arrayEqual(oldRequest.optionalFilters, currentRequest.optionalFilters) &&
-            searchUtils.arrayEqual(oldRequest.requiredFilters, currentRequest.requiredFilters));
+            searchUtils.arrayEqual(oldRequest.userDefinedORFilters, currentRequest.userDefinedORFilters) &&
+            searchUtils.arrayEqual(oldRequest.userDefinedANDFilters, currentRequest.userDefinedANDFilters));
             if (isEqual) {
                 return false;
             }
@@ -164,11 +166,11 @@ searchUtils.buildURLParams = function(vm){
             if (vm.requests[request].query()) {
                 d[request].q = vm.requests[request].query();
             }
-            if (vm.requests[request].requiredFilters.length > 0) {
-                d[request].required = vm.requests[request].requiredFilters.join('|');
+            if (vm.requests[request].userDefinedANDFilters.length > 0) {
+                d[request].required = vm.requests[request].userDefinedANDFilters.join('|');
             }
-            if (vm.requests[request].optionalFilters.length > 0) {
-                d[request].optional = vm.requests[request].optionalFilters.join('|');
+            if (vm.requests[request].userDefinedORFilters.length > 0) {
+                d[request].optional = vm.requests[request].userDefinedORFilters.join('|');
             }
             if (vm.requests[request].sort()) {
                 d[request].sort = vm.requests[request].sort();
@@ -180,8 +182,13 @@ searchUtils.buildURLParams = function(vm){
 
 /* Builds the elasticsearch query that will be POSTed to the search API */
 searchUtils.buildQuery = function (vm) {
-    var must = $.map(vm.requiredFilters, searchUtils.parseFilter);
-    var should = $.map(vm.optionalFilters, searchUtils.parseFilter);
+    var userMust = $.map(vm.userDefinedANDFilters, searchUtils.parseFilter);
+    var userShould = $.map(vm.userDefinedORFilters, searchUtils.parseFilter);
+    var must = $.map(vm.dashboardDefinedANDFilters, searchUtils.parseFilter);
+    var should = $.map(vm.dashboardDefinedORFilters, searchUtils.parseFilter);
+    must = must.concat(userMust);
+    should = should.concat(userShould);
+
     var size = vm.size || 10;
     var sort = {};
 
@@ -224,11 +231,11 @@ searchUtils.updateFilter = function (vm, requests, filter, required) {
     }
 
     requests.forEach(function(request) {
-        if (required && request.requiredFilters.indexOf(filter) === -1) {
-            request.requiredFilters.push(filter);
+        if (required && request.userDefinedANDFilters.indexOf(filter) === -1) {
+            request.userDefinedANDFilters.push(filter);
             request.page = 0;
-        } else if (request.optionalFilters.indexOf(filter) === -1 && !required) {
-            request.optionalFilters.push(filter);
+        } else if (request.userDefinedORFilters.indexOf(filter) === -1 && !required) {
+            request.userDefinedORFilters.push(filter);
             request.page = 0;
         }
     });
@@ -246,14 +253,14 @@ searchUtils.removeFilter = function (vm, requests, filter) {
     }
 
     requests.forEach(function(request){
-        var reqIndex = request.requiredFilters.indexOf(filter);
-        var optIndex = request.optionalFilters.indexOf(filter);
+        var reqIndex = request.userDefinedANDFilters.indexOf(filter);
+        var optIndex = request.userDefinedORFilters.indexOf(filter);
         if (reqIndex > -1) {
-            request.requiredFilters.splice(reqIndex, 1);
+            request.userDefinedANDFilters.splice(reqIndex, 1);
             request.page = 0; //reset the page will reset the results.
         }
         if (optIndex > -1) {
-            request.optionalFilters.splice(optIndex, 1);
+            request.userDefinedORFilters.splice(optIndex, 1);
             request.page = 0;
         }
     });
@@ -274,8 +281,7 @@ searchUtils.arrayEqual = function (a, b) {
  * @param {String} filterString A string representation of a filter dictionary
  */
 searchUtils.parseFilter = function (filterString) {
-    var filterParts = filterString.split('='); //remove lock qualifier if it exists
-    var parts = filterParts[0].split(':');
+    var parts = filterString.split(':');
     var type = parts[0];
     var field = parts[1];
 

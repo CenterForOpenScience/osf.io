@@ -77,8 +77,8 @@ ShareApp.controller = function() {
     History.replaceState({
         query: self.vm.query(),
         sort: self.vm.sort(),
-        optionalFilters: self.vm.optionalFilters,
-        requiredFilters: self.vm.requiredFilters
+        optionalFilters: self.vm.userDefinedORFilters,
+        requiredFilters: self.vm.userDefinedANDFilters
     }, self.vm.pageTitle, '?' + utils.buildURLParams(self.vm));
 
     m.request({
