@@ -134,7 +134,7 @@ class NodeSerializer(JSONAPISerializer):
             if attr == 'tags':
                 old_tags = set([tag._id for tag in instance.tags])
                 if value:
-                    current_tags = set(literal_eval(value))
+                    current_tags = set(value)
                 else:
                     current_tags = set()
                 new_tags = list(current_tags - old_tags)

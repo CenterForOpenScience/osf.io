@@ -13,6 +13,10 @@ def _rapply(d, func, *args, **kwargs):
             key: _rapply(value, func, *args, **kwargs)
             for key, value in d.iteritems()
         }
+    if isinstance(d, list):
+        return [
+            _rapply(item, func, *args, **kwargs) for item in d
+        ]
     else:
         return func(d, *args, **kwargs)
 
