@@ -139,11 +139,9 @@ class NodeSerializer(JSONAPISerializer):
                     current_tags = set(value)
                 else:
                     current_tags = set()
-                new_tags = list(current_tags - old_tags)
-                deleted_tags = list(old_tags - current_tags)
-                for new_tag in new_tags:
+                for new_tag in (current_tags - old_tags):
                     instance.add_tag(new_tag, auth=auth)
-                for deleted_tag in deleted_tags:
+                for deleted_tag in (old_tags - current_tags):
                     instance.remove_tag(deleted_tag, auth=auth)
             else:
                 setattr(instance, attr, value)
