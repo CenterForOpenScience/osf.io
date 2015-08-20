@@ -93,3 +93,6 @@ website/static/img/badges
 
 # GUIDS
 scripts/guid_blacklist.txt
+
+# Scripts
+scripts/osfstorage/usage_whitelist.json
