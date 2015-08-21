@@ -168,6 +168,17 @@ utils.buildQuery = function (vm) {
     var should = $.map(vm.optionalFilters, utils.parseFilter);
     var from = (vm.page - 1) * 10;
     var sort = {};
+    var query = (vm.query().length > 0 && (vm.query() !== '*')) ? utils.commonQuery(vm.query()) : utils.matchAllQuery();
+    var builtQuery = {};
+    var filters = utils.boolQuery(must, null, should);
+    if (Object.keys(filters).length === 0) {
+        builtQuery = query;
+    } else {
+        builtQuery.filtered = {
+            query: query,
+            filter: filters
+        };
+    }
 
     if (vm.sortMap[vm.sort()]) {
         sort[vm.sortMap[vm.sort()]] = 'desc';
@@ -177,12 +188,7 @@ utils.buildQuery = function (vm) {
 
     // size defaults to 10, left out intentionally
     var ret = {
-        'query' : {
-            'filtered': {
-                'query': (vm.query().length > 0 && (vm.query() !== '*')) ? utils.commonQuery(vm.query()) : utils.matchAllQuery(),
-                'filter': utils.boolQuery(must, null, should)
-            }
-        },
+        'query' : builtQuery,
         'aggregations': vm.loadStats ? utils.buildStatsAggs(vm) : {},
         'highlight': {
             'fields': {
