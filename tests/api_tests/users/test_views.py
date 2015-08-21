@@ -608,3 +608,53 @@ class TestDeactivatedUser(ApiTestCase):
         self.user.save()
         res = self.app.get(url, auth=self.user.auth , expect_errors=True)
         assert_equal(res.status_code, 410)
+
+class TestExceptionFormatting(ApiTestCase):
+    def setUp(self):
+
+        super(TestExceptionFormatting, self).setUp()
+
+        self.user = AuthUserFactory.build(
+            fullname='Martin Luther King Jr.',
+            given_name='Martin',
+            family_name='King',
+            suffix='Jr.',
+            social=dict(
+                github='userOneGithub',
+                scholar='userOneScholar',
+                personal='http://www.useronepersonalwebsite.com',
+                twitter='userOneTwitter',
+                linkedIn='userOneLinkedIn',
+                impactStory='userOneImpactStory',
+                orcid='userOneOrcid',
+                researcherId='userOneResearcherId'
+            )
+        )
+        self.url = '/{}users/{}/'.format(API_BASE, self.user._id)
+
+        self.user_two = AuthUserFactory()
+
+    def test_updates_user_with_no_fullname(self):
+        res = self.app.put_json_api(self.url, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors']
+        assert(isinstance(errors, list))
+        assert('fullname' in res.json['errors'][0]['detail'])
+
+    def test_updates_user_unauthorized(self):
+        res = self.app.put_json_api(self.url, expect_errors=True)
+        errors = res.json['errors']
+        assert(isinstance(errors, list))
+        assert_equal(errors[0], {'detail': "Authentication credentials were not provided."})
+
+    def test_updates_user_forbidden(self):
+        res = self.app.put_json_api(self.url, auth=self.user_two.auth, expect_errors=True)
+        errors = res.json['errors']
+        assert(isinstance(errors, list))
+        assert_equal(errors[0], {'detail': 'You do not have permission to perform this action.'})
+
+    def test_user_does_not_exist_formatting(self):
+        url = '/{}users/{}/'.format(API_BASE, '12345')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors']
+        assert(isinstance(errors, list))
+        assert_equal(errors[0], {'detail': 'Not found.'})
