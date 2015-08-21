@@ -224,6 +224,7 @@ class JSONAPISerializer(ser.Serializer):
         :param obj: Object to be serialized.
         :param envelope: Key for resource object.
         """
+        ret = {}
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
@@ -250,7 +251,6 @@ class JSONAPISerializer(ser.Serializer):
             else:
                 data['attributes'][field.field_name] = field.to_representation(attribute)
 
-        ret = {}
         if envelope:
             ret[envelope] = data
         else:
