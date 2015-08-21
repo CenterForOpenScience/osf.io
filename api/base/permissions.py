@@ -11,6 +11,10 @@ class TokenHasScope(permissions.BasePermission):
     Requires the user to define `read_scopes` and `write_scopes` attributes based on names of publicly defined composed
         scopes
     """
+    def has_object_permission(self, request, view, obj):
+        # FIXME: Implement
+        return True
+
     def has_permission(self, request, view):
         token = request.auth
 
