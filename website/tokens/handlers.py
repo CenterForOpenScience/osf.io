@@ -57,12 +57,15 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     if not sanction:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Bad request',
-            'message_long': 'There is no sanction associated with this token'
+            'message_long': 'There is no {0} associated with this token.'.format(kind)
         })
-
+    if sanction.is_approved:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_long="This registration is not pending {0}.".format(sanction.short_name)
+        ))
     if sanction.is_rejected:
         raise HTTPError(http.GONE, data=dict(
-            message_long="This registration has been rejected"
+            message_long="This registration {0} has been rejected.".format(sanction.short_name)
         ))
     do_action = getattr(sanction, action, None)
     if do_action:
