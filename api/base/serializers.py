@@ -207,8 +207,8 @@ class JSONAPIListSerializer(ser.ListSerializer):
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
     allows for enveloping of both single resources and collections.  Looks to nest fields
-    according to JSON API spec. Relational fields must use HyperlinkedIdentityField or
-    HyperlinkedIdentityFieldWithMeta. Self/html links must be nested under "links".
+    according to JSON API spec. Relational fields must use HyperlinkedIdentityFieldWithMeta.
+    Self/html links must be nested under "links".
     """
 
     # overrides Serializer
@@ -241,7 +241,7 @@ class JSONAPISerializer(ser.Serializer):
 
             if attribute is None:
                 data[field.field_name] = None
-            elif isinstance(field, ser.HyperlinkedIdentityField):
+            elif isinstance(field, HyperlinkedIdentityFieldWithMeta):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
