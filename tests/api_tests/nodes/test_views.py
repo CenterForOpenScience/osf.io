@@ -1546,3 +1546,63 @@ class TestReturnDeletedNode(ApiTestCase):
     def test_delete_deleted_private_node(self):
         res = self.app.delete(self.private_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
+
+
+class TestExceptionFormatting(ApiTestCase):
+    def setUp(self):
+
+        super(TestExceptionFormatting, self).setUp()
+        self.user = AuthUserFactory()
+        self.non_contrib = AuthUserFactory()
+
+        self.title = 'Cool Project'
+        self.description = 'A Properly Cool Project'
+        self.category = 'data'
+
+        self.project_no_title = {'description': self.description,
+                                 'category': self.category,
+                                 }
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
+
+    def test_creates_project_with_no_title_formatting(self):
+        url = '/{}nodes/'.format(API_BASE)
+        res = self.app.post_json_api(url, self.project_no_title, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors']
+        assert(isinstance(errors, list))
+        assert('title' in res.json['errors'][0]['detail'])
+
+    def test_node_does_not_exist_formatting(self):
+        url = '/{}nodes/{}/'.format(API_BASE, '12345')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors']
+        assert(isinstance(errors, list))
+        assert_equal(errors[0], {'detail': 'Not found.'})
+
+    def test_forbidden_formatting(self):
+        res = self.app.get(self.private_url, auth=self.non_contrib.auth, expect_errors=True)
+        errors = res.json['errors']
+        assert(isinstance(errors, list))
+        assert_equal(errors[0], {'detail': 'You do not have permission to perform this action.'})
+
+    def test_not_authorized_formatting(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        errors = res.json['errors']
+        assert(isinstance(errors, list))
+        assert_equal(errors[0], {'detail': "Authentication credentials were not provided."})
+
+    def test_update_project_with_no_title_or_category_formatting(self):
+        res = self.app.put_json_api(self.private_url, {'description': 'New description'}, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors']
+        assert(isinstance(errors, list))
+        assert_equal(len(errors), 2)
+        assert('category' in errors[0]['detail'].keys())
+        assert('title' in errors[1]['detail'].keys())
+
+    def test_create_node_link_no_target_formatting(self):
+        url = self.private_url + 'node_links/'
+        res = self.app.post_json_api(url, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors']
+        assert(isinstance(errors, list))
+        assert('target_node_id' in res.json['errors'][0]['detail'])
