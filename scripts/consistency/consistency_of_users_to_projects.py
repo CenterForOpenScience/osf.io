@@ -30,5 +30,6 @@ def check_consistency_of_users_to_projects():
     else:
         logger.info("Consistency of users to projects' check is done. There are {} inconsistency found.".format(count))
 
+
 if __name__ == '__main__':
     check_consistency_of_users_to_projects()
