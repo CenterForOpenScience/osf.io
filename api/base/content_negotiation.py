@@ -15,4 +15,4 @@ class JSONAPIContentNegotiation(DefaultContentNegotiation):
         if 'application/json' in accepts:
             return (renderers[0], renderers[0].media_type)
 
-        return DefaultContentNegotiation.select_renderer(self, request, renderers)
+        return super(JSONAPIContentNegotiation, self).select_renderer(request, renderers)
