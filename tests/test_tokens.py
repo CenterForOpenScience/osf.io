@@ -3,8 +3,7 @@ import httplib as http
 
 import mock
 from nose.tools import *  # noqa
-from nose.loader import TestLoader
-import nose
+import unittest
 
 from modularodm import Q
 
@@ -93,74 +92,77 @@ SANCTION_FACTORY_MAP = {
     'retraction': factories.RetractionFactory
 }
 
-def make_sanction_token_handler_case(kind):
+class SanctionTokenHandlerBase(OsfTestCase):
+
+    kind = None
 
     def setUp(self, *args, **kwargs):
         OsfTestCase.setUp(self, *args, **kwargs)
-        setattr(self, kind, SANCTION_FACTORY_MAP[kind]())
-        setattr(self, '{0}_reg'.format(kind), Node.find_one(Q(kind, 'eq', getattr(self, kind))))
-        setattr(self, '{0}_user'.format(kind), getattr(self, '{0}_reg'.format(kind)).creator)
+        if not self.kind:
+            return
+        setattr(self, self.kind, SANCTION_FACTORY_MAP[self.kind]())
+        setattr(self, '{0}_reg'.format(self.kind), Node.find_one(Q(self.kind, 'eq', getattr(self, self.kind))))
+        setattr(self, '{0}_user'.format(self.kind), getattr(self, '{0}_reg'.format(self.kind)).creator)
 
-    @mock.patch('website.tokens.handlers.{0}_handler'.format(kind))
-    def test_sanction_handler(self, mock_handler):
-        approval_token = getattr(self, kind).approval_state[getattr(self, '{}_user'.format(kind))._id]['approval_token']
+    def test_sanction_handler(self):
+        if not self.kind:
+            return
+        approval_token = getattr(self, self.kind).approval_state[getattr(self, '{}_user'.format(self.kind))._id]['approval_token']
         handler = TokenHandler.from_string(approval_token)
-        with mock_auth(getattr(self, '{0}_user'.format(kind))):
-            handler.to_response()
-            mock_handler.assert_called_with('approve', getattr(self, '{0}_reg'.format(kind)), getattr(self, '{0}_reg'.format(kind)).registered_from)
+        with mock_auth(getattr(self, '{0}_user'.format(self.kind))):
+            with mock.patch('website.tokens.handlers.{0}_handler'.format(self.kind)) as mock_handler:
+                handler.to_response()
+                mock_handler.assert_called_with('approve', getattr(self, '{0}_reg'.format(self.kind)), getattr(self, '{0}_reg'.format(self.kind)).registered_from)
 
     def test_sanction_handler_no_sanction(self):
-        approval_token = getattr(self, kind).approval_state[getattr(self, '{0}_user'.format(kind))._id]['approval_token']
+        if not self.kind:
+            return
+        approval_token = getattr(self, self.kind).approval_state[getattr(self, '{0}_user'.format(self.kind))._id]['approval_token']
         handler = TokenHandler.from_string(approval_token)
-        SANCTION_CLASS_MAP[kind].remove_one(getattr(self, kind))
-        with mock_auth(getattr(self, '{0}_user'.format(kind))):
+        SANCTION_CLASS_MAP[self.kind].remove_one(getattr(self, self.kind))
+        with mock_auth(getattr(self, '{0}_user'.format(self.kind))):
             try:
                 handler.to_response()
             except HTTPError as e:
                 assert_equal(e.code, http.BAD_REQUEST)
-                assert_equal(e.data['message_long'], NO_SANCTION_MSG.format(SANCTION_CLASS_MAP[kind].DISPLAY_NAME))
+                assert_equal(e.data['message_long'], NO_SANCTION_MSG.format(SANCTION_CLASS_MAP[self.kind].DISPLAY_NAME))
 
     def test_sanction_handler_sanction_approved(self):
-        approval_token = getattr(self, kind).approval_state[getattr(self, '{0}_user'.format(kind))._id]['approval_token']
+        if not self.kind:
+            return
+        approval_token = getattr(self, self.kind).approval_state[getattr(self, '{0}_user'.format(self.kind))._id]['approval_token']
         handler = TokenHandler.from_string(approval_token)
-        getattr(self, kind).state = Sanction.APPROVED
-        getattr(self, kind).save()
-        with mock_auth(getattr(self, '{0}_user'.format(kind))):
+        getattr(self, self.kind).state = Sanction.APPROVED
+        getattr(self, self.kind).save()
+        with mock_auth(getattr(self, '{0}_user'.format(self.kind))):
             try:
                 handler.to_response()
             except HTTPError as e:
-                assert_equal(e.code, http.BAD_REQUEST if kind in ['embargo', 'registration_approval'] else http.GONE)
-                assert_equal(e.data['message_long'], APPROVED_MSG.format(getattr(self, kind).DISPLAY_NAME))
+                assert_equal(e.code, http.BAD_REQUEST if self.kind in ['embargo', 'registration_approval'] else http.GONE)
+                assert_equal(e.data['message_long'], APPROVED_MSG.format(getattr(self, self.kind).DISPLAY_NAME))
 
     def test_sanction_handler_sanction_rejected(self):
-        approval_token = getattr(self, kind).approval_state[getattr(self, '{0}_user'.format(kind))._id]['approval_token']
+        if not self.kind:
+            return
+        approval_token = getattr(self, self.kind).approval_state[getattr(self, '{0}_user'.format(self.kind))._id]['approval_token']
         handler = TokenHandler.from_string(approval_token)
-        getattr(self, kind).state = Sanction.REJECTED
-        getattr(self, kind).save()
-        with mock_auth(getattr(self, '{0}_user'.format(kind))):
+        getattr(self, self.kind).state = Sanction.REJECTED
+        getattr(self, self.kind).save()
+        with mock_auth(getattr(self, '{0}_user'.format(self.kind))):
             try:
                 handler.to_response()
             except HTTPError as e:
-                assert_equal(e.code, http.GONE if kind in ['embargo', 'registration_approval'] else http.BAD_REQUEST)
-                assert_equal(e.data['message_long'], REJECTED_MSG.format(getattr(self, kind).DISPLAY_NAME))
+                assert_equal(e.code, http.GONE if self.kind in ['embargo', 'registration_approval'] else http.BAD_REQUEST)
+                assert_equal(e.data['message_long'], REJECTED_MSG.format(getattr(self, self.kind).DISPLAY_NAME))
 
-    return type(
-        'Test{0}TokenHandlers'.format(kind),
-        (OsfTestCase,),
-        {
-            'setUp': setUp,
-            'test_sanction_handler_{0}'.format(kind): test_sanction_handler,
-            'test_sanction_sanction_handler_no_{0}'.format(kind): test_sanction_handler_no_sanction,
-            'test_sanction_handler_{0}_approved'.format(kind): test_sanction_handler_sanction_approved,
-            'test_sanction_handler_{0}_rejected'.format(kind): test_sanction_handler_sanction_rejected
-        }
-    )
+class TestEmbargoTokenHandler(SanctionTokenHandlerBase):
 
-global test_sanction_handler_embargo
-global test_sanction_handler_registration_appproval
-global test_sanction_handler_retraction
-for kind in ['embargo', 'registration_approval', 'retraction']:
-    globals()['test_sanction_handler_{0}'.format(kind)] = make_sanction_token_handler_case(kind)
+    kind = 'embargo'
 
-if __name__ == '__main__':
-    unittest.main()
+class TestRegistrationApprovalTokenHandler(SanctionTokenHandlerBase):
+
+    kind = 'registration_approval'
+
+class TestRetractionTokenHandler(SanctionTokenHandlerBase):
+
+    kind = 'retraction'
