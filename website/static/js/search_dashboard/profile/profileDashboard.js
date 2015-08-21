@@ -5,19 +5,19 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 
 //TODO pack into lib
-var searchUtils = require('js/search_dashboard/searchUtils');
-var widgetUtils = require('js/search_dashboard/widgetUtils');
-var charts = require('js/search_dashboard/charts');
-var FilterWidget = require('js/search_dashboard/FilterWidget');
-var SearchDashboard = require('js/search_dashboard/searchDashboard');
+var searchUtils = require('js/search_dashboard/searchUtils'); //This file includes useful function to help with elasticsearch
+var widgetUtils = require('js/search_dashboard/widgetUtils'); //This file has widget helpers
+var charts = require('js/search_dashboard/charts'); //This file contains components and helper functions for charting (c3 stuff)
+var FilterWidget = require('js/search_dashboard/FilterWidget'); //This file has the component to display filters
+var SearchDashboard = require('js/search_dashboard/searchDashboard'); //This is the main file that setup the dashboard and widgets + processes requests
 
 //Custom widgets...
-var ResultsWidget = require('./resultsWidget');
+var ResultsWidget = require('./resultsWidget');  //This is a non-standard file with a mithril component to display widget //TODO make generic
 
 
 var profileDashboard = {};
 
-var ctx = window.contextVars;
+var ctx = window.contextVars; //contains user information
 /**
  * Setups elastic aggregations to get contributers.
  *
@@ -56,17 +56,17 @@ profileDashboard.projectsByTimesAgg = function() {
  * @return {object} Parsed data for c3 objects
  */
 
-profileDashboard.contributorsParser = function(rawData, levelNames, vm){
+profileDashboard.contributorsParser = function(rawData, levelNames, vm){ //a custom parser, because we need guidsToNames mapping...
     var guidsToNames = vm.requests.nameRequest.formattedData;
 
     var chartData = {};
-    chartData.name = levelNames[0];
-    chartData.columns = [];
-    chartData.colors = {};
-    var numProjects = 0;
-    var hexColors = charts.generateColors(rawData.aggregations[levelNames[0]].buckets.length);
+    chartData.name = levelNames[0]; //name if the chart influences its c3 divId
+    chartData.columns = []; //Column wise data for c3
+    chartData.colors = {}; //colours of column data
+    var numProjects = 0; //numb of projects to change title
+    var hexColors = charts.generateColors(rawData.aggregations[levelNames[0]].buckets.length); //get colors for columns
     var i = 0;
-    rawData.aggregations[levelNames[0]].buckets.forEach(
+    rawData.aggregations[levelNames[0]].buckets.forEach( //step into returned agg data
         function (bucket) {
             if (bucket.key === ctx.userId){
                 numProjects = bucket.doc_count;
@@ -101,32 +101,32 @@ profileDashboard.contributorsParser = function(rawData, levelNames, vm){
  * Contains settings for all widgets and requests.
  */
 profileDashboard.mount = function(divID) {
-    var contributorLevelNames = ['contributors','contributorsName'];
+    var contributorLevelNames = ['contributors','contributorsName']; //names of the levels of aggregation, used for parsing results to c3
     var contributors = {
-        id: contributorLevelNames[0],
-        title: ctx.name + '\'s top 10 contributors',
-        size: ['.col-md-6', 300],
-        levelNames: contributorLevelNames,
-        aggregations: {mainRequest: profileDashboard.contributorsAgg()},
-        display: {
-            reqRequests: ['mainRequest', 'nameRequest'], //these are the requests that need to have completed before we can update this widget
-            component: charts.donut,
-            labelFormat: function(value, ratio){return value; },
+        id: contributorLevelNames[0], //{string} id of the widget, required.
+        title: ctx.name + '\'s top 10 contributors', // {string} title of the widget, displayed in widget panel
+        size: ['.col-md-6', 300], //{string/int} size of the widget, the width is controlled via bootstrap, the height is controlled by the display widget (c3 in this case)
+        levelNames: contributorLevelNames, //{array of strings} Levels names for parsing to c3
+        aggregations: {mainRequest: profileDashboard.contributorsAgg()}, //{object} an object containing aggregations and what request (object key) they should be applied too
+        display: { //display object contains all the params for the display component that sits in the widgets outer pannel
+            reqRequests: ['mainRequest', 'nameRequest'], //these are the requests that need to have completed before we can update this widget, order is irrelevant
+            component: charts.donut, //{mithril component} display component which must contain a view function that returns mithril m()'s
+            labelFormat: function(value, ratio){return value; }, //function to run to format chart labels
             parser: profileDashboard.contributorsParser, //this function is run by the display widget to format data for display
-            callbacks: { onclick : function (key) {
+            callbacks: { onclick : function (key) { //callbacks that run when interacting with c3 chart, this one runs on click of donut slice
                 //bound information (this) from chart contains vm and widget
-                var vm = this.vm;
-                var widget = this.widget;
+                var vm = this.vm; //the search widget vm
+                var widget = this.widget; //the search widget (i.e. contributers)
                 var request = vm.requests.mainRequest;
                 var guidsToNames = vm.requests.nameRequest.formattedData;
                 var name = key;
-                if (key.name) {name = key.name; }
+                if (key.name) {name = key.name; } //force click of legend or donut slice to have same name
                 //utils.removeFilter(vm, widget.filters.contributorsFilter, true); //uncomment to overwrite last filter
-                widget.filters.contributorsFilter = 'match:contributors.url:' + widgetUtils.getKeyFromValue(guidsToNames, name);
-                widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate);
-                searchUtils.updateFilter(vm, [request], widget.filters.contributorsFilter, true);
+                widget.filters.contributorsFilter = 'match:contributors.url:' + widgetUtils.getKeyFromValue(guidsToNames, name); //create and save a match filter
+                widgetUtils.signalWidgetsToUpdate(vm, widget.display.callbacksUpdate); //Signal all the other widgets to update with next run of requests
+                searchUtils.updateFilter(vm, [request], widget.filters.contributorsFilter, true); //add filters and run requests
             }},
-            callbacksUpdate: ['all']
+            callbacksUpdate: ['all'] //signal that interaction with this widget should update all other widgets...
         }
     };
 
@@ -187,11 +187,11 @@ profileDashboard.mount = function(divID) {
         size: ['.col-md-12'],
         display: {
             reqRequests : ['mainRequest'],
-            component: FilterWidget,
+            component: FilterWidget, //this widget does not require any callbacks, parsers, title etc
             callbacks: null, //callbacks included in displayWidget
             callbacksUpdate: ['all'],
-            filterParsers: {
-                range: function(field, value){
+            filterParsers: { //tells the filter object how to display filters as string tags
+                range: function(field, value){ //if we have a range filter do this
                     if (field[0] === 'date_created') {
                         var valueOut = widgetUtils.timeSinceEpochInMsToMMYY(parseInt(value[0])) +
                             ' to ' + widgetUtils.timeSinceEpochInMsToMMYY(parseInt(value[1]));
@@ -199,7 +199,7 @@ profileDashboard.mount = function(divID) {
                     }
                     return value + ' ' + field;
                 },
-                match: function(field, value, vm){
+                match: function(field, value, vm){ //if we have a match filter, do this
                     var fieldMappings = {
                         '_type' : 'Type is ',
                         'contributors': ' is a Contributor',
@@ -223,21 +223,23 @@ profileDashboard.mount = function(divID) {
         size: ['.col-md-12'],
         display: {
             reqRequests : ['mainRequest'],
-            component: ResultsWidget,
+            component: ResultsWidget, //This widget is custom made for the profile page, so not many display settings required
             callbacks: null, //callbacks included in displayWidget
             callbacksUpdate: ['all']
         }
     };
 
-    var mainRequest = {
-            id: 'mainRequest',
-            elasticURL: '/api/v1/search/',
-            size: 5,
-            page: 0,
-            ANDFilters: ['match:contributors.url:' + ctx.userId],
-            ORFilters: ['match:_type:project', 'match:_type:component'],
-            sort: 'Date',
-            sortMap: {
+    //Requests are the things that get data from elastic-search which can then populate widgets.
+    // Requests run in the order specified by 'requestOrder' and run on load, filter and history change. Can also be called manually with utils.runRequests(vm)
+    var mainRequest = { //This is the main request which the majority of aggregations are applied too (see widgets)
+            id: 'mainRequest', //id of request, required
+            elasticURL: '/api/v1/search/', //elasticsearch DB to hit
+            size: 5, //The number of results we want to return
+            page: 0, //page to begin with. without setting page to zero, pagination is not possible
+            ANDFilters: ['match:contributors.url:' + ctx.userId], //and filters that are always applied to this request (as opposed to user added)
+            ORFilters: ['match:_type:project', 'match:_type:component'], //or filters that are always applied to this request
+            sort: 'Date', //start by sorting by 'Date' entry of sort map
+            sortMap: { //tells what elastic feilds to sort based on 'sort' value above
                 Date: 'date_created',
                 Relevance: null
             }
@@ -247,7 +249,8 @@ profileDashboard.mount = function(divID) {
         id: 'nameRequest',
         elasticURL: '/api/v1/search/',
         ANDFilters: ['match:category:user'],
-        preRequest: [function (requestIn, data) { //functions to modify filters and query before request
+        //any missing variables will be populated with defaults by search widgets (ORFilters = [])
+        preRequest: [function (requestIn, data) { //{array of functions} functions to modify filters and query before request, the last requests data is inputed
             var request = $.extend({}, requestIn);
             var urls = [];
             data.aggregations.contributors.buckets.forEach( //first find urls returned
@@ -266,7 +269,7 @@ profileDashboard.mount = function(divID) {
             request.size = missingGuids.length;
             return request;
         }],
-        postRequest: [function (requestIn, data) {
+        postRequest: [function (requestIn, data) { //{array of functions} functions to modify filters and query before request, result data from request is inputted
             var request = $.extend({}, requestIn);
             var newGuidMaps = {};
             data.results.forEach(function (user) {
@@ -278,37 +281,37 @@ profileDashboard.mount = function(divID) {
     };
 
     var searchSetup = {
-        url: document.location.search,
-        loadingIcon: function() {
+        url: document.location.search, //url from page, this means we can resume filter state from any url
+        loadingIcon: function() { //loading icon that we want to display when request data not ready
             return m('.spinner-loading-wrapper', [m('.logo-spin.text-center',
                 m('img[src=/static/img/logo_spin.png][alt=loader]')),
                 m('p.m-t-sm.fg-load-message', ' Loading... ')]);
         },
-        errorHandlers: {
+        errorHandlers: { //handlers to run when we have an error
             invalidQuery: function(vm){$osf.growl('Error', 'invalid query');}
         },
         requests : {
-            mainRequest: mainRequest,
+            mainRequest: mainRequest, //request objects to run
             nameRequest: nameRequest
         },
-        requestOrder: [
+        requestOrder: [ //this is the order to run requests, string names here must match ids of each request.
             ['mainRequest', 'nameRequest'], //run these two in serial
             //[] //this would be run in parallel with the two above
         ],
-        widgets : {
+        widgets : { //widgets to add
             contributors: contributors,
             projectsByTimes: projectsByTimes,
             activeFilters: activeFilters,
             results: results
         },
-        rowMap: [
-            ['contributors', 'projectsByTimes'],
-            ['activeFilters'],
-            ['results'],
+        rowMap: [ //the row layout of the widgets
+            ['contributors', 'projectsByTimes'], //row 1
+            ['activeFilters'], //row 2
+            ['results'], //row 3
         ],
     };
     
-    SearchDashboard.mount(divID, searchSetup);
+    SearchDashboard.mount(divID, searchSetup); //call to setup dashboard and attach to a div on page
 };
 
 module.exports = profileDashboard;
