@@ -199,7 +199,7 @@ var FileViewPage = {
 
         var editPane = function() {
             if (ctrl.editor) {
-                return m('.btn' + (ctrl.editor.selected ? '.btn-primary' : '.btn-default'), {
+                return m('button.btn' + (ctrl.editor.selected ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
                         e.preventDefault();
                         // atleast one button must remain enabled.
@@ -220,15 +220,15 @@ var FileViewPage = {
         };
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
+                m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             m('.btn-group.m-t-xs', [
-                m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+                m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
             m('.btn-group.btn-group-sm.m-t-xs', [
                ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null
             ].concat(
-                m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
+                m('button.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
                         e.preventDefault();
                         // at least one button must remain enabled.
@@ -241,7 +241,7 @@ var FileViewPage = {
             ).concat([editPane()])
             ),
             m('.btn-group.m-t-xs', [
-                m('.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
+                m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
                     if (ctrl.mfrIframeParent.is(':visible')){
                         ctrl.mfrIframeParent.toggle();
                         ctrl.revisions.selected = true;
