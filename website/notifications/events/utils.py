@@ -77,69 +77,6 @@ def categorize_users(user, source_event, source_node, event, node):
     remove = utils.users_to_remove(source_event, source_node, node)
     source_node_subs = compile_subscriptions(source_node, utils.find_subscription_type(source_event))
     new_subs = compile_subscriptions(node, utils.find_subscription_type(source_event), event)
-    warn = {key: [] for key in constants.NOTIFICATION_TYPES}
-    move = {key: [] for key in constants.NOTIFICATION_TYPES}
-
-    # Set operations to separate users
-    for notifications in constants.NOTIFICATION_TYPES:
-        if notifications == 'none':
-            continue
-        move[notifications] = list(set(source_node_subs[notifications]).union(set(new_subs[notifications])))
-        warn[notifications] = list(set(source_node_subs[notifications]).difference(set(new_subs[notifications])))
-        subbed, removed = utils.separate_users(node, warn[notifications])
-        warn[notifications] = subbed
-        remove[notifications].extend(removed)
-        remove[notifications] = list(set(remove[notifications]))
-
-    # Remove duplicates in different types
-    for notifications in constants.NOTIFICATION_TYPES:
-        if notifications == 'none':
-            continue
-        for nt in constants.NOTIFICATION_TYPES:
-            if nt == 'none':
-                continue
-            if nt != notifications:
-                warn[notifications] = list(set(warn[notifications]).difference(set(new_subs[nt])))
-                move[notifications] = list(set(move[notifications]).difference(set(new_subs[nt])))
-
-    # Remove final duplicates in all types
-    # Done in addition to the previous loop because of overlaps between sets.
-    for notifications in constants.NOTIFICATION_TYPES:
-        if notifications == 'none':
-            continue
-        for nt in constants.NOTIFICATION_TYPES:
-            if nt == 'none':
-                continue
-            move[notifications] = list(set(move[notifications]).difference(set(warn[nt])))
-            move[notifications] = list(set(move[notifications]).difference(set(remove[nt])))
-        # Remove the user who started this whole thing.
-        user_id = user._id
-        if user_id in warn[notifications]:
-            warn[notifications].remove(user_id)
-        if user_id in move[notifications]:
-            move[notifications].remove(user_id)
-        if user_id in remove[notifications]:
-            remove[notifications].remove(user_id)
-
-    return move, warn, remove
-
-
-def categorize_users_2(user, source_event, source_node, event, node):
-    """Categorize users from a file subscription into three categories.
-
-    Puts users in one of three bins: Those that are moved, those that
-     need warned, those that are removed.
-    Calls move_subscription in order to move the sub and get users w/o permissions
-    :param user: User instance who started the event
-    :param source_event: <guid>_event_name
-    :param source_node: node from where the event happened
-    :param event: new guid event name
-    :param node: node where event ends up
-    :return: Moved, to be warned, and removed users.
-    """
-    remove = utils.users_to_remove(source_event, source_node, node)
-    source_node_subs = compile_subscriptions(source_node, utils.find_subscription_type(source_event))
-    new_subs = compile_subscriptions(node, utils.find_subscription_type(source_event), event)
 
     # Moves users into the warn bucket or the move bucket
     move = subscriptions_users_union(source_node_subs, new_subs)
@@ -149,12 +86,12 @@ def categorize_users_2(user, source_event, source_node, event, node):
     warn, remove = subscriptions_node_permissions(node, warn, remove)
 
     # Remove duplicates
-    warn = subscriptions_users_remove_duplicates(warn, new_subs)
-    move = subscriptions_users_remove_duplicates(move, new_subs)
+    warn = subscriptions_users_remove_duplicates(warn, new_subs, remove_same=False)
+    move = subscriptions_users_remove_duplicates(move, new_subs, remove_same=False)
 
     # Remove duplicates between move and warn; and move and remove
-    move = subscriptions_users_remove_duplicates(move, warn)
-    move = subscriptions_users_remove_duplicates(move, remove)
+    move = subscriptions_users_remove_duplicates(move, warn, remove_same=True)
+    move = subscriptions_users_remove_duplicates(move, remove, remove_same=True)
 
     for notifications in constants.NOTIFICATION_TYPES:
         # Remove the user who started this whole thing.
@@ -174,14 +111,16 @@ def subscriptions_node_permissions(node, warn_subscription, remove_subscription)
         subbed, removed = utils.separate_users(node, warn_subscription[notification])
         warn_subscription[notification] = subbed
         remove_subscription[notification].extend(removed)
-        remove_subscription[notification] = set(remove_subscription[notification])
-        return warn_subscription, remove_subscription
+        remove_subscription[notification] = list(set(remove_subscription[notification]))
+    return warn_subscription, remove_subscription
 
 
 def subscriptions_users_union(emails_1, emails_2):
     return {
         notification:
-            set(emails_1[notification]).union(set(emails_2[notification]))
+            list(
+                set(emails_1[notification]).union(set(emails_2[notification]))
+            )
         for notification in constants.NOTIFICATION_TYPES.keys()
     }
 
@@ -189,14 +128,20 @@ def subscriptions_users_union(emails_1, emails_2):
 def subscriptions_users_difference(emails_1, emails_2):
     return {
         notification:
-            set(emails_1[notification]).difference(set(emails_2[notification]))
+            list(
+                set(emails_1[notification]).difference(set(emails_2[notification]))
+            )
         for notification in constants.NOTIFICATION_TYPES.keys()
     }
 
 
-def subscriptions_users_remove_duplicates(emails_1, emails_2):
-    emails_list = {}
+def subscriptions_users_remove_duplicates(emails_1, emails_2, remove_same=False):
+    emails_list = dict(emails_1)
     for notifications in constants.NOTIFICATION_TYPES:
         for nt in constants.NOTIFICATION_TYPES:
-            emails_list[notifications] = set(emails_1[notifications]).difference(set(emails_2[nt]))
+            if nt == 'none' or not remove_same and nt == notifications:
+                continue
+            emails_list[notifications] = list(
+                set(emails_list[notifications]).difference(set(emails_2[nt]))
+            )
     return emails_list

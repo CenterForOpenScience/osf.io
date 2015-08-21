@@ -9,6 +9,7 @@ from website.notifications.events.files import (
     AddonFileCopied, AddonFileMoved,
 )
 
+from website.notifications.emails import compile_subscriptions
 from website.notifications.events import utils
 from website.notifications.events import signals
 
@@ -566,7 +567,6 @@ class TestCategorizeUsers(OsfTestCase):
         )
         assert_equal({email_transactional: [], email_digest: [self.user_3._id], 'none': []}, warn)
         assert_equal({email_transactional: [self.user_1._id], email_digest: [], 'none': []}, moved)
-        # print (warn, moved, removed)
 
     def test_moved_user(self):
         # Doesn't warn a user with two different subs, but does send a
@@ -597,102 +597,70 @@ class TestCategorizeUsers(OsfTestCase):
         )
         assert_equal({email_transactional: [self.user_3._id], email_digest: [], 'none': []}, removed)
 
+    def test_node_permissions(self):
+        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'])
+        self.private_sub.email_digest.extend([self.user_3, self.user_4])
+        remove = {email_transactional: [], email_digest: [], 'none': []}
+        warn = {email_transactional: [], email_digest: [self.user_3._id, self.user_4._id], 'none': []}
+        subbed, remove = utils.subscriptions_node_permissions(
+            self.private_node,
+            warn,
+            remove
+        )
+        assert_equal({email_transactional: [], email_digest: [self.user_3._id], 'none': []}, subbed)
+        assert_equal({email_transactional: [], email_digest: [self.user_4._id], 'none': []}, remove)
 
-class TestCategorizeUsers2(OsfTestCase):
-    def setUp(self):
-        super(TestCategorizeUsers2, self).setUp()
-        self.user_1 = factories.AuthUserFactory()
-        self.auth = Auth(user=self.user_1)
-        self.user_2 = factories.AuthUserFactory()
-        self.user_3 = factories.AuthUserFactory()
-        self.user_4 = factories.AuthUserFactory()
-        self.project = factories.ProjectFactory(creator=self.user_1)
-        self.private_node = factories.NodeFactory(
-            parent=self.project, is_public=False, creator=self.user_1
-        )
-        # Payload
-        file_moved_payload = file_move_payload(self.private_node, self.project)
-        self.event = event_register['addon_file_moved'](
-            self.user_2, self.private_node, 'addon_file_moved',
-            payload=file_moved_payload
-        )
-        # Subscriptions
-        # for parent node
-        self.sub = factories.NotificationSubscriptionFactory(
-            _id=self.project._id + '_file_updated',
-            owner=self.project,
-            event_name='file_updated'
-        )
-        self.sub.save()
-        # for private node
-        self.private_sub = factories.NotificationSubscriptionFactory(
-            _id=self.private_node._id + '_file_updated',
-            owner=self.private_node,
-            event_name='file_updated'
-        )
-        self.private_sub.save()
-        # for file subscription
-        self.file_sub = factories.NotificationSubscriptionFactory(
-            _id='{pid}_{wbid}_file_updated'.format(
-                pid=self.project._id,
-                wbid=self.event.waterbutler_id
-            ),
-            owner=self.project,
-            event_name='xyz42_file_updated'
-        )
-        self.file_sub.save()
-
-    def test_warn_user(self):
-        # Tests that a user with a sub in the origin node gets a warning that
-        # they are no longer tracking the file.
-        self.sub.email_transactional.append(self.user_1)
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
-        self.project.save()
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
-        self.private_node.save()
-        self.sub.email_digest.append(self.user_3)
-        self.sub.save()
-        self.private_sub.none.append(self.user_3)
-        self.private_sub.save()
-        moved, warn, removed = utils.categorize_users_2(
-            self.event.user, self.event.event_type, self.event.source_node,
-            self.event.event_type, self.event.node
-        )
-        assert_equal({email_transactional: [], email_digest: [self.user_3._id], 'none': []}, warn)
-        assert_equal({email_transactional: [self.user_1._id], email_digest: [], 'none': []}, moved)
-        # print (warn, moved, removed)
-
-    def test_moved_user(self):
-        # Doesn't warn a user with two different subs, but does send a
-        # moved email
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
-        self.project.save()
-        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
-        self.private_node.save()
-        self.sub.email_digest.append(self.user_3)
-        self.sub.save()
-        self.private_sub.email_transactional.append(self.user_3)
-        self.private_sub.save()
-        moved, warn, removed = utils.categorize_users_2(
-            self.event.user, self.event.event_type, self.event.source_node,
-            self.event.event_type, self.event.node
-        )
-        assert_equal({email_transactional: [], email_digest: [], 'none': []}, warn)
-        assert_equal({email_transactional: [self.user_3._id], email_digest: [], 'none': []}, moved)
-
-    def test_remove_user(self):
-        self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
-        self.project.save()
-        self.file_sub.email_transactional.append(self.user_3)
-        self.file_sub.save()
-        moved, warn, removed = utils.categorize_users_2(
-            self.event.user, self.event.event_type, self.event.source_node,
-            self.event.event_type, self.event.node
-        )
-        assert_equal({email_transactional: [self.user_3._id], email_digest: [], 'none': []}, removed)
 
 class TestSubscriptionManipulations(OsfTestCase):
-    pass
+    def setUp(self):
+        super(TestSubscriptionManipulations, self).setUp()
+        self.emails_1 = {
+            email_digest: ['a1234', 'b1234', 'c1234'],
+            email_transactional: ['d1234', 'e1234', 'f1234'],
+            'none': ['g1234', 'h1234', 'i1234']
+        }
+        self.emails_2 = {
+            email_digest: ['j1234'],
+            email_transactional: ['k1234'],
+            'none': ['l1234']
+        }
+        self.emails_3 = {
+            email_digest: ['b1234', 'c1234'],
+            email_transactional: ['e1234', 'f1234'],
+            'none': ['h1234', 'i1234']
+        }
+        self.emails_4 = {
+            email_digest: ['d1234', 'i1234'],
+            email_transactional: ['b1234'],
+            'none': []
+        }
+        self.diff_1_3 = {email_transactional: ['d1234'], 'none': ['g1234'], email_digest: ['a1234']}
+        self.union_1_2 = {'email_transactional': ['e1234', 'd1234', 'k1234', 'f1234'],
+                          'none': ['h1234', 'g1234', 'i1234', 'l1234'],
+                          'email_digest': ['j1234', 'b1234', 'a1234', 'c1234']}
+        self.dup_1_3 = {email_transactional: ['e1234', 'f1234'], 'none': ['h1234', 'g1234'],
+                        'email_digest': ['a1234', 'c1234']}
+
+    def test_subscription_user_difference(self):
+        result = utils.subscriptions_users_difference(self.emails_1, self.emails_3)
+        assert_equal(self.diff_1_3, result)
+
+    def test_subscription_user_union(self):
+        result = utils.subscriptions_users_union(self.emails_1, self.emails_2)
+        assert_equal(self.union_1_2, result)
+
+    def test_remove_duplicates(self):
+        result = utils.subscriptions_users_remove_duplicates(
+            self.emails_1, self.emails_4, remove_same=False
+        )
+        assert_equal(self.dup_1_3, result)
+
+    def test_remove_duplicates_true(self):
+        result = utils.subscriptions_users_remove_duplicates(
+            self.emails_1, self.emails_1, remove_same=True
+        )
+        assert_equal({email_digest: [], email_transactional: [], 'none': list(set(['g1234', 'h1234', 'i1234']))}, result)
+
 
 wb_path = u'5581cb50a24f710b0f4623f9'
 materialized = u'/One/Paper13.txt'
