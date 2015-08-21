@@ -186,9 +186,9 @@ def format_result(result, parent_id=None):
         'is_registration': (result['is_registration'] if parent_info is None
                                                         else parent_info.get('is_registration')),
         'is_retracted': result['is_retracted'],
-        #'is_pending_retraction': result['is_pending_retraction'],
-        #'embargo_end_date': result['embargo_end_date'],
-        #'is_pending_embargo': result['is_pending_embargo'],
+        'is_pending_retraction': result['is_pending_retraction'],
+        'embargo_end_date': result['embargo_end_date'],
+        'is_pending_embargo': result['is_pending_embargo'],
         'description': result['description'] if parent_info is None else None,
         'category': result.get('category'),
         'date_created': result.get('date_created'),
