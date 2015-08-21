@@ -210,13 +210,7 @@ var FileViewPage = {
                 }, ctrl.editor.title);
             }
         };
-        var editDisplay = function() {
-            ctrl.triggerResize();
-            if (ctrl.editor && !ctrl.editor.selected) {
-                return m('[style="display:none"]', ctrl.editor);
-            }
-            return m('.col-sm-12', ctrl.editor);
-        };
+
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
@@ -257,8 +251,10 @@ var FileViewPage = {
                 m('.row', ctrl.revisions)
             ]));
         }
+        var editDisplay = (ctrl.editor && !ctrl.editor.selected) ? 'display:none' : '' ;
+        ctrl.triggerResize();
         return m('.file-view-page', m('.panel-toggler', [
-            m('.row', {view: editDisplay})
+            m('.row[style="' + editDisplay + '"]', m('.col-sm-12', ctrl.editor))
         ]));
     }
 };
