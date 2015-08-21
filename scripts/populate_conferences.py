@@ -326,14 +326,20 @@ MEETING_DATA = {
         'public_projects': True,
     },
     'ESIP2015': {
-        'name': 'ESIP2015',
+        'name': 'Earth Science Information Partners 2015',
         'info_url': 'http://esipfed.org/',
         'logo_url': 'http://s30.postimg.org/m2uz2g4pt/ESIP.png',
         'active': True,
         'admins': [],
         'public_projects': True,
     },
-
+    'SPSP2016': {
+        'name': 'Society for Personality and Social Psychology 2016',
+        'info_url': 'http://meeting.spsp.org/',
+        'logo_url': 'http://meeting.spsp.org/sites/default/files/2016ConventionLogo.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
 }
 
 

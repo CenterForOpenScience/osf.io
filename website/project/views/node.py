@@ -28,6 +28,7 @@ from website.project.decorators import (
     must_have_permission,
     must_not_be_registration,
 )
+from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError
@@ -361,7 +362,9 @@ def configure_comments(node, **kwargs):
 
 @must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
+@process_token_or_pass
 def view_project(auth, node, **kwargs):
+
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
@@ -723,11 +726,12 @@ def _view_project(node, auth, primary=False):
             'tags': [tag._primary_key for tag in node.tags],
             'children': bool(node.nodes),
             'is_registration': node.is_registration,
+            'is_pending_registration': node.is_pending_registration,
             'is_retracted': node.is_retracted,
-            'pending_retraction': node.pending_retraction,
+            'is_pending_retraction': node.is_pending_retraction,
             'retracted_justification': getattr(node.retraction, 'justification', None),
             'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
-            'pending_embargo': node.pending_embargo,
+            'is_pending_embargo': node.is_pending_embargo,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id,
@@ -899,10 +903,11 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
         'primary': primary,
         'is_registration': node.is_registration,
         'is_fork': node.is_fork,
+        'is_pending_registration': node.is_pending_registration,
         'is_retracted': node.is_retracted,
-        'pending_retraction': node.pending_retraction,
+        'is_pending_retraction': node.is_pending_retraction,
         'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
-        'pending_embargo': node.pending_embargo,
+        'is_pending_embargo': node.is_pending_embargo,
         'archiving': node.archiving,
     }
 
