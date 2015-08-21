@@ -403,7 +403,10 @@ class File(FileNode):
         If revisions is None the created version is NOT and should NOT be saved
         as there is no identifing information to tell if it needs to be updated or not.
         Hits Waterbutler's metadata endpoint and saves the returned data.
-        :returns: None if the file is not found otherwise FileVersion
+        If a file cannot be rendered IE figshare private files a tuple of the FileVersion and
+        renderable HTML will be returned.
+            >>>isinstance(file_node.touch(), tuple) # This file cannot be rendered
+        :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
         """
         version = self.get_version(revision)
         # Versions do not change. No need to refetch what we already know
