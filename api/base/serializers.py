@@ -50,6 +50,7 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
         self.link_type = kwargs.pop('link_type', 'url')
         super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
 
+    # overrides HyperlinkedIdentityField
     def get_url(self, obj, view_name, request, format):
         """
         Given an object, return the URL that hyperlinks to the object.
@@ -62,6 +63,7 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
 
         return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
 
+    # overrides HyperlinkedIdentityField
     def to_representation(self, value):
         """
         Returns nested dictionary in format {'links': {'self.link_type': ... }
@@ -204,7 +206,9 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
-    allows for enveloping of both single resources and collections.
+    allows for enveloping of both single resources and collections.  Looks to nest fields
+    according to JSON API spec. Relational fields must use HyperlinkedIdentityField or
+    HyperlinkedIdentityFieldWithMeta. Self/html links must be nested under "links".
     """
 
     # overrides Serializer
@@ -223,7 +227,9 @@ class JSONAPISerializer(ser.Serializer):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
-        ret = collections.OrderedDict([('id', ''), ('type', type_), ('attributes', {}), ('relationships', {}), ('links', {})])
+
+        data = collections.OrderedDict([('id', ''), ('type', type_), ('attributes', {}),
+                                        ('relationships', {}), ('links', {})])
 
         fields = [field for field in self.fields.values() if not field.write_only]
 
@@ -234,24 +240,22 @@ class JSONAPISerializer(ser.Serializer):
                 continue
 
             if attribute is None:
-                # We skip `to_representation` for `None` values so that
-                # fields do not have to explicitly deal with that case.
-                ret[field.field_name] = None
+                data[field.field_name] = None
             elif isinstance(field, ser.HyperlinkedIdentityField):
-                ret['relationships'][field.field_name] = field.to_representation(attribute)
+                data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
-                ret['id'] = field.to_representation(attribute)
+                data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':
-                ret['links'] = field.to_representation(attribute)
+                data['links'] = field.to_representation(attribute)
             else:
-                ret['attributes'][field.field_name] = field.to_representation(attribute)
+                data['attributes'][field.field_name] = field.to_representation(attribute)
 
-        data = {}
+        ret = {}
         if envelope:
-            data[envelope] = ret
+            ret[envelope] = data
         else:
-            data = ret
-        return data
+            ret = data
+        return ret
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
