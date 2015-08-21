@@ -277,7 +277,7 @@ module.exports = function(context) {
         }
 
         if (window.mfr !== undefined) {
-            var mfrRender = new mfr.Render('mfrIframe', url);
+            var mfrRender = new mfr.Render('mfrIframe', url, {}, 'cos_logo.png');
             $(document).on('fileviewpage:reload', function() {
                 mfrRender.reload();
             });
