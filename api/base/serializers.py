@@ -1,8 +1,9 @@
 import collections
 import re
 
-from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
+from rest_framework import serializers as ser
+
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
@@ -29,8 +30,18 @@ def _url_val(val, obj, serializer, **kwargs):
     else:
         return val
 
+
 class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
-    """Returns a nested dict with url and optional meta information: """
+    """
+    HyperlinkedIdentity field that returns a nested dict with url,
+    optional meta information, and link_type.
+
+    Example:
+
+        children = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk',
+                                    link_type='related', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
+
+    """
 
     def __init__(self, view_name=None, **kwargs):
         kwargs['read_only'] = True
@@ -52,6 +63,11 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
         return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
 
     def to_representation(self, value):
+        """
+        Returns nested dictionary in format {'links': {'self.link_type': ... }
+        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
+        the link is represented as a links object with 'href' and 'meta' members.
+        """
         url = super(HyperlinkedIdentityFieldWithMeta, self).to_representation(value)
 
         if self.meta is None:
@@ -63,6 +79,7 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
             self.meta = meta
 
             return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
+
 
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
