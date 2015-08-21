@@ -5,7 +5,6 @@ var bootbox = require('bootbox');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
-require('../css/fangorn.css');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 function expandOnLoad() {

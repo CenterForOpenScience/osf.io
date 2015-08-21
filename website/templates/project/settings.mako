@@ -226,7 +226,6 @@
 
         % endif ## End Configure Wiki
 
-
         % if 'admin' in user['permissions']:  ## Begin Configure Commenting
 
             % if not node['is_registration']:
@@ -269,7 +268,6 @@
             % endif
 
         % endif  ## End Configure Commenting
-
 
         % if user['has_read_permissions']:  ## Begin Configure Notifications
 
