@@ -9,7 +9,7 @@ from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
 from .permissions import ReadOnlyOrCurrentUser
 from django.contrib.auth.models import AnonymousUser
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import NotAuthenticated
 
 
 class UserMixin(object):
@@ -25,11 +25,8 @@ class UserMixin(object):
         current_user = self.request.user
 
         if key == 'me':
-            # TODO: change exception from PermissionDenied to NotAuthenticated/AuthenticationFailed
-            # TODO: for unauthorized users
-
             if isinstance(current_user, AnonymousUser):
-                raise PermissionDenied
+                raise NotAuthenticated
             else:
                 return self.request.user
 
