@@ -3392,7 +3392,7 @@ class Retraction(EmailApprovableSanction):
 class RegistrationApproval(EmailApprovableSanction):
 
     DISPLAY_NAME = 'Registration Approval'
-    SHORT_NAME = 'registration_approval'
+    SHORT_NAME = 'approval'
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
