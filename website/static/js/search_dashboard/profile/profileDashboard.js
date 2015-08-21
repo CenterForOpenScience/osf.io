@@ -97,20 +97,8 @@ profileDashboard.contributorsParser = function(rawData, levelNames, vm){
 };
 
 /**
-* View function for the profile dashboard
-*
-* @param {Object} ctrl: controller Object automatically passed in by mithril
-* @return {Object}  initialised searchDashboard component
-*/
-profileDashboard.view = function(ctrl) {
-    return m.component(SearchDashboard, ctrl.searchSetup); //TODO remove mithril stuff...
-};
-
-/**
- * controller function for the ProfileDashboard. Basically a constructor that sets up a SearchDashboard.
- * Contains settings for all widgets. Contains Elastic Data.
- *
- * @return {m.component.controller} returns itself
+ * Mount function of the profile dashboard, it constructs and mounts a SearchDashboard.
+ * Contains settings for all widgets and requests.
  */
 profileDashboard.mount = function(divID) {
     var contributorLevelNames = ['contributors','contributorsName'];

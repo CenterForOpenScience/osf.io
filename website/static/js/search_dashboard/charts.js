@@ -3,11 +3,10 @@
 var c3 = require('c3');
 var m = require('mithril');
 var $ = require('jquery');
-var $osf = require('js/osfHelpers');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 
 require('c3/c3.css');
-require('css/search_widget.css');
+require('./css/search-widget.css');
 
 //This module contains a bunch of generic charts and parsers for formating the correct data for them
 

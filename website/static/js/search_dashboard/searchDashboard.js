@@ -5,6 +5,9 @@ var History = require('exports?History!history');
 
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 var searchUtils = require('js/search_dashboard/searchUtils');
+
+require('./css/search-widget.css');
+
 var searchDashboard = {};
 
 
@@ -151,8 +154,6 @@ searchDashboard.buildRequest = function(id, userRequestParams, currentUrl, aggs)
         sortMap: userRequestParams.sortMap
     };
 };
-
-require('css/search_widget.css');
 
 var SearchWidget = {
     /**
