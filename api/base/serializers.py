@@ -240,9 +240,7 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if attribute is None:
-                data[field.field_name] = None
-            elif isinstance(field, HyperlinkedIdentityFieldWithMeta):
+            if isinstance(field, HyperlinkedIdentityFieldWithMeta):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
