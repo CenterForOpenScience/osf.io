@@ -26,21 +26,19 @@
 
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
-                            
-                        % if 'write' in user['permissions']:
-                            <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
 
-                            % if addon_enabled_settings:
-                                <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
-                            % endif
+                        <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
 
-                            <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
+                        % if addon_enabled_settings:
+                            <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                         % endif
 
                         % if include_wiki_settings:
                             <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
                         % endif
-                            
+
+                        <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
+
                         % if 'admin' in user['permissions']:
                             <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                         % endif
@@ -198,35 +196,6 @@
 
         % endif  ## End Select Addons
 
-        % if user['has_read_permissions']:  ## Begin Configure Notifications
-
-            % if not node['is_registration']:
-
-                <div class="panel panel-default">
-                    <span id="configureNotificationsAnchor" class="anchor"></span>
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Notifications</h3>
-                    </div>
-                    <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
-                    </div>
-                    <form id="notificationSettings" class="osf-treebeard-minimal">
-                        <div id="grid">
-                            <div class="spinner-loading-wrapper">
-                                <div class="logo-spin logo-lg"></div>
-                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
-                            </div>
-                        </div>
-                        <div class="help-block" style="padding-left: 15px">
-                            <p id="configureNotificationsMessage"></p>
-                        </div>
-                    </form>
-                </div>
-
-            %endif
-
-        % endif ## End Configure Notifications
-
         % if include_wiki_settings:  ## Begin Configure Wiki
 
             % if not node['is_registration']:
@@ -257,7 +226,34 @@
 
         % endif ## End Configure Wiki
 
-        
+        % if user['has_read_permissions']:  ## Begin Configure Notifications
+
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="configureNotificationsAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Configure Notifications</h3>
+                    </div>
+                    <div class="help-block" style="padding-left: 15px">
+                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                    </div>
+                    <form id="notificationSettings" class="osf-treebeard-minimal">
+                        <div id="grid">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                            </div>
+                        </div>
+                        <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                        </div>
+                    </form>
+                </div>
+
+            %endif
+
+        % endif ## End Configure Notifications
 
         % if 'admin' in user['permissions']:  ## Begin Configure Commenting
 
