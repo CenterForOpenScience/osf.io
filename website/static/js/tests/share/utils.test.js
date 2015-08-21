@@ -154,8 +154,8 @@ describe('share/utils', () => {
         });
 
         it('creates match query filters for required filters', () => {
-            vm.requiredFilters.push('_all:1');
-            vm.requiredFilters.push('_all:2');
+            vm.requiredFilters.push('match:_all:1');
+            vm.requiredFilters.push('match:_all:2');
             var built = utils.buildQuery(vm);
 
             assert.equal('bool', Object.keys(built.query.filtered.filter)[0]);
@@ -166,8 +166,8 @@ describe('share/utils', () => {
         });
 
         it('creates a list of should filters for the optional filters', () => {
-            vm.requiredFilters.push('_all:1');
-            vm.requiredFilters.push('_all:2');
+            vm.optionalFilters.push('match:_all:1');
+            vm.optionalFilters.push('match:_all:2');
             var built = utils.buildQuery(vm);
 
             $.map(built.query.filtered.filter.bool.should, function (item) {
