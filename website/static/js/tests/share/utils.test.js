@@ -139,18 +139,18 @@ describe('share/utils', () => {
             var built;
             query = '';
             built = utils.buildQuery(vm);
-            assert.equal('match_all', Object.keys(built.query.filtered.query)[0]);
+            assert.equal('match_all', Object.keys(built.query)[0]);
 
             query = '*';
             built = utils.buildQuery(vm);
-            assert.equal('match_all', Object.keys(built.query.filtered.query)[0]);
+            assert.equal('match_all', Object.keys(built.query)[0]);
 
             query = 'toast';
         });
 
         it('creates a common terms query otherwise', () => {
             var built = utils.buildQuery(vm);
-            assert.equal('common', Object.keys(built.query.filtered.query)[0]);
+            assert.equal('common', Object.keys(built.query)[0]);
         });
 
         it('creates match query filters for required filters', () => {
