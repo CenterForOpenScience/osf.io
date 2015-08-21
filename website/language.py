@@ -12,8 +12,10 @@
 
 # Status message shown at settings page on first login
 # (upon clicking primary email confirmation link)
-WELCOME_MESSAGE = ('Welcome to the OSF! If you need help getting started, '
-                   'please visit the <a href="/getting-started/">Getting Started</a> page.')
+WELCOME_MESSAGE = '''
+<h1>Welcome to the OSF!</h1>
+<p>Visit our <a href="[https://osf.io/getting-started/">getting started page</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a></p>
+'''
 
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
