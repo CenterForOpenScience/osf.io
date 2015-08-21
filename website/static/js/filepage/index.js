@@ -163,7 +163,10 @@ var FileViewPage = {
         //With other non-mithril components on the page
         ctrl.enableEditing();
 
-        var panelsShown = ((ctrl.editor && ctrl.editor.selected) ? 1 : 0) + (ctrl.mfrIframeParent.is(':visible') ? 1 : 0);
+        var panelsShown = (
+            ((ctrl.editor && ctrl.editor.selected) ? 1 : 0) + // Editor panel is active
+            (ctrl.mfrIframeParent.is(':visible') ? 1 : 0)    // View panel is active
+        );
         var mfrIframeParentLayout;
         var fileViewPanelsLayout;
 
@@ -221,7 +224,7 @@ var FileViewPage = {
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
-            m('.btn-group.btn-group-sm.m-t-xs' + (ctrl.editor ? '.btn-group' : ''), [
+            m('.btn-group.btn-group-sm.m-t-xs', [
                ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null
             ].concat(
                 m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
