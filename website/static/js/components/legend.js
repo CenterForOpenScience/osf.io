@@ -3,9 +3,12 @@ var m = require('mithril');
 
 module.exports = {
     view: function(data, repr, opts) {
-        var title = opts.title || 'Legend';
-        return [m('h3', title),
-            m('hr'),
+        if(data[0].label){
+            data.sort(function(a, b) {
+                return a.label.localeCompare(b.label);
+            });
+        }
+        return [
             m('div', {
                 className: 'legend-grid'
             }, data.map(function(item) {
@@ -13,7 +16,6 @@ module.exports = {
                     className: 'legend-grid-item'
                 }, repr(item));
             })),
-            m('hr'),
             m('span', {className: 'pull-left'}, opts.footer || '')
         ];
     }

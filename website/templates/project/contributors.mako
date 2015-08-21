@@ -5,7 +5,7 @@
 <%include file="project/modal_add_contributor.mako"/>
 
 <div class="page-header  visible-xs">
-  <h2 class="text-300">Contributors</h2>
+  <h2 class="text-300">Sharing</h2>
 </div>
 
 <div class="row">
@@ -128,9 +128,9 @@
                             </div>
 
                             <div class="btn-group">
-                                <button class="btn btn-primary btn-sm m-r-xs copy-button"
+                                <button title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button"
                                         data-bind="attr: {data-clipboard-text: linkUrl}" >
-                                    Copy
+                                    <i class="fa fa-copy"></i>
                                 </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>
@@ -256,14 +256,13 @@
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    <% import json %>
 
     <script type="text/javascript">
       window.contextVars = window.contextVars || {};
-      window.contextVars.user = ${json.dumps(user)};
-      window.contextVars.isRegistration = ${json.dumps(node['is_registration'])};
-      window.contextVars.contributors = ${json.dumps(contributors)};
-      window.contextVars.adminContributors = ${json.dumps(adminContributors)};
+      window.contextVars.user = ${ user | sjson, n };
+      window.contextVars.isRegistration = ${ node['is_registration'] | sjson, n };
+      window.contextVars.contributors = ${ contributors | sjson, n };
+      window.contextVars.adminContributors = ${ adminContributors | sjson, n };
 
     </script>
     <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>

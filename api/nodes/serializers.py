@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksFieldWIthSelfLink, Link, WaterbutlerLink, LinksField
+from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, HyperlinkedIdentityFieldWithMeta
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -27,7 +27,7 @@ class NodeSerializer(JSONAPISerializer):
     collection = ser.BooleanField(read_only=True, source='is_folder')
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
 
-    links = LinksFieldWIthSelfLink({'html': 'get_absolute_url'})
+    links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
@@ -37,58 +37,23 @@ class NodeSerializer(JSONAPISerializer):
                                                             'node have implicit read permissions for all child nodes',
                               )
 
-    relationships = LinksField({
-        'children': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_node_count'
-                    }
-                }
-            },
-        },
-        'contributors': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_contrib_count'
-                    }
-                }
-            },
-        },
-        'pointers': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_pointers_count'
-                    }
-                }
-            },
-        },
-        'registrations': {
-            'links': {
-                'related': {
-                    'href': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-                    'meta': {
-                        'count': 'get_registration_count'
-                    }
-                }
-            },
-        },
-        'files': {
-            'links': {
-                'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
-            }
-        },
-        'parent': {
-            'links': {
-                'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
-            }
-        }
-    })
+    children = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk', link_type='related',
+                                                lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
+
+    contributors = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
+                                                    lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
+
+    files = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id',
+                                             link_type='related')
+
+    node_links = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
+                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})
+
+    parent = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-detail', lookup_field='parent_id', link_type='self',
+                                              lookup_url_kwarg='node_id')
+
+    registrations = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
+                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})
 
     # TODO: finish me
     class Meta:
@@ -147,17 +112,17 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 
-class NodePointersSerializer(JSONAPISerializer):
+class NodeLinksSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
-    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this pointer points to')
-    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this pointer '
+    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
+    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
                                                                          'points to')
 
     class Meta:
-        type_ = 'pointers'
+        type_ = 'node_links'
 
-    links = LinksFieldWIthSelfLink({
+    links = LinksField({
         'html': 'get_absolute_url',
     })
 
@@ -177,34 +142,30 @@ class NodePointersSerializer(JSONAPISerializer):
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
         except ValueError:
-            raise exceptions.ValidationError('Pointer to node {} already in list'.format(pointer_node._id))
+            raise exceptions.ValidationError('Node Link to node {} already in list'.format(pointer_node._id))
 
     def update(self, instance, validated_data):
         pass
 
 
 class NodeFilesSerializer(JSONAPISerializer):
+
     id = ser.SerializerMethodField()
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
     item_type = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
-    content_type = ser.CharField(read_only=True)
-    modified = ser.DateTimeField(read_only=True)
-    size = ser.CharField(read_only=True)
-    extra = ser.DictField(read_only=True)
+    metadata = ser.DictField(read_only=True)
 
     class Meta:
         type_ = 'files'
 
-    links = LinksFieldWIthSelfLink({
+    links = LinksField({
         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
         'related': {
             'href': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
-                        query_kwargs={'path': '<path>', 'provider': '<provider>'}),
-            'meta': {
-                'self_methods': 'valid_self_link_methods'
-            }
+                    query_kwargs={'path': '<path>', 'provider': '<provider>'}),
+            'meta': {'self_methods': 'valid_self_link_methods'}
         }
     })
 

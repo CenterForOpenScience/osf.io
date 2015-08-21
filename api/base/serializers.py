@@ -1,7 +1,9 @@
 import collections
 import re
 
+from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
+
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
@@ -29,7 +31,59 @@ def _url_val(val, obj, serializer, **kwargs):
         return val
 
 
-class LinksFieldWIthSelfLink(ser.Field):
+class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
+    """
+    HyperlinkedIdentity field that returns a nested dict with url,
+    optional meta information, and link_type.
+
+    Example:
+
+        children = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk',
+                                    link_type='related', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
+
+    """
+
+    def __init__(self, view_name=None, **kwargs):
+        kwargs['read_only'] = True
+        kwargs['source'] = '*'
+        self.meta = kwargs.pop('meta', None)
+        self.link_type = kwargs.pop('link_type', 'url')
+        super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
+
+    # overrides HyperlinkedIdentityField
+    def get_url(self, obj, view_name, request, format):
+        """
+        Given an object, return the URL that hyperlinks to the object.
+
+        Returns null if lookup value is None
+        """
+
+        if getattr(obj, self.lookup_field) is None:
+            return None
+
+        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+
+    # overrides HyperlinkedIdentityField
+    def to_representation(self, value):
+        """
+        Returns nested dictionary in format {'links': {'self.link_type': ... }
+        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
+        the link is represented as a links object with 'href' and 'meta' members.
+        """
+        url = super(HyperlinkedIdentityFieldWithMeta, self).to_representation(value)
+
+        if self.meta is None:
+            return {'links': {self.link_type: url}}
+        else:
+            meta = {}
+            for key in self.meta:
+                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+            self.meta = meta
+
+            return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
+
+
+class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
     If the object to be serialized implements `get_absolute_url`, then the return value
     of that method is used for the `self` link.
@@ -39,15 +93,15 @@ class LinksFieldWIthSelfLink(ser.Field):
         links = LinksField({
             'html': 'absolute_url',
             'children': {
-                'related': Link('nodes:node-children', pk='<pk>'),
+                'related': Link('nodes:node-children', node_id='<pk>'),
                 'count': 'get_node_count'
             },
             'contributors': {
-                'related': Link('nodes:node-contributors', pk='<pk>'),
+                'related': Link('nodes:node-contributors', node_id='<pk>'),
                 'count': 'get_contrib_count'
             },
             'registrations': {
-                'related': Link('nodes:node-registrations', pk='<pk>'),
+                'related': Link('nodes:node-registrations', node_id='<pk>'),
                 'count': 'get_registration_count'
             },
         })
@@ -66,12 +120,6 @@ class LinksFieldWIthSelfLink(ser.Field):
         ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
         if hasattr(obj, 'get_absolute_url'):
             ret['self'] = obj.get_absolute_url()
-        return ret
-
-
-class LinksField(LinksFieldWIthSelfLink):
-    def to_representation(self, obj):
-        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
         return ret
 
 _tpl_pattern = re.compile(r'\s*<\s*(\S*)\s*>\s*')
@@ -158,7 +206,9 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
-    allows for enveloping of both single resources and collections.
+    allows for enveloping of both single resources and collections.  Looks to nest fields
+    according to JSON API spec. Relational fields must use HyperlinkedIdentityFieldWithMeta.
+    Self/html links must be nested under "links".
     """
 
     # overrides Serializer
@@ -179,20 +229,26 @@ class JSONAPISerializer(ser.Serializer):
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
 
-        attributes = super(JSONAPISerializer, self).to_representation(obj)
-        top_level = {
-            'id': attributes.get('id'),
-            'links': attributes.get('links'),
-            'relationships': attributes.get('relationships')
-        }
-        for i in top_level.keys():
-            attributes.pop(i, None)
-        data = collections.OrderedDict((
-            ('id', top_level['id']),
-            ('type', type_),
-            ('attributes', attributes),
-            ('links', top_level['links']),
-            ('relationships', top_level['relationships'])))
+        data = collections.OrderedDict([('id', ''), ('type', type_), ('attributes', collections.OrderedDict()),
+                                        ('relationships', collections.OrderedDict()), ('links', {})])
+
+        fields = [field for field in self.fields.values() if not field.write_only]
+
+        for field in fields:
+            try:
+                attribute = field.get_attribute(obj)
+            except SkipField:
+                continue
+
+            if isinstance(field, HyperlinkedIdentityFieldWithMeta):
+                data['relationships'][field.field_name] = field.to_representation(attribute)
+            elif field.field_name == 'id':
+                data['id'] = field.to_representation(attribute)
+            elif field.field_name == 'links':
+                data['links'] = field.to_representation(attribute)
+            else:
+                data['attributes'][field.field_name] = field.to_representation(attribute)
+
         if envelope:
             ret[envelope] = data
         else:

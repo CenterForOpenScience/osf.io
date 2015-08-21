@@ -32,7 +32,7 @@
       <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
           <div class="spinner-loading-wrapper">
-            <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+            <div class="logo-spin logo-lg"></div>
             <p class="m-t-sm fg-load-message"> Loading files...  </p>
           </div>
         </div>
@@ -47,9 +47,11 @@
     </div>
   </div>
 
+<!-- The osf-logo spinner here is from mfr code base -->
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
-      <div id="mfrIframeParent" class="col-sm-9">
+        <div id="externalView" class="col-sm-9"></div>
+        <div id="mfrIframeParent" class="col-sm-9">
         <div id="mfrIframe" class="mfr mfr-file"></div>
       </div>
 
@@ -96,6 +98,9 @@
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -113,6 +118,9 @@
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
       </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
     </div>
   </div>
 </div>
@@ -129,6 +137,9 @@
           Your browser does not support collaborative editing. You may continue to make edits.
           <strong>Changes will not be saved until you press the "Save" button.</strong>
         </p>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
       </div>
     </div>
   </div>
@@ -150,37 +161,39 @@
     <script type="text/javascript">
       window.contextVars = $.extend(true, {}, window.contextVars, {
         file: {
-            size: ${size},
-            extra: ${extra},
-            error: '${error | js_str}',
-            name: '${file_name | js_str}',
-            path: '${file_path | js_str}',
-            provider: '${provider | js_str}',
-            safeName: '${file_name | h,js_str}',
-            materializedPath: '${materialized_path | js_str}',
+            size: ${size | sjson, n },
+            extra: ${extra | sjson, n },
+            error: ${ error | sjson, n },
+            privateRepo: ${ private | sjson, n },
+            name: ${ file_name | sjson, n },
+            path: ${ file_path | sjson, n },
+            provider: ${ provider | sjson, n },
+            safeName: ${ file_name | h, sjson},
+            materializedPath: ${ materialized_path | sjson, n },
           urls: {
+              external: ${ (urls['external'] or '') | sjson, n },
         %if error is None:
-              render: '${urls['render']}',
+              render: ${ urls['render'] | sjson, n },
         %endif
-              sharejs: '${urls['sharejs'] | js_str}',
+              sharejs: ${ urls['sharejs'] | sjson, n },
             }
         },
         editor: {
             registration: true,
-            docId: '${sharejs_uuid}',
-            userId: '${user['id']}',
-            userName: '${user['fullname'] | js_str}',
-            userUrl: '/${user['id']}/',
-            userGravatar: '${urls['gravatar']}'.replace('&amp;', '&')
+            docId: ${ sharejs_uuid | sjson, n },
+            userId: ${ user['id'] | sjson, n },
+            userName: ${ user['fullname'] | sjson, n },
+            userUrl: ${ ('/' + user['id'] + '/') if user['id'] else None | sjson, n },
+            userGravatar: ${ urls['gravatar'].replace('&amp;', '&') | sjson, n }
         },
         node: {
           urls: {
-            files: '${urls['files'] | js_str}'
+            files: ${ urls['files'] | sjson, n }
           }
         },
         panelsUsed: ['edit', 'view'],
         currentUser: {
-          canEdit: ${int(user['can_edit'])}
+          canEdit: ${ int(user['can_edit']) | sjson, n }
         }
       });
     </script>

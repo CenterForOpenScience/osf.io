@@ -41,20 +41,26 @@
         <br />
         <br />
         <div class="row" data-bind="if: showSelect">
-          <div class="col-md-8">
+          <div class="form-group col-md-8">
             <select class="form-control" id="s3_bucket" name="s3_bucket"
                     data-bind="value: selectedBucket,
                                attr.disabled: !loadedBucketList(),
                                options: bucketList"> </select>
           </div>
+          ## Remove comments to enable user toggling of file upload encryption
+          ## <div class="col-md-3">
+          ##   <input type="checkbox" id="encryptUploads" name="encryptUploads"
+          ##         data-bind="checked: encryptUploads" />  Encrypt file uploads
+          ## </div>
           <div class="col-md-2">
             <button data-bind="click: selectBucket,
-                               attr.disabled: !allowSelectBucket()"
+                               attr.disabled: !allowSelectBucket(),
+                               text: saveButtonText"
                     class="btn btn-success">
               Save
             </button>
           </div>
-        </div>        
+        </div>
       </div>
       </div>
     </div>

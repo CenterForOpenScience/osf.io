@@ -19,7 +19,7 @@
     "locales": "https://github.com/citation-style-language/locales.git#d2b612f8a6f764cbd66e67238636fac3888a7736",
     "raven-js": "1.1.17",
     "zeroclipboard": "2.1.6",
-    "osf-style": "https://github.com/CenterForOpenScience/osf-style.git#7864d222e69b274a42de17d88dc326e405347a87"
+    "osf-style": "https://github.com/CenterForOpenScience/osf-style.git#ea27f1bf94f185c26c0f98bb5e1aebfe20489c05"
 
   }
 }

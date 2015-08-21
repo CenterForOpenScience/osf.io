@@ -72,7 +72,7 @@
                     <div class="panel-heading clearfix">
                         <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                     </div>
-                    <div id="nodeCategorySettings" class="panel-body">
+                    <div id="nodeCategorySettings" class="panel-body scripted">
                         <h5>
                             Category: <select data-bind="attr.disabled: disabled,
                                                         options: categories,
@@ -91,7 +91,7 @@
                         <span data-bind="css: messageClass, html: message"></span>
 
                         <span data-bind="if: disabled" class="help-block">
-                            A top-level project's category cannot be changed
+                            A top-level project's category cannot be changed.
                         </span>
                     </div>
 
@@ -210,8 +210,8 @@
                     </div>
                     <form id="notificationSettings" class="osf-treebeard-minimal">
                         <div id="grid">
-                            <div class="notifications-loading">
-                                <i class="fa fa-spinner notifications-spin"></i>
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
                                 <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
                             </div>
                         </div>
@@ -303,7 +303,7 @@
                                     registrations will be marked with a <strong>retracted</strong> tag.
                                 </div>
 
-                                %if not node['pending_retraction']:
+                                %if not node['is_pending_retraction']:
                                     <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
                                 % else:
                                     <p><strong>This registration is already pending a retraction.</strong></p>
@@ -331,11 +331,11 @@
        template_name = data['node_settings_template']
        tpl = data['template_lookup'].get_template(template_name).render(**data)
     %>
-    ${tpl}
+    ${ tpl | n }
 </%def>
 
 % for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+    <script id="capabilities-${name}" type="text/html">${ capabilities | n }</script>
 % endfor
 
 
@@ -347,13 +347,12 @@
 
 
 <%def name="javascript_bottom()">
-    <% import json %>
     ${parent.javascript_bottom()}
     <script>
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
-      window.contextVars.node.nodeType = '${node['node_type']}';
-      window.contextVars.nodeCategories = ${json.dumps(categories)};
+      window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
+      window.contextVars.nodeCategories = ${ categories | sjson, n };
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
