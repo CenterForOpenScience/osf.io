@@ -64,7 +64,7 @@ def migrate_filenodes():
         if root_node is None:
             logger.warning('OsfStorageNodeSettings {} has no root_node; skipping'.format(node_settings._id))
             continue
-        list(osfstorage_model.OsfStorageNodeSettings.find(Q('node_settings', 'eq', node_settings._id)))
+        list(osfstorage_model.OsfStorageFileNode.find(Q('node_settings', 'eq', node_settings._id)))
         node_settings.root_node = migrate_top_down(node_settings, root_node)
         node_settings.save()
 

@@ -58,18 +58,6 @@ def get_addon_user_config(**kwargs):
     return addon.to_json(user)
 
 
-def check_file_guid(guid):
-
-    guid_url = '/{0}/'.format(guid._id)
-    if not request.path.startswith(guid_url):
-        url_split = request.url.split(guid.file_url)
-        try:
-            guid_url += url_split[1].lstrip('/')
-        except IndexError:
-            pass
-        return guid_url
-    return None
-
 permission_map = {
     'create_folder': 'write',
     'revisions': 'read',

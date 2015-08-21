@@ -452,13 +452,13 @@ class TestUtils(FilesTestCase):
 
     def test_genwrapper_repr(self):
         wrapped = models.FileNode.find()
-        assert_true(isinstance(wrapped, utils._GenWrapper))
+        assert_true(isinstance(wrapped, utils.GenWrapper))
         assert_in(wrapped.mqs.__repr__(), wrapped.__repr__())
 
     def test_genwrapper_getattr(self):
         with assert_raises(AttributeError) as e:
             models.FileNode.find().test
-        assert_equal(e.exception.message, "'_GenWrapper' object has no attribute 'test'")
+        assert_equal(e.exception.message, "'GenWrapper' object has no attribute 'test'")
 
 
 class TestFileVersion(FilesTestCase):

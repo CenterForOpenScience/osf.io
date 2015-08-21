@@ -4,6 +4,7 @@ import os
 import bson
 import logging
 import requests
+import functools
 
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
@@ -152,7 +153,7 @@ class FileNode(object):
 
     @classmethod
     def resolve_class(cls, provider, _type=2):
-        """Resolves a provider and type to the appropriate subclass.
+        """Resolve a provider and type to the appropriate subclass.
         Usage:
             >>> FileNode.resolve_class('box', FileNode.ANY)  # BoxFileNode
             >>> FileNode.resolve_class('dropbox', FileNode.FILE)  # DropboxFile
@@ -178,16 +179,16 @@ class FileNode(object):
             return None
         # Use reduce to & together all our queries. equavilent to:
         # return q1 & q2 ... & qn
-        return reduce(lambda q1, q2: q1 & q2, qs)
+        return functools.reduce(lambda q1, q2: q1 & q2, qs)
 
     @classmethod
     def find(cls, qs=None):
         """A proxy for StoredFileNode.find but applies class based contraints.
-        Wraps The MongoQuerySet in a _GenWrapper this overrides the __iter__ of
+        Wraps The MongoQuerySet in a GenWrapper this overrides the __iter__ of
         MongoQuerySet to return wrapped objects
-        :rtype: _GenWrapper<MongoQuerySet<cls>>
+        :rtype: GenWrapper<MongoQuerySet<cls>>
         """
-        return utils._GenWrapper(StoredFileNode.find(cls._filter(qs)))
+        return utils.GenWrapper(StoredFileNode.find(cls._filter(qs)))
 
     @classmethod
     def find_one(cls, qs):
@@ -453,8 +454,8 @@ class Folder(FileNode):
     @property
     def children(self):
         """Finds all Filenodes that view self as a parent
-        :returns: A _GenWrapper for all children
-        :rtype: _GenWrapper<MongoQuerySet<cls>>
+        :returns: A GenWrapper for all children
+        :rtype: GenWrapper<MongoQuerySet<cls>>
         """
         return FileNode.find(Q('parent', 'eq', self._id))
 

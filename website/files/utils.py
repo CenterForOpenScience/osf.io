@@ -26,7 +26,7 @@ def copy_files(src, target_node, parent=None, name=None):
     return cloned
 
 
-class _GenWrapper(object):
+class GenWrapper(object):
     """A Wrapper for MongoQuerySets
     Overrides __iter__ so for loops will always
     return wrapped objects.
@@ -42,7 +42,7 @@ class _GenWrapper(object):
         return (x.wrapped() for x in self.mqs)
 
     def __repr__(self):
-        return '<website.files.utils._GenWrapper({!r})>'.format(self.mqs)
+        return '<website.files.utils.GenWrapper({!r})>'.format(self.mqs)
 
     def __getitem__(self, x):
         """__getitem__ does not default to __getattr__
