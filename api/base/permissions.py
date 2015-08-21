@@ -1,6 +1,7 @@
 from django.core.exceptions import ImproperlyConfigured
-from rest_framework import permissions
+from rest_framework import exceptions, permissions
 
+from framework.auth import oauth_scopes
 
 # Implementation built on django-oauth-toolkit, but  with more granular control over read+write permissions
 #   https://github.com/evonove/django-oauth-toolkit/blob/d45431ea0bf64fd31e16f429db1e902dbf30e3a8/oauth2_provider/ext/rest_framework/permissions.py#L15
@@ -26,7 +27,13 @@ class TokenHasScope(permissions.BasePermission):
 
         # Scopes are returned as a space-delimited list in the token
         scopes = token['scopes'].split()
-        normalized_scopes = self._normalize_scopes(scopes)
+
+        try:
+            normalized_scopes = self._normalize_scopes(scopes)
+        except KeyError:
+            # This should never fire: it implies that CAS issued a scope name not in the master list of scopes
+            raise exceptions.APIException("OAuth2 token specifies unrecognized scope.")
+
         return required_scopes.issubset(normalized_scopes)
 
     def _get_scopes(self, request, view):
@@ -52,7 +59,9 @@ class TokenHasScope(permissions.BasePermission):
         """
         Given a list of public-facing scope names from a CAS token, return the list of internal scopes
 
-        This is useful for converting a single broad scope (readwrite, admin, etc) into the small constituent parts
+        This is useful for converting a single broad scope into the small constituent parts
         """
-        # TODO: Make sure this returns a set
-        raise NotImplementedError
+        all_scopes = set()
+        for sc in scopes:
+            all_scopes |= oauth_scopes.public_scopes[sc]
+        return all_scopes

@@ -3,6 +3,8 @@ from modularodm import Q
 
 from website.models import User, Node
 from framework.auth.core import Auth
+from framework.auth.oauth_scopes import CoreScopes
+from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
@@ -46,12 +48,17 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
     """
 
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope
     )
 
     serializer_class = UserSerializer
     ordering = ('-date_registered')
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -73,8 +80,12 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     """
     permission_classes = (
         ReadOnlyOrCurrentUser,
+        base_permissions.TokenHasScope
     )
     serializer_class = UserSerializer
+
+    required_read_scopes = [CoreScopes.USERS_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE]
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -92,9 +103,13 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope
     )
 
     serializer_class = NodeSerializer
+
+    required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):

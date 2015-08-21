@@ -75,13 +75,13 @@ class ComposedScopes(object):
 
     # Nodes collection.
     # Base node data includes node metadata, links, and children.
-    NODE_BASIC_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ)
-    NODE_BASIC_WRITE = NODE_BASIC_READ + \
+    NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ)
+    NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE)
 
     # Privileges relating to editing content uploaded under that node # TODO: Add wiki etc when implemented
-    NODE_EDITOR_READ = (CoreScopes.NODE_FILE_READ,)
-    NODE_EDITOR_WRITE = NODE_EDITOR_READ + \
+    NODE_DATA_READ = (CoreScopes.NODE_FILE_READ,)
+    NODE_DATA_WRITE = NODE_DATA_READ + \
                         (CoreScopes.NODE_FILE_WRITE,)
 
     # Privileges relating to who can access a node (via contributors or registrations)
@@ -90,8 +90,8 @@ class ComposedScopes(object):
                             (CoreScopes.NODE_CONTRIBUTORS_WRITE, CoreScopes.NODE_REGISTRATIONS_WRITE)
 
     # Combine all sets of node permissions into one convenience level
-    NODE_ALL_READ = NODE_BASIC_READ + NODE_EDITOR_READ + NODE_ACCESS_READ
-    NODE_ALL_WRITE = NODE_ALL_READ + NODE_BASIC_WRITE + NODE_EDITOR_WRITE + NODE_ACCESS_WRITE
+    NODE_ALL_READ = NODE_METADATA_READ + NODE_DATA_READ + NODE_ACCESS_READ
+    NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
     # Full permissions: all routes intended to be exposed to third party API users
     FULL_READ = NODE_ALL_READ + USERS_READ
@@ -108,11 +108,11 @@ public_scopes = {  # TODO: Move (most of) this list to a database
     'osf.users+read': frozenset(ComposedScopes.USERS_READ),  # Read profile / user data
     'osf.users+write': frozenset(ComposedScopes.USERS_WRITE),  # Edit profile data
 
-    'osf.nodes.basic+read': frozenset(ComposedScopes.NODE_BASIC_READ),  # Read only access to basic node metadata
-    'osf.nodes.basic+write': frozenset(ComposedScopes.NODE_BASIC_WRITE),
+    'osf.nodes.metadata+read': frozenset(ComposedScopes.NODE_METADATA_READ),  # Read only access to basic node metadata
+    'osf.nodes.metadata+write': frozenset(ComposedScopes.NODE_METADATA_WRITE),
 
-    'osf.nodes.editor+read': frozenset(ComposedScopes.NODE_EDITOR_READ),
-    'osf.nodes.editor+write': frozenset(ComposedScopes.NODE_EDITOR_WRITE),
+    'osf.nodes.data+read': frozenset(ComposedScopes.NODE_DATA_READ),
+    'osf.nodes.data+write': frozenset(ComposedScopes.NODE_DATA_WRITE),
 
     'osf.nodes.access+read': frozenset(ComposedScopes.NODE_ACCESS_READ),
     'osf.nodes.access+write': frozenset(ComposedScopes.NODE_ACCESS_WRITE),
@@ -124,5 +124,5 @@ public_scopes = {  # TODO: Move (most of) this list to a database
     'osf.full+write': frozenset(ComposedScopes.FULL_WRITE),
 
     # Undocumented scopes that can not be requested by third parties (per CAS restriction)
-    'osf.admin': frozenset([ComposedScopes.APPLICATIONS_WRITE]),
+    'osf.admin': frozenset(ComposedScopes.APPLICATIONS_WRITE),
 }
