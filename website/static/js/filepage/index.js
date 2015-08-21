@@ -163,12 +163,6 @@ var FileViewPage = {
         //it was removed and shoved here due to issues with mithrils caching and interacting
         //With other non-mithril components on the page
         ctrl.enableEditing();
-        var panels, shown;
-        if (ctrl.editor) {
-            panels = [ctrl.editor];
-        } else {
-            panels = [];
-        }
 
         var panelsShown = ((ctrl.editor && ctrl.editor.selected) ? 1 : 0) + (ctrl.mfrIframeParent.is(':visible') ? 1 : 0);
         var mfrIframeParentLayout;
@@ -200,6 +194,27 @@ var FileViewPage = {
             ]);
         }
 
+        var editPane = function() {
+            if (ctrl.editor) {
+                return m('.btn' + (ctrl.editor.selected ? '.btn-primary' : '.btn-default'), {
+                    onclick: function (e) {
+                        e.preventDefault();
+                        // atleast one button must remain enabled.
+                        if ((!ctrl.editor.selected || panelsShown > 1)) {
+                            ctrl.editor.selected = !ctrl.editor.selected;
+                            ctrl.revisions.selected = false;
+                        }
+                    }
+                }, ctrl.editor.title);
+            }
+        };
+        var editDisplay = function() {
+            ctrl.triggerResize();
+            if (ctrl.editor && !ctrl.editor.selected) {
+                return m('[style="display:none"]', ctrl.editor);
+            }
+            return m('.col-sm-12', ctrl.editor);
+        };
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
@@ -213,27 +228,15 @@ var FileViewPage = {
                 m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
                         e.preventDefault();
-                        // atleast one button must remain enabled.
+                        // at least one button must remain enabled.
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = false;
                         }
                     }
                 }, 'View')
-            ).concat(
-                panels.map(function(panel) {
-                    return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
-                        onclick: function(e) {
-                            e.preventDefault();
-                            // atleast one button must remain enabled.
-                            if ((!panel.selected || panelsShown > 1)) {
-                                panel.selected = !panel.selected;
-                                ctrl.revisions.selected = false;
-                            }
-                        }
-                    }, panel.title);
-                })
-            )),
+            ).concat([editPane()])
+            ),
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
                     if (ctrl.mfrIframeParent.is(':visible')){
@@ -253,13 +256,7 @@ var FileViewPage = {
             ]));
         }
         return m('.file-view-page', m('.panel-toggler', [
-            m('.row', panels.map(function(pane, index) {
-                ctrl.triggerResize();
-                if (!pane.selected) {
-                    return m('[style="display:none"]', pane);
-                }
-                return m('.col-sm-' + Math.floor(12/shown), pane);
-            }))
+            m('.row', {view: editDisplay})
         ]));
     }
 };
