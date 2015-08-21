@@ -166,13 +166,17 @@ utils.buildURLParams = function(vm){
 utils.buildQuery = function (vm) {
     var must = $.map(vm.requiredFilters, utils.parseFilter);
     var should = $.map(vm.optionalFilters, utils.parseFilter);
+    var from = (vm.page - 1) * 10;
     var sort = {};
 
     if (vm.sortMap[vm.sort()]) {
         sort[vm.sortMap[vm.sort()]] = 'desc';
+    } else {
+        sort = null;
     }
 
-    return {
+    // size defaults to 10, left out intentionally
+    var ret = {
         'query' : {
             'filtered': {
                 'query': (vm.query().length > 0 && (vm.query() !== '*')) ? utils.commonQuery(vm.query()) : utils.matchAllQuery(),
@@ -180,9 +184,6 @@ utils.buildQuery = function (vm) {
             }
         },
         'aggregations': vm.loadStats ? utils.buildStatsAggs(vm) : {},
-        'from': (vm.page - 1) * 10,
-        'size': 10,
-        'sort': [sort],
         'highlight': {
             'fields': {
                 'title': {'fragment_size': 2000},
@@ -192,6 +193,13 @@ utils.buildQuery = function (vm) {
         }
     };
 
+    if (sort) {
+        ret.sort = sort;
+    }
+    if (from !== 0) {
+        ret.from = from;
+    }
+    return ret;
 };
 
 utils.maybeQuashEvent = function (event) {
@@ -312,13 +320,26 @@ utils.rangeFilter = function (fieldName, gte, lte) {
 
 /* Creates a bool query */
 utils.boolQuery = function (must, mustNot, should, minimum) {
-    var ret = {
-        'bool': {
-            'must': (must || []),
-            'must_not': (mustNot || []),
-            'should': (should || [])
-        }
-    };
+    var ret = {};
+    var mustProvided = must && (must.length > 0);
+    var mustNotProvided = mustNot && (mustNot.length > 0);
+    var shouldProvided = should && (should.length > 0);
+
+    if (!mustProvided && !mustNotProvided && !shouldProvided) {
+        return ret;
+    } else {
+        ret.bool = {};
+    }
+
+    if (mustProvided) {
+        ret.bool.must = must;
+    }
+    if (mustNotProvided) {
+        ret.bool.must_not = mustNot;
+    }
+    if (shouldProvided) {
+        ret.bool.should = should;
+    }
     if (minimum) {
         ret.bool.minimum_should_match = minimum;
     }
