@@ -9,7 +9,7 @@ var template = require('raw!templates/license-picker.html');
 
 var DEFAULT_LICENSE = {
     id: 'NONE',
-    name: 'None',
+    name: 'None Selected',
     text: 'Copyright [year] [fullname]'
 };
 var OTHER_LICENSE = {
@@ -25,7 +25,6 @@ var OTHER_LICENSE = {
  * @param {string} saveMethod: HTTP method for save request (one of 'GET', 'POST', 'PUT', 'PATCH')
  * @param {string} saveLicenseKey: key to use for save request payload
  * @param {license} license: optional instantiation license
- * @property {ko.observable<boolean>} editing: 
  * @property {ko.observable<boolean>} previewing:
  * @property {ko.observable<license>} savedLicense:
  * @property {ko.observable<license>} selectedLicense:
@@ -41,11 +40,12 @@ var OTHER_LICENSE = {
 var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
     var self = this;
 
+    self.user = $osf.currentUser();
+
     self.saveUrl = saveUrl || '';
     self.saveMethod = saveMethod || 'POST';
     self.saveLicenseKey = saveLicenseKey || 'license';
 
-    self.editing = ko.observable(false);
     self.previewing = ko.observable(false);
 
     self.licenses = $.map(licenses, function(value, key) {
@@ -54,6 +54,7 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
     });
     self.licenses.unshift(DEFAULT_LICENSE);
     self.licenses.push(OTHER_LICENSE);
+    
 
     self.savedLicense = ko.observable(license || DEFAULT_LICENSE);
     self.savedLicenseName = ko.pureComputed(function() {
@@ -81,12 +82,23 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
         }
     });
 
-    self.disableSave = ko.computed(function() {
-        return self.selectedLicense().id === self.savedLicense().id;
+    self.year = ko.observable(self.savedLicense().year || new Date().getFullYear());
+    self.copyrightHolders = ko.observable(self.savedLicense().copyrightHolders || '');
+    self.properties = ko.computed(function() {
+        var props = self.selectedLicense().properties;
+        if (props) {
+            return $.map(props, function(prop) {
+                return {
+                    name: prop,
+                    value: self[prop]
+                };
+            });
+        }
+        return null;
     });
 
-    self.showPreview = ko.computed(function() {
-        return self.previewing() || self.editing();
+    self.disableSave = ko.computed(function() {
+        return self.selectedLicense().id === self.savedLicense().id;
     });
 
     self.notification = ko.observable();

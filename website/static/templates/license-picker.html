@@ -1,15 +1,17 @@
-<span class="text-muted" data-bind="text: savedLicenseName">
+<span class="text-muted" data-bind="text: savedLicenseName"></span>
+<span data-bind="ifnot: user.isAdmin">
+  <i class="fa fa-info-circle" data-bind="click: togglePreview"></i>
 </span>
-<i class="text-muted fa fa-info-circle" data-bind="click: togglePreview"></i>
-<i class="text-muted fa fa-pencil" data-bind="click: editing.bind(null, true)">
-</i>
+<span data-bind="if: user.isAdmin">
+  <i class="fa fa-pencil" data-bind="click: togglePreview"></i>
+</span>
 <p data-bind="if: notification">
     <span data-bind="text: notification, css: {'text-danger': error, 'text-success': success}"></span>
 </p>
-<span data-bind="if: showPreview">
+<span data-bind="if: previewing">
   <div class="panel panel-default">
     <div class="panel-body">
-        <div class="col-md" data-bind="if: editing">
+        <div class="col-md" data-bind="if: user.isAdmin">
             <div class="form-inline">
                 <div class="form-group">
                     <label> Choose a license: </label>
@@ -24,14 +26,18 @@
                                                                }">Save</button>
                 </div>
             </div>
+            <div class="form-inline" data-bind="if: properties">
+              <div data-bind="foreach: properties">
+                  <label class="control-lable" data-bind="text: name"></label>
+                  <input data-bind="value: value"></div>
+              </div>
+            </div>
         </div>
-        <div class="col-md hidden-sm hidden-xs" data-bind="if: showPreview">
+        <div class="col-md" data-bind="if: previewing">
             <br />
             <pre data-bind="text: selectedLicenseText" ></pre>
-        </div>
-        <div class="col-md visible-sm visible-xs" data-bind="if: showPreview">
-            <a class="btn btn-default" data-bind="attr.href: selectedLicenseUrl" target="_blank">View Source</a>
         </div>
     </div>
   </div>
 </span>
+ 
