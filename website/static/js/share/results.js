@@ -7,20 +7,12 @@ var $osf = require('js/osfHelpers');
 var utils = require('./utils');
 require('truncate');
 
-var LoadingIcon = {
-    view: function(ctrl) {
-        return m('img', {src: '/static/img/loading.gif', alt: 'loading spinner'});
-    }
-};
-
 var Results = {
     view: function(ctrl, params) {
         var vm = params.vm;
         var resultViews = $.map(vm.results || [], function(result, i) {
-            return m.component(Result, {result: result, vm: vm,});
+            return m.component(Result, {result: result, vm: vm});
         });
-
-
 
         var len = 0;
         if (vm.results){
@@ -32,7 +24,7 @@ var Results = {
             } else if (!loading && results.length === 0) {
                 return m('p', {class: 'text-muted'}, 'No results for this query');
             } else {
-                return m('', [m.component(LoadingIcon), 'loading...']);
+                return vm.loadingIcon;
             }
         };
 

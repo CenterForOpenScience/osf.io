@@ -27,19 +27,16 @@ var FilterWidget = {
             return m('p', {class: 'text-muted'}, 'No filters applied');
         }
 
-        var requiredFilterViews = $.map(ANDFilters, function(searchFilter, i) {
+        var ANDFilterViews = $.map(ANDFilters, function(searchFilter, i) {
             var isLastFilter = (i + 1 === numFilters);
             return m.component(Filter, $.extend({},params,{key: searchFilter, filter: searchFilter, isLastFilter: isLastFilter, required: true}));
         });
 
-        var optionalFilterViews = $.map(ORFilters, function(searchFilter, i) {
+        var ORFilterViews = $.map(ORFilters, function(searchFilter, i) {
             var isLastFilter = (i + 1 + ANDFilters.length === numFilters);
             return m.component(Filter, $.extend({},params,{key: searchFilter, filter: searchFilter, isLastFilter: isLastFilter, required: false}));
         });
-        var filtersToDisp = requiredFilterViews.concat(optionalFilterViews);
-        console.log(filtersToDisp.length);
-        var ret = m('div', {}, filtersToDisp);
-        return ret;
+        return m('div', {}, ANDFilterViews.concat(ORFilterViews));
     }
 };
 

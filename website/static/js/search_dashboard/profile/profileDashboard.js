@@ -1,9 +1,10 @@
 'use strict';
 //Defines a template for a basic search widget
-var c3 = require('c3');
 var m = require('mithril');
 var $ = require('jquery');
 var $osf = require('js/osfHelpers');
+
+//TODO pack into lib
 var searchUtils = require('js/search_dashboard/searchUtils');
 var widgetUtils = require('js/search_dashboard/widgetUtils');
 var charts = require('js/search_dashboard/charts');
@@ -102,7 +103,7 @@ profileDashboard.contributorsParser = function(rawData, levelNames, vm){
 * @return {Object}  initialised searchDashboard component
 */
 profileDashboard.view = function(ctrl) {
-    return m.component(SearchDashboard, ctrl.searchSetup);
+    return m.component(SearchDashboard, ctrl.searchSetup); //TODO remove mithril stuff...
 };
 
 /**
@@ -111,7 +112,7 @@ profileDashboard.view = function(ctrl) {
  *
  * @return {m.component.controller} returns itself
  */
-profileDashboard.controller = function(params) {
+profileDashboard.mount = function(divID) {
     var contributorLevelNames = ['contributors','contributorsName'];
     var contributors = {
         id: contributorLevelNames[0],
@@ -245,8 +246,8 @@ profileDashboard.controller = function(params) {
             elasticURL: '/api/v1/search/',
             size: 5,
             page: 0,
-            dashboardDefinedANDFilters: ['match:contributors.url:' + ctx.userId],
-            dashboardDefinedORFilters: ['match:_type:project', 'match:_type:component'],
+            ANDFilters: ['match:contributors.url:' + ctx.userId],
+            ORFilters: ['match:_type:project', 'match:_type:component'],
             sort: 'Date',
             sortMap: {
                 Date: 'date_created',
@@ -257,7 +258,7 @@ profileDashboard.controller = function(params) {
     var nameRequest = {
         id: 'nameRequest',
         elasticURL: '/api/v1/search/',
-        dashboardDefinedANDFilters: ['match:category:user'],
+        ANDFilters: ['match:category:user'],
         preRequest: [function (requestIn, data) { //functions to modify filters and query before request
             var request = $.extend({}, requestIn);
             var urls = [];
@@ -288,12 +289,15 @@ profileDashboard.controller = function(params) {
         }]
     };
 
-    this.searchSetup = {
-        user: ctx.userId,
+    var searchSetup = {
+        url: document.location.search,
         loadingIcon: function() {
             return m('.spinner-loading-wrapper', [m('.logo-spin.text-center',
                 m('img[src=/static/img/logo_spin.png][alt=loader]')),
                 m('p.m-t-sm.fg-load-message', ' Loading... ')]);
+        },
+        errorHandlers: {
+            invalidQuery: function(vm){$osf.growl('Error', 'invalid query');}
         },
         requests : {
             mainRequest: mainRequest,
@@ -315,6 +319,8 @@ profileDashboard.controller = function(params) {
             ['results'],
         ],
     };
+    
+    SearchDashboard.mount(divID, searchSetup);
 };
 
 module.exports = profileDashboard;

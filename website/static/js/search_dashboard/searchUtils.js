@@ -12,13 +12,28 @@ var tags = ['div', 'i', 'b', 'sup', 'p', 'span', 'sub', 'bold', 'strong', 'itali
 
 /* This resets the state of the vm on error */
 searchUtils.errorState = function(vm){
-    //TODO remove queries, sorts, and non-locked filters from all requests
+    for (var request in vm.requests) {
+        if (vm.requests.hasOwnProperty(request)) {
+            vm.requests[request].query = m.prop('*');
+            vm.requests[request].userDefinedANDFilters = [];
+            vm.requests[request].userDefinedORFilters = [];
+            //vm.requests[request].sort = m.sort('*') // TODO Default sort should be saved so it can be repopulated here
+        }
+    }
     m.redraw(true);
-    if (vm.errorHandeler) {
-        vm.errorHandeler(vm);
+    if (vm.errorHandlers.invalidQuery) { //Add other errors here
+        vm.errorHandlers.invalidQuery(vm);
     }
 };
 
+/**
+ * Makes request to elastic
+ *
+ * @param {object} vm: searchDashboard viewmodel
+ * @param {object} request: objects of request parameters
+ * @param {object} data: input data (possibly from previous requests) to feed into any preRequest functions
+ * @return {object} a promise
+ */
 searchUtils.runRequest = function(vm, request, data) {
     var ret = m.deferred();
     var runRequest = true;
@@ -26,7 +41,7 @@ searchUtils.runRequest = function(vm, request, data) {
         runRequest = request.preRequest.every(function (funcToRun) {
             var returnedRequest = funcToRun(request, data);
             if (!returnedRequest) {
-                return false; //if any of the preRequest functions return false, then dont run this request
+                return false; //if any of the preRequest functions return false, then don't run this request
             }
             request = returnedRequest;
             return true;
@@ -62,15 +77,28 @@ searchUtils.runRequest = function(vm, request, data) {
     return ret.promise;
 };
 
+/**
+ * Runs all requests contained in vm according to the requestOrder specified in the view model
+ *
+ * @param {object} vm: searchDashboard viewmodel with requests to run
+ */
 searchUtils.runRequests = function(vm){
     if (searchUtils.hasRequestsStateChanged(vm)) {
         searchUtils.pushRequestsToHistory(vm);
     }
-    vm.requestOrder.forEach(function(parallelReqs){ //TODO move into if state chaged, so only requests when nessary
+    vm.requestOrder.forEach(function(parallelReqs){ //TODO move to async.js instead of this custom parellel/serial request
         searchUtils.recursiveRequest(vm, parallelReqs);
     });
 };
 
+/**
+ * Recursively and asynchronously run requests, only running the next when the previous has complete
+ *
+ * @param {object} vm: searchDashboard viewmodel
+ * @param {object} requests: serial requests to run, one after the other
+ * @param {int} level: level to handle recusive nature of function, handled internally, this can be set undefined
+ * @param {object} data: data from previous request to use in new request
+ */
 searchUtils.recursiveRequest = function(vm, requests, level, data){
 
     if (level === undefined){
@@ -83,12 +111,18 @@ searchUtils.recursiveRequest = function(vm, requests, level, data){
     }
     if (vm.requests[requests[level]]) {
         searchUtils.runRequest(vm, vm.requests[requests[level]], data).then(function(newData){
-            m.endComputation();
+            m.endComputation(); //trigger mithril to redraw, or decrement redraw counter
             searchUtils.recursiveRequest(vm, requests, level, newData);
         });
     }
 };
 
+/**
+ * Get another page worth of results from specified requests
+ *
+ * @param {object} vm: searchDashboard view model
+ * @param {array} requests: a list of requests to get more results from, note if request.page does not exist, then request will not run
+ */
 searchUtils.paginateRequests = function(vm, requests){
     if (requests.length === 0){
         for (var request in vm.requests) {
@@ -106,7 +140,11 @@ searchUtils.paginateRequests = function(vm, requests){
     searchUtils.runRequests(vm);
 };
 
-/* updates the current state when history changed. Should be bound to forward/back buttons callback */
+/**
+ * populate requests with data from history, then run these requests, called on forward/back buttons by history.js
+ *
+ * @param {object} vm: searchDashboard viewmodel
+ */
 searchUtils.updateRequestsFromHistory = function(vm){
     var state = History.getState().data.requests;
     for (var request in vm.requests) {
@@ -120,6 +158,11 @@ searchUtils.updateRequestsFromHistory = function(vm){
     searchUtils.runRequests(vm);
 };
 
+/**
+ * Adds current requests to history
+ *
+ * @param {object} vm: searchDashboard viewmodel
+ */
 searchUtils.pushRequestsToHistory = function(vm){
     History.pushState(
         {requests: vm.requests},
@@ -128,7 +171,12 @@ searchUtils.pushRequestsToHistory = function(vm){
     );
 };
 
-/* Checks to see if the state of the vm has changed */
+/**
+ * Test if the state of all request has changed since last push to history
+ *
+ * @param {object} vm: searchDashboard viewmodel
+ * @return {bool} Returns true if any of the requests have changed state, false otherwise
+ */
 searchUtils.hasRequestsStateChanged = function (vm) {
     for (var request in vm.requests) {
         if (vm.requests.hasOwnProperty(request)) {
@@ -141,6 +189,13 @@ searchUtils.hasRequestsStateChanged = function (vm) {
     return false;
 };
 
+/**
+ * Test if a single request has changed stage from the last push to history, called by hasRequestsStateChanged
+ *
+ * @param {object} vm: searchDashboard viewmodel
+ * @param {object} currentRequest: request object to check against
+ * @return {bool} Returns true if the request has changed state, false otherwise
+ */
 searchUtils.hasRequestStateChanged = function (vm, currentRequest){
     var state = History.getState().data;
     if (state.requests) {
@@ -157,59 +212,69 @@ searchUtils.hasRequestStateChanged = function (vm, currentRequest){
     return true;
 };
 
-/* Turns the vm state into a nice-ish to look at representation that can be stored in a URL */
+/**
+ * Converts state of requests into url
+ *
+ * @param {object} vm: searchDashboard viewmodel
+ * @return {string} url version of requests
+ */
 searchUtils.buildURLParams = function(vm){
     var d = {};
     for (var request in vm.requests) {
         if (vm.requests.hasOwnProperty(request)) {
             d[request] = {};
             if (vm.requests[request].query()) {
-                d[request].q = vm.requests[request].query();
+                d[request].query = vm.requests[request].query();
             }
             if (vm.requests[request].userDefinedANDFilters.length > 0) {
-                d[request].required = vm.requests[request].userDefinedANDFilters.join('|');
+                d[request].ANDFilters = vm.requests[request].userDefinedANDFilters.join('|');
             }
             if (vm.requests[request].userDefinedORFilters.length > 0) {
-                d[request].optional = vm.requests[request].userDefinedORFilters.join('|');
+                d[request].ORFilters = vm.requests[request].userDefinedORFilters.join('|');
             }
             if (vm.requests[request].sort()) {
                 d[request].sort = vm.requests[request].sort();
             }
         }
     }
-    return $.param(d);
+    return encodeURIComponent(JSON.stringify(d));
 };
 
-/* Builds the elasticsearch query that will be POSTed to the search API */
-searchUtils.buildQuery = function (vm) {
-    var userMust = $.map(vm.userDefinedANDFilters, searchUtils.parseFilter);
-    var userShould = $.map(vm.userDefinedORFilters, searchUtils.parseFilter);
-    var must = $.map(vm.dashboardDefinedANDFilters, searchUtils.parseFilter);
-    var should = $.map(vm.dashboardDefinedORFilters, searchUtils.parseFilter);
+/**
+ * Builds elasticsearch query to be posted from request
+ *
+ * @param {object} request: request to build from
+ * @return {object} JSON formatted elastic request
+ */
+searchUtils.buildQuery = function (request) {
+    var userMust = $.map(request.userDefinedANDFilters, searchUtils.parseFilter);
+    var userShould = $.map(request.userDefinedORFilters, searchUtils.parseFilter);
+    var must = $.map(request.dashboardDefinedANDFilters, searchUtils.parseFilter);
+    var should = $.map(request.dashboardDefinedORFilters, searchUtils.parseFilter);
     must = must.concat(userMust);
     should = should.concat(userShould);
 
-    var size = vm.size || 10;
+    var size = request.size || 10;
     var sort = {};
 
-    if (vm.sortMap){
-        if (vm.sortMap[vm.sort()]) {
-            sort[vm.sortMap[vm.sort()]] = 'desc';
+    if (request.sortMap){
+        if (request.sortMap[request.sort()]) {
+            sort[request.sortMap[request.sort()]] = 'desc';
         }
     }
 
     return {
         'query' : {
             'filtered': {
-                'query': (vm.query().length > 0 && (vm.query() !== '*')) ? searchUtils.commonQuery(vm.query()) : searchUtils.matchAllQuery(),
+                'query': (request.query().length > 0 && (request.query() !== '*')) ? searchUtils.commonQuery(request.query()) : searchUtils.matchAllQuery(),
                 'filter': searchUtils.boolQuery(must, null, should)
             }
         },
-        'aggregations': searchUtils.buildAggs(vm),
-        'from': vm.page * size,
+        'aggregations': searchUtils.buildAggs(request),
+        'from': request.page * size,
         'size': size,
         'sort': [sort],
-        'highlight': { //TODO work out what this does and generalize
+        'highlight': { //TODO @bdyetton->@fabianvf work out what this does and generalize...
             'fields': {
                 'title': {'fragment_size': 2000},
                 'description': {'fragment_size': 2000},
@@ -220,8 +285,16 @@ searchUtils.buildQuery = function (vm) {
 
 };
 
-/* Adds a filter to the list of filters if it doesn't already exist */
-searchUtils.updateFilter = function (vm, requests, filter, required) {
+/**
+ * Adds a filter to the list of filters for the requests specified. If no request specified then add to all requests.
+ * Then run requests again.
+ *
+ * @param {object} vm: searchDashboard vm
+ * @param {Array} requests: array of request ids to add to
+ * @param {object} filter: filter to add
+ * @param {required} isANDFilter: if the filter is to be ANDed or ORed
+ */
+searchUtils.updateFilter = function (vm, requests, filter, isANDFilter) {
     if (requests.length === 0){
         for (var request in vm.requests) {
             if (vm.requests.hasOwnProperty(request)) {
@@ -231,10 +304,10 @@ searchUtils.updateFilter = function (vm, requests, filter, required) {
     }
 
     requests.forEach(function(request) {
-        if (required && request.userDefinedANDFilters.indexOf(filter) === -1) {
+        if (isANDFilter && request.userDefinedANDFilters.indexOf(filter) === -1) {
             request.userDefinedANDFilters.push(filter);
             request.page = 0;
-        } else if (request.userDefinedORFilters.indexOf(filter) === -1 && !required) {
+        } else if (request.userDefinedORFilters.indexOf(filter) === -1 && !isANDFilter) {
             request.userDefinedORFilters.push(filter);
             request.page = 0;
         }
@@ -242,7 +315,14 @@ searchUtils.updateFilter = function (vm, requests, filter, required) {
     searchUtils.runRequests(vm);
 };
 
-/* Removes a filter from the list of filters */
+/**
+ * Removes a filter to the list of filters for the requests specified. If no request specified then add to all requests.
+ * Then run requests again.
+ *
+ * @param {object} vm: searchDashboard vm
+ * @param {Array} requests: array of request ids to add to
+ * @param {object} filter: filter to remove
+ */
 searchUtils.removeFilter = function (vm, requests, filter) {
     if (requests.length === 0){
         for (var request in vm.requests) {
@@ -296,6 +376,15 @@ searchUtils.parseFilter = function (filterString) {
     }
 };
 
+/**
+ * Adds aggregation to current aggregation, returns combination.
+ * If global flag set, then agg becomes global of all elastic queries
+ *
+ * @param {object} currentAgg: agg object to add to
+ * @param {object} newAgg: new agg to add
+ * @param {bool} globalAgg: filter to add
+ * @return {object} combined new agg
+ */
 searchUtils.updateAgg = function (currentAgg, newAgg, globalAgg) {
     globalAgg = globalAgg || false;
 
@@ -316,19 +405,30 @@ searchUtils.updateAgg = function (currentAgg, newAgg, globalAgg) {
     return newAgg; //else, do nothing
 };
 
-
-searchUtils.buildAggs = function (vm) {
+/**
+ * creates and returns aggregation from request object with list of aggregations
+ *
+ * @param {object} request: Request object with list of aggregations to add
+ * @return {object} agg object in elasticsearch format
+ */
+searchUtils.buildAggs = function (request) {
     var currentAggs = {};
-    if (vm.aggregations === undefined) {return []; }
-    $.map(vm.aggregations, function (agg) {
-        currentAggs = searchUtils.updateAgg(currentAggs, agg);
+    if (request.aggregations === undefined) {return []; }
+    $.map(request.aggregations, function (agg) {
+        currentAggs = searchUtils.updateAgg(currentAggs, agg, false);
     });
     return currentAggs;
 };
 
 /*** Elasticsearch functions below ***/
 
-/* Creates a filtered query */
+/**
+ * Creates a filtered query in elastic search format
+ *
+ * @param {object} query: query to bve filtered
+ * @param {object} filter: filter object to apply to query
+ * @return {object} elastic formatted filtered query
+ */
 searchUtils.filteredQuery = function(query, filter) {
     var ret = {
         'filtered': {}
@@ -342,13 +442,22 @@ searchUtils.filteredQuery = function(query, filter) {
     return ret;
 };
 
-searchUtils.termsFilter = function (field, value, minDocCount, exclustions) {
+/**
+ * Creates a term filter in elastic search format
+ *
+ * @param {object} field: Field to filter on (generally feild)
+ * @param {object} value: value to filter (must match this)
+ * @param {object} minDocCount: The smallest number of results that must match before inclusion in results
+ * @param {object} exclusions: Excluded terms from search (i.e. if it contains these values, then dont return result)
+ * @return {object} elastic formatted filtered query
+ */
+searchUtils.termsFilter = function (field, value, minDocCount, exclusions) {
     minDocCount = minDocCount || 0;
-    exclustions = ('|'+ exclustions) || '';
+    exclusions = ('|'+ exclusions) || '';
     var ret = {'terms': {}};
     ret.terms[field] = value;
     ret.terms.size = 0;
-    ret.terms.exclude = 'of|and|or' + exclustions;
+    ret.terms.exclude = 'of|and|or' + exclusions;
     ret.terms.min_doc_count = minDocCount;
     return ret;
 };

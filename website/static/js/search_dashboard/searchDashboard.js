@@ -1,21 +1,28 @@
 'use strict';
 //Defines a template for a basic search widget
-var c3 = require('c3');
 var m = require('mithril');
-var $ = require('jquery');
-var $osf = require('js/osfHelpers');
+var History = require('exports?History!history');
 
 var widgetUtils = require('js/search_dashboard/widgetUtils');
-var History = require('exports?History!history');
 var searchUtils = require('js/search_dashboard/searchUtils');
 var searchDashboard = {};
 
+
+searchDashboard.mount = function(divId, params){
+    var component = {
+        view: function(ctrl)
+        {
+            return m.component(searchDashboard, params);
+        }
+    }
+    m.mount(divId, component);
+};
 /**
  * View function for the search dashboard. Gridifys the contained
- * widgets depending on their row.
+ * widgets depending on their row (in rowmap).
  *
  * @param {Object} ctrl: controller object automatically passed in by mithril
- * @return {m.component object}  initialised searchDashboard component
+ * @return {Object}  initialised searchDashboard component
  */
 searchDashboard.view = function (ctrl, params) {
     var grid = [];
@@ -32,6 +39,7 @@ searchDashboard.view = function (ctrl, params) {
 
 };
 
+/*populates a row with widgets*/
 searchDashboard.returnRow = function(widgetNames, vm){
     widgetNames.map(function(widgetName){
         return m.component(SearchWidget, {
@@ -52,14 +60,15 @@ searchDashboard.vm = {};
  */
 searchDashboard.controller = function (params) {
     var self = this;
-    //search dashboard state
-    self.widgets = params.widgets || [];
-    self.error = m.prop('');
-    self.rows = params.rows;
-
+    if (params.url){
+        params.url = JSON.parse(decodeURIComponent(params.url).substring(1));
+    } else {
+        params.url = {};
+    }
     //search model state
     self.vm = searchDashboard.vm;
     self.vm.loadingIcon = params.loadingIcon || function(){return m('div',' Loading... '); };
+    self.vm.errorHandlers = params.errorHandlers;
     self.vm.requestOrder = params.requestOrder;
     self.vm.tempData = params.tempData;
     self.vm.widgetsToUpdate = [];
@@ -86,12 +95,11 @@ searchDashboard.controller = function (params) {
                     }
                 }
             }
-            self.vm.requests[request] = searchDashboard.buildRequest(request, self.vm.requests[request],aggregations);
+            self.vm.requests[request] = searchDashboard.buildRequest(request, self.vm.requests[request], params.url, aggregations);
         }
     }
-    self.vm.chartHandles = []; //TODO think about moving this...
-    self.vm.results = null; //unused, only for backwards compatibility with utils TODO remove
 
+    //add hook to history
     History.Adapter.bind(window, 'statechange', function(e) {
         var historyChanged = searchUtils.hasRequestsStateChanged(self.vm);
         if (historyChanged){
@@ -104,25 +112,43 @@ searchDashboard.controller = function (params) {
     searchUtils.runRequests(self.vm);
 };
 
-searchDashboard.buildRequest = function(id, request, aggs){
+/**
+ * Builds a request object based on the current URL and user defined inputs or defaults
+ *
+ * @param {string} id: name of request
+ * @param {object} userRequestParams: user defined params to override request default params, can be {}
+ * @param {object} currentUrl: user defined params to override request default params, can be {}
+ * @param {Array} aggs: user defined aggregations to add to this query, can be []
+ * @return {object}  initialised Request object
+ */
+searchDashboard.buildRequest = function(id, userRequestParams, currentUrl, aggs){
+    var requestURL = currentUrl[id] || {};
+    var ANDFilters = [];
+    var ORFilters = [];
+    if (requestURL.ANDFilters) {
+        ANDFilters = requestURL.ANDFilters.split('|');
+    }
+    if (requestURL.ORFilters) {
+        ORFilters = requestURL.ORFilters.split('|');
+    }
     return {
         id : id,
-        elasticURL: request.elasticURL,
-        query: request.query || m.prop('*'),
-        userDefinedANDFilters : [],
-        userDefinedORFilters : [],
-        dashboardDefinedANDFilters: request.dashboardDefinedANDFilters || [],
-        dashboardDefinedORFilters: request.dashboardDefinedORFilters || [],
-        preRequest: request.preRequest,
-        postRequest: request.postRequest,
+        elasticURL: userRequestParams.elasticURL,
+        query: m.prop(requestURL.query || (userRequestParams.query || '*')),
+        userDefinedANDFilters: ANDFilters || [],
+        userDefinedORFilters: ORFilters || [],
+        dashboardDefinedANDFilters: userRequestParams.ANDFilters || [],
+        dashboardDefinedORFilters: userRequestParams.ORFilters || [],
+        preRequest: userRequestParams.preRequest,
+        postRequest: userRequestParams.postRequest,
         aggregations : aggs || [],
-        size: request.size,
-        page: request.page,
+        size: userRequestParams.size,
+        page: userRequestParams.page,
         data: null,
         formattedData: {},
         complete: m.prop(false),
-        sort: m.prop(request.sort),
-        sortMap: request.sortMap
+        sort: m.prop(requestURL.sort || userRequestParams.sort),
+        sortMap: userRequestParams.sortMap
     };
 };
 

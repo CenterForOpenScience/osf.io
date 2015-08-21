@@ -25,16 +25,83 @@ function rgbToHex(rgb) {
     return  '#' + (0x1000000 + rgb).toString(16).substring(1);
 }
 
+/**
+ * Returns a colors in the middle of current colors
+ *
+ * @param {Array} colorsUsed: colors used
+ * @return {Array}  new colors to use
+ */
+function getNewColors (colorsUsed) {
+    var newColors = [];
+    for (var i=0; i < colorsUsed.length-1; i++) {
+        newColors.push(calculateDistanceBetweenColors(colorsUsed[i], colorsUsed[i + 1]));
+    }
+    return newColors;
+};
+
+/**
+ * Returns a requested number of unique complementary colors
+ *
+ * @param {integer} numColors: number of colors to return
+ * @return {Array}  Array of Hex color values
+ */
+charts.generateColors = function(numColors) {
+    var colorsToGenerate = COLORBREWER_COLORS.slice();
+    var colorsUsed = [];
+    var colorsOut = [];
+
+    while (colorsOut.length < numColors) {
+        var color = colorsToGenerate.shift();
+        if (typeof color === 'undefined'){
+            colorsToGenerate = getNewColors(colorsUsed);
+            colorsUsed = [];
+        } else {
+            colorsUsed.push(color);
+            colorsOut.push(rgbToHex(color));
+        }
+    }
+    return colorsOut;
+};
+
+/**
+ * Finds the first range filter and applies its bounds to the timegraphs zoom.
+ * This is useful when instantiating a page from URL
+ *
+ * @param {Object} request: The request to get filter bounds from
+ * @return {Array}  Zoom bounds in int format (time since epoch in MS)
+ */
+charts.getZoomFromTimeRangeFilter = function(request){
+    var zoom = null;
+    request.userDefinedANDFilters.some(function(filterString) {
+        var filterParts = filterString.split('='); //remove lock qualifier if it exists
+        if (filterParts[1] !== undefined) {return; } //there is a lock, so do nothing with this filter
+
+        var parts = filterParts[0].split(':');
+        var type = parts[0];
+        if (type === 'range') { //TODO this assumes all range filters work on dates, better would be to check if field matches the 'date_created'
+            zoom = [parseInt(parts[2]), parseInt(parts[3])]; //also this will be the last range filter that is returned...
+        }
+    });
+    return zoom;
+};
+
+/**
+ * Mithril component for the timeseries object
+ */
 charts.timeSeries = {
     view: function(ctrl, params){
         var vm = params.vm;
         var widget = params.widget;
         var parsedData = widget.display.parser(vm.requests[widget.display.reqRequests[0]].data, widget.levelNames, vm, widget);
+        parsedData.zoom = charts.getZoomFromTimeRangeFilter(vm.requests[widget.display.reqRequests[0]]);
         var chartSetup = charts.timeSeriesChart(parsedData, vm, widget);
         return charts.updateC3(vm, chartSetup, widget.id);
     }
 };
 
+/**
+ * Mithril component for the chart object
+ */
 charts.donut = {
     view: function(ctrl, params){
         var vm = params.vm;
@@ -58,11 +125,11 @@ charts.updateC3 = function(vm, c3ChartSetup, divID) {
     return m('div.c3-chart-padding', {id: divID,
                     config: function(element, isInit, context){
                         if (!isInit) {
-                            vm.chartHandles[divID] = c3.generate(c3ChartSetup);
-                            return vm.chartHandles[divID];
+                            vm.widgets[divID].handle = c3.generate(c3ChartSetup);
+                            return vm.widgets[divID].handle;
                         }
                         if (!widgetUtils.updateTriggered(divID,vm)) {return; }
-                        vm.chartHandles[divID].load({
+                        vm.widgets[divID].handle.load({
                             columns: c3ChartSetup.data.columns,
                             unload: true
                         });
@@ -164,21 +231,6 @@ charts.barChart = function (data, vm, widget) {
     };
 };
 
-charts.getZoomFromTimeRangeFilter = function(vm, bounds){
-    var zoom = null;
-    vm.userDefinedANDFilters.some(function(filterString) {
-        var filterParts = filterString.split('='); //remove lock qualifier if it exists
-        if (filterParts[1] !== undefined) {return; } //there is a lock, so do nothing with this filter
-
-        var parts = filterParts[0].split(':');
-        var type = parts[0];
-        if (type === 'range') { //TODO this assumes all range filters work on dates, better would be to check if field matches the 'date_created'
-            zoom = [parts[2], parts[3]]; //also this will be the last range filter that is returned...
-        }
-    });
-    return zoom;
-};
-
 /**
  * Creates a c3 timeseries chart component after parsing raw data
  *
@@ -188,7 +240,7 @@ charts.getZoomFromTimeRangeFilter = function(vm, bounds){
  */
 charts.timeSeriesChart = function (data, vm, widget) {
     data.type = widget.display.type ? widget.display.type : 'area-spline';
-    if (!data.zoom && vm.chartHandles[widget.id]) {vm.chartHandles[widget.id].unzoom(); }
+    if (!data.zoom && widget.handle) {widget.handle.unzoom(); }
     return {
         bindto: '#' + widget.id,
         size: {
@@ -326,46 +378,6 @@ charts.twoLevelAggParser = function (data, levelNames, vm, widget) {
     chartData.bounds = [chartData.columns[0][1], chartData.columns[0][chartData.columns[0].length-1]]; //get bounds of chart
     chartData.zoom = charts.getZoomFromTimeRangeFilter(vm.requests.mainRequest, chartData.bounds); //TODO the request name should not be here...
     return chartData;
-};
-
-/**
- * Returns a requested number of unique complementary colors
- *
- * @param {integer} numColors: number of colors to return
- * @return {array}  Array of Hex color values
- */
-charts.generateColors = function(numColors) {
-    var colorsToGenerate = COLORBREWER_COLORS.slice();
-    var colorsUsed = [];
-    var colorsOut = [];
-    var colorsNorm = [];
-
-    while (colorsOut.length < numColors) {
-        var color = colorsToGenerate.shift();
-        if (typeof color === 'undefined'){
-            colorsToGenerate = charts.getNewColors(colorsUsed);
-            colorsUsed = [];
-        } else {
-            colorsUsed.push(color);
-            colorsNorm.push(color);
-            colorsOut.push(rgbToHex(color));
-        }
-    }
-    return colorsOut;
-};
-
-/**
- * Returns a colors in the middle of current colors
- *
- * @param {array} colorsUsed: colors used
- * @return {array}  new colors to use
- */
-charts.getNewColors = function(colorsUsed) {
-    var newColors = [];
-    for (var i=0; i < colorsUsed.length-1; i++) {
-        newColors.push(calculateDistanceBetweenColors(colorsUsed[i], colorsUsed[i + 1]));
-    }
-    return newColors;
 };
 
 module.exports = charts;
