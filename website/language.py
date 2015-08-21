@@ -12,8 +12,8 @@
 
 # Status message shown at settings page on first login
 # (upon clicking primary email confirmation link)
-WELCOME_MESSAGE = ('Welcome to the OSF! Please update the following settings. If you need assistance '
-                   'in getting started, please visit the <a href="/getting-started/">Getting Started</a> page.')
+WELCOME_MESSAGE = ('Welcome to the OSF! If you need help getting started, '
+                   'please visit the <a href="/getting-started/">Getting Started</a> page.')
 
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
