@@ -228,8 +228,8 @@ class JSONAPISerializer(ser.Serializer):
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
 
-        data = collections.OrderedDict([('id', ''), ('type', type_), ('attributes', {}),
-                                        ('relationships', {}), ('links', {})])
+        data = collections.OrderedDict([('id', ''), ('type', type_), ('attributes', collections.OrderedDict()),
+                                        ('relationships', collections.OrderedDict()), ('links', {})])
 
         fields = [field for field in self.fields.values() if not field.write_only]
 
@@ -249,8 +249,6 @@ class JSONAPISerializer(ser.Serializer):
                 data['links'] = field.to_representation(attribute)
             else:
                 data['attributes'][field.field_name] = field.to_representation(attribute)
-
-        data['attributes'] = collections.OrderedDict(sorted(data['attributes'].items(), key=lambda t: t[0]))
 
         ret = {}
         if envelope:
