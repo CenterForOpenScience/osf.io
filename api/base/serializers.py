@@ -250,6 +250,8 @@ class JSONAPISerializer(ser.Serializer):
             else:
                 data['attributes'][field.field_name] = field.to_representation(attribute)
 
+        data['attributes'] = collections.OrderedDict(sorted(data['attributes'].items(), key=lambda t: t[0]))
+
         ret = {}
         if envelope:
             ret[envelope] = data
