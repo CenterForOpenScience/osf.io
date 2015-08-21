@@ -8,7 +8,7 @@ from framework.auth.core import Auth
 from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_404, waterbutler_url_for
+from api.base.utils import get_object_or_error, waterbutler_url_for
 from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
@@ -22,7 +22,7 @@ class NodeMixin(object):
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self):
-        obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
+        obj = get_object_or_error(Node, self.kwargs[self.node_lookup_url_kwarg], 'node')
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
         return obj
@@ -231,7 +231,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         pointer_lookup_url_kwarg = 'node_link_id'
-        pointer = get_object_or_404(Pointer, self.kwargs[pointer_lookup_url_kwarg])
+        pointer = get_object_or_error(Pointer, self.kwargs[pointer_lookup_url_kwarg], 'node link')
         # May raise a permission denied
         self.check_object_permissions(self.request, pointer)
         return pointer

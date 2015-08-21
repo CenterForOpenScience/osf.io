@@ -45,7 +45,7 @@ def main():
         sorted(rows, key=lambda row: row[2]),
         headers=['fullname', 'email', 'logs'],
     )
-    print(table)
+    print(table.encode('utf8'))
 
 
 if __name__ == '__main__':
