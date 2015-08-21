@@ -181,15 +181,13 @@ def confirm_email_get(**kwargs):
         user.save()
 
         # Go to dashboard
-        status.push_status_message(language.WELCOME_MESSAGE, 'success')
+        status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
         redirect_url = web_url_for('dashboard', _absolute=True)
     else:
         redirect_url = web_url_for('user_account', _absolute=True)
 
     if is_merge:
         status.push_status_message(language.MERGE_COMPLETE, 'success')
-    else:
-        status.push_status_message(language.CONFIRMED_EMAIL, 'success')
 
     # Redirect to CAS and authenticate the user with a verification key.
     user.verification_key = security.random_string(20)
