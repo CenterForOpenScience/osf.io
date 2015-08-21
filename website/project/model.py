@@ -3463,7 +3463,6 @@ class RegistrationApproval(EmailApprovableSanction):
                 'registration': node._primary_key,
             },
             auth=Auth(user),
-            log_date=node.registered_date,
             save=False
         )
         src.save()
