@@ -149,6 +149,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 
 
 class NodeFilesSerializer(JSONAPISerializer):
+
     id = ser.SerializerMethodField()
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
