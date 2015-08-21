@@ -70,6 +70,11 @@ class TestStoredFileNode(FilesTestCase):
     def test_wrapped(self):
         assert_true(isinstance(self.sfn.wrapped(), TestFile))
 
+    def test_wrapped_invalid_provider(self):
+        with assert_raises(exceptions.SubclassNotFound):
+            self.sfn.provider = 'the ocean'
+            self.sfn.wrapped()
+
     def test_get_guid_no_create(self):
         assert_is(self.sfn.get_guid(), None)
 

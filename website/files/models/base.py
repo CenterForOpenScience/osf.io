@@ -79,7 +79,7 @@ class StoredFileNode(StoredObject):
     def wrapped(self):
         """Wrap self in a FileNode subclass
         """
-        return PROVIDER_MAP[self.provider][int(self.is_file)](self)
+        return FileNode.resolve_class(self.provider, int(self.is_file))(self)
 
     def get_guid(self, create=False):
         """Attempt to find a Guid that points to this object.
@@ -159,7 +159,12 @@ class FileNode(object):
             >>> FileNode.resolve_class('dropbox', FileNode.FILE)  # DropboxFile
         :rtype: Subclass of FileNode
         """
-        return PROVIDER_MAP[provider][int(_type)]
+        try:
+            return PROVIDER_MAP[provider][int(_type)]
+        except IndexError:
+            raise exceptions.SubclassNotFound('_type must be 0, 1, or 2')
+        except KeyError:
+            raise exceptions.SubclassNotFound(provider)
 
     @classmethod
     def _filter(cls, qs=None):
@@ -473,7 +478,7 @@ class Folder(FileNode):
         return self._create_child(name, FileNode.FOLDER, path=path, materialized_path=materialized_path, save=save)
 
     def _create_child(self, name, kind, path=None, materialized_path=None, save=True):
-        child = PROVIDER_MAP[self.provider][kind](
+        child = FileNode.resolve_class(self.provider, kind)(
             name=name,
             node=self.node,
             path=path or '/' + name,
@@ -486,7 +491,7 @@ class Folder(FileNode):
         return child
 
     def find_child_by_name(self, name, kind=2):
-        return PROVIDER_MAP[self.provider][kind].find_one(
+        return FileNode.resolve_class(self.provider, kind).find_one(
             Q('name', 'eq', name) &
             Q('parent', 'eq', self)
         )
