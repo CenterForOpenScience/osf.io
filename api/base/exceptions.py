@@ -4,9 +4,8 @@ from rest_framework.exceptions import APIException
 
 
 def json_api_exception_handler(exc, context):
-    """
-    Custom exception handler that returns errors object as an array
-    """
+    """ Custom exception handler that returns errors object as an array """
+
     from rest_framework.views import exception_handler
     response = exception_handler(exc, context)
 
