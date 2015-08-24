@@ -3,9 +3,9 @@ from rest_framework import permissions
 
 
 class ReadOnlyOrCurrentUser(permissions.BasePermission):
-    # Check to see if the request is coming from the currently logged in user, and allows
-    # non safe actions if so
-
+    """ Check to see if the request is coming from the currently logged in user,
+    and allow non-safe actions if so.
+    """
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, User), 'obj must be a User, got {}'.format(obj)
         request_user = request.user

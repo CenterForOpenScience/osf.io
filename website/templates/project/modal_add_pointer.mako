@@ -63,7 +63,7 @@
                             <div data-bind='if: loadingResults'>
                                 <div class="spinner-loading-wrapper">
                                     <div class="logo-spin logo-lg"></div>
-                                    <p class="m-t-sm fg-load-message"> Loading Results...  </p>
+                                    <p class="m-t-sm fg-load-message"> Loading results...  </p>
                                 </div>
                             </div>
 

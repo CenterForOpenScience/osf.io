@@ -3100,7 +3100,7 @@ class EmailApprovableSanction(Sanction):
 
     def _send_approval_request_email(self, user, template, context):
         mails.send_mail(
-            user,
+            user.username,
             template,
             user=user,
             **context
@@ -3298,7 +3298,7 @@ class Retraction(EmailApprovableSanction):
             'node_id': registration._id
         }
 
-    def _approve_url_context(self, user_id):
+    def _approval_url_context(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
             registration = Node.find_one(Q('retraction', 'eq', self))
@@ -3392,7 +3392,7 @@ class Retraction(EmailApprovableSanction):
 class RegistrationApproval(EmailApprovableSanction):
 
     DISPLAY_NAME = 'Registration Approval'
-    SHORT_NAME = 'registration_approval'
+    SHORT_NAME = 'approval'
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
     NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_NON_ADMIN
@@ -3463,7 +3463,6 @@ class RegistrationApproval(EmailApprovableSanction):
                 'registration': node._primary_key,
             },
             auth=Auth(user),
-            log_date=node.registered_date,
             save=False
         )
         src.save()

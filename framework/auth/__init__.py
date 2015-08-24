@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from framework.sessions import session, create_session
+from framework.sessions import session, create_session, Session
+from modularodm import Q
 from framework import bcrypt
 from framework.auth.exceptions import DuplicateEmailError
 
@@ -48,6 +49,7 @@ def logout():
             del session.data[key]
         except KeyError:
             pass
+    Session.remove(Q('_id', 'eq', session._id))
     return True
 
 

@@ -522,7 +522,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, http.UNAUTHORIZED)
 
-    def test_GET_approve_registration_without_retraction_returns_HTTPError_GONE(self):
+    def test_GET_approve_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert_true(self.registration.is_pending_retraction)
         self.registration.retraction.reject(self.user, self.rejection_token)
         assert_false(self.registration.is_pending_retraction)
@@ -533,7 +533,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.GONE)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_GET_approve_with_invalid_token_returns_HTTPError_BAD_REQUEST(self):
         res = self.app.get(
@@ -572,7 +572,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         assert_equal(res.status_code, http.UNAUTHORIZED)
 
-    def test_GET_disapprove_registration_without_retraction_returns_HTTPError_GONE(self):
+    def test_GET_disapprove_registration_without_retraction_returns_HTTPError_BAD_REQUEST(self):
         assert_true(self.registration.is_pending_retraction)
         self.registration.retraction.reject(self.user, self.rejection_token)
         assert_false(self.registration.is_pending_retraction)
@@ -583,7 +583,7 @@ class RegistrationRetractionApprovalDisapprovalViewsTestCase(OsfTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, http.GONE)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_GET_disapprove_with_invalid_token_HTTPError_BAD_REQUEST(self):
         res = self.app.get(

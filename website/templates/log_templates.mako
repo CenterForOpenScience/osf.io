@@ -17,7 +17,7 @@ Embargo for
 
 <script type="text/html" id="embargo_cancelled">
 cancelled embargo of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="embargo_completed">
