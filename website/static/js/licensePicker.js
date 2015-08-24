@@ -4,10 +4,12 @@ require('knockout.validation');
 var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
-var licenses = require('js/licenses');
+
+var siteLicenses = require('js/licenses');
+var licenses = siteLicenses.list;
+var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
 
 var template = require('raw!templates/license-picker.html');
-
 
 /**
  * @class LicensePicker: Knockout.js view model for project license selection
@@ -73,9 +75,10 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
         }
     });
     self['Copyright Holders'] = ko.observable(license['Copyright Holders'] || '').extend({required: true});
-    self.dirty = ko.observable(false);
-    self.Year.subscribe(self.dirty.bind(null, true));
-    self['Copyright Holders'].subscribe(self.dirty.bind(null, true));
+    self.dirty = ko.computed(function() {
+        var savedLicense = self.savedLicense();
+        return self.Year() !== savedLicense.Year || self['Copyright Holders']() !== savedLicense['Copyright Holders'];
+    });
     self.properties = ko.computed(function() {
         var props = self.selectedLicense().properties;
         if (props) {

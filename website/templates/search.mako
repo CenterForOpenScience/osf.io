@@ -71,7 +71,7 @@
                         </div>
                         <br />
                         <!-- /ko -->
-                        <div class="hidden-xs" data-bind="if: showLicenses" class="row">
+                        <div class="row" class="hidden-xs" data-bind="if: showLicenses" class="row">
                             <div class="col-md-12">
                                 <h4> Filter by License:</h4>
                                 <span data-bind="if: licenses">

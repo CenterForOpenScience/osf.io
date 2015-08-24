@@ -5,7 +5,7 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 require('bootstrap.growl');
 var History = require('exports?History!history');
-var licenses = require('js/licenses');
+var licenses = require('js/licenses').list;
 
 var $osf = require('js/osfHelpers');
 // Enable knockout punches
@@ -113,6 +113,13 @@ var ViewModel = function(params) {
     });
     self.showLicenses = ko.computed(function() {
         return ['project', 'registration', 'component'].indexOf(self.category().name) >= 0;
+    });
+    self.category.subscribe(function(value) {
+        if (['project', 'registration', 'component'].indexOf(value) < 0) {
+            $.each(self.licenses(), function(i, license) {
+                license.active(false);
+            });
+        }
     });
 
     // Maintain compatibility with hiding search bar elsewhere on the site

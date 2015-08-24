@@ -149,6 +149,11 @@ def search(query, index=None, doc_type='_all'):
             pass
 
     tags = get_tags(tag_query, index)
+
+    try:
+        del aggs_query['query']['filtered']['filter']
+    except KeyError:
+        pass
     aggregations = get_aggregations(aggs_query, index)
     counts = {
         key: value
