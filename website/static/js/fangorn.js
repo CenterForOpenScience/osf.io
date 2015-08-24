@@ -1394,10 +1394,12 @@ var FGButton = {
             opts['data-placement'] = 'bottom';
             opts.title = args.tooltip;
         }
-        return m('div', opts, [
-            m('i', {className: iconCSS}),
-            m('span', children)
-        ]);
+        var childrenElements = [];
+        childrenElements.push(m('i', {className: iconCSS}));
+        if(children) {
+            childrenElements.push(m('span', children));
+        }
+        return m('div', opts, childrenElements);
     }
 };
 
