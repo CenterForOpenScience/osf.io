@@ -78,6 +78,7 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         if user is None:
             raise exceptions.AuthenticationFailed("Could not find the user associated with this token")
 
+        # TODO: Instead of just the token itself, store the CAS response, including list of associated scopes
         return user, auth_token
 
     def authenticate_header(self, request):
