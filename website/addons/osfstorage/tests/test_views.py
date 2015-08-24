@@ -579,7 +579,7 @@ class TestFileRenting(HookTestCase):
         assert_equal(resp.json['status'], 'success')
 
         url = self.project.api_url_for('osfstorage_return', **self.view_kwargs)
-        resp = self.app.post_json(url, auth=self.user.auth)
+        resp = self.app.delete_json(url, auth=self.user.auth)
 
         assert_equal(resp.status_code, 200)
         assert_equal(resp.json['status'], 'success')
@@ -592,7 +592,7 @@ class TestFileRenting(HookTestCase):
         assert_equal(resp.json['status'], 'success')
 
         url = self.project.api_url_for('osfstorage_return_all')
-        resp = self.app.post_json(url, auth=self.user.auth)
+        resp = self.app.delete_json(url, auth=self.user.auth)
 
         assert_equal(resp.status_code, 200)
         assert_equal(resp.json['status'], 'success')
