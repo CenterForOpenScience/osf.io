@@ -180,8 +180,15 @@ def confirm_email_get(**kwargs):
         user.date_last_login = datetime.datetime.utcnow()
         user.save()
 
-        # Go to dashboard
+        # Send out our welcome message
+        mails.send_mail(
+            to_addr=user.username,
+            mail=mails.WELCOME,
+            mimetype='html',
+            user=user
+        )
         status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+        # Go to dashboard
         redirect_url = web_url_for('dashboard', _absolute=True)
     else:
         redirect_url = web_url_for('user_account', _absolute=True)
