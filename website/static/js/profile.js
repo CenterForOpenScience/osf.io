@@ -673,18 +673,34 @@ ListViewModel.prototype.addContent = function() {
 };
 
 ListViewModel.prototype.removeContent = function(content) {
+    // If there is more then one model, then delete it.  If there is only one, then delete it and add another
+    // to preserve the fields in the view.
     var idx = this.contents().indexOf(content);
-    //  If there is more then one model, then delete it.  If there is only one, then delete it and add another.
-    this.contents.splice(idx, 1);
-    if (!this.contentsLength()) {
-        this.contents.push(new this.ContentModel(this));
-    }
+    var self = this;
 
-    this.changeMessage(
-        'Institution Removed',
-        'text-danger',
-        5000
-    );
+        bootbox.confirm({
+            title: 'Remove Institution?',
+            message: 'Are you sure you want to remove this Institution?',
+            callback: function(confirmed) {
+                if (confirmed) {
+                    self.contents.splice(idx, 1);
+                    if (!self.contentsLength()) {
+                        self.contents.push(new self.ContentModel(self));
+                    }
+                    self.changeMessage(
+                        'Institution Removed',
+                        'text-danger',
+                        5000
+                    );
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Remove',
+                    className:'btn-danger'
+                }
+            }
+        });
 };
 
 ListViewModel.prototype.unserialize = function(data) {
@@ -738,7 +754,7 @@ var JobViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-               return !self.department() || !self.title();
+               return !!self.department() || !!self.title();
             },
             message: 'Institution/Employer required'
         }
@@ -779,7 +795,7 @@ var SchoolViewModel = function() {
         trimmed: true,
         required: {
             onlyIf: function() {
-                return !self.department() || !self.degree();
+                return !!self.department() || !!self.degree();
             },
             message: 'Institution required'
         }
