@@ -59,9 +59,11 @@ class TokenHasScope(permissions.BasePermission):
         """
         Given a list of public-facing scope names from a CAS token, return the list of internal scopes
 
-        This is useful for converting a single broad scope into the small constituent parts
+        This is useful for converting a single broad scope name (from CAS) into the small constituent parts
+            (as used by views)
         """
         all_scopes = set()
         for sc in scopes:
-            all_scopes |= oauth_scopes.public_scopes[sc]
+            scope_tuple = oauth_scopes.public_scopes[sc]
+            all_scopes |= scope_tuple.parts
         return all_scopes

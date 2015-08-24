@@ -348,3 +348,15 @@ class ExternalProvider(object):
         :return dict:
         """
         pass
+
+
+class ApiOAuth2Scope(StoredObject):
+    """
+    Store information about recognized OAuth2 scopes. Only scopes registered under this database model can
+        be requested by third parties.
+    """
+    _id = fields.StringField(primary=True,
+                             default=lambda: str(ObjectId()))
+    name = fields.StringField(unique=True, required=True, index=True)
+    description = fields.StringField(required=True)
+    active = fields.BooleanField(default=True, index=True)

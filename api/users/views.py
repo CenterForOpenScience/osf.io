@@ -48,7 +48,6 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
     """
 
-
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope
