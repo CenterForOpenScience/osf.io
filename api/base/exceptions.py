@@ -27,7 +27,7 @@ def json_api_exception_handler(exc, context):
         else:
             errors.append({'detail': message})
 
-    response.data = {'errors': errors}
+        response.data = {'errors': errors}
 
     return response
 
