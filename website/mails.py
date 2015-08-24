@@ -120,7 +120,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
 TEST = Mail('test', subject='A test email to ${name}')
 
-CONFIRM_EMAIL = Mail('confirm', subject='Confirm your email address')
+CONFIRM_EMAIL = Mail('confirm', subject='Open Science Framework Account Verification')
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
 
 REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
@@ -214,4 +214,10 @@ ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
 ARCHIVE_SUCCESS = Mail(
     'archive_success',
     subject="Registration of " + UNESCAPE + " complete"
+)
+
+
+WELCOME = Mail(
+    'welcome',
+    subject='Welcome to the Open Science Framework'
 )
