@@ -330,6 +330,14 @@ class TestWebsiteUtils(unittest.TestCase):
         for i in inputs:
             assert_equal(outputs[i], i + 1)
 
+    def test_rapply_on_tuple(self):
+        inputs = tuple(i for i in range(5))
+        add_one = lambda n: n + 1
+        outputs = util.rapply(inputs, add_one)
+        for i in inputs:
+            assert_equal(outputs[i], i + 1)
+        assert_equal(type(outputs), tuple)
+
     def test_rapply_preserves_args_and_kwargs(self):
         def zero_if_not_check(item, check, checkFn=lambda n: n):
             if check and checkFn(item):

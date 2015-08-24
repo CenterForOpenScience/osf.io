@@ -41,10 +41,14 @@ def rapply(collection, func, *args, **kwargs):
             key: rapply(value, func, *args, **kwargs)
             for key, value in collection.iteritems()
         }
-    if isinstance(collection, list):
+    elif isinstance(collection, list):
         return [
             rapply(item, func, *args, **kwargs) for item in collection
         ]
+    elif isinstance(collection, tuple):
+        return tuple(
+            rapply(item, func, *args, **kwargs) for item in collection
+        )
     else:
         return func(collection, *args, **kwargs)
 
