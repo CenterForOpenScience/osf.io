@@ -9,12 +9,17 @@ from api.base.utils import absolute_reverse, waterbutler_url_for
 
 
 def _rapply(d, func, *args, **kwargs):
-    """Apply a function to all values in a dictionary, recursively."""
+    """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
+    as those are the only complex structures currently supported by DRF Serializer Fields."""
     if isinstance(d, collections.Mapping):
         return {
             key: _rapply(value, func, *args, **kwargs)
             for key, value in d.iteritems()
         }
+    if isinstance(d, list):
+        return [
+            _rapply(item, func, *args, **kwargs) for item in d
+        ]
     else:
         return func(d, *args, **kwargs)
 
