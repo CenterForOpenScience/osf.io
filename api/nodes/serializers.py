@@ -6,6 +6,17 @@ from rest_framework import exceptions
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
 
+class NodeTagField(ser.Field):
+
+    def to_representation(self, obj):
+        if obj is not None:
+            return obj._id
+        return None
+
+    def to_internal_value(self, data):
+        return data
+
+
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
@@ -20,9 +31,7 @@ class NodeSerializer(JSONAPISerializer):
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
-    tags = ser.SerializerMethodField(help_text='A dictionary that contains two lists of tags: '
-                                               'user and system. Any tag that a user will define in the UI will be '
-                                               'a user tag')
+    tags = ser.ListField(child=NodeTagField(), required=False)
 
     links = LinksField({
         'html': 'get_absolute_url',
@@ -106,14 +115,6 @@ class NodeSerializer(JSONAPISerializer):
         }
         return ret
 
-    @staticmethod
-    def get_tags(obj):
-        ret = {
-            'system': [tag._id for tag in obj.system_tags],
-            'user': [tag._id for tag in obj.tags],
-        }
-        return ret
-
     def create(self, validated_data):
         node = Node(**validated_data)
         node.save()
@@ -124,8 +125,20 @@ class NodeSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         assert isinstance(instance, Node), 'instance must be a Node'
+        auth = self.get_user_auth(self.context['request'])
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            if attr == 'tags':
+                old_tags = set([tag._id for tag in instance.tags])
+                if value:
+                    current_tags = set(value)
+                else:
+                    current_tags = set()
+                for new_tag in (current_tags - old_tags):
+                    instance.add_tag(new_tag, auth=auth)
+                for deleted_tag in (old_tags - current_tags):
+                    instance.remove_tag(deleted_tag, auth=auth)
+            else:
+                setattr(instance, attr, value)
         instance.save()
         return instance
 
