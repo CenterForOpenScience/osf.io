@@ -87,6 +87,14 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
+    def test_get_new_users(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_two._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        user_json = res.json['data']
+        assert_equal(user_json['fullname'], self.user_two.fullname)
+        assert_equal(user_json['twitter'], self.user_two.social['twitter'])
+
     def test_get_correct_pk_user(self):
         url = "/{}users/{}/".format(API_BASE, self.user_one._id)
         res = self.app.get(url)
