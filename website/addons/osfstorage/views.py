@@ -12,12 +12,11 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_signed
 
-from website.models import User
-from website.project.decorators import (
-    must_not_be_registration, must_have_addon,
-)
 from website.util import rubeus
+from website.models import User
 from website.project.model import has_anonymous_link
+from website.project.decorators import must_have_addon
+from website.project.decorators import must_not_be_registration
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
@@ -163,7 +162,8 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
                         'service': payload['metadata']['provider'],
                     })
                 ),
-                dict(payload['metadata'], **payload['hashes'])
+                dict(payload['metadata'], **payload['hashes']),
+                ignore_size=node_addon.owner.is_registration
             )
             version_id = version._id
             archive_exists = version.archive is not None
@@ -172,6 +172,9 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
     else:
         version_id = None
         archive_exists = False
+
+        if user.get_addon('osfstorage').at_warning_threshold:
+            user.get_addon('osfstorage').send_warning_email()
 
     return {
         'status': 'success',

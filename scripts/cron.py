@@ -64,6 +64,11 @@ def main(dry_run=True):
     glacier_audit.hour.on(6)
     glacier_audit.minute.on(0)  # Sunday 6:00 a.m.
 
+    files_audit = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/find_abusers.sh')))
+    files_audit.dow.on(0)
+    files_audit.hour.on(2)
+    files_audit.minute.on(0)  # Sunday 2:00 a.m.
+
     logger.info('Updating crontab file:')
     logger.info(cron.render())
 

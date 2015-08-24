@@ -1,5 +1,4 @@
-#!/usr/bin/env python
-# encoding: utf-8
+import os
 
 from . import routes, views, model, oldels
 
@@ -10,9 +9,11 @@ MODELS = [
     model.OsfStorageGuidFile,
     model.OsfStorageFileVersion,
     model.OsfStorageNodeSettings,
+    model.OsfStorageUserSettings,
     model.OsfStorageTrashedFileNode,
 ]
 NODE_SETTINGS_MODEL = model.OsfStorageNodeSettings
+USER_SETTINGS_MODEL = model.OsfStorageUserSettings
 
 ROUTES = [
     routes.api_routes
@@ -21,10 +22,10 @@ ROUTES = [
 SHORT_NAME = 'osfstorage'
 FULL_NAME = 'OSF Storage'
 
-OWNERS = ['node']
+OWNERS = ['node', 'user']
 
-ADDED_DEFAULT = ['node']
-ADDED_MANDATORY = ['node']
+ADDED_DEFAULT = ['node', 'user']
+ADDED_MANDATORY = ['node', 'user']
 
 VIEWS = []
 CONFIGS = []
@@ -43,6 +44,6 @@ GET_HGRID_DATA = views.osf_storage_root
 MAX_FILE_SIZE = 128  # 128 MB
 HIGH_MAX_FILE_SIZE = 5 * 1024  # 5 GB
 
-# HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.abspath(__file__))
 NODE_SETTINGS_TEMPLATE = None  # no node settings view
 USER_SETTINGS_TEMPLATE = None  # no user settings view

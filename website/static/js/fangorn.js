@@ -746,15 +746,19 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     // File may either be a webkit Entry or a file object, depending on the browser
     // On Chrome we can check if a directory is being uploaded
     var msgText;
+    var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
+    // Parent may be undefined, e.g. in Chrome, where file is an entry object
     if (file.isDirectory) {
         msgText = 'Cannot upload directories, applications, or packages.';
     } else if (xhr && xhr.status === 507) {
-        msgText = 'Cannot upload file due to insufficient storage.';
+        if (parent && parent.data.provider === 'osfstorage') {
+            msgText = 'We were unable to upload your file because you have insufficient space in your Open Science Framework storage account.<br>Please use an add-on or contact <a href="mailto:support@osf.io">support@osf.io</a> with questions.';
+        } else {
+            msgText = 'Cannot upload file due to insufficient storage.';
+        }
     } else {
         msgText = message || DEFAULT_ERROR_MESSAGE;
     }
-    var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
-    // Parent may be undefined, e.g. in Chrome, where file is an entry object
     var item;
     var child;
     var destroyItem = false;

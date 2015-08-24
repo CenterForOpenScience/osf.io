@@ -58,6 +58,12 @@ class AddonModelMixin(StoredObject):
             if deleted or not addons[0].deleted:
                 assert len(addons) == 1, 'Violation of one-to-one mapping with addon model'
                 return addons[0]
+        elif self._name in addon_config.added_default:
+            # Cant use add_addon as it calls this method
+            model = addon_config.settings_models[self._name](owner=self)
+            model.on_add()
+            model.save()
+            return model
         return None
 
     def has_addon(self, addon_name, deleted=False):

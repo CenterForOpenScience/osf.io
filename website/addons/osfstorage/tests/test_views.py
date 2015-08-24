@@ -1,7 +1,7 @@
 # encoding: utf-8
 from __future__ import unicode_literals
 
-import os
+import mock
 import datetime
 from nose.tools import *  # noqa
 
@@ -15,6 +15,7 @@ from website.addons.osfstorage.tests import factories
 from framework.auth import signing
 from website.util import rubeus
 
+from website.project.model import Node
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
@@ -185,6 +186,21 @@ class TestUploadFileHook(HookTestCase):
         assert_equal(record.serialized(), res.json['data'])
         assert_equal(res.json['data']['downloads'], self.record.get_download_count())
 
+    def test_registrations_excluded_from_quotas(self):
+        name = 'slightly-mad'
+        self.node_settings.owner.is_registration = True
+        self.node_settings.owner.save()
+        assert_equal(self.node_settings.storage_usage, 0)
+
+        with mock.patch.object(Node, 'archiving', True):
+            res = self.send_upload_hook(self.node_settings.root_node, self.make_payload(name=name))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+
+        self.node_settings.reload()
+        assert_equal(self.node_settings.storage_usage, 0)
+
     def test_upload_update(self):
         delta = Delta(lambda: len(self.record.versions), lambda value: value + 1)
         with AssertDeltas(delta):
@@ -202,7 +218,7 @@ class TestUploadFileHook(HookTestCase):
             storage_settings.WATERBUTLER_RESOURCE: 'osf',
             'object': 'file',
         }
-        version = self.record.create_version(self.user, location)
+        version = self.record.create_version(self.user, location, {'size': 123})
         with AssertDeltas(Delta(lambda: len(self.record.versions))):
             res = self.send_upload_hook(self.node_settings.root_node, self.make_payload())
             self.record.reload()
@@ -310,6 +326,7 @@ class TestUploadFileHook(HookTestCase):
             'osfstorage_update_metadata',
             {},
             payload={'metadata': {
+                'size': 583,
                 'vault': 'Vault 101',
                 'archive': '101 tluaV',
             }, 'version': res.json['version']},
@@ -320,6 +337,7 @@ class TestUploadFileHook(HookTestCase):
             name=name,
             hashes={'sha256': 'foo'},
             metadata={
+                'size': 499,
                 'name': 'lakdjf',
                 'provider': 'testing',
             }))
@@ -378,6 +396,7 @@ class TestUpdateMetadataHook(HookTestCase):
         self.send_metadata_hook({
             'version': self.version._id,
             'metadata': {
+                'size': 38502,
                 'vault': 'osf_storage_prod',
                 'archive': 'Some really long glacier object id here'
             }
@@ -390,7 +409,7 @@ class TestUpdateMetadataHook(HookTestCase):
     def test_archived_record_not_found(self):
         res = self.send_metadata_hook(
             payload={
-                'metadata': {'archive': 'glacier'},
+                'metadata': {'size': 13, 'archive': 'glacier'},
                 'version': self.version._id[::-1],
                 'size': 123,
                 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT'

@@ -180,6 +180,29 @@ def get_auth(**kwargs):
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if action == 'upload' and provider_name == 'osfstorage':
+        # Sadly this enpoint has a dual purpose of being the "provider" for osfstorage
+        # As well as serving out credentials so the above if is required.
+        # It has been placed here so files can be rejected before they are fully uploaded
+        # Note: This check is after getting credentials to avoid "leaking" user information
+        try:
+            file_size = int(request.args['size'])
+        except KeyError:
+            raise HTTPError(httplib.BAD_REQUEST, data={
+                'message_short': 'size parameter is required',
+                'message_long': 'File size must be included in the size parameter to upload to osfstorage'
+            })
+        except ValueError:
+            raise HTTPError(httplib.BAD_REQUEST, data={
+                'message_short': 'size must be an int',
+                'message_long': 'File size must be parsable as a base 10 integer'
+            })
+
+        user_addon = user.get_addon('osfstorage')
+
+        if file_size + user_addon.storage_usage > user_addon.storage_limit:
+            raise HTTPError(httplib.INSUFFICIENT_STORAGE)
+
     return {
         'auth': make_auth(user),
         'credentials': credentials,

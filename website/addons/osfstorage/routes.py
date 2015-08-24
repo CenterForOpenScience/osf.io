@@ -10,7 +10,6 @@ api_routes = {
     'prefix': '/api/v1',
 
     'rules': [
-
         Rule(
             [
                 '/project/<pid>/osfstorage/',
