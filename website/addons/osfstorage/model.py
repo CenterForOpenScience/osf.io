@@ -98,6 +98,14 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             file_node.return_rent()
         return True
 
+    def rented_all(self):
+        file_nodes = OsfStorageFileNode.find(
+            Q('node_settings', 'eq', self) &
+            Q('renter', 'ne', None)
+        )
+        for file in file_nodes:
+            yield file._id
+
     def serialize_waterbutler_settings(self):
         return dict(settings.WATERBUTLER_SETTINGS, **{
             'nid': self.owner._id,

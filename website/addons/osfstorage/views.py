@@ -277,3 +277,8 @@ def osfstorage_return_all(file_node, auth, **kwargs):
     if worked:
         return {'status': 'success'}
     return {'status': 'failure'}
+
+@decorators.handle_odm_errors
+@decorators.autoload_filenode(default_root=True)
+def osfstorage_rented_all(file_node, **kwargs):
+    return file_node.rented_all()

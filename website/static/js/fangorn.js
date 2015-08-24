@@ -1529,7 +1529,7 @@ var FGItemButtons = {
                                         m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                                         m('span.btn.btn-warning', {onclick: function() {
                                             $osf.postJSON(
-                                                 item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/check_out/',
+                                                 item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/checkout/',
                                                 {}
                                             ).done(function(resp) {
                                                 if (resp.status === 'success') {
@@ -1561,7 +1561,7 @@ var FGItemButtons = {
                         onclick: function(event) {
                             $.ajax({
                                 method: 'delete',
-                                url: item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/check_in/',
+                                url: item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/checkout/',
                             }).done(function(resp) {
                                 if (resp.status === 'success') {
                                     window.location.reload();
@@ -1616,7 +1616,7 @@ var FGItemButtons = {
                             m('span.btn.btn-warning', {onclick: function() {
                                 $.ajax({
                                     method: 'delete',
-                                    url: item.data.nodeApiUrl + 'osfstorage/check_in_all/',
+                                    url: item.data.nodeApiUrl + 'osfstorage/checkout/',
                                 }).done(function(resp) {
                                     if (resp.status === 'success') {
                                         window.location.reload();
@@ -1642,7 +1642,7 @@ var FGItemButtons = {
                             m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                             m('span.btn.btn-warning', {onclick: function(){
                                 $osf.postJSON(
-                                    item.data.nodeApiUrl + 'osfstorage/check_out_all/',
+                                    item.data.nodeApiUrl + 'osfstorage/checkout/',
                                     {}
                                 ).done(function(resp) {
                                     if (resp.status === 'success') {
@@ -1832,7 +1832,7 @@ var FGToolbar = {
                             for (var i = 0, len = items.length; i < len; i++) {
                                 var each = items[i];
                                 $osf.postJSON(
-                                     each.data.nodeApiUrl + 'osfstorage' + each.data.path +'/check_out/',
+                                     each.data.nodeApiUrl + 'osfstorage' + each.data.path +'/checkout/',
                                     {}
                                 ).done(function(resp) {
                                     if (resp.status === 'success') {
@@ -1858,7 +1858,7 @@ var FGToolbar = {
                                 var each = items[i];
                                 $.ajax({
                                     method: 'delete',
-                                    url: each.data.nodeApiUrl + 'osfstorage' + each.data.path + '/check_in/',
+                                    url: each.data.nodeApiUrl + 'osfstorage' + each.data.path + '/checkout/',
                                 }).done(function(resp) {
                                     if (resp.status === 'success') {
                                     } else {
