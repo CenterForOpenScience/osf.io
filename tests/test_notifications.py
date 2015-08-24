@@ -267,7 +267,7 @@ class TestRemoveNodeSignal(OsfTestCase):
 
 
 def list_or_dict(data):
-    """Generator only returns lists or dicts from list or dict"""
+    # Generator only returns lists or dicts from list or dict
     if isinstance(data, dict):
         for key in data:
             if isinstance(data[key], dict) or isinstance(data[key], list):
@@ -279,13 +279,11 @@ def list_or_dict(data):
 
 
 def has(data, sub_data):
-    """
-    Recursive approach to look for a subset of data in data.
-    WARNING: Don't use on huge structures
-    :param data: Data structure
-    :param sub_data: subset being checked for
-    :return: True or False
-    """
+    # Recursive approach to look for a subset of data in data.
+    # WARNING: Don't use on huge structures
+    # :param data: Data structure
+    # :param sub_data: subset being checked for
+    # :return: True or False
     try:
         (item for item in data if item == sub_data).next()
         return True
@@ -298,12 +296,10 @@ def has(data, sub_data):
 
 
 def subscription_schema(project, structure, level=0):
-    """
-    builds a schema from a list of nodes and events
-    :param project: validation type
-    :param structure: list of nodes (another list) and events
-    :return: schema
-    """
+    # builds a schema from a list of nodes and events
+    # :param project: validation type
+    # :param structure: list of nodes (another list) and events
+    # :return: schema
     sub_list = []
     for item in list_or_dict(structure):
         sub_list.append(subscription_schema(project, item, level=level+1))
@@ -524,9 +520,8 @@ class TestNotificationUtils(OsfTestCase):
         assert has(data, event)
 
     def test_format_includes_admin_view_only_component_subscriptions(self):
-        """ Test private components in which parent project admins are not contributors still appear in their
-            notifications settings.
-        """
+        # Test private components in which parent project admins are not contributors still appear in their
+        # notifications settings.
         node = factories.NodeFactory(parent=self.project)
         data = utils.format_data(self.user, [self.project._id])
         event = {
@@ -778,21 +773,21 @@ class TestCompileSubscriptions(OsfTestCase):
         assert_equal({'email_transactional': [], 'none': [], 'email_digest': []}, result)
 
     def test_creator_subbed_parent(self):
-        """Basic sub check"""
+        # Basic sub check
         self.base_sub.email_transactional.append(self.user_1)
         self.base_sub.save()
         result = emails.compile_subscriptions(self.base_project, 'file_updated')
         assert_equal({'email_transactional': [self.user_1._id], 'none': [], 'email_digest': []}, result)
 
     def test_creator_subbed_to_parent_from_child(self):
-        """checks the parent sub is the one to appear without a child sub"""
+        # checks the parent sub is the one to appear without a child sub
         self.base_sub.email_transactional.append(self.user_1)
         self.base_sub.save()
         result = emails.compile_subscriptions(self.shared_node, 'file_updated')
         assert_equal({'email_transactional': [self.user_1._id], 'none': [], 'email_digest': []}, result)
 
     def test_creator_subbed_to_both_from_child(self):
-        """checks that only one sub is in the list."""
+        # checks that only one sub is in the list.
         self.base_sub.email_transactional.append(self.user_1)
         self.base_sub.save()
         self.shared_sub.email_transactional.append(self.user_1)
@@ -801,7 +796,7 @@ class TestCompileSubscriptions(OsfTestCase):
         assert_equal({'email_transactional': [self.user_1._id], 'none': [], 'email_digest': []}, result)
 
     def test_creator_diff_subs_to_both_from_child(self):
-        """Check that the child node sub overrides the parent node sub"""
+        # Check that the child node sub overrides the parent node sub
         self.base_sub.email_transactional.append(self.user_1)
         self.base_sub.save()
         self.shared_sub.none.append(self.user_1)
@@ -810,7 +805,7 @@ class TestCompileSubscriptions(OsfTestCase):
         assert_equal({'email_transactional': [], 'none': [self.user_1._id], 'email_digest': []}, result)
 
     def test_user_wo_permission_on_child_node_not_listed(self):
-        """Tests to see if a user without permission gets an Email about a node they cannot see."""
+        # Tests to see if a user without permission gets an Email about a node they cannot see.
         self.base_sub.email_transactional.append(self.user_3)
         self.base_sub.save()
         result = emails.compile_subscriptions(self.private_node, 'file_updated')
@@ -870,6 +865,16 @@ class TestMoveSubscription(OsfTestCase):
         )
         self.file_sub.save()
 
+    def test_separate_users(self):
+        self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
+        self.private_node.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
+        self.private_node.save()
+        subbed, removed = utils.separate_users(
+            self.private_node, [self.user_2._id, self.user_3._id, self.user_4._id]
+        )
+        assert_equal([self.user_2._id, self.user_3._id], subbed)
+        assert_equal([self.user_4._id], removed)
+
     def test_event_subs_same(self):
         self.file_sub.email_transactional.extend([self.user_2, self.user_3, self.user_4])
         self.file_sub.save()
@@ -889,14 +894,14 @@ class TestMoveSubscription(OsfTestCase):
         assert_equal({'email_transactional': [], 'email_digest': [], 'none': []}, results)
 
     def test_move_sub(self):
-        """Tests old sub is replaced with new sub."""
+        # Tests old sub is replaced with new sub.
         utils.move_subscription(self.blank, 'xyz42_file_updated', self.project, 'abc42_file_updated', self.private_node)
         assert_equal('abc42_file_updated', self.file_sub.event_name)
         assert_equal(self.private_node, self.file_sub.owner)
         assert_equal(self.private_node._id + '_abc42_file_updated', self.file_sub._id)
 
     def test_move_sub_with_none(self):
-        """Attempt to reproduce an error that is seen when moving files"""
+        # Attempt to reproduce an error that is seen when moving files
         self.project.add_contributor(self.user_2, permissions=['write', 'read'], auth=self.auth)
         self.project.save()
         self.file_sub.none.append(self.user_2)
@@ -905,7 +910,7 @@ class TestMoveSubscription(OsfTestCase):
         assert_equal({'email_transactional': [], 'email_digest': [], 'none': [self.user_2._id]}, results)
 
     def test_remove_one_user(self):
-        """One user doesn't have permissions on the node the sub is moved to. Should be listed."""
+        # One user doesn't have permissions on the node the sub is moved to. Should be listed.
         self.file_sub.email_transactional.extend([self.user_2, self.user_3, self.user_4])
         self.file_sub.save()
         self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
@@ -914,13 +919,8 @@ class TestMoveSubscription(OsfTestCase):
         results = utils.users_to_remove('xyz42_file_updated', self.project, self.private_node)
         assert_equal({'email_transactional': [self.user_4._id], 'email_digest': [], 'none': []}, results)
 
-        # url = self.private_node.api_url_for('get_contributors')
-        # res = self.app.get(url, auth=self.user_1.auth)
-        # result = [item['id'] for item in res.json['contributors']]
-        # print result
-
     def test_remove_one_user_warn_another(self):
-        """Two users do not have permissions on new node, but one has a project sub. Both should be listed."""
+        # Two users do not have permissions on new node, but one has a project sub. Both should be listed.
         self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
         self.private_node.save()
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
@@ -934,7 +934,7 @@ class TestMoveSubscription(OsfTestCase):
         assert_in(self.user_3, self.sub.email_digest)  # Is not removed from the project subscription.
 
     def test_warn_user(self):
-        """One user with a project sub does not have permission on new node. User should be listed."""
+        # One user with a project sub does not have permission on new node. User should be listed.
         self.private_node.add_contributor(self.user_2, permissions=['admin', 'write', 'read'], auth=self.auth)
         self.private_node.save()
         self.project.add_contributor(self.user_3, permissions=['write', 'read'], auth=self.auth)
@@ -1048,9 +1048,8 @@ class TestSendEmails(OsfTestCase):
 
     @mock.patch('website.notifications.emails.store_emails')
     def test_notify_sends_comment_event_if_comment_reply_is_not_direct_reply_on_component(self, mock_store):
-        """ Test that comment replies on components that are not direct replies to the subscriber use the
-            "comments" email template.
-        """
+        # Test that comment replies on components that are not direct replies to the subscriber use the
+        # "comments" email template.
         user = factories.UserFactory()
         time_now = datetime.datetime.utcnow()
         emails.notify('comments', user, self.node, time_now, target_user=user)
@@ -1161,109 +1160,114 @@ class TestSendEmails(OsfTestCase):
 
 
 class TestSendDigest(OsfTestCase):
+    def setUp(self):
+        super(TestSendDigest, self).setUp()
+        self.user_1 = factories.UserFactory()
+        self.user_2 = factories.UserFactory()
+        self.project = factories.ProjectFactory()
+        self.timestamp = datetime.datetime.utcnow()
+
     def test_group_notifications_by_user_transactional(self):
         send_type = 'email_transactional'
-        user = factories.UserFactory()
-        user2 = factories.UserFactory()
-        project = factories.ProjectFactory()
-        timestamp = (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).replace(microsecond=0)
         d = factories.NotificationDigestFactory(
-            user_id=user._id,
+            user_id=self.user_1._id,
             send_type=send_type,
-            timestamp=timestamp,
+            timestamp=self.timestamp,
             message='Hello',
-            node_lineage=[project._id]
+            node_lineage=[self.project._id]
         )
         d.save()
         d2 = factories.NotificationDigestFactory(
-            user_id=user2._id,
+            user_id=self.user_2._id,
             send_type=send_type,
-            timestamp=timestamp,
+            timestamp=self.timestamp,
             message='Hello',
-            node_lineage=[project._id]
+            node_lineage=[self.project._id]
         )
         d2.save()
         d3 = factories.NotificationDigestFactory(
-            user_id=user2._id,
+            user_id=self.user_2._id,
             send_type='email_digest',
-            timestamp=timestamp,
-            message='Hello, but this should not appear',
-            node_lineage=[project._id]
+            timestamp=self.timestamp,
+            message='Hello, but this should not appear (this is a digest)',
+            node_lineage=[self.project._id]
         )
         d3.save()
         user_groups = get_users_emails(send_type)
-        expected = \
-            [{
-                u'user_id': user._id,
+        expected = [
+            {
+                u'user_id': self.user_1._id,
                 u'info': [{
                     u'message': u'Hello',
-                    u'node_lineage': [unicode(project._id)],
+                    u'node_lineage': [unicode(self.project._id)],
                     u'_id': d._id
                 }]
                 },
                 {
-                u'user_id': user2._id,
+                u'user_id': self.user_2._id,
                 u'info': [{
                     u'message': u'Hello',
-                    u'node_lineage': [unicode(project._id)],
+                    u'node_lineage': [unicode(self.project._id)],
                     u'_id': d2._id
                 }]
-            }]
+            }
+        ]
 
         assert_equal(len(user_groups), 2)
         assert_equal(user_groups, expected)
+        digest_ids = [d._id, d2._id, d3._id]
+        remove_notifications(email_notification_ids=digest_ids)
 
     def test_group_notifications_by_user_digest(self):
         send_type = 'email_digest'
-        user = factories.UserFactory()
-        user2 = factories.UserFactory()
-        project = factories.ProjectFactory()
-        timestamp = (datetime.datetime.utcnow() - datetime.timedelta(hours=1)).replace(microsecond=0)
         d = factories.NotificationDigestFactory(
-            user_id=user._id,
+            user_id=self.user_1._id,
             send_type=send_type,
-            timestamp=timestamp,
+            timestamp=self.timestamp,
             message='Hello',
-            node_lineage=[project._id]
+            node_lineage=[self.project._id]
         )
         d.save()
         d2 = factories.NotificationDigestFactory(
-            user_id=user2._id,
+            user_id=self.user_2._id,
             send_type=send_type,
-            timestamp=timestamp,
+            timestamp=self.timestamp,
             message='Hello',
-            node_lineage=[project._id]
+            node_lineage=[self.project._id]
         )
         d2.save()
         d3 = factories.NotificationDigestFactory(
-            user_id=user2._id,
+            user_id=self.user_2._id,
             send_type='email_transactional',
-            timestamp=timestamp,
-            message='Hello, but this should not appear',
-            node_lineage=[project._id]
+            timestamp=self.timestamp,
+            message='Hello, but this should not appear (this is transactional)',
+            node_lineage=[self.project._id]
         )
         d3.save()
         user_groups = get_users_emails(send_type)
-        expected = \
-            [{
-                u'user_id': user._id,
+        expected = [
+            {
+                u'user_id': self.user_1._id,
                 u'info': [{
                     u'message': u'Hello',
-                    u'node_lineage': [unicode(project._id)],
+                    u'node_lineage': [unicode(self.project._id)],
                     u'_id': d._id
                 }]
             },
-                {
-                    u'user_id': user2._id,
-                    u'info': [{
-                        u'message': u'Hello',
-                        u'node_lineage': [unicode(project._id)],
-                        u'_id': d2._id
-                    }]
+            {
+                u'user_id': self.user_2._id,
+                u'info': [{
+                    u'message': u'Hello',
+                    u'node_lineage': [unicode(self.project._id)],
+                    u'_id': d2._id
                 }]
+            }
+        ]
 
         assert_equal(len(user_groups), 2)
         assert_equal(user_groups, expected)
+        digest_ids = [d._id, d2._id, d3._id]
+        remove_notifications(email_notification_ids=digest_ids)
 
     @mock.patch('website.mails.send_mail')
     def test_send_users_email_called_with_correct_args(self, mock_send_mail):

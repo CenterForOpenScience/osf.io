@@ -6,26 +6,17 @@ def get_file_subs_from_folder(addon, user, kind, path, name):
     """Find the file tree under a specified folder."""
     folder = dict(kind=kind, path=path, name=name)
     file_tree = addon._get_file_tree(filenode=folder, user=user, version='latest-published')
+    return list_of_files(file_tree)
+
+
+def list_of_files(file_object):
     files = []
-    list_of_files(file_tree, files)
-    return files
-
-
-def list_of_files(file_object, files):
-    """Recursively make a flat list of files in a directory."""
     if file_object['kind'] == 'file':
-        files.append(file_object['path'])
+        return [file_object['path']]
     else:
         for child in file_object['children']:
-            list_of_files(child, files)
-
-
-def get_file_guid(node, provider, path):
-    """Use node, provider, and waterbutler path to find guid."""
-    path = path if path.startswith('/') else '/' + path
-    addon = node.get_addon(provider)
-    guid, created = addon.find_or_create_file_guid(path)
-    return guid
+            files.extend(list_of_files(child))
+    return files
 
 
 def compile_user_lists(files, user, source_node, node):

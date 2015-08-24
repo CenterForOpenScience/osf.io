@@ -1,22 +1,18 @@
+from collections import OrderedDict
 
 import mock
 from nose.tools import *
-from collections import OrderedDict
 
-from website.notifications.events.model import Event, register, event_register
+from website.notifications.events.base import Event, register, event_registry
 from website.notifications.events.files import (
     FileAdded, FileRemoved, FolderCreated, FileUpdated,
     AddonFileCopied, AddonFileMoved,
 )
-
-from website.notifications.emails import compile_subscriptions
 from website.notifications.events import utils
-from website.notifications.events import signals
-
+from website.addons.base import signals
 from framework.auth import Auth
 from tests import factories
 from tests.base import OsfTestCase
-
 
 email_transactional = 'email_transactional'
 email_digest = 'email_digest'
@@ -90,9 +86,7 @@ class TestListOfFiles(OsfTestCase):
         }
 
     def test_list_of_files(self):
-        files = []
-        utils.list_of_files(self.tree, files)
-        assert_equal(['e', 'f', 'c', 'd'], files)
+        assert_equal(['e', 'f', 'c', 'd'], utils.list_of_files(self.tree))
 
 
 class TestEventExists(OsfTestCase):
@@ -106,34 +100,34 @@ class TestEventExists(OsfTestCase):
 
     def test_get_file_updated(self):
         # Event gets FileUpdated from file_updated
-        event = event_register['file_updated'](self.user, self.node, 'file_updated', payload=file_payload)
+        event = event_registry['file_updated'](self.user, self.node, 'file_updated', payload=file_payload)
         assert_is_instance(event, FileUpdated)
 
     def test_get_file_added(self):
         # Event gets FileAdded from file_added
-        event = event_register['file_added'](self.user, self.node, 'file_added', payload=file_payload)
+        event = event_registry['file_added'](self.user, self.node, 'file_added', payload=file_payload)
         assert_is_instance(event, FileAdded)
 
     def test_get_file_removed(self):
         # Event gets FileRemoved from file_removed
-        event = event_register['file_removed'](self.user, self.node, 'file_removed', payload=file_deleted_payload)
+        event = event_registry['file_removed'](self.user, self.node, 'file_removed', payload=file_deleted_payload)
         assert_is_instance(event, FileRemoved)
 
     def test_get_folder_created(self):
         # Event gets FolderCreated from folder_created
-        event = event_register['folder_created'](self.user, self.node, 'folder_created', payload=folder_created_payload)
+        event = event_registry['folder_created'](self.user, self.node, 'folder_created', payload=folder_created_payload)
         assert_is_instance(event, FolderCreated)
 
     def test_get_file_moved(self):
         # Event gets AddonFileMoved from addon_file_moved
         file_moved_payload = file_move_payload(self.node, self.node)
-        event = event_register['addon_file_moved'](self.user, self.node, 'addon_file_moved', payload=file_moved_payload)
+        event = event_registry['addon_file_moved'](self.user, self.node, 'addon_file_moved', payload=file_moved_payload)
         assert_is_instance(event, AddonFileMoved)
 
     def test_get_file_copied(self):
         # Event gets AddonFileCopied from addon_file_copied
         file_copied_payload = file_copy_payload(self.node, self.node)
-        event = event_register['addon_file_copied'](self.user, self.node, 'addon_file_copied', payload=file_copied_payload)
+        event = event_registry['addon_file_copied'](self.user, self.node, 'addon_file_copied', payload=file_copied_payload)
         assert_is_instance(event, AddonFileCopied)
 
 
@@ -166,7 +160,7 @@ class TestFileUpdated(OsfTestCase):
             event_name='file_updated',
         )
         self.sub.save()
-        self.event = event_register['file_updated'](self.user_2, self.project, 'file_updated', payload=file_payload)
+        self.event = event_registry['file_updated'](self.user_2, self.project, 'file_updated', payload=file_payload)
 
     def test_info_formed_correct(self):
         assert_equal('{}_file_updated'.format(wb_path), self.event.event_type)
@@ -193,7 +187,7 @@ class TestFileAdded(OsfTestCase):
         )
         self.project_subscription.save()
         self.user2 = factories.UserFactory()
-        self.event = event_register['file_added'](self.user2, self.project, 'file_added', payload=file_payload)
+        self.event = event_registry['file_added'](self.user2, self.project, 'file_added', payload=file_payload)
 
     def test_info_formed_correct(self):
         assert_equal('{}_file_updated'.format(wb_path), self.event.event_type)
@@ -221,7 +215,7 @@ class TestFileRemoved(OsfTestCase):
         )
         self.project_subscription.save()
         self.user2 = factories.UserFactory()
-        self.event = event_register['file_removed'](
+        self.event = event_registry['file_removed'](
             self.user2, self.project, 'file_removed', payload=file_deleted_payload
         )
 
@@ -250,7 +244,7 @@ class TestFolderCreated(OsfTestCase):
         )
         self.project_subscription.save()
         self.user2 = factories.UserFactory()
-        self.event = event_register['folder_created'](
+        self.event = event_registry['folder_created'](
             self.user2, self.project, 'folder_created', payload=folder_created_payload
         )
 
@@ -282,7 +276,7 @@ class TestFolderFileRenamed(OsfTestCase):
 
         # Payload
         file_renamed_payload = file_move_payload(self.project, self.project)
-        self.event = event_register['addon_file_moved'](
+        self.event = event_registry['addon_file_moved'](
             self.user_1, self.project, 'addon_file_moved',
             payload=file_renamed_payload
         )
@@ -343,7 +337,7 @@ class TestFileMoved(OsfTestCase):
         self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
         # Payload
         file_moved_payload = file_move_payload(self.private_node, self.project)
-        self.event = event_register['addon_file_moved'](
+        self.event = event_registry['addon_file_moved'](
             self.user_2, self.private_node, 'addon_file_moved', payload=file_moved_payload
         )
         # Subscriptions
@@ -437,7 +431,7 @@ class TestFileCopied(OsfTestCase):
         self.private_node = factories.NodeFactory(parent=self.project, is_public=False, creator=self.user_1)
         # Payload
         file_copied_payload = file_copy_payload(self.private_node, self.project)
-        self.event = event_register['addon_file_copied'](
+        self.event = event_registry['addon_file_copied'](
             self.user_2, self.private_node, 'addon_file_copied',
             payload=file_copied_payload
         )
@@ -519,7 +513,7 @@ class TestCategorizeUsers(OsfTestCase):
         )
         # Payload
         file_moved_payload = file_move_payload(self.private_node, self.project)
-        self.event = event_register['addon_file_moved'](
+        self.event = event_registry['addon_file_moved'](
             self.user_2, self.private_node, 'addon_file_moved',
             payload=file_moved_payload
         )
@@ -659,7 +653,7 @@ class TestSubscriptionManipulations(OsfTestCase):
         result = utils.subscriptions_users_remove_duplicates(
             self.emails_1, self.emails_1, remove_same=True
         )
-        assert_equal({email_digest: [], email_transactional: [], 'none': list(set(['g1234', 'h1234', 'i1234']))}, result)
+        assert_equal({email_digest: [], email_transactional: [], 'none': list({'g1234', 'h1234', 'i1234'})}, result)
 
 
 wb_path = u'5581cb50a24f710b0f4623f9'

@@ -147,7 +147,7 @@ var FileViewPage = {
         //Ran into problems with mithrils caching messing up with multiple "Panels"
         self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
         self.revisions.selected = false;
-        self.revisions.title = 'More';
+        self.revisions.title = 'Revisions';
         
         // inform the mfr of a change in display size performed via javascript,
         // otherwise the mfr iframe will not update unless the document windows is changed.

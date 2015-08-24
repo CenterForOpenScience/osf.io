@@ -33,7 +33,9 @@ class NotificationsDict(dict):
 
 
 def find_subscription_type(subscription):
-    """Somewhat robust subscription finder, until something is a subset"""
+    """Find subscription type string within specific subscription.
+     Essentially removes extraneous parts of the string to get the type.
+    """
     subs_available = list(constants.USER_SUBSCRIPTIONS_AVAILABLE.keys())
     subs_available.extend(list(constants.NODE_SUBSCRIPTIONS_AVAILABLE.keys()))
     for available in subs_available:
@@ -78,8 +80,8 @@ def remove_subscription(node):
 
 
 def separate_users(node, user_ids):
-    """
-    Separates users into ones with permissions and ones without given a list.
+    """Separates users into ones with permissions and ones without given a list.
+
     :param node: Node to separate based on permissions
     :param user_ids: List of ids, will also take and return User instances
     :return: list of subbed, list of removed user ids
@@ -99,8 +101,8 @@ def separate_users(node, user_ids):
 
 
 def users_to_remove(source_event, source_node, new_node):
-    """
-    Find users that do not have permissions on new_node
+    """Find users that do not have permissions on new_node.
+
     :param source_event: such as _file_updated
     :param source_node: Node instance where a subscription currently resides
     :param new_node: Node instance where a sub or new sub will be.
@@ -121,8 +123,8 @@ def users_to_remove(source_event, source_node, new_node):
 
 
 def move_subscription(remove_users, source_event, source_node, new_event, new_node):
-    """
-    Moves subscription from old_node to new_node
+    """Moves subscription from old_node to new_node
+
     :param remove_users: dictionary of lists of users to remove from the subscription
     :param source_event: A specific guid event <guid>_file_updated
     :param source_node: Instance of Node
@@ -149,7 +151,9 @@ def move_subscription(remove_users, source_event, source_node, new_event, new_no
 
 
 def get_configured_projects(user):
-    """ Filter all user subscriptions for ones that are on parent projects and return the project ids
+    """Filter all user subscriptions for ones that are on parent projects
+     and return the project ids.
+
     :param user: modular odm User object
     :return: list of project ids for projects with no parent
     """

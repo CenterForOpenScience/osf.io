@@ -6,13 +6,13 @@ from datetime import datetime
 from website.notifications import emails
 
 
-event_register = {}
+event_registry = {}
 
 
 def register(event_type):
     """Register classes into event_register"""
     def decorator(cls):
-        event_register[event_type] = cls
+        event_registry[event_type] = cls
         return cls
     return decorator
 
@@ -46,7 +46,7 @@ class Event(object):
             timestamp=self.timestamp,
             message=self.html_message,
             gravatar_url=self.gravatar_url,
-            url=self.url.url
+            url=self.url
         )
 
     @property
@@ -71,3 +71,7 @@ class Event(object):
         Examples:
             <waterbutler id>_file_updated"""
         raise NotImplementedError
+
+
+class RegistryError(TypeError):
+    pass

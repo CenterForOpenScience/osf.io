@@ -2,8 +2,7 @@
 
 from framework.auth import signals as auth
 from website.project import signals as project
-from website.notifications.events import signals as event
-
+from website.addons.base import signals as event
 
 ALL_SIGNALS = [
     auth.contributor_removed,

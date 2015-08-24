@@ -16,17 +16,17 @@ from framework.sessions import session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in, must_be_signed
-
 from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
-from website.notifications.events import signals as file_signals
+from website.addons.base import signals as file_signals
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 from website.project.utils import serialize_node
+
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
