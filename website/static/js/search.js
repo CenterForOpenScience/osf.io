@@ -5,7 +5,7 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 require('bootstrap.growl');
 var History = require('exports?History!history');
-var licenses = require('list-of-licenses');
+var licenses = require('js/licenses');
 
 var $osf = require('js/osfHelpers');
 // Enable knockout punches

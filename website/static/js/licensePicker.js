@@ -2,23 +2,12 @@ var $ = require('jquery');
 var ko = require('knockout');
 require('knockout.validation');
 var bootbox = require('bootbox');
-var licenses = require('list-of-licenses');
 
 var $osf = require('js/osfHelpers');
+var licenses = require('js/licenses');
 
 var template = require('raw!templates/license-picker.html');
 
-var DEFAULT_LICENSE = {
-    id: 'NONE',
-    name: 'None Selected',
-    text: 'Copyright {{year}} {{fullname}}',
-    properties: ['Name', 'Copyright Holders']
-};
-var OTHER_LICENSE = {
-    id: 'OTHER',
-    name: 'Other',
-    text: 'Please see the "license.txt" uploaded in this project\'s OSF Storage'
-};
 
 /**
  * @class LicensePicker: Knockout.js view model for project license selection
@@ -50,13 +39,7 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
 
     self.previewing = ko.observable(false);
 
-    self.licenses = $.map(licenses, function(value, key) {
-        value.id = key;
-        return value;
-    });
-    self.licenses.unshift(DEFAULT_LICENSE);
-    self.licenses.push(OTHER_LICENSE);
-    
+    self.licenses = licenses;
 
     self.savedLicense = ko.observable(license || DEFAULT_LICENSE);
     self.savedLicenseName = ko.pureComputed(function() {
