@@ -46,7 +46,9 @@ NodeActions.forkNode = function() {
             ctx.node.urls.api + 'fork/',
             {}
         ).done(function(response) {
-            window.location = response;
+            bootbox.alert('Fork successfully created!', function() {
+                window.location = response;
+            });
         }).fail(function(response) {
             $osf.unblock();
             if (response.status === 403) {
