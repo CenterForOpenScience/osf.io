@@ -848,6 +848,9 @@ class TestNodeChildrenList(ApiTestCase):
 
         self.user_two = AuthUserFactory()
 
+        self.deleted_project = NodeFactory(parent=self.public_project, is_deleted=True, creator=self.user)
+        self.deleted_project.save()
+
     def test_node_children_list_does_not_include_pointers(self):
         res = self.app.get(self.private_project_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
@@ -885,6 +888,14 @@ class TestNodeChildrenList(ApiTestCase):
         private_component = NodeFactory(parent=self.project)
         res = self.app.get(self.private_project_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
+
+    def test_node_children_list_does_not_include_deleted(self):
+        res = self.app.get(self.public_project_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        ids = [node['id'] for node in res.json['data']]
+        assert_not_in(self.deleted_project._id, ids)
+        assert_equal(1, len(ids))
+
 
 
 class TestNodeChildCreate(ApiTestCase):
