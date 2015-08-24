@@ -131,8 +131,8 @@ $(document).ready(function() {
                     bootbox.confirm({
                         message: ($osf.joinPrompts(
                             response.errors,
-                            'Before you continue...'
-                        ) + '<br /><hr /> ' + language.registerSkipAddons),
+                            '<h4>Before you continue...</h4>'
+                        ) + '<hr /> ' + language.registerSkipAddons),
                         callback: function (result) {
                             if (result) {
                                 confirm();
