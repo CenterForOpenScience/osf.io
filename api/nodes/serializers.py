@@ -6,12 +6,6 @@ from rest_framework import exceptions
 from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
 
-class NodeTag(object):
-    def __init__(self, tag):
-        assert tag is not None
-        self._id = tag
-
-
 class NodeTagField(ser.Field):
 
     def to_representation(self, obj):
