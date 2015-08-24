@@ -3,6 +3,20 @@ from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import User
 
 
+class SocialSerializer(ser.DictField):
+    gitHub = ser.CharField(required=False, source='social.github', initial='', default='', allow_blank=True, help_text='GitHub Handle')
+    scholar = ser.CharField(required=False, source='social.scholar', allow_blank=True, default='', help_text='Google Scholar Account')
+    personal_website = ser.URLField(required=False, source='social.personal', allow_blank=True, default='', help_text='Personal Website')
+    twitter = ser.CharField(required=False, source='social.twitter', allow_blank=True, default='', help_text='Twitter Handle')
+    linkedIn = ser.CharField(required=False, source='social.linkedIn', allow_blank=True, default='', help_text='LinkedIn Account')
+    impactStory = ser.CharField(required=False, source='social.impactStory', allow_blank=True, default='', help_text='ImpactStory Account')
+    orcid = ser.CharField(required=False, source='social.orcid', allow_blank=True, default='', help_text='ORCID')
+    researcherId = ser.CharField(required=False, source='social.researcherId', allow_blank=True, default='', help_text='ResearcherId Account')
+
+    class Meta:
+        type_ = 'social'
+
+
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'fullname',
@@ -21,15 +35,17 @@ class UserSerializer(JSONAPISerializer):
     gravatar_url = ser.URLField(required=False, read_only=True, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
-    gitHub = ser.CharField(required=False, source='social.github', allow_blank=True, help_text='GitHub Handle')
-    scholar = ser.CharField(required=False, source='social.scholar', allow_blank=True, help_text='Google Scholar Account')
-    personal_website = ser.URLField(required=False, source='social.personal', allow_blank=True, help_text='Personal Website')
-    twitter = ser.CharField(required=False, source='social.twitter', allow_blank=True, help_text='Twitter Handle')
-    linkedIn = ser.CharField(required=False, source='social.linkedIn', allow_blank=True, help_text='LinkedIn Account')
-    impactStory = ser.CharField(required=False, source='social.impactStory', allow_blank=True, help_text='ImpactStory Account')
-    orcid = ser.CharField(required=False, source='social.orcid', allow_blank=True, help_text='ORCID')
-    researcherId = ser.CharField(required=False, source='social.researcherId', allow_blank=True, help_text='ResearcherId Account')
+    # gitHub = ser.CharField(required=False, source='social.github', allow_blank=True, help_text='GitHub Handle')
+    # scholar = ser.CharField(required=False, source='social.scholar', allow_blank=True, help_text='Google Scholar Account')
+    # personal_website = ser.URLField(required=False, source='social.personal', allow_blank=True, help_text='Personal Website')
+    # twitter = ser.CharField(required=False, source='social.twitter', allow_blank=True, help_text='Twitter Handle')
+    # linkedIn = ser.CharField(required=False, source='social.linkedIn', allow_blank=True, help_text='LinkedIn Account')
+    # impactStory = ser.CharField(required=False, source='social.impactStory', allow_blank=True, help_text='ImpactStory Account')
+    # orcid = ser.CharField(required=False, source='social.orcid', allow_blank=True, help_text='ORCID')
+    # researcherId = ser.CharField(required=False, source='social.researcherId', allow_blank=True, help_text='ResearcherId Account')
 
+    social = SocialSerializer(read_only=True, required=False, source='social', help_text='An array of dictionaries representing the '
+                                                                                                             'places the user has worked')
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
