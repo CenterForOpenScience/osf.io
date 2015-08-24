@@ -1,5 +1,6 @@
 var $ = require('jquery');
 var ko = require('knockout');
+require('knockout.validation');
 var bootbox = require('bootbox');
 var licenses = require('list-of-licenses');
 
@@ -10,7 +11,8 @@ var template = require('raw!templates/license-picker.html');
 var DEFAULT_LICENSE = {
     id: 'NONE',
     name: 'None Selected',
-    text: 'Copyright [year] [fullname]'
+    text: 'Copyright {{year}} {{fullname}}',
+    properties: ['Name', 'Copyright Holders']
 };
 var OTHER_LICENSE = {
     id: 'OTHER',
@@ -61,10 +63,7 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
         return self.savedLicense().name;
     });
 
-    self.selectedLicense = ko.observable(license || DEFAULT_LICENSE);
-    self.selectedLicenseText = ko.pureComputed(function() {
-        return self.selectedLicense().text;
-    });
+    self.selectedLicense = ko.observable(DEFAULT_LICENSE);
     self.selectedLicenseUrl = ko.pureComputed(function() {
         return self.selectedLicense().url;
     });
@@ -81,9 +80,19 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
             })[0]);
         }
     });
+    self.selectedLicenseId(license.id);
 
-    self.year = ko.observable(self.savedLicense().year || new Date().getFullYear());
-    self.copyrightHolders = ko.observable(self.savedLicense().copyrightHolders || '');
+    self.Year = ko.observable(license.Year || new Date().getFullYear()).extend({
+        required: true,
+        pattern: {
+            params: /^\d{4}\s*$/,
+            message: 'Please specify a valid year.'
+        }
+    });
+    self['Copyright Holders'] = ko.observable(license['Copyright Holders'] || '').extend({required: true});
+    self.dirty = ko.observable(false);
+    self.Year.subscribe(self.dirty.bind(null, true));
+    self['Copyright Holders'].subscribe(self.dirty.bind(null, true));
     self.properties = ko.computed(function() {
         var props = self.selectedLicense().properties;
         if (props) {
@@ -96,9 +105,18 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
         }
         return null;
     });
+    self.selectedLicenseText = ko.computed(function() {
+        return self.selectedLicense().text
+            .replace('{{year}}', self.Year())
+            .replace('{{copyrightHolders}}', self['Copyright Holders']());
+    });
+
+    self.validProps = ko.computed(function() {
+        return (!self.properties) || (self.Year.isValid() && self['Copyright Holders'].isValid());
+    });
 
     self.disableSave = ko.computed(function() {
-        return self.selectedLicense().id === self.savedLicense().id;
+        return !self.validProps() || !self.dirty() && self.selectedLicense().id === self.savedLicense().id;
     });
 
     self.notification = ko.observable();
@@ -127,7 +145,6 @@ LicensePicker.prototype.onSaveSuccess = function(selectedLicense) {
     var self = this;
 
     self.error(false);
-    self.editing(false);
     self.previewing(false);
     self.savedLicense(selectedLicense);
     self.notification('License updated successfully.');
@@ -144,10 +161,17 @@ LicensePicker.prototype.onSaveFail = function() {
 LicensePicker.prototype.save = function() {
     var self = this;
 
+    if (!self.validProps()) {
+        return;
+    }
+
     var license = self.selectedLicense();
 
     var payload = {};
     var selectedLicense = self.selectedLicense();
+    selectedLicense.Year = self.Year();
+    selectedLicense['Copyright Holders'] = self['Copyright Holders']();
+
     payload[self.saveLicenseKey] = selectedLicense;
     var save = function() {
         return $.ajax({

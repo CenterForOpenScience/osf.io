@@ -26,10 +26,15 @@
                                                                }">Save</button>
                 </div>
             </div>
-            <div class="form-inline" data-bind="if: properties">
+            <div class="form panel-default" data-bind="if: properties">
               <div data-bind="foreach: properties">
-                  <label class="control-lable" data-bind="text: name"></label>
-                  <input data-bind="value: value"></div>
+                <div class="form-group">
+                  <label>
+                    <span data-bind="text: name + ':'"></span>
+                    <span class="text-danger" data-bind="validationMessage: value"></span>
+                  </label>
+                  <input class="form-control" data-bind="value: value, valueUpdate: 'keyup'" />
+                </div>
               </div>
             </div>
         </div>
@@ -40,4 +45,3 @@
     </div>
   </div>
 </span>
- 
