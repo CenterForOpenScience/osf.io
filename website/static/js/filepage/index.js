@@ -31,7 +31,7 @@ var FileViewPage = {
         self.isRenter = function() {
             $.ajax({
                 method: 'get',
-                url: '/api/v1/project/' +self.node.id + '/osfstorage' + self.file.path + '/rented/',
+                url: '/api/v1/project/' +self.node.id + '/osfstorage' + self.file.path + '/checked_out/',
             }).done(function(resp) {
                 self.request_done = true;
                 self.file.renter = resp.renter;
@@ -107,7 +107,7 @@ var FileViewPage = {
                         return;
                     }
                     $osf.postJSON(
-                        '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/rent/',
+                        '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/check_out/',
                         {}
                     ).done(function(resp) {
                         window.location.reload();
@@ -124,10 +124,10 @@ var FileViewPage = {
             });
         });
         $(document).on('fileviewpage:return', function() {
-            $osf.postJSON(
-                '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/return/',
-                {}
-            ).done(function(resp) {
+            $.ajax({
+                method: 'delete',
+                url: '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path + '/check_in/',
+            }).done(function(resp) {
                 window.location.reload();
             }).fail(function(resp) {
                 $osf.growl('Error', 'Unable to check-in file');
@@ -147,10 +147,10 @@ var FileViewPage = {
                     if (!confirm) {
                         return;
                     }
-                    $osf.postJSON(
-                        '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/force_return/',
-                        {}
-                    ).done(function(resp) {
+                    $.ajax({
+                        method: 'delete',
+                        url: '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/check_in/',
+                    }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
                         $osf.growl('Error', 'Unable to force check-in file, make sure you have admin privileges.');

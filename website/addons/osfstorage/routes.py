@@ -115,7 +115,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/rent/',
+                '/project/<pid>/osfstorage/<fid>/check_out/',
             ],
             'post',
             views.osfstorage_rent,
@@ -124,16 +124,16 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/return/',
+                '/project/<pid>/osfstorage/<fid>/check_in/',
             ],
-            'post',
+            'delete',
             views.osfstorage_return,
             json_renderer,
         ),
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/rented/',
+                '/project/<pid>/osfstorage/<fid>/checked_out/',
             ],
             'get',
             views.osfstorage_rented,
@@ -142,16 +142,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/force_return/',
-            ],
-            'post',
-            views.osfstorage_force_return,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/osfstorage/rent_all/',
+                '/project/<pid>/osfstorage/check_out_all/',
             ],
             'post',
             views.osfstorage_rent_all,
@@ -160,9 +151,9 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/return_all/',
+                '/project/<pid>/osfstorage/check_in_all/',
             ],
-            'post',
+            'delete',
             views.osfstorage_return_all,
             json_renderer,
         ),

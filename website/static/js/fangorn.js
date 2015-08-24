@@ -1529,7 +1529,7 @@ var FGItemButtons = {
                                         m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                                         m('span.btn.btn-warning', {onclick: function() {
                                             $osf.postJSON(
-                                                 item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/rent/',
+                                                 item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/check_out/',
                                                 {}
                                             ).done(function(resp) {
                                                 if (resp.status === 'success') {
@@ -1559,10 +1559,10 @@ var FGItemButtons = {
                 rowButtons.push(
                     m.component(FGButton, {
                         onclick: function(event) {
-                            $osf.postJSON(
-                                 item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/return/',
-                                {}
-                            ).done(function(resp) {
+                            $.ajax({
+                                method: 'delete',
+                                url: item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/check_in/',
+                            }).done(function(resp) {
                                 if (resp.status === 'success') {
                                     window.location.reload();
                                 } else {
@@ -1614,10 +1614,10 @@ var FGItemButtons = {
                         ]), m('', [
                             m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                             m('span.btn.btn-warning', {onclick: function() {
-                                $osf.postJSON(
-                                     item.data.nodeApiUrl + 'osfstorage/return_all/',
-                                    {}
-                                ).done(function(resp) {
+                                $.ajax({
+                                    method: 'delete',
+                                    url: item.data.nodeApiUrl + 'osfstorage/check_in_all/',
+                                }).done(function(resp) {
                                     if (resp.status === 'success') {
                                         window.location.reload();
                                     } else {
@@ -1642,7 +1642,7 @@ var FGItemButtons = {
                             m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                             m('span.btn.btn-warning', {onclick: function(){
                                 $osf.postJSON(
-                                    item.data.nodeApiUrl + 'osfstorage/rent_all/',
+                                    item.data.nodeApiUrl + 'osfstorage/check_out_all/',
                                     {}
                                 ).done(function(resp) {
                                     if (resp.status === 'success') {
@@ -1832,7 +1832,7 @@ var FGToolbar = {
                             for (var i = 0, len = items.length; i < len; i++) {
                                 var each = items[i];
                                 $osf.postJSON(
-                                     each.data.nodeApiUrl + 'osfstorage' + each.data.path +'/rent/',
+                                     each.data.nodeApiUrl + 'osfstorage' + each.data.path +'/check_out/',
                                     {}
                                 ).done(function(resp) {
                                     if (resp.status === 'success') {
@@ -1856,10 +1856,10 @@ var FGToolbar = {
                         onclick: function() {
                             for (var i = 0, len = items.length; i < len; i++) {
                                 var each = items[i];
-                                $osf.postJSON(
-                                     each.data.nodeApiUrl + 'osfstorage' + each.data.path +'/return/',
-                                    {}
-                                ).done(function(resp) {
+                                $.ajax({
+                                    method: 'delete',
+                                    url: each.data.nodeApiUrl + 'osfstorage' + each.data.path + '/check_in/',
+                                }).done(function(resp) {
                                     if (resp.status === 'success') {
                                     } else {
                                         $osf.growl('Error', 'Unable to check-in file.');
