@@ -687,6 +687,7 @@ ListViewModel.prototype.removeContent = function(content) {
                     if (!self.contentsLength()) {
                         self.contents.push(new self.ContentModel(self));
                     }
+                    self.submit();
                     self.changeMessage(
                         'Institution Removed',
                         'text-danger',
