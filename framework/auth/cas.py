@@ -41,11 +41,12 @@ class CasTokenError(CasError):
 class CasResponse(object):
     """A wrapper for an HTTP response returned from CAS."""
 
-    def __init__(self, authenticated=False, status=None, user=None, attributes=None):
+    def __init__(self, authenticated=False, status=None, user=None, attributes=None, scopes=None):
         self.authenticated = authenticated
         self.status = status
         self.user = user
         self.attributes = attributes or {}
+        self.scopes = scopes or []
 
 
 class CasClient(object):

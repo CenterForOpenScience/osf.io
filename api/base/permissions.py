@@ -20,16 +20,16 @@ class TokenHasScope(permissions.BasePermission):
         token = request.auth
 
         if token is None:
-            return True  # TODO: This assumes that user authenticated in some way other than oauth and therefore no token permission check is performed. Revisit.
+            # Assumption: user authenticated via non-oauth means, so don't check token permissions.
+            return True
 
-        # TODO: Assumes that scopes are always present in token. Is assumption valid? (is there a default value?)
         required_scopes = self._get_scopes(request, view)
 
         # Scopes are returned as a space-delimited list in the token
-        scopes = token['scopes'].split()
+        allowed_scopes = token.scopes
 
         try:
-            normalized_scopes = self._normalize_scopes(scopes)
+            normalized_scopes = self._normalize_scopes(allowed_scopes)
         except KeyError:
             # This should never fire: it implies that CAS issued a scope name not in the master list of scopes
             raise exceptions.APIException("OAuth2 token specifies unrecognized scope.")

@@ -78,7 +78,7 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         if user is None:
             raise exceptions.AuthenticationFailed("Could not find the user associated with this token")
 
-        return user, auth_token
+        return user, resp
 
     def authenticate_header(self, request):
         return ""

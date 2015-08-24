@@ -42,7 +42,7 @@ class CoreScopes(object):
     NODE_BASE_WRITE = 'nodes.basic+write'
 
     NODE_CHILDREN_READ = 'nodes.children+read'
-    NODE_CHILDREN_WRITE = 'nodes.children.write'
+    NODE_CHILDREN_WRITE = 'nodes.children+write'
 
     NODE_CONTRIBUTORS_READ = 'nodes.contributors+read'
     NODE_CONTRIBUTORS_WRITE = 'nodes.contributors+write'
@@ -124,5 +124,10 @@ public_scopes = {  # TODO: Move (most of) this list to a database
     'osf.full+write': frozenset(ComposedScopes.FULL_WRITE),
 
     # Undocumented scopes that can not be requested by third parties (per CAS restriction)
-    'osf.admin': frozenset(ComposedScopes.APPLICATIONS_WRITE),
+    'osf.admin': frozenset(ComposedScopes.ADMIN_LEVEL),
 }
+
+
+if __name__ == '__main__':
+    from pprint import pprint as pp
+    pp(public_scopes)

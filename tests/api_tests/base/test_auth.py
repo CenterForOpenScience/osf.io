@@ -7,6 +7,8 @@ import mock
 from nose.tools import *  # flake8: noqa
 
 from framework.auth import cas
+from website.util import api_v2_url
+
 from tests.base import ApiTestCase
 from tests.factories import ProjectFactory, UserFactory
 
@@ -61,3 +63,52 @@ class TestOAuthValidation(ApiTestCase):
         res = self.app.get(self.unreachable_url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403, msg=res.json)
 
+# TODO: Add unit tests to deal with scopes. Validate sample access to a few views.
+class TestOAuthScopedAccess(ApiTestCase):
+    """Verify that scopes restrict access for a few sample views. These tests cover basic mechanics,
+        but are not intended to be an exhaustive list of how all views respond to all scopes."""
+    def setUp(self):
+        super(TestOAuthScopedAccess, self).setUp()
+        self.user = UserFactory()
+        self.user2 = UserFactory()  # Todo move inside tests that need this
+        self.project = ProjectFactory(creator=self.user)
+
+    def _scoped_response(self, scopes_list, user=None):
+        user = user or self.user
+        return cas.CasResponse(authenticated=True, user=user._id, scopes=scopes_list)
+
+    @mock.patch('framework.auth.cas.CasClient.profile')
+    def test_user_read_scope_can_read_user_view(self, mock_user_info):
+        mock_user_info.return_value = self._scoped_response(['osf.users+read'])
+        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
+        res = self.app.get(url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('framework.auth.cas.CasClient.profile')
+    def test_user_read_scope_cant_write_user_view(self, mock_user_info):
+        mock_user_info.return_value = self._scoped_response(['osf.users+read'])
+        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
+        payload = {u'suffix': u'VIII'}
+
+        res = self.app.patch(url, params=payload,
+                             auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    @mock.patch('framework.auth.cas.CasClient.profile')
+    def test_user_write_scope_implies_read_permissions_for_user_view(self, mock_user_info):
+        mock_user_info.return_value = self._scoped_response(['osf.users+write'])
+        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
+        res = self.app.get(url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+    @mock.patch('framework.auth.cas.CasClient.profile')
+    def test_user_write_scope_can_write_user_view(self, mock_user_info):
+        mock_user_info.return_value = self._scoped_response(['osf.users+write'])
+        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
+        payload = {u'suffix': u'VIII'}
+
+        res = self.app.patch(url, params=payload,
+                             auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_dict_contains_subset(payload,
+                                    res.json['data'])

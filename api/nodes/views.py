@@ -112,6 +112,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
+        # TODO: The method it overrides already returns request (plus more stuff). Why does this method exist?
         return {'request': self.request}
 
     # overrides RetrieveUpdateDestroyAPIView
