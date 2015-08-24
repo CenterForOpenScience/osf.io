@@ -192,11 +192,24 @@ var ViewModel = function(params) {
     self.filters = function(){
         var licenses = self.selectedLicenses();
         if (licenses.length) {
-            return  {
+            var filters = {
                 terms: {
                     'license.name': licenses
                 }
-            };
+            };     
+            if (licenses.filter(function(l) {
+                return l.name === 'None Selected';
+            }).length) {
+                filters = {
+                    or: [
+                        filters, 
+                        {
+                            missing: {field: 'license'}
+                        }
+                    ]
+                };
+            }
+            return filters;
         }
         return null;
     };
@@ -303,13 +316,19 @@ var ViewModel = function(params) {
             self.categories.removeAll();
             self.shareCategory('');
 
+            var nullLicenseCount = data.counts.project + data.counts.registration;
             if ((data.aggs || {}).licenses)  {
                 var licenseCounts = self.licenses();
                 $.each(data.aggs.licenses, function(key, value) {
                     licenseCounts.filter(function(l) {
                         return l.name === key;
                     })[0].count(value);
+                    nullLicenseCount -= value;
                 });
+                var noneLicense = licenseCounts.filter(function(l) {
+                    return l.name === 'None Selected';
+                })[0];
+                noneLicense.count(noneLicense.count() + nullLicenseCount);
                 self.licenses(licenseCounts);
             }            
 
