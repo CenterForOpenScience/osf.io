@@ -1,21 +1,10 @@
-import collections
 import re
 
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
-
-def _rapply(d, func, *args, **kwargs):
-    """Apply a function to all values in a dictionary, recursively."""
-    if isinstance(d, collections.Mapping):
-        return {
-            key: _rapply(value, func, *args, **kwargs)
-            for key, value in d.iteritems()
-        }
-    else:
-        return func(d, *args, **kwargs)
-
+from website.util import rapply as _rapply
 
 def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the

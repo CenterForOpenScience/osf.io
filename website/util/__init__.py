@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import collections
 import re
 import logging
 import urlparse
@@ -27,6 +28,26 @@ waterbutler_action_map = {
     'metadata': 'data',
     'create_folder': 'file',
 }
+
+# Function courtesty of @brianjgeiger, moved from API utils
+def rapply(collection, func, *args, **kwargs):
+    """Recursively apply a function to all values in a dict or list
+
+    :param dict | list collection:
+    :param function func:
+    """
+    if isinstance(collection, collections.Mapping):
+        return {
+            key: rapply(value, func, *args, **kwargs)
+            for key, value in collection.iteritems()
+        }
+    if isinstance(collection, list):
+        return [
+            rapply(item, func, *args, **kwargs) for item in collection
+        ]
+    else:
+        return func(collection, *args, **kwargs)
+
 
 def conjunct(words, conj='and'):
     words = list(words)
