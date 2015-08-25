@@ -246,15 +246,18 @@ def archive(self, job_pk):
     src, dst, user = job.info()
     logger = get_task_logger(__name__)
     logger.info("Received archive task for Node: {0} into Node: {1}".format(src._id, dst._id))
-    results = AggregateStatResult(
-        dst._id,
-        dst.title,
-        targets=[
-            stat_addon.si(
-                addon_short_name=target.name,
-                job_pk=job_pk,
-            )()
-            for target in job.target_addons
-        ]
-    )
-    archive_node.s(results, job_pk=job_pk)()
+    results = celery.group(
+        stat_addon.si(
+            addon_short_name=target.name,
+            job_pk=job_pk,
+        )
+        for target in job.target_addons
+    )().get()
+    archive_node.s(
+        AggregateStatResult(
+            dst._id,
+            dst.title,
+            targets=results
+        ),
+        job_pk=job_pk
+    )()
