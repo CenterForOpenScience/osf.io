@@ -303,7 +303,7 @@ def create_waterbutler_log(payload, **kwargs):
 
         node_addon.create_waterbutler_log(auth, action, metadata)
 
-    file_signals.file_updated.send(user=user, node=node, event_type=action, payload=payload)
+    file_signals.file_updated.send(node=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
 
