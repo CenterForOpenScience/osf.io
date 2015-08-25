@@ -199,21 +199,23 @@ class TestArchiverTasks(ArchiverTestCase):
 
     @use_fake_addons
     @mock.patch('framework.tasks.handlers.enqueue_task')
-    @mock.patch('celery.chord')
-    @mock.patch('website.archiver.tasks.stat_addon.si')
-    @mock.patch('website.archiver.tasks.archive_node.s')
-    def test_archive(self, mock_archive, mock_stat, mock_chord, mock_enqueue):
+    @mock.patch('celery.chain')
+    def test_archive(self, mock_chain, mock_enqueue):
         archive(job_pk=self.archive_job._id)
         targets = [self.src.get_addon(name) for name in settings.ADDONS_ARCHIVABLE]
-        chain_sig = celery.group(
-            stat_addon.si(
-                addon_short_name=addon.config.short_name,
-                job_pk=self.archive_job._id,
-            )
-            for addon in targets if (addon and addon.complete and isinstance(addon, StorageAddonBase))
-        )
+        target_addons = [addon for addon in targets if (addon and addon.complete and isinstance(addon, StorageAddonBase))]
         assert_true(self.dst.archiving)
-        mock_chord.assert_called_with(chain_sig)
+        mock_chain.assert_called_with(
+            [
+                celery.group(
+                    stat_addon.si(
+                        addon_short_name=addon.config.short_name,
+                        job_pk=self.archive_job._id,
+                    ) for addon in target_addons
+                ),
+                archive_node.s(job_pk=self.archive_job._id)
+            ]
+        )
 
     @use_fake_addons
     def test_stat_addon(self):
