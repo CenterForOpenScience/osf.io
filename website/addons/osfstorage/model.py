@@ -84,7 +84,7 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             if file_node.renter is not None and file_node.renter != user:
                 return False
         for file_node in file_nodes:
-            if file_node.is_file():
+            if file_node.is_file:
                 file_node.rent(renter=user)
         return True
 
@@ -381,7 +381,7 @@ class OsfStorageFileNode(StoredObject):
             for child in self.children:
                 if child.is_folder:
                     file_nodes_list.extend(child.get_all_children())
-            file_nodes_list.append(child)
+                file_nodes_list.append(child)
         return file_nodes_list
 
     def children_delete(self):
