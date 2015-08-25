@@ -54,16 +54,22 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     sanction_id = payload.get('sanction_id', None)
     sanction = Model.load(sanction_id)
 
+    err_code = None
+    err_message = None
     if not sanction:
-        raise HTTPError(http.BAD_REQUEST, data={
-            'message_short': 'Bad request',
-            'message_long': 'There is no sanction associated with this token'
-        })
-
-    if sanction.is_rejected:
-        raise HTTPError(http.GONE, data=dict(
-            message_long="This registration has been rejected"
+        err_code = http.BAD_REQUEST
+        err_message = 'There is no {0} associated with this token.'.format(Model.DISPLAY_NAME)
+    elif sanction.is_approved:
+        err_code = http.BAD_REQUEST if kind in ['registration', 'embargo'] else http.GONE
+        err_message = "This registration is not pending {0}.".format(sanction.DISPLAY_NAME)
+    elif sanction.is_rejected:
+        err_code = http.GONE if kind in ['registration', 'embargo'] else http.BAD_REQUEST
+        err_message = "This registration {0} has been rejected.".format(sanction.DISPLAY_NAME)
+    if err_code:
+        raise HTTPError(err_code, data=dict(
+            message_long=err_message
         ))
+
     do_action = getattr(sanction, action, None)
     if do_action:
         registration = Node.find_one(Q(sanction.SHORT_NAME, 'eq', sanction))

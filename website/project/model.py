@@ -18,6 +18,7 @@ from modularodm import fields
 from modularodm.validators import MaxLengthValidator
 from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import NoResultsFound
 
 from api.base.utils import absolute_reverse
 from framework import status
@@ -294,6 +295,9 @@ class NodeLog(StoredObject):
     WIKI_UPDATED = 'wiki_updated'
     WIKI_DELETED = 'wiki_deleted'
     WIKI_RENAMED = 'wiki_renamed'
+
+    MADE_WIKI_PUBLIC = 'made_wiki_public'
+    MADE_WIKI_PRIVATE = 'made_wiki_private'
 
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
@@ -671,7 +675,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def sanction(self):
-        sanction = self.registration_approval or self.embargo
+        sanction = self.registration_approval or self.embargo or self.retraction
         if sanction:
             return sanction
         elif self.parent_node:
@@ -923,18 +927,34 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return self.is_admin_parent(user)
         return False
 
-    def can_read_children(self, user):
-        """Checks if the given user has read permissions on any child nodes
+    def has_permission_on_children(self, user, permission):
+        """Checks if the given user has a given permission on any child nodes
             that are not registrations or deleted
         """
-        if self.has_permission(user, 'read'):
+        if self.has_permission(user, permission):
             return True
 
         for node in self.nodes:
             if not node.primary or node.is_deleted:
                 continue
 
-            if node.can_read_children(user):
+            if node.has_permission_on_children(user, permission):
+                return True
+
+        return False
+
+    def has_addon_on_children(self, addon):
+        """Checks if a given node has a specific addon on child nodes
+            that are not registrations or deleted
+        """
+        if self.has_addon(addon):
+            return True
+
+        for node in self.nodes:
+            if not node.primary or node.is_deleted:
+                continue
+
+            if node.has_addon_on_children(addon):
                 return True
 
         return False
@@ -2472,7 +2492,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if permissions == 'public' and not self.is_public:
             if self.is_registration:
                 if self.is_pending_embargo:
-                    raise NodeStateError("A registration with an unapproved embargo cannot be made public")
+                    raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
                 if self.embargo_end_date and not self.is_pending_embargo:
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
@@ -2505,6 +2525,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if save:
             self.save()
         return True
+
+    def admin_public_wiki(self, user):
+        return (
+            self.has_addon('wiki') and
+            self.has_permission(user, 'admin') and
+            self.is_public
+        )
+
+    def include_wiki_settings(self, user):
+        """Check if node meets requirements to make publicly editable."""
+        return (
+            self.admin_public_wiki(user) or
+            any(
+                each.admin_public_wiki(user)
+                for each in self.get_descendants_recursive()
+            )
+        )
 
     # TODO: Move to wiki add-on
     def get_wiki_page(self, name=None, version=None, id=None):
@@ -2929,6 +2966,8 @@ class Sanction(StoredObject):
     REJECTED = 'rejected'
 
     DISPLAY_NAME = 'Sanction'
+    # SHORT_NAME must correspond with the associated foreign field to query against,
+    # e.g. Node.find_one(Q(sanction.SHORT_NAME, 'eq', sanction))
     SHORT_NAME = 'sanction'
 
     APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this {DISPLAY_NAME}'
@@ -3168,7 +3207,11 @@ class Embargo(EmailApprovableSanction):
         return not self.for_existing_registration and self.pending_approval
 
     def __repr__(self):
-        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        parent_registration = None
+        try:
+            parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        except NoResultsFound:
+            pass
         return ('<Embargo(parent_registration={0}, initiated_by={1}, '
                 'end_date={2}) with _id {3}>').format(
             parent_registration,
@@ -3284,7 +3327,11 @@ class Retraction(EmailApprovableSanction):
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
 
     def __repr__(self):
-        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        parent_registration = None
+        try:
+            parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        except NoResultsFound:
+            pass
         return ('<Retraction(parent_registration={0}, initiated_by={1}) '
                 'with _id {2}>').format(
             parent_registration,
@@ -3391,7 +3438,7 @@ class Retraction(EmailApprovableSanction):
 
 class RegistrationApproval(EmailApprovableSanction):
 
-    DISPLAY_NAME = 'Registration Approval'
+    DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
@@ -3463,7 +3510,6 @@ class RegistrationApproval(EmailApprovableSanction):
                 'registration': node._primary_key,
             },
             auth=Auth(user),
-            log_date=node.registered_date,
             save=False
         )
         src.save()

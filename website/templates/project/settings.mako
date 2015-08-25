@@ -27,22 +27,21 @@
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
 
+                        <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
 
-
-                        % if 'write' in user['permissions']:
-                            <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
-
-                            % if addon_enabled_settings:
-                                <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
-                            % endif
-
-                            <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
+                        % if addon_enabled_settings:
+                            <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
                         % endif
+
+                        % if include_wiki_settings:
+                            <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
+                        % endif
+
+                        <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
 
                         % if 'admin' in user['permissions']:
                             <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                         % endif
-
 
                     % endif
 
@@ -91,7 +90,7 @@
                         <span data-bind="css: messageClass, html: message"></span>
 
                         <span data-bind="if: disabled" class="help-block">
-                            A top-level project's category cannot be changed
+                            A top-level project's category cannot be changed.
                         </span>
                     </div>
 
@@ -194,7 +193,38 @@
                 % endif
 
             % endif
+
         % endif  ## End Select Addons
+
+        % if include_wiki_settings:  ## Begin Configure Wiki
+
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="configureWikiAnchor" class="anchor"></span>
+
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Configure Wiki</h3>
+                    </div>
+                    <div class="help-block" style="padding-left: 15px">
+                        <p class="text-info">These settings control who can edit your wiki. To make a wiki editable by all OSF users, make your project/component public.</p>
+                    </div>
+                    <form id="wikiSettings" class="osf-treebeard-minimal">
+                        <div id="wgrid">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
+                            </div>
+                        </div>
+                        <div class="help-block" style="padding-left: 15px">
+                            <p id="configureWikiMessage"></p>
+                        </div>
+                    </form>
+                </div>
+
+            %endif
+
+        % endif ## End Configure Wiki
 
         % if user['has_read_permissions']:  ## Begin Configure Notifications
 
@@ -223,9 +253,7 @@
 
             %endif
 
-        % endif End Configure Notifications
-
-
+        % endif ## End Configure Notifications
 
         % if 'admin' in user['permissions']:  ## Begin Configure Commenting
 

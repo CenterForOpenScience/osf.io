@@ -72,12 +72,11 @@ SHARE_ELASTIC_INDEX = 'share'
 SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
-# TODO: Override SECRET_KEY in local.py in production
+# TODO: Override OSF_COOKIE_DOMAIN in local.py in production
+OSF_COOKIE_DOMAIN = None
 COOKIE_NAME = 'osf'
+# TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
-
-# TODO: Remove after migration to OSF Storage
-COPY_GIT_REPOS = False
 
 # Change if using `scripts/cron.py` to manage crontab
 CRON_USER = None
