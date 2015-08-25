@@ -3,7 +3,6 @@
 var assert = require('chai').assert;
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith
 sinon.assert.expose(assert, {prefix: ''});
-//var faker = require('faker');
 
 var testUtils = require('./utils');
 

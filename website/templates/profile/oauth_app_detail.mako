@@ -52,31 +52,29 @@
                 </p>
             </div>
             <div id="app-fields">
-                ## TODO: Add revoke/ reset buttons
-                <form role="form" data-bind="validationOptions: {insertMessages: false, messagesOnModified: false}">
+                <form novalidate role="form" data-bind="submit: $root.submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
                     <div class="form-group">
                         <label>Application name</label>
-                        <input class="form-control" type="text" data-bind="value: name" placeholder="Required">
-
-                            <p data-bind="validationMessage: name" class="text-danger"></p>
+                        <input class="form-control" type="text" data-bind="value: name" required="required" placeholder="Required">
+                        <p data-bind="validationMessage: name, visible: $root.showMessages()" class="text-danger"></p>
                     </div>
 
                     <div class="form-group">
                         <label>Project homepage URL</label>
-                        <input class="form-control" type="text" data-bind="value: homeUrl" placeholder="Required">
-                            <p data-bind="validationMessage: homeUrl" class="text-danger"></p>
+                        <input class="form-control" type="url" data-bind="value: homeUrl" required="required" placeholder="Required">
+                        <p data-bind="validationMessage: homeUrl, visible: $root.showMessages()" class="text-danger"></p>
                     </div>
 
                     <div class="form-group">
                         <label>Application description</label>
                         <textarea class="form-control" placeholder="Application description is optional" data-bind="value: description"></textarea>
-                            <p data-bind="validationMessage: description" class="text-danger"></p>
+                        <p data-bind="validationMessage: description, visible: $root.showMessages()" class="text-danger"></p>
                     </div>
 
                     <div class="form-group">
                         <label>Authorization callback URL</label>
-                        <input type="text" class="form-control" data-bind="value: callbackUrl" placeholder="Required">
-                            <p data-bind="validationMessage: callbackUrl" class="text-danger"></p>
+                        <input type="url" class="form-control" data-bind="value: callbackUrl" required="required" placeholder="Required">
+                        <p data-bind="validationMessage: callbackUrl, visible: $root.showMessages()" class="text-danger"></p>
                     </div>
 
                     <!-- Flashed Messages -->
@@ -88,10 +86,10 @@
                         <button type="reset" class="btn btn-default"
                                 data-bind="click: $root.cancelChange">Cancel</button>
                         <button type="submit" class="btn btn-success"
-                                data-bind="visible: $root.isCreateView(), click: $root.createApplication, enable: isValid()">Create</button>
+                                data-bind="visible: $root.isCreateView()">Create</button>
                         <button data-bind="visible: !$root.isCreateView(), click: $root.deleteApplication" class="btn btn-danger">Deactivate</button>
                         <button type="submit" class="btn btn-success"
-                                data-bind="visible: !$root.isCreateView(), click: $root.updateApplication, enable: (isValid() && $root.dirty())">Save</button>
+                                data-bind="visible: !$root.isCreateView(), click: $root.updateApplication, enable: $root.dirty()">Save</button>
                     </div>
                 </form>
             </div>

@@ -110,7 +110,7 @@ var ApplicationDataClient = oop.defclass({
         var request = $osf.ajaxJSON(method, url, {isCors: true, data: payload});
 
         request.done(function (data) { // The server response will contain the newly created/updated record
-            ret.resolve(new ApplicationData(data.data));
+            ret.resolve(this.unserialize(data));
         }.bind(this));
         request.fail(function (xhr, status, error) {
             ret.reject(xhr, status, error);
@@ -237,8 +237,10 @@ var ApplicationDetailViewModel = oop.defclass({
         this.message = ko.observable();
         this.messageClass = ko.observable();
 
-        // Control display of client secret (on detail page)
+        // Toggle hiding client secret (in detail view)
         this.showSecret = ko.observable(false);
+        // Toggle display of validation messages
+        this.showMessages = ko.observable(false);
 
         // // If no detail url provided, render view as though it was a creation form. Otherwise, treat as READ/UPDATE.
         this.apiDetailUrl = ko.observable(urls.apiDetailUrl);
@@ -318,6 +320,20 @@ var ApplicationDetailViewModel = oop.defclass({
                 error: error
             });
         }.bind(this));
+    },
+    submit: function () {
+        // Validate and dispatch form to correct handler based on view type
+        if (!this.appData().isValid()) {
+            // Turn on display of validation messages
+            this.showMessages(true);
+        } else {
+            this.showMessages(false);
+            if (this.isCreateView()) {
+                this.createApplication();
+            } else {
+                this.updateApplication();
+            }
+        }
     },
     deleteApplication: function () {
         var appData = this.appData();

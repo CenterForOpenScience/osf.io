@@ -15,7 +15,7 @@
         <a href="${ '#' if current_page == 'notifications' else web_url_for('user_notifications') }">Notifications</a></li>
 
       % if dev_mode:
-          <li ${'class="active"' if current_page == 'dev_apps' else ''}>
+          <li class="${'active' if current_page == 'dev_apps' else ''}">
             <a href="${ '#' if current_page == 'dev_apps' else web_url_for('oauth_application_list')}">Developer Apps</a></li>
       % endif
   </ul>
