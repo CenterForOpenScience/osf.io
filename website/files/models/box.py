@@ -1,6 +1,9 @@
 from website.files.models.base import File, Folder, FileNode
 
 
+__all__ = ('BoxFile', 'BoxFolder', 'BoxFileNode')
+
+
 class BoxFileNode(FileNode):
     provider = 'box'
 
