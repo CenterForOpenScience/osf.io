@@ -16,8 +16,10 @@ from django.core.urlresolvers import reverse
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
+from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
+
 from api.base.utils import absolute_reverse
 from framework import status
 from framework.mongo import ObjectId
@@ -671,7 +673,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def sanction(self):
-        sanction = self.registration_approval or self.embargo
+        sanction = self.registration_approval or self.embargo or self.retraction
         if sanction:
             return sanction
         elif self.parent_node:
@@ -2929,6 +2931,8 @@ class Sanction(StoredObject):
     REJECTED = 'rejected'
 
     DISPLAY_NAME = 'Sanction'
+    # SHORT_NAME must correspond with the associated foreign field to query against,
+    # e.g. Node.find_one(Q(sanction.SHORT_NAME, 'eq', sanction))
     SHORT_NAME = 'sanction'
 
     APPROVAL_NOT_AUTHORIZED_MESSAGE = 'This user is not authorized to approve this {DISPLAY_NAME}'
@@ -3168,7 +3172,11 @@ class Embargo(EmailApprovableSanction):
         return not self.for_existing_registration and self.pending_approval
 
     def __repr__(self):
-        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        parent_registration = None
+        try:
+            parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        except NoResultsFound:
+            pass
         return ('<Embargo(parent_registration={0}, initiated_by={1}, '
                 'end_date={2}) with _id {3}>').format(
             parent_registration,
@@ -3284,7 +3292,11 @@ class Retraction(EmailApprovableSanction):
     justification = fields.StringField(default=None, validate=MaxLengthValidator(2048))
 
     def __repr__(self):
-        parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        parent_registration = None
+        try:
+            parent_registration = Node.find_one(Q('retraction', 'eq', self))
+        except NoResultsFound:
+            pass
         return ('<Retraction(parent_registration={0}, initiated_by={1}) '
                 'with _id {2}>').format(
             parent_registration,
@@ -3391,7 +3403,7 @@ class Retraction(EmailApprovableSanction):
 
 class RegistrationApproval(EmailApprovableSanction):
 
-    DISPLAY_NAME = 'Registration Approval'
+    DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = mails.PENDING_REGISTRATION_ADMIN
@@ -3463,7 +3475,6 @@ class RegistrationApproval(EmailApprovableSanction):
                 'registration': node._primary_key,
             },
             auth=Auth(user),
-            log_date=node.registered_date,
             save=False
         )
         src.save()

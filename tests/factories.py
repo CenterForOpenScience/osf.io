@@ -25,10 +25,9 @@ from framework.sessions.model import Session
 from website.addons import base as addons_base
 from website.oauth.models import ApiOAuth2Application, ExternalAccount, ExternalProvider
 from website.project.model import (
-    Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, Retraction, Sanction, Tag, WatchConfig,
+    Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
-from website.archiver import listeners as archiver_listeners
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.archiver import ARCHIVER_SUCCESS
 
@@ -182,7 +181,7 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, archive=False, embargo=None, approval=None, *args, **kwargs):
+                template=None, data=None, archive=False, embargo=None, registration_approval=None, retraction=None, *args, **kwargs):
         save_kwargs(**kwargs)
 
         # Original project to be registered
@@ -206,17 +205,17 @@ class RegistrationFactory(AbstractNodeFactory):
         )
 
         def add_approval_step(reg):
-            target = None
             if embargo:
                 reg.embargo = embargo
-                target = embargo
-            if approval:
-                reg.registration_approval = approval
+            elif registration_approval:
+                reg.registration_approval = registration_approval
+            elif retraction:
+                reg.retraction = retraction
             else:
                 reg.require_approval(reg.creator)
-            if not embargo:
-                target = reg.registration_approval
-            target.save()
+            reg.save()
+            reg.sanction.add_authorizer(reg.creator)
+            reg.sanction.save()
 
         if archive:
             reg = register()
@@ -255,15 +254,36 @@ class WatchConfigFactory(ModularOdmFactory):
     node = SubFactory(NodeFactory)
 
 
-class RetractionFactory(ModularOdmFactory):
+class SanctionFactory(ModularOdmFactory):
+
+    ABSTRACT_FACTORY = True
+
+    @classmethod
+    def _create(cls, target_class, approve=False, *args, **kwargs):
+        user = UserFactory()
+        sanction = ModularOdmFactory._create(target_class, initiated_by=user, *args, **kwargs)
+        reg_kwargs = {
+            'owner': user,
+            sanction.SHORT_NAME: sanction
+        }
+        RegistrationFactory(**reg_kwargs)
+        if not approve:
+            sanction.state = Sanction.UNAPPROVED
+            sanction.save()
+        return sanction
+
+class RetractionFactory(SanctionFactory):
     FACTORY_FOR = Retraction
     user = SubFactory(UserFactory)
 
 
-class EmbargoFactory(ModularOdmFactory):
+class EmbargoFactory(SanctionFactory):
     FACTORY_FOR = Embargo
     user = SubFactory(UserFactory)
 
+class RegistrationApprovalFactory(SanctionFactory):
+    FACTORY_FOR = RegistrationApproval
+    user = SubFactory(UserFactory)
 
 class NodeWikiFactory(ModularOdmFactory):
     FACTORY_FOR = NodeWikiPage
