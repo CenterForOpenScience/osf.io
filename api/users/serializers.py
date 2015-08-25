@@ -1,30 +1,34 @@
 from rest_framework import serializers as ser
-
 from api.base.serializers import JSONAPISerializer, LinksField, Link
+from website.models import User
 
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'fullname',
         'given_name',
-        'middle_name',
+        'middle_names',
         'family_name',
         'id'
     ])
     id = ser.CharField(read_only=True, source='_id')
-    fullname = ser.CharField(help_text='Display name used in the general user interface')
-    given_name = ser.CharField(help_text='For bibliographic citations')
-    middle_name = ser.CharField(source='middle_names', help_text='For bibliographic citations')
-    family_name = ser.CharField(help_text='For bibliographic citations')
-    suffix = ser.CharField(help_text='For bibliographic citations')
+    fullname = ser.CharField(required=True, help_text='Display name used in the general user interface')
+    given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
+    middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
+    family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
+    suffix = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-    gravatar_url = ser.CharField(help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
-    employment_institutions = ser.ListField(source='jobs', help_text='An array of dictionaries representing the '
-                                                                     'places the user has worked')
-    educational_institutions = ser.ListField(source='schools', help_text='An array of dictionaries representing the '
-                                                                         'places the user has attended school')
-    social_accounts = ser.DictField(source='social', help_text='A dictionary of various social media account '
-                                                               'identifiers including an array of user-defined URLs')
+    gravatar_url = ser.URLField(required=False, read_only=True, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
+
+    # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
+    gitHub = ser.CharField(required=False, source='social.github', allow_blank=True, help_text='GitHub Handle')
+    scholar = ser.CharField(required=False, source='social.scholar', allow_blank=True, help_text='Google Scholar Account')
+    personal_website = ser.URLField(required=False, source='social.personal', allow_blank=True, help_text='Personal Website')
+    twitter = ser.CharField(required=False, source='social.twitter', allow_blank=True, help_text='Twitter Handle')
+    linkedIn = ser.CharField(required=False, source='social.linkedIn', allow_blank=True, help_text='LinkedIn Account')
+    impactStory = ser.CharField(required=False, source='social.impactStory', allow_blank=True, help_text='ImpactStory Account')
+    orcid = ser.CharField(required=False, source='social.orcid', allow_blank=True, help_text='ORCID')
+    researcherId = ser.CharField(required=False, source='social.researcherId', allow_blank=True, help_text='ResearcherId Account')
 
     links = LinksField({
         'html': 'absolute_url',
@@ -40,8 +44,11 @@ class UserSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def update(self, instance, validated_data):
-        # TODO
-        pass
+        assert isinstance(instance, User), 'instance must be a User'
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 class ContributorSerializer(UserSerializer):

@@ -105,7 +105,8 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         login=login,
         username=username,
         password=password,
-        mail_server=mail_server)
+        mail_server=mail_server
+    )
 
     if settings.USE_CELERY:
         return mailer.apply_async(kwargs=kwargs, link=callback)
@@ -154,6 +155,7 @@ CONFERENCE_FAILED = Mail(
 DIGEST = Mail('digest', subject='OSF Notifications')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
 
+# Retraction related Mail objects
 PENDING_RETRACTION_ADMIN = Mail(
     'pending_retraction_admin',
     subject='Retraction pending for one of your projects.'
@@ -162,13 +164,22 @@ PENDING_RETRACTION_NON_ADMIN = Mail(
     'pending_retraction_non_admin',
     subject='Retraction pending for one of your projects.'
 )
-
+# Embargo related Mail objects
 PENDING_EMBARGO_ADMIN = Mail(
     'pending_embargo_admin',
     subject='Registration pending for one of your projects.'
 )
 PENDING_EMBARGO_NON_ADMIN = Mail(
     'pending_embargo_non_admin',
+    subject='Registration pending for one of your projects.'
+)
+# Registration related Mail Objects
+PENDING_REGISTRATION_ADMIN = Mail(
+    'pending_registration_admin',
+    subject='Registration pending for one of your projects.'
+)
+PENDING_REGISTRATION_NON_ADMIN = Mail(
+    'pending_registration_non_admin',
     subject='Registration pending for one of your projects.'
 )
 FILE_OPERATION_SUCCESS = Mail(

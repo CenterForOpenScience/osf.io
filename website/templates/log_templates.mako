@@ -4,6 +4,7 @@
 ## log templates. An addon's log templates are located in
 ## website/addons/<addon_name>/templates/log_templates.mako.
 
+## Embargo related logs
 <script type="text/html" id="embargo_approved">
 approved embargo of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -16,7 +17,7 @@ Embargo for
 
 <script type="text/html" id="embargo_cancelled">
 cancelled embargo of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="embargo_completed">
@@ -34,6 +35,7 @@ initiated an embargoed registration of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+## Retraction related logs
 <script type="text/html" id="retraction_approved">
 approved retraction of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -41,7 +43,7 @@ approved retraction of
 
 <script type="text/html" id="retraction_cancelled">
 cancelled retraction of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="retraction_initiated">
@@ -49,6 +51,28 @@ initiated retraction of
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
 </script>
 
+## Registration related Logs
+<script type="text/html" id="registration_initiated">
+initiated registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="registration_cancelled">
+cancelled registration of
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
+</script>
+
+<script type="text/html" id="registration_approved">
+approved registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle , attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="registration_approved_no_user">
+Registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> approved
+</script>
+
+## Project related logs
 <script type="text/html" id="project_created">
 created
 <a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
@@ -132,6 +156,10 @@ to
 <script type="text/html" id="project_registered">
 registered
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="project_registered_no_user">
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> registered
 </script>
 
 <script type="text/html" id="node_forked">
