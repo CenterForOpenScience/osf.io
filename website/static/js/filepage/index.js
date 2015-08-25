@@ -234,8 +234,8 @@ var FileViewPage = {
                             ctrl.revisions.selected = true;
                         }
                     }
-                }, 'View')
-            ).concat([editButton()])
+                }, 'View'), [editButton()]
+            )
             ),
             m('.btn-group.m-t-xs', [
                 m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
