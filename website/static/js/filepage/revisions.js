@@ -33,7 +33,6 @@ var FileRevisionsTable = {
         self.enableEditing = enableEditing;
         self.baseUrl = (window.location.href).split('?')[0];
 
-        model.hasHashes = model.revisions && model.revisions[0] && model.revisions[0].extra.hashes;
         model.hasDate = self.file.provider !== 'dataverse';
 
         self.reload = function() {
@@ -60,6 +59,7 @@ var FileRevisionsTable = {
                     self.enableEditing();
                 }
                 model.hasUser = model.revisions[0] && model.revisions[0].extra && model.revisions[0].extra.user;
+                model.hasHashes = model.revisions && model.revisions[0] && model.revisions[0].extra.hashes;
                 m.endComputation();
             }).fail(function(response) {
                 m.startComputation();
@@ -105,7 +105,9 @@ var FileRevisionsTable = {
 
         self.makeTableRow = function(revision, index) {
             var isSelected = index === model.selectedRevision;
-
+            var clipBoard = function(element) {
+                makeClient(element);
+            };
             return m('tr' + (isSelected ? '.active' : ''), [
                 m('td',  isSelected ? revision.displayVersion :
                   m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
@@ -129,14 +131,14 @@ var FileRevisionsTable = {
                 model.hasHashes ? m('td',
                     m('div.input-group[style="width: 180px"]',
                         [
-                            m('span.input-group-btn', m('button#copyBtnMd5'+ revision.displayVersion +'.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+revision.extra.hashes.md5 + '"]', {config: new makeClient($('#copyBtnMd5'+ revision.displayVersion))}, m('.fa.fa-copy'))),
+                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+revision.extra.hashes.md5 + '"]', {config: clipBoard}, m('.fa.fa-copy'))),
                             m('input[value="'+revision.extra.hashes.md5+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;"]')
                         ]
                     )) : false,
                 model.hasHashes ? m('td',
                     m('div.input-group[style="width: 180px"]',
                         [
-                            m('span.input-group-btn', m('button#copyBtnSha'+ revision.displayVersion +'.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+revision.extra.hashes.sha256 + '"]',{config: new makeClient($('#copyBtnSha'+ revision.displayVersion))}, m('.fa.fa-copy'))),
+                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+revision.extra.hashes.sha256 + '"]',{config: clipBoard}, m('.fa.fa-copy'))),
                             m('input[value="'+revision.extra.hashes.sha256+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;"]')
                         ]
                     )) : false
