@@ -196,7 +196,7 @@ var FileViewPage = {
             ]);
         }
 
-        var editPane = function() {
+        var editButton = function() {
             if (ctrl.editor) {
                 return m('button.btn' + (ctrl.editor.selected ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
@@ -234,7 +234,7 @@ var FileViewPage = {
                         }
                     }
                 }, 'View')
-            ).concat([editPane()])
+            ).concat([editButton()])
             ),
             m('.btn-group.m-t-xs', [
                 m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
