@@ -21,6 +21,7 @@ licenses.push(OTHER_LICENSE);
 
 module.exports = {
     list: licenses,
-    DEFAULT_LICENSE: DEFAULT_LICENSE
+    DEFAULT_LICENSE: DEFAULT_LICENSE,
+    OTHER_LICENSE: OTHER_LICENSE
 };
     

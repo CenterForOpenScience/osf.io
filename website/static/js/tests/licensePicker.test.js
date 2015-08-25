@@ -71,22 +71,33 @@ describe('LicensePicker', () => {
     describe('#save', () => {
         var confirmStub;
         var ajaxStub;
-        before(() => {
+
+        beforeEach(() => {            
             confirmStub = sinon.stub(bootbox, 'confirm');
             ajaxStub = sinon.stub($, 'ajax', function() {
                 var ret = $.Deferred();
                 ret.resolve();
                 return ret.promise();
             });
+            sinon.stub(lp, 'validProps', function() {return true;});
         });
-        after(() => {
+        afterEach(() => {
             bootbox.confirm.restore();
             $.ajax.restore();
+            if (lp.validProps.restore) {
+                lp.validProps.restore();
+            }
+        });
+        it('returns without saving if required fields are missing', () => {
+            lp.validProps.restore();
+            lp.save();
+            assert.isFalse(confirmStub.called);
+            assert.isFalse(ajaxStub.called);
         });
         it('asks confirmation if the user has selected the OTHER license', () => {
             lp.selectedLicenseId('OTHER');
             lp.save();
-            assert.calledOnce(confirmStub); 
+            assert.calledOnce(confirmStub);
         });
         it('otherwise makes a request based on the value of saveUrl, saveMethod, and saveLicenseKey', (done) => {
             lp.selectedLicenseId('MIT');

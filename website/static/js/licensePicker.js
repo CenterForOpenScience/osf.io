@@ -8,6 +8,7 @@ var $osf = require('js/osfHelpers');
 var siteLicenses = require('js/licenses');
 var licenses = siteLicenses.list;
 var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
+var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;
 
 var template = require('raw!templates/license-picker.html');
 
