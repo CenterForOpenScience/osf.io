@@ -1,5 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 <div id="alertBar"></div>
+
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
 
