@@ -43,7 +43,7 @@ def migrate_trashedfilenodes():
 
         models.TrashedFileNode(
             _id=trashed._id,
-            versions=[translate_versions(trashed.versions)],
+            versions=translate_versions(trashed.versions),
             node=trashed.node_settings.owner,
             parent=parent,
             is_file=trashed.kind == 'file',
@@ -73,7 +73,7 @@ def migrate_top_down(node_settings, filenode, parent=None):
     logger.debug('Migrating OsfStorageFileNode {}'.format(filenode._id))
     new_node = models.StoredFileNode(
         _id=filenode._id,
-        versions=[translate_versions(filenode.versions)],
+        versions=translate_versions(filenode.versions),
         node=node_settings.owner,
         parent=parent,
         is_file=filenode.kind == 'file',
