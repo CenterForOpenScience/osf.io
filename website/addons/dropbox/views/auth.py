@@ -13,7 +13,6 @@ from framework.sessions import session
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
-from framework.status import push_status_message as flash
 
 from website.util import api_url_for
 from website.util import web_url_for
@@ -58,7 +57,6 @@ def finish_auth(node):
     except DropboxOAuth2Flow.CsrfException:
         raise HTTPError(http.FORBIDDEN)
     except DropboxOAuth2Flow.NotApprovedException:  # User canceled flow
-        flash('Did not approve token.', 'info')
         if node:
             return redirect(node.web_url_for('node_setting'))
         return redirect(web_url_for('user_addons'))
@@ -77,9 +75,8 @@ def dropbox_oauth_start(auth, **kwargs):
         session.data['dropbox_auth_nid'] = nid
     if not user:
         raise HTTPError(http.FORBIDDEN)
-    # If user has already authorized dropbox, flash error message
+    # Handle if user has already authorized dropbox
     if user.has_addon('dropbox') and user.get_addon('dropbox').has_auth:
-        flash('You have already authorized Dropbox for this account', 'warning')
         return redirect(web_url_for('user_addons'))
     # Force the user to reapprove the dropbox authorization each time. Currently the
     # URI component force_reapprove is not configurable from the dropbox python client.
@@ -112,7 +109,6 @@ def dropbox_oauth_finish(auth, **kwargs):
     user_settings.dropbox_info = client.account_info()
     user_settings.save()
 
-    flash('Successfully authorized Dropbox', 'success')
     if node:
         del session.data['dropbox_auth_nid']
         # Automatically use newly-created auth
@@ -142,8 +138,7 @@ def dropbox_oauth_delete_user(user_addon, auth, **kwargs):
 
 
 @must_be_logged_in
-@must_have_addon('dropbox', 'user')
-def dropbox_user_config_get(user_addon, auth, **kwargs):
+def dropbox_user_config_get(auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     Dropbox user settings.
     """
@@ -151,25 +146,33 @@ def dropbox_user_config_get(user_addon, auth, **kwargs):
         'create': api_url_for('dropbox_oauth_start_user'),
         'delete': api_url_for('dropbox_oauth_delete_user')
     }
-    info = user_addon.dropbox_info
-    valid_credentials = True
+    user_addon = auth.user.get_addon('dropbox')
 
-    if user_addon.has_auth:
-        try:
-            client = get_client_from_user_settings(user_addon)
-            client.account_info()
-        except ErrorResponse as error:
-            if error.status == 401:
-                valid_credentials = False
-            else:
-                HTTPError(http.BAD_REQUEST)
+    info = None
+    user_has_auth = False
+    n_nodes_authorized = 0
+    valid_credentials = True
+    if user_addon:
+        info = user_addon.dropbox_info
+        user_has_auth = user_addon.has_auth
+        n_nodes_authorized = len(user_addon.nodes_authorized)
+
+        if user_addon.has_auth:
+            try:
+                client = get_client_from_user_settings(user_addon)
+                client.account_info()
+            except ErrorResponse as error:
+                if error.status == 401:
+                    valid_credentials = False
+                else:
+                    raise HTTPError(http.BAD_REQUEST, data=dict(message_long=error.error_msg))
 
     return {
         'result': {
-            'userHasAuth': user_addon.has_auth,
+            'userHasAuth': user_has_auth,
             'validCredentials': valid_credentials,
             'dropboxName': info['display_name'] if info else None,
-            'nNodesAuthorized': len(user_addon.nodes_authorized),
+            'nNodesAuthorized': n_nodes_authorized,
             'urls': urls
         },
     }, http.OK

@@ -15,6 +15,7 @@ var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 var iconmap = require('js/iconmap');
+var storageAddons = require('json!storageAddons.json');
 
 // CSS
 require('css/fangorn.css');
@@ -42,6 +43,8 @@ var STATE_MAP = {
         display: 'Renaming '
     }
 };
+
+var SYNC_UPLOAD_ADDONS = ['github', 'dataverse'];
 
 
 var OPERATIONS = {
@@ -87,7 +90,8 @@ function findByTempID(parent, tmpID) {
 
 function cancelUploads (row) {
     var tb = this;
-    var filesArr = tb.dropzone.getQueuedFiles();
+    var uploading = tb.dropzone.getUploadingFiles();
+    var filesArr = uploading.concat(tb.dropzone.getQueuedFiles());
     for (var i = 0; i < filesArr.length; i++) {
         var j = filesArr[i];
         if(!row){
@@ -108,7 +112,6 @@ function cancelUploads (row) {
 var uploadRowTemplate = function(item){
     var tb = this;
     var padding;
-    var progress = item.data.uploadState() === 'pending' ? 0 : Math.floor(item.data.progress);
     if (tb.filterOn) {
         padding = 20;
     } else {
@@ -124,12 +127,12 @@ var uploadRowTemplate = function(item){
             ]),
             m('.col-xs-3',
                 m('.progress', [
-                    m('.progress-bar.progress-bar-info.progress-bar-striped', {
+                    m('.progress-bar.progress-bar-info.progress-bar-striped.active', {
                         role : 'progressbar',
-                        'aria-valuenow' : progress,
+                        'aria-valuenow' : item.data.progress,
                         'aria-valuemin' : '0',
                         'aria-valuemax': '100',
-                        'style':'width: ' + progress + '%' }, m('span.sr-only', progress + '% Complete'))
+                        'style':'width: ' + item.data.progress + '%' }, m('span.sr-only', item.data.progress + '% Complete'))
                 ])
             ),
             m('.col-xs-2', [
@@ -185,6 +188,11 @@ function resolveIconView(item) {
         var template = m('span', { 'class' : iconType});
         return template;
     }
+    if (item.data.permissions){
+        if (!item.data.permissions.view) {
+            return m('span', { 'class' : iconmap.private });
+        }
+    }
     if (item.data.isDashboard) {
         return returnView('collection');
     }
@@ -225,7 +233,7 @@ function resolveIconView(item) {
  * @private
  */
 function _fangornResolveIcon(item) {
-    var privateFolder =  m('div.file-extension._folder_delete', ' '),
+    var privateFolder =  m('i.fa.fa-lock', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
         closedFolder = m('i.fa.fa-folder', ' '),
@@ -236,7 +244,7 @@ function _fangornResolveIcon(item) {
 
         if (item.kind === 'folder') {
             if (item.data.iconUrl) {
-                return m('span', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'block'}}, '');
+                return m('div', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'inline-block'}}, '');
             }
             if (!item.data.permissions.view) {
                 return privateFolder;
@@ -350,13 +358,13 @@ function checkConflicts(tb, item, folder, cb) {
         var child = folder.children[i];
         if (child.data.name === item.data.name && child.id !== item.id) {
             tb.modal.update(m('', [
-                m('h3.break-word', 'An item named "' + item.data.name + '" already exists in this location.'),
-                m('p', 'Do you want to replace it?')
-            ]), m('', [
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
-            ]));
+                    m('p', 'An item named "' + item.data.name + '" already exists in this location.')
+                ]), m('', [
+                    m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
+                ]), m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
+            );
             return;
         }
     }
@@ -369,13 +377,12 @@ function checkConflictsRename(tb, item, name, cb) {
         var child = parent.children[i];
         if (child.data.name === name && child.id !== item.id) {
             tb.modal.update(m('', [
-                m('h3.break-word', 'An item named "' + name + '" already exists in this location.'),
-                m('p', 'Do you want to replace it?')
+                m('p', 'An item named "' + name + '" already exists in this location.')
             ]), m('', [
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
-                m('span.tb-modal-btn.text-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
-                m('span.tb-modal-btn.text-default', {onclick: cb.bind(tb, 'replace')},'Replace'),
-            ]));
+                m('span.btn.btn-info', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
+                m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), // jshint ignore:line
+                m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
+            ]), m('h3.break-word.modal-title', 'Replace "' + name + '"?'));
             return;
         }
     }
@@ -427,7 +434,7 @@ function doItemOp(operation, to, from, rename, conflict) {
                 m('p', 'In the mean time you can leave this page; your ' + operation.status + ' will still be completed.')
             ]);
             var mithrilButtons = m('div', [
-                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'OK')
+                m('span.tb-modal-btn', { 'class' : 'text-default', onclick : function() { tb.modal.dismiss(); }}, 'Close')
             ]);
             tb.modal.update(mithrilContent, mithrilButtons);
             return;
@@ -533,23 +540,15 @@ function _fangornMouseOverRow(item, event) {
  */
 function _fangornUploadProgress(treebeard, file, progress) {
     var parent = file.treebeardParent;
-
-    var item,
-        child,
-        templateWithCancel,
-        templateWithoutCancel;
+    progress = Math.ceil(progress);
     for(var i = 0; i < parent.children.length; i++) {
-        child = parent.children[i];
-        if(!child.data.tmpID){
-            continue;
+        if (parent.children[i].data.tmpID !== file.tmpID) continue;
+        if (parent.children[i].data.progress !== progress) {
+            parent.children[i].data.progress = progress;
+            m.redraw();
         }
-        if(child.data.tmpID === file.tmpID) {
-            item = child;
-            item.data.progress = progress;
-            item.data.uploadState('uploading');
-        }
+        return;
     }
-    m.redraw();
 }
 
 /**
@@ -587,6 +586,19 @@ function _fangornAddedFile(treebeard, file) {
     if (!_fangornCanDrop(treebeard, item)) {
         return;
     }
+
+    if (SYNC_UPLOAD_ADDONS.indexOf(item.data.provider) !== -1) {
+        this.syncFileCache = this.syncFileCache || {};
+        this.syncFileCache[item.data.provider] = this.syncFileCache[item.data.provider] || [];
+
+        var files = this.getActiveFiles().filter(function(f) {return f.isSync;});
+        if (files.length > 0) {
+            this.syncFileCache[item.data.provider].push(file);
+            this.files.splice(this.files.indexOf(files), 1);
+        }
+        file.isSync = true;
+    }
+
     var configOption = resolveconfigOption.call(treebeard, item, 'uploadAdd', [file, item]);
 
     var tmpID = tempCounter++;
@@ -605,7 +617,8 @@ function _fangornAddedFile(treebeard, file) {
             edit: false
         },
         tmpID: tmpID,
-        uploadState : m.prop('pending')
+        progress: 0,
+        uploadState : m.prop('uploading'),
     };
     var newitem = treebeard.createItem(blankItem, item.id);
     return configOption || null;
@@ -661,6 +674,12 @@ function _fangornComplete(treebeard, file) {
     var item = file.treebeardParent;
     resolveconfigOption.call(treebeard, item, 'onUploadComplete', [item]);
     orderFolder.call(treebeard, item);
+
+    if (file.isSync) {
+        if (this.syncFileCache[item.data.provider].length > 0) {
+            this.processFile(this.syncFileCache[item.data.provider].pop());
+        }
+    }
 }
 
 /**
@@ -729,10 +748,10 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
     var msgText;
     if (file.isDirectory) {
         msgText = 'Cannot upload directories, applications, or packages.';
-    } else if (xhr.status === 507) {
+    } else if (xhr && xhr.status === 507) {
         msgText = 'Cannot upload file due to insufficient storage.';
     } else {
-        msgText = DEFAULT_ERROR_MESSAGE;
+        msgText = message || DEFAULT_ERROR_MESSAGE;
     }
     var parent = file.treebeardParent || treebeardParent.dropzoneItemCache; // jshint ignore:line
     // Parent may be undefined, e.g. in Chrome, where file is an entry object
@@ -748,7 +767,13 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
             child.removeSelf();
         }
     }
-    $osf.growl('Error', msgText);
+    if (msgText !== 'Upload canceled.') {
+        $osf.growl(
+            'Error',
+            'Unable to reach the provider, please try again later. If the ' +
+            'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.'
+            );
+    }
     treebeard.options.uploadInProgress = false;
 }
 
@@ -856,7 +881,7 @@ function _removeEvent (event, items, col) {
         tb.modal.dismiss();
     }
     function runDelete(item) {
-        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');
+        tb.select('.modal-footer .btn-danger').html('<i> Deleting...</i>').removeClass('btn-danger').addClass('btn-default disabled');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
         url = url || waterbutler.buildTreeBeardDelete(item);
@@ -887,14 +912,14 @@ function _removeEvent (event, items, col) {
         var folder = items[0];
         if (folder.data.permissions.edit) {
                 var mithrilContent = m('div', [
-                        m('h3.break-word', 'Delete "' + folder.data.name+ '"?'),
+
                         m('p.text-danger', 'This folder and ALL its contents will be deleted. This action is irreversible.')
                     ]);
                 var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
-                        m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(folder); }  }, 'Delete')
+                        m('span.btn.btn-default', { onclick : function() { cancelDelete.call(tb); } }, 'Cancel'),
+                        m('span.btn.btn-danger', {  onclick : function() { runDelete(folder); }  }, 'Delete')
                     ]);
-                tb.modal.update(mithrilContent, mithrilButtons);
+                tb.modal.update(mithrilContent, mithrilButtons, m('h3.break-word.modal-title', 'Delete "' + folder.data.name+ '"?'));
         } else {
             folder.notify.update('You don\'t have permission to delete this file.', 'info', undefined, 3000);
         }
@@ -904,16 +929,15 @@ function _removeEvent (event, items, col) {
     if(items.length === 1) {
         if(items[0].kind !== 'folder'){
             var mithrilContentSingle = m('div', [
-                m('h3.break-word', 'Delete "' + items[0].data.name + '"'),
                 m('p', 'This action is irreversible.')
             ]);
             var mithrilButtonsSingle = m('div', [
-                m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { cancelDelete(); } }, 'Cancel'),
-                m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDelete(items[0]); }  }, 'Delete')
+                m('span.btn.btn-default', { onclick : function() { cancelDelete(); } }, 'Cancel'),
+                m('span.btn.btn-danger', { onclick : function() { runDelete(items[0]); }  }, 'Delete')
             ]);
             // This is already being checked before this step but will keep this edit permission check
             if(items[0].data.permissions.edit){
-                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle);
+                tb.modal.update(mithrilContentSingle, mithrilButtonsSingle, m('h3.break-word.modal-title', 'Delete "' + items[0].data.name + '"?'));
             }
         }
         if(items[0].kind === 'folder') {
@@ -945,7 +969,6 @@ function _removeEvent (event, items, col) {
         // If all items can be deleted
         if(canDelete){
             mithrilContentMultiple = m('div', [
-                    m('h3.break-word', 'Delete multiple files?'),
                     deleteMessage,
                     deleteList.map(function(n){
                         if(n.kind === 'folder'){
@@ -957,12 +980,11 @@ function _removeEvent (event, items, col) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
-                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
+                    m('span.btn.btn-default', { onclick : function() { tb.modal.dismiss(); } }, 'Cancel'),
+                    m('span.btn.btn-danger', { onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete All')
                 ]);
         } else {
             mithrilContentMultiple = m('div', [
-                    m('h3.break-word', 'Delete multiple files?'),
                     m('p', 'Some of these files can\'t be deleted but you can delete the ones highlighted with green. This action is irreversible.'),
                     deleteList.map(function(n){
                         if(n.kind === 'folder'){
@@ -977,11 +999,11 @@ function _removeEvent (event, items, col) {
                     })
                 ]);
             mithrilButtonsMultiple =  m('div', [
-                    m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function() {  tb.modal.dismiss(); } }, 'Cancel'),
-                    m('span.tb-modal-btn', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
+                    m('span.btn.btn-default', { 'class' : 'text-default', onclick : function() {  tb.modal.dismiss(); } }, 'Cancel'),
+                    m('span.btn.btn-danger', { 'class' : 'text-danger', onclick : function() { runDeleteMultiple.call(tb, deleteList); }  }, 'Delete Some')
                 ]);
         }
-        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple);
+        tb.modal.update(mithrilContentMultiple, mithrilButtonsMultiple, m('h3.break-word.modal-title', 'Delete multiple files?'));
     }
 }
 
@@ -993,6 +1015,7 @@ function _removeEvent (event, items, col) {
  * @private
  */
 function _fangornResolveLazyLoad(item) {
+    item.connected = true;
     var configOption = resolveconfigOption.call(this, item, 'lazyload', [item]);
     if (configOption) {
         return configOption;
@@ -1011,10 +1034,8 @@ function _fangornResolveLazyLoad(item) {
  * @private
  */
 function _fangornLazyLoadError (item) {
+    item.connected = false;
     var configOption = resolveconfigOption.call(this, item, 'lazyLoadError', [item]);
-    if (!configOption) {
-        item.notify.update('Files couldn\'t load. Please try again later.', 'deleting', undefined, 3000);
-    }
 }
 
 /**
@@ -1073,7 +1094,6 @@ function _fangornUploadMethod(item) {
     return configOption || 'PUT';
 }
 
-
 function gotoFileEvent (item) {
     var tb = this;
     var redir = new URI(item.data.nodeUrl);
@@ -1095,6 +1115,9 @@ function gotoFileEvent (item) {
  */
 function _fangornTitleColumn(item, col) {
     var tb = this;
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+        return _connectCheckTemplate.call(this, item);
+    }
     if (item.kind === 'file' && item.data.permissions.view) {
         return m('span.fg-file-links',{
             onclick: function(event) {
@@ -1103,7 +1126,34 @@ function _fangornTitleColumn(item, col) {
             }
         }, item.data.name);
     }
+    if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
+        return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
+                item.data.name);
+    }
     return m('span', item.data.name);
+}
+
+/**
+ * Returns a reusable template for column titles when there is no connection
+ * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
+ * @this Treebeard.controller
+ * @private
+ */
+function _connectCheckTemplate(item){
+    var tb = this;
+    return m('span.text-danger', [
+        m('span', item.data.name),
+        m('em', ' couldn\'t load.' ),
+        m('button.btn.btn-xs.btn-default.m-l-xs', {
+            onclick : function(e){
+                e.stopImmediatePropagation();
+                if (tb.options.togglecheck.call(tb, item)) {
+                    var index = tb.returnIndex(item.id);
+                    tb.toggleFolder(index, e);
+                }
+            }
+        }, [m('i.fa.fa-refresh'), ' Retry'])
+    ]);
 }
 
 /**
@@ -1120,6 +1170,10 @@ function _fangornResolveRows(item) {
     item.css = '';
     if(tb.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
+    }
+
+    if(item.data.permissions && !item.data.permissions.view){
+        item.css += ' tb-private-row';
     }
 
     if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
@@ -1354,14 +1408,12 @@ var FGInput = {
         var placeholder = args.placeholder || '';
         var id = args.id || '';
         var helpTextId = args.helpTextId || '';
-        var onclick = args.onclick || noop;
         var onkeypress = args.onkeypress || noop;
         var value = args.value ? '[value="' + args.value + '"]' : '';
         return m('span', [
             m('input' + value, {
                 'id' : id,
                 className: 'tb-header-input' + extraCSS,
-                onclick: onclick,
                 onkeypress: onkeypress,
                 'data-toggle':  tooltipText ? 'tooltip' : '',
                 'title':  tooltipText,
@@ -1410,14 +1462,14 @@ var FGItemButtons = {
                 m.component(FGButton, {
                     onclick: function(event) {_uploadEvent.call(tb, event, item); },
                     icon: 'fa fa-upload',
-                    className : 'text-primary'
+                    className : 'text-success'
                 }, 'Upload'),
                 m.component(FGButton, {
                     onclick: function() {
                         mode(toolbarModes.ADDFOLDER);
                     },
                     icon: 'fa fa-plus',
-                    className : 'text-primary'
+                    className : 'text-success'
                 }, 'Create Folder'));
             if(item.data.path){
                 rowButtons.push(
@@ -1429,6 +1481,13 @@ var FGItemButtons = {
             }
         }
         if (item.kind === 'file'){
+            rowButtons.push(
+                m.component(FGButton, {
+                    onclick: function(event) { _downloadEvent.call(tb, event, item); },
+                    icon: 'fa fa-download',
+                    className : 'text-primary'
+                }, 'Download')
+            );
             if (item.data.permissions && item.data.permissions.view) {
                 rowButtons.push(
                     m.component(FGButton, {
@@ -1439,13 +1498,6 @@ var FGItemButtons = {
                         className : 'text-info'
                     }, 'View'));
             }
-            rowButtons.push(
-                m.component(FGButton, {
-                    onclick: function(event) { _downloadEvent.call(tb, event, item); },
-                    icon: 'fa fa-download',
-                    className : 'text-success'
-                }, 'Download')
-            );
             if (item.data.permissions && item.data.permissions.edit) {
                 rowButtons.push(
                     m.component(FGButton, {
@@ -1455,12 +1507,21 @@ var FGItemButtons = {
                     }, 'Delete'));
 
             }
+            if(storageAddons[item.data.provider].externalView) {
+                var providerFullName = storageAddons[item.data.provider].fullName;
+                rowButtons.push(
+                    m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                        m('i.fa.fa-external-link'),
+                        m('span', 'View on ' + providerFullName)
+                    ])
+                );
+            }
         } else if(item.data.provider && item.children.length !== 0) {
             rowButtons.push(
                 m.component(FGButton, {
                     onclick: function(event) { _downloadZipEvent.call(tb, event, item); },
                     icon: 'fa fa-download',
-                    className : 'text-success'
+                    className : 'text-primary'
                 }, 'Download as zip')
             );
         }
@@ -1634,24 +1695,28 @@ var FGToolbar = {
             m.component(FGButton, {
                 onclick: function(event){
                     var mithrilContent = m('div', [
-                        m('h3.break-word.m-b-lg', 'How to Use the File Browser'),
                         m('p', [ m('b', 'Select Rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
                         m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use Command or Shift keys to select multiple files.')]),
                         m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
                         m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and  click a file name to open it in a new tab.')]),
                         m('p', [ m('b', 'Copy Files:'), m('span', ' Press Option (or Alt in Windows) while dragging a file to a new folder or component.')])
                     ]);
-                    var mithrilButtons = m('div', [
-                        m('span.tb-modal-btn', { 'class' : 'text-primary', onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close'),
-                    ]);
-                    ctrl.tb.modal.update(mithrilContent, mithrilButtons);
+                    var mithrilButtons = m('button', {
+                            'type':'button',
+                            'class' : 'btn btn-default',
+                            onclick : function(event) { ctrl.tb.modal.dismiss(); } }, 'Close');
+                    ctrl.tb.modal.update(mithrilContent, mithrilButtons, m('h3.modal-title.break-word', 'How to Use the File Browser'));
                 },
                 icon: 'fa fa-info',
                 className : 'text-info'
             }, '')
         );
 
-        templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons,  m('span', generalButtons)]));
+        if (item && item.connected !== false){ // as opposed to undefined, avoids unnecessary setting of this value
+            templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', [finalRowButtons,  m('span', generalButtons)]));
+        } else {
+            templates[toolbarModes.DEFAULT] =  m('.col-xs-12', m('.pull-right', m('span', generalButtons)));
+        }
         return m('.row.tb-header-row', [
             m('#folderRow', { config : function () {
                 $('#folderRow input').focus();
@@ -1829,6 +1894,10 @@ function _dropLogic(event, items, folder) {
         return;
     }
 
+    if (folder.data.kind === 'file') {
+        folder = folder.parent();
+    }
+
     // if (items[0].data.kind === 'folder' && ['github', 'figshare', 'dataverse'].indexOf(folder.data.provider) !== -1) { return; }
 
     if (!folder.open) {
@@ -1877,6 +1946,10 @@ function getCopyMode(folder, items) {
     var canMove = true;
     var mustBeIntra = (folder.data.provider === 'github');
     var cannotBeFolder = (folder.data.provider === 'figshare' || folder.data.provider === 'dataverse');
+
+    if (folder.data.kind === 'file') {
+        folder = folder.parent();
+    }
 
     if (folder.parentId === 0 ||
         folder.data.kind !== 'folder' ||
@@ -1941,7 +2014,8 @@ function _resizeHeight () {
     var topBuffer = tbody.offset().top + 50;
     var availableSpace = windowHeight - topBuffer;
     if(availableSpace > 0) {
-        tbody.height(availableSpace);
+        // Set a minimum height
+        tbody.height(availableSpace < 300 ? 300 : availableSpace);
     }
 }
 
@@ -2057,13 +2131,15 @@ tbOptions = {
     onmouseoverrow : _fangornMouseOverRow,
     sortDepth : 2,
     dropzone : {                                           // All dropzone options.
+        maxFilesize: 10000000,
         url: function(files) {return files[0].url;},
         clickable : '#treeGrid',
         addRemoveLinks: false,
         previewTemplate: '<div></div>',
-        parallelUploads: 1,
+        parallelUploads: 5,
         acceptDirectories: false,
-        fallback: function(){}
+        createImageThumbnails: false,
+        fallback: function(){},
     },
     resolveIcon : _fangornResolveIcon,
     resolveToggle : _fangornResolveToggle,
@@ -2168,7 +2244,8 @@ Fangorn.Utils = {
     dismissToolbar : dismissToolbar,
     uploadRowTemplate : uploadRowTemplate,
     resolveIconView: resolveIconView,
-    orderFolder: orderFolder
+    orderFolder: orderFolder,
+    connectCheckTemplate : _connectCheckTemplate
 };
 
 Fangorn.DefaultOptions = tbOptions;

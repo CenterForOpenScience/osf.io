@@ -5,13 +5,9 @@
 }
 
 .alert-deleting {
-	background: #F5F5F5;
-color: #F00;
-text-align: center;
-}
-
-#treeGrid span {
-    vertical-align: middle;
+  background: #F5F5F5;
+  color: #A94442;
+  text-align: center;
 }
 
 .tb-head {
@@ -32,6 +28,9 @@ text-align: center;
 }
 .fangorn-selected .text-muted {
     color: #eeeeee;
+}
+.fangorn-selected .text-danger {
+    color: #FFFFFF;
 }
 .fangorn-selected a {
 	color : white;
@@ -62,7 +61,7 @@ text-align: center;
     height: inherit;
     padding-top: 6px;
 }
-#treeGrid .tb-td {
+.tb-row .tb-td {
     padding-top: 2px;
     padding-bottom: 4px;
 }
@@ -101,8 +100,8 @@ text-align: center;
 }
 .tb-notify {
 	white-space: nowrap;
-    height: 30px;
-    padding-top: 4px;
+  height: 34px;
+  padding-top: 4px;
 }
 
 .tb-row .progress {
@@ -112,10 +111,16 @@ text-align: center;
 .tb-expand-icon-holder {
 	cursor: default;
 }
-#treeGrid .tb-expand-icon-holder div {
+.tb-row  .tb-expand-icon-holder div {
     vertical-align: middle;
 }
 
+.tb-private-row {
+    color: #888;
+}
+.fangorn-selected.tb-private-row {
+    color: #CCC;
+}
 .tb-expand-icon-holder > i {
 	font-size: 14px;
 	padding-left: 2px;
@@ -146,12 +151,6 @@ text-align: center;
 }
 .tb-modal-btn:hover {
 	background-color: #efefef;
-}
-.tb-modal-dismiss {
-  font-size: 24px;
-  margin-top: 4px;
-  margin-right: 11px;
-  cursor: pointer;
 }
 .tb-modal-footer {
 	padding: 10px 18px 16px 16px;
@@ -191,6 +190,9 @@ text-align: center;
     font-size: 13px;
     border-radius: 2px;
     margin-top: 4px;
+}
+a.fangorn-toolbar-icon {
+    text-decoration: none;
 }
 .fangorn-toolbar-icon .fa {
     font-size: 15px;
@@ -326,6 +328,7 @@ text-align: center;
 .file-extension._vcd {background: url('/static/img/hgrid/fatcowicons/file_extension_vcd.png');	}
 .file-extension._vob {background: url('/static/img/hgrid/fatcowicons/file_extension_vob.png');	}
 .file-extension._wav {background: url('/static/img/hgrid/fatcowicons/file_extension_wav.png');	}
+.file-extension._webm {background: url('/static/img/hgrid/fatcowicons/file_extension_mp4.png'); }
 .file-extension._wma {background: url('/static/img/hgrid/fatcowicons/file_extension_wma.png');	}
 .file-extension._wmv {background: url('/static/img/hgrid/fatcowicons/file_extension_wmv.png');	}
 .file-extension._wps {background: url('/static/img/hgrid/fatcowicons/file_extension_wps.png');	}

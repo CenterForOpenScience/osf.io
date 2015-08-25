@@ -51,7 +51,9 @@ var apiV2Url = function (path, options){
 
     var apiUrl = URI(opts.prefix);
     var pathSegments = URI(path).segment();
-    pathSegments.forEach(function(el){apiUrl.segment(el);});  // Hack to prevent double slashes when joining base + path
+    pathSegments.forEach(function(el){
+        apiUrl.segment(el);
+    });  // Hack to prevent double slashes when joining base + path
     apiUrl.query(opts.query);
 
     return apiUrl.toString();
@@ -189,13 +191,14 @@ var unblock = function() {
 };
 
 var joinPrompts = function(prompts, base) {
-    var prompt = base ? '<h4>'+ base +'</h4>': '';
+    var prompt = base || '';
     if (prompts.length !==0) {
-        prompt += '<div>';
+        prompt += '<hr />';
+        prompt += '<ul>';
         for (var i=0; i<prompts.length; i++) {
-            prompt += '<div class="osf-box p-sm">' + prompts[i] + '</div>';
+            prompt += '<li>' + prompts[i] + '</li>';
         }
-        prompt += '</div>';
+        prompt += '</ul>';
     }
     return prompt;
 };
@@ -378,7 +381,7 @@ ko.bindingHandlers.anchorScroll = {
                 // get location of the target
                 var target = $item.attr('href');
                 // if target has a scrollbar scroll it, otherwise scroll the page
-                if ( $element.get(0).scrollHeight > $element.height() ) {
+                if ( $element.get(0).scrollHeight > $element.innerHeight() ) {
                     offset = $(target).position();
                     $element.scrollTop(offset.top - buffer);
                 } else {
@@ -465,26 +468,49 @@ var applyBindings = function(viewModel, selector) {
     ko.applyBindings(viewModel, $elem[0]);
 };
 
+/**
+ * A function that checks if a datestring is an ISO 8601 datetime string
+ * that lacks an offset. A datetime without a time offset should default
+ * to UTC according to JS standards, but Firefox implemented date parsing
+ * according to the ISO spec, meaning in Firefox it will default to local
+ * time
+ * @param {String} dateString The original date or datetime as an ISO date/
+ *                            datetime string
+ */
+var dateTimeWithoutOffset = function(dateString) {
+    if (dateString.indexOf('T') === -1) {
+        return false;
+    }
+    var time = dateString.split('T')[1];
+    return !((time.indexOf('+') !== -1) || (time.indexOf('-') !== -1));
+};
+
+/**
+ * A function that coerces a Datetime with no offset to a Datetime with
+ * an offset of UTC +00 (equivalent to Z)
+ * @param {String} dateTimeString The original Datetime string, which may or may not
+ *                                have a terminating Z implying UTC +00
+ */
+var forceUTC = function(dateTimeString) {
+    return dateTimeString.slice(-1) === 'Z' ? dateTimeString : dateTimeString + 'Z';
+};
 
 var hasTimeComponent = function(dateString) {
     return dateString.indexOf('T') !== -1;
 };
 
-var forceUTC = function(dateTimeString) {
-    return dateTimeString.slice(-1) === 'Z' ? dateTimeString : dateTimeString + 'Z';
-};
-
 /**
   * A date object with two formats: local time or UTC time.
   * @param {String} date The original date as a string. Should be an standard
-  *                      format such as RFC or ISO.
+  *                      format such as RFC or ISO. If the date is a datetime string
+  *                      with no offset, an offset of UTC +00:00 will be assumed
   */
 var LOCAL_DATEFORMAT = 'YYYY-MM-DD hh:mm A';
 var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
 
     if (typeof date === 'string') {
-        this.date = new Date(hasTimeComponent(date) ? forceUTC(date) : date);
+        this.date = moment.utc(dateTimeWithoutOffset(date) ? forceUTC(date) : date).toDate();
     } else {
         this.date = date;
     }
@@ -589,6 +615,20 @@ ko.bindingHandlers.listing = {
     }
 };
 
+/* Responsive Affix for side nav */
+var fixAffixWidth = function() {
+    $('.osf-affix').each(function (){
+        var el = $(this);
+        var colsize = el.parent('.affix-parent').width();
+        el.outerWidth(colsize);
+    });
+};
+
+var initializeResponsiveAffix = function (){
+    $(window).resize(debounce(fixAffixWidth, 20, true));
+    $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
+};
+
 // Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable
 function humanFileSize(bytes, si) {
     var thresh = si ? 1000 : 1024;
@@ -665,6 +705,14 @@ var isIE = function(userAgent) {
 };
 
 /**
+*  Helper function to judge if the user browser is Safari
+*/
+var isSafari = function(userAgent) {
+    userAgent = userAgent || navigator.userAgent;
+    return (userAgent.search('Safari') >= 0 && userAgent.search('Chrome') < 0);
+};
+
+/**
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
@@ -707,14 +755,14 @@ var confirmDangerousAction = function (options) {
             },
             success: {
                 label: 'Confirm',
-                className: 'btn-success',
+                className: 'btn-danger',
                 callback: handleConfirmAttempt
             }
         },
         message: ''
     };
 
-    var bootboxOptions = $.extend({}, defaults, options);
+    var bootboxOptions = $.extend(true, {}, defaults, options);
 
     bootboxOptions.message += [
         '<p>Type the following to continue: <strong>',
@@ -750,7 +798,9 @@ module.exports = window.$.osf = {
     htmlEscape: htmlEscape,
     htmlDecode: htmlDecode,
     tableResize: tableResize,
+    initializeResponsiveAffix: initializeResponsiveAffix,
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
-    isIE: isIE
+    isIE: isIE,
+    isSafari:isSafari
 };

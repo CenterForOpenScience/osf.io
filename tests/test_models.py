@@ -29,6 +29,7 @@ from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
+from website.project.signals import contributor_added
 from website.project.model import (
     Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo,
@@ -268,6 +269,26 @@ class TestUser(OsfTestCase):
         master = UserFactory()
         dupe = UserFactory(merged_by=master)
         assert_false(dupe.is_active)
+
+    def test_merged_user_with_two_account_on_same_project_with_different_visibility_and_permissions(self):
+        user2 = UserFactory.build()
+        user2.save()
+
+        project = ProjectFactory(is_public=True)
+        # Both the master and dupe are contributors
+        project.add_contributor(user2, log=False)
+        project.add_contributor(self.user, log=False)
+        project.set_permissions(user=self.user, permissions=['read'])
+        project.set_permissions(user=user2, permissions=['read', 'write', 'admin'])
+        project.set_visible(user=self.user, visible=False)
+        project.set_visible(user=user2, visible=True)
+        project.save()
+        self.user.merge_user(user2)
+        self.user.save()
+
+        assert_true('admin' in project.permissions[self.user._id])
+        assert_true(self.user._id in project.visible_contributor_ids)
+        assert_false(project.is_contributor(user2))
 
     def test_cant_create_user_without_username(self):
         u = User()  # No username given
@@ -1605,6 +1626,53 @@ class TestNode(OsfTestCase):
             )
         assert_equal(err.exception.message, 'Cannot register deleted node.')
 
+    def test_set_visible_contributor_with_only_one_contributor(self):
+        with assert_raises(ValueError) as e:
+            self.node.set_visible(user=self.user, visible=False, auth=None)
+            assert_equal(e.exception.message, 'Must have at least one visible contributor')
+
+    def test_contributor_manage_visibility(self):
+
+        reg_user1 = UserFactory()
+        #This makes sure manage_contributors uses set_visible so visibility for contributors is added before visibility
+        #for other contributors is removed ensuring there is always at least one visible contributor
+        self.node.add_contributor(contributor=self.user, permissions=['read', 'write','admin'], auth=self.consolidate_auth)
+        self.node.add_contributor(contributor=reg_user1, permissions=['read', 'write','admin'], auth=self.consolidate_auth)
+
+        self.node.manage_contributors(
+            user_dicts=[
+                    {'id': self.user._id, 'permission': 'admin', 'visible': True},
+                    {'id': reg_user1._id, 'permission': 'admin', 'visible': False},
+                ],
+            auth=self.consolidate_auth,
+            save=True
+        )
+        self.node.manage_contributors(
+            user_dicts=[
+                    {'id': self.user._id, 'permission': 'admin', 'visible': False},
+                    {'id': reg_user1._id, 'permission': 'admin', 'visible': True},
+            ],
+            auth=self.consolidate_auth,
+            save=True
+        )
+
+        assert_equal(len(self.node.visible_contributor_ids),1)
+
+    def test_contributor_set_visibility_validation(self):
+        reg_user1, reg_user2 = UserFactory(), UserFactory()
+        self.node.add_contributors(
+                        [
+                {'user': reg_user1, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': True},
+                {'user': reg_user2, 'permissions': [
+                    'read', 'write', 'admin'], 'visible': False},
+            ]
+        )
+        print(self.node.visible_contributor_ids)
+        with assert_raises(ValueError) as e:
+            self.node.set_visible(user=reg_user1, visible=False, auth=None)
+            self.node.set_visible(user=self.user, visible=False, auth=None)
+            assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
 class TestNodeTraversals(OsfTestCase):
 
@@ -1634,6 +1702,25 @@ class TestNodeTraversals(OsfTestCase):
         assert_equal(len(descendants), 2)  # two immediate children
         assert_equal(len(descendants[0][1]), 1)  # only one visible child of comp1
         assert_equal(len(descendants[1][1]), 0)  # don't auto-include comp2's children
+
+    def test_delete_registration_tree(self):
+        proj = NodeFactory()
+        NodeFactory(parent=proj)
+        comp2 = NodeFactory(parent=proj)
+        NodeFactory(parent=comp2)
+        reg = RegistrationFactory(project=proj)
+        reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
+        reg.delete_registration_tree(save=True)
+        assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
+
+    def test_delete_registration_tree_deletes_backrefs(self):
+        proj = NodeFactory()
+        NodeFactory(parent=proj)
+        comp2 = NodeFactory(parent=proj)
+        NodeFactory(parent=comp2)
+        reg = RegistrationFactory(project=proj)
+        reg.delete_registration_tree(save=True)
+        assert_false(proj.node__registrations)
 
     def test_get_descendants_recursive(self):
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
@@ -1938,6 +2025,19 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_in(user2, self.project.contributors)
         assert_equal(self.project.logs[-1].action, 'contributor_added')
+
+    def test_add_contributor_sends_contributor_added_signal(self):
+        user = UserFactory()
+        contributors = [{
+            'user': user,
+            'visible': True,
+            'permissions': ['read', 'write']
+        }]
+        with capture_signals() as mock_signals:
+            self.project.add_contributors(contributors=contributors, auth=self.consolidate_auth)
+            self.project.save()
+            assert_in(user, self.project.contributors)
+            assert_equal(mock_signals.signals_sent(), set([contributor_added]))
 
     def test_add_unregistered_contributor(self):
         self.project.add_unregistered_contributor(
@@ -2479,8 +2579,7 @@ class TestProject(OsfTestCase):
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
-        assert_false(registration.embargo_end_date)
-        assert_true(registration.pending_embargo)
+        assert_true(registration.is_pending_embargo)
 
         func = lambda: registration.set_privacy('public', auth=self.consolidate_auth)
         assert_raises(NodeStateError, func)
@@ -2493,19 +2592,16 @@ class TestProject(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         registration.save()
-        assert_false(registration.embargo_end_date)
-        assert_true(registration.pending_embargo)
+        assert_true(registration.is_pending_embargo)
 
         approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
         registration.embargo.approve_embargo(self.user, approval_token)
-        assert_true(registration.embargo_end_date)
-        assert_false(registration.pending_embargo)
+        assert_false(registration.is_pending_embargo)
 
         registration.set_privacy('public', auth=self.consolidate_auth)
         registration.save()
-        assert_false(registration.embargo_end_date)
-        assert_false(registration.pending_embargo)
-        assert_equal(registration.embargo.state, Embargo.CANCELLED)
+        assert_false(registration.is_pending_embargo)
+        assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_true(registration.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
 
@@ -2720,6 +2816,15 @@ class TestTemplateNode(OsfTestCase):
         assert_equal(new.wiki_pages_current, {})
         assert_equal(new.wiki_pages_versions, {})
 
+    def test_user_who_makes_node_from_template_has_creator_permission(self):
+        project = ProjectFactory(is_public=True)
+        user = UserFactory()
+        auth = Auth(user)
+
+        templated = project.use_as_template(auth)
+
+        assert_equal(templated.get_permissions(user), ['read', 'write', 'admin'])
+
     def test_template_security(self):
         """Create a templated node from a node with public and private children
 
@@ -2742,7 +2847,7 @@ class TestTemplateNode(OsfTestCase):
         self.read.save()
 
         self.write = NodeFactory(creator=self.user, parent=self.project)
-        self.write.add_contributor(other_user, permissions=['read', 'write', ])
+        self.write.add_contributor(other_user, permissions=['read', 'write'])
         self.write.save()
 
         self.admin = NodeFactory(creator=self.user, parent=self.project)
@@ -2949,6 +3054,9 @@ class TestForkNode(OsfTestCase):
         user2_auth = Auth(user=user2)
         fork = self.project.fork_node(user2_auth)
         assert_true(fork)
+        # Forker has admin permissions
+        assert_equal(len(fork.contributors), 1)
+        assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
 
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)
@@ -3047,11 +3155,8 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(registration.creator, self.user)
 
     def test_logs(self):
-        # Registered node has all logs except the Project Registered log
+        # Registered node has all logs except for registration approval initiated
         assert_equal(self.registration.logs, self.project.logs[:-1])
-
-    def test_registration_log(self):
-        assert_equal(self.project.logs[-1].action, 'project_registered')
 
     def test_tags(self):
         assert_equal(self.registration.tags, self.project.tags)
@@ -3116,9 +3221,9 @@ class TestRegisterNode(OsfTestCase):
 
         # Share the project and some nodes
         user2 = UserFactory()
-        self.project.add_contributor(user2)
-        self.shared_component.add_contributor(user2)
-        self.shared_subproject.add_contributor(user2)
+        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.shared_component.add_contributor(user2, permissions=('read', 'write', 'admin'))
+        self.shared_subproject.add_contributor(user2, permissions=('read', 'write', 'admin'))
 
         # Partial contributor registers the node
         registration = RegistrationFactory(project=self.project, user=user2)
@@ -3151,7 +3256,7 @@ class TestRegisterNode(OsfTestCase):
     def test_registered_user(self):
         # Add a second contributor
         user2 = UserFactory()
-        self.project.add_contributor(user2)
+        self.project.add_contributor(user2, permissions=('read', 'write', 'admin'))
         # Second contributor registers project
         registration = RegistrationFactory(parent=self.project, user=user2)
         assert_equal(registration.registered_user, user2)

@@ -18,6 +18,8 @@ ARCHIVER_FAILURE_STATUSES = {
     ARCHIVER_UNCAUGHT_ERROR,
 }
 
+NO_ARCHIVE_LIMIT = 'high_upload_limit'
+
 class StatResult(object):
     """
     Helper class to collect metadata about a single file
@@ -30,7 +32,7 @@ class StatResult(object):
         self.disk_usage = float(disk_usage)
 
     def __str__(self):
-        return str(dict(self))
+        return str(self._to_dict())
 
     def _to_dict(self):
         return {
@@ -42,7 +44,7 @@ class StatResult(object):
 
 class AggregateStatResult(object):
     """
-    Helper class to collect metadata about aribitrary depth file/addon/node file trees
+    Helper class to collect metadata about arbitrary depth file/addon/node file trees
     """
     def __init__(self, target_id, target_name, targets=None):
         self.target_id = target_id

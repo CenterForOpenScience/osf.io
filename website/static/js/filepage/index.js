@@ -9,6 +9,7 @@ var waterbutler = require('js/waterbutler');
 var utils = require('./util.js');
 var FileEditor = require('./editor.js');
 var FileRevisionsTable = require('./revisions.js');
+var storageAddons = require('json!storageAddons.json');
 
 // Sanity
 var Panel = utils.Panel;
@@ -34,6 +35,11 @@ var FileViewPage = {
             content: waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render'})
         });
 
+        if ($osf.urlParams().branch) {
+            self.file.urls.revisions = waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {sha: $osf.urlParams().branch});
+            self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render', branch: $osf.urlParams().branch});
+        }
+
         $(document).on('fileviewpage:delete', function() {
             bootbox.confirm({
                 title: 'Delete file?',
@@ -54,12 +60,19 @@ var FileViewPage = {
                     }).fail(function() {
                         $osf.growl('Error', 'Could not delete file.');
                     });
+                },
+                buttons:{
+                    confirm:{
+                        label:'Delete',
+                        className:'btn-danger'
+                    }
                 }
             });
         });
 
         $(document).on('fileviewpage:download', function() {
-            window.location = self.file.urls.content;
+            //replace mode=render with action=download for download count incrementation
+            window.location = self.file.urls.content.replace('mode=render', 'action=download');
             return false;
         });
 
@@ -72,8 +85,7 @@ var FileViewPage = {
         self.editHeader = function() {
             return m('.row', [
                 m('.col-sm-12', m('span[style=display:block;]', [
-                    m('i.fa.fa-pencil-square-o'),
-                    ' Edit',
+                    m('h3.panel-title',[m('i.fa.fa-pencil-square-o'), '   Edit ']),
                     m('.pull-right', [
                         m('.progress.no-margin.pointer', {
                             'data-toggle': 'modal',
@@ -199,14 +211,22 @@ var FileViewPage = {
         $('#mfrIframeParent').removeClass().addClass(mfrIframeParentLayout);
         $('.file-view-panels').removeClass().addClass('file-view-panels').addClass(fileViewPanelsLayout);
 
-        m.render(document.getElementById('toggleBar'), m('.btn-toolbar[style=margin-top:20px]', [
-            ctrl.canEdit() ? m('.btn-group', {style: 'margin-left: 0;'}, [
+        if(ctrl.file.urls.external && !ctrl.file.privateRepo) {
+            m.render(document.getElementById('externalView'), [
+                m('p.text-muted', 'View this file on ', [
+                    m('a', {href:ctrl.file.urls.external}, storageAddons[ctrl.file.provider].fullName)
+                ], '.')
+            ]);
+        }
+
+        m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
+            ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
-            m('.btn-group', [
-                m('.btn.btn-sm.btn-success.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+            m('.btn-group.m-t-xs', [
+                m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
-            m('.btn-group.btn-group-sm', [
+            m('.btn-group.btn-group-sm.m-t-xs', [
                 m('.btn.btn-default.disabled', 'Toggle view: ')
             ].concat(
                 m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {

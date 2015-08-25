@@ -1,5 +1,4 @@
 <%
-    import json
     is_project = node['node_type'] == 'project'
 %>
 
@@ -30,10 +29,10 @@
                         % endif
 
                     % endif
-                        <li><a href="${node['url']}"  class="project-title"> ${node['title'] | n}  </a></li>
+                        <li><a href="${node['url']}"  class="project-title"> ${ node['title'] }  </a></li>
 
                     % if not node['is_retracted']:
-                        <li><a href="${node['url']}files/">Files</a></li>
+                        <li id="projectNavFiles"><a href="${node['url']}files/">Files</a></li>
                         <!-- Add-on tabs -->
                         % for addon in addons_enabled:
 
@@ -86,25 +85,31 @@
     % if node['is_registration']:  ## Begin registration undismissable labels
 
         % if not node['is_retracted']:
-            <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.
-            </div>
-            <style type="text/css">
-            .watermarked {
-                background-image:url('/static/img/read-only.png');
-                background-repeat:repeat;
-            }
-            </style>
+           % if not node['is_pending_registration']:
+              <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.</div>
+
+           % else:
+              <div class="alert alert-info">This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
+           % endif
+
+           <style type="text/css">
+              .watermarked {
+                  background-image:url('/static/img/read-only.png');
+                  background-repeat:repeat;
+              }
+           </style>
+
         % endif
 
-        % if node['pending_retraction']:
+        % if node['is_pending_retraction']:
             <div class="alert alert-info">This ${node['node_type']} is currently pending entering into a retracted state.</div>
         % endif
 
         % if  node['is_retracted']:
-            <div class="alert alert-danger">This ${node['node_type']} is a retracted registration of <a class="alert-link" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
+            <div class="alert alert-danger">This ${node['node_type']} is a retracted registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
         % endif
 
-        % if  node['pending_embargo']:
+        % if  node['is_pending_embargo']:
             <div class="alert alert-info">This ${node['node_type']} is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.</div>
         % endif
 
@@ -115,7 +120,7 @@
     % endif  ## End registration undismissable labels
 
     % if node['anonymous'] and user['is_contributor']:
-        <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="alert-link" href="${node['redirect_url']}">here</a>.</div>
+        <div class="alert alert-info">This ${node['node_type']} is being viewed through an anonymized, view-only link. If you want to view it as a contributor, click <a class="link-solid" href="${node['redirect_url']}">here</a>.</div>
     % endif
 
     % if node['link'] and not node['is_public'] and not user['is_contributor']:

@@ -172,9 +172,9 @@ def get_all_registrations_smart_folder(auth, **kwargs):
         Q('is_folder', 'eq', False)
     ).sort('-title')
 
-    # Note(hrybacki): is_retracted and pending_embargo are property methods
+    # Note(hrybacki): is_retracted and is_pending_embargo are property methods
     # and cannot be directly queried
-    nodes = filter(lambda node: not node.is_retracted and not node.pending_embargo, nodes)
+    nodes = filter(lambda node: not node.is_retracted and not node.is_pending_embargo, nodes)
     keys = [node._id for node in nodes]
     return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
 
@@ -290,7 +290,7 @@ def serialize_log(node_log, auth=None, anonymous=False):
         else {'fullname': node_log.foreign_user},
         'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
         'action': node_log.action,
-        'params': sanitize.safe_unescape_html(node_log.params),
+        'params': sanitize.unescape_entities(node_log.params),
         'date': utils.iso8601format(node_log.date),
         'node': node_log.node.serialize(auth) if node_log.node else None,
         'anonymous': anonymous
@@ -368,3 +368,15 @@ def resolve_guid(guid, suffix=None):
 
     # GUID not found
     raise HTTPError(http.NOT_FOUND)
+
+##### Redirects #####
+
+# Redirect /about/ to OSF wiki page
+# https://github.com/CenterForOpenScience/osf.io/issues/3862
+# https://github.com/CenterForOpenScience/community/issues/294
+def redirect_about(**kwargs):
+    return redirect('https://osf.io/4znzp/wiki/home/')
+
+
+def redirect_howosfworks(**kwargs):
+    return redirect('/getting-started/')

@@ -2,7 +2,11 @@
 <%def name="title()">Settings</%def>
 <%def name="content()">
 <% from website import settings %>
-<h2 class="page-header">Profile Information</h2>
+<h2 class="page-header">Settings
+    <div class="pull-right">
+        <a href="/profile" class="btn btn-link"><i class="fa fa-user m-r-sm"></i>View your profile </a>
+    </div>
+</h2>
 
 ## TODO: Review and un-comment
 ##<div class="row">
@@ -16,17 +20,10 @@
 ##    </div>
 ##</div>
 
-<div class="row">
+<div id="profileSettings" class="row">
 
-    <div class="col-sm-3">
-        <div class="panel panel-default">
-            <ul class="nav nav-stacked nav-pills">
-                <li><a href="#">Profile Information</a></li>
-                <li><a href="${ web_url_for('user_account') }">Account Settings</a></li>
-                <li><a href="${ web_url_for('user_addons') }">Configure Add-ons</a></li>
-                <li><a href="${ web_url_for('user_notifications') }">Notifications</a></li>
-            </ul>
-        </div><!-- end sidebar -->
+    <div class="col-sm-3 affix-parent">
+      <%include file="include/profile/settings_navpanel.mako" args="current_page='profile'"/>
     </div>
 
     <div class="col-sm-9 col-md-7">
@@ -41,23 +38,18 @@
             </ul>
 
             <div class="tab-content" id="containDrag">
-
                 <div class="m-t-md tab-pane active" id="names">
                     <div data-bind="template: {name: 'profileName'}"></div>
                 </div>
-
                 <div class="m-t-md tab-pane" id="social">
                     <div data-bind="template: {name: 'profileSocial'}"></div>
                 </div>
-
                 <div class="m-t-md tab-pane" id="jobs">
                     <div data-bind="template: {name: 'profileJobs'}"></div>
                 </div>
-
                 <div class="m-t-md tab-pane" id="schools">
                     <div data-bind="template: {name: 'profileSchools'}"></div>
                 </div>
-
             </div>
 
         </div>
@@ -87,17 +79,17 @@
     ## modules. Not sure if this is a good idea.
     window.contextVars = window.contextVars || {};
     window.contextVars.nameUrls = {
-        crud: '${ api_url_for('serialize_names') }',
-        impute: '${ api_url_for('impute_names') }'
+        crud: ${ api_url_for('serialize_names') | sjson, n },
+        impute: ${ api_url_for('impute_names') | sjson, n }
     };
     window.contextVars.socialUrls = {
-        crud: '${ api_url_for('serialize_social') }'
+        crud: ${ api_url_for('serialize_social') | sjson, n }
     };
     window.contextVars.jobsUrls = {
-        crud: '${ api_url_for('serialize_jobs') }'
+        crud: ${ api_url_for('serialize_jobs') | sjson, n }
     };
     window.contextVars.schoolsUrls = {
-        crud: '${ api_url_for('serialize_schools') }'
+        crud: ${ api_url_for('serialize_schools') | sjson, n }
     };
 </script>
 <script src=${"/static/public/js/profile-settings-page.js" | webpack_asset}></script>

@@ -25,7 +25,7 @@
             <a data-bind="attr.href: url" target="_blank">{{ linkDisplay }}</a>.
         </div>
 
-        <div class="spaced-buttons">
+        <div class="spaced-buttons m-t-sm">
             <a class="btn btn-primary" data-bind="click: doRedirect">Redirect</a>
         </div>
 

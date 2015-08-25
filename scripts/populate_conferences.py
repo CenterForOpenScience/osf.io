@@ -317,6 +317,23 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'OpenCon2015': {
+        'name': 'OpenCon2015',
+        'info_url': 'http://opencon2015.org/',
+        'logo_url': 'http://s8.postimg.org/w9b30pxyd/Open_Con2015_new_logo.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'ESIP2015': {
+        'name': 'ESIP2015',
+        'info_url': 'http://esipfed.org/',
+        'logo_url': 'http://s30.postimg.org/m2uz2g4pt/ESIP.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+
 }
 
 

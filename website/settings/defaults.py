@@ -30,9 +30,10 @@ BCRYPT_LOG_ROUNDS = 12
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
-# Hours before pending embargo/retraction automatically becomes active
+# Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
+REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
@@ -71,12 +72,11 @@ SHARE_ELASTIC_INDEX = 'share'
 SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
-# TODO: Override SECRET_KEY in local.py in production
+# TODO: Override OSF_COOKIE_DOMAIN in local.py in production
+OSF_COOKIE_DOMAIN = None
 COOKIE_NAME = 'osf'
+# TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
-
-# TODO: Remove after migration to OSF Storage
-COPY_GIT_REPOS = False
 
 # Change if using `scripts/cron.py` to manage crontab
 CRON_USER = None
@@ -242,6 +242,9 @@ DISK_SAVING_MODE = False
 # Add Contributors (most in common)
 MAX_MOST_IN_COMMON_LENGTH = 15
 
+# Seconds before another notification email can be sent to a contributor when added to a project
+CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
+
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None
 GOOGLE_SITE_VERIFICATION = None
@@ -280,6 +283,8 @@ MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
 
 ENABLE_ARCHIVER = True
-###########################
 
 MAX_INDEXED_FILE_SIZE = 5 * (2 ** 20)  # Megabytes
+
+JWT_SECRET = 'changeme'
+JWT_ALGORITHM = 'HS256'

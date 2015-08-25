@@ -8,7 +8,6 @@ from oath import accept_totp
 from framework.status import push_status_message
 from website.addons.base import AddonUserSettingsBase
 
-
 class TwoFactorUserSettings(AddonUserSettingsBase):
     totp_secret = StringField()  # hexadecimal
     totp_drift = IntegerField()
@@ -26,10 +25,10 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
     def to_json(self, user):
         rv = super(TwoFactorUserSettings, self).to_json(user)
         rv.update({
+            'is_enabled': True,
             'is_confirmed': self.is_confirmed,
             'secret': self.totp_secret_b32,
             'drift': self.totp_drift,
-            'otpauth_url': self.otpauth_url,
         })
         return rv
 
@@ -51,8 +50,8 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
     #############
 
     def on_add(self):
-        push_status_message('Please <a href="#TfaVerify">activate your'
-                            ' device</a> before continuing.')
+        push_status_message('Please <u><a href="#TfaVerify">activate your'
+                            ' device</a></u> before continuing.', 'info')
         super(TwoFactorUserSettings, self).on_add()
         self.totp_secret = _generate_seed()
         self.totp_drift = 0
@@ -62,7 +61,7 @@ class TwoFactorUserSettings(AddonUserSettingsBase):
         if self.is_confirmed:
             push_status_message('Successfully deauthorized two-factor'
                                 ' authentication. Please delete the'
-                                ' verification code on your device.')
+                                ' verification code on your device.', 'success')
         super(TwoFactorUserSettings, self).on_delete()
         self.totp_secret = None
         self.totp_drift = 0

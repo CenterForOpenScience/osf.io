@@ -13,7 +13,12 @@
         </div><!-- end div -->
 
         <div class="project-organizer" id="projectOrganizerScope">
-            <div id="project-grid"></div>
+            <div id="project-grid">
+                <div class="spinner-loading-wrapper">
+                    <div class="logo-spin logo-lg"></div>
+                     <p class="m-t-sm fg-load-message"> Loading projects...  </p>
+                </div>
+            </div>
         </div><!-- end project-organizer -->
     </div><!-- end col -->
 
@@ -63,7 +68,7 @@
     <div class="row">
         <div class="col-sm-5">
             <div class="page-header">
-              <button class="btn btn-success pull-right" id="newBadge" type="button">New Badge</button>
+              <button class="btn btn-primary pull-right" id="newBadge" type="button">New Badge</button>
                 <h3>Your Badges</h3>
             </div>
             <div mod-meta='{
@@ -82,6 +87,7 @@
 </%def>
 
 <%def name="stylesheets()">
+    ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/pages/dashboard-page.css">
 </%def>
 

@@ -2,9 +2,9 @@
 'use strict';
 
 var $ = require('jquery');
-require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
 require('bootstrap-editable');
+require('js/osfToggleHeight');
 
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
@@ -20,7 +20,6 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
-
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -50,8 +49,9 @@ if (!ctx.node.anonymous && !ctx.node.isRetracted) {
     new CitationList('#citationList');
     new CitationWidget('#citationStyleInput', '#citationText');
 }
-
 $(document).ready(function () {
+
+    $('#contributorsList').osfToggleHeight();
 
     if (!ctx.node.isRetracted) {
         // Treebeard Files view
@@ -71,7 +71,7 @@ $(document).ready(function () {
                     return [
                         {
                             title: 'Name',
-                            width : '90%',
+                            width : '100%',
                             sort : true,
                             sortType : 'text'
                         }
@@ -82,6 +82,9 @@ $(document).ready(function () {
                     item.css = '';
                     if(tb.isMultiselected(item.id)){
                         item.css = 'fangorn-selected';
+                    }
+                    if(item.data.permissions && !item.data.permissions.view){
+                        item.css += ' tb-private-row';
                     }
                     var defaultColumns = [
                                 {
@@ -157,6 +160,11 @@ $(document).ready(function () {
             $('#title').focus();
         }
     });
+
+    $('#newComponent').on('hidden.bs.modal', function(){
+        $('#newComponent .modal-alert').text('');
+    });
+
     $('#addPointer').on('shown.bs.modal', function(){
         if(!$osf.isIE()){
             $('#addPointer input').focus();
@@ -198,4 +206,7 @@ $(document).ready(function () {
     if (window.contextVars.node.isRegistration && window.contextVars.node.tags.length === 0) {
         $('div.tags').remove();
     }
+    $('a.btn').mouseup(function(){
+        $(this).blur();
+    });
 });

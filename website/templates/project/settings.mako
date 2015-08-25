@@ -16,21 +16,18 @@
 </div>
 
 <div class="row project-page">
-
     <!-- Begin left column -->
-    <div class="col-sm-3 affix-parent">
+    <div class="col-sm-3 affix-parent scrollspy">
 
         % if 'write' in user['permissions']:
 
-            <div class="panel panel-default" data-spy="affix" data-offset-top="60" data-offset-bottom="268"><!-- Begin sidebar -->
+            <div class="panel panel-default osf-affix" data-spy="affix" data-offset-top="60" data-offset-bottom="263"><!-- Begin sidebar -->
                 <ul class="nav nav-stacked nav-pills">
 
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
 
-                        % if 'admin' in user['permissions']:
-                            <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
-                        % endif
+
 
                         % if 'write' in user['permissions']:
                             <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
@@ -40,7 +37,12 @@
                             % endif
 
                             <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
-                        %endif
+                        % endif
+
+                        % if 'admin' in user['permissions']:
+                            <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
+                        % endif
+
 
                     % endif
 
@@ -65,13 +67,12 @@
         % if 'write' in user['permissions']:  ## Begin Configure Project
 
             % if not node['is_registration']:
-
                 <div class="panel panel-default">
                     <span id="configureNodeAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
                         <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                     </div>
-                    <div id="nodeCategorySettings" class="panel-body">
+                    <div id="nodeCategorySettings" class="panel-body scripted">
                         <h5>
                             Category: <select data-bind="attr.disabled: disabled,
                                                         options: categories,
@@ -81,15 +82,16 @@
                         </h5>
                         <p data-bind="if: !disabled">
                             <button data-bind="css: {disabled: !dirty()},
-                                               click: updateCategory"
-                                    class="btn btn-primary">Change</button>
-                            <button data-bind="css: {disabled: !dirty()},
                                                click: cancelUpdateCategory"
                                     class="btn btn-default">Cancel</button>
+                            <button data-bind="css: {disabled: !dirty()},
+                                               click: updateCategory"
+                                    class="btn btn-primary">Change</button>
                         </p>
                         <span data-bind="css: messageClass, html: message"></span>
+
                         <span data-bind="if: disabled" class="help-block">
-                            A top-level project's category cannot be changed
+                            A top-level project's category cannot be changed.
                         </span>
                     </div>
 
@@ -110,50 +112,6 @@
             % endif
 
         % endif  ## End Configure Project
-
-        % if 'admin' in user['permissions']:  ## Begin Configure Commenting
-
-            % if not node['is_registration']:
-
-                <div class="panel panel-default">
-                    <span id="configureCommentingAnchor" class="anchor"></span>
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Commenting</h3>
-                    </div>
-
-                    <div class="panel-body">
-
-                        <form class="form" id="commentSettings">
-
-                            <div class="radio">
-                                <label>
-                                    <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
-                                    Only contributors can post comments
-                                </label>
-                            </div>
-                            <div class="radio">
-                                <label>
-                                    <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
-                                    When the ${node['node_type']} is public, any OSF user can post comments
-                                </label>
-                            </div>
-
-                            <button class="btn btn-success">Submit</button>
-
-                            <!-- Flashed Messages -->
-                            <div class="help-block">
-                                <p id="configureCommentingMessage"></p>
-                            </div>
-                        </form>
-
-                    </div>
-
-                </div>
-
-            % endif
-
-        % endif  ## End Configure Commenting
-
 
         % if 'write' in user['permissions']:  ## Begin Select Addons
 
@@ -202,7 +160,7 @@
                             <br />
 
                             <button id="settings-submit" class="btn btn-success">
-                                Submit
+                                Apply
                             </button>
                             <div class="addon-settings-message text-success" style="padding-top: 10px;"></div>
 
@@ -236,7 +194,6 @@
                 % endif
 
             % endif
-
         % endif  ## End Select Addons
 
         % if user['has_read_permissions']:  ## Begin Configure Notifications
@@ -249,12 +206,12 @@
                         <h3 class="panel-title">Configure Notifications</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
-                        <p>These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
                     </div>
                     <form id="notificationSettings" class="osf-treebeard-minimal">
                         <div id="grid">
-                            <div class="notifications-loading">
-                                <i class="fa fa-spinner notifications-spin"></i>
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
                                 <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
                             </div>
                         </div>
@@ -266,7 +223,54 @@
 
             %endif
 
-        % endif  ## End Configure Addons
+        % endif End Configure Notifications
+
+
+
+        % if 'admin' in user['permissions']:  ## Begin Configure Commenting
+
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="configureCommentingAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Configure Commenting</h3>
+                    </div>
+
+                    <div class="panel-body">
+
+                        <form class="form" id="commentSettings">
+
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="commentLevel" value="private" ${'checked' if comments['level'] == 'private' else ''}>
+                                    Only contributors can post comments
+                                </label>
+                            </div>
+                            <div class="radio">
+                                <label>
+                                    <input type="radio" name="commentLevel" value="public" ${'checked' if comments['level'] == 'public' else ''}>
+                                    When the ${node['node_type']} is public, any OSF user can post comments
+                                </label>
+                            </div>
+
+                            <button class="btn btn-success">Save</button>
+
+                            <!-- Flashed Messages -->
+                            <div class="help-block">
+                                <p id="configureCommentingMessage"></p>
+                            </div>
+                        </form>
+
+                    </div>
+
+                </div>
+
+            % endif
+
+        % endif  ## End Configure Commenting
+
+
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
@@ -277,7 +281,7 @@
                     <div class="panel panel-default">
                         <span id="retractRegistrationAnchor" class="anchor"></span>
 
-                        <div class="panel-heading">
+                        <div class="panel-heading clearfix">
                             <h3 class="panel-title">Retract Registration</h3>
                         </div>
 
@@ -299,7 +303,7 @@
                                     registrations will be marked with a <strong>retracted</strong> tag.
                                 </div>
 
-                                %if not node['pending_retraction']:
+                                %if not node['is_pending_retraction']:
                                     <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
                                 % else:
                                     <p><strong>This registration is already pending a retraction.</strong></p>
@@ -327,21 +331,28 @@
        template_name = data['node_settings_template']
        tpl = data['template_lookup'].get_template(template_name).render(**data)
     %>
-    ${tpl}
+    ${ tpl | n }
 </%def>
 
 % for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+    <script id="capabilities-${name}" type="text/html">${ capabilities | n }</script>
 % endfor
 
+
+<%def name="stylesheets()">
+    ${parent.stylesheets()}
+
+    <link rel="stylesheet" href="/static/css/pages/project-page.css">
+</%def>
+
+
 <%def name="javascript_bottom()">
-    <% import json %>
     ${parent.javascript_bottom()}
     <script>
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
-      window.contextVars.node.nodeType = '${node['node_type']}';
-      window.contextVars.nodeCategories = ${json.dumps(categories)};
+      window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
+      window.contextVars.nodeCategories = ${ categories | sjson, n };
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
