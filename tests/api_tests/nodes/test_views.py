@@ -991,6 +991,26 @@ class TestNodeChildrenList(ApiTestCase):
         res = self.app.get(self.private_project_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
 
+    def test_node_children_list_does_not_include_deleted(self):
+        child_project = NodeFactory(parent=self.public_project, creator=self.user)
+        child_project.save()
+
+        res = self.app.get(self.public_project_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        ids = [node['id'] for node in res.json['data']]
+        assert_in(child_project._id, ids)
+        assert_equal(2, len(ids))
+
+        child_project.is_deleted = True
+        child_project.save()
+
+        res = self.app.get(self.public_project_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        ids = [node['id'] for node in res.json['data']]
+        assert_not_in(child_project._id, ids)
+        assert_equal(1, len(ids))
+
+
 
 class TestNodeChildCreate(ApiTestCase):
 
