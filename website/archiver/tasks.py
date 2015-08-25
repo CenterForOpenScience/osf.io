@@ -200,7 +200,7 @@ def archive_addon(addon_short_name, job_pk, stat_result):
 
 @celery_app.task(base=ArchiverTask, name="archiver.archive_node")
 @logged('archive_node')
-def archive_node(stat_result, job_pk):
+def archive_node(stat_results, job_pk):
     """First use the results of #stat_node to check disk usage of the
     initiated registration, then either fail the registration or
     create a celery.group group of subtasks to archive addons
@@ -213,6 +213,14 @@ def archive_node(stat_result, job_pk):
     job = ArchiveJob.load(job_pk)
     src, dst, user = job.info()
     logger.info("Archiving node: {0}".format(src._id))
+
+    if not isinstance(stat_results, list):
+        stat_results = [stat_results]
+    stat_result = AggregateStatResult(
+        dst._id,
+        dst.title,
+        targets=stat_results
+    )
     if (NO_ARCHIVE_LIMIT not in job.initiator.system_tags) and (stat_result.disk_usage > settings.MAX_ARCHIVE_SIZE):
         raise ArchiverSizeExceeded(result=stat_result)
     else:
@@ -246,18 +254,17 @@ def archive(self, job_pk):
     src, dst, user = job.info()
     logger = get_task_logger(__name__)
     logger.info("Received archive task for Node: {0} into Node: {1}".format(src._id, dst._id))
-    results = celery.group(
-        stat_addon.si(
-            addon_short_name=target.name,
-            job_pk=job_pk,
-        )
-        for target in job.target_addons
-    )().get()
-    archive_node.s(
-        AggregateStatResult(
-            dst._id,
-            dst.title,
-            targets=results
-        ),
-        job_pk=job_pk
+    celery.chain(
+        [
+            celery.group(
+                stat_addon.si(
+                    addon_short_name=target.name,
+                    job_pk=job_pk,
+                )
+                for target in job.target_addons
+            ),
+            archive_node.s(
+                job_pk=job_pk
+            )
+        ]
     )()
