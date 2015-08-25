@@ -229,6 +229,9 @@ var FileViewPage = {
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
                             ctrl.revisions.selected = false;
+                        } else if (ctrl.mfrIframeParent.is(':visible') && !ctrl.editor){
+                            ctrl.mfrIframeParent.toggle();
+                            ctrl.revisions.selected = true;
                         }
                     }
                 }, 'View')
@@ -236,13 +239,24 @@ var FileViewPage = {
             ),
             m('.btn-group.m-t-xs', [
                 m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
-                    if (ctrl.mfrIframeParent.is(':visible')){
+                    var editable = ctrl.editor && ctrl.editor.selected,
+                        viewable = ctrl.mfrIframeParent.is(':visible');
+                    if (editable || viewable){
+                        if (viewable){
+                            ctrl.mfrIframeParent.toggle();
+                            flag = true;
+                        }
+                        if (editable) {
+                            ctrl.editor.selected = false;
+                            flag = true;
+                        }
+                        ctrl.revisions.selected = true;
+                    } else {
                         ctrl.mfrIframeParent.toggle();
-                        ctrl.revisions.selected = true;
-                    }
-                    if (ctrl.editor && ctrl.editor.selected) {
-                        ctrl.revisions.selected = true;
-                        ctrl.editor.selected = false;
+                        if (ctrl.editor) {
+                            ctrl.editor.selected = false;
+                        }
+                        ctrl.revisions.selected = false;
                     }
                 }}, 'Revisions')
             ])
