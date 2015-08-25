@@ -10,7 +10,7 @@ event_registry = {}
 
 
 def register(event_type):
-    """Register classes into event_register"""
+    """Register classes into event_registry"""
     def decorator(cls):
         event_registry[event_type] = cls
         return cls
@@ -20,15 +20,9 @@ def register(event_type):
 class Event(object):
     """Base event class for notification.
 
-    - abstract methods set methods that must be defined by subclasses.
+    - abstract methods set methods that should be defined by subclasses.
     To use this interface you must use the class as a Super (inherited).
      - Implement property methods in subclasses
-     - All subclasses must be in this file for the meta class to list them
-     - Name the subclasses you will be calling as such:
-      - event (the type of event from _SUBSCRIPTIONS_AVAILABLE or specific cases)
-      - class
-      example: event = file_added, class = FileAdded
-     - Call Event.parse_event() with the correct event name
     """
     def __init__(self, user, node, action):
         self.user = user

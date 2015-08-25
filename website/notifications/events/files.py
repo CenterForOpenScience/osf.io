@@ -1,16 +1,8 @@
 """File event module
 
-Contains usable classes:
-- FileAdded
-- FileUpdated
-- FileRemoved
-- FolderCreated
-- AddonFileMoved
-- AddonFileCopied
-
-These classes are registered in event_register and are callable through the
+These classes are registered in event_registry and are callable through the
  register. The main way these are used is with the signals blinker module
- that catches the signal with the addon_file_updated function.
+ that catches the signal with the file_updated function.
 
 FileEvent and ComplexFileEvent are parent classes with shared functionality.
 """
