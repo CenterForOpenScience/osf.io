@@ -312,7 +312,8 @@ describe('s3NodeConfigViewModel', () => {
         var postEndpoint = makeSettingsEndpoint();
         postEndpoint.method = 'POST';
         postEndpoint.response = postEndpoint.response.result;
-        var bucket = faker.internet.domainWord();
+        // Bucket names cannot include periods
+        var bucket = faker.internet.domainWord().replace('.', '');
         postEndpoint.response.bucket = bucket;
         postEndpoint.response.has_bucket = true;
         var endpoints = [
@@ -384,7 +385,7 @@ describe('s3NodeConfigViewModel', () => {
                 user_has_auth: true,
                 user_is_owner: true,
                 node_has_auth: true,
-                valid_credentials: true                    
+                valid_credentials: true
             }),
             deleteEndpoint,
             importEndpoint,
@@ -473,7 +474,7 @@ describe('s3NodeConfigViewModel', () => {
         }
         buckets.push(name);
         var createEndpoint = {
-            method:  'POST',    
+            method:  'POST',
             url: URLS.create_bucket,
             response: {
                 buckets: buckets
