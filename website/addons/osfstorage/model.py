@@ -84,7 +84,8 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             if file_node.renter is not None and file_node.renter != user:
                 return False
         for file_node in file_nodes:
-            file_node.rent(renter=user)
+            if file_node.is_file():
+                file_node.rent(renter=user)
         return True
 
     def return_all_files(self, user):
@@ -353,35 +354,44 @@ class OsfStorageFileNode(StoredObject):
                 return
         raise errors.VersionNotFoundError
 
-    def delete(self, recurse=True, skip_check=False):
-        if skip_check or self.check_delete():
-            trashed = OsfStorageTrashedFileNode()
-            trashed.renter = None
-            trashed._id = self._id
-            trashed.name = self.name
-            trashed.kind = self.kind
-            trashed.parent = self.parent
-            trashed.versions = self.versions
-            trashed.node_settings = self.node_settings
+    def delete(self, recurse=True):
+        if self.renter is None:
+            if self.is_file or not recurse:
+                trashed = OsfStorageTrashedFileNode()
+                trashed.renter = None
+                trashed._id = self._id
+                trashed.name = self.name
+                trashed.kind = self.kind
+                trashed.parent = self.parent
+                trashed.versions = self.versions
+                trashed.node_settings = self.node_settings
 
-            trashed.save()
+                trashed.save()
 
-            if self.is_folder and recurse:
-                for child in self.children:
-                    child.delete(skip_check=True)
-
-            self.__class__.remove_one(self)
-            return True
+                self.__class__.remove_one(self)
+                return True
+            else:
+                if self.children_delete():
+                    return self.delete(recurse=False)
         return False
 
-    def check_delete(self):
-        can_delete = True
-        if self.renter is not None:
-            return False
+    def get_all_children(self):
+        file_nodes_list = []
         if self.is_folder:
             for child in self.children:
-                can_delete = child.check_delete()
-        return can_delete
+                if child.is_folder:
+                    file_nodes_list.extend(child.get_all_children())
+            file_nodes_list.append(child)
+        return file_nodes_list
+
+    def children_delete(self):
+        all_children = self.get_all_children()
+        for child in all_children:
+            if child.renter is not None:
+                return False
+        for child in all_children:
+            child.delete(recurse=False)
+        return True
 
     def serialized(self, include_full=False):
         """Build Treebeard JSON for folder or file.

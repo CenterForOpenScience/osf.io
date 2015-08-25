@@ -31,7 +31,7 @@ var FileViewPage = {
         self.isRenter = function() {
             $.ajax({
                 method: 'get',
-                url: '/api/v1/project/' +self.node.id + '/osfstorage' + self.file.path + '/checkout/',
+                url: '/api/v1/project/' +self.node.id + '/osfstorage' + self.file.path + '/checkouts/',
             }).done(function(resp) {
                 self.request_done = true;
                 self.file.renter = resp.renter;
@@ -107,7 +107,7 @@ var FileViewPage = {
                         return;
                     }
                     $osf.postJSON(
-                        '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/checkout/',
+                        '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/checkouts/',
                         {}
                     ).done(function(resp) {
                         window.location.reload();
@@ -126,7 +126,7 @@ var FileViewPage = {
         $(document).on('fileviewpage:return', function() {
             $.ajax({
                 method: 'delete',
-                url: '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path + '/checkout/',
+                url: '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path + '/checkouts/',
             }).done(function(resp) {
                 window.location.reload();
             }).fail(function(resp) {
@@ -149,7 +149,7 @@ var FileViewPage = {
                     }
                     $.ajax({
                         method: 'delete',
-                        url: '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/checkout/',
+                        url: '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/checkouts/',
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
