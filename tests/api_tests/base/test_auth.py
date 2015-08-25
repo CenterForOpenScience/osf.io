@@ -79,14 +79,14 @@ class TestOAuthScopedAccess(ApiTestCase):
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_read_scope_can_read_user_view(self, mock_user_info):
-        mock_user_info.return_value = self._scoped_response(['osf.users+read'])
+        mock_user_info.return_value = self._scoped_response(['osf.users.all+read'])
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 200)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_read_scope_cant_write_user_view(self, mock_user_info):
-        mock_user_info.return_value = self._scoped_response(['osf.users+read'])
+        mock_user_info.return_value = self._scoped_response(['osf.users.all+read'])
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
         payload = {u'suffix': u'VIII'}
 
@@ -96,14 +96,14 @@ class TestOAuthScopedAccess(ApiTestCase):
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_write_scope_implies_read_permissions_for_user_view(self, mock_user_info):
-        mock_user_info.return_value = self._scoped_response(['osf.users+write'])
+        mock_user_info.return_value = self._scoped_response(['osf.users.all+write'])
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
         res = self.app.get(url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 200)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_write_scope_can_write_user_view(self, mock_user_info):
-        mock_user_info.return_value = self._scoped_response(['osf.users+write'])
+        mock_user_info.return_value = self._scoped_response(['osf.users.all+write'])
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
         payload = {u'suffix': u'VIII'}
 
