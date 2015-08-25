@@ -239,8 +239,8 @@ var FileViewPage = {
             ),
             m('.btn-group.m-t-xs', [
                 m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
-                    var editable = ctrl.editor && ctrl.editor.selected,
-                        viewable = ctrl.mfrIframeParent.is(':visible');
+                    var editable = ctrl.editor && ctrl.editor.selected;
+                    var viewable = ctrl.mfrIframeParent.is(':visible');
                     if (editable || viewable){
                         if (viewable){
                             ctrl.mfrIframeParent.toggle();
