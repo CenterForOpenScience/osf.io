@@ -97,7 +97,6 @@ class NodeSerializer(JSONAPISerializer):
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
 
-
     def create(self, validated_data):
         node = Node(**validated_data)
         node.save()
