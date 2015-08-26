@@ -2481,7 +2481,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     self.embargo.save()
             self.is_public = True
         elif permissions == 'private' and self.is_public:
-            if self.is_registration and not self.is_pending_embargo:
+            if self.is_registration and not self.is_pending_embargo and not self.is_pending_registration:
                 raise NodeStateError("Public registrations must be retracted, not made private.")
             else:
                 self.is_public = False
@@ -3492,9 +3492,8 @@ class RegistrationApproval(EmailApprovableSanction):
         register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
         auth = Auth(self.initiated_by)
-        register.set_privacy('public', auth, log=False)
-        for child in register.get_descendants_recursive(lambda n: n.primary):
-            child.set_privacy('public', auth, log=False)
+        for node in register.node_and_primary_descendants():
+            node.set_privacy('public', auth, log=False)
         # Accounts for system actions where no `User` performs the final approval
         auth = Auth(user) if user else None
         registered_from.add_log(
