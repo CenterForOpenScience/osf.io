@@ -3216,10 +3216,12 @@ class Embargo(EmailApprovableSanction):
             disapproval_link = urls.get('reject', '')
             approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
 
+            registration = Node.find_one(Q('embargo', 'eq', self))
+
             return {
                 'initiated_by': self.initiated_by.fullname,
-                'registration_link': registration_link,
                 'approval_link': approval_link,
+                'project_name': registration.title,
                 'disapproval_link': disapproval_link,
                 'registration_link': registration_link,
                 'embargo_end_date': self.end_date,
