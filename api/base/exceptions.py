@@ -10,15 +10,15 @@ def json_api_exception_handler(exc, context):
     from rest_framework.views import exception_handler
     response = exception_handler(exc, context)
 
-    # Title removed to avoid clash with node "title" errors
-    acceptable_members = ['id', 'links', 'status', 'code', 'detail', 'source', 'meta']
+    # Error objects may have the following members. Title removed to avoid clash with node "title" errors.
+    top_level_error_keys = ['id', 'links', 'status', 'code', 'detail', 'source', 'meta']
     errors = []
 
     if response is not None:
         message = response.data
         if isinstance(message, dict):
             for key, value in message.iteritems():
-                if key in acceptable_members:
+                if key in top_level_error_keys:
                     errors.append({key: value})
                 else:
                     errors.append({'detail': {key: value}})
