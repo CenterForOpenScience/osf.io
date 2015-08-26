@@ -341,6 +341,14 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'NACIII': {
+        'name': '2015 National Astronomy Consortium (NAC) III Workshop',
+        'info_url': 'https://info.nrao.edu/do/odi/meetings/2015/nac111/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 
