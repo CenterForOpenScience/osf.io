@@ -107,6 +107,6 @@ div.search-result  {
     padding-top: 10px;
 }
 
-.osf-search {
-    z-index: 1029 !important;
+#searchControls .osf-search {
+    z-index: 1029; /* No larger than 1030 */
 }
