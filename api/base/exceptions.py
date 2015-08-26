@@ -14,7 +14,7 @@ def json_api_exception_handler(exc, context):
     top_level_error_keys = ['id', 'links', 'status', 'code', 'detail', 'source', 'meta']
     errors = []
 
-    if response is not None:
+    if response:
         message = response.data
         if isinstance(message, dict):
             for key, value in message.iteritems():
