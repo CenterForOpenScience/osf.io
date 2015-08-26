@@ -3221,6 +3221,7 @@ class Embargo(EmailApprovableSanction):
             registration = Node.find_one(Q('embargo', 'eq', self))
 
             return {
+                'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
                 'approval_link': approval_link,
                 'project_name': registration.title,
