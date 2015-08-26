@@ -358,7 +358,7 @@ class TestPublicNodes(SearchTestCase):
         for tag in tags:
             docs = query('tags:"{}"'.format(tag))['results']
             assert_equal(len(docs), 0)
-            self.project.add_tag(tag, self.consolidate_auth, save=True)
+            self.project.add_tag(tag, self.consolidate_auth)
 
         for tag in tags:
             docs = query('tags:"{}"'.format(tag))['results']
@@ -369,8 +369,8 @@ class TestPublicNodes(SearchTestCase):
         tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
         for tag in tags:
-            self.project.add_tag(tag, self.consolidate_auth, save=True)
-            self.project.remove_tag(tag, self.consolidate_auth, save=True)
+            self.project.add_tag(tag, self.consolidate_auth)
+            self.project.remove_tag(tag, self.consolidate_auth)
             docs = query('tags:"{}"'.format(tag))['results']
             assert_equal(len(docs), 0)
 
@@ -450,7 +450,7 @@ class TestPublicNodes(SearchTestCase):
         tags = ['stonecoldcrazy', 'just a poor boy', 'from-a-poor-family']
 
         for tag in tags:
-            self.project.add_tag(tag, self.consolidate_auth, save=True)
+            self.project.add_tag(tag, self.consolidate_auth)
 
         docs = query(self.title)['tags']
         assert len(docs) == 3

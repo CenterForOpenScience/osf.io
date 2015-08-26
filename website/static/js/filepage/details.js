@@ -3,6 +3,8 @@ var $ = require('jquery');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
+require('jquery-tagsinput');
+
 var util = require('./util.js');
 
 // Helper for filtering
@@ -21,7 +23,7 @@ var model = {
 };
 
 
-var FileRevisionsTable = {
+var FileDetailTable = {
     controller: function(file, node, enableEditing, canEdit) {
         var self = {};
         self.node = node;
@@ -44,7 +46,7 @@ var FileRevisionsTable = {
                 m.startComputation();
                 var urlParmas = $osf.urlParams();
                 model.revisions = response.data.map(function(rev, index) {
-                    rev = FileRevisionsTable.postProcessRevision(self.file, self.node, rev, index);
+                    rev = FileDetailTable.postProcessRevision(self.file, self.node, rev, index);
                     if (urlParmas[rev.versionIdentifier] === rev.version) {
                         model.selectedRevision = index;
                     }
@@ -123,6 +125,57 @@ var FileRevisionsTable = {
             ].filter(TRUTHY));
         };
 
+        self.tagsInput = function() {
+            var guid = self.file.file_guid;
+            var name = self.file.name;
+            // Tags input
+            $('#node-tags').tagsInput({
+                interactive: self.canEdit(),
+                maxChars: 128,
+                onAddTag: function(tag){
+                    var url = nodeApiUrl + 'file/tags/' + guid + '/';
+                    var request = $.ajax({
+                        url: url,
+                        type: 'POST',
+                        contentType: 'application/json',
+                        dataType: 'JSON',
+                        data: JSON.stringify({tag: tag, fileName: name})
+                    });
+                    request.fail(function(xhr, textStatus, error) {
+                        Raven.captureMessage('Failed to add tag', {
+                            tag: tag, url: url, textStatus: textStatus, error: error
+                        });
+                    });
+                },
+                onRemoveTag: function(tag){
+                    var url = nodeApiUrl + 'file/tags/' + guid + '/';
+                    var request = $.ajax({
+                        url: url,
+                        type: 'DELETE',
+                        contentType: 'application/json',
+                        dataType: 'JSON',
+                        data: JSON.stringify({tag: tag, fileName: name})
+                    });
+                    request.fail(function(xhr, textStatus, error) {
+                        Raven.captureMessage('Failed to remove tag', {
+                            tag: tag, url: url, textStatus: textStatus, error: error
+                        });
+                    });
+                }
+            });
+
+            // Remove delete UI if not contributor
+            if (!self.canEdit() || self.node.isRegistration) {
+                $('a[title="Removing tag"]').remove();
+                $('span.tag span').each(function(idx, elm) {
+                    $(elm).text($(elm).text().replace(/\s*$/, ''));
+                });
+            }
+            if (self.node.isRegistration && self.file.file_tags.length === 0) {
+                $('div.tags').remove();
+            }
+        };
+
         if (!model.loaded()) {
             self.reload();
         }
@@ -130,14 +183,32 @@ var FileRevisionsTable = {
         return self;
     },
     view: function(ctrl) {
-        return m('#revisionsPanel.panel.panel-default', [
+        var fileTags = ctrl.file.file_tags.join(',');
+        return m('', [
+            // File Tagging Input
+            ctrl.canEdit() || ctrl.file.file_tags.length !== 0 ?
+                m('.tags.panel.panel-default', [
+                    m('.panel-heading.clearfix', m('h3.panel-title', 'Tags')),
+                    m('.panel-body', {
+                        config: function(element, isInitialized, context) {
+                            if(isInitialized) {
+                                return;
+                            }
+                            ctrl.tagsInput();
+                        }
+                    },[
+                        m('input', {value: fileTags, id:'node-tags'})
+                    ])
+                ]) : '',
+            // Revisions Table
+            m('#revisionsPanel.panel.panel-default', [
                 m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
                 m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0', 'overflow': 'auto'}}, (function() {
                     if (!model.loaded()) {
                         return util.Spinner;
                     }
                     if (model.errorMessage) {
-                        return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
+                        return m('.alert.alert-warning', {style: {margin: '10px'}}, model.errorMessage);
                     }
 
                     return m('table.table.table-responsive',{style: {marginBottom: '0'}}, [
@@ -145,7 +216,8 @@ var FileRevisionsTable = {
                         m('tbody', model.revisions.map(ctrl.makeTableRow))
                     ]);
                 })())
-            ]);
+            ])
+        ]);
     },
     postProcessRevision: function(file, node, revision, index) {
         var options = {};
@@ -197,4 +269,4 @@ var FileRevisionsTable = {
     }
 };
 
-module.exports = FileRevisionsTable;
+module.exports = FileDetailTable;

@@ -537,7 +537,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     def test_remove_tag(self):
-        self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1, save=True)
+        self.project.add_tag("foo'ta#@%#%^&g?", auth=self.consolidate_auth1)
         assert_in("foo'ta#@%#%^&g?", self.project.tags)
         url = self.project.api_url_for("project_remove_tag")
         self.app.delete_json(url, {"tag": "foo'ta#@%#%^&g?"}, auth=self.auth)
@@ -930,6 +930,63 @@ class TestProjectViews(OsfTestCase):
         assert_in('fork_count', res.json['node'])
         assert_equal(0, res.json['node']['fork_count'])
 
+
+class TestFileTagViews(OsfTestCase):
+
+    def setUp(self):
+        super(TestFileTagViews, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+
+        self.user.add_addon('github')
+        self.project.add_addon('github', auth=Auth(self.user))
+
+        self.user_addon = self.user.get_addon('github')
+        self.node_addon = self.project.get_addon('github')
+        self.oauth = AddonGitHubOauthSettings(
+            github_user_id='denbarell',
+            oauth_access_token='Truthy'
+        )
+
+        self.oauth.save()
+
+        self.user_addon.oauth_settings = self.oauth
+        self.user_addon.save()
+
+        self.node_addon.user_settings = self.user_addon
+        self.node_addon.save()
+
+        self.path = 'cloudfiles'
+        self.guid, _ = self.node_addon.find_or_create_file_guid('/' + self.path)
+
+    def test_file_add_tag(self):
+        assert_not_in('footag', self.guid.tags)
+        url = "/api/v1/project/{pid}/file/tags/{guid}/".format(
+            pid=self.project._primary_key,
+            guid=self.guid
+        )
+        post_data = {
+            'tag': 'footag',
+            'fileName': 'test.pdf'
+        }
+        self.app.post_json(url, post_data, auth=self.user.auth)
+        self.guid.reload()
+        assert_in('footag', self.guid.tags)
+
+    def test_file_remove_tag(self):
+        self.guid.add_tag('footag', auth=Auth(self.user), file_name='test.pdf')
+        assert_in('footag', self.guid.tags)
+        url = "/api/v1/project/{pid}/file/tags/{guid}/".format(
+            pid=self.project._primary_key,
+            guid=self.guid
+        )
+        delete_data = {
+            'tag': 'footag',
+            'fileName': 'test.pdf'
+        }
+        self.app.delete_json(url, delete_data, auth=self.user.auth)
+        self.guid.reload()
+        assert_not_in('footag', self.guid.tags)
 
 class TestEditableChildrenViews(OsfTestCase):
 
