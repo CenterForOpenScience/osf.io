@@ -75,7 +75,7 @@ class TestOAuthScopedAccess(ApiTestCase):
 
     def _scoped_response(self, scopes_list, user=None):
         user = user or self.user
-        return cas.CasResponse(authenticated=True, user=user._id, scopes=scopes_list)
+        return cas.CasResponse(authenticated=True, user=user._id, scope=scopes_list)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_read_scope_can_read_user_view(self, mock_user_info):
