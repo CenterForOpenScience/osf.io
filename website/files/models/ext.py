@@ -14,12 +14,14 @@ class PathFollowingFileNode(FileNode):
     from the providers root directory
     """
 
+    FOLDER_ATTR_NAME = 'folder'
+
     @classmethod
     def get_or_create(cls, node, path):
         """Forces path to extend to the add-on's root directory
         """
         node_settings = node.get_addon(cls.provider)
-        path = os.path.join(node_settings.folder.strip('/'), path.lstrip('/'))
+        path = os.path.join(getattr(node_settings, cls.FOLDER_ATTR_NAME).strip('/'), path.lstrip('/'))
         return super(PathFollowingFileNode, cls).get_or_create(node, '/' + path)
 
     @property
@@ -34,4 +36,4 @@ class PathFollowingFileNode(FileNode):
         """
         node_settings = self.node.get_addon(self.provider)
         assert node_settings is not None, 'Connected node has no {} account'.format(self.provider)
-        return node_settings.folder.strip('/')
+        return getattr(node_settings, self.FOLDER_ATTR_NAME).strip('/')
