@@ -10,7 +10,6 @@ require('js/osfToggleHeight');
 require('bootstrap-editable');
 
 var ctx = window.contextVars;
-//var LINK_CUTOFF = 2;
 
 var setupEditable = function(elm, data) {
     var $elm = $(elm);
