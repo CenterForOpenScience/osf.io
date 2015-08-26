@@ -2793,6 +2793,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
             save=True,
         )
+
         if self.is_public:
             self.set_privacy('private', Auth(user))
 
@@ -2828,7 +2829,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             auth=Auth(user),
             save=True,
         )
-        # TODO make private?
+
+        if self.is_public:
+            self.set_privacy('private', Auth(user))
 
 @Node.subscribe('before_save')
 def validate_permissions(schema, instance):
