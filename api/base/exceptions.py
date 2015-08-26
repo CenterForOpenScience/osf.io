@@ -6,6 +6,7 @@ from rest_framework.exceptions import APIException
 def json_api_exception_handler(exc, context):
     """ Custom exception handler that returns errors object as an array """
 
+    # Import inside method to avoid errors when the OSF is loaded without Django
     from rest_framework.views import exception_handler
     response = exception_handler(exc, context)
 
