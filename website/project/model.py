@@ -3335,8 +3335,12 @@ class Retraction(EmailApprovableSanction):
             disapproval_link = urls.get('reject', '')
             approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
 
+            registration = Node.find_one(Q('retraction', 'eq', self))
+
             return {
+                'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
+                'project_name': registration.title,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
