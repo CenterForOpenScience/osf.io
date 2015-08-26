@@ -8,24 +8,38 @@
 </tr>
 <tr>
   <td style="border-collapse: collapse;">
-    Hello ${user.fullname},<br>
+
+Hello ${user.fullname},<br>
 <br>
-    Thank you for verifying your OSF account. You are now ready to store your work, manage your projects, and collaborate within the OSF. Here are a few ways scholars work with us:<br>
+Thank you for verifying your OSF account, a free, open-source service maintained by the Center for Open Science. Here are a few things you can do with the OSF:<br>
 <br>
-    <h4>Project Management</h4>
-    The OSF allows you to view all of your projects from a single dashboard, and to organize elements of your projects with components. You can organize your projects in whichever way works best for you, by members of your lab, to parts of a larger research undertaking.<br>
+<h4>Store your files</h4>
+Archive your materials, data, manuscripts, or anything else associated with your research during the research process or after it is complete.<br>
 <br>
-    <h4>Collaboration</h4>
-    The OSF was built from the ground up with collaboration in mind. Files stored in your projects are versioned, so no more emailing files back and forth with ever expanding suffixes. You control who has access to your projects and what they can see.<br>
+<h4>Share your work</h4>
+Keep your research materials and data private, make it accessible to specific others with view-only links, or make it publicly accessible. You have full control of what parts of your research are public and what remains private.<br>
 <br>
-    <h4>Archiving</h4>
-    You can make permanent, time stamped snapshots of your projects whenever you want. About to start collecting data? Register your project to demonstrate that your hypotheses and methods weren't influenced by your data. About to submit for publication? Register and keep a record of your first submission. Data stored on the OSF are guaranteed by an endowment to make sure your work is preserved in perpetuity.<br>
+<h4>Register your research</h4>
+Create a permanent, time-stamped version of your projects and files.  Do this to preregister your design and analysis plan to conduct a confirmatory study, or archive your materials, data, and analysis scripts when publishing a report.<br>
 <br>
-    These are just a few of the things that the Open Science Framework can do for you. You can browse <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a> for more inspiration. Learn more <a href="https://osf.io/getting-started/">here</a>, and do not hesitate to <a href="mailto:contact@cos.io">contact us</a> with questions.<br>
+<h4>Make your work citable</h4>
+Every project and file on the OSF has a permanent unique identifier, and every registration can be assigned a DOI/ARK.  Citations for public projects are generated automatically so that visitors can give you credit for your research.<br>
 <br>
-    Sincerely,<br>
-    Brian Nosek and Jeff Spies<br>
-    Founders, The Center for Open Science
+<h4>Measure your impact</h4>
+You can monitor traffic to your public projects and downloads of your public files.<br>
+<br>
+<h4>Connect services that you use</h4>
+GitHub, Dropbox, Google Drive, Box.com, Dataverse, figshare, Amazon S3, Mendeley, Zotero.  Do you use any of these? Link the services that you use to your OSF projects so that all parts of your project are in one place.<br>
+<br>
+<h4>Collaborate</h4>
+Add your collaborators to have a shared environment for maintaining your research materials and data and never lose files again.<br>
+<br>
+<br>
+Learn more about the OSF at <a href="https://osf.io/getting-started/">the getting started page</a>, or <a href="mailto:contact@osf.io">email contact@osf.io</a> with questions for support.<br>
+<br>
+Sincerely,<br>
+<br>
+The Center for Open Science Team<br>
   </td>
 </tr>
 </%def>
