@@ -421,17 +421,16 @@ class TestArchiverUtils(ArchiverTestCase):
 
 class TestArchiverListeners(ArchiverTestCase):
 
-    @mock.patch('celery.chain')
+    @mock.patch('website.archiver.tasks.archive')
     @mock.patch('website.archiver.utils.before_archive')
-    def test_after_register(self, mock_before_archive, mock_chain):
-        mock_chain.return_value = celery.chain()
+    def test_after_register(self, mock_before_archive, mock_archive):
         listeners.after_register(self.src, self.dst, self.user)
         mock_before_archive.assert_called_with(self.dst, self.user)
-        archive_signature = archive.si(job_pk=self.archive_job._id)
-        mock_chain.assert_called_with(archive_signature)
+        mock_archive.assert_called_with(job_pk=self.archive_job._id)
 
+    @mock.patch('website.archiver.tasks.archive')
     @mock.patch('celery.chain')
-    def test_after_register_archive_runs_only_for_root(self, mock_chain):
+    def test_after_register_archive_runs_only_for_root(self, mock_chain, mock_archive):
         proj = factories.ProjectFactory()
         c1 = factories.ProjectFactory(parent=proj)
         c2 = factories.ProjectFactory(parent=c1)
@@ -443,11 +442,12 @@ class TestArchiverListeners(ArchiverTestCase):
         listeners.after_register(c2, rc2, self.user)
         mock_chain.assert_not_called()
         listeners.after_register(proj, reg, self.user)
-        archive_sigs = [archive.si(**kwargs) for kwargs in [dict(job_pk=n.archive_job._id,) for n in [reg, rc1, rc2]]]
-        mock_chain.assert_called_with(*archive_sigs)
+        for kwargs in [dict(job_pk=n.archive_job._id,) for n in [reg, rc1, rc2]]:
+            mock_archive.assert_any_call(**kwargs)
 
+    @mock.patch('website.archiver.tasks.archive')
     @mock.patch('celery.chain')
-    def test_after_register_does_not_archive_pointers(self, mock_chain):
+    def test_after_register_does_not_archive_pointers(self, mock_chain, mock_archive):
         proj = factories.ProjectFactory(creator=self.user)
         c1 = factories.ProjectFactory(creator=self.user, parent=proj)
         other = factories.ProjectFactory(creator=self.user)
@@ -456,9 +456,8 @@ class TestArchiverListeners(ArchiverTestCase):
         proj.add_pointer(other, auth=Auth(self.user))
         listeners.after_register(c1, r1, self.user)
         listeners.after_register(proj, reg, self.user)
-
-        archive_sigs = [archive.si(**kwargs) for kwargs in [dict(job_pk=n.archive_job._id,) for n in [reg, r1]]]
-        mock_chain.assert_called_with(*archive_sigs)
+        for kwargs in [dict(job_pk=n.archive_job._id,) for n in [reg, r1]]:
+            mock_archive.assert_any_call(**kwargs)
 
     def test_archive_callback_pending(self):
         for addon in ['osfstorage', 'dropbox']:
@@ -796,5 +795,3 @@ class TestArchiveJobModel(OsfTestCase):
                 node.archive_job.update_target(target.name, ARCHIVER_SUCCESS)
         for node in regs:
             assert_true(node.archive_job.archive_tree_finished())
-            
-                   
