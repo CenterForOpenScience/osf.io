@@ -239,9 +239,7 @@ def archive_node(stat_results, job_pk):
         project_signals.archive_callback.send(dst)
 
 
-@celery_app.task(bind=True, base=ArchiverTask, name='archiver.archive')
-@logged('archive')
-def archive(self, job_pk):
+def archive(job_pk):
     """Starts a celery.chord that runs stat_addon for each
     complete addon attached to the Node, then runs
     #archive_node with the result
@@ -254,7 +252,7 @@ def archive(self, job_pk):
     src, dst, user = job.info()
     logger = get_task_logger(__name__)
     logger.info("Received archive task for Node: {0} into Node: {1}".format(src._id, dst._id))
-    celery.chain(
+    return celery.chain(
         [
             celery.group(
                 stat_addon.si(
@@ -267,4 +265,4 @@ def archive(self, job_pk):
                 job_pk=job_pk
             )
         ]
-    )()
+    )
