@@ -233,6 +233,9 @@ function resolveIconView(item) {
  * @private
  */
 function _fangornResolveIcon(item) {
+    if (item.data.unavailable)
+        return m('div', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'inline-block', opacity: 0.4}}, '');
+
     var privateFolder =  m('i.fa.fa-lock', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
