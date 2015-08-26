@@ -336,7 +336,15 @@ MEETING_DATA = {
     'SPSP2016': {
         'name': 'Society for Personality and Social Psychology 2016 ',
         'info_url': 'http://meeting.spsp.org',
-        'logo_url': 'http://meeting.spsp.org/sites/default/files/2016ConventionLogo.png',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    'NACIII': {
+        'name': '2015 National Astronomy Consortium (NAC) III Workshop',
+        'info_url': 'https://info.nrao.edu/do/odi/meetings/2015/nac111/',
+        'logo_url': None,
         'active': True,
         'admins': [],
         'public_projects': True,
