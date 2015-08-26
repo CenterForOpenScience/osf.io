@@ -51,7 +51,7 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory, RegistrationApprovalFactory
+    AuthUserFactory, DashboardFactory, FolderFactory
 )
 from tests.test_features import requires_piwik
 
@@ -2604,13 +2604,6 @@ class TestProject(OsfTestCase):
         assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_true(registration.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
-
-    def test_can_not_set_privacy_for_pending_registration(self):
-        approval = RegistrationApprovalFactory()
-        reg = Node.find_one(Q('registration_approval', 'eq', approval))
-        err = lambda: reg.set_privacy('public', auth=reg.creator.auth)
-        assert_raises(NodeStateError, err)
-        assert_false(reg.is_public)
 
     def test_set_description(self):
         old_desc = self.project.description
