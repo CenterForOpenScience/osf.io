@@ -3221,6 +3221,7 @@ class Embargo(EmailApprovableSanction):
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
+                'registration_link': registration_link,
                 'embargo_end_date': self.end_date,
                 'approval_time_span': approval_time_span,
             }
