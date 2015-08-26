@@ -16,7 +16,7 @@ from api.base.settings import API_BASE
 
 
 class TestOAuthValidation(ApiTestCase):
-    """Test that OAuth2 requests can be validated"""
+    """Test that APIv2 requests can validate and respond to OAuth2 bearer tokens"""
     def setUp(self):
         super(TestOAuthValidation, self).setUp()
         self.user1 = UserFactory()
@@ -27,7 +27,7 @@ class TestOAuthValidation(ApiTestCase):
         self.unreachable_project = ProjectFactory(title="Private Project User 2", is_public=False, creator=self.user2)
 
         self.reachable_url = "/{}nodes/{}/".format(API_BASE, self.reachable_project._id)
-        self.unreachable_url = "/{}nodes/{}/".format(API_BASE, self.unreachable_project._id)
+        self.unreachable_url = "/{}nodes/{}/".format(API_BASE, self.unreachable_project._id)  # User1 can't access this
 
     def test_missing_token_fails(self):
         res = self.app.get(self.reachable_url, auth=None, auth_type='jwt', expect_errors=True)
@@ -37,35 +37,35 @@ class TestOAuthValidation(ApiTestCase):
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_invalid_token_fails(self, mock_user_info):
-        mock_user_info.return_value = cas.CasResponse(authenticated=False, user=None)
+        mock_user_info.return_value = cas.CasResponse(authenticated=False, user=None, scope=['osf.full+read'])
 
         res = self.app.get(self.reachable_url, auth='invalid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403, msg=res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_returns_unknown_user_thus_fails(self, mock_user_info):
-        mock_user_info.return_value = cas.CasResponse(authenticated=True, user='fail')
+        mock_user_info.return_value = cas.CasResponse(authenticated=True, user='fail', scope=['osf.full+read'])
 
         res = self.app.get(self.reachable_url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403, msg=res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_authenticates_and_has_permissions(self, mock_user_info):
-        mock_user_info.return_value = cas.CasResponse(authenticated=True, user=self.user1._id)
+        mock_user_info.return_value = cas.CasResponse(authenticated=True, user=self.user1._id, scope=['osf.full+read'])
 
         res = self.app.get(self.reachable_url, auth='some_valid_token', auth_type='jwt')
         assert_equal(res.status_code, 200, msg=res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
-    def test_valid_token_authenticates_but_user_lacks_permissions(self, mock_user_info):
-        mock_user_info.return_value = cas.CasResponse(authenticated=True, user=self.user1._id)
+    def test_valid_token_authenticates_but_user_lacks_object_permissions(self, mock_user_info):
+        mock_user_info.return_value = cas.CasResponse(authenticated=True, user=self.user1._id, scope=['osf.full+read'])
 
         res = self.app.get(self.unreachable_url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403, msg=res.json)
 
-# TODO: Add unit tests to deal with scopes. Validate sample access to a few views.
+
 class TestOAuthScopedAccess(ApiTestCase):
-    """Verify that scopes restrict access for a few sample views. These tests cover basic mechanics,
+    """Verify that OAuth2 scopes restrict APIv2 access for a few sample views. These tests cover basic mechanics,
         but are not intended to be an exhaustive list of how all views respond to all scopes."""
     def setUp(self):
         super(TestOAuthScopedAccess, self).setUp()
