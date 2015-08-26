@@ -211,7 +211,7 @@ var ViewModel = function(params) {
         var dirty = false;
         while (matches.length) {
             var match = matches.pop();
-            if (match.match(tagName).length) {
+            if ((match.match(tagName) || []).length) {
                 query = query.replace(match, '');   
                 dirty = true;
             }
