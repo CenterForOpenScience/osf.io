@@ -1692,6 +1692,7 @@ class TestExceptionFormatting(ApiTestCase):
                                  }
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
     def test_creates_project_with_no_title_formatting(self):
@@ -1734,3 +1735,12 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert('target_node_id' in res.json['errors'][0]['detail'])
+
+    def test_node_link_already_exists(self):
+        url = self.private_url + 'node_links/'
+        res = self.app.post_json_api(url, {'target_node_id': self.public_project._id}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 201)
+        res = self.app.post_json_api(url, {'target_node_id': self.public_project._id}, auth=self.user.auth, expect_errors=True)
+        errors = res.json['errors']
+        assert(isinstance(errors, list))
+        assert(self.public_project._id in res.json['errors'][0]['detail'])
