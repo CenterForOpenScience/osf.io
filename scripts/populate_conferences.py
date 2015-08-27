@@ -342,7 +342,7 @@ MEETING_DATA = {
         'public_projects': True,
     },
     'NACIII': {
-        'name': '2015 National Astronomy Consortium (NAC) III Workshop',
+        'name': 'National Astronomy Consortium (NAC) III Workshop 2015',
         'info_url': 'https://info.nrao.edu/do/odi/meetings/2015/nac111/',
         'logo_url': None,
         'active': True,
@@ -350,7 +350,15 @@ MEETING_DATA = {
         'public_projects': True,
     },
 }
-
+    'SEASR2016': {
+        'name': 'Southeastern Association of Shared Services 2016',
+        'info_url': 'http://seasr.abrf.org',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+}
 
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
