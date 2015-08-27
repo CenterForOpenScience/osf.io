@@ -5,6 +5,7 @@ import logging
 from website.app import init_app
 from website import models
 from modularodm import Q
+from scripts import utils as script_utils
 
 app = init_app()
 logger = logging.getLogger(__name__)
@@ -32,4 +33,5 @@ def check_consistency_of_users_to_projects():
 
 
 if __name__ == '__main__':
+    script_utils.add_file_logger(logger, __file__)
     check_consistency_of_users_to_projects()
