@@ -13,6 +13,8 @@ from website.project.model import (
     Retraction, Embargo, RegistrationApproval,
     Sanction
 )
+
+from website.mails.mail_triggers     import SentEmail, QueuedEmail
 from website.oauth.models import ExternalAccount
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
@@ -29,7 +31,8 @@ MODELS = (
     NotificationSubscription, NotificationDigest, CitationStyle,
     CitationStyle, ExternalAccount, Identifier,
     Embargo, Retraction, RegistrationApproval,
-    ArchiveJob, ArchiveTarget, BlacklistGuid, Sanction
+    ArchiveJob, ArchiveTarget, BlacklistGuid, Sanction,
+    SentEmail, QueuedEmail,
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

@@ -1,1 +1,1 @@
-import mails
+from mails import *

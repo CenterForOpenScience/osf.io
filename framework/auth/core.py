@@ -451,7 +451,8 @@ class User(GuidStoredObject, AddonModelMixin):
         user.is_registered = True
         user.is_claimed = True
         user.date_confirmed = user.date_registered
-        email = QueuedEmail(to_user=user, email_type='no_addon', send_at=dt.datetime.now()+dt.timedelta(months=2))
+        email = QueuedEmail()
+        email.create(to_user=user, email_type='no_addon', send_at=dt.datetime.utcnow() + dt.timedelta(months=2))
         return user
 
     @classmethod
