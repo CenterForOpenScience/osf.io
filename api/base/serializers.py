@@ -142,7 +142,9 @@ def _tpl(val):
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
     if attr_name:
-        attribute_value = getattr(obj, attr_name, ser.empty)
+        attribute_value = obj
+        for attr_segment in attr_name.split('.'):
+            attribute_value = getattr(attribute_value, attr_segment, ser.empty)
         if attribute_value is not ser.empty:
             return attribute_value
         elif attr_name in obj:
