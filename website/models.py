@@ -14,12 +14,12 @@ from website.project.model import (
     Sanction
 )
 
-from website.mails.mail_triggers     import SentEmail, QueuedEmail
 from website.oauth.models import ExternalAccount
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
 from website.conferences.model import Conference, MailRecord
 from website.notifications.model import NotificationDigest
+from website.mails.mails_queue import SentEmail, QueuedEmail
 from website.notifications.model import NotificationSubscription
 from website.archiver.model import ArchiveJob, ArchiveTarget
 

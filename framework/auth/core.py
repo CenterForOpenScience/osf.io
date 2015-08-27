@@ -28,7 +28,7 @@ from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 
 from website import mails, settings, filters, security
-from website.mails.mail_triggers import QueuedEmail
+from website.mails.mails_queue import QueuedEmail
 
 
 name_formatters = {

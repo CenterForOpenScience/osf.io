@@ -65,7 +65,7 @@ def main(dry_run=True):
     glacier_audit.minute.on(0)  # Sunday 6:00 a.m.
 
     triggered_emails = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/triggered_emails.sh')))
-    triggered_emails.hour.on(0)
+    triggered_emails.hour.on(12)
     triggered_emails.minute.on(0)  # Daily 12 a.m.
 
     logger.info('Updating crontab file:')

@@ -1,1 +1,1 @@
-from mails import *
+from mails_legacy import *
