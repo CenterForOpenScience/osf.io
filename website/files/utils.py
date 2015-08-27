@@ -72,3 +72,35 @@ def validate_location(value):
     for key in ('service', settings.WATERBUTLER_RESOURCE, 'object'):
         if key not in value:
             raise ValidationValueError('Location {} missing key "{}"'.format(value, key))
+
+
+def insort(col, element, get=lambda x: x):
+    """Python's bisect does not allow for a get/key
+    so it can not be used on a list of dictionaries.
+    Inserts element into the sorted collection col via
+    a binary search.
+    if element is not directly compairable the kwarg get may
+    be a callable that transforms element into a compairable object.
+    ie: A lambda that returns a certain key of a dict or attribute of an object
+    :param list col: The collection to insort into
+    :param ? element: The Element to be insortted into col
+    :param callable get: A callable that take a type of element and returns a compairable
+    """
+    if not col:
+        # If collection is empty go ahead and insert at the first position
+        col.insert(0, element)
+        return col
+
+    lo, hi = 0, len(col)
+
+    # Binary search for the correct position
+    while lo < hi:
+        mid = int((hi + lo) / 2)
+        if get(col[mid]) > get(element):
+            hi = mid
+        else:
+            lo = mid + 1
+
+    col.insert(lo, element)
+
+    return col
