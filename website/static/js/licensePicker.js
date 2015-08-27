@@ -31,14 +31,14 @@ var template = require('raw!templates/license-picker.html');
  * @property {string} text: full text of license
  * @property {string} id: unique identifier
  **/
-var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
+var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license, readonly) {
     var self = this;
 
-    self.user = $osf.currentUser();
+    var user = $osf.currentUser();
 
     self.saveUrl = saveUrl || '';
     self.saveMethod = saveMethod || 'POST';
-    self.saveLicenseKey = saveLicenseKey || 'license';
+    self.saveLicenseKey = saveLicenseKey || 'license';    
 
     self.previewing = ko.observable(false);
 
@@ -73,8 +73,12 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
     self.Year = ko.observable(license.Year || new Date().getFullYear()).extend({
         required: true,
         pattern: {
-            params: /^\d{4}\s*$/,
+            params: /^\d{4}\s*$/,            
             message: 'Please specify a valid year.'
+        },
+        max: {
+            params: new Date().getFullYear(),
+            message: 'Future years are not allowed'
         }
     });
     self['Copyright Holders'] = ko.observable(license['Copyright Holders'] || '').extend({required: true});
@@ -123,6 +127,10 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
     self.error = ko.observable(false);
     self.success = ko.computed(function() {
         return !self.error();
+    });
+
+    self.allowEdit = ko.pureComputed(function() {
+        return user.isAdmin && !readonly;
     });
 };
 LicensePicker.prototype.togglePreview = function() {
@@ -195,7 +203,8 @@ ko.components.register('license-picker', {
             if (!Object.keys(license).length) {
                 license = null;
             }
-            return new LicensePicker(params.saveUrl, params.saveMethod, params.saveLicenseKey, license);
+            var readonly = params.readonly || false;
+            return new LicensePicker(params.saveUrl, params.saveMethod, params.saveLicenseKey, license, readonly);
         }
     },
     template: template

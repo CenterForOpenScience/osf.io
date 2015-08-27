@@ -58,7 +58,7 @@ var Log = function(params) {
             return key + ' to ' + nodeCategories[item['new']];
         }
         else if (key === 'node_license') {
-            return 'license' + ' to ' + item.new.name;
+            return 'license ';
         }
         else {
             return key + ' to ' + item;

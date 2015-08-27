@@ -182,7 +182,8 @@
                       <license-picker params="saveUrl: '${node['update_url']}',
                                               saveMethod: 'PUT',
                                               license: window.contextVars.node.license,
-                                              saveLicenseKey: 'node_license'">
+                                              saveLicenseKey: 'node_license',
+                                              readonly: ${ node['is_registration'] | sjson, n}">
                       </license-picker>
                     </p>
             </div>

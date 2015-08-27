@@ -2509,6 +2509,16 @@ class TestProject(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.is_registration_of(self.project))
 
+    def test_registration_preserves_license(self):
+        license = {
+            'name': 'A License',
+            'text': 'Blah blah blah'
+        }
+        self.project.node_license = license
+        self.project.save()
+        registraion = self.project.register_node(None, self.auth, '', '')
+        assert_equal(registraion.node_license, license)
+
     def test_is_contributor_unregistered(self):
         unreg = UnregUserFactory()
         self.project.add_unregistered_contributor(
@@ -3057,6 +3067,16 @@ class TestForkNode(OsfTestCase):
         # Forker has admin permissions
         assert_equal(len(fork.contributors), 1)
         assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
+
+    def test_fork_preserves_license(self):
+        license = {
+            'name': 'A License',
+            'text': 'Blah blah blah'
+        }
+        self.project.node_license = license
+        self.project.save()
+        fork = self.project.fork_node(self.auth)
+        assert_equal(fork.node_license, license)
 
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)
