@@ -1674,6 +1674,13 @@ class TestNode(OsfTestCase):
             self.node.set_visible(user=self.user, visible=False, auth=None)
             assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
+    def test_active_child_nodes(self):
+        self.node.is_deleted = True
+        self.node.save()
+        self.node.reload()
+        assert_false(self.parent.nodes_active)
+
+
 class TestNodeTraversals(OsfTestCase):
 
     def setUp(self):
