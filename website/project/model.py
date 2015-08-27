@@ -771,6 +771,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         parents = self.parents
         return {p._id for p in parents}
 
+    @property
+    def nodes_active(self):
+        return [x for x in self.nodes if not x.is_deleted]
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
