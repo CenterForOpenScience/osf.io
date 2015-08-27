@@ -7,6 +7,7 @@ __all__ = ('GoogleDriveFile', 'GoogleDriveFolder', 'GoogleDriveFileNode')
 
 class GoogleDriveFileNode(PathFollowingFileNode):
     provider = 'googledrive'
+    FOLDER_ATTR_NAME = 'folder_path'
 
 
 class GoogleDriveFolder(GoogleDriveFileNode, Folder):
