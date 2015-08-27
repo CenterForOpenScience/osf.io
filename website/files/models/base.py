@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import os
 import bson
 import logging
+import datetime
 import requests
 import functools
 
@@ -60,6 +61,13 @@ class StoredFileNode(StoredObject):
     """
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
 
+    # The last time the touch method was called on this FileNode
+    last_touched = fields.DateTimeField()
+    # A list of dictionaries sorted by the 'modified' key
+    # The raw output of the metadata request deduped by etag
+    # Add regardless it can be pinned to a version or not
+    history = fields.DictionaryField(list=True)
+    # A concrete version of a FileNode, must have an identifier
     versions = fields.ForeignField('FileVersion', list=True)
 
     node = fields.ForeignField('Node', required=True)
@@ -418,18 +426,36 @@ class File(FileNode):
             logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
             return None
 
-        data = resp.json()
-        self.name = data['data']['name']
-        self.materialized_path = data['data']['materialized']
+        data = resp.json()['data']
+
+        self.name = data['name']
+        self.materialized_path = data['materialized']
 
         version = FileVersion(identifier=revision)
-        version.update_metadata(data['data'], save=False)
+        version.update_metadata(data, save=False)
+
+        # Transform here so it can be sortted on later
+        data['modified'] = parse_date(
+            data['modified'],
+            ignoretz=True,
+            default=datetime.datetime.now()  # Just incase nothing can be parsed
+        )
 
         # if revision is none then version is the latest version
         # Dont save the latest information
         if revision is not None:
             version.save()
             self.versions.append(version)
+
+        for entry in self.history:
+            if entry['etag'] == data['etag']:
+                break
+        else:
+            # Insert into history if there is no matching etag
+            utils.insort(self.history, data, lambda x: x['modified'])
+
+        # Finally update last touched
+        self.last_touched = datetime.datetime.utcnow()
 
         self.save()
         return version
@@ -513,7 +539,6 @@ class FileVersion(StoredObject):
 
     # Date version record was created. This is the date displayed to the user.
     date_created = fields.DateTimeField(auto_now_add=True)
-    last_touched = fields.DateTimeField(auto_now_add=True)
 
     # Dictionary specifying all information needed to locate file on backend
     # {
