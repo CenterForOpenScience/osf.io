@@ -412,6 +412,8 @@ MEETING_DATA = {
         'active': True,
         'admins': [],
         'public_projects': True,
+        'poster': True,
+        'talk': True,
     },
     'NACIII': {
         'name': '2015 National Astronomy Consortium (NAC) III Workshop',
@@ -420,6 +422,8 @@ MEETING_DATA = {
         'active': True,
         'admins': [],
         'public_projects': True,
+        'poster': True,
+        'talk': True,
     },
 }
 
