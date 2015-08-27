@@ -361,7 +361,7 @@ def pip_install(req_file):
 
 
 @task(aliases=['req'])
-def requirements(addons=False, release=False, dev=False):
+def requirements(addons=False, release=False, dev=False, metrics=False):
     """Install python dependencies.
 
     Examples:
@@ -369,6 +369,7 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --dev
         inv requirements --addons
         inv requirements --release
+        inv requirements --metrics
     """
     if release or addons:
         addon_requirements()
@@ -377,6 +378,8 @@ def requirements(addons=False, release=False, dev=False):
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:  # then dev requirements
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    elif metrics:  # then dev requirements
+        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
     else:  # then base requirements
         req_file = os.path.join(HERE, 'requirements.txt')
     run(pip_install(req_file), echo=True)

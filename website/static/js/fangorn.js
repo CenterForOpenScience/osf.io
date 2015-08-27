@@ -233,6 +233,9 @@ function resolveIconView(item) {
  * @private
  */
 function _fangornResolveIcon(item) {
+    if (item.data.unavailable)
+        return m('div', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'inline-block', opacity: 0.4}}, '');
+
     var privateFolder =  m('i.fa.fa-lock', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
@@ -1279,10 +1282,16 @@ function expandStateLoad(item) {
     var tb = this,
         i;
     if (item.children.length > 0 && item.depth === 1) {
-        for (i = 0; i < item.children.length; i++) {
-            // if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
+        // NOTE: On the RPP *only*: Load the top-level project's OSF Storage
+        // but do NOT lazy-load children in order to save hundreds of requests.
+        // TODO: We might want to do this for every project, but that's TBD.
+        // /sloria
+        if (window.contextVars && window.contextVars.node && window.contextVars.node.id === 'ezcuj') {
+            tb.updateFolder(null, item.children[0]);
+        } else {
+            for (i = 0; i < item.children.length; i++) {
                 tb.updateFolder(null, item.children[i]);
-            // }
+            }
         }
     }
     if (item.children.length > 0 && item.depth === 2) {
@@ -1394,10 +1403,12 @@ var FGButton = {
             opts['data-placement'] = 'bottom';
             opts.title = args.tooltip;
         }
-        return m('div', opts, [
-            m('i', {className: iconCSS}),
-            m('span', children)
-        ]);
+        var childrenElements = [];
+        childrenElements.push(m('i', {className: iconCSS}));
+        if(children) {
+            childrenElements.push(m('span', children));
+        }
+        return m('div', opts, childrenElements);
     }
 };
 
