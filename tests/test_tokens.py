@@ -12,7 +12,8 @@ from tests import factories
 from framework.exceptions import HTTPError
 
 from website import settings
-from website.models import Node, Sanction, Embargo, RegistrationApproval, Retraction
+from website.models import Node, Embargo, RegistrationApproval, Retraction
+from website.project.model import Sanction
 from website.tokens import decode, encode, TokenHandler
 from website.tokens.exceptions import TokenHandlerNotFound
 

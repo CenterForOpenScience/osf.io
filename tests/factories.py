@@ -27,7 +27,7 @@ from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
     Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
-    Retraction, Embargo, Sanction, RegistrationApproval
+    Retraction, Embargo, Sanction, RegistrationApproval, DraftRegistration, MetaSchema
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob

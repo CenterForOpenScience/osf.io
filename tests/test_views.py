@@ -15,7 +15,7 @@ import time
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 
-from modularodm import Q, fields
+from modularodm import Q
 from modularodm.exceptions import ValidationError
 from dateutil.parser import parse as parse_date
 
@@ -1846,7 +1846,7 @@ class TestAddingContributorViews(OsfTestCase):
         project.use_as_template(auth=Auth(project.creator))
         assert_false(send_mail.called)
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     @mock.patch('website.mails.send_mail')
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
@@ -4557,7 +4557,7 @@ class TestDraftRegistrationViews(OsfTestCase):
         assert_equal(mock_register_draft.call_args[0][0]._id, self.draft._id)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_template_make_public_creates_public_registration(self, mock_enquque):
+    def test_register_template_make_public_creates_pending_registration(self, mock_enquque):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
         self.node.reload()
@@ -4565,10 +4565,10 @@ class TestDraftRegistrationViews(OsfTestCase):
         reg = Node.load(self.node.node__registrations[-1])
         assert_true(reg.is_registration)
         # The registration created is public
-        assert_true(reg.is_public)
+        assert_true(reg.is_pending_registration)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_template_make_public_makes_children_public(self, mock_enquque):
+    def test_register_template_make_public_makes_children_pending_registration(self, mock_enquque):
         comp1 = NodeFactory(parent=self.node)
         NodeFactory(parent=comp1)
 
@@ -4579,7 +4579,7 @@ class TestDraftRegistrationViews(OsfTestCase):
         reg = Node.load(self.node.node__registrations[-1])
         for node in reg.get_descendants_recursive():
             assert_true(node.is_registration)
-            assert_true(node.is_public)
+            assert_true(node.is_pending_registration)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_creates_embargo(self, mock_enquque):
@@ -4599,7 +4599,7 @@ class TestDraftRegistrationViews(OsfTestCase):
         # The registration created is not public
         assert_false(reg.is_public)
         # The registration is pending an embargo that has not been approved
-        assert_true(reg.pending_embargo)
+        assert_true(reg.is_pending_embargo)
         assert_false(reg.embargo_end_date)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
@@ -4630,7 +4630,7 @@ class TestDraftRegistrationViews(OsfTestCase):
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
-        assert_true(registration.pending_registration)
+        assert_true(registration.is_pending_embargo)
         assert_is_not_none(registration.embargo)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
