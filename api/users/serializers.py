@@ -1,20 +1,71 @@
 from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import User
+from rest_framework.fields import empty, SkipField, get_attribute
 
 
-class SocialSerializer(ser.DictField):
-    gitHub = ser.CharField(required=False, source='social.github', initial='', default='', allow_blank=True, help_text='GitHub Handle')
-    scholar = ser.CharField(required=False, source='social.scholar', allow_blank=True, default='', help_text='Google Scholar Account')
-    personal_website = ser.URLField(required=False, source='social.personal', allow_blank=True, default='', help_text='Personal Website')
-    twitter = ser.CharField(required=False, source='social.twitter', allow_blank=True, default='', help_text='Twitter Handle')
-    linkedIn = ser.CharField(required=False, source='social.linkedIn', allow_blank=True, default='', help_text='LinkedIn Account')
-    impactStory = ser.CharField(required=False, source='social.impactStory', allow_blank=True, default='', help_text='ImpactStory Account')
-    orcid = ser.CharField(required=False, source='social.orcid', allow_blank=True, default='', help_text='ORCID')
-    researcherId = ser.CharField(required=False, source='social.researcherId', allow_blank=True, default='', help_text='ResearcherId Account')
+class SocialCharField(ser.CharField):
+    """
+    Color objects are serialized into 'rgb(#, #, #)' notation.
+    """
+    def get_attribute(self, instance):
+        """
+        Given the *outgoing* object instance, return the primitive value
+        that should be used for this field.
+        """
+        try:
+            return get_attribute(instance, self.source_attrs)
+        except (KeyError, AttributeError) as exc:
+            if not self.required and self.default is empty:
+                raise SkipField()
+            if self.default is not empty:
+                return self.default
+            msg = (
+                'Got {exc_type} when attempting to get a value for field '
+                '`{field}` on serializer `{serializer}`.\nThe serializer '
+                'field might be named incorrectly and not match '
+                'any attribute or key on the `{instance}` instance.\n'
+                'Original exception text was: {exc}.'.format(
+                    exc_type=type(exc).__name__,
+                    field=self.field_name,
+                    serializer=self.parent.__class__.__name__,
+                    instance=instance.__class__.__name__,
+                    exc=exc
+                )
+            )
+            raise type(exc)(msg)
 
-    class Meta:
-        type_ = 'social'
+
+class SocialUrlField(ser.URLField):
+    """
+    Color objects are serialized into 'rgb(#, #, #)' notation.
+    """
+    def get_attribute(self, instance):
+        """
+        Given the *outgoing* object instance, return the primitive value
+        that should be used for this field.
+        """
+        try:
+            return get_attribute(instance, self.source_attrs)
+        except (KeyError, AttributeError) as exc:
+            if not self.required and self.default is empty:
+                raise SkipField()
+            if self.default is not empty:
+                return self.default
+            msg = (
+                'Got {exc_type} when attempting to get a value for field '
+                '`{field}` on serializer `{serializer}`.\nThe serializer '
+                'field might be named incorrectly and not match '
+                'any attribute or key on the `{instance}` instance.\n'
+                'Original exception text was: {exc}.'.format(
+                    exc_type=type(exc).__name__,
+                    field=self.field_name,
+                    serializer=self.parent.__class__.__name__,
+                    instance=instance.__class__.__name__,
+                    exc=exc
+                )
+            )
+            raise type(exc)(msg)
 
 
 class UserSerializer(JSONAPISerializer):
@@ -35,17 +86,15 @@ class UserSerializer(JSONAPISerializer):
     gravatar_url = ser.URLField(required=False, read_only=True, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
-    # gitHub = ser.CharField(required=False, source='social.github', allow_blank=True, help_text='GitHub Handle')
-    # scholar = ser.CharField(required=False, source='social.scholar', allow_blank=True, help_text='Google Scholar Account')
-    # personal_website = ser.URLField(required=False, source='social.personal', allow_blank=True, help_text='Personal Website')
-    # twitter = ser.CharField(required=False, source='social.twitter', allow_blank=True, help_text='Twitter Handle')
-    # linkedIn = ser.CharField(required=False, source='social.linkedIn', allow_blank=True, help_text='LinkedIn Account')
-    # impactStory = ser.CharField(required=False, source='social.impactStory', allow_blank=True, help_text='ImpactStory Account')
-    # orcid = ser.CharField(required=False, source='social.orcid', allow_blank=True, help_text='ORCID')
-    # researcherId = ser.CharField(required=False, source='social.researcherId', allow_blank=True, help_text='ResearcherId Account')
+    gitHub = SocialCharField(required=False, default='', source='social.github', allow_blank=True, help_text='GitHub Handle')
+    scholar = SocialCharField(required=False, default='', source='social.scholar', allow_blank=True, help_text='Google Scholar Account')
+    personal_website = SocialUrlField(required=False, default='', source='social.personal', allow_blank=True, help_text='Personal Website')
+    twitter = SocialCharField(required=False, default='', source='social.twitter', allow_blank=True, help_text='Twitter Handle')
+    linkedIn = SocialCharField(required=False, default='', source='social.linkedIn', allow_blank=True, help_text='LinkedIn Account')
+    impactStory = SocialCharField(required=False, default='', source='social.impactStory', allow_blank=True, help_text='ImpactStory Account')
+    orcid = SocialCharField(required=False, default='', source='social.orcid', allow_blank=True, help_text='ORCID')
+    researcherId = SocialCharField(required=False, default='', source='social.researcherId', allow_blank=True, help_text='ResearcherId Account')
 
-    social = SocialSerializer(read_only=True, required=False, source='social', help_text='An array of dictionaries representing the '
-                                                                                                             'places the user has worked')
     links = LinksField({
         'html': 'absolute_url',
         'nodes': {
