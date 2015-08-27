@@ -380,4 +380,3 @@ def http_error_if_disk_saving_mode(func):
             )
         return func(*args, **kwargs)
     return wrapper
-
