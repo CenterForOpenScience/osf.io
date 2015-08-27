@@ -118,6 +118,8 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'size': None,
             u'modified': None,
             u'contentType': None,
+            u'md5': None,
+            u'sha256': None,
         })
 
         version = file.create_version(
@@ -141,6 +143,8 @@ class TestOsfstorageFileNode(StorageTestCase):
             'size': 1234,
             'modified': None,
             'contentType': 'text/plain',
+            'md5': None,
+            'sha256': None,
         })
 
         date = datetime.datetime.now()
@@ -158,6 +162,8 @@ class TestOsfstorageFileNode(StorageTestCase):
             'size': 1234,
             'modified': date.isoformat(),
             'contentType': 'text/plain',
+            'md5': None,
+            'sha256': None,
         })
 
     def test_get_child_by_name(self):

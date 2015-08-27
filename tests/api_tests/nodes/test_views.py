@@ -886,6 +886,26 @@ class TestNodeChildrenList(ApiTestCase):
         res = self.app.get(self.private_project_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
 
+    def test_node_children_list_does_not_include_deleted(self):
+        child_project = NodeFactory(parent=self.public_project, creator=self.user)
+        child_project.save()
+
+        res = self.app.get(self.public_project_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        ids = [node['id'] for node in res.json['data']]
+        assert_in(child_project._id, ids)
+        assert_equal(2, len(ids))
+
+        child_project.is_deleted = True
+        child_project.save()
+
+        res = self.app.get(self.public_project_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        ids = [node['id'] for node in res.json['data']]
+        assert_not_in(child_project._id, ids)
+        assert_equal(1, len(ids))
+
+
 
 class TestNodeChildCreate(ApiTestCase):
 
@@ -1024,6 +1044,114 @@ class TestNodePointersList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+
+class TestNodeTags(ApiTestCase):
+    def setUp(self):
+        super(TestNodeTags, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.read_only_contributor = AuthUserFactory()
+        self.one_new_tag_json = {'tags': ['new-tag']}
+
+        self.public_project = ProjectFactory(title="Project One", is_public=True, creator=self.user)
+        self.public_project.add_contributor(self.user, permissions=['read'])
+        self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
+        self.private_project.add_contributor(self.user, permissions=['read'])
+        self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
+
+    def test_public_project_starts_with_no_tags(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['tags']), 0)
+
+    def test_contributor_can_add_tag_to_public_project(self):
+        res = self.app.patch_json(self.public_url, self.one_new_tag_json, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # Ensure data is correct from the PATCH response
+        assert_equal(len(res.json['data']['tags']), 1)
+        assert_equal(res.json['data']['tags'][0], 'new-tag')
+        # Ensure data is correct in the database
+        self.public_project.reload()
+        assert_equal(len(self.public_project.tags), 1)
+        assert_equal(self.public_project.tags[0]._id, 'new-tag')
+        # Ensure data is correct when GETting the resource again
+        reload_res = self.app.get(self.public_url)
+        assert_equal(len(reload_res.json['data']['tags']), 1)
+        assert_equal(reload_res.json['data']['tags'][0], 'new-tag')
+
+    def test_contributor_can_add_tag_to_private_project(self):
+        res = self.app.patch_json(self.private_url, self.one_new_tag_json, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # Ensure data is correct from the PATCH response
+        assert_equal(len(res.json['data']['tags']), 1)
+        assert_equal(res.json['data']['tags'][0], 'new-tag')
+        # Ensure data is correct in the database
+        self.private_project.reload()
+        assert_equal(len(self.private_project.tags), 1)
+        assert_equal(self.private_project.tags[0]._id, 'new-tag')
+        # Ensure data is correct when GETting the resource again
+        reload_res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(len(reload_res.json['data']['tags']), 1)
+        assert_equal(reload_res.json['data']['tags'][0], 'new-tag')
+
+    def test_non_authenticated_user_cannot_add_tag_to_public_project(self):
+        res = self.app.patch_json(self.public_url, self.one_new_tag_json, expect_errors=True, auth=None)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_non_authenticated_user_cannot_add_tag_to_private_project(self):
+        res = self.app.patch_json(self.private_url, self.one_new_tag_json, expect_errors=True, auth=None)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_non_contributor_cannot_add_tag_to_public_project(self):
+        res = self.app.patch_json(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.user_two.auth)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_non_contributor_cannot_add_tag_to_private_project(self):
+        res = self.app.patch_json(self.private_url, self.one_new_tag_json, expect_errors=True, auth=self.user_two.auth)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_read_only_contributor_cannot_add_tag_to_public_project(self):
+        res = self.app.patch_json(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.read_only_contributor.auth)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_read_only_contributor_cannot_add_tag_to_private_project(self):
+        res = self.app.patch_json(self.private_url, self.one_new_tag_json, expect_errors=True, auth=self.read_only_contributor.auth)
+        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
+        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
+        # a little better
+        assert_equal(res.status_code, 403)
+
+    def test_tags_add_and_remove_properly(self):
+        res = self.app.patch_json(self.private_url, self.one_new_tag_json, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # Ensure adding tag data is correct from the PATCH response
+        assert_equal(len(res.json['data']['tags']), 1)
+        assert_equal(res.json['data']['tags'][0], 'new-tag')
+        # Ensure removing and adding tag data is correct from the PATCH response
+        res = self.app.patch_json(self.private_url, {'tags': ['newer-tag']}, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['tags']), 1)
+        assert_equal(res.json['data']['tags'][0], 'newer-tag')
+        # Ensure removing tag data is correct from the PATCH response
+        res = self.app.patch_json(self.private_url, {'tags': []}, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['tags']), 0)
 
 class TestCreateNodePointer(ApiTestCase):
     def setUp(self):
