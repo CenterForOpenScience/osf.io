@@ -548,7 +548,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_registered_projects_contributions(self, mock_archive):
         # register a project
         self.project.register_node(None, Auth(user=self.project.creator), None)

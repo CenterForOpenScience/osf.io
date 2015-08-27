@@ -1336,8 +1336,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/permissions/beforepublic/',
         ], 'get', project_views.node.project_before_set_public, json_renderer),
 
-        ### Wiki ###
-
         ### Watching ###
         Rule([
             '/project/<pid>/watch/',
@@ -1357,6 +1355,7 @@ def make_url_map(app):
         Rule([
             '/watched/logs/'
         ], 'get', website_views.watched_logs_get, json_renderer),
+
         ### Accounts ###
         Rule([
             '/user/merge/'

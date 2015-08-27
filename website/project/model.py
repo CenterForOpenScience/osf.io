@@ -291,6 +291,9 @@ class NodeLog(StoredObject):
     WIKI_DELETED = 'wiki_deleted'
     WIKI_RENAMED = 'wiki_renamed'
 
+    MADE_WIKI_PUBLIC = 'made_wiki_public'
+    MADE_WIKI_PRIVATE = 'made_wiki_private'
+
     CONTRIB_ADDED = 'contributor_added'
     CONTRIB_REMOVED = 'contributor_removed'
     CONTRIB_REORDERED = 'contributors_reordered'
@@ -923,18 +926,34 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return self.is_admin_parent(user)
         return False
 
-    def can_read_children(self, user):
-        """Checks if the given user has read permissions on any child nodes
+    def has_permission_on_children(self, user, permission):
+        """Checks if the given user has a given permission on any child nodes
             that are not registrations or deleted
         """
-        if self.has_permission(user, 'read'):
+        if self.has_permission(user, permission):
             return True
 
         for node in self.nodes:
             if not node.primary or node.is_deleted:
                 continue
 
-            if node.can_read_children(user):
+            if node.has_permission_on_children(user, permission):
+                return True
+
+        return False
+
+    def has_addon_on_children(self, addon):
+        """Checks if a given node has a specific addon on child nodes
+            that are not registrations or deleted
+        """
+        if self.has_addon(addon):
+            return True
+
+        for node in self.nodes:
+            if not node.primary or node.is_deleted:
+                continue
+
+            if node.has_addon_on_children(addon):
                 return True
 
         return False
@@ -2482,7 +2501,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if permissions == 'public' and not self.is_public:
             if self.is_registration:
                 if self.is_pending_embargo:
-                    raise NodeStateError("A registration with an unapproved embargo cannot be made public")
+                    raise NodeStateError("A registration with an unapproved embargo cannot be made public.")
                 if self.embargo_end_date and not self.is_pending_embargo:
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
@@ -2515,6 +2534,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if save:
             self.save()
         return True
+
+    def admin_public_wiki(self, user):
+        return (
+            self.has_addon('wiki') and
+            self.has_permission(user, 'admin') and
+            self.is_public
+        )
+
+    def include_wiki_settings(self, user):
+        """Check if node meets requirements to make publicly editable."""
+        return (
+            self.admin_public_wiki(user) or
+            any(
+                each.admin_public_wiki(user)
+                for each in self.get_descendants_recursive()
+            )
+        )
 
     # TODO: Move to wiki add-on
     def get_wiki_page(self, name=None, version=None, id=None):
@@ -3225,11 +3261,15 @@ class Embargo(EmailApprovableSanction):
             disapproval_link = urls.get('reject', '')
             approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
 
+            registration = Node.find_one(Q('embargo', 'eq', self))
+
             return {
+                'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
-                'registration_link': registration_link,
                 'approval_link': approval_link,
+                'project_name': registration.title,
                 'disapproval_link': disapproval_link,
+                'registration_link': registration_link,
                 'embargo_end_date': self.end_date,
                 'approval_time_span': approval_time_span,
             }
@@ -3344,8 +3384,12 @@ class Retraction(EmailApprovableSanction):
             disapproval_link = urls.get('reject', '')
             approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
 
+            registration = Node.find_one(Q('retraction', 'eq', self))
+
             return {
+                'is_initiator': self.initiated_by == user,
                 'initiated_by': self.initiated_by.fullname,
+                'project_name': registration.title,
                 'registration_link': registration_link,
                 'approval_link': approval_link,
                 'disapproval_link': disapproval_link,
