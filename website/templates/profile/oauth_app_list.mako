@@ -11,14 +11,13 @@
     <div class="col-sm-9 col-md-7">
 
         <div id="appList" class="panel panel-default scripted">
-            <div class="panel-heading clearfix"><h3 class="panel-title">Developer Applications</h3></div>
-            <div class="panel-body">
-
-                <div class="row m-b-sm">
-                    <div class="col-sm-12 col-md-12">
-                        <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-primary pull-right"><i class="fa fa-plus"></i> Register new</a>
-                    </div>
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Developer Applications</h3>
+                <div class="pull-right">
+                    <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-sm btn-default">New application</a>
                 </div>
+            </div>
+            <div class="panel-body">
 
                 <p>The OSF allows third-party web applications to connect to the OSF on behalf of other users, via the OAuth 2.0 web application flow.</p>
 
