@@ -61,6 +61,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
         except ValueError:
             return None
 
+    @property
+    def history(self):
+        return [v.metadata for v in self.versions]
+
     def serialize(self, include_full=None):
         ret = super(OsfStorageFile, self).serialize()
         if include_full:
