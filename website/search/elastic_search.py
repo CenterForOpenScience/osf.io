@@ -86,13 +86,8 @@ def requires_search(func):
 
 
 @requires_search
-def get_aggregations(query, clean=True):
+def get_aggregations(query, doc_type):
     query['aggregations'] = {
-        'counts': {
-            'terms': {
-                'field': '_type',
-            }
-        },
         'licenses': {
             'terms': {
                 'field': 'license.name'
@@ -100,14 +95,35 @@ def get_aggregations(query, clean=True):
         }
     }
 
-    res = es.search(index=INDEX, doc_type=None, search_type='count', body=query)
-    return {
+    res = es.search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
+    ret = {
         doc_type: {
             item['key']: item['doc_count']
             for item in agg['buckets']
         }
         for doc_type, agg in res['aggregations'].iteritems()
     }
+    ret['total'] = res['hits']['total']
+    return ret
+
+
+@requires_search
+def get_counts(count_query, clean=True):
+    count_query['aggregations'] = {
+        'counts': {
+            'terms': {
+                'field': '_type',
+            }
+        }
+    }
+
+    res = es.search(index=INDEX, doc_type=None, search_type='count', body=count_query)
+
+    counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
+
+    counts['total'] = sum([val for val in counts.values()])
+    return counts
+
 
 @requires_search
 def get_tags(query, index):
@@ -140,11 +156,13 @@ def search(query, index=None, doc_type='_all'):
     index = index or INDEX
     tag_query = copy.deepcopy(query)
     aggs_query = copy.deepcopy(query)
+    count_query = copy.deepcopy(query)
 
     for key in ['from', 'size', 'sort']:
         try:
             del tag_query[key]
             del aggs_query[key]
+            del count_query[key]
         except KeyError:
             pass
 
@@ -154,14 +172,9 @@ def search(query, index=None, doc_type='_all'):
         del aggs_query['query']['filtered']['filter']
     except KeyError:
         pass
-    aggregations = get_aggregations(aggs_query, index)
-    counts = {
-        key: value
-        for key, value in aggregations['counts'].iteritems()
-        if key in ALIASES.keys()
-    }
-    counts['total'] = sum([val for val in counts.values()])
-    del aggregations['counts']
+    aggregations = get_aggregations(aggs_query, doc_type=doc_type)
+
+    counts = get_counts(count_query, index)
 
     # Run the real query and get the results
     raw_results = es.search(index=index, doc_type=doc_type, body=query)

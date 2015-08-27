@@ -100,7 +100,25 @@ var ViewModel = function(params) {
         })
     );
     self.licenseNames = ko.computed(function() {
-        return $.map(self.licenses() || {}, function(count, name) {
+        var sortedLicenses = self.licenses() || [];
+        sortedLicenses.sort(function(a, b) {
+            if (a.count() > b.count()) {
+                return -1;
+            }
+            else if (b.count() > a.count()) {
+                return 1;
+            }
+            else {
+                if (a.name > b.name) {
+                    return -1;
+                }
+                else {
+                    return 1;
+                }
+                return a.name > b.name;
+            }
+        });
+        return $.map(sortedLicenses, function(count, name) {
             return name;
         });
     });
@@ -329,21 +347,26 @@ var ViewModel = function(params) {
             self.categories.removeAll();
             self.shareCategory('');
 
-            var nullLicenseCount = data.counts.project + data.counts.registration;
+            var licenseCounts = self.licenses();
+            var noneLicense;
+            ko.utils.arrayForEach(licenseCounts, function(l) {
+                l.count(0);
+                if (l.name === 'None Selected') {
+                    noneLicense = l;
+                }
+            });
+            noneLicense.count(0);
+            var nullLicenseCount = data.aggs.total || 0;
             if ((data.aggs || {}).licenses)  {
-                var licenseCounts = self.licenses();
                 $.each(data.aggs.licenses, function(key, value) {
                     licenseCounts.filter(function(l) {
                         return l.name === key;
                     })[0].count(value);
                     nullLicenseCount -= value;
                 });
-                var noneLicense = licenseCounts.filter(function(l) {
-                    return l.name === 'None Selected';
-                })[0];
-                noneLicense.count(noneLicense.count() + nullLicenseCount);
-                self.licenses(licenseCounts);
             }            
+            noneLicense.count(noneLicense.count() + nullLicenseCount);
+            self.licenses(licenseCounts);
 
             data.results.forEach(function(result){
                 if(result.category === 'user'){
