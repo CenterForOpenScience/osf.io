@@ -725,7 +725,7 @@ def _view_project(node, auth, primary=False):
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
             'tags': [tag._primary_key for tag in node.tags],
-            'children': bool(node.nodes),
+            'children': bool(node.nodes_active),
             'is_registration': node.is_registration,
             'is_pending_registration': node.is_pending_registration,
             'is_retracted': node.is_retracted,
