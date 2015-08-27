@@ -345,7 +345,8 @@ class TestUpdateMetadataHook(HookTestCase):
             'metadata': {
                 'size': 123,
                 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT',
-                'md5': 'askjasdlk;jsadlkjsadf'
+                'md5': 'askjasdlk;jsadlkjsadf',
+                'sha256': 'sahduashduahdushaushda',
             },
             'version': self.version._id,
             'size': 321,  # Just to make sure the field is ignored

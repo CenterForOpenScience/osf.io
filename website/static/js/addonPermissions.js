@@ -9,6 +9,8 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
+require('js/osfToggleHeight');
+
 
 var AddonPermissionsTable = {
     init: function(addonShortName, addonFullname) {
@@ -51,18 +53,8 @@ var AddonPermissionsTable = {
                     }
                 }
             });
-    });
-
-    $('#' + addonShortName + '-more').on('click', function (event) {
-        $('#' + addonShortName + '-header').removeClass('table-less');
-        $('#' + addonShortName + '-more').hide();
-        $('#' + addonShortName + '-less').show();
-    });
-    $('#' + addonShortName + '-less').on('click', function (event) {
-        $('#' + addonShortName + '-header').addClass('table-less');
-        $('#' + addonShortName + '-less').hide();
-        $('#' + addonShortName + '-more').show();
-    });
+        });
+        $('#' + addonShortName + '-header').osfToggleHeight({height: 140});
     }
 };
 

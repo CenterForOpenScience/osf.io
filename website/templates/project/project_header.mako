@@ -50,7 +50,7 @@
                         % endfor
 
                         % if node['is_public'] or user['is_contributor']:
-                            <li><a href="${node['url']}statistics/">Statistics</a></li>
+                            <li><a href="${node['url']}statistics/">Analytics</a></li>
                         % endif
 
                         % if not node['is_registration']:
