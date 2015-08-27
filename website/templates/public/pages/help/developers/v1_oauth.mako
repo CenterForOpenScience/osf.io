@@ -5,7 +5,8 @@
 <div class="nav-rows container">
     <div class="row">
         <div class="col-sm-4 affix-parent scrollspy col-md-3 nav-list-spy">
-            <div data-spy="affix" class="hidden-print hidden-xs panel panel-default affix osf-affix m-t-lg" data-offset-top="40" data-offset-bottom="268" role="complementary">
+            <div data-spy="affix" class="hidden-print hidden-xs panel panel-default affix osf-affix m-t-lg"
+                 data-offset-top="40" data-offset-bottom="268" role="complementary">
                 <ul class="nav nav-stacked nav-pills" style="min-width: 210px">
                     <li><a class="active" href="#introduction">Introduction</a></li>
                     <li><a class="active" href="#quickstart">Quickstart</a></li>
@@ -23,20 +24,29 @@
 
             <div id="introduction" class="anchor row">
                 <h2>Introduction</h2>
-                The OSF allows third-party web applications to connect to the OSF on behalf of other users, via
-                the OAuth 2.0 web application flow. This document describes the process of obtaining access tokens
+                <p>
+                    Using the <a href="https://tools.ietf.org/html/rfc6749#section-5.2">OAuth 2.0 protocol</a>,
+                    third-party applications can gain permission from a user to connect to the OSF and access
+                    confidential data in the user's OSF account, without needing a password.
+                </p>
+                <p>
+                    ## TODO: Add link (need to be in same branch as reg UI for weburlfor to work)
+                    All third-party developers seeking to access private user data must first
+                    <a href="">register an application</a> to obtain a client ID and client secret.
+                </p>
             </div>
             <div id="quickstart" class="anchor row">
                 <h2>Quickstart</h2>
                 <p>
-                    The OSF implements the OAuth 2.0 framework via the authorization code grant (web application)
-                    flow. The procedures for connecting are therefore familiar for those who have used other OAuth implementations (such as Google),
-                    and integration can be rapidly implemented using common libraries such as
+                    Below is information needed to connect via authorization code grant (also known as the web
+                    application flow). This will likely be familiar to users of other OAuth implementations
+                    (such as Google), and integration can be rapidly implemented using common libraries such as
                     <a href="https://requests-oauthlib.readthedocs.org/en/latest/">requests_oauthlib</a> (for Python).
                 </p>
                 <p>
                     ## TODO: Add link
-                    In order to connect to the OSF on behalf of users, you must first <a href="">register</a> your platform application and obtain a client ID/ client secret.
+                    In order to connect to the OSF on behalf of users, you must first <a href="">register</a> your
+                    platform application and obtain a client ID/ client secret.
                 </p>
                 <div id="auth-grant">
                     <h3>Ask the user to grant authorization</h3>
@@ -108,47 +118,31 @@
                         <thead>
                             <tr>
                                 <th>Parameter</th>
-                                <th>Values</th>
-                                <th>Description</th>
+                                <th>Value</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>code</td>
-                                <td>The authorization code received in step 1</td>
-                                <td>An authorization code previously issued on behalf of the user, which can be
-                                    exchanged for access and refresh token. This must be done quickly, as authorization codes
-                                    expire 10 seconds after being issued.</td>
+                                <td>The authorization code received in step 1. Authorization codes expire 10 seconds after being issued.</td>
                             </tr>
                             <tr>
                                 <td>client_id</td>
                                 ## TODO: Add link (need to be in same branch as reg UI for weburlfor to work)
                                 <td>The client ID obtained when <a href="">registering</a> the application</td>
-                                <td>
-                                    Each application requesting access to the OSF on behalf of a user must register for a unique Client ID.
-                                    The value here must exactly match the client ID given in the application detail page for the registered Developer App.
-                                </td>
                             </tr>
                             <tr>
                                 <td>client_secret</td>
                                 ## TODO: Add link (need to be in same branch as reg UI for weburlfor to work)
                                 <td>The client secret obtained when <a href="">registering</a> the application</td>
-                                <td>
-                                    Each application requesting access to the OSF on behalf of a user must register in advance.
-                                    The value of client secret should remain secret (known only to the application owner),
-                                    and must exactly match the client secret given in the application detail page for the registered Developer App.
-                                </td>
                             </tr>
                             <tr>
                                 <td>redirect_uri</td>
                                 ## TODO: Add link
-                                <td>The callback URL provided when <a href="">registering</a> the application.</td>
-                                <td>Where to redirect the user in order to respond after an authorization request.
-                                    Must exactly match the callback URL provided when registering the application.</td>
+                                <td>Must exactly match the callback URL provided when <a href="">registering</a> the application.</td>
                             </tr>
                             <tr>
                                 <td>grant_type</td>
-                                <td><code>authorization_code</code></td>
                                 <td>For obtaining a token, specify a value of <code>authorization_code</code>.</td>
                             </tr>
                         </tbody>
@@ -157,10 +151,10 @@
                     <p>A successful request will yield a response such as the one shown below:</p>
 <pre>
 {
-    "token_type":"bearer",
-    "expires_in":3597,
-    "refresh_token":"TGT-1-a3ZMZfRtMqOWSQA5kNNxvGAOkA1lGKoB0KNz0M3mola09BzU3W-accounts.osf.io",
-    "access_token":"ST-11-EiHKg0IqWvvC1MN0O50A-accounts.osf.io"
+    "token_type": "bearer",
+    "expires_in": 3600,
+    "refresh_token": "TGT-1-a3ZMZfRtMqOWSQA5kNNxvGAOkA1lGKoB0KNz0M3mola09BzU3W-accounts.osf.io",
+    "access_token": "ST-11-EiHKg0IqWvvC1MN0O50A-accounts.osf.io"
 }
 </pre>
                 </div>
@@ -176,13 +170,11 @@
                             <tr>
                                 <th>Parameter</th>
                                 <th>Values</th>
-                                <th>Description</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
                                 <td>refresh_token</td>
-                                <td>The refresh token received when an access token was first issued.</td>
                                 <td>The refresh token that was issued when the user first authorized access. This token
                                     never expires, and can be exchanged for new access tokens as needed.</td>
                             </tr>
@@ -190,31 +182,19 @@
                                 <td>client_id</td>
                                 ## TODO: Add link (need to be in same branch as reg UI for weburlfor to work)
                                 <td>The client ID obtained when <a href="">registering</a> the application</td>
-                                <td>
-                                    Each application requesting access to the OSF on behalf of a user must register for a unique Client ID.
-                                    The value here must exactly match the client ID given in the application detail page for the registered Developer App.
-                                </td>
                             </tr>
                             <tr>
                                 <td>client_secret</td>
                                 ## TODO: Add link (need to be in same branch as reg UI for weburlfor to work)
-                                <td>The client secret obtained when <a href="">registering</a> the application</td>
-                                <td>
-                                    Each application requesting access to the OSF on behalf of a user must register in advance.
-                                    The value of client secret should remain secret (known only to the application owner),
-                                    and must exactly match the client secret given in the application detail page for the registered Developer App.
-                                </td>
+                                <td>The client secret obtained when <a href="">registering</a> the application.</td>
                             </tr>
                             <tr>
                                 <td>redirect_uri</td>
                                 ## TODO: Add link
-                                <td>The callback URL provided when <a href="">registering</a> the application.</td>
-                                <td>Where to redirect the user in order to respond after an authorization request.
-                                    Must exactly match the callback URL provided when registering the application.</td>
+                                <td>Must exactly match the callback URL provided when <a href="">registering</a> the application.</td>
                             </tr>
                             <tr>
                                 <td>grant_type</td>
-                                <td><code>refresh_token</code></td>
                                 <td>Specify a value of <code>refresh_token</code>.</td>
                             </tr>
                         </tbody>
