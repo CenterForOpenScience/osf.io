@@ -44,7 +44,9 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license) {
 
     self.licenses = licenses;
 
-    self.savedLicense = ko.observable(license || DEFAULT_LICENSE);
+    license = license || DEFAULT_LICENSE;
+
+    self.savedLicense = ko.observable(license);
     self.savedLicenseName = ko.pureComputed(function() {
         return self.savedLicense().name;
     });
