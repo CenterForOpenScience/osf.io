@@ -483,6 +483,17 @@ def impute_names(**kwargs):
     name = request.args.get('name', '')
     return auth_utils.impute_names(name)
 
+@must_be_logged_in
+def start_help_emails(**kwargs):
+    user = kwargs['auth'].user
+    user.mailing_lists['help'] = True
+    user.save()
+
+@must_be_logged_in
+def stop_help_emails(**kwargs):
+    user = kwargs['auth'].user
+    user.mailing_lists['help'] = False
+    user.save()
 
 @must_be_logged_in
 def serialize_names(**kwargs):

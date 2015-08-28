@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import datetime as dt
+
 from framework.sessions import session, create_session, Session
 from modularodm import Q
 from framework import bcrypt
@@ -59,7 +61,12 @@ def register_unconfirmed(username, password, fullname):
         user = User.create_unconfirmed(username=username,
             password=password,
             fullname=fullname)
+        user.mailing_lists['help'] = True
         user.save()
+
+        from website.models import QueuedEmail
+        email = QueuedEmail()
+        email.create(to_user=user, email_type='no_addon', send_at=dt.datetime.utcnow() + dt.timedelta(seconds=8))
     elif not user.is_registered:  # User is in db but not registered
         user.add_unconfirmed_email(username)
         user.set_password(password)

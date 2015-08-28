@@ -28,7 +28,6 @@ from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
 
 from website import mails, settings, filters, security
-from website.mails.mails_queue import QueuedEmail
 
 
 name_formatters = {
@@ -451,8 +450,6 @@ class User(GuidStoredObject, AddonModelMixin):
         user.is_registered = True
         user.is_claimed = True
         user.date_confirmed = user.date_registered
-        email = QueuedEmail()
-        email.create(to_user=user, email_type='no_addon', send_at=dt.datetime.utcnow() + dt.timedelta(months=2))
         return user
 
     @classmethod

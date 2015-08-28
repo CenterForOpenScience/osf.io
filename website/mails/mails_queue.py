@@ -11,7 +11,7 @@ def _send_email(to_address, template, data):
     :return: bool on success
     '''
     try:
-        mandrill_client = mandrill.Mandrill('change-me')
+        mandrill_client = mandrill.Mandrill('change')
         message = {
             'html': '<h1> This is a mandrill email </h1>',
             'subject': data.get('subject') if data else 'Welp',
@@ -20,7 +20,6 @@ def _send_email(to_address, template, data):
                 'email': str(to_address)
                 }]
             }
-
         mandrill_client.messages.send_template(template_name=template, template_content=data.get('template_content') if data else [], message=message, async=False)
         # Log result
         return True
@@ -46,6 +45,7 @@ class QueuedEmail(StoredObject):
         if emailType['callback'](self) and self.to_.mailing_lists.get('help'):
             if _send_email(to_address=self.to_.username, template=emailType['template'], data=self.data):
                 sent = SentEmail()
+                sent._id = self._id
                 sent.email_type = self.email_type
                 sent.sent_to = self.to_
                 sent.sent_at = datetime.now()
