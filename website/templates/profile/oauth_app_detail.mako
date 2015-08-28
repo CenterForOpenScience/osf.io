@@ -20,15 +20,15 @@
       <%include file="include/profile/settings_navpanel.mako"/>
     </div>
 
-    <div class="col-sm-9 col-md-7">
+    <div class="col-sm-9 col-md-7" id="appDetail" style="display:none;" data-bind="visible: true">
         <div class="row">
             <div class="col-sm-12">
-                <div class="breadcrumb"><i class="fa fa-angle-double-left"></i> <a href="${web_url_for('oauth_application_list')}">Return to list of registered applications</a></div>
+                <div class="breadcrumb"><i class="fa fa-angle-double-left"></i> <a data-bind="attr: {href: $root.webListUrl}">Return to list of registered applications</a></div>
             </div>
         </div>
 
 
-        <div id="appDetail" data-bind="with: appData()">
+        <div data-bind="with: appData()">
             <div id="app-keys" class="border-box text-right"
                  data-bind="visible: !$root.isCreateView()">
                 <p><strong>Client ID</strong>
@@ -50,6 +50,9 @@
                         <span data-bind="visible: !$root.showSecret()"><i class="fa fa-eye"></i> Show</span>
                     </a>
                 </p>
+                <p data-bind="visible: !$root.isCreateView()">
+                    <a data-bind="click: $root.deleteApplication" class="text-danger">Deactivate application</a>
+                </p>
             </div>
             <div id="app-fields">
                 <form novalidate role="form" data-bind="submit: $root.submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
@@ -67,7 +70,7 @@
 
                     <div class="form-group">
                         <label>Application description</label>
-                        <textarea class="form-control" placeholder="Application description is optional" data-bind="value: description"></textarea>
+                        <textarea class="form-control" placeholder="Optional" data-bind="value: description"></textarea>
                         <p data-bind="validationMessage: description, visible: $root.showMessages()" class="text-danger"></p>
                     </div>
 
@@ -87,7 +90,6 @@
                                 data-bind="click: $root.cancelChange">Cancel</button>
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: $root.isCreateView()">Create</button>
-                        <button data-bind="visible: !$root.isCreateView(), click: $root.deleteApplication" class="btn btn-danger">Deactivate</button>
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: !$root.isCreateView(), click: $root.updateApplication, enable: $root.dirty()">Save</button>
                     </div>

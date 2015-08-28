@@ -10,16 +10,16 @@
 
     <div class="col-sm-9 col-md-7">
 
-        <div id="appList" class="panel panel-default scripted">
+        <div id="appList" class="panel panel-default scripted" style="display:none;" data-bind="visible: true">
             <div class="panel-heading clearfix">
                 <h3 class="panel-title" style="padding-bottom: 5px; padding-top: 5px;">Developer Applications</h3>
                 <div class="pull-right">
-                    <a href="${web_url_for('oauth_application_register')}" role="button" class="btn btn-sm btn-default">New application</a>
+                    <a data-bind="attr: {href: webCreateUrl}" role="button" class="btn btn-sm btn-default">New application</a>
                 </div>
             </div>
             <div class="panel-body">
 
-                <p>The OSF allows third-party web applications to connect to the OSF on behalf of other users, via the OAuth 2.0 web application flow.</p>
+                <p>The OSF allows third-party web applications to connect to the OSF on behalf of other users via the OAuth 2.0 web application flow.</p>
 
                 <p data-bind="visible: (appData().length == 0)">You have not registered any applications that can connect to the OSF on behalf of other users.</p>
                 <div id="if-apps" data-bind="visible: (appData().length > 0)">
@@ -36,7 +36,7 @@
                             </th>
                         </tr>
                         </thead>
-                        <tbody data-bind="foreach: sortByName">
+                        <tbody data-bind="foreach: sortedByName">
                             <tr>
                                 <td>
                                     <a href="#" data-bind="attr: {href: webDetailUrl  }"><span data-bind="text: name"></span></a>
@@ -62,7 +62,8 @@
 <script type="text/javascript">
     window.contextVars = window.contextVars || {};
     window.contextVars.urls = {
-        apiListUrl: ${app_list_url | sjson, n}
+        apiListUrl: ${ app_list_url | sjson, n },
+        webCreateUrl: ${ web_url_for('oauth_application_register') | sjson, n }
     };
 </script>
 <script src=${"/static/public/js/profile-settings-applications-list-page.js" | webpack_asset}></script>

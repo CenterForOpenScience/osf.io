@@ -133,8 +133,8 @@ class ApiOAuth2ApplicationFactory(ModularOdmFactory):
 
     name = Sequence(lambda n: 'Example OAuth2 Application #{}'.format(n))
 
-    home_url = 'ftp://ftp.ncbi.nlm.nih.gov/'
-    callback_url = 'http://example.com'
+    home_url = 'ftp://ftp.ncbi.nlm.nimh.gov/'
+    callback_url = 'http://example.uk'
 
 
 class PrivateLinkFactory(ModularOdmFactory):

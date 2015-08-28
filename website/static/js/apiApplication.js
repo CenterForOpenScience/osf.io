@@ -151,9 +151,10 @@ var ApplicationDataClient = oop.defclass({
 var ApplicationsListViewModel = oop.defclass({
     constructor: function (urls) {
         this.apiListUrl = urls.apiListUrl;
+        this.webCreateUrl = urls.webCreateUrl;
         // Set up data storage
         this.appData = ko.observableArray();
-        this.sortByName = ko.computed(function () {
+        this.sortedByName = ko.pureComputed(function () {
             return this.appData().sort(function (a,b) {
                 var an = a.name().toLowerCase();
                 var bn = b.name().toLowerCase();
@@ -247,16 +248,16 @@ var ApplicationDetailViewModel = oop.defclass({
         this.isCreateView = ko.computed(function () {
             return !this.apiDetailUrl();
         }.bind(this));
-
-        // Prevent user from leaving page if there are unsaved changes
-        $(window).on('beforeunload', function () {
-            if (this.dirty() && !this.allowExit()) {
-                return 'There are unsaved changes on this page.';
-            }
-        }.bind(this));
     },
     init: function () {
         if (!this.isCreateView()) {
+            // Prevent user from leaving page if there are unsaved changes
+            $(window).on('beforeunload', function () {
+                if (this.dirty() && !this.allowExit()) {
+                    return 'There are unsaved changes on this page.';
+                }
+            }.bind(this));
+
             var request = this.client.fetchOne(this.apiDetailUrl());
             request.done(function (dataObj) {
                 this.appData(dataObj);
@@ -297,6 +298,7 @@ var ApplicationDetailViewModel = oop.defclass({
                 error: error
             });
         }.bind(this));
+        return request;
     },
     createApplication: function () {
         var request = this.client.createOne(this.appData());

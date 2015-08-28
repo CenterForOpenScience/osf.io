@@ -75,7 +75,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        """Node is not actually deleted from DB- just flagged as inactive, which hides it from list views"""
+        """Instance is not actually deleted from DB- just flagged as inactive, which hides it from list views"""
         obj = self.get_object()
         try:
             obj.deactivate()

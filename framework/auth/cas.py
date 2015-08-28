@@ -150,14 +150,14 @@ class CasClient(object):
         return resp
 
     def revoke_application_tokens(self, client_id, client_secret):
-        """Revoke all tokens associated with a given CAS client"""
+        """Revoke all tokens associated with a given CAS client_id"""
         url = furl.furl(self.BASE_URL)
         url.path.segments.extend(('oauth2', 'revoke'))
-        url.args['client_id'] = client_id
-        url.args['client_secret'] = client_secret
 
-        # TODO: Expand revocation options in future. YAGNI until then
-        resp = requests.post(url.url)
+        data = {'client_id': client_id,
+                'client_secret': client_secret}
+
+        resp = requests.post(url.url, data=data)
         if resp.status_code == 204:
             return True
         else:
