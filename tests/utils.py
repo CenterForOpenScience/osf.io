@@ -24,6 +24,31 @@ def requires_module(module):
 @contextlib.contextmanager
 def mock_archive(project, schema=None, auth=None, template=None, data=None, parent=None,
                  autocomplete=True, autoapprove=False):
+    """ A context manager for registrations. When you want to call Node#register_node in
+    a test but do not want to deal with any of this side effects of archiver, this
+    helper allows for creating a registration in a safe fashion.
+
+    :param bool autocomplete: automatically finish archival?
+    :param bool autoapprove: automatically approve registration approval?
+
+    Example use:
+
+    project = ProjectFactory()
+    with mock_archive(project) as registration:
+        assert_true(registration.is_registration)
+        assert_true(registration.archiving)
+        assert_true(registration.is_pending_registration)
+
+    with mock_archive(project, autocomplete=True) as registration:
+        assert_true(registration.is_registration)
+        assert_false(registration.archiving)
+        assert_true(registration.is_pending_registration)
+
+    with mock_archive(project, autocomplete=True, autoapprove=True) as registration:
+        assert_true(registration.is_registration)
+        assert_false(registration.archiving)
+        assert_false(registration.is_pending_registration)
+    """
     schema = schema or None
     auth = auth or Auth(project.creator)
     template = template or ''
