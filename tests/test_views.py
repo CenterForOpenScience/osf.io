@@ -930,6 +930,12 @@ class TestProjectViews(OsfTestCase):
         assert_in('fork_count', res.json['node'])
         assert_equal(0, res.json['node']['fork_count'])
 
+    def test_statistic_page_redirect(self):
+        url = self.project.web_url_for('project_statistics_redirect')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302)
+        assert_in(self.project.web_url_for('project_statistics'), res.location)
+
 
 class TestEditableChildrenViews(OsfTestCase):
 
