@@ -105,7 +105,7 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license, reado
     });
 
     self.validProps = ko.computed(function() {
-        return (!self.properties()) || (self.Year.isValid() && self['Copyright Holders'].isValid());
+        return (!self.properties) || (self.Year.isValid() && self['Copyright Holders'].isValid());
     });
 
     self.disableSave = ko.computed(function() {
