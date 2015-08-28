@@ -354,6 +354,8 @@ class OsfStorageFileNode(StoredObject):
             'downloads': self.get_download_count(),
             'size': version.size if version else None,
             'contentType': version.content_type if version else None,
+            'md5': self.versions[-1].metadata.get('md5') if self.versions else None,
+            'sha256': self.versions[-1].metadata.get('sha256') if self.versions else None,
             'modified': version.date_modified.isoformat() if version and version.date_modified else None,
         })
         return data

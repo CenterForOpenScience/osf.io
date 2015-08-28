@@ -307,7 +307,7 @@ class TestNodeSettingsCallbacks(DataverseAddonTestCase):
         assert_true(self.node_settings.dataset_doi is None)
         assert_true(self.node_settings.dataset is None)
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_does_not_get_copied_to_registrations(self, mock_archive):
         registration = self.project.register_node(
             schema=None,
