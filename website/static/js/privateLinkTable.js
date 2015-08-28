@@ -5,11 +5,11 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 var $osf = require('./osfHelpers');
 var clipboard = require('./clipboard');
+require('js/osfToggleHeight');
 
 require('bootstrap-editable');
 
 var ctx = window.contextVars;
-var LINK_CUTOFF = 2;
 
 var setupEditable = function(elm, data) {
     var $elm = $(elm);
@@ -44,22 +44,16 @@ function LinkViewModel(data, $root) {
     self.$root = $root;
     $.extend(self, data);
 
-    self.collapse = 'Collapse';
     self.name = ko.observable(data.name);
     self.readonly = 'readonly';
     self.selectText = 'this.setSelectionRange(0, this.value.length);';
 
-    self.collapseNode = ko.observable(false);
     self.dateCreated = new $osf.FormattableDate(data.date_created);
     self.linkUrl = ko.computed(function() {
         return self.$root.nodeUrl() + '?view_only=' + data.key;
     });
-    self.nodesList = ko.observableArray(data.nodes.slice(0, LINK_CUTOFF));
-    self.moreNode = ko.observable(data.nodes.length > LINK_CUTOFF);
+    self.nodesList = ko.observableArray(data.nodes);
     self.removeLink = 'Remove this link';
-    self.hasMoreText = ko.computed(function(){
-        return 'Show ' + (data.nodes.length - LINK_CUTOFF).toString() + ' more...';
-    });
 
     self.anonymousDisplay = ko.computed(function() {
         var openTag = '<span>';
@@ -77,17 +71,6 @@ function LinkViewModel(data, $root) {
         }
         return [openTag, text, closeTag].join('');
     });
-
-    self.displayAllNodes = function() {
-        self.nodesList(data.nodes);
-        self.moreNode(false);
-        self.collapseNode(true);
-    };
-    self.displayDefaultNodes = function() {
-        self.nodesList(data.nodes.slice(0, LINK_CUTOFF));
-        self.moreNode(true);
-        self.collapseNode(false);
-    };
 
 }
 
@@ -163,6 +146,7 @@ function ViewModel(url, nodeIsPublic) {
         clipboard(target[0]);
         $tr.find('.remove-private-link').tooltip();
         setupEditable(elm, data);
+        $('.private-link-list').osfToggleHeight({height: 50});
     };
 
 }

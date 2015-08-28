@@ -289,6 +289,7 @@ def node_setting(auth, node, **kwargs):
             config['template_lookup'] = addon.config.template_lookup
             config['addon_icon_url'] = addon.config.icon_url
             addon_enabled_settings.append(config)
+
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
@@ -302,8 +303,9 @@ def node_setting(auth, node, **kwargs):
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-
     ret['addon_js'] = collect_node_config_js(node.get_addons())
+
+    ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
 
     ret['comments'] = {
         'level': node.comment_level,
@@ -678,7 +680,6 @@ def _should_show_wiki_widget(node, user):
     else:
         return has_wiki
 
-
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
@@ -724,7 +725,7 @@ def _view_project(node, auth, primary=False):
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
             'tags': [tag._primary_key for tag in node.tags],
-            'children': bool(node.nodes),
+            'children': bool(node.nodes_active),
             'is_registration': node.is_registration,
             'is_pending_registration': node.is_pending_registration,
             'is_retracted': node.is_retracted,

@@ -42,6 +42,11 @@ var NavbarViewModel = function() {
        }
     };
 
+    $('.navbar .dropdown').on('show.bs.dropdown', function () {
+        self.showSearch(false);
+        self.searchCSS('');
+    });
+
 };
 
 function NavbarControl (selector, data, options) {

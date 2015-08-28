@@ -35,35 +35,35 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <h4> Improve your search:</h4>
-                                <span class="tag-cloud" data-bind="foreach: tags">
+                                <span class="tag-cloud" data-bind="foreach: {data: tags, as: 'tag'}">
                                     <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
                                     <span class="tag tag-big tag-container"
-                                          data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
+                                          data-bind="click: $root.addTag.bind($parentContext, tag.name)">
                                         <span class="cloud-text">
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag big"
-                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'remove')"></i>
+                                           data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
                                     <span class="tag tag-med tag-container"
-                                          data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
+                                          data-bind="click: $root.addTag.bind($parentContext, tag.name)">
                                         <span class="cloud-text">
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag med"
-                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'remove')"></i>
+                                           data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count <= $parent.tagMaxCount()/2-->
                                     <span class="tag tag-sm tag-container"
-                                          data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
+                                          data-bind="click: $root.addTag.bind($parentContext, tag.name)">
                                         <span class="cloud-text">
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag"
-                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'remove')"></i>
+                                           data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
                                     </span>
                                     <!-- /ko -->
                                 </span>
@@ -270,10 +270,10 @@
         <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <div data-bind="foreach: tags">
                 <span class="tag pointer tag-container"
-                      data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
+                      data-bind="click: $root.addTag.bind($parentContext, $data)">
                     <span class="tag-text" data-bind="text: $data"></span>
                     <i class="fa fa-times-circle remove-tag"
-                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
+                       data-bind="click: $root.removeTag.bind($parentContext, $data)"></i>
                 </span>
             </div>
         </p>
