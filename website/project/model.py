@@ -2872,9 +2872,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def require_approval(self, user):
         if not self.is_registration:
-            raise NodeStateError('Only registrations may be embargoed')
+            raise NodeStateError('Only registrations can require registration approval')
         if not self.has_permission(user, 'admin'):
-            raise PermissionsError('Only admins may embargo a registration')
+            raise PermissionsError('Only admins can intiate a registration approval')
 
         approval = self._initiate_approval(user)
 
