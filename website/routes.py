@@ -865,7 +865,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.project_statistics_redirect,
-            json_renderer
+            notemplate,
         ),
 
         Rule(
