@@ -355,6 +355,7 @@ class TestFileObj(FilesTestCase):
         mock_response.json.return_value = {
             'data': {
                 'name': 'fairly',
+                'modified': '2015',
                 'size': 0xDEADBEEF,
                 'materialized': 'ephemeral',
             }
@@ -366,7 +367,7 @@ class TestFileObj(FilesTestCase):
         assert_equals(len(file.versions), 0)
 
     @mock.patch('website.files.models.base.requests.get')
-    def test_touch_catching(self, mock_requests):
+    def test_touch_caching(self, mock_requests):
         file = models.StoredFileNode(
             path='afile',
             name='name',
@@ -380,6 +381,7 @@ class TestFileObj(FilesTestCase):
         mock_response.json.return_value = {
             'data': {
                 'name': 'fairly',
+                'modified': '2015',
                 'size': 0xDEADBEEF,
                 'materialized': 'ephemeral',
             }
