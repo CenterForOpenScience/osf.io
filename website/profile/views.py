@@ -410,7 +410,10 @@ def user_choose_mailing_lists(auth, **kwargs):
     json_data = escape_html(request.get_json())
     if json_data:
         for list_name, subscribe in json_data.items():
-            update_subscription(user, list_name, subscribe)
+            if list_name is 'help':
+                help_emails(user=user,subscribe=subscribe)
+            else:
+                update_subscription(user, list_name, subscribe)
     else:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long="Must provide a dictionary of the format {'mailing list name': Boolean}")
@@ -483,6 +486,9 @@ def impute_names(**kwargs):
     name = request.args.get('name', '')
     return auth_utils.impute_names(name)
 
+def help_emails(user, subscribe):
+    user.mailing_lists['help'] = subscribe
+    user.save()
 
 @must_be_logged_in
 def serialize_names(**kwargs):
