@@ -38,7 +38,7 @@ def _url_val(val, obj, serializer, **kwargs):
 
 class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
     """
-    HyperlinkedIdentity field that returns a nested dict with url,
+    HyperlinkedIdentityField that returns a nested dict with url,
     optional meta information, and link_type.
 
     Example:
@@ -72,6 +72,7 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
     def to_representation(self, value):
         """
         Returns nested dictionary in format {'links': {'self.link_type': ... }
+
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
