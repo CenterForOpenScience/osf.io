@@ -453,7 +453,7 @@ def project_statistics(auth, node, **kwargs):
 @must_be_valid_project
 @must_be_contributor_or_public
 def project_statistics_redirect(auth, node, **kwargs):
-    return redirect(node.web_url_for("project_statistics"))
+    return redirect(node.web_url_for("project_statistics", _guid=True))
 
 ###############################################################################
 # Make Private/Public

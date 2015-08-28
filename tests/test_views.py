@@ -934,7 +934,7 @@ class TestProjectViews(OsfTestCase):
         url = self.project.web_url_for('project_statistics_redirect')
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302)
-        assert_in(self.project.web_url_for('project_statistics'), res.location)
+        assert_in(self.project.web_url_for('project_statistics', _guid=True), res.location)
 
 
 class TestEditableChildrenViews(OsfTestCase):
