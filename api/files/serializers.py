@@ -1,6 +1,8 @@
+import furl
+
 from rest_framework import serializers as ser
 
-from api.base.utils import absolute_reverse
+from website import settings
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
 
@@ -30,7 +32,9 @@ class FileSerializer(JSONAPISerializer):
         type_ = 'files'
 
     def absolute_url(self, obj):
-        return absolute_reverse('files:file-detail', kwargs={'file_id': obj._id})
+        return furl.furl(settings.DOMAIN).set(
+            path=(obj.node._id, 'files', obj.provider, obj.path.lstrip('/'))
+        ).url
 
     def update(self, instance, validated_data):
         # TODO
@@ -54,10 +58,11 @@ class FileVersionSerializer(JSONAPISerializer):
         type_ = 'file_versions'
 
     def absolute_url(self, obj):
-        return absolute_reverse('files:version-detail', kwargs={
-            'version_id': obj._id,
-            'file_id': self.context['view'].kwargs['file_id'],  # TODO Find a better way
-        })
+        fobj = self.context['view'].get_file()
+        return furl.furl(settings.DOMAIN).set(
+            path=(fobj.node._id, 'files', fobj.provider, fobj.path.lstrip('/')),
+            query={fobj.version_idenifier: obj.identifier}
+        ).url
 
     def update(self, instance, validated_data):
         pass
