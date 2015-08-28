@@ -207,7 +207,7 @@ class TestAppJSONAPI(TestApp):
             return self._gen_request(method, url, **kw)
 
         subst = dict(lmethod=method.lower(), method=method)
-        wrapper.__name__ = str('%(lmethod)s_json' % subst)
+        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
 
         return wrapper
 
