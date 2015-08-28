@@ -54,6 +54,7 @@ from tests.factories import (
     AuthUserFactory, DashboardFactory, FolderFactory
 )
 from tests.test_features import requires_piwik
+from tests.utils import mock_archive
 
 
 GUID_FACTORIES = UserFactory, NodeFactory, ProjectFactory
@@ -1930,16 +1931,13 @@ class TestAddonCallbacks(OsfTestCase):
                 self.node, fork, self.user
             )
 
-    @mock.patch('website.archiver.tasks.archive')
-    def test_register_callback(self, mock_archive):
-        registration = self.node.register_node(
-            None, self.auth, '', '',
-        )
-        for addon in self.node.addons:
-            callback = addon.after_register
-            callback.assert_called_once_with(
-                self.node, registration, self.user
-            )
+    def test_register_callback(self):
+        with mock_archive(self.node) as registration:
+            for addon in self.node.addons:
+                callback = addon.after_register
+                callback.assert_called_once_with(
+                    self.node, registration, self.user
+                )
 
 
 class TestProject(OsfTestCase):
@@ -2470,20 +2468,18 @@ class TestProject(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.is_fork_of(self.project))
 
-    @mock.patch('website.archiver.tasks.archive')
-    def test_is_registration_of(self, mock_archive):
+    def test_is_registration_of(self):
         project = ProjectFactory()
-        reg1 = project.register_node(None, Auth(user=project.creator), '', None)
-        reg2 = reg1.register_node(None, Auth(user=project.creator), '', None)
-        assert_true(reg1.is_registration_of(project))
-        assert_true(reg2.is_registration_of(project))
+        with mock_archive(project) as reg1:
+            with mock_archive(reg1) as reg2: 
+                assert_true(reg1.is_registration_of(project))
+                assert_true(reg2.is_registration_of(project))
 
-    @mock.patch('website.archiver.tasks.archive')
-    def test_is_registration_of_false(self, mock_archive):
+    def test_is_registration_of_false(self):
         project = ProjectFactory()
         to_reg = ProjectFactory()
-        reg = to_reg.register_node(None, Auth(user=to_reg.creator), '', None)
-        assert_false(reg.is_registration_of(project))
+        with mock_archive(to_reg) as reg:
+            assert_false(reg.is_registration_of(project))
 
     def test_raises_permissions_error_if_not_a_contributor(self):
         project = ProjectFactory()
@@ -2491,19 +2487,16 @@ class TestProject(OsfTestCase):
         with assert_raises(PermissionsError):
             project.register_node(None, Auth(user=user), '', None)
 
-    @mock.patch('website.archiver.tasks.archive')
-    def test_admin_can_register_private_children(self, mock_archive):
+    def test_admin_can_register_private_children(self):
         user = UserFactory()
         project = ProjectFactory(creator=user)
         project.set_permissions(user, ['admin', 'write', 'read'])
         child = NodeFactory(parent=project, is_public=False)
         assert_false(child.can_edit(auth=Auth(user=user)))  # sanity check
-
-        registration = project.register_node(None, Auth(user=user), '', None)
-
-        # child was registered
-        child_registration = registration.nodes[0]
-        assert_equal(child_registration.registered_from, child)
+        with mock_archive(project, None, Auth(user=user), '', None) as registration:
+            # child was registered
+            child_registration = registration.nodes[0]
+            assert_equal(child_registration.registered_from, child)
 
     def test_is_registration_of_no_registered_from(self):
         project = ProjectFactory()
@@ -2516,8 +2509,8 @@ class TestProject(OsfTestCase):
         }
         self.project.node_license = license
         self.project.save()
-        registraion = self.project.register_node(None, self.auth, '', '')
-        assert_equal(registraion.node_license, license)
+        with mock_archive(self.project, autocomplete=True) as registration:        
+            assert_equal(registration.node_license, license)
 
     def test_is_contributor_unregistered(self):
         unreg = UnregUserFactory()
@@ -3490,14 +3483,13 @@ class TestPointer(OsfTestCase):
         registered = self.pointer.fork_node()
         self._assert_clone(self.pointer, registered)
 
-    @mock.patch('website.archiver.tasks.archive')
-    def test_register_with_pointer_to_registration(self, mock_archive):
+    def test_register_with_pointer_to_registration(self):
         pointee = RegistrationFactory()
         project = ProjectFactory()
         auth = Auth(user=project.creator)
         project.add_pointer(pointee, auth=auth)
-        registration = project.register_node(None, auth, '', '')
-        assert_equal(registration.nodes[0].node, pointee)
+        with mock_archive(project) as registration:
+            assert_equal(registration.nodes[0].node, pointee)
 
     def test_has_pointers_recursive_false(self):
         project = ProjectFactory()
