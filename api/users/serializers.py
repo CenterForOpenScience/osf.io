@@ -103,14 +103,22 @@ class UserSerializer(JSONAPISerializer):
                                 help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
-    gitHub = SocialCharField(required=False, social_default='', source='social.github', allow_blank=True, help_text='GitHub Handle')
-    scholar = SocialCharField(required=False, social_default='', source='social.scholar', allow_blank=True, help_text='Google Scholar Account')
-    personal_website = SocialUrlField(required=False, social_default='', source='social.personal', allow_blank=True, help_text='Personal Website')
-    twitter = SocialCharField(required=False, social_default='', source='social.twitter', allow_blank=True, help_text='Twitter Handle')
-    linkedIn = SocialCharField(required=False, social_default='', source='social.linkedIn', allow_blank=True, help_text='LinkedIn Account')
-    impactStory = SocialCharField(required=False, social_default='', source='social.impactStory', allow_blank=True, help_text='ImpactStory Account')
-    orcid = SocialCharField(required=False, social_default='', source='social.orcid', allow_blank=True, help_text='ORCID')
-    researcherId = SocialCharField(required=False, social_default='', source='social.researcherId', allow_blank=True, help_text='ResearcherId Account')
+    gitHub = SocialCharField(required=False, social_default='', source='social.github',
+                             allow_blank=True, help_text='GitHub Handle')
+    scholar = SocialCharField(required=False, social_default='', source='social.scholar',
+                              allow_blank=True, help_text='Google Scholar Account')
+    personal_website = SocialUrlField(required=False, social_default='', source='social.personal',
+                                      allow_blank=True, help_text='Personal Website')
+    twitter = SocialCharField(required=False, social_default='', source='social.twitter',
+                              allow_blank=True, help_text='Twitter Handle')
+    linkedIn = SocialCharField(required=False, social_default='', source='social.linkedIn',
+                               allow_blank=True, help_text='LinkedIn Account')
+    impactStory = SocialCharField(required=False, social_default='', source='social.impactStory',
+                                  allow_blank=True, help_text='ImpactStory Account')
+    orcid = SocialCharField(required=False, social_default='', source='social.orcid',
+                            allow_blank=True, help_text='ORCID')
+    researcherId = SocialCharField(required=False, social_default='', source='social.researcherId',
+                                   allow_blank=True, help_text='ResearcherId Account')
 
     links = LinksField({
         'html': 'absolute_url',
