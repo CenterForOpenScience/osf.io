@@ -3,6 +3,7 @@ import furl
 from rest_framework import serializers as ser
 
 from website import settings
+from api.base.utils import absolute_reverse
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
 
@@ -24,6 +25,7 @@ class FileSerializer(JSONAPISerializer):
 
     links = LinksField({
         'html': 'absolute_url',
+        'self': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'node': {'relation': Link('nodes:node-detail', kwargs={'node_id': '<node._id>'})},
         'versions': {'relation': Link('files:file-versions', kwargs={'file_id': '<_id>'})},
     })
@@ -52,10 +54,19 @@ class FileVersionSerializer(JSONAPISerializer):
     size = ser.IntegerField(help_text='The size of this file at this version')
     identifier = ser.CharField(help_text='This version\'s unique identifier from it\'s original service')
     content_type = ser.CharField(help_text='The mime type of this file at this verison')
-    links = LinksField({'html': 'absolute_url'})
+    links = LinksField({
+        'self': 'self_url',
+        'html': 'absolute_url'
+    })
 
     class Meta:
-        type_ = 'file_versions'
+        type_ = 'file_version'
+
+    def self_url(self, obj):
+        return absolute_reverse('files:version-detail', kwargs={
+            'version_id': obj._id,
+            'file_id': self.context['view'].kwargs['file_id']
+        })
 
     def absolute_url(self, obj):
         fobj = self.context['view'].get_file()
