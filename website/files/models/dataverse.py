@@ -18,8 +18,9 @@ class DataverseFolder(DataverseFileNode, Folder):
 
 class DataverseFile(DataverseFileNode, File):
 
-    def touch(self, version=None, **kwargs):
+    def touch(self, version=None, revision=None, **kwargs):
         """Note: Dataverse only has psuedo versions, don't save them"""
+        version = revision or version  # Use revision or version
 
         resp = requests.get(self.generate_metadata_url(version=version, **kwargs))
         if resp.status_code != 200:

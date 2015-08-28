@@ -12,5 +12,4 @@ class S3Folder(S3FileNode, Folder):
 
 
 class S3File(S3FileNode, File):
-    def touch(self, version=None, **kwargs):
-        return super(S3File, self).touch(revision=version, **kwargs)
+    version_idenifier = 'version'

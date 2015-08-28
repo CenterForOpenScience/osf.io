@@ -13,6 +13,4 @@ class GithubFolder(GithubFileNode, Folder):
 
 
 class GithubFile(GithubFileNode, File):
-
-    def touch(self, ref=None, **kwargs):
-        return super(GithubFile, self).touch(revision=ref)
+    version_idenifier = 'ref'
