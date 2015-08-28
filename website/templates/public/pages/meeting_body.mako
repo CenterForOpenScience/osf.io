@@ -1,5 +1,5 @@
 <h2 style="padding-bottom: 30px;">${ meeting['name'] }
-    <a>Posters & Talks if meeting['poster'] and meeting['talk'] else Posters if meeting['poster'] else Talks</a>
+    <a>${'Posters & Talks' if meeting['poster'] and meeting['talk'] else 'Posters' if meeting['poster'] else 'Talks'}</a>
 </h2>
 
 % if meeting['logo_url']:
@@ -9,7 +9,7 @@
 
 % if meeting['active']:
     <div>
-        <a id="addLink" onclick="" href="#">Add your posters or talks if meeting['poster'] and meeting['talk'] else add your posters if meeting['poster'] else add your talks</a>
+        <a id="addLink" onclick="" href="#">${'Add your posters or talks' if meeting['poster'] and meeting['talk'] else 'Add your posters' if meeting['poster'] else 'Add your talks'}</a>
 
         % if meeting['info_url']:
           | <a href="${ meeting['info_url'] }" target="_blank">Conference homepage <i class="fa fa-sm fa fa-external-link"></i></a>
@@ -17,7 +17,7 @@
     </div>
 
     <div style="display: none" id="submit">
-        <h3>Add your posters or talks if meeting['poster'] and meeting['talk'] else add your posters if meeting['poster'] else add your talks</h3>
+        <h3>${'Add your posters or talks' if meeting['poster'] and meeting['talk'] else 'Add your posters' if meeting['poster'] else 'Add your talks'}</h3>
         <p>
             Send an email to one of the following addresses from the email
             account you would like used on the OSF:
