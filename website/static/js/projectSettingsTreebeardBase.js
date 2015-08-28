@@ -9,7 +9,6 @@ var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var Fangorn = require('js/fangorn');
-require('../css/fangorn.css');
 
 
 function resolveToggle(item) {
