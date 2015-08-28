@@ -286,7 +286,7 @@ class TestRegistrations(OsfTestCase):
         res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
-        assert_in('Sharing', subnav.text)
+        assert_in('Contributors', subnav.text)
 
     def test_sees_registration_templates(self):
         # Browse to original project
