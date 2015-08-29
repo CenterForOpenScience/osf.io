@@ -1,7 +1,7 @@
 from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import User
-from rest_framework.fields import empty, SkipField, get_attribute, CharField, MaxLengthValidator, MinLengthValidator, URLValidator, URLField
+from rest_framework.fields import empty, SkipField, get_attribute
 
 
 class CharFieldWithReadDefault(ser.CharField):
