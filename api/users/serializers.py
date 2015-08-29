@@ -4,34 +4,26 @@ from website.models import User
 from rest_framework.fields import empty, SkipField, get_attribute, CharField, MaxLengthValidator, MinLengthValidator, URLValidator, URLField
 
 
-class SocialCharField(ser.CharField):
+class CharFieldWithReadDefault(ser.CharField):
 
-    def __init__(self, social_default, **kwargs):
-        self.allow_blank = kwargs.pop('allow_blank', False)
-        self.trim_whitespace = kwargs.pop('trim_whitespace', True)
-        self.max_length = kwargs.pop('max_length', None)
-        self.min_length = kwargs.pop('min_length', None)
-        super(CharField, self).__init__(**kwargs)
-        if self.max_length is not None:
-            message = self.error_messages['max_length'].format(max_length=self.max_length)
-            self.validators.append(MaxLengthValidator(self.max_length, message=message))
-        if self.min_length is not None:
-            message = self.error_messages['min_length'].format(min_length=self.min_length)
-            self.validators.append(MinLengthValidator(self.min_length, message=message))
-        self.social_default = social_default
+    def __init__(self, **kwargs):
+        self.always_show = True
+        super(CharFieldWithReadDefault, self).__init__(**kwargs)
 
     def get_attribute(self, instance):
         """
         Given the *outgoing* object instance, return the primitive value
         that should be used for this field.
         """
+        if not self.always_show:
+            super(CharFieldWithReadDefault, self).get_attribute(self, instance)
         try:
             return get_attribute(instance, self.source_attrs)
         except (KeyError, AttributeError) as exc:
-            if not self.required and self.default and self.social_default is empty:
+            if not self.required and not self.always_show and self.default is empty:
                 raise SkipField()
-            if self.social_default == '':
-                return self.social_default
+            if self.always_show:
+                return ''
             msg = (
                 'Got {exc_type} when attempting to get a value for field '
                 '`{field}` on serializer `{serializer}`.\nThe serializer '
@@ -48,26 +40,26 @@ class SocialCharField(ser.CharField):
             raise type(exc)(msg)
 
 
-class SocialUrlField(ser.URLField):
+class UrlFieldWithReadDefault(ser.URLField):
 
-    def __init__(self, social_default, **kwargs):
-        super(URLField, self).__init__(**kwargs)
-        validator = URLValidator(message=self.error_messages['invalid'])
-        self.validators.append(validator)
-        self.social_default = social_default
+    def __init__(self, **kwargs):
+        self.always_show = True
+        super(UrlFieldWithReadDefault, self).__init__(**kwargs)
 
     def get_attribute(self, instance):
         """
         Given the *outgoing* object instance, return the primitive value
         that should be used for this field.
         """
+        if not self.always_show:
+            super(UrlFieldWithReadDefault, self).get_attribute(self, instance)
         try:
             return get_attribute(instance, self.source_attrs)
         except (KeyError, AttributeError) as exc:
-            if not self.required and self.default and self.social_default is empty:
+            if not self.required and not self.always_show and self.default is empty:
                 raise SkipField()
-            if self.social_default == '':
-                return self.social_default
+            if self.always_show:
+                return ''
             msg = (
                 'Got {exc_type} when attempting to get a value for field '
                 '`{field}` on serializer `{serializer}`.\nThe serializer '
@@ -103,21 +95,21 @@ class UserSerializer(JSONAPISerializer):
                                 help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
-    gitHub = SocialCharField(required=False, social_default='', source='social.github',
+    gitHub = CharFieldWithReadDefault(required=False, source='social.github',
                              allow_blank=True, help_text='GitHub Handle')
-    scholar = SocialCharField(required=False, social_default='', source='social.scholar',
+    scholar = CharFieldWithReadDefault(required=False, source='social.scholar',
                               allow_blank=True, help_text='Google Scholar Account')
-    personal_website = SocialUrlField(required=False, social_default='', source='social.personal',
+    personal_website = UrlFieldWithReadDefault(required=False, source='social.personal',
                                       allow_blank=True, help_text='Personal Website')
-    twitter = SocialCharField(required=False, social_default='', source='social.twitter',
+    twitter = CharFieldWithReadDefault(required=False, source='social.twitter',
                               allow_blank=True, help_text='Twitter Handle')
-    linkedIn = SocialCharField(required=False, social_default='', source='social.linkedIn',
+    linkedIn = CharFieldWithReadDefault(required=False, source='social.linkedIn',
                                allow_blank=True, help_text='LinkedIn Account')
-    impactStory = SocialCharField(required=False, social_default='', source='social.impactStory',
+    impactStory = CharFieldWithReadDefault(required=False, source='social.impactStory',
                                   allow_blank=True, help_text='ImpactStory Account')
-    orcid = SocialCharField(required=False, social_default='', source='social.orcid',
+    orcid = CharFieldWithReadDefault(required=False, source='social.orcid',
                             allow_blank=True, help_text='ORCID')
-    researcherId = SocialCharField(required=False, social_default='', source='social.researcherId',
+    researcherId = CharFieldWithReadDefault(required=False, source='social.researcherId',
                                    allow_blank=True, help_text='ResearcherId Account')
 
     links = LinksField({
