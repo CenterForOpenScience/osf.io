@@ -423,6 +423,7 @@ class TestUserUpdate(ApiTestCase):
 
         self.user_two = AuthUserFactory()
         self.user_two.save()
+        self.user_two_url = "/v2/users/{}/".format(self.user_two._id)
 
         self.new_user_one_data = {
             'id': self.user_one._id,
@@ -547,7 +548,29 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(self.user_one.suffix, 'The Millionth')
         assert_equal(self.user_one.social['github'], self.user_one.social['github'])
 
-    def test_partial_put_no_social(self):
+    def test_partial_patch_social_new_user(self):
+        # Test to make sure new fields are patched and old fields stay the same
+        res = self.app.patch_json(self.user_two_url, {
+            'gitHub': 'even_newer_github',
+        }, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        res = self.app.get(self.user_two_url)
+        assert_equal(res.json['data']['fullname'], self.user_two.fullname)
+        assert_equal(res.json['data']['suffix'], self.user_two.suffix)
+        assert_equal(res.json['data']['given_name'], self.user_two.given_name)
+        assert_equal(res.json['data']['middle_names'], self.user_two.middle_names)
+        assert_equal(res.json['data']['family_name'], self.user_two.family_name)
+        assert_equal(res.json['data']['gitHub'], 'even_newer_github')
+        assert_equal(res.json['data']['personal_website'], '')
+        assert_equal(res.json['data']['twitter'], '')
+        assert_equal(res.json['data']['linkedIn'], '')
+        assert_equal(res.json['data']['impactStory'], '')
+        assert_equal(res.json['data']['orcid'], '')
+        assert_equal(res.json['data']['researcherId'], '')
+        self.user_two.reload()
+        assert_equal(self.user_two.social['github'], 'even_newer_github')
+
+    def test_partial_put_social_new_user(self):
         # Test to make sure new fields are patched and old fields stay the same
         res = self.app.patch_json(self.user_one_url, {
             'id': self.user_one._id,
