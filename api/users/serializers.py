@@ -1,79 +1,37 @@
 from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 from website.models import User
-from rest_framework.fields import empty, SkipField, get_attribute
+from rest_framework.fields import SkipField, get_attribute
 
 
 class CharFieldWithReadDefault(ser.CharField):
 
-    def __init__(self, **kwargs):
-        self.always_show = True
-        super(CharFieldWithReadDefault, self).__init__(**kwargs)
-
     def get_attribute(self, instance):
         """
-        Given the *outgoing* object instance, return the primitive value
-        that should be used for this field.
+        Overwrite the error message to return a blank value is if there is no existing value.
+        This allows the display of keys that do not exist in the DB (gitHub on a new OSF account for example.)
         """
-        if not self.always_show:
-            super(CharFieldWithReadDefault, self).get_attribute(self, instance)
         try:
             return get_attribute(instance, self.source_attrs)
-        except (KeyError, AttributeError) as exc:
-            if not self.required and not self.always_show and self.default is empty:
+        except (KeyError, AttributeError):
+            if not self.required and not self.default:
                 raise SkipField()
-            if self.always_show:
-                return ''
-            msg = (
-                'Got {exc_type} when attempting to get a value for field '
-                '`{field}` on serializer `{serializer}`.\nThe serializer '
-                'field might be named incorrectly and not match '
-                'any attribute or key on the `{instance}` instance.\n'
-                'Original exception text was: {exc}.'.format(
-                    exc_type=type(exc).__name__,
-                    field=self.field_name,
-                    serializer=self.parent.__class__.__name__,
-                    instance=instance.__class__.__name__,
-                    exc=exc
-                )
-            )
-            raise type(exc)(msg)
+            return ''
 
 
 class UrlFieldWithReadDefault(ser.URLField):
 
-    def __init__(self, **kwargs):
-        self.always_show = True
-        super(UrlFieldWithReadDefault, self).__init__(**kwargs)
-
     def get_attribute(self, instance):
         """
-        Given the *outgoing* object instance, return the primitive value
-        that should be used for this field.
+        Overwrite the error message to return a blank value is if there is no existing value.
+        This allows the display of keys that do not exist in the DB (profile_website on a new OSF account for example.)
         """
-        if not self.always_show:
-            super(UrlFieldWithReadDefault, self).get_attribute(self, instance)
         try:
             return get_attribute(instance, self.source_attrs)
-        except (KeyError, AttributeError) as exc:
-            if not self.required and not self.always_show and self.default is empty:
+        except (KeyError, AttributeError):
+            if not self.required and not self.default:
                 raise SkipField()
-            if self.always_show:
-                return ''
-            msg = (
-                'Got {exc_type} when attempting to get a value for field '
-                '`{field}` on serializer `{serializer}`.\nThe serializer '
-                'field might be named incorrectly and not match '
-                'any attribute or key on the `{instance}` instance.\n'
-                'Original exception text was: {exc}.'.format(
-                    exc_type=type(exc).__name__,
-                    field=self.field_name,
-                    serializer=self.parent.__class__.__name__,
-                    instance=instance.__class__.__name__,
-                    exc=exc
-                )
-            )
-            raise type(exc)(msg)
+            return ''
 
 
 class UserSerializer(JSONAPISerializer):
@@ -96,21 +54,21 @@ class UserSerializer(JSONAPISerializer):
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
     gitHub = CharFieldWithReadDefault(required=False, source='social.github',
-                             allow_blank=True, help_text='GitHub Handle')
+                                      allow_blank=True, help_text='GitHub Handle')
     scholar = CharFieldWithReadDefault(required=False, source='social.scholar',
-                              allow_blank=True, help_text='Google Scholar Account')
+                                       allow_blank=True, help_text='Google Scholar Account')
     personal_website = UrlFieldWithReadDefault(required=False, source='social.personal',
-                                      allow_blank=True, help_text='Personal Website')
+                                               allow_blank=True, help_text='Personal Website')
     twitter = CharFieldWithReadDefault(required=False, source='social.twitter',
-                              allow_blank=True, help_text='Twitter Handle')
+                                       allow_blank=True, help_text='Twitter Handle')
     linkedIn = CharFieldWithReadDefault(required=False, source='social.linkedIn',
-                               allow_blank=True, help_text='LinkedIn Account')
+                                        allow_blank=True, help_text='LinkedIn Account')
     impactStory = CharFieldWithReadDefault(required=False, source='social.impactStory',
-                                  allow_blank=True, help_text='ImpactStory Account')
+                                           allow_blank=True, help_text='ImpactStory Account')
     orcid = CharFieldWithReadDefault(required=False, source='social.orcid',
-                            allow_blank=True, help_text='ORCID')
+                                     allow_blank=True, help_text='ORCID')
     researcherId = CharFieldWithReadDefault(required=False, source='social.researcherId',
-                                   allow_blank=True, help_text='ResearcherId Account')
+                                            allow_blank=True, help_text='ResearcherId Account')
 
     links = LinksField({
         'html': 'absolute_url',
