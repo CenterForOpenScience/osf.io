@@ -5,6 +5,7 @@ from website.models import Node, NodeLog
 from api.base.filters import ODMFilterMixin
 
 from api.logs import serializers
+from api.nodes import serializers as node_serializers
 
 class LogList(generics.ListAPIView, ODMFilterMixin):
 
@@ -25,3 +26,18 @@ class LogList(generics.ListAPIView, ODMFilterMixin):
 
     def get_queryset(self):
         return NodeLog.find(self.get_query_from_request())
+
+class LogNodeList(generics.ListAPIView, ODMFilterMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+    serializer_class = node_serializers.NodeSerializer
+    order = ('-date', )
+
+    def get_queryset(self):
+        log = NodeLog.load(self.kwargs.get('log_id'))
+        if not log:
+            return []
+        else:
+            return log.node__logged

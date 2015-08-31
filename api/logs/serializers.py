@@ -4,6 +4,25 @@ from website.models import NodeLog
 
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
+class LogUserSerializer(JSONAPISerializer):
+
+    id = ser.CharField(read_only=True, source='user._id')
+    fullname = ser.CharField(read_only=True, source='user.fullname')
+
+class NestedField(ser.Field):
+
+    filterable_fields = frozenset(['id', 'fullname'])
+
+    def __init__(self, attrs, *args, **kwargs):
+        super(NestedField, self).__init__(*args, **kwargs)
+        self.attrs = attrs
+
+    def to_representation(self, obj):
+        ret = {}
+        for field, serializer in self.attrs.iteritems():
+            ret[field] = serializer.to_representation(obj)
+        return ret
+
 class LogSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset(['action'])
@@ -14,30 +33,14 @@ class LogSerializer(JSONAPISerializer):
     action = ser.CharField(help_text='One of: {0}'.format(', '.join(NodeLog.actions())))
     params = ser.DictField()
 
-    nodes_logged = ser.SerializerMethodField(help_text='A list of node primary keys for nodes associated with this log')
-    user = ser.SerializerMethodField(help_text='The user associated with this log')
-
-    def get_user(self, log):
-        return log._render_log_contributor(log.user._id)
-
-    def get_nodes_logged(self, log):
-        return [n._id for n in log.node__logged]
-
-    links = ser.SerializerMethodField()
-
-    def get_links(self, log):
-        links = {
-            'nodes': {
-                'related': [
-                    Link('nodes:node-detail', kwargs={'node_id': n._id})
-                    for n in log.node__logged
-                ]
-            }
+    links = LinksField({
+        'nodes': {
+            'related': Link('logs:log-nodes', kwargs={'log_id': '<_id>'})
+        },
+        'user': {
+            'related': Link('users:user-detail', kwargs={'user_id': '<user._id>'})
         }
-        links['user'] = {
-            'related': Link('users:user-detail', kwargs={'user_id': log.user._id}),
-        }
-        return LinksField(links).to_representation(log)
+    })
 
     class Meta:
         type_ = 'logs'
