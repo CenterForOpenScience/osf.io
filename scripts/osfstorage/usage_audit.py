@@ -9,6 +9,7 @@ import os
 import sys
 import json
 import logging
+import functools
 from collections import defaultdict
 
 from modularodm import Q
@@ -50,10 +51,16 @@ def add_to_white_list(gtg):
 
 def get_usage(node):
     addon = node.get_addon('osfstorage')
-    calculate_usage = lambda m: sum([v.size or 0 for fn in m.find(Q('node_settings', 'eq', addon)) for v in fn.versions])  # Sum all versions of all files of this node
-    usage = (calculate_usage(model.OsfStorageFileNode), calculate_usage(model.OsfStorageTrashedFileNode))  # Sum both deleted and not deleted files, keep as a tuple (files, deletedfiles)
+    usage = (
+        sum([v.size or 0 for file_node in model.OsfStorageFileNode.find(Q('node_settings', 'eq', addon)) for v in file_node.versions]),  # Sum all versions of all files of this node
+        sum([v.size or 0 for file_node in model.OsfStorageTrashedFileNode.find(Q('node_settings', 'eq', addon)) for v in file_node.versions]),  # Sum all versions of all deleted files of this node
+    )
     return map(sum, zip(*([usage] + [get_usage(child) for child in node.nodes])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
+
+def limit_filter(limit, (item, usage)):
+    """Note: usage is a tuple(current_usage, deleted_usage)"""
+    return item._id not in WHITE_LIST and sum(usage) >= limit
 
 def main(send_email=False):
     logger.info('Starting Project storage audit')
@@ -71,17 +78,15 @@ def main(send_email=False):
             if node.can_edit(user=contrib):
                 users[contrib] = tuple(map(sum, zip(users[contrib], projects[node])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
-    filter_factory = lambda x: lambda (i, (u, d)): i._id not in WHITE_LIST and (u + d) >= x  # Returns a lambda that returns if i is in the whitelist and its storage usage is >= x
-
     for collection, limit in ((users, USER_LIMIT), (projects, PROJECT_LIMIT)):
-        for item, (used, deleted) in filter(filter_factory(limit), collection.items()):
+        for item, (used, deleted) in filter(functools.partial(limit_filter, limit), collection.items()):
             line = '{!r} has exceeded the limit {:.2f}GBs ({}b) with {:.2f}GBs ({}b) used and {:.2f}GBs ({}b) deleted.'.format(item, limit / GBs, limit, used / GBs, used, deleted / GBs, deleted)
             logger.info(line)
             lines.append(line)
 
     if lines:
         if send_email:
-            logger.info('Sending email...'.format(len(lines)))
+            logger.info('Sending email...')
             mails.send_mail('support@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit')
         else:
             logger.info('send_email is False, not sending email'.format(len(lines)))
