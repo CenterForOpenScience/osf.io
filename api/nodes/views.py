@@ -65,6 +65,15 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         query = self.get_query_from_request()
         return Node.find(query)
 
+    def get_serializer(self, *args, **kwargs):
+        if "data" in kwargs:
+            data = kwargs["data"]
+
+            if isinstance(data, list):
+                kwargs.update({'many': True})
+
+        return super(NodeList, self).get_serializer(*args, **kwargs)
+
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
         """
