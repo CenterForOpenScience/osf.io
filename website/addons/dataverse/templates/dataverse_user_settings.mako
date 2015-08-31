@@ -15,7 +15,7 @@
 
     <!-- ko foreach: accounts -->
     <a data-bind="click: $root.askDisconnect" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
-    <div class="m-h-lg">
+    <div class="m-h-lg addon-auth-table" id="${addon_short_name}-header">
         <table class="table table-hover">
             <thead>
                 <tr class="user-settings-addon-auth">
