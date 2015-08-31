@@ -1,7 +1,7 @@
 <!-- Authorization -->
 <div class="addon-oauth"
      data-addon-short-name="${ addon_short_name }"
-     data-addon-name="${ addon_full_name }">  
+     data-addon-name="${ addon_full_name }">
     <h4 class="addon-title">
       <img class="addon-icon" src="${addon_icon_url}"></img>
       <span data-bind="text:properName"></span>
@@ -12,7 +12,7 @@
     <!-- ko foreach: accounts -->
     <a data-bind="click: $root.askDisconnect" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
 
-    <div class="m-h-lg">
+    <div class="m-h-lg addon-auth-table" id="${addon_short_name}-header">
         <table class="table table-hover">
             <thead>
                 <tr class="user-settings-addon-auth">
