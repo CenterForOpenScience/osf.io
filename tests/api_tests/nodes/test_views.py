@@ -365,6 +365,14 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['description'], strip_html(description))
         assert_equal(res.json['data']['category'], self.category)
 
+    def test_bulk_create(self):
+        res = self.app.post_json(self.url, [self.public_project, self.private_project], auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        print res.json
+        assert_equal(len(res.json['data']), 2)
+
+
+
 
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
