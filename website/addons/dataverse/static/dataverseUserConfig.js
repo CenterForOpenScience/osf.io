@@ -184,6 +184,8 @@ function ViewModel(url) {
             self.hosts(data.hosts);
             self.loaded(true);
             self.updateAccounts();
+            $('#dataverse-header').osfToggleHeight({height: 140});
+
         }).fail(function (xhr, textStatus, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');
             Raven.captureMessage('Could not GET Dataverse settings', {
