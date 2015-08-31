@@ -9,6 +9,7 @@ Changelog
 user.
 - MD5 and SHA1 hashes appear in a file's Revisions table.
 - Update UI for OSF for meetings page.
+- Add scripts for internal storage auditing.
 
 0.47.0 (2015-08-15)
 ===================
