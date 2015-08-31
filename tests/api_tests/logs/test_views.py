@@ -11,46 +11,64 @@ from tests.factories import (
     AuthUserFactory
 )
 
-class TestLogList(ApiTestCase):
+class LogsTestCase(ApiTestCase):
 
     def setUp(self):
-        super(TestLogList, self).setUp()
+        super(LogsTestCase, self).setUp()
 
         self.user = AuthUserFactory()
-        self.url = '/{}logs/'.format(API_BASE)
 
         self.action_set = NodeLog.actions()
-        node = ProjectFactory()
+        self.node = ProjectFactory()
         for i in range(len(self.action_set)):
-            node.add_log(
+            self.node.add_log(
                 self.action_set[i],
                 {},
-                Auth(node.creator),
+                Auth(self.node.creator),
                 save=True
             )
-        node.add_contributor(self.user, permissions='read', auth=Auth(node.creator), log=False, save=True)
+        self.node.add_contributor(self.user, permissions='read', auth=Auth(self.node.creator), log=False, save=True)
 
         self.public_node = ProjectFactory(is_public=True)
         for i in range(len(self.action_set)):
             self.public_node.add_log(
                 self.action_set[i],
                 {},
-                Auth(node.creator),
+                Auth(self.public_node.creator),
                 save=True
             )
 
+
+class TestLogList(LogsTestCase):
+
+    url = '/{}logs/'.format(API_BASE)
+
     def test_returns_only_public_logs_for_logged_out_user(self):
         res = self.app.get(self.url)
-        data = res.json['data']
         meta = res.json['links']['meta']
         assert_equal(meta['total'], len(self.action_set) + 1)
-        for log in data:
-            assert_equal(log['nodes_logged'][0], self.public_node._id)
 
     def test_returns_public_and_contributed_logs_for_logged_in_user(self):
         res = self.app.get(self.url, auth=self.user)
-        data = res.json['data']
         meta = res.json['links']['meta']
         assert_equal(meta['total'], 2 * (len(self.action_set) + 1))
-        for log in data:
-            assert_true(Node.load(log['nodes_logged'][0]).can_view(self.user))
+
+
+class TestLogNodeList(LogsTestCase):
+
+    url = '/{}logs/'.format(API_BASE)
+
+    def test_nodes_link(self):
+        self.node.add_log(self.action_set[0], {}, Auth(self.node.creator), save=True)
+        log = self.node.logs[-1]
+        self.public_node.logs.append(log)
+        self.public_node.save()
+        res = self.app.get(self.url, auth=self.user)
+        data = res.json['data']
+        nodes_link = data[0]['links']['nodes']['related']
+        res = self.app.get(nodes_link, auth=self.user)
+        meta = res.json['links']['meta']
+        data = res.json['data']
+        assert_equal(meta['total'], 2)
+        for node in data:
+            assert_in(node['id'], [self.node._id, self.public_node._id])
