@@ -45,17 +45,17 @@
                 <p>
                    <span class="text-muted"
                          data-bind="html:  $root.showSecret() ? clientSecret : '&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;'"></span>
-                    <a class="btn btn-default btn-xs m-l-sm " data-bind="click: $root.toggleDisplay">
+                    <a class="btn btn-default btn-xs m-l-sm " data-bind="click: $root.toggleDisplay.bind($root)">
                         <span data-bind="visible: $root.showSecret()"><i class="fa fa-eye-slash"></i> Hide</span>
                         <span data-bind="visible: !$root.showSecret()"><i class="fa fa-eye"></i> Show</span>
                     </a>
                 </p>
                 <p data-bind="visible: !$root.isCreateView()">
-                    <a data-bind="click: $root.deleteApplication" class="text-danger">Deactivate application</a>
+                    <a data-bind="click: $root.deleteApplication.bind($root)" class="text-danger">Deactivate application</a>
                 </p>
             </div>
             <div id="app-fields">
-                <form novalidate role="form" data-bind="submit: $root.submit, validationOptions: {insertMessages: false, messagesOnModified: false}">
+                <form novalidate role="form" data-bind="submit: $root.submit.bind($root), validationOptions: {insertMessages: false, messagesOnModified: false}">
                     <div class="form-group">
                         <label>Application name</label>
                         <input class="form-control" type="text" data-bind="value: name" required="required" placeholder="Required">
@@ -87,11 +87,11 @@
 
                     <div class="padded">
                         <button type="reset" class="btn btn-default"
-                                data-bind="click: $root.cancelChange">Cancel</button>
+                                data-bind="click: $root.cancelChange.bind($root)">Cancel</button>
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: $root.isCreateView()">Create</button>
                         <button type="submit" class="btn btn-success"
-                                data-bind="visible: !$root.isCreateView(), click: $root.updateApplication, enable: $root.dirty()">Save</button>
+                                data-bind="visible: !$root.isCreateView(), click: $root.updateApplication.bind($root), enable: $root.dirty()">Save</button>
                     </div>
                 </form>
             </div>

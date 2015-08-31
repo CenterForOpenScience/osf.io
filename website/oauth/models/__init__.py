@@ -358,7 +358,11 @@ class ExternalProvider(object):
 
 
 class ApiOAuth2Application(StoredObject):
-    """Registration and key for user-created OAuth API applications"""
+    """Registration and key for user-created OAuth API applications
+
+    This collection is also used by CAS to create the master list of available applications.
+    Any changes made to field names in this model must be echoed in the CAS implementation.
+    """
     _id = fields.StringField(
         primary=True,
         default=lambda: str(ObjectId())

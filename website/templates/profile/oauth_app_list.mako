@@ -43,7 +43,7 @@
                                     <p>Client ID: <span class="text-muted" data-bind="text: clientId"></span></p>
                                 </td>
                                 <td>
-                                    <a href="#" data-bind="click: $root.deleteApplication"><i class="fa fa-times text-danger pull-right"></i></a>
+                                    <a href="#" data-bind="click: $root.deleteApplication.bind($root)"><i class="fa fa-times text-danger pull-right"></i></a>
                                 </td>
                             </tr>
                         </tbody>

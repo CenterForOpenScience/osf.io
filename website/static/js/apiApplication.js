@@ -11,8 +11,6 @@ var historyjs = require('exports?History!history');
 
 var ko = require('knockout');
 require('knockout.validation');
-require('knockout.punches');
-ko.punches.enableAll();
 var Raven = require('raven-js');
 
 var koHelpers = require('./koHelpers');  // URL validators etc
@@ -346,7 +344,6 @@ var ApplicationDetailViewModel = oop.defclass({
                 if (confirmed) {
                     var request = this.client.deleteOne(appData );
                     request.done(function () {
-                        var appName = $osf.htmlEscape(appData.name());
                         this.allowExit(true);
                         // Don't let user go back to a deleted application page
                         historyjs.replaceState({}, '', this.webListUrl);
