@@ -1,5 +1,7 @@
 from rest_framework import serializers as ser
 
+from website.models import NodeLog
+
 from api.base.serializers import JSONAPISerializer, LinksField, Link
 
 class LogSerializer(JSONAPISerializer):
@@ -9,14 +11,14 @@ class LogSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='_id')
 
     date = ser.DateTimeField(read_only=True)
-    action = ser.CharField()
+    action = ser.CharField(help_text='One of: {0}'.format(', '.join(NodeLog.actions())))
     params = ser.DictField()
 
-    nodes_logged = ser.SerializerMethodField()
-    user = ser.SerializerMethodField()
+    nodes_logged = ser.SerializerMethodField(help_text='A list of node primary keys for nodes associated with this log')
+    user = ser.SerializerMethodField(help_text='The user associated with this log')
 
     def get_user(self, log):
-        return log.user._id
+        return log._render_log_contributor(log.user._id)
 
     def get_nodes_logged(self, log):
         return [n._id for n in log.node__logged]
