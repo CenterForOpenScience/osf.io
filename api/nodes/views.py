@@ -213,7 +213,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
             auth = Auth(None)
         else:
             auth = Auth(user)
-        children = [node for node in nodes if node.can_view(auth) and node.primary]
+        children = [node for node in nodes if node.can_view(auth) and node.primary and not node.is_deleted]
         return children
 
     # overrides ListCreateAPIView

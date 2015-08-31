@@ -12,8 +12,10 @@
 
 # Status message shown at settings page on first login
 # (upon clicking primary email confirmation link)
-WELCOME_MESSAGE = ('Welcome to the OSF! Please update the following settings. If you need assistance '
-                   'in getting started, please visit the <a href="/getting-started/">Getting Started</a> page.')
+WELCOME_MESSAGE = '''
+<h1>Welcome to the OSF!</h1>
+<p>Visit our <a href="https://osf.io/getting-started/">getting started page</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a></p>
+'''
 
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
@@ -25,9 +27,6 @@ ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
                ' <a href="/resend/">Click here</a> to resend your confirmation email.')
-
-# Shown upon successful email address confirmation
-CONFIRMED_EMAIL = 'Email address confirmation successful.'
 
 # Shown if the user's account is disabled
 DISABLED = '''
