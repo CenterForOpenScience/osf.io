@@ -58,13 +58,13 @@ def sanction_handler(kind, action, payload, encoded_token, auth, **kwargs):
     err_message = None
     if not sanction:
         err_code = http.BAD_REQUEST
-        err_message = 'There is no {0} associated with this token.'.format(kind)
+        err_message = 'There is no {0} associated with this token.'.format(Model.DISPLAY_NAME)
     elif sanction.is_approved:
         err_code = http.BAD_REQUEST if kind in ['registration', 'embargo'] else http.GONE
-        err_message = "This registration is not pending {0}.".format(sanction.SHORT_NAME)
+        err_message = "This registration is not pending {0}.".format(sanction.DISPLAY_NAME)
     elif sanction.is_rejected:
         err_code = http.GONE if kind in ['registration', 'embargo'] else http.BAD_REQUEST
-        err_message = "This registration {0} has been rejected.".format(sanction.SHORT_NAME)
+        err_message = "This registration {0} has been rejected.".format(sanction.DISPLAY_NAME)
     if err_code:
         raise HTTPError(err_code, data=dict(
             message_long=err_message

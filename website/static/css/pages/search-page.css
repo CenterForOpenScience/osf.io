@@ -106,3 +106,7 @@ div.search-result  {
 .search-contributor-links {
     padding-top: 10px;
 }
+
+#searchControls .osf-search {
+    z-index: 1029; /* No larger than 1030 */
+}

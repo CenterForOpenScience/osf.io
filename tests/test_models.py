@@ -1674,6 +1674,13 @@ class TestNode(OsfTestCase):
             self.node.set_visible(user=self.user, visible=False, auth=None)
             assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
+    def test_active_child_nodes(self):
+        self.node.is_deleted = True
+        self.node.save()
+        self.node.reload()
+        assert_false(self.parent.nodes_active)
+
+
 class TestNodeTraversals(OsfTestCase):
 
     def setUp(self):
@@ -1930,7 +1937,7 @@ class TestAddonCallbacks(OsfTestCase):
                 self.node, fork, self.user
             )
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_register_callback(self, mock_archive):
         registration = self.node.register_node(
             None, self.consolidate_auth, '', '',
@@ -2470,7 +2477,7 @@ class TestProject(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.is_fork_of(self.project))
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_is_registration_of(self, mock_archive):
         project = ProjectFactory()
         reg1 = project.register_node(None, Auth(user=project.creator), '', None)
@@ -2478,7 +2485,7 @@ class TestProject(OsfTestCase):
         assert_true(reg1.is_registration_of(project))
         assert_true(reg2.is_registration_of(project))
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_is_registration_of_false(self, mock_archive):
         project = ProjectFactory()
         to_reg = ProjectFactory()
@@ -2491,7 +2498,7 @@ class TestProject(OsfTestCase):
         with assert_raises(PermissionsError):
             project.register_node(None, Auth(user=user), '', None)
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_admin_can_register_private_children(self, mock_archive):
         user = UserFactory()
         project = ProjectFactory(creator=user)
@@ -3470,7 +3477,7 @@ class TestPointer(OsfTestCase):
         registered = self.pointer.fork_node()
         self._assert_clone(self.pointer, registered)
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_register_with_pointer_to_registration(self, mock_archive):
         pointee = RegistrationFactory()
         project = ProjectFactory()

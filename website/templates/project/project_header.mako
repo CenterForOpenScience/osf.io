@@ -50,7 +50,7 @@
                         % endfor
 
                         % if node['is_public'] or user['is_contributor']:
-                            <li><a href="${node['url']}statistics/">Statistics</a></li>
+                            <li><a href="${node['url']}analytics/">Analytics</a></li>
                         % endif
 
                         % if not node['is_registration']:
@@ -59,7 +59,7 @@
 
                         <li><a href="${node['url']}forks/">Forks</a></li>
                         % if user['is_contributor']:
-                            <li><a href="${node['url']}contributors/">Sharing</a></li>
+                            <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
 
                         % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
