@@ -30,8 +30,8 @@ function Submissions(data) {
                 {
                     title: 'Date Created',
                     width: '15%',
-                    sortType: 'number',
-                    sort: false
+                    sortType: 'date',
+                    sort: true
                 },
                 {
                     title: 'Downloads',
