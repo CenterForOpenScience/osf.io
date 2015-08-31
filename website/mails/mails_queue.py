@@ -5,7 +5,7 @@ from modularodm import fields, Q
 from framework.mongo import StoredObject
 import website.mails.mail_types as wm
 
-def _send_email(to_address, template, data):
+def _send_email(to_address, template, subject, data):
     '''
     Dependent on what is used to send the email
     :return: bool on success
@@ -14,7 +14,7 @@ def _send_email(to_address, template, data):
         mandrill_client = mandrill.Mandrill('')
         message = {
             'html': '<h1> This is a mandrill email </h1>',
-            'subject': data.get('subject') if data else 'Welp',
+            'subject': subject,
             'from_email': 'h.moco@hotmail.com',
             'to': [{
                 'email': str(to_address)
@@ -41,9 +41,9 @@ class QueuedEmail(StoredObject):
         self.save()
 
     def send_email(self):
-        emailType = wm.email_types[self.email_type]
+        emailType = wm.EMAIL_TYPES[self.email_type]
         if emailType['callback'](self) and self.to_.osf_mailing_lists.get('Open Science Framework Help'):
-            if _send_email(to_address=self.to_.username, template=emailType['template'], data=self.data):
+            if _send_email(to_address=self.to_.username, template=emailType['template'], subject=emailType['subject'], data=self.data):
                 sent = SentEmail()
                 sent._id = self._id
                 sent.email_type = self.email_type

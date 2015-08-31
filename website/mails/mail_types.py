@@ -1,4 +1,8 @@
+# -*- coding: utf-8 -*-
+from modularodm import Q
+
 from datetime import datetime, timedelta
+from website.models import Node
 
 def _week_check(email):
     sent_emails = email.find_others_to()
@@ -18,13 +22,37 @@ def no_login(email):
         return True
     return False
 
-email_types = {
+def new_public(email):
+    if _week_check(email):
+        node = Node.find_one(Q('_id', 'eq', email.data['nid']))
+        if node.is_public:
+            return True
+    return False
+
+def welcome_osf4m(email):
+    if _week_check(email):
+        return True
+    return False
+
+EMAIL_TYPES = {
     'no_addon': {
         'template': 'no_addon',
         'callback': no_addon,
+        'subject': 'Link an add-on to your OSF project',
     },
     'no_login': {
         'template': 'no_login',
         'callback': no_login,
+        'subject': 'What you’re missing on the OSF',
+    },
+    'new_public': {
+        'template': 'new_public',
+        'callback': new_public,
+        'subject': 'Now, public. Next, impact.',
+    },
+    'welcome_osf4m': {
+        'template': 'welcome_osf4m',
+        'callback': welcome_osf4m,
+        'subject': 'The benefits of sharing your presentation',
     }
 }

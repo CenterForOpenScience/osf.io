@@ -3,6 +3,7 @@
 import json
 import httplib
 import logging
+from datetime import datetime, timedelta
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -13,7 +14,7 @@ from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 
 from website import settings
-from website.models import Node
+from website.models import Node, QueuedEmail
 from website.util import web_url_for
 from website.mails import send_mail
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
@@ -84,6 +85,8 @@ def add_poster_by_email(conference, message):
                 verification_key=user.verification_key,
                 _absolute=True,
             )
+            email = QueuedEmail()
+            email.create(to_user=user, send_at=datetime.utcnow() + timedelta(weeks=2), email_type='welcome_osf4m')
         else:
             set_password_url = None
 

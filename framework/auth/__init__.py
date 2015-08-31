@@ -65,7 +65,7 @@ def register_unconfirmed(username, password, fullname):
 
         from website.models import QueuedEmail
         email = QueuedEmail()
-        email.create(to_user=user, email_type='no_addon', send_at=dt.datetime.utcnow() + dt.timedelta(seconds=8))
+        email.create(to_user=user, email_type='no_addon', send_at=dt.datetime.utcnow() + dt.timedelta(weeks=8))
     elif not user.is_registered:  # User is in db but not registered
         user.add_unconfirmed_email(username)
         user.set_password(password)
