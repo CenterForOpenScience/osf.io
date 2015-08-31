@@ -76,6 +76,7 @@ function ViewModel(url) {
                 externalAccount.dataverseUrl = account.host_url;
                 return externalAccount;
             }));
+            $('.addon-auth-table').osfToggleHeight({height: 140});
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
@@ -106,6 +107,7 @@ function ViewModel(url) {
             self.clearModal();
             $modal.modal('hide');
             self.updateAccounts();
+
         }).fail(function(xhr, textStatus, error) {
             var errorMessage = (xhr.status === 401) ? language.authInvalid : language.authError;
             self.changeMessage(errorMessage, 'text-danger');
@@ -185,8 +187,6 @@ function ViewModel(url) {
             self.hosts(data.hosts);
             self.loaded(true);
             self.updateAccounts();
-            $('#dataverse-header').osfToggleHeight({height: 140});
-
         }).fail(function (xhr, textStatus, error) {
             self.changeMessage(language.userSettingsError, 'text-danger');
             Raven.captureMessage('Could not GET Dataverse settings', {
