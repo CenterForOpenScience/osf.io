@@ -153,8 +153,67 @@ var ViewModel = function(params) {
 
     self.childQuery = ko.pureComputed(function(){
             return {
+                'bool': {
+                    'should': [
+                        {
+                            'has_child': {
+                                'type': 'project_file',
+                                'score_mode': 'avg',
+                                'query': {
+                                    'query_string': {
+                                        'default_field': '_all',
+                                        'query': self.query(),
+                                        'analyze_wildcard': true,
+                                        'fields':[
+                                            'name^0.5',
+                                            'attachment^0.01'
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            'has_child': {
+                                'type': 'component_file',
+                                'score_mode': 'avg',
+                                'query': {
+                                    'query_string': {
+                                        'default_field': '_all',
+                                        'query': self.query(),
+                                        'analyze_wildcard': true,
+                                        'fields':[
+                                            'name^0.5',
+                                            'attachment^0.01'
+                                        ]
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            'has_child': {
+                                'type': 'registration_file',
+                                'score_mode': 'avg',
+                                'query': {
+                                    'query_string': {
+                                        'default_field': '_all',
+                                        'query': self.query(),
+                                        'analyze_wildcard': true,
+                                        'fields':[
+                                            'name^0.5',
+                                            'attachment^0.01'
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    ]
+
+                }
+            }
+
+            return {
                 'has_child': {
-                    'type': 'file',
+                    'type': 'project_file',
                     'score_mode': 'avg',
                     'query': {
                         'query_string': {

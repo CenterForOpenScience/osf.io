@@ -60,21 +60,33 @@ def build_query(qs='*', start=0, size=10, sort=None, has_child=True):
 def build_has_child_query_string(qs='*'):
     """Queries for parent documents who's children match a query string.
     """
-    return {
-        'has_child': {
-            'type': 'file',
-            'score_mode': 'avg',
-            'query': {
-                'query_string': {
-                    'default_field': '_all',
-                    'query': qs,
-                    'analyze_wildcard': True,
-                    'fields': [
-                        'name^0.5',
-                        'attachment^0.01',
-                    ]
+
+    def child_query(doc_type):
+        return {
+            'has_child': {
+                'type': doc_type,
+                'score_mode': 'avg',
+                'query': {
+                    'query_string': {
+                        'default_field': '_all',
+                        'query': qs,
+                        'analyze_wildcard': True,
+                        'fields': [
+                            'name^0.5',
+                            'attachment^0.01',
+                        ]
+                    },
                 },
-            },
+            }
+        }
+
+    return {
+        'bool': {
+            'should': [
+                child_query('project_file'),
+                child_query('component_file'),
+                child_query('registration_file'),
+            ]
         }
     }
 

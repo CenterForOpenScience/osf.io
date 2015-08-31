@@ -319,6 +319,7 @@ def update_file(file_node, index=None):
     name = file_node.name
     parent_node = file_node.node
     parent_id = parent_node._id
+    parent_node_type = get_doctype_from_node(parent_node)
     path = file_util.norm_path(file_node.path)
     file_content = file_util.get_file_content(file_node)
 
@@ -327,7 +328,7 @@ def update_file(file_node, index=None):
         'path': path,
         'parent_id': parent_id,
         'attachment': base64.encodestring(file_content),
-        'category': 'file'
+        'category': '{}_file'.format(parent_node_type)
     }
 
     es.index(
@@ -366,6 +367,7 @@ def update_file_from_content(file_node, content, index=None):
     attachment = base64.encodestring(content)
     category = 'file'
     parent_id = file_node.node._id
+    parent_type = get_doctype_from_node(file_node.node)
     file_path = file_util.norm_path(file_node.path)
     file_name = file_node.name
     file_doc = {
@@ -377,7 +379,7 @@ def update_file_from_content(file_node, content, index=None):
     }
     es.index(
         index=index,
-        doc_type='file',
+        doc_type='{}_file'.format(parent_type),
         parent=parent_id,
         id=file_path,
         body=file_doc,
@@ -398,6 +400,7 @@ def delete_file(file_node, index=None):
 
     path = file_util.norm_path(file_node.path)
     parent_id = file_node.node._id
+    parent_doc_type = get_doctype_from_node(file_node.node)
 
     if not file_util.is_indexed(file_node):
         return False
@@ -407,7 +410,7 @@ def delete_file(file_node, index=None):
 
     es.delete(
         index=index,
-        doc_type='file',
+        doc_type='{}_file'.format(parent_doc_type),
         parent=parent_id,
         id=path,
         refresh=True,
@@ -468,26 +471,31 @@ def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
 
     path = file_util.norm_path(file_node_id)
 
+    old_parent = Node.load(old_parent_id)
+    old_parent_doctype = get_doctype_from_node(old_parent)
+
     doc = es.get(
         index=index,
-        doc_type='file',
+        doc_type='{}_file'.format(old_parent_doctype),
         id=path,
         parent=old_parent_id,
     )['_source']
 
     es.delete(
         index=index,
-        doc_type='file',
+        doc_type='{}_file'.format(old_parent_doctype),
         parent=old_parent_id,
         id=path,
         refresh=True,
     )
 
     doc['parent_id'] = new_parent_id
+    new_parent = Node.load(new_parent_id)
+    new_parent_type = get_doctype_from_node(new_parent)
 
     es.index(
         index=index,
-        doc_type='file',
+        doc_type='{}_file'.format(new_parent_type),
         parent=new_parent_id,
         id=path,
         body=doc,
@@ -521,10 +529,12 @@ def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, inde
     )['_source']
 
     doc['parent_id'] = new_parent_id
+    new_parent = Node.load(new_parent_id)
+    new_parent_type = get_doctype_from_node(new_parent)
 
     es.index(
         index=index,
-        doc_type='file',
+        doc_type='{}_file'.format(new_parent_type),
         id=new_path,
         parent=new_parent_id,
         body=doc,
@@ -624,7 +634,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'file']
+    document_types = ['project', 'component', 'registration', 'user', 'project_file', 'component_file', 'registration_file']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 
@@ -657,8 +667,9 @@ def create_index(index=None):
             }
             mapping['properties'].update(fields)
 
-        if type_ == 'file':
-            mapping.update({'_parent': {'type': 'project'}})
+        if type_[-4:] == 'file':
+            parent = type_[:-5]
+            mapping.update({'_parent': {'type': parent}})
             mapping['properties'].update({'attachment': {'type': 'attachment'}})
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
