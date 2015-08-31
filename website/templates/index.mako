@@ -197,7 +197,7 @@
             <h3>See project changes</h3>
             <p>See the latest project changes, who is contributing and <strong>historical file versions.</strong></p>
 
-            <h3>View project statistics</h3>
+            <h3>View project analytics</h3>
             <p>Access <strong>project data</strong> ranging from visits over time to top referring websites.</p>
 
           </div>
