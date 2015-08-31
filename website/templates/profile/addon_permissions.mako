@@ -1,5 +1,5 @@
 % if nodes:
-    <div class="m-h-lg" id="${addon_short_name}-header">
+    <div class="m-h-lg addon-auth-table" id="${addon_short_name}-header">
         <table class="table table-hover" id="${addon_short_name}-auth-table">
             <thead><th>Authorized Projects:</th><th></th></thead>
             % for node in nodes:

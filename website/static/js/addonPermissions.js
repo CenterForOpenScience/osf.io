@@ -54,7 +54,6 @@ var AddonPermissionsTable = {
                 }
             });
         });
-        $('#' + addonShortName + '-header').osfToggleHeight({height: 140});
     }
 };
 
