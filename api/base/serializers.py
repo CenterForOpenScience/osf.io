@@ -3,7 +3,7 @@ import re
 
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
-from api.base.utils import absolute_reverse, waterbutler_url_for
+from api.base.utils import absolute_reverse, waterbutler_url_for, deep_get
 
 
 def _rapply(d, func, *args, **kwargs):
@@ -83,11 +83,10 @@ def _tpl(val):
         return match.groups()[0]
     return None
 
-
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
     if attr_name:
-        attribute_value = getattr(obj, attr_name, ser.empty)
+        attribute_value = deep_get(obj, attr_name)
         if attribute_value is not ser.empty:
             return attribute_value
         elif attr_name in obj:
@@ -105,7 +104,8 @@ def _get_attr_from_tpl(attr_tpl, obj):
 # TODO: Make this a Field that is usable on its own?
 class Link(object):
     """Link object to use in conjunction with Links field. Does reverse lookup of
-    URLs given an endpoint name and attributed enclosed in `<>`.
+    URLs given an endpoint name and attributed enclosed in `<>`. This includes
+    complex key strings like 'user.id'
     """
 
     def __init__(self, endpoint, args=None, kwargs=None, query_kwargs=None, **kw):
