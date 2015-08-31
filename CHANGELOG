@@ -5,6 +5,8 @@ Changelog
 0.48.0 (unreleased)
 ===================
 
+Target 2015-08-31
+
 - Add project settings that allows a project's wiki to be editable by any OSF
 user.
 - MD5 and SHA1 hashes appear in a file's Revisions table.
