@@ -1213,6 +1213,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def add_pointer(self, node, auth, save=True):
         """Add a pointer to a node.
 
+        :rtype : object
         :param Node node: Node to add
         :param Auth auth: Consolidated authorization
         :param bool save: Save changes
