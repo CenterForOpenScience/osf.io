@@ -171,7 +171,7 @@ var ApplicationsListViewModel = oop.defclass({
 
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                language.apiOauth2Application.dataFetchError,
+                language.apiOauth2Application.dataListFetchError,
                 'danger');
 
             Raven.captureMessage('Error fetching list of registered applications', {

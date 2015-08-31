@@ -1,18 +1,8 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Application Detail</%def>
 <%def name="content()">
-<style type="text/css">
-    .border-box {
-        padding: 15px 10px;
-        border: solid #DDD;
-        border-width: 1px 0;
-        line-height: 1.1;
-        display: block;
-        margin-bottom: 1em;
-    }
-</style>
 
-<h2 class="page-header">Application Detail</h2>
+    <h2 class="page-header">Application Detail</h2>
 
 
 <div id="applicationDetailPage" class="row">
@@ -91,7 +81,7 @@
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: $root.isCreateView()">Create</button>
                         <button type="submit" class="btn btn-success"
-                                data-bind="visible: !$root.isCreateView(), click: $root.updateApplication.bind($root), enable: $root.dirty()">Save</button>
+                                data-bind="visible: !$root.isCreateView(), enable: $root.dirty()">Save</button>
                     </div>
                 </form>
             </div>
