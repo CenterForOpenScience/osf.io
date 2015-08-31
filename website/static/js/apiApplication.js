@@ -13,6 +13,7 @@ var ko = require('knockout');
 require('knockout.validation');
 var Raven = require('raven-js');
 
+var ChangeMessageMixin = require('js/changeMessage');
 var koHelpers = require('./koHelpers');  // URL validators etc
 var $osf = require('./osfHelpers');
 var oop = require('js/oop');
@@ -216,8 +217,9 @@ var ApplicationsListViewModel = oop.defclass({
     Expects a urls object containing webListUrl, apiListUrl, and apiDetailUrl values. If apiDetailUrl is blank, it
     behaves like a create view.
  */
-var ApplicationDetailViewModel = oop.defclass({
+var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
     constructor: function (urls) {
+        this.super.constructor.call(this);
         var placeholder = new ApplicationData();
         this.appData = ko.observable(placeholder);
 
@@ -232,10 +234,6 @@ var ApplicationDetailViewModel = oop.defclass({
         this.webListUrl = urls.webListUrl;
         this.client = new ApplicationDataClient(urls.apiListUrl);
 
-        // Control success/failure messages above submit buttons
-        this.message = ko.observable();
-        this.messageClass = ko.observable();
-
         // Toggle hiding client secret (in detail view)
         this.showSecret = ko.observable(false);
         // Toggle display of validation messages
@@ -249,7 +247,7 @@ var ApplicationDetailViewModel = oop.defclass({
     },
     init: function () {
         if (!this.isCreateView()) {
-            // Prevent user from leaving page if there are unsaved changes
+            // Add listener to prevent user from leaving page if there are unsaved changes
             $(window).on('beforeunload', function () {
                 if (this.dirty() && !this.allowExit()) {
                     return 'There are unsaved changes on this page.';
@@ -275,14 +273,23 @@ var ApplicationDetailViewModel = oop.defclass({
         }
     },
     updateApplication: function () {
+        if (!this.dirty()){
+            // No data needs to be sent to the server, but give the illusion that form was submitted
+            this.changeMessage(
+                language.apiOauth2Application.dataUpdated,
+                'text-success',
+                5000);
+            return;
+        }
+
         var request = this.client.updateOne(this.appData());
         request.done(function (dataObj) {
             this.appData(dataObj);
             this.originalValues(dataObj.serialize());
             this.changeMessage(
-            'Application data updated',
-            'text-success',
-            5000);
+                language.apiOauth2Application.dataUpdated,
+                'text-success',
+                5000);
         }.bind(this));
 
         request.fail(function (xhr, status, error) {
@@ -389,20 +396,6 @@ var ApplicationDetailViewModel = oop.defclass({
             });
         }
     },
-    changeMessage: function (text, css, timeout) {
-        // Display messages near save button. Overlaps with profile.js.
-        this.message(text);
-        var cssClass = css || 'text-info';
-        this.messageClass(cssClass);
-        if (timeout) {
-            // Reset message after timeout period
-            setTimeout(function () {
-                    this.message('');
-                    this.messageClass('text-info');
-                }.bind(this),
-                timeout
-            );
-    }},
     toggleDisplay: function () {
         // Toggle display of client secret on detail view page
         this.showSecret(!this.showSecret());

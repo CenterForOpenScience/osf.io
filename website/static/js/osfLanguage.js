@@ -79,8 +79,9 @@ module.exports = {
         deactivateConfirm: 'Are you sure you want to deactivate this application for all users and revoke all access tokens? This cannot be reversed.',
         deactivateError: 'Could not delete application. ' + REFRESH_OR_SUPPORT,
         dataFetchError: 'Data not loaded. ' + REFRESH_OR_SUPPORT,
-        dataListFetchError: 'Could not load a list of Developer Applications at this time. ' + REFRESH_OR_SUPPORT,
+        dataListFetchError: 'Could not load list of developer applications at this time. ' + REFRESH_OR_SUPPORT,
         dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
-        creationSuccess: 'Successfully registered new application'
+        creationSuccess: 'Successfully registered new application',
+        dataUpdated: 'Application data updated'
     }
 };

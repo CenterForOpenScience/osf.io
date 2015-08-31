@@ -81,7 +81,7 @@
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: $root.isCreateView()">Create</button>
                         <button type="submit" class="btn btn-success"
-                                data-bind="visible: !$root.isCreateView(), enable: $root.dirty()">Save</button>
+                                data-bind="visible: !$root.isCreateView()">Save</button>
                     </div>
                 </form>
             </div>
