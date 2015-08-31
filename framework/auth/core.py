@@ -296,6 +296,8 @@ class User(GuidStoredObject, AddonModelMixin):
     #    ...
     # }
 
+    osf_mailing_lists = fields.DictionaryField(default={'Open Science Framework Help': True})
+
     # the date this user was registered
     # TODO: consider removal - this can be derived from date_registered
     date_registered = fields.DateTimeField(auto_now_add=dt.datetime.utcnow,

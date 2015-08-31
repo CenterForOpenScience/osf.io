@@ -11,7 +11,7 @@ def _send_email(to_address, template, data):
     :return: bool on success
     '''
     try:
-        mandrill_client = mandrill.Mandrill('ozYH3cChlCjZi_BAEoqObQ')
+        mandrill_client = mandrill.Mandrill('')
         message = {
             'html': '<h1> This is a mandrill email </h1>',
             'subject': data.get('subject') if data else 'Welp',
@@ -42,7 +42,7 @@ class QueuedEmail(StoredObject):
 
     def send_email(self):
         emailType = wm.email_types[self.email_type]
-        if emailType['callback'](self) and self.to_.mailing_lists.get('help'):
+        if emailType['callback'](self) and self.to_.osf_mailing_lists.get('Open Science Framework Help'):
             if _send_email(to_address=self.to_.username, template=emailType['template'], data=self.data):
                 sent = SentEmail()
                 sent._id = self._id

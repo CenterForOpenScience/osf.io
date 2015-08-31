@@ -410,21 +410,22 @@ def user_choose_mailing_lists(auth, **kwargs):
     json_data = escape_html(request.get_json())
     if json_data:
         for list_name, subscribe in json_data.items():
-            if list_name is 'help':
+            # TO DO: change this to take in any potential non-mailchimp, something like try: update_subscription(), except IndexNotFound: update_mailchimp_subscription()
+            if list_name is 'Open Science Framework Help':
                 help_emails(user=user,subscribe=subscribe)
             else:
-                update_subscription(user, list_name, subscribe)
+                update_mailchimp_subscription(user, list_name, subscribe)
     else:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long="Must provide a dictionary of the format {'mailing list name': Boolean}")
         )
 
     user.save()
-    return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
+    return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists.update(user.osf_mailing_lists)}, 200
 
 
 @user_merged.connect
-def update_subscription(user, list_name, subscription):
+def update_mailchimp_subscription(user, list_name, subscription):
     """ Update mailing list subscription in mailchimp.
 
     :param obj user: current user
@@ -487,7 +488,7 @@ def impute_names(**kwargs):
     return auth_utils.impute_names(name)
 
 def help_emails(user, subscribe):
-    user.mailing_lists['help'] = subscribe
+    user.osf_mailing_lists['Open Science Framework Help'] = subscribe
     user.save()
 
 @must_be_logged_in

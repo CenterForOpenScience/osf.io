@@ -20,7 +20,6 @@ var ViewModel = function(list) {
             type: 'GET',
             dataType: 'json',
             success: function(response) {
-                debugger;
                 var isSubscribed = response.mailing_lists ? response.mailing_lists[self.list] : false;
                 self.subscribed(isSubscribed);
             },

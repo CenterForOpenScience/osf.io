@@ -61,7 +61,6 @@ def register_unconfirmed(username, password, fullname):
         user = User.create_unconfirmed(username=username,
             password=password,
             fullname=fullname)
-        user.mailing_lists['help'] = True
         user.save()
 
         from website.models import QueuedEmail
