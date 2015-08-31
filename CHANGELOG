@@ -8,6 +8,7 @@ Changelog
 - Add project settings that allows a project's wiki to be editable by any OSF
 user.
 - MD5 and SHA1 hashes appear in a file's Revisions table.
+- Update UI for OSF for meetings page.
 
 0.47.0 (2015-08-15)
 ===================
