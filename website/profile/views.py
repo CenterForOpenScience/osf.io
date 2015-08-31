@@ -487,6 +487,7 @@ def impute_names(**kwargs):
     name = request.args.get('name', '')
     return auth_utils.impute_names(name)
 
+
 def help_emails(user, subscribe):
     user.osf_mailing_lists['Open Science Framework Help'] = subscribe
     user.save()

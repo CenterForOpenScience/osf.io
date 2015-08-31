@@ -983,6 +983,11 @@ def make_url_map(app):
 
         Rule('/mailchimp/hooks/', 'post', profile_views.sync_data_from_mailchimp, json_renderer),
 
+        #will change this to be better later
+        Rule('/email/help/', 'delete', profile_views.stop_help_emails, json_renderer),
+
+        Rule('/email/help/', 'post', profile_views.start_help_emails, json_renderer),
+
         # Create project, used by projectCreator.js
         Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
 
