@@ -462,7 +462,7 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     # Send mail to referrer, telling them to forward verification link to claimer
     mails.send_mail(
         referrer.username,
-        mails.FORWARD_INVITE_REGiSTERED,
+        mails.FORWARD_INVITE_REGISTERED,
         user=unreg_user,
         referrer=referrer,
         node=node,
