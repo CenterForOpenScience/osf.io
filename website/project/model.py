@@ -3258,7 +3258,7 @@ class Embargo(EmailApprovableSanction):
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
+            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
 
             registration = Node.find_one(Q('embargo', 'eq', self))
 
@@ -3497,7 +3497,7 @@ class RegistrationApproval(EmailApprovableSanction):
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
 
-            approval_time_span = (24 * settings.REGISTRATION_APPROVAL_TIME.days) + (settings.REGISTRATION_APPROVAL_TIME.seconds / 60)
+            approval_time_span = settings.REGISTRATION_APPROVAL_TIME.days * 24
 
             registration = Node.find_one(Q('registration_approval', 'eq', self))
 

@@ -9,6 +9,7 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 import framework.auth
+
 from framework.auth import cas
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
@@ -88,10 +89,9 @@ def forgot_password_post():
                 reset_link=reset_link
             )
         status.push_status_message(
-            ('An email with instructions on how to reset the password '
-             'for the account associated with {0} has been sent. If you '
-             'do not receive an email and believe you should have please '
-             'contact OSF Support.').format(email), 'success')
+            ('If there is an OSF account associated with {0}, an email with instructions on how to reset '
+             'the OSF password has been sent to {0}. If you do not receive an email and believe you should '
+             'have, please contact OSF Support. ').format(email), 'success')
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
