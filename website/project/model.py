@@ -503,11 +503,18 @@ def validate_title(value):
     above 200 characters.
     """
     if value is None or not value.strip():
-        raise ValidationValueError('Title cannot be blank.')
+        raise ValidationValueError('Title cannot be blank')
+
+    value = sanitize.strip_html(value)
+
+    if value is None or not value.strip():
+        raise ValidationValueError('Invalid title.')
 
     if len(value) > 200:
         raise ValidationValueError('Title cannot exceed 200 characters.')
-    return True
+
+    return value
+
 
 def validate_user(value):
     if value != {}:
@@ -516,11 +523,13 @@ def validate_user(value):
             raise ValidationValueError('User does not exist.')
     return True
 
+
 class NodeUpdateError(Exception):
     def __init__(self, reason, key, *args, **kwargs):
         super(NodeUpdateError, self).__init__(*args, **kwargs)
         self.key = key
         self.reason = reason
+
 
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 

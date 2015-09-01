@@ -32,7 +32,7 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError
+from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -49,7 +49,8 @@ logger = logging.getLogger(__name__)
 def edit_node(auth, node, **kwargs):
     post_data = request.json
     edited_field = post_data.get('name')
-    value = strip_html(post_data.get('value', ''))
+    value = post_data.get('value', '')
+
     if edited_field == 'title':
         try:
             node.set_title(value, auth=auth)
@@ -1060,10 +1061,11 @@ def project_generate_private_link_post(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 def project_private_link_edit(auth, **kwargs):
     new_name = request.json.get('value', '')
+    name = validate_title(new_name)
     private_link_id = request.json.get('pk', '')
     private_link = PrivateLink.load(private_link_id)
     if private_link:
-        private_link.name = new_name
+        private_link.name = name
         private_link.save()
 
 
