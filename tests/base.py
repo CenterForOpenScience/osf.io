@@ -60,6 +60,7 @@ SILENT_LOGGERS = [
     'framework.auth.core',
     'website.mails',
     'website.search_migration.migrate',
+    'website.util.paths',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -207,7 +208,7 @@ class TestAppJSONAPI(TestApp):
             return self._gen_request(method, url, **kw)
 
         subst = dict(lmethod=method.lower(), method=method)
-        wrapper.__name__ = str('%(lmethod)s_json' % subst)
+        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
 
         return wrapper
 

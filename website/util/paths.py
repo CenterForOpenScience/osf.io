@@ -31,7 +31,7 @@ def webpack_asset(path, asset_paths=asset_paths, debug=settings.DEBUG_MODE):
     (which may include the hash of the file).
     """
     if not asset_paths:
-        logging.warn('web-assets.json has not yet been generated. Falling back to non-cache-busted assets')
+        logger.warn('webpack-assets.json has not yet been generated. Falling back to non-cache-busted assets')
         return path
     if not debug:
         key = path.replace(base_static_path, '').replace('.js', '')
