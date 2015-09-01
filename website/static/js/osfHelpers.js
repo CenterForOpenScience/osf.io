@@ -168,7 +168,7 @@ var handleJSONError = function(response) {
 
 var handleEditableError = function(response) {
     Raven.captureMessage('Unexpected error occurred in an editable input');
-    return 'Error: ' + response.message_long;
+    return 'Error: ' + response.responseJSON.message_long;
 };
 
 var block = function(message) {
