@@ -1414,6 +1414,11 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert 'detail' in res.json['errors'][0]
 
+    def test_files_list_does_not_contain_empty_relationships_object(self):
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert 'relationships' not in res.json['data'][0]
+
 
 class TestNodePointerDetail(ApiTestCase):
 
