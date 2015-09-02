@@ -14,7 +14,7 @@ from website.project.model import (
     Sanction
 )
 
-from website.oauth.models import ExternalAccount
+from website.oauth.models import ApiOAuth2Application, ExternalAccount
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
 from website.mails import SentQueuedMail, QueuedMail
@@ -25,7 +25,7 @@ from website.archiver.model import ArchiveJob, ArchiveTarget
 
 # All models
 MODELS = (
-    User, Node, NodeLog,
+    User, ApiOAuth2Application, Node, NodeLog,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,
     NotificationSubscription, NotificationDigest, CitationStyle,
