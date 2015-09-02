@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import uuid
 
-from .model import Node, PrivateLink
+from .model import Node, PrivateLink, validate_title
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from modularodm import Q
@@ -59,6 +59,7 @@ def new_node(category, title, user, description=None, parent=None):
 
     return node
 
+
 def new_dashboard(user):
     """Create a new dashboard project.
 
@@ -108,6 +109,7 @@ def new_folder(title, user):
 
     return node
 
+
 def new_private_link(name, user, nodes, anonymous):
     """Create a new private link.
 
@@ -120,7 +122,7 @@ def new_private_link(name, user, nodes, anonymous):
     """
     key = str(uuid.uuid4()).replace("-", "")
     if name:
-        name = sanitize(name.strip())
+        name = validate_title(name)
     else:
         name = "Shared project link"
 

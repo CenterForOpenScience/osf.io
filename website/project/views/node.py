@@ -1034,6 +1034,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     node_ids = request.json.get('node_ids', [])
     name = request.json.get('name', '')
+
     anonymous = request.json.get('anonymous', False)
 
     if node._id not in node_ids:
@@ -1043,9 +1044,15 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     has_public_node = any(node.is_public for node in nodes)
 
-    new_link = new_private_link(
-        name=name, user=auth.user, nodes=nodes, anonymous=anonymous
-    )
+    try:
+        new_link = new_private_link(
+            name=name, user=auth.user, nodes=nodes, anonymous=anonymous
+        )
+    except ValidationValueError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=e.message)
+        )
 
     if anonymous and has_public_node:
         status.push_status_message(
@@ -1061,7 +1068,13 @@ def project_generate_private_link_post(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 def project_private_link_edit(auth, **kwargs):
     new_name = request.json.get('value', '')
-    name = validate_title(new_name)
+    try:
+        name = validate_title(new_name)
+    except ValidationValueError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=e.message)
+        )
     private_link_id = request.json.get('pk', '')
     private_link = PrivateLink.load(private_link_id)
     if private_link:
