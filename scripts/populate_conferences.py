@@ -349,6 +349,14 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'CDS2015': {
+        'name': 'Cognitive Development Society 2015',
+        'info_url': 'http://meetings.cogdevsoc.org/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 
