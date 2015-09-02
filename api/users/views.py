@@ -1,7 +1,7 @@
-from django.contrib.auth.models import AnonymousUser
-from rest_framework.exceptions import PermissionDenied
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from django.contrib.auth.models import AnonymousUser
+from rest_framework.exceptions import NotAuthenticated
 
 from modularodm import Q
 
@@ -12,8 +12,6 @@ from api.base.utils import get_object_or_error
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
 from .permissions import ReadOnlyOrCurrentUser
-from django.contrib.auth.models import AnonymousUser
-from rest_framework.exceptions import NotAuthenticated
 
 
 class UserMixin(object):
