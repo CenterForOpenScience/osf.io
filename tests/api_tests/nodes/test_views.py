@@ -1534,6 +1534,7 @@ class TestNodeLogList(ApiTestCase):
         self.user_auth = Auth(self.user)
         self.NodeLogFactory = ProjectFactory()
         self.pointer = ProjectFactory()
+
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = '/{}nodes/{}/logs/'.format(API_BASE, self.private_project._id)
 
@@ -1546,8 +1547,6 @@ class TestNodeLogList(ApiTestCase):
 
     def test_add_tag(self):
         user_auth = Auth(self.user)
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
         self.public_project.add_tag("Jeff Spies", auth=user_auth)
         assert_equal("tag_added", self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user.auth)
@@ -1556,8 +1555,6 @@ class TestNodeLogList(ApiTestCase):
 
     def test_remove_tag(self):
         user_auth = Auth(self.user)
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
         self.public_project.add_tag("Jeff Spies", auth=user_auth)
         assert_equal("tag_added", self.public_project.logs[-1].action)
         self.public_project.remove_tag("Jeff Spies", auth=self.user_auth)
@@ -1594,8 +1591,6 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(res.json['data'][0]['name'], self.private_project.logs[0]._name)
 
     def test_project_remove_contributor(self):
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
         self.public_project.add_contributor(self.contrib, auth=self.user_auth)
         assert_equal('contributor_added', self.public_project.logs[-1].action)
         self.public_project.remove_contributor(self.contrib, auth=self.user_auth)
@@ -1604,24 +1599,18 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(res.json['data'][-1]['action'], 'contributor_removed')
 
     def test_add_addon(self):
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
         self.public_project.add_addon('github', auth=self.user_auth)
         assert_equal('addon_added', self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.json['data'][-1]['action'], 'addon_added')
 
     def test_project_add_contributor(self):
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
         self.public_project.add_contributor(self.contrib, auth=self.user_auth)
         assert_equal('contributor_added', self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.json['data'][-1]['action'], 'contributor_added')
 
     def test_remove_addon(self):
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
         self.public_project.add_addon('github', auth=self.user_auth)
         assert_equal('addon_added', self.public_project.logs[-1].action)
         self.public_project.delete_addon('github', auth=self.user_auth)
@@ -1629,11 +1618,8 @@ class TestNodeLogList(ApiTestCase):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.json['data'][-1]['action'], 'addon_removed')
 
-    def test_add_pointer_in_logs(self):
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+    def test_add_pointer(self):
         self.public_project.add_pointer(self.pointer, auth=Auth(self.user), save=True)
         assert_equal('pointer_created', self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.json['data'][-1]['action'], 'pointer_created')
-
