@@ -2,6 +2,29 @@
 Changelog
 *********
 
+0.48.0 (2015-08-31)
+===================
+
+- Add project settings that allows a project's wiki to be editable by any OSF user.
+- MD5 and SHA1 hashes appear in a file's Revisions table.
+- Update UI for OSF for Meetings page.
+- Various UI improvements.
+
+0.47.0 (2015-08-15)
+===================
+
+- Project registrations require approval from admin contributors.
+- Add tokens module for implementing JWT token-based actions. Currently allows
+generating URLs for registration approval/disapproval, embargo
+approval/disapproval, and retraction approval/disapproval.
+- Change sign-up flow: users are taken to Dashboard after confirming their
+email address.
+- APIv2: Fix serialization of Node tags. Remove Node system tags from
+response.
+- APIv2: Fix node and user endpoints so that they don't return deleted
+nodes/users.
+- APIv2: Implement POST and PATCH for the User resource.
+
 0.46.0 (2015-08-17)
 ===================
 

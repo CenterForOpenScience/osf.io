@@ -121,7 +121,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
 TEST = Mail('test', subject='A test email to ${name}')
 
-CONFIRM_EMAIL = Mail('confirm', subject='Confirm your email address')
+CONFIRM_EMAIL = Mail('confirm', subject='Open Science Framework Account Verification')
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
 
 REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
@@ -130,7 +130,7 @@ INVITE = Mail('invite', subject='You have been added as a contributor to an OSF 
 CONTRIBUTOR_ADDED = Mail('contributor_added', subject='You have been added as a contributor to an OSF project.')
 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
-FORWARD_INVITE_REGiSTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
+FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
 PENDING_VERIFICATION = Mail('pending_invite', subject="Your account is almost ready!")
@@ -225,4 +225,10 @@ ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
 ARCHIVE_SUCCESS = Mail(
     'archive_success',
     subject="Registration of " + UNESCAPE + " complete"
+)
+
+
+WELCOME = Mail(
+    'welcome',
+    subject='Welcome to the Open Science Framework'
 )

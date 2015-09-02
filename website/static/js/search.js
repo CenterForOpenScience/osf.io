@@ -13,8 +13,6 @@ ko.punches.enableAll();
 // Disable IE Caching of JSON
 $.ajaxSetup({ cache: false });
 
-//https://stackoverflow.com/questions/7731778/jquery-get-query-string-parameters
-
 var Category = function(name, count, display){
     var self = this;
 
@@ -190,27 +188,42 @@ var ViewModel = function(params) {
         }
     };
 
-    /** name of tag, action add or remove.*/
-    self.clickTag = function(name, action) {
-        // To handle passing from template vs. in main html
-        var tag = name;
-
-        if(typeof name.name !== 'undefined') {
-            tag = name.name;
-        }
-
-        self.currentPage(1);
-        var tagString = 'tags:("' + tag + '")';
-
-        if (self.query().indexOf(tagString) === -1) {
-            if (self.query() !== '' && action === 'add') {
-                self.query(self.query() + ' AND ');
-            } else if (self.query() !== '' && action === 'remove') {
-                self.query(self.query() + ' NOT ');
+    self._makeTagString = function(tagName) {
+        return 'tags:("' + tagName.replace(/"/g, '\\\"') + '")';        
+    };
+    self.addTag = function(tagName) {
+        var tagString = self._makeTagString(tagName);
+        var query = self.query();
+        if (query.indexOf(tagString) === -1) {
+            if (self.query() !== '') {
+                query += ' AND ';
             }
-            self.query(self.query() + tagString);
-            self.category(new Category('total', 0, 'Total'));
+            query += tagString;
+            self.query(query); 
+            self.onUpdateTags();                      
+        }     
+    };
+    self.removeTag = function(tagName, _, e) {
+        e.stopPropagation();            
+        var query = self.query();
+        var tagRegExp = /(?:AND)?\s*tags\:\([\'\"](.+?)[\'\"]\)/g;
+        var matches = query.match(tagRegExp);
+        var dirty = false;
+        while (matches.length) {
+            var match = matches.pop();
+            if ((match.match(tagName) || []).length) {
+                query = query.replace(match, '');   
+                dirty = true;
+            }
         }
+        if (dirty) {
+            self.query(query);
+            self.onUpdateTags();
+        }
+    };
+    self.onUpdateTags = function() {
+        self.category(new Category('total', 0, 'Total'));
+        self.currentPage(1);
         self.search();
     };
 
