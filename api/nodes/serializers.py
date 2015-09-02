@@ -39,9 +39,6 @@ class NodeSerializer(JSONAPISerializer):
             'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
             'count': 'get_node_count',
         },
-        'logs': {
-            'related': Link('nodes:node-logs', kwargs={'node_id': '<pk>'})
-        },
         'contributors': {
             'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
             'count': 'get_contrib_count',
@@ -212,27 +209,3 @@ class NodeFilesSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
-
-class NodeLogSerializer(JSONAPISerializer):
-    date = ser.DateTimeField(read_only=True)
-    id = ser.CharField(read_only=True, source='_id')
-    action = ser.CharField(read_only=True)
-    version = ser.IntegerField(read_only=True, source='_version')
-    name = ser.CharField(read_only=True, source='_name')
-
-    class Meta:
-        type_ = 'logs'
-
-    links = LinksField({
-        'self': 'get_absolute_api_v2_url',
-        'user': {
-            'self': Link('users:user-detail', kwargs={'user_id': '<user_id>'})
-        }
-    })
-
-    def absolute_url(self, obj):
-        return obj.absolute_url
-
-    def get_absolute_api_v2_url(self, obj):
-        pointer_node = Node.load(obj.node._id)
-        return pointer_node.absolute_api_v2_url

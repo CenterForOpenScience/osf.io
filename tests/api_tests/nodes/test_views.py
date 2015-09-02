@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import mock
 import urlparse
-import datetime
-import datetime as dt
 from nose.tools import *  # flake8: noqa
 
 from website.models import Node
@@ -11,18 +9,16 @@ from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 from website.settings import API_DOMAIN
 
-from tests.base import ApiTestCase, fake, assert_datetime_equal
+from tests.base import ApiTestCase, fake
 from tests.factories import (
     DashboardFactory,
     FolderFactory,
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
-    NodeLogFactory,
     UserFactory,
     AuthUserFactory
 )
-
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
@@ -97,7 +93,9 @@ class TestNodeList(ApiTestCase):
         assert_not_in(self.private._id, ids)
 
 
+
 class TestNodeFiltering(ApiTestCase):
+
     def setUp(self):
         super(TestNodeFiltering, self).setUp()
         self.user_one = AuthUserFactory()
@@ -299,6 +297,7 @@ class TestNodeFiltering(ApiTestCase):
 
 
 class TestNodeCreate(ApiTestCase):
+
     def setUp(self):
         super(TestNodeCreate, self).setUp()
         self.user_one = AuthUserFactory()
@@ -423,8 +422,8 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['links']['parent']['self'], urlparse.urljoin(API_DOMAIN, self.public_url))
 
-
 class TestNodeUpdate(ApiTestCase):
+
     def setUp(self):
         super(TestNodeUpdate, self).setUp()
         self.user = AuthUserFactory()
@@ -619,6 +618,7 @@ class TestNodeUpdate(ApiTestCase):
 
 
 class TestNodeDelete(ApiTestCase):
+
     def setUp(self):
         super(TestNodeDelete, self).setUp()
         self.user = AuthUserFactory()
@@ -685,6 +685,7 @@ class TestNodeDelete(ApiTestCase):
 
 
 class TestNodeContributorList(ApiTestCase):
+
     def setUp(self):
         super(TestNodeContributorList, self).setUp()
         self.user = AuthUserFactory()
@@ -733,8 +734,8 @@ class TestNodeContributorList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-
 class TestNodeContributorFiltering(ApiTestCase):
+
     def setUp(self):
         super(TestNodeContributorFiltering, self).setUp()
         self.project = ProjectFactory()
@@ -744,6 +745,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         self.basic_auth = (self.project.creator.username, self.password)
 
     def test_filtering_node_with_only_bibliographic_contributors(self):
+
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
         # no filter
         res = self.app.get(base_url, auth=self.basic_auth)
@@ -782,7 +784,6 @@ class TestNodeContributorFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.basic_auth)
         assert_equal(len(res.json['data']), 1)
         assert_false(res.json['data'][0].get('bibliographic', None))
-
 
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
@@ -907,6 +908,7 @@ class TestNodeChildrenList(ApiTestCase):
 
 
 class TestNodeChildCreate(ApiTestCase):
+
     def setUp(self):
         super(TestNodeChildCreate, self).setUp()
         self.user = AuthUserFactory()
@@ -994,6 +996,7 @@ class TestNodeChildCreate(ApiTestCase):
 
 
 class TestNodePointersList(ApiTestCase):
+
     def setUp(self):
         super(TestNodePointersList, self).setUp()
         self.user = AuthUserFactory()
@@ -1244,6 +1247,7 @@ class TestCreateNodePointer(ApiTestCase):
 
 
 class TestNodeFilesList(ApiTestCase):
+
     def setUp(self):
         super(TestNodeFilesList, self).setUp()
         self.user = AuthUserFactory()
@@ -1341,6 +1345,7 @@ class TestNodeFilesList(ApiTestCase):
 
 
 class TestNodePointerDetail(ApiTestCase):
+
     def setUp(self):
         super(TestNodePointerDetail, self).setUp()
         self.user = AuthUserFactory()
@@ -1356,8 +1361,7 @@ class TestNodePointerDetail(ApiTestCase):
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
                                                               auth=Auth(self.user),
                                                               save=True)
-        self.public_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id,
-                                                              self.public_pointer._id)
+        self.public_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
 
     def test_returns_public_node_pointer_detail_logged_out(self):
         res = self.app.get(self.public_url)
@@ -1390,6 +1394,7 @@ class TestNodePointerDetail(ApiTestCase):
 
 
 class TestDeleteNodePointer(ApiTestCase):
+
     def setUp(self):
         super(TestDeleteNodePointer, self).setUp()
         self.user = AuthUserFactory()
@@ -1448,10 +1453,10 @@ class TestDeleteNodePointer(ApiTestCase):
 
     def test_return_deleted_public_node_pointer(self):
         res = self.app.delete(self.public_url, auth=self.user.auth)
-        self.public_project.reload()  # Update the model to reflect changes made by post request
+        self.public_project.reload() # Update the model to reflect changes made by post request
         assert_equal(res.status_code, 204)
 
-        # check that deleted pointer can not be returned
+        #check that deleted pointer can not be returned
         res = self.app.get(self.public_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
@@ -1460,45 +1465,11 @@ class TestDeleteNodePointer(ApiTestCase):
         self.project.reload()  # Update the model to reflect changes made by post request
         assert_equal(res.status_code, 204)
 
-        # check that deleted pointer can not be returned
+        #check that deleted pointer can not be returned
         res = self.app.get(self.private_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
 
-<<<<<<< HEAD
-class TestNodeLogList(ApiTestCase):
-    def setUp(self):
-        super(TestNodeLogList, self).setUp()
-        self.user = AuthUserFactory()
-        self.contrib = AuthUserFactory()
-        self.creator = AuthUserFactory()
-        self.user_auth = Auth(self.user)
-        self.NodeLogFactory = ProjectFactory()
-
-        self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_url = '/{}nodes/{}/logs/'.format(API_BASE, self.private_project._id)
-
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_url = '/{}nodes/{}/logs/'.format(API_BASE, self.public_project._id)
-
-    def test_add_tag(self):
-        user_auth = Auth(self.user)
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        self.public_project.add_tag("Jeff Spies", auth=user_auth)
-        assert_equal("tag_added", self.public_project.logs[-1].action)
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.json['data'][-1]['action'], 'tag_added')
-        assert_equal("Jeff Spies", self.public_project.logs[-1].params['tag'])
-
-    def test_project_created(self):
-        res = self.app.get(self.public_url)
-        assert_equal(res.status_code, 200)
-        assert_equal(self.public_project.logs[0].action, "project_created")
-
-
-
-=======
 class TestReturnDeletedNode(ApiTestCase):
     def setUp(self):
 
@@ -1549,4 +1520,3 @@ class TestReturnDeletedNode(ApiTestCase):
     def test_delete_deleted_private_node(self):
         res = self.app.delete(self.private_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
->>>>>>> upstream/develop

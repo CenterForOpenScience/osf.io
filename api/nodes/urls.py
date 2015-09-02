@@ -13,6 +13,5 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/children/$', views.NodeChildrenList.as_view(), name='node-children'),
     url(r'^(?P<node_id>\w+)/node_links/$', views.NodeLinksList.as_view(), name='node-pointers'),
     url(r'^(?P<node_id>\w+)/files/$', views.NodeFilesList.as_view(), name='node-files'),
-    url(r'^(?P<node_id>\w+)/logs/$', views.NodeLogList.as_view(), name='node-logs'),
     url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)', views.NodeLinksDetail.as_view(), name='node-pointer-detail'),
 ]
