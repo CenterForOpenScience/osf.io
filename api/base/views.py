@@ -63,6 +63,7 @@ def root(request, format=None):
         current_user = UserSerializer(user, context={'request': request}).data
     else:
         current_user = None
+
     return Response({
         'meta': {
             'message': 'Welcome to the OSF API.',
