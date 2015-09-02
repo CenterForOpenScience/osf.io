@@ -64,7 +64,6 @@ class NodeSerializer(JSONAPISerializer):
     registrations = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
                                                      lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})
 
-    # TODO: finish me
     class Meta:
         type_ = 'nodes'
 
