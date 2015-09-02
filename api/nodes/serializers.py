@@ -236,4 +236,3 @@ class NodeLogSerializer(JSONAPISerializer):
     def get_absolute_api_v2_url(self, obj):
         pointer_node = Node.load(obj.node._id)
         return pointer_node.absolute_api_v2_url
-
