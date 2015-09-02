@@ -1674,6 +1674,13 @@ class TestNode(OsfTestCase):
             self.node.set_visible(user=self.user, visible=False, auth=None)
             assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
+    def test_active_child_nodes(self):
+        self.node.is_deleted = True
+        self.node.save()
+        self.node.reload()
+        assert_false(self.parent.nodes_active)
+
+
 class TestNodeTraversals(OsfTestCase):
 
     def setUp(self):
@@ -1702,6 +1709,25 @@ class TestNodeTraversals(OsfTestCase):
         assert_equal(len(descendants), 2)  # two immediate children
         assert_equal(len(descendants[0][1]), 1)  # only one visible child of comp1
         assert_equal(len(descendants[1][1]), 0)  # don't auto-include comp2's children
+
+    def test_delete_registration_tree(self):
+        proj = NodeFactory()
+        NodeFactory(parent=proj)
+        comp2 = NodeFactory(parent=proj)
+        NodeFactory(parent=comp2)
+        reg = RegistrationFactory(project=proj)
+        reg_ids = [reg._id] + [r._id for r in reg.get_descendants_recursive()]
+        reg.delete_registration_tree(save=True)
+        assert_false(Node.find(Q('_id', 'in', reg_ids) & Q('is_deleted', 'eq', False)).count())
+
+    def test_delete_registration_tree_deletes_backrefs(self):
+        proj = NodeFactory()
+        NodeFactory(parent=proj)
+        comp2 = NodeFactory(parent=proj)
+        NodeFactory(parent=comp2)
+        reg = RegistrationFactory(project=proj)
+        reg.delete_registration_tree(save=True)
+        assert_false(proj.node__registrations)
 
     def test_get_descendants_recursive(self):
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
@@ -1911,7 +1937,7 @@ class TestAddonCallbacks(OsfTestCase):
                 self.node, fork, self.user
             )
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_register_callback(self, mock_archive):
         registration = self.node.register_node(
             None, self.consolidate_auth, '', '',
@@ -2451,7 +2477,7 @@ class TestProject(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.is_fork_of(self.project))
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_is_registration_of(self, mock_archive):
         project = ProjectFactory()
         reg1 = project.register_node(None, Auth(user=project.creator), '', None)
@@ -2459,7 +2485,7 @@ class TestProject(OsfTestCase):
         assert_true(reg1.is_registration_of(project))
         assert_true(reg2.is_registration_of(project))
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_is_registration_of_false(self, mock_archive):
         project = ProjectFactory()
         to_reg = ProjectFactory()
@@ -2472,7 +2498,7 @@ class TestProject(OsfTestCase):
         with assert_raises(PermissionsError):
             project.register_node(None, Auth(user=user), '', None)
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_admin_can_register_private_children(self, mock_archive):
         user = UserFactory()
         project = ProjectFactory(creator=user)
@@ -2560,8 +2586,7 @@ class TestProject(OsfTestCase):
             self.user,
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
-        assert_false(registration.embargo_end_date)
-        assert_true(registration.pending_embargo)
+        assert_true(registration.is_pending_embargo)
 
         func = lambda: registration.set_privacy('public', auth=self.consolidate_auth)
         assert_raises(NodeStateError, func)
@@ -2574,19 +2599,16 @@ class TestProject(OsfTestCase):
             datetime.datetime.utcnow() + datetime.timedelta(days=10)
         )
         registration.save()
-        assert_false(registration.embargo_end_date)
-        assert_true(registration.pending_embargo)
+        assert_true(registration.is_pending_embargo)
 
         approval_token = registration.embargo.approval_state[self.user._id]['approval_token']
         registration.embargo.approve_embargo(self.user, approval_token)
-        assert_true(registration.embargo_end_date)
-        assert_false(registration.pending_embargo)
+        assert_false(registration.is_pending_embargo)
 
         registration.set_privacy('public', auth=self.consolidate_auth)
         registration.save()
-        assert_false(registration.embargo_end_date)
-        assert_false(registration.pending_embargo)
-        assert_equal(registration.embargo.state, Embargo.CANCELLED)
+        assert_false(registration.is_pending_embargo)
+        assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_true(registration.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.EMBARGO_APPROVED)
 
@@ -3140,11 +3162,8 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(registration.creator, self.user)
 
     def test_logs(self):
-        # Registered node has all logs except the Project Registered log
+        # Registered node has all logs except for registration approval initiated
         assert_equal(self.registration.logs, self.project.logs[:-1])
-
-    def test_registration_log(self):
-        assert_equal(self.project.logs[-1].action, 'project_registered')
 
     def test_tags(self):
         assert_equal(self.registration.tags, self.project.tags)
@@ -3458,7 +3477,7 @@ class TestPointer(OsfTestCase):
         registered = self.pointer.fork_node()
         self._assert_clone(self.pointer, registered)
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_register_with_pointer_to_registration(self, mock_archive):
         pointee = RegistrationFactory()
         project = ProjectFactory()

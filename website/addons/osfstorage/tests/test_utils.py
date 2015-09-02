@@ -40,6 +40,8 @@ class TestSerializeRevision(StorageTestCase):
             },
             'date': self.versions[0].date_created.isoformat(),
             'downloads': 2,
+            'md5': None,
+            'sha256': None,
         }
         observed = utils.serialize_revision(
             self.project,
@@ -62,6 +64,8 @@ class TestSerializeRevision(StorageTestCase):
             'user': None,
             'date': self.versions[0].date_created.isoformat(),
             'downloads': 0,
+            'md5': None,
+            'sha256': None,
         }
         observed = utils.serialize_revision(
             self.project,

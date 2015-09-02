@@ -41,7 +41,7 @@ class TestNotificationsModels(OsfTestCase):
         self.parent = factories.ProjectFactory(creator=self.user)
         self.node = factories.NodeFactory(creator=self.user, parent=self.parent)
 
-    def test_can_read_children(self):
+    def test_has_permission_on_children(self):
         non_admin_user = factories.UserFactory()
         parent = factories.ProjectFactory()
         parent.add_contributor(contributor=non_admin_user, permissions=['read'])
@@ -53,8 +53,9 @@ class TestNotificationsModels(OsfTestCase):
         sub_component.save()
         sub_component2 = factories.NodeFactory(parent=node)
 
-        has_permission_on_child_node = node.can_read_children(non_admin_user)
-        assert_true(has_permission_on_child_node)
+        assert_true(
+            node.has_permission_on_children(non_admin_user, 'read')
+        )
 
     def test_check_user_has_permission_excludes_deleted_components(self):
         non_admin_user = factories.UserFactory()
@@ -69,8 +70,9 @@ class TestNotificationsModels(OsfTestCase):
         sub_component.save()
         sub_component2 = factories.NodeFactory(parent=node)
 
-        has_permission_on_child_node = node.can_read_children(non_admin_user)
-        assert_false(has_permission_on_child_node)
+        assert_false(
+            node.has_permission_on_children(non_admin_user,'read')
+        )
 
     def test_check_user_does_not_have_permission_on_private_node_child(self):
         non_admin_user = factories.UserFactory()
@@ -79,8 +81,10 @@ class TestNotificationsModels(OsfTestCase):
         parent.save()
         node = factories.NodeFactory(parent=parent, category='project')
         sub_component = factories.NodeFactory(parent=node)
-        has_permission_on_child_node = node.can_read_children(non_admin_user)
-        assert_false(has_permission_on_child_node)
+
+        assert_false(
+            node.has_permission_on_children(non_admin_user,'read')
+        )
 
     def test_check_user_child_node_permissions_false_if_no_children(self):
         non_admin_user = factories.UserFactory()
@@ -88,15 +92,19 @@ class TestNotificationsModels(OsfTestCase):
         parent.add_contributor(contributor=non_admin_user, permissions=['read'])
         parent.save()
         node = factories.NodeFactory(parent=parent, category='project')
-        has_permission_on_child_node = node.can_read_children(non_admin_user)
-        assert_false(has_permission_on_child_node)
+
+        assert_false(
+            node.has_permission_on_children(non_admin_user,'read')
+        )
 
     def test_check_admin_has_permissions_on_private_component(self):
         parent = factories.ProjectFactory()
         node = factories.NodeFactory(parent=parent, category='project')
         sub_component = factories.NodeFactory(parent=node)
-        has_permission_on_child_node = node.can_read_children(parent.creator)
-        assert_true(has_permission_on_child_node)
+
+        assert_true(
+            node.has_permission_on_children(parent.creator,'read')
+        )
 
     def test_check_user_private_node_child_permissions_excludes_pointers(self):
         user = factories.UserFactory()
@@ -104,8 +112,10 @@ class TestNotificationsModels(OsfTestCase):
         pointed = factories.ProjectFactory(contributor=user)
         parent.add_pointer(pointed, Auth(parent.creator))
         parent.save()
-        has_permission_on_child_nodes = parent.can_read_children(user)
-        assert_false(has_permission_on_child_nodes)
+
+        assert_false(
+            parent.has_permission_on_children(user,'read')
+        )
 
 
 class TestSubscriptionView(OsfTestCase):

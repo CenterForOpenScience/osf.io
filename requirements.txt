@@ -44,3 +44,4 @@ webcolors==1.4
 Django==1.8
 djangorestframework==3.1.1
 django-rest-swagger==0.3.2
+pyjwt==1.4.0
