@@ -1637,9 +1637,5 @@ class TestNodeLogList(ApiTestCase):
         self.public_project.add_pointer(self.pointer, auth=Auth(self.user), save=True)
         assert_equal('pointer_created', self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.json['data'][-1]['action'], 'pointer_created')
-
-
-
-
+        assert_equal(res.json['data'][-1]['action'], 'pointer_created' )
 
