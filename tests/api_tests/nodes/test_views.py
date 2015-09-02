@@ -1627,7 +1627,8 @@ class TestExceptionFormatting(ApiTestCase):
         res = self.app.post_json_api(url, self.project_no_title, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert('title' in res.json['errors'][0]['detail'])
+        assert('title' in res.json['errors'][0]['meta']['field'])
+        assert('This field is required.' in res.json['errors'][0]['detail'])
 
     def test_node_does_not_exist_formatting(self):
         url = '/{}nodes/{}/'.format(API_BASE, '12345')
@@ -1653,15 +1654,19 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(len(errors), 2)
-        assert('category' in errors[0]['detail'].keys())
-        assert('title' in errors[1]['detail'].keys())
+        assert('category' in res.json['errors'][0]['meta']['field'])
+        assert('This field is required.' in res.json['errors'][0]['detail'])
+        assert('title' in res.json['errors'][1]['meta']['field'])
+        assert('This field is required.' in res.json['errors'][0]['detail'])
 
     def test_create_node_link_no_target_formatting(self):
         url = self.private_url + 'node_links/'
         res = self.app.post_json_api(url, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert('target_node_id' in res.json['errors'][0]['detail'])
+        assert('target_node_id' in res.json['errors'][0]['meta']['field'])
+        assert('This field is required.' in res.json['errors'][0]['detail'])
+
 
     def test_node_link_already_exists(self):
         url = self.private_url + 'node_links/'
