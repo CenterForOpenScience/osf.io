@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import uuid
 
-from .model import Node, PrivateLink, validate_title
+from .model import Node, PrivateLink
 from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from modularodm import Q

@@ -33,7 +33,7 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
+from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -1048,7 +1048,6 @@ def project_generate_private_link_post(auth, node, **kwargs):
     new_link = new_private_link(
         name=name, user=auth.user, nodes=nodes, anonymous=anonymous
     )
-
 
     if anonymous and has_public_node:
         status.push_status_message(
