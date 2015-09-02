@@ -5,6 +5,16 @@ from modularodm import Q
 from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
 
+class ForeignFieldReference(object):
+
+    _foreign = True
+
+    def __init__(self, Model, Serializer):
+        self.model_class = Model
+        self.serializer_class = Serializer
+
+    def _get_queryset(self, field, value):
+        return self.model_class.find(Q(field, 'eq', value))
 
 class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
@@ -45,21 +55,20 @@ class FilterMixin(object):
             raise NotImplementedError()
 
     def is_filterable_field(self, key):
-        try:
-            return key.strip() in self.serializer_class.filterable_fields
-        except AttributeError:
-            return key.strip() in self.serializer_class._declared_fields
+        return key.strip().split('.')[0] in self.serializer_class.filterable_fields
 
     # Used so that that queries by _id will work
     def convert_key(self, key):
         key = key.strip()
-        if self.serializer_class._declared_fields[key].source:
-            return self.serializer_class._declared_fields[key].source
+        if key in self.serializer_class._declared_fields:
+            return self.serializer_class._declared_fields[key].source or key
+        elif key.split('.')[0] in self.serializer_class._foreign_fields:
+            return key.split('.')[0]
         return key
 
     # Used to convert string values from query params to Python booleans when necessary
     def convert_value(self, value, field):
-        field_type = type(self.serializer_class._declared_fields[field])
+        field_type = self.serializer_class.get_field_type(field)
         value = value.strip()
         if field_type == ser.BooleanField:
             if value in self.TRUTHY:
@@ -87,6 +96,7 @@ class ODMFilterMixin(FilterMixin):
     field_comparison_operators = {
         ser.CharField: 'icontains',
         ser.ListField: 'in',
+        ForeignFieldReference: 'in',
     }
 
     def __init__(self, *args, **kwargs):
@@ -94,8 +104,18 @@ class ODMFilterMixin(FilterMixin):
         if not self.serializer_class:
             raise NotImplementedError()
 
+    def convert_value(self, value, field):
+        field_instance = self.serializer_class().get_field(field)
+        if isinstance(field_instance, ForeignFieldReference):
+            key = field.split('.').pop()
+            if key in field_instance.serializer_class._declared_fields:
+                key = field_instance.serializer_class._declared_fields[key].source or key
+            return field_instance._get_queryset(key, value).get_keys()
+        else:
+            return super(ODMFilterMixin, self).convert_value(value, field)
+
     def get_comparison_operator(self, key):
-        field_type = type(self.serializer_class._declared_fields[key])
+        field_type = self.serializer_class.get_field_type(key)
         if field_type in self.field_comparison_operators:
             return self.field_comparison_operators[field_type]
         else:
@@ -105,7 +125,10 @@ class ODMFilterMixin(FilterMixin):
         raise NotImplementedError('Must define get_default_odm_query')
 
     def get_query_from_request(self):
-        param_query = self.query_params_to_odm_query(self.request.QUERY_PARAMS)
+        return self._get_query(self.request.QUERY_PARAMS)
+
+    def _get_query(self, query_params):
+        param_query = self.query_params_to_odm_query(query_params)
         default_query = self.get_default_odm_query()
 
         if param_query:

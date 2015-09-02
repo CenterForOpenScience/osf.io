@@ -3,14 +3,15 @@
 import furl
 import collections
 from modularodm import Q
-from rest_framework.reverse import reverse
-from api.base.exceptions import Gone
-from rest_framework.exceptions import NotFound
 from modularodm.exceptions import NoResultsFound
+from rest_framework.reverse import reverse
+from rest_framework.exceptions import NotFound
+from django.core import urlresolvers
 
 from website import util as website_util  # noqa
 from website import settings as website_settings
 
+from api.base.exceptions import Gone
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
@@ -101,3 +102,7 @@ def deep_get(obj, key):
         return deep_get(soft_get(obj, keychain.pop(0)), '.'.join(keychain))
     else:
         return soft_get(obj, key)
+
+def get_view(url):
+    view = urlresolvers.resolve(url)
+    return view.to_view()

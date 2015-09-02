@@ -1,10 +1,13 @@
 from rest_framework import serializers as ser
-
-from website.models import Node
-from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
+from framework.auth.core import Auth
+
+from website.models import Node, User
+
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.base.filters import ForeignFieldReference
+from api.users.serializers import UserSerializer
 
 class NodeTagField(ser.Field):
 
@@ -23,7 +26,7 @@ class NodeSerializer(JSONAPISerializer):
     # instance
     category_choices = Node.CATEGORY_MAP.keys()
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
-    filterable_fields = frozenset(['title', 'description', 'public'])
+    filterable_fields = frozenset(['title', 'description', 'public', 'creator'])
 
     id = ser.CharField(read_only=True, source='_id')
     title = ser.CharField(required=True)
@@ -32,6 +35,8 @@ class NodeSerializer(JSONAPISerializer):
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     tags = ser.ListField(child=NodeTagField(), required=False)
+
+    creator = ForeignFieldReference(User, UserSerializer)
 
     links = LinksField({
         'html': 'get_absolute_url',

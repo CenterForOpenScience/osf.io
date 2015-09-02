@@ -3,7 +3,9 @@ import re
 
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
+
 from api.base.utils import absolute_reverse, waterbutler_url_for, deep_get
+from api.base.filters import ForeignFieldReference
 
 
 def _rapply(d, func, *args, **kwargs):
@@ -145,8 +147,39 @@ class WaterbutlerLink(Link):
         """
         return waterbutler_url_for(obj['waterbutler_type'], obj['provider'], obj['path'], obj['node_id'], obj['cookie'], obj['args'])
 
+class ForeignFieldMeta(ser.SerializerMetaclass):
 
-class JSONAPIListSerializer(ser.ListSerializer):
+    @classmethod
+    def _get_foreign_fields(cls, attrs):
+        return {
+            name: field
+            for name, field in attrs.iteritems()
+            if getattr(field, '_foreign', False)
+        }
+
+    def __new__(cls, name, bases, attrs):
+        attrs['_foreign_fields'] = cls._get_foreign_fields(attrs)
+        return super(ForeignFieldMeta, cls).__new__(cls, name, bases, attrs)
+
+class FieldTypeMixin(object):
+
+    def get_field(self, key):
+        if key in self._declared_fields:
+            return self._declared_fields[key]
+        elif key.split('.')[0] in self._foreign_fields:
+            return self._foreign_fields[key.split('.')[0]]
+
+    @classmethod
+    def get_field_type(cls, key):
+        key = key.strip()
+        if key in cls._declared_fields:
+            return type(cls._declared_fields[key])
+        elif key.split('.')[0] in cls._foreign_fields:
+            return ForeignFieldReference
+
+class JSONAPIListSerializer(ser.ListSerializer, FieldTypeMixin):
+
+    __metaclass__ = ForeignFieldMeta
 
     def to_representation(self, data):
         # Don't envelope when serializing collection
@@ -155,10 +188,11 @@ class JSONAPIListSerializer(ser.ListSerializer):
         ]
 
 
-class JSONAPISerializer(ser.Serializer):
+class JSONAPISerializer(ser.Serializer, FieldTypeMixin):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
     allows for enveloping of both single resources and collections.
     """
+    __metaclass__ = ForeignFieldMeta
 
     # overrides Serializer
     @classmethod
