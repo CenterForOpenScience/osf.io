@@ -172,6 +172,7 @@ class TestApplicationDetail(ApiTestCase):
                                      'client_secret': user1_app.client_secret,
                                      'owner': user1_app.owner._id,
                                      'name': new_name,
+                                     'description': user1_app.description,
                                      'home_url': user1_app.home_url,
                                      'callback_url': user1_app.callback_url
                                      },
