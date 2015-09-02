@@ -503,7 +503,7 @@ def validate_title(value):
     above 200 characters.
     """
     if value is None or not value.strip():
-        raise ValidationValueError('Title cannot be blank')
+        raise ValidationValueError('Title cannot be blank.')
 
     value = sanitize.strip_html(value)
 

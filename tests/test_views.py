@@ -64,18 +64,24 @@ from tests.factories import (
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
+
 class Addon(MockAddonNodeSettings):
     @property
     def complete(self):
         return True
+
     def archive_errors(self):
         return 'Error'
+
+
 class Addon2(MockAddonNodeSettings):
     @property
     def complete(self):
         return True
+
     def archive_errors(self):
         return 'Error'
+
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
@@ -87,6 +93,20 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.link.nodes.append(self.project)
         self.link.save()
         self.project_url = self.project.web_url_for('view_project')
+
+    def test_edit_title_empty(self):
+        node = ProjectFactory(creator=self.user)
+        url = node.api_url_for("edit_node")
+        res = self.app.post_json(url, {'name': 'title', 'value': ''}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Title cannot be blank', res.body)
+
+    def test_edit_title_invalid(self):
+        node = ProjectFactory(creator=self.user)
+        url = node.api_url_for("edit_node")
+        res = self.app.post_json(url, {'name': 'title', 'value': '<a></a>'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Invalid title.', res.body)
 
     def test_not_anonymous_for_public_project(self):
         anonymous_link = PrivateLinkFactory(anonymous=True)
