@@ -357,6 +357,14 @@ MEETING_DATA = {
         'admins': [],
         'public_projects': True,
     },
+    'SEASR2016': {
+        'name': 'Southeastern Association of Shared Resources 2016',
+        'info_url': 'http://seasr.abrf.org',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 
