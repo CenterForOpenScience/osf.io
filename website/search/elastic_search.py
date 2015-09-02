@@ -234,6 +234,11 @@ def get_doctype_from_node(node):
         return node.category
 
 
+def get_doctype_from_filenode(filenode):
+    parent_type = get_doctype_from_node(filenode.node)
+    return '{}_file'.format(parent_type)
+
+
 @requires_search
 def update_node(node, index=None):
     index = index or INDEX
@@ -322,18 +327,18 @@ def update_file(file_node, index=None):
     parent_node_type = get_doctype_from_node(parent_node)
     path = file_util.norm_path(file_node.path)
     file_content = file_util.get_file_content(file_node)
-
+    doc_type = get_doctype_from_filenode(file_node)
     file_doc = {
         'name': name,
         'path': path,
         'parent_id': parent_id,
         'attachment': base64.encodestring(file_content),
-        'category': '{}_file'.format(parent_node_type)
+        'category': 'file'
     }
 
     es.index(
         index=index,
-        doc_type='file',
+        doc_type=doc_type,
         parent=parent_id,
         id=file_util.norm_path(file_node.path),
         body=file_doc,
@@ -367,7 +372,6 @@ def update_file_from_content(file_node, content, index=None):
     attachment = base64.encodestring(content)
     category = 'file'
     parent_id = file_node.node._id
-    parent_type = get_doctype_from_node(file_node.node)
     file_path = file_util.norm_path(file_node.path)
     file_name = file_node.name
     file_doc = {
@@ -379,7 +383,7 @@ def update_file_from_content(file_node, content, index=None):
     }
     es.index(
         index=index,
-        doc_type='{}_file'.format(parent_type),
+        doc_type=get_doctype_from_filenode(file_node),
         parent=parent_id,
         id=file_path,
         body=file_doc,
@@ -400,7 +404,6 @@ def delete_file(file_node, index=None):
 
     path = file_util.norm_path(file_node.path)
     parent_id = file_node.node._id
-    parent_doc_type = get_doctype_from_node(file_node.node)
 
     if not file_util.is_indexed(file_node):
         return False
@@ -410,7 +413,7 @@ def delete_file(file_node, index=None):
 
     es.delete(
         index=index,
-        doc_type='{}_file'.format(parent_doc_type),
+        doc_type=get_doctype_from_filenode(file_node),
         parent=parent_id,
         id=path,
         refresh=True,
@@ -428,9 +431,10 @@ def delete_file_from_path(file_node_path, file_node_parent_id, index=None):
     """
     index = index or INDEX
     file_path = file_util.norm_path(file_node_path)
+    parent_type = get_doctype_from_node(Node.load(file_node_parent_id))
     es.delete(
         index=index,
-        doc_type='file',
+        doc_type='{}_file'.format(parent_type),
         parent=file_node_parent_id,
         id=file_path,
         refresh=True,
@@ -452,7 +456,7 @@ def delete_all_files(node, index=None):
     }
     es.delete_by_query(
         index=index,
-        doc_type='file',
+        doc_type='{}_file'.format(get_doctype_from_node(node)),
         body=body,
     )
 
@@ -520,10 +524,11 @@ def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, inde
 
     path = file_util.norm_path(file_node_id)
     new_path = file_util.norm_path(new_file_node_id)
+    old_parent_doctype = get_doctype_from_node(Node.load(old_parent_id))
 
     doc = es.get(
         index=index,
-        doc_type='file',
+        doc_type='{}_file'.format(old_parent_doctype),
         id=path,
         parent=old_parent_id,
     )['_source']

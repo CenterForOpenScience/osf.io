@@ -120,10 +120,10 @@ def query(text, index=None):
     return hits
 
 
-def file_count(index=None):
+def file_count(parent_doctype, index=None):
     index = index or settings.ELASTIC_INDEX
     body = {'query': {'query_string': {'query': '*'}}}
-    resp = elastic_search.es.search(doc_type='file', body=body, index=index)
+    resp = elastic_search.es.search(doc_type='{}_file'.format(parent_doctype), body=body, index=index)
     count = len(resp['hits']['hits'])
     return count
 
@@ -205,19 +205,19 @@ class TestFileIndexingTestCase(FileIndexingTestCase):
 
     def test_file_count(self):
         elastic_search.es.index(
-            doc_type='file',
+            doc_type='project_file',
             body={'name': 'test'},
             parent='12345',
             index=settings.ELASTIC_INDEX,
         )
         elastic_search.es.index(
-            doc_type='file',
+            doc_type='project_file',
             body={'name': 'test_two'},
             parent='67890',
             index=settings.ELASTIC_INDEX,
         )
         time.sleep(1)
-        count = file_count()
+        count = file_count(parent_doctype='project')
         assert_equal(2, count)
 
     def test_get_existing_file(self):
