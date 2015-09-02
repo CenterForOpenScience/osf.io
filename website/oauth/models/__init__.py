@@ -14,7 +14,7 @@ from requests.exceptions import HTTPError as RequestsHTTPError
 
 from modularodm import fields, Q
 from modularodm.storage.base import KeyExistsException
-from modularodm.validators import URLValidator
+from modularodm.validators import MaxLengthValidator, URLValidator
 from requests_oauthlib import OAuth1Session
 from requests_oauthlib import OAuth2Session
 
@@ -383,8 +383,8 @@ class ApiOAuth2Application(StoredObject):
                                 required=True)
 
     # User-specified application descriptors
-    name = fields.StringField(index=True, required=True)
-    description = fields.StringField(required=False)
+    name = fields.StringField(index=True, required=True, validate=MaxLengthValidator(200))
+    description = fields.StringField(required=False, validate=MaxLengthValidator(1000))
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
                                         editable=False)

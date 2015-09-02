@@ -1034,6 +1034,18 @@ class TestApiOAuth2Application(OsfTestCase):
             api_app = ApiOAuth2ApplicationFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
             api_app.save()
 
+    def test_long_name_raises_exception(self):
+        long_name = ('JohnJacobJingelheimerSchmidtHisNameIsMyN' * 5) + 'a'
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(name=long_name)
+            api_app.save()
+
+    def test_long_description_raises_exception(self):
+        long_desc = ('JohnJacobJingelheimerSchmidtHisNameIsMyN' * 25) + 'a'
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(description=long_desc)
+            api_app.save()
+
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_active_set_to_false_upon_successful_deletion(self, mock_method):
         mock_method.return_value(True)
