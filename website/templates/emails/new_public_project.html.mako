@@ -1,6 +1,6 @@
-Hello [first name, last name],
+Hello ${fullname},
 
-Congratulations on making your first public project on the Open Science Framework (OSF)! Now that your project “<project title>” is public, you’ll be able to take advantage of more
+Congratulations on making your first public project on the Open Science Framework (OSF)! Now that your project “${project_title}" is public, you’ll be able to take advantage of more
 
 OSF features:
 The number of downloads of your files [link to files page] will be automatically logged for you

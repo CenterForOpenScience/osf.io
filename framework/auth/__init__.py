@@ -66,8 +66,9 @@ def register_unconfirmed(username, password, fullname):
         mails.queue_mail(
             to_addr=user.username,
             mail=mails.NO_ADDON,
-            send_at=dt.datetime.utcnow() + dt.timedelta(seconds=8),
-            user=user
+            send_at=dt.datetime.utcnow() + dt.timedelta(weeks=8),
+            user=user,
+            fullname=user.fullname
         )
     elif not user.is_registered:  # User is in db but not registered
         user.add_unconfirmed_email(username)

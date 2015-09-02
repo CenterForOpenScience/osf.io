@@ -90,7 +90,10 @@ def add_poster_by_email(conference, message):
                 to_addr=user,
                 mail=mails.WELCOME_OSF4M,
                 send_at=datetime.utcnow() + timedelta(weeks=2),
-                user=user
+                user=user,
+                conference=conference.name,
+                fullname=user.fullname,
+                presentation='presentation'
             )
         else:
             set_password_url = None

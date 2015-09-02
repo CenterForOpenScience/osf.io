@@ -2508,7 +2508,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     mail=mails.NEW_PUBLIC_PROJECT,
                     send_at=datetime.datetime.utcnow() + datetime.timedelta(hours=24),
                     user=auth.user,
-                    nid=self._id
+                    nid=self._id,
+                    fullname=auth.user.fullname,
+                    project_title=self.title
                 )
             self.is_public = True
         elif permissions == 'private' and self.is_public:

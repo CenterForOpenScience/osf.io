@@ -3,7 +3,6 @@ from framework.transactions.context import TokuTransaction
 from website.app import init_app
 from modularodm import Q
 from website import mails
-#from website.models import QueuedMail, SentQueuedMail
 from framework.auth import User
 
 def main():
@@ -19,7 +18,8 @@ def main():
                     to_addr=user.username,
                     mail=mails.NO_LOGIN,
                     send_at=datetime.utcnow(),
-                    user=user
+                    user=user,
+                    fullname=user.fullname
                 )
 
     queued_emails = list(mails.QueuedMail.find(Q('send_at', 'lt', datetime.utcnow())))

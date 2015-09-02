@@ -140,6 +140,7 @@ class QueuedMail(StoredObject):
         self.to_addr = to_addr
         self.send_at = send_at
         self.email_type = mail['template']
+        self.data = context
         self.save()
 
     def send_mail(self):
@@ -150,7 +151,7 @@ class QueuedMail(StoredObject):
             subject=mail_struct['subject']
         )
         if callback and self.user.osf_mailing_lists.get('Open Science Framework Help'):
-            if send_mail(self.to_addr, mail, mimetype='html'):
+            if send_mail(self.to_addr, mail, mimetype='html', **(self.data or {})):
                 sent = SentQueuedMail()
                 sent._id = self._id
                 sent.email_type = self.email_type
