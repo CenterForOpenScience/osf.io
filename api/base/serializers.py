@@ -78,15 +78,15 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         """
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
 
-        if self.meta is None:
-            return {'links': {self.link_type: url}}
-        else:
+        if self.meta:
             meta = {}
             for key in self.meta:
                 meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
             self.meta = meta
 
             return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
+        else:
+            return {'links': {self.link_type: url}}
 
 
 class LinksField(ser.Field):
