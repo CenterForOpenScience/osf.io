@@ -171,7 +171,7 @@ var TrackedMixin = function() {
     self.originalValues = ko.observable();
 };
 
-/** Determine is the model has changed from its original state */
+/** Determine if the model has changed from its original state */
 TrackedMixin.prototype.dirty = function() {
     var self = this;
     return ko.toJSON(self.trackedProperties) !== ko.toJSON(self.originalValues());
