@@ -246,7 +246,7 @@
         <div class="modal-content">
             <div class="spinner-loading-wrapper">
                 <div class="logo-spin logo-xl"></div>
-                 <p class="m-t-sm fg-load-message"> Wiki rename in process...  </p>
+                 <p class="m-t-sm fg-load-message"> Renaming wiki...  </p>
             </div>
         </div>
     </div>
