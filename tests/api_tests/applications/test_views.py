@@ -74,11 +74,11 @@ class TestApplicationList(ApiTestCase):
 
         assert_equal(res.status_code, 201)
 
-        assert_equal(res.json['data']['owner'], self.user1._id)
+        assert_equal(res.json['data']['attributes']['owner'], self.user1._id)
         # Some fields aren't writable; make sure user can't set these
-        assert_not_equal(res.json['data']['client_id'],
+        assert_not_equal(res.json['data']['attributes']['client_id'],
                          self.sample_data['client_id'])
-        assert_not_equal(res.json['data']['client_secret'],
+        assert_not_equal(res.json['data']['attributes']['client_secret'],
                          self.sample_data['client_secret'])
 
     def test_creating_application_fails_if_callbackurl_fails_validation(self):
@@ -98,8 +98,7 @@ class TestApplicationList(ApiTestCase):
 
         res = self.app.post(self.user1_list_url, payload, auth=self.user1.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['name'], cleaned_text)
-        assert_equal(res.json['data']['name'], cleaned_text)
+        assert_equal(res.json['data']['attributes']['name'], cleaned_text)
 
     def test_created_applications_show_up_in_api_list(self):
         res = self.app.post(self.user1_list_url, self.sample_data, auth=self.user1.auth)
@@ -132,7 +131,7 @@ class TestApplicationDetail(ApiTestCase):
     def test_owner_can_view(self):
         res = self.app.get(self.user1_app_url, auth=self.user1.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['client_id'], self.user1_app.client_id)
+        assert_equal(res.json['data']['attributes']['client_id'], self.user1_app.client_id)
 
     def test_non_owner_cant_view(self):
         res = self.app.get(self.user1_app_url, auth=self.user2.auth, expect_errors=True)
@@ -168,7 +167,6 @@ class TestApplicationDetail(ApiTestCase):
                              {"name": new_name},
                              auth=self.user1.auth)
         user1_app.reload()
-
         assert_equal(res.status_code, 200)
         assert_dict_contains_subset({'client_id': user1_app.client_id,
                                      'client_secret': user1_app.client_secret,
@@ -178,7 +176,7 @@ class TestApplicationDetail(ApiTestCase):
                                      'home_url': user1_app.home_url,
                                      'callback_url': user1_app.callback_url
                                      },
-                                    res.json['data'])
+                                    res.json['data']['attributes'])
 
     def test_updating_an_instance_does_not_change_the_number_of_instances(self):
         new_name = "The instance formerly known as Prince"
