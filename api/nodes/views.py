@@ -5,11 +5,11 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from framework.auth.core import Auth
-from website.models import Node, Pointer
+from website.models import Node, Pointer, NodeLog
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
-from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
+from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer, NodeLogSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
@@ -366,3 +366,29 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
                 files.append(self.get_file_item(waterbutler_data, cookie, obj_args))
 
         return files
+
+class NodeLogList(generics.ListAPIView, NodeMixin):
+    """ Recent Log Activity
+
+    This allows users to be able to get log information. This will allow more interesting
+    use cases for the API. Also this will be necessary if we want to be able to use the
+     v2 api for the project summary page.
+
+    """
+    serializer_class = NodeLogSerializer
+
+    log_lookup_url_kwarg = 'node_id'
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+    )
+
+    def get_queryset(self):
+        query = Q('__backrefs.logged.node.logs', 'q', self.get_node()._id)
+        logs = NodeLog.find(query).sort('_id')
+        log_list = []
+        for log in logs:
+            log.user_id = log.user._id
+            log_list.append(log)
+        return log_list
