@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 
 import os
 import bson
+import json
 import logging
 import datetime
 import requests
@@ -289,12 +290,11 @@ class FileNode(object):
             'kind': self.kind,
         }
 
-    def generate_metadata_url(self, **kwargs):
-        return util.waterbutler_url_for(
-            'metadata',
+    def generate_waterbutler_url(self, **kwargs):
+        return util.waterbutler_api_url_for(
+            self.node._id,
             self.provider,
             self.path,
-            self.node,
             **kwargs
         )
 
@@ -397,15 +397,6 @@ class File(FileNode):
                 return
         raise exceptions.VersionNotFoundError(location)
 
-    def generate_download_url(self, **kwargs):
-        return util.waterbutler_url_for(
-            'download',
-            self.provider,
-            self.path,
-            self.node,
-            **kwargs
-        )
-
     def touch(self, revision=None, **kwargs):
         """The bread and butter of File, collects metadata about self
         and creates versions and updates self when required.
@@ -425,13 +416,20 @@ class File(FileNode):
         if version is not None:
             return version
 
-        resp = requests.get(self.generate_metadata_url(revision=revision, **kwargs))
+        # resp = requests.get(self.generate_metadata_url(revision=revision, **kwargs))
+        resp = requests.head(self.generate_metadata_url(revision=revision, **kwargs))
         if resp.status_code != 200:
             logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
             return None
 
-        data = resp.json()['data']
+        return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
+    def update(self, revision, data):
+        """Using revision and data update all data pretaining to self
+        :param str or None revision: The revision that data points to
+        :param dict data: Metadata recieved from waterbutler
+        :returns: FileVersion
+        """
         self.name = data['name']
         self.materialized_path = data['materialized']
 
