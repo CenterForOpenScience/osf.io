@@ -124,7 +124,7 @@
                     <tr>
                         <td class="col-sm-3">
                             <div>
-                                <span class="link-name m-b-xs" data-bind="text: name, tooltip: {title: 'Link name'}" style="display: block; width: 100%"></span>
+                                <span class="link-name m-b-xs" data-bind="html: name, tooltip: {title: 'Link name'}" style="display: block; width: 100%"></span>
                             </div>
 
                             <div class="btn-group">

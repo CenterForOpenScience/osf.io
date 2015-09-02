@@ -122,7 +122,7 @@ def new_private_link(name, user, nodes, anonymous):
     """
     key = str(uuid.uuid4()).replace("-", "")
     if name:
-        name = validate_title(name)
+        name = sanitize(name)
     else:
         name = "Shared project link"
 

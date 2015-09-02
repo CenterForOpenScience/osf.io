@@ -20,6 +20,7 @@ from website import language
 
 from website.util import paths
 from website.util import rubeus
+from website.util import sanitize
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -1044,15 +1045,10 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     has_public_node = any(node.is_public for node in nodes)
 
-    try:
-        new_link = new_private_link(
-            name=name, user=auth.user, nodes=nodes, anonymous=anonymous
-        )
-    except ValidationValueError as e:
-        raise HTTPError(
-            http.BAD_REQUEST,
-            data=dict(message_long=e.message)
-        )
+    new_link = new_private_link(
+        name=name, user=auth.user, nodes=nodes, anonymous=anonymous
+    )
+
 
     if anonymous and has_public_node:
         status.push_status_message(
@@ -1068,17 +1064,10 @@ def project_generate_private_link_post(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 def project_private_link_edit(auth, **kwargs):
     new_name = request.json.get('value', '')
-    try:
-        name = validate_title(new_name)
-    except ValidationValueError as e:
-        raise HTTPError(
-            http.BAD_REQUEST,
-            data=dict(message_long=e.message)
-        )
     private_link_id = request.json.get('pk', '')
     private_link = PrivateLink.load(private_link_id)
     if private_link:
-        private_link.name = name
+        private_link.name = sanitize(new_name)
         private_link.save()
 
 
