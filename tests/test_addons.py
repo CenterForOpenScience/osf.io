@@ -566,6 +566,20 @@ class TestAddonFileViews(OsfTestCase):
 
         assert_equals(resp.status_code, 401)
 
+    def test_nonstorage_addons_raise(self):
+        resp = self.app.get(
+            self.project.web_url_for(
+                'addon_view_or_download_file',
+                path='sillywiki',
+                provider='wiki',
+                action='download'
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equals(resp.status_code, 400)
+
     def test_head_returns_url(self):
         path = 'the little engine that couldnt'
         guid, _ = self.node_addon.find_or_create_file_guid('/' + path)

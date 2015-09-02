@@ -1,8 +1,8 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title']} Statistics</%def>
+<%def name="title()">${node['title']} Analytics</%def>
 
 <div class="page-header  visible-xs">
-  <h2 class="text-300">Statistics</h2>
+  <h2 class="text-300">Analytics</h2>
 </div>
 
 <%

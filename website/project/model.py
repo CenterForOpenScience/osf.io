@@ -770,6 +770,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         parents = self.parents
         return {p._id for p in parents}
 
+    @property
+    def nodes_active(self):
+        return [x for x in self.nodes if not x.is_deleted]
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -3259,7 +3263,7 @@ class Embargo(EmailApprovableSanction):
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
+            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
 
             registration = Node.find_one(Q('embargo', 'eq', self))
 
@@ -3498,7 +3502,7 @@ class RegistrationApproval(EmailApprovableSanction):
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
 
-            approval_time_span = (24 * settings.REGISTRATION_APPROVAL_TIME.days) + (settings.REGISTRATION_APPROVAL_TIME.seconds / 60)
+            approval_time_span = settings.REGISTRATION_APPROVAL_TIME.days * 24
 
             registration = Node.find_one(Q('registration_approval', 'eq', self))
 

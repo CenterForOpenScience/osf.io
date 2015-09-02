@@ -6,7 +6,7 @@ You initiated a registration of your project ${project_name}. The proposed regis
 ${initiated_by} has initiated a registration of your project ${project_name}. The proposed registration can be viewed here: ${registration_link}.
 % endif 
 
-If approved, a registration will be created for the project and will be publicly visible immediately.
+If approved, a registration will be created for the project and will be made public immediately.
 
 To approve this registration, click the following link: ${approval_link}
 

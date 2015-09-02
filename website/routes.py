@@ -885,6 +885,16 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/statistics/',
             ],
             'get',
+            project_views.node.project_statistics_redirect,
+            notemplate,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/analytics/',
+                '/project/<pid>/node/<nid>/analytics/',
+            ],
+            'get',
             project_views.node.project_statistics,
             OsfWebRenderer('project/statistics.mako', trust=False)
         ),
