@@ -10,7 +10,7 @@ def main():
     inactive_emails = list(mails.SentQueuedMail.find(Q('email_type', 'eq', 'no_login')))
     users_sent = []
     for email in inactive_emails:
-        users_sent.append(email.to_)
+        users_sent.append(email.user)
     for user in inactive_users:
         if user not in users_sent:
             with TokuTransaction():
@@ -22,7 +22,12 @@ def main():
                     fullname=user.fullname
                 )
 
-    queued_emails = list(mails.QueuedMail.find(Q('send_at', 'lt', datetime.utcnow())))
+    queued_emails = list(mails.QueuedMail.find(
+        Q('send_at', 'lt', datetime.utcnow()) &
+        Q('done', 'eq', False)
+    ))
+    
+    #map by user and only try to send the top of the list otherwise keep it there
 
     for mail in queued_emails:
         with TokuTransaction():

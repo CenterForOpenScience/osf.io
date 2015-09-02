@@ -11,25 +11,18 @@ def _week_check(email):
     return True
 
 def no_addon(email):
-    if _week_check(email):
-        if len(email.user.get_addons()) is 0:
-            return True
-    return False
+    if len(email.user.get_addons()) is 0:
+        return True
 
 def no_login(email):
-    if _week_check(email):
-        return True
-    return False
+    return True
 
 def new_public_project(email):
-    if _week_check(email):
-        from website.models import Node
-        node = Node.find_one(Q('_id', 'eq', email.data['nid']))
-        if node.is_public:
-            return True
+    from website.models import Node
+    node = Node.find_one(Q('_id', 'eq', email.data['nid']))
+    if node.is_public:
+        return True
     return False
 
 def welcome_osf4m(email):
-    if _week_check(email):
-        return True
-    return False
+    return True

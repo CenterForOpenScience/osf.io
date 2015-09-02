@@ -102,6 +102,9 @@ MAILCHIMP_WEBHOOK_SECRET_KEY = 'CHANGEME'  # OSF secret key to ensure webhook is
 ENABLE_EMAIL_SUBSCRIPTIONS = True
 MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
+#what am I even doing
+OSF_GENERAL_LIST = 'Open Science Framework Help'
+
 # TODO: Override in local.py
 MAILGUN_API_KEY = None
 

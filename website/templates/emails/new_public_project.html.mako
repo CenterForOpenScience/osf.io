@@ -1,3 +1,4 @@
+## -*- coding: utf-8 -*-
 Hello ${fullname},
 
 Congratulations on making your first public project on the Open Science Framework (OSF)! Now that your project “${project_title}" is public, you’ll be able to take advantage of more

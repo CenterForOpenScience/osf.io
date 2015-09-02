@@ -134,6 +134,8 @@ class QueuedMail(StoredObject):
     send_at = fields.DateTimeField(default=None)
     email_type = fields.StringField(default=None)
     data = fields.DictionaryField(default=None)
+    sent_at = fields.DateTimeField(index=True)
+    done = fields.BooleanField(index=True, default=False)
 
     def create(self, to_addr, mail, send_at, user, **context):
         self.user = user
@@ -152,15 +154,11 @@ class QueuedMail(StoredObject):
         )
         if callback and self.user.osf_mailing_lists.get('Open Science Framework Help'):
             if send_mail(self.to_addr, mail, mimetype='html', **(self.data or {})):
-                sent = SentQueuedMail()
-                sent._id = self._id
-                sent.email_type = self.email_type
-                sent.sent_to = self.to_
-                sent.sent_at = datetime.utcnow()
-                sent.save()
-                self.__class__.remove_one(self)
+                self.sent_at = datetime.utcnow()
+                self.done = True
         else:
-            self.__class__.remove_one(self)
+            self.done = True
+        self.save()
 
     def delete(self):
         self.__class__.remove_one(self)
@@ -293,25 +291,25 @@ WELCOME = Mail(
 
 # Predefined emails with callbacks
 NO_ADDON = {
-    'template':'no_addon',
+    'template': 'no_addon',
     'subject': 'Link an add-on to your OSF project',
     'callback': mail_callbacks.no_addon
 }
 
 NO_LOGIN = {
-    'template':'no_login',
+    'template': 'no_login',
     'subject': 'What you\'re missing on the OSF',
     'callback': mail_callbacks.no_login
 }
 
 NEW_PUBLIC_PROJECT = {
-    'template':'new_public_project',
+    'template': 'new_public_project',
     'subject': 'Now, public. Next, impact.',
     'callback': mail_callbacks.new_public_project
 }
 
 WELCOME_OSF4M = {
-    'template':'welcome_osf4m',
+    'template': 'welcome_osf4m',
     'subject': 'The benefits of sharing your presentation',
     'callback': mail_callbacks.welcome_osf4m
 }

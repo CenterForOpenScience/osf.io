@@ -9,7 +9,7 @@ ko.punches.enableAll();
 var ViewModel = function(list) {
     var self = this;
     self.list = list;
-    self.subscribed = ko.observable();
+    self.subscribed = ko.observableArray();
     // Flashed messages
     self.message = ko.observable('');
     self.messageClass = ko.observable('text-success');
@@ -20,8 +20,12 @@ var ViewModel = function(list) {
             type: 'GET',
             dataType: 'json',
             success: function(response) {
-                var isSubscribed = response.mailing_lists ? response.mailing_lists[self.list] : false;
-                self.subscribed(isSubscribed);
+                for (var key in response.mailing_lists){
+                    debugger;
+                    if (response.mailing_lists[key]){
+                        self.subscribed.push(key);
+                    }
+                }
             },
             error: function() {
                 var message = 'Could not retrieve settings information.';

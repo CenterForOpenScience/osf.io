@@ -25,9 +25,18 @@
                         <div class="form-group">
 
                             <input type="checkbox"
-                                   data-bind="checked: subscribed"/>
-                            <label data-bind="text: list"></label>
+                                   data-bind="checked: subscribed['Open Science Framework General']"/>
+                            <label data-bind="text: list[0]"></label>
                             <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
+                        </div>
+                    </form>
+                    <form>
+                        <div class="form-group">
+
+                            <input type="checkbox"
+                                   data-bind="checked: subscribed['Open Science Framework Help']"/>
+                            <label data-bind="text: list[1]"></label>
+                            <p class="text-muted" style="padding-left: 15px">Receive up to one help notification per week.</p>
                         </div>
                         <div class="p-t-md p-b-md">
                         <button
@@ -36,13 +45,12 @@
                             data-bind="click: submit"
                         >Save</button>
                         </div>
-
                     </form>
-
                     <!-- Flashed Messages -->
                     <div data-bind="html: message, attr: {class: messageClass}"></div>
             </div><!--view model scope ends -->
         </div>
+
         <div class="panel panel-default">
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Notification Preferences</h3></div>
                 <form id="selectNotifications" class="osf-treebeard-minimal">
@@ -65,7 +73,9 @@
     <% import website %>
     ${parent.javascript()}
     <script type="text/javascript">
-        window.contextVars = $.extend({}, window.contextVars, {'mailingList': ${website.settings.MAILCHIMP_GENERAL_LIST | sjson, n }});
+        window.contextVars = $.extend({}, window.contextVars, {
+            'mailingList': [${website.settings.MAILCHIMP_GENERAL_LIST | sjson, n }, ${website.settings.OSF_GENERAL_LIST | sjson, n }],
+        });
     </script>
 </%def>
 

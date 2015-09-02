@@ -371,7 +371,7 @@ def user_addons(auth, **kwargs):
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
     return {
-        'mailing_lists': auth.user.mailing_lists
+        'mailing_lists': dict(auth.user.mailing_lists.items() + auth.user.osf_mailing_lists.items())
     }
 
 @dev_only
