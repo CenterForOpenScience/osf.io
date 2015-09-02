@@ -6,6 +6,7 @@ from framework.sessions import session, create_session, Session
 from modularodm import Q
 from framework import bcrypt
 from framework.auth.exceptions import DuplicateEmailError
+from website import mails
 
 from .core import User, Auth
 from .core import get_user
@@ -62,10 +63,12 @@ def register_unconfirmed(username, password, fullname):
             password=password,
             fullname=fullname)
         user.save()
-
-        from website.models import QueuedEmail
-        email = QueuedEmail()
-        email.create(to_user=user, email_type='no_addon', send_at=dt.datetime.utcnow() + dt.timedelta(weeks=8))
+        mails.queue_mail(
+            to_addr=user.username,
+            mail=mails.NO_ADDON,
+            send_at=dt.datetime.utcnow() + dt.timedelta(seconds=8),
+            user=user
+        )
     elif not user.is_registered:  # User is in db but not registered
         user.add_unconfirmed_email(username)
         user.set_password(password)

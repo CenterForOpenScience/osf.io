@@ -2503,10 +2503,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if not auth.user.has_made_public:
                 auth.user.has_made_public = True
                 auth.user.save()
-                from website.models import QueuedEmail
-                email = QueuedEmail()
-                email.create(to_user=auth.user, send_at=datetime.datetime.utcnow() + datetime.timedelta(hours=24),
-                             email_type='new_public', data={'nid': self._id})
+                mails.queue_mail(
+                    to_addr=auth.user.username,
+                    mail=mails.NEW_PUBLIC_PROJECT,
+                    send_at=datetime.datetime.utcnow() + datetime.timedelta(hours=24),
+                    user=auth.user,
+                    nid=self._id
+                )
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
