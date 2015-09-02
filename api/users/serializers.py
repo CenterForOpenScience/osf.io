@@ -1,5 +1,5 @@
 from rest_framework import serializers as ser
-from api.base.serializers import JSONAPISerializer, LinksField, Link
+from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField
 from website.models import User
 
 
@@ -30,12 +30,9 @@ class UserSerializer(JSONAPISerializer):
     orcid = ser.CharField(required=False, source='social.orcid', allow_blank=True, help_text='ORCID')
     researcherId = ser.CharField(required=False, source='social.researcherId', allow_blank=True, help_text='ResearcherId Account')
 
-    links = LinksField({
-        'html': 'absolute_url',
-        'nodes': {
-            'relation': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
-        }
-    })
+    links = LinksField({'html': 'absolute_url'})
+    nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
+                                             link_type='related')
 
     class Meta:
         type_ = 'users'

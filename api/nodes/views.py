@@ -356,7 +356,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             try:
                 waterbutler_data = waterbutler_request.json()['data']
             except KeyError:
-                raise ValidationError(detail='detail: Could not retrieve files information.')
+                raise ValidationError('Could not retrieve files information.')
 
             if isinstance(waterbutler_data, list):
                 for item in waterbutler_data:
