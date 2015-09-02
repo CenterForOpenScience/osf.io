@@ -22,7 +22,7 @@ def json_api_exception_handler(exc, context):
                     errors.append({key: value})
                 else:
                     errors.append({'detail': {key: value}})
-        elif isinstance(message, list):
+        elif isinstance(message, (list, tuple)):
             for error in message:
                 errors.append({'detail': error})
         else:
