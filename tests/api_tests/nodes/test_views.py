@@ -1615,7 +1615,7 @@ class TestNodeLogList(ApiTestCase):
 
     def test_project_add_contributor(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 200) 
         self.public_project.add_contributor(self.contrib, auth=self.user_auth)
         assert_equal('contributor_added', self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user.auth)
