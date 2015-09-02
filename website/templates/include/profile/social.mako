@@ -1,6 +1,7 @@
 <script id="profileSocial" type="text/html">
 
     <div data-bind="if: mode() === 'edit'">
+
         <form role="form" data-bind="submit: submit">
             <label>Your Websites</label>
             <div data-bind="sortable: {
@@ -101,16 +102,18 @@
             </div>
 
             <div class="padded">
+            <div class="p-t-lg p-b-lg">
+
                 <button
                         type="button"
                         class="btn btn-default"
                         data-bind="click: cancel"
-                    >Cancel</button>
+                    >Discard changes</button>
 
                 <button
                         type="submit"
-                        class="btn btn-primary"
-                    >Submit</button>
+                        class="btn btn-success"
+                    >Save</button>
 
             </div>
 
@@ -148,7 +151,7 @@
         </div>
 
         <div data-bind="if: editAllowed">
-            <a class="btn btn-default" data-bind="click: edit">Edit</a>
+            <a class="btn btn-primary" data-bind="click: edit">Edit</a>
         </div>
 
     </div>

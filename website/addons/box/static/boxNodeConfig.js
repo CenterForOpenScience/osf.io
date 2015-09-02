@@ -75,12 +75,12 @@ var ViewModel = function(url, selector, folderPicker) {
                     'this time. The Box addon credentials may no longer be valid.' +
                     ' Try deauthorizing and reauthorizing Box on your <a href="' +
                         self.urls().settings + '">account settings page</a>.',
-                    'text-warning');
+                    'text-danger');
                 } else {
                     self.changeMessage('Could not retrieve Box settings at ' +
                     'this time. The Box addon credentials may no longer be valid.' +
                     ' Contact ' + self.ownerName() + ' to verify.',
-                    'text-warning');
+                    'text-danger');
                 }
             }
         })
@@ -89,7 +89,7 @@ var ViewModel = function(url, selector, folderPicker) {
                 'this time. Please refresh ' +
                 'the page. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.',
-                'text-warning');
+                'text-danger');
             Raven.captureMessage('Could not GET Box settings', {
                 url: url,
                 textStatus: textStatus,
@@ -215,11 +215,17 @@ var ViewModel = function(url, selector, folderPicker) {
     */
     self.deauthorize = function() {
         bootbox.confirm({
-            title: 'Deauthorize Box?',
+            title: 'Disconnect Box?',
             message: 'Are you sure you want to remove this Box authorization?',
             callback: function(confirmed) {
                 if (confirmed) {
                     return sendDeauth();
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Disconnect',
+                    className:'btn-danger'
                 }
             }
         });
@@ -247,13 +253,18 @@ var ViewModel = function(url, selector, folderPicker) {
         */
     self.importAuth = function() {
         bootbox.confirm({
-            title: 'Import Box Access Token?',
+            title: 'Import Box access token',
             message: 'Are you sure you want to authorize this project with your Box access token?',
             callback: function(confirmed) {
                 if (confirmed) {
                     return $osf.putJSON(self.urls().importAuth, {})
                         .done(onImportSuccess)
                         .fail(onImportError);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Import'
                 }
             }
         });
@@ -298,7 +309,7 @@ var ViewModel = function(url, selector, folderPicker) {
                     error: function(xhr, textStatus, error) {
                         self.loading(false);
                         self.changeMessage('Could not connect to Box at this time. ' +
-                                            'Please try again later.', 'text-warning');
+                                            'Please try again later.', 'text-danger');
                         Raven.captureMessage('Could not GET get Box contents.', {
                             textStatus: textStatus,
                             error: error

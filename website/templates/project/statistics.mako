@@ -1,8 +1,8 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">${node['title']} Statistics</%def>
+<%def name="title()">${node['title']} Analytics</%def>
 
 <div class="page-header  visible-xs">
-  <h2 class="text-300">Statistics</h2>
+  <h2 class="text-300">Analytics</h2>
 </div>
 
 <%
@@ -20,7 +20,11 @@
 %>
 
 % if not node['piwik_site_id']:
-    <img src="/static/img/no_analytics.png">
+    <div class="row m-lg">
+        <div class="col-xs-12 text-center">
+            <img src="/static/img/no_analytics.png">
+        </div>
+    </div>
 % else:
     % if not node['is_public']:
         <div class='alert alert-warning'>

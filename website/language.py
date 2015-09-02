@@ -12,8 +12,10 @@
 
 # Status message shown at settings page on first login
 # (upon clicking primary email confirmation link)
-WELCOME_MESSAGE = ('Welcome to the OSF! Please update the following settings. If you need assistance '
-                   'in getting started, please visit the <a href="/getting-started/">Getting Started</a> page.')
+WELCOME_MESSAGE = '''
+<h1>Welcome to the OSF!</h1>
+<p>Visit our <a href="https://osf.io/getting-started/">getting started page</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a></p>
+'''
 
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
@@ -25,9 +27,6 @@ ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'
 # Shown if user tries to login with an email that is not yet confirmed
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
                ' <a href="/resend/">Click here</a> to resend your confirmation email.')
-
-# Shown upon successful email address confirmation
-CONFIRMED_EMAIL = 'Email address confirmation successful.'
 
 # Shown if the user's account is disabled
 DISABLED = '''
@@ -79,10 +78,15 @@ MERGE_CONFIRMATION_REQUIRED_LONG = (
     '<p>This email is confirmed to another account. '
     'Would you like to merge <em>{user_to_merge.username}</em> with the account '
     '<em>{user.username}</em>?<p>'
-    '<a class="btn btn-success" href="?confirm_merge">Confirm merge</a> '
+    '<a class="btn btn-primary" href="?confirm_merge">Confirm merge</a> '
 )
 
 # Node Actions
+
+AFTER_REGISTER_ARCHIVING = (
+    'Files are being copied to the newly created registration, and you will receive an email '
+    'notification when the copying is finished.'
+)
 
 BEFORE_REGISTER_HAS_POINTERS = (
     'This {category} contains links to other projects. Links will be copied '
@@ -132,12 +136,11 @@ registration is to retract it. Retractions show only the registration title,
 contributors, and description to indicate that a registration was made and
 later retracted.</p>
 
-<p>When you register, a notification will be sent to all other project
-contributors. Other administrators will have 48 hours to approve or reject
-creating the registration. If any other administrator rejects the
+<p>If you choose to embargo your registration, a notification will be sent to
+all other project contributors. Other administrators will have 48 hours to
+approve or cancel creating the registration. If any other administrator rejects the
 registration, it will be canceled. If all other administrators approve or do
-nothing, the registration will be confirmed and released or enter its embargo
-period.</p>
+nothing, the registration will be confirmed and enter its embargo period.</p>
 '''
 
 BEFORE_REGISTRATION_INFO = '''

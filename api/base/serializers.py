@@ -7,12 +7,17 @@ from api.base.utils import absolute_reverse, waterbutler_url_for
 
 
 def _rapply(d, func, *args, **kwargs):
-    """Apply a function to all values in a dictionary, recursively."""
+    """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
+    as those are the only complex structures currently supported by DRF Serializer Fields."""
     if isinstance(d, collections.Mapping):
         return {
             key: _rapply(value, func, *args, **kwargs)
             for key, value in d.iteritems()
         }
+    if isinstance(d, list):
+        return [
+            _rapply(item, func, *args, **kwargs) for item in d
+        ]
     else:
         return func(d, *args, **kwargs)
 
@@ -39,15 +44,15 @@ class LinksField(ser.Field):
         links = LinksField({
             'html': 'absolute_url',
             'children': {
-                'related': Link('nodes:node-children', pk='<pk>'),
+                'related': Link('nodes:node-children', node_id='<pk>'),
                 'count': 'get_node_count'
             },
             'contributors': {
-                'related': Link('nodes:node-contributors', pk='<pk>'),
+                'related': Link('nodes:node-contributors', node_id='<pk>'),
                 'count': 'get_contrib_count'
             },
             'registrations': {
-                'related': Link('nodes:node-registrations', pk='<pk>'),
+                'related': Link('nodes:node-registrations', node_id='<pk>'),
                 'count': 'get_registration_count'
             },
         })
@@ -114,7 +119,10 @@ class Link(object):
         kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.kwargs.items()}
         arg_values = [_get_attr_from_tpl(attr_tpl, obj) for attr_tpl in self.args]
         query_kwarg_values = {key: _get_attr_from_tpl(attr_tpl, obj) for key, attr_tpl in self.query_kwargs.items()}
-
+        # Presumably, if you have are expecting a value but the value is empty, then the link is invalid.
+        for item in kwarg_values:
+            if kwarg_values[item] is None:
+                return None
         return absolute_reverse(
             self.endpoint,
             args=arg_values,

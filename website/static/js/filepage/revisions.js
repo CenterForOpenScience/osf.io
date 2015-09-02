@@ -1,9 +1,11 @@
 var m = require('mithril');
 var $ = require('jquery');
+var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 var util = require('./util.js');
+var makeClient = require('js/clipboard');
 
 // Helper for filtering
 function TRUTHY(item) {
@@ -17,6 +19,7 @@ var model = {
     errorMessage: undefined,
     hasUser: false,
     hasDate: false,
+    hasHashes: false,
     selectedRevision: 0
 };
 
@@ -28,6 +31,7 @@ var FileRevisionsTable = {
         self.file = file;
         self.canEdit = canEdit;
         self.enableEditing = enableEditing;
+        self.baseUrl = (window.location.href).split('?')[0];
 
         model.hasDate = self.file.provider !== 'dataverse';
 
@@ -55,6 +59,7 @@ var FileRevisionsTable = {
                     self.enableEditing();
                 }
                 model.hasUser = model.revisions[0] && model.revisions[0].extra && model.revisions[0].extra.user;
+                model.hasHashes = model.revisions && model.revisions[0] && model.revisions[0].extra.hashes;
                 m.endComputation();
             }).fail(function(response) {
                 m.startComputation();
@@ -92,27 +97,30 @@ var FileRevisionsTable = {
                     model.hasDate ? m('th', 'Date') : false,
                     model.hasUser ? m('th', 'User') : false,
                     m('th[colspan=2]', 'Download'),
+                    model.hasHashes ? m('th', 'MD5') : false,
+                    model.hasHashes ? m('th', 'SHA2') : false,
                 ].filter(TRUTHY))
             ]);
         };
 
         self.makeTableRow = function(revision, index) {
             var isSelected = index === model.selectedRevision;
-
+            var clipBoard = function(element) {
+                makeClient(element);
+            };
             return m('tr' + (isSelected ? '.active' : ''), [
-                m('td',  isSelected ?
-                  revision.displayVersion :
-                  m('a', {href: revision.osfViewUrl}, revision.displayVersion)
+                m('td',  isSelected ? revision.displayVersion :
+                  m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
                 ),
                 model.hasDate ? m('td', revision.displayDate) : false,
                 model.hasUser ?
                     m('td', revision.extra.user.url ?
-                        m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
-                        revision.extra.user.name
+                            m('a', {href: revision.extra.user.url}, revision.extra.user.name) :
+                            revision.extra.user.name
                     ) : false,
                 m('td', revision.extra.downloads > -1 ? m('.badge', revision.extra.downloads) : ''),
                 m('td',
-                  m('a.btn.btn-primary.btn-sm.file-download', {
+                    m('a.btn.btn-primary.btn-sm.file-download', {
                         href: revision.osfDownloadUrl,
                         onclick: function() {
                             window.location = revision.waterbutlerDownloadUrl;
@@ -120,6 +128,20 @@ var FileRevisionsTable = {
                         }
                     }, m('i.fa.fa-download'))
                 ),
+                model.hasHashes ? m('td',
+                    m('div.input-group[style="width: 180px"]',
+                        [
+                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+revision.extra.hashes.md5 + '"]', {config: clipBoard}, m('.fa.fa-copy'))),
+                            m('input[value="'+revision.extra.hashes.md5+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;"]')
+                        ]
+                    )) : false,
+                model.hasHashes ? m('td',
+                    m('div.input-group[style="width: 180px"]',
+                        [
+                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+revision.extra.hashes.sha256 + '"]',{config: clipBoard}, m('.fa.fa-copy'))),
+                            m('input[value="'+revision.extra.hashes.sha256+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;"]')
+                        ]
+                    )) : false
             ].filter(TRUTHY));
         };
 
@@ -130,23 +152,22 @@ var FileRevisionsTable = {
         return self;
     },
     view: function(ctrl) {
-        return m('#revisionsPanel', [
-            m('.osf-panel-header', 'Revisions'),
-            m('', (function() {
-                if (!model.loaded()) {
-                    return util.Spinner;
-                }
-                if (model.errorMessage) {
-                    return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
-                }
+        return m('#revisionsPanel.panel.panel-default', [
+                m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
+                m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0', 'overflow': 'auto'}}, (function() {
+                    if (!model.loaded()) {
+                        return util.Spinner;
+                    }
+                    if (model.errorMessage) {
+                        return m('.alert.alert-warning', {style:{margin: '10px'}}, model.errorMessage);
+                    }
 
-                return m('table.table', [
-                    ctrl.getTableHead(),
-                    m('tbody', model.revisions.map(ctrl.makeTableRow))
-                ]);
-            })())
-        ]);
-
+                    return m('table.table.table-responsive',{style: {marginBottom: '0'}}, [
+                        ctrl.getTableHead(),
+                        m('tbody', model.revisions.map(ctrl.makeTableRow))
+                    ]);
+                })())
+            ]);
     },
     postProcessRevision: function(file, node, revision, index) {
         var options = {};

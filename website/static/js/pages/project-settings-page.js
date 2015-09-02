@@ -12,7 +12,7 @@ require('css/addonsettings.css');
 
 var ctx = window.contextVars;
 
-// Initialize treebeard grid
+// Initialize treebeard grid for notifications
 var ProjectNotifications = require('js/notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 var notificationsURL = ctx.node.urls.api  + 'subscriptions/';
@@ -27,18 +27,30 @@ if ($('#grid').length) {
     }).fail(function(xhr, status, error) {
         $notificationsMsg.addClass('text-danger');
         $notificationsMsg.text('Could not retrieve notification settings.');
-        Raven.captureMessage('Could not GET notification settings', {
+        Raven.captureMessage('Could not GET notification settings.', {
             url: notificationsURL, status: status, error: error
         });
     });
 }
 
-// Reusable function to fix affix widths to columns.
-function fixAffixWidth() {
-    $('.affix, .affix-top, .affix-bottom').each(function (){
-        var el = $(this);
-        var colsize = el.parent('.affix-parent').width();
-        el.outerWidth(colsize);
+//Initialize treebeard grid for wiki
+var ProjectWiki = require('js/wikiSettingsTreebeard.js');
+var wikiSettingsURL = ctx.node.urls.api  + 'wiki/settings/';
+var $wikiMsg = $('#configureWikiMessage');
+
+if ($('#wgrid').length) {
+    $.ajax({
+        url: wikiSettingsURL,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        new ProjectWiki(response);
+    }).fail(function(xhr, status, error) {
+        $wikiMsg.addClass('text-danger');
+        $wikiMsg.text('Could not retrieve wiki settings.');
+        Raven.captureMessage('Could not GET wiki settings.', {
+            url: wikiSettingsURL, status: status, error: error
+        });
     });
 }
 
@@ -62,11 +74,8 @@ $(document).ready(function() {
             window.contextVars.node.urls.update,
             disableCategory
         );
-        ko.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
+        $osf.applyBindings(categorySettingsVM, $('#nodeCategorySettings')[0]);
     }
-
-    $(window).resize(function (){ fixAffixWidth(); });
-    $('.project-page .panel').on('affixed.bs.affix', function(){ fixAffixWidth(); });
 
     $('#deleteNode').on('click', function() {
         ProjectSettings.getConfirmationCode(ctx.node.nodeType);
@@ -83,11 +92,25 @@ $(document).ready(function() {
             ctx.node.urls.api + 'settings/comments/',
             {commentLevel: commentLevel}
         ).done(function() {
-            $commentMsg.addClass('text-success');
             $commentMsg.text('Successfully updated settings.');
-            window.location.reload();
+            $commentMsg.addClass('text-success');
+            if($osf.isSafari()){
+                //Safari can't update jquery style change before reloading. So delay is applied here
+                setTimeout(function(){window.location.reload();}, 100);
+            } else {
+                window.location.reload();
+            }
+
         }).fail(function() {
-            bootbox.alert('Could not set commenting configuration. Please try again.');
+            bootbox.alert({
+                message: 'Could not set commenting configuration. Please try again.',
+                buttons:{
+                    ok:{
+                        label:'Close',
+                        className:'btn-default'
+                    }
+                }
+            });
         });
 
         return false;
@@ -116,7 +139,12 @@ $(document).ready(function() {
                 msgElm.text('Settings updated').fadeIn();
                 checkedOnLoad = $('#selectAddonsForm input:checked');
                 uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
-                window.location.reload();
+                if($osf.isSafari()){
+                    //Safari can't update jquery style change before reloading. So delay is applied here
+                    setTimeout(function(){window.location.reload();}, 100);
+                } else {
+                    window.location.reload();
+                }
             }
         });
 
@@ -145,14 +173,19 @@ $(document).ready(function() {
             var name = $that.attr('name');
             var capabilities = $('#capabilities-' + name).html();
             if (capabilities) {
-                bootbox.confirm(
-                    capabilities,
-                    function(result) {
+                bootbox.confirm({
+                    message: capabilities,
+                    callback: function(result) {
                         if (!result) {
                             $(that).attr('checked', false);
                         }
+                    },
+                    buttons:{
+                        confirm:{
+                            label:'Confirm'
+                        }
                     }
-                );
+               });
             }
         }
     });

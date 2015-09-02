@@ -44,12 +44,13 @@
     "morgan": "^1.5.1",
     "object-assign": "^2.0.0",
     "pikaday": "^1.3.2",
+    "pretty-data": "^0.40.0",
     "pym.js": "^0.4.1",
     "raven": "^0.7.2",
     "raw-loader": "^0.5.1",
     "share": "0.7.27",
     "style-loader": "^0.8.3",
-    "treebeard": "git://github.com/caneruguz/treebeard.git#b6661a9bf14bb972be7b8eb55357c9784ded2af6",
+    "treebeard": "git://github.com/caneruguz/treebeard.git#9f1458a9f5961460dcd84c833b5da0180219f253",
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "webpack": "^1.7.2",
@@ -68,7 +69,7 @@
     "karma-sinon": "^1.0.4",
     "karma-sourcemap-loader": "^0.3.4",
     "karma-spec-reporter": "0.0.16",
-    "karma-webpack": "^1.5.0",
+    "karma-webpack": "~1.5.0",
     "mocha": "^2.1.0"
   },
   "scripts": {

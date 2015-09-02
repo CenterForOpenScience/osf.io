@@ -15,6 +15,7 @@ from website.archiver import (
 from website.addons.base import StorageAddonBase
 from website import settings
 
+
 class ArchiveTarget(StoredObject):
     """Stores the results of archiving a single addon
     """
@@ -47,6 +48,7 @@ class ArchiveTarget(StoredObject):
             self.status
         )
 
+
 class ArchiveJob(StoredObject):
 
     _id = fields.StringField(
@@ -66,14 +68,6 @@ class ArchiveJob(StoredObject):
     initiator = fields.ForeignField('user')
 
     target_addons = fields.ForeignField('archivetarget', list=True)
-
-    # This field is used for stashing embargo URLs while still in the app context
-    # Format: {
-    #     'view': <str> url,
-    #     'approve': <str> url,
-    #     'disapprove': <str> url,
-    # }
-    meta = fields.DictionaryField()
 
     def __repr__(self):
         return (

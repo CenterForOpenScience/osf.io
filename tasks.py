@@ -320,6 +320,15 @@ def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
     from website.search_migration.migrate import migrate
     migrate(delete, index=index)
 
+@task
+def rebuild_search():
+    """Delete and recreate the index for elasticsearch"""
+    run("curl -s -XDELETE {uri}/{index}*".format(uri=settings.ELASTIC_URI,
+                                             index=settings.ELASTIC_INDEX))
+    run("curl -s -XPUT {uri}/{index}".format(uri=settings.ELASTIC_URI,
+                                          index=settings.ELASTIC_INDEX))
+    migrate_search()
+
 
 @task
 def mailserver(port=1025):
@@ -352,7 +361,7 @@ def pip_install(req_file):
 
 
 @task(aliases=['req'])
-def requirements(addons=False, release=False, dev=False):
+def requirements(addons=False, release=False, dev=False, metrics=False):
     """Install python dependencies.
 
     Examples:
@@ -360,6 +369,7 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --dev
         inv requirements --addons
         inv requirements --release
+        inv requirements --metrics
     """
     if release or addons:
         addon_requirements()
@@ -368,6 +378,8 @@ def requirements(addons=False, release=False, dev=False):
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:  # then dev requirements
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    elif metrics:  # then dev requirements
+        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
     else:  # then base requirements
         req_file = os.path.join(HERE, 'requirements.txt')
     run(pip_install(req_file), echo=True)
@@ -597,13 +609,12 @@ def analytics():
     import matplotlib
     matplotlib.use('Agg')
     init_app()
-    from scripts import metrics
     from scripts.analytics import (
         logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        metrics, logs, addons, comments, folders, links, watch, email_invites,
+        logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:
@@ -781,6 +792,15 @@ def webpack(clean=False, watch=False, dev=False):
 
 
 @task()
+def build_js_config_files():
+    from website import settings
+    from website.app import build_js_config_files as _build_js_config_files
+    print('Building JS config files...')
+    _build_js_config_files(settings)
+    print("...Done.")
+
+
+@task()
 def assets(dev=False, watch=False):
     """Install and build static assets."""
     npm = 'npm install'
@@ -788,6 +808,7 @@ def assets(dev=False, watch=False):
         npm += ' --production'
     run(npm, echo=True)
     bower_install()
+    build_js_config_files()
     # Always set clean=False to prevent possible mistakes
     # on prod
     webpack(clean=False, watch=watch, dev=dev)

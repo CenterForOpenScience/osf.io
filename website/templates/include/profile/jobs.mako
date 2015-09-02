@@ -30,7 +30,7 @@
                     <div class="form-group">
                         <label>Institution / Employer</label>
                         <input class="form-control" data-bind="value: institution"
-                            placeholder="Required"/>
+                            required="required" placeholder="Required"/>
                         <div data-bind="visible: $parent.showMessages, css:'text-danger'">
                             <p data-bind="validationMessage: institution"></p>
                         </div>
@@ -96,23 +96,23 @@
             </div>
 
             <div>
-                <a class="btn btn-default" data-bind="click: addContent">
+                <a class="btn btn-success" data-bind="click: addContent">
                     Add another
                 </a>
             </div>
 
-            <div class="padded">
+            <div class="p-t-lg p-b-lg">
 
                 <button
                         type="button"
                         class="btn btn-default"
                         data-bind="click: cancel"
-                    >Cancel</button>
+                    >Discard changes</button>
 
                 <button
                         type="submit"
-                        class="btn btn-primary"
-                    >Submit</button>
+                        class="btn btn-success"
+                    >Save</button>
 
             </div>
 

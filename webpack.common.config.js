@@ -37,6 +37,7 @@ var entry = {
     'register_1-page': staticPath('js/pages/register_1-page.js'),
     'sharing-page': staticPath('js/pages/sharing-page.js'),
     'conference-page': staticPath('js/pages/conference-page.js'),
+    'meetings-page': staticPath('js/pages/meetings-page.js'),
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
@@ -69,6 +70,7 @@ var entry = {
         'js/fangorn',
         'js/citations',
         'js/osfHelpers',
+        'js/osfToggleHeight',
         'mithril'
     ]
 };

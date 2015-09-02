@@ -17,7 +17,7 @@ var socialRules = {
     researcherId: /researcherid\.com\/rid\/([-\w]+)/i,
     scholar: /scholar\.google\.com\/citations\?user=(\w+)/i,
     twitter: /twitter\.com\/(\w+)/i,
-    linkedIn: /linkedin\.com\/profile\/view\?id=(\d+)/i,
+    linkedIn: /.*\/?(in\/.*|profile\/.*|pub\/.*)/i,
     impactStory: /impactstory\.org\/([\w\.-]+)/i,
     github: /github\.com\/(\w+)/i
 };
@@ -38,7 +38,7 @@ var SerializeMixin = function() {};
 
 /** Serialize to a JS Object. */
 SerializeMixin.prototype.serialize = function() {
-   return ko.toJS(this);
+    return ko.toJS(this);
 };
 
 SerializeMixin.prototype.unserialize = function(data) {
@@ -46,8 +46,6 @@ SerializeMixin.prototype.unserialize = function(data) {
     $.each(data || {}, function(key, value) {
         if (ko.isObservable(self[key])) {
             self[key](value);
-
-            
             // Ensure that validation errors are displayed
             self[key].notifySubscribers();
         }
@@ -115,7 +113,7 @@ var DateMixin = function() {
             return new Date(self.endYear(), '0', '1');
         }
     }, self).extend({
-        notInFuture: true,
+        notInFuture:true,
         minDate: self.start
     });
     self.clearEnd = function() {
@@ -202,6 +200,7 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     self.editAllowed = $.inArray('edit', self.modes) >= 0;
     self.editable = ko.observable(self.editAllowed);
     self.mode = ko.observable(self.editable() ? 'edit' : 'view');
+
     self.original = ko.observable();
     self.tracked = [];  // Define for each view model that inherits
 
@@ -212,7 +211,7 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     if (preventUnsaved !== false) {
         $(window).on('beforeunload', function() {
             if (self.dirty()) {
-                return 'You have unsaved changes.  Please click "Submit" or "Cancel" before leaving the page.';
+                return 'There are unsaved changes to your settings.';
             }
         });
     }
@@ -220,8 +219,8 @@ var BaseViewModel = function(urls, modes, preventUnsaved) {
     // Warn on tab change if dirty
     $('body').on('show.bs.tab', function() {
         if (self.dirty()) {
-            $osf.growl('You have unsaved changes.',
-                    'Please click "Submit" or "Cancel" before switching ' +
+            $osf.growl('There are unsaved changes to your settings.',
+                    'Please save or discard your changes before switching ' +
                     'tabs.');
             return false;
         }
@@ -253,7 +252,6 @@ BaseViewModel.prototype.changeMessage = function(text, css, timeout) {
 BaseViewModel.prototype.handleSuccess = function() {
     if ($.inArray('view', this.modes) >= 0) {
         this.mode('view');
-        
     } else {
         this.changeMessage(
             'Settings updated',
@@ -263,21 +261,17 @@ BaseViewModel.prototype.handleSuccess = function() {
     }
 };
 
-BaseViewModel.prototype.handleError = function(response) {    
+BaseViewModel.prototype.handleError = function(response) {
     var defaultMsg = 'Could not update settings';
-    var msg;
-    if (response.responseJSON === undefined) {
-        msg = defaultMsg;
-    }
-    else {
-        msg = response.responseJSON.message_long;
-    }
-     this.changeMessage(
-         msg,
-         'text-danger',
+    var msg = response.message_long || defaultMsg;
+
+ 
+
+    this.changeMessage(
+        msg,
+        'text-danger',
         5000
     );
-
 };
 
 BaseViewModel.prototype.setOriginal = function() {};
@@ -316,6 +310,12 @@ BaseViewModel.prototype.cancel = function(data, event) {
                     if ($.inArray('view', self.modes) !== -1) {
                         self.mode('view');
                     }
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Discard',
+                    className:'btn-danger'
                 }
             }
         });
@@ -393,9 +393,10 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         });
     };
 
-    var initials = function(names) {
+    self.initials = function(names) {
+        names = $.trim(names);
         return names
-            .split(' ')
+            .split(/\s+/)
             .map(function(name) {
                 return name[0].toUpperCase() + '.';
             })
@@ -420,7 +421,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         var given = $.trim(self.given() + ' ' + self.middle());
 
         if (given) {
-            cite = cite + ', ' + initials(given);
+            cite = cite + ', ' + self.initials(given);
         }
         if (self.suffix()) {
             cite = cite + ', ' + suffix(self.suffix());
@@ -433,7 +434,7 @@ var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
         if (self.given()) {
             cite = cite + ', ' + self.given();
             if (self.middle()) {
-                cite = cite + ' ' + initials(self.middle());
+                cite = cite + ' ' + self.initials(self.middle());
             }
         }
         if (self.suffix()) {
@@ -451,10 +452,8 @@ $.extend(NameViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototy
  * Custom observable for use with external services.
  */
 var extendLink = function(obs, $parent, label, baseUrl) {
-    
     obs.url = ko.computed(function($data, event) {
         // Prevent click from submitting form
-        
         event && event.preventDefault();
         if (obs()) {
             return baseUrl ? baseUrl + obs() : obs();
@@ -476,12 +475,12 @@ var extendLink = function(obs, $parent, label, baseUrl) {
 };
 
 var SocialViewModel = function(urls, modes) {
-    var self = this,
-        i;
+    var self = this;
     BaseViewModel.call(self, urls, modes);
     TrackedMixin.call(self);
-    self.addons = ko.observableArray();
 
+    self.addons = ko.observableArray();
+    
     self.profileWebsites = ko.observableArray();
 
     self.hasProfileWebsites = ko.computed(function() {
@@ -504,7 +503,17 @@ var SocialViewModel = function(urls, modes) {
             return false;
         }
     });
-    
+
+    //self.personal = extendLink(
+    //    // Note: Apply extenders in reverse order so that `ensureHttp` is
+    //    // applied before `url`.
+    //    ko.observable().extend({
+    //        trimmed: true,
+    //        url: true,
+    //        ensureHttp: true
+    //    }),
+    //    self, 'personal'
+    //);
     self.orcid = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
         self, 'orcid', 'http://orcid.org/'
@@ -523,7 +532,7 @@ var SocialViewModel = function(urls, modes) {
     );
     self.linkedIn = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.linkedIn)}),
-        self, 'linkedIn', 'https://www.linkedin.com/profile/view?id='
+        self, 'linkedIn', 'https://www.linkedin.com/'
     );
     self.impactStory = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.impactStory)}),
@@ -536,6 +545,7 @@ var SocialViewModel = function(urls, modes) {
 
     self.trackedProperties = [
         self.profileWebsites,
+        //self.personal,
         self.orcid,
         self.researcherId,
         self.twitter,
@@ -546,7 +556,6 @@ var SocialViewModel = function(urls, modes) {
     ];
 
     var validated = ko.validatedObservable(self);
- 
     self.isValid = ko.computed(function() {
         return validated.isValid();
     });
@@ -554,6 +563,7 @@ var SocialViewModel = function(urls, modes) {
 
     self.values = ko.computed(function() {
         return [
+            //{label: 'Personal Site', text: self.personal(), value: self.personal.url()},
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
             {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
@@ -646,6 +656,10 @@ var ListViewModel = function(ContentModel, urls, modes) {
     self.contents = ko.observableArray();
 
     self.tracked = self.contents;
+
+    self.canRemove = ko.computed(function() {
+        return self.contents().length > 1;
+    });
 
     self.isValid = ko.computed(function() {
         for (var i=0; i<self.contents().length; i++) {
@@ -844,17 +858,13 @@ var Jobs = function(selector, urls, modes) {
 var Schools = function(selector, urls, modes) {
     this.viewModel = new SchoolsViewModel(urls, modes);
     $osf.applyBindings(this.viewModel, selector);
-
 };
-
-
 
 module.exports = {
     Names: Names,
     Social: Social,
     Jobs: Jobs,
     Schools: Schools,
-
     // Expose private viewmodels
     _NameViewModel: NameViewModel
 };

@@ -16,7 +16,16 @@ require('pikaday-css');
     */
 function registrationFailed() {
     $osf.unblock();
-    bootbox.alert('Registration failed');
+    bootbox.alert({
+        title : 'Registration failed',
+        message : 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to <a href=\"mailto:support@osf.io\">support@osf.io</a> ',
+        buttons:{
+            ok:{
+                label:'Close',
+                className:'btn-default'
+            }
+        }
+    } );
 }
 
 function registerNode(data) {
@@ -102,26 +111,39 @@ $(document).ready(function() {
             success: function(response) {
                 var preRegisterWarnings = function() {
                     bootbox.confirm(
-                        $osf.joinPrompts(response.prompts, language.registerConfirm),
-                        function(result) {
-                            if (result) {
-                                registerNode(data);
-                            }
+                        {
+                            size: 'large',
+                            message : $osf.joinPrompts(response.prompts, '<h4>'+ language.registerConfirm + '</h4>'),
+                            callback: function(result) {
+                                if (result) {
+                                    registerNode(data);
+                                }
+                            },
+                            buttons:{
+                                confirm:{
+                                    label:'Register'
+                                }
+                           }
                         }
                     );
                 };
                 var preRegisterErrors = function(confirm, reject) {
-                    bootbox.confirm(
-                        $osf.joinPrompts(
-                            response.errors, 
-                            'Before you continue...'
-                        ) + '<br /><hr /> ' + language.registerSkipAddons,
-                        function(result) {
-                            if(result) {
+                    bootbox.confirm({
+                        message: ($osf.joinPrompts(
+                            response.errors,
+                            '<h4>Before you continue...</h4>'
+                        ) + '<hr /> ' + language.registerSkipAddons),
+                        callback: function (result) {
+                            if (result) {
                                 confirm();
                             }
+                        },
+                        buttons:{
+                            confirm:{
+                                label:'Continue'
+                            }
                         }
-                    );
+                    });
                 };
 
                 if (response.errors && response.errors.length) {

@@ -16,7 +16,7 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 import datetime
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
-from mock import patch
+from mock import patch, Mock
 
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
@@ -26,12 +26,12 @@ from website.addons import base as addons_base
 from website.oauth.models import ExternalAccount
 from website.oauth.models import ExternalProvider
 from website.project.model import (
-    ApiKey, Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
-    Retraction, Embargo,
+    Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
+    Retraction, Embargo, Sanction, RegistrationApproval
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
-from website.archiver import utils as archiver_utils
 from website.archiver.model import ArchiveTarget, ArchiveJob
+from website.archiver import ARCHIVER_SUCCESS
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -87,7 +87,6 @@ class UserFactory(ModularOdmFactory):
     fullname = Sequence(lambda n: "Freddie Mercury{0}".format(n))
     is_registered = True
     is_claimed = True
-    api_keys = []
     date_confirmed = datetime.datetime(2014, 2, 21)
     merged_by = None
     email_verifications = {}
@@ -117,21 +116,16 @@ class AuthUserFactory(UserFactory):
     """
 
     @post_generation
-    def add_api_key(self, create, extracted):
-        key = ApiKeyFactory()
-        self.api_keys.append(key)
+    def add_auth(self, create, extracted):
+        self.set_password('password')
         self.save()
-        self.auth = ('test', key._primary_key)
+        self.auth = (self.username, 'password')
 
 
 class TagFactory(ModularOdmFactory):
     FACTORY_FOR = Tag
 
     _id = Sequence(lambda n: "scientastic-{}".format(n))
-
-
-class ApiKeyFactory(ModularOdmFactory):
-    FACTORY_FOR = ApiKey
 
 
 class PrivateLinkFactory(ModularOdmFactory):
@@ -178,7 +172,7 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, archive=False, *args, **kwargs):
+                template=None, data=None, archive=False, embargo=None, registration_approval=None, retraction=None, *args, **kwargs):
         save_kwargs(**kwargs)
 
         # Original project to be registered
@@ -200,21 +194,39 @@ class RegistrationFactory(AbstractNodeFactory):
             template=template,
             data=data,
         )
-        ArchiveJob(
-            src_node=project,
-            dst_node=register,
-            initiator=user,
-        )
+
+        def add_approval_step(reg):
+            if embargo:
+                reg.embargo = embargo
+            elif registration_approval:
+                reg.registration_approval = registration_approval
+            elif retraction:
+                reg.retraction = retraction
+            else:
+                reg.require_approval(reg.creator)
+            reg.save()
+            reg.sanction.add_authorizer(reg.creator)
+            reg.sanction.save()
+
         if archive:
-            return register()
+            reg = register()
+            add_approval_step(reg)
         else:
             with patch('framework.tasks.handlers.enqueue_task'):
                 reg = register()
-                archiver_utils.archive_success(
-                    reg,
-                    reg.registered_user
-                )
-                return reg
+                add_approval_step(reg)
+            with patch.object(reg.archive_job, 'archive_tree_finished', Mock(return_value=True)):
+                reg.archive_job.status = ARCHIVER_SUCCESS
+                reg.archive_job.save()
+                reg.sanction.state = Sanction.APPROVED
+                reg.sanction.save()
+        ArchiveJob(
+            src_node=project,
+            dst_node=reg,
+            initiator=user,
+        )
+        reg.save()
+        return reg
 
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer
@@ -232,15 +244,36 @@ class WatchConfigFactory(ModularOdmFactory):
     node = SubFactory(NodeFactory)
 
 
-class RetractionFactory(ModularOdmFactory):
+class SanctionFactory(ModularOdmFactory):
+
+    ABSTRACT_FACTORY = True
+
+    @classmethod
+    def _create(cls, target_class, approve=False, *args, **kwargs):
+        user = UserFactory()
+        sanction = ModularOdmFactory._create(target_class, initiated_by=user, *args, **kwargs)
+        reg_kwargs = {
+            'owner': user,
+            sanction.SHORT_NAME: sanction
+        }
+        RegistrationFactory(**reg_kwargs)
+        if not approve:
+            sanction.state = Sanction.UNAPPROVED
+            sanction.save()
+        return sanction
+
+class RetractionFactory(SanctionFactory):
     FACTORY_FOR = Retraction
     user = SubFactory(UserFactory)
 
 
-class EmbargoFactory(ModularOdmFactory):
+class EmbargoFactory(SanctionFactory):
     FACTORY_FOR = Embargo
     user = SubFactory(UserFactory)
 
+class RegistrationApprovalFactory(SanctionFactory):
+    FACTORY_FOR = RegistrationApproval
+    user = SubFactory(UserFactory)
 
 
 class NodeWikiFactory(ModularOdmFactory):
@@ -308,7 +341,6 @@ class UnconfirmedUserFactory(ModularOdmFactory):
 class AuthFactory(base.Factory):
     FACTORY_FOR = Auth
     user = SubFactory(UserFactory)
-    api_key = SubFactory(ApiKeyFactory)
 
 
 class ProjectWithAddonFactory(ProjectFactory):

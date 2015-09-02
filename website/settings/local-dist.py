@@ -13,6 +13,9 @@ DEBUG_MODE = True  # Sets app to debug mode, turns off template caching, etc.
 SEARCH_ENGINE = 'elastic'
 ELASTIC_TIMEOUT = 10
 
+# Comment out to use SHARE in development
+USE_SHARE = False
+
 # Comment out to use celery in development
 USE_CELERY = False
 
@@ -29,6 +32,7 @@ MAIL_PASSWORD = 'CHANGEME'
 ENABLE_EMAIL_SUBSCRIPTIONS = False
 
 # Session
+OSF_COOKIE_DOMAIN = None
 COOKIE_NAME = 'osf'
 SECRET_KEY = "CHANGEME"
 

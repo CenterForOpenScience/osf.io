@@ -319,6 +319,31 @@ class TestCheckAuth(OsfTestCase):
             views.check_access(self.node, None, 'download')
         assert_equal(exc_info.exception.code, 401)
 
+    def test_has_permission_on_parent_node_copyto_pass_if_registration(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, parent=self.node)
+        component.is_registration = True
+
+        assert_false(component.has_permission(self.user, 'write'))
+        res = views.check_access(component, self.user, 'copyto')
+        assert_true(res)
+
+    def test_has_permission_on_parent_node_copyto_fail_if_not_registration(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, parent=self.node)
+
+        assert_false(component.has_permission(self.user, 'write'))
+        with assert_raises(HTTPError):
+            views.check_access(component, self.user, 'copyto')
+
+    def test_has_permission_on_parent_node_copyfrom(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, public=False, parent=self.node)
+
+        assert_false(component.has_permission(self.user, 'write'))
+        res = views.check_access(component, self.user, 'copyfrom')
+        assert_true(res)
+
 
 class OsfFileTestCase(OsfTestCase):
 
@@ -400,12 +425,14 @@ class TestAddonFileViews(OsfTestCase):
             'provider': '',
             'file_path': '',
             'sharejs_uuid': '',
+            'private': '',
             'urls': {
                 'files': '',
                 'render': '',
                 'sharejs': '',
                 'mfr': '',
                 'gravatar': '',
+                'external': '',
             },
             'size': '',
             'extra': '',
@@ -538,6 +565,20 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 401)
+
+    def test_nonstorage_addons_raise(self):
+        resp = self.app.get(
+            self.project.web_url_for(
+                'addon_view_or_download_file',
+                path='sillywiki',
+                provider='wiki',
+                action='download'
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equals(resp.status_code, 400)
 
     def test_head_returns_url(self):
         path = 'the little engine that couldnt'
