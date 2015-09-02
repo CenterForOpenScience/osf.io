@@ -6,6 +6,7 @@ from rest_framework import serializers as ser
 
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
+from website.util import waterbutler_api_url_for
 
 
 def _rapply(d, func, *args, **kwargs):
@@ -200,7 +201,9 @@ class WaterbutlerLink(Link):
     def resolve_url(self, obj):
         """Reverse URL lookup for WaterButler routes
         """
-        return waterbutler_url_for(obj['waterbutler_type'], obj['provider'], obj['path'], obj['node_id'], obj['cookie'], obj['args'])
+        if isinstance(obj, dict):
+            return waterbutler_api_url_for(obj['node_id'], obj['provider'], obj['path'], **self.query_kwargs)
+        return waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.query_kwargs)
 
 
 class JSONAPIListSerializer(ser.ListSerializer):

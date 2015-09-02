@@ -160,14 +160,12 @@ class NodeLinksSerializer(JSONAPISerializer):
         pass
 
 
-class NodeFilesSerializer(JSONAPISerializer):
+class NodeProviderSerializer(JSONAPISerializer):
 
-    id = ser.SerializerMethodField()
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
     item_type = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
-    metadata = ser.DictField(read_only=True)
 
     class Meta:
         type_ = 'files'
@@ -179,6 +177,8 @@ class NodeFilesSerializer(JSONAPISerializer):
                     query_kwargs={'path': '<path>', 'provider': '<provider>'}),
             'meta': {'self_methods': 'valid_self_link_methods'}
         }
+        'self_methods': 'valid_self_link_methods',
+        'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'}),
     })
 
     @staticmethod

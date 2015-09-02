@@ -4,7 +4,7 @@ from rest_framework import serializers as ser
 
 from website import settings
 from api.base.utils import absolute_reverse
-from api.base.serializers import JSONAPISerializer, LinksField, Link
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
 
 
 class FileSerializer(JSONAPISerializer):
@@ -25,7 +25,8 @@ class FileSerializer(JSONAPISerializer):
 
     links = LinksField({
         'html': 'absolute_url',
-        'self': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
+        # 'self': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
+        'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
         'node': {'relation': Link('nodes:node-detail', kwargs={'node_id': '<node._id>'})},
         'versions': {'relation': Link('files:file-versions', kwargs={'file_id': '<_id>'})},
     })
