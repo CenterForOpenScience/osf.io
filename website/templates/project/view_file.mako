@@ -32,7 +32,7 @@
       <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
           <div class="spinner-loading-wrapper">
-            <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+            <div class="logo-spin logo-lg"></div>
             <p class="m-t-sm fg-load-message"> Loading files...  </p>
           </div>
         </div>
@@ -47,6 +47,7 @@
     </div>
   </div>
 
+<!-- The osf-logo spinner here is from mfr code base -->
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
         <div id="externalView" class="col-sm-9"></div>

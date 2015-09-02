@@ -5,11 +5,10 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
-from website.models import Node, Pointer, User
+from website.models import Node, Pointer
+from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_404, waterbutler_url_for
-from .serializers import NodeContributorsSerializer, NodeContributorDetailSerializer
-from .permissions import AdminOrPublic, ContributorDetailPermissions
+from api.base.utils import get_object_or_error, waterbutler_url_for
 from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
@@ -23,7 +22,7 @@ class NodeMixin(object):
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self):
-        obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
+        obj = get_object_or_error(Node, self.kwargs[self.node_lookup_url_kwarg], 'node')
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
         return obj
@@ -128,7 +127,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
-    serializer_class = NodeContributorsSerializer
+    serializer_class = ContributorSerializer
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -235,7 +234,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
             auth = Auth(None)
         else:
             auth = Auth(user)
-        children = [node for node in nodes if node.can_view(auth) and node.primary]
+        children = [node for node in nodes if node.can_view(auth) and node.primary and not node.is_deleted]
         return children
 
     # overrides ListCreateAPIView
@@ -276,7 +275,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         pointer_lookup_url_kwarg = 'node_link_id'
-        pointer = get_object_or_404(Pointer, self.kwargs[pointer_lookup_url_kwarg])
+        pointer = get_object_or_error(Pointer, self.kwargs[pointer_lookup_url_kwarg], 'node link')
         # May raise a permission denied
         self.check_object_permissions(self.request, pointer)
         return pointer
@@ -401,7 +400,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             try:
                 waterbutler_data = waterbutler_request.json()['data']
             except KeyError:
-                raise ValidationError(detail='detail: Could not retrieve files information.')
+                raise ValidationError('Could not retrieve files information.')
 
             if isinstance(waterbutler_data, list):
                 for item in waterbutler_data:

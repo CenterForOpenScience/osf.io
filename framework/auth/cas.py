@@ -81,6 +81,11 @@ class CasClient(object):
         url.path.segments.extend(('oauth2', 'profile',))
         return url.url
 
+    def get_application_revocation_url(self):
+        url = furl.furl(self.BASE_URL)
+        url.path.segments.extend(('oauth2', 'revoke'))
+        return url.url
+
     def service_validate(self, ticket, service_url):
         """Send request to validate ticket.
 
@@ -148,6 +153,18 @@ class CasClient(object):
         for attribute in data['attributes'].keys():
             resp.attributes[attribute] = data['attributes'][attribute]
         return resp
+
+    def revoke_application_tokens(self, client_id, client_secret):
+        """Revoke all tokens associated with a given CAS client_id"""
+        url = self.get_application_revocation_url()
+        data = {'client_id': client_id,
+                'client_secret': client_secret}
+
+        resp = requests.post(url, data=data)
+        if resp.status_code == 204:
+            return True
+        else:
+            self._handle_error(resp)
 
 
 def parse_auth_header(header):

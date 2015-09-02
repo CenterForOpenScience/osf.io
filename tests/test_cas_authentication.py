@@ -112,6 +112,34 @@ class TestCASClient(OsfTestCase):
         with assert_raises(cas.CasHTTPError):
             self.client.profile('invalid-access-token')
 
+    @httpretty.activate
+    def test_application_token_revocation_succeeds(self):
+        url = self.client.get_application_revocation_url()
+        client_id= 'fake_id'
+        client_secret = 'fake_secret'
+        httpretty.register_uri(httpretty.POST,
+                               url,
+                               body={'client_id': client_id,
+                                     'client_secret': client_secret},
+                               status=204)
+
+        res = self.client.revoke_application_tokens(client_id, client_secret)
+        assert_equal(res, True)
+
+    @httpretty.activate
+    def test_application_token_revocation_fails(self):
+        url = self.client.get_application_revocation_url()
+        client_id= 'fake_id'
+        client_secret = 'fake_secret'
+        httpretty.register_uri(httpretty.POST,
+                               url,
+                               body={'client_id': client_id,
+                                     'client_secret': client_secret},
+                               status=400)
+
+        with assert_raises(cas.CasHTTPError):
+            res = self.client.revoke_application_tokens(client_id, client_secret)
+
     @unittest.skip('finish me')
     def test_profile_valid_access_token_returns_cas_response(self):
         assert 0

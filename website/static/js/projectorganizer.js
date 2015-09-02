@@ -187,7 +187,7 @@ function saveExpandState(item, callback) {
         expandUrl = item.apiURL + 'expand/';
         postAction = $osf.postJSON(expandUrl, {});
         postAction.done(function () {
-            item.expand = false;
+            item.expand = true;
             if (callback !== undefined) {
                 callback();
             }

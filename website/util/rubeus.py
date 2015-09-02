@@ -7,6 +7,7 @@ import datetime
 import hurry.filesize
 from modularodm import Q
 
+from framework import sentry
 from framework.auth.decorators import Auth
 
 from website.util import paths
@@ -487,7 +488,20 @@ class NodeFileCollector(object):
         for addon in node.get_addons():
             if addon.config.has_hgrid_files:
                 # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
-                temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
+                try:
+                    temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
+                except Exception:
+                    sentry.log_exception()
+                    rv.append({
+                        KIND: FOLDER,
+                        'unavailable': True,
+                        'iconUrl': addon.config.icon_url,
+                        'provider': addon.config.short_name,
+                        'addonFullname': addon.config.full_name,
+                        'permissions': {'view': False, 'edit': False},
+                        'name': '{} is currently unavailable'.format(addon.config.full_name),
+                    })
+                    continue
                 rv.extend(sort_by_name(temp) or [])
         return rv
 

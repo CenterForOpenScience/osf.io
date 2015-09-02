@@ -105,6 +105,67 @@ class TestOsfstorageFileNode(StorageTestCase):
 
         assert_equal(file, model.OsfStorageFileNode.get_file(_id, self.node_settings))
 
+    def test_serialize(self):
+        file = model.OsfStorageFileNode(name='MOAR PYLONS', kind='file', node_settings=self.node_settings)
+
+        assert_equals(file.serialized(), {
+            u'id': file._id,
+            u'path': file.path,
+            u'name': 'MOAR PYLONS',
+            u'kind': 'file',
+            u'version': 0,
+            u'downloads': 0,
+            u'size': None,
+            u'modified': None,
+            u'contentType': None,
+            u'md5': None,
+            u'sha256': None,
+        })
+
+        version = file.create_version(
+            self.user,
+            {
+                'service': 'cloud',
+                settings.WATERBUTLER_RESOURCE: 'osf',
+                'object': '06d80e',
+            }, {
+                'size': 1234,
+                'contentType': 'text/plain'
+            })
+
+        assert_equals(file.serialized(), {
+            'id': file._id,
+            'path': file.path,
+            'name': 'MOAR PYLONS',
+            'kind': 'file',
+            'version': 1,
+            'downloads': 0,
+            'size': 1234,
+            'modified': None,
+            'contentType': 'text/plain',
+            'md5': None,
+            'sha256': None,
+        })
+
+        date = datetime.datetime.now()
+        version.update_metadata({
+            'modified': date.isoformat()
+        })
+
+        assert_equals(file.serialized(), {
+            'id': file._id,
+            'path': file.path,
+            'name': 'MOAR PYLONS',
+            'kind': 'file',
+            'version': 1,
+            'downloads': 0,
+            'size': 1234,
+            'modified': date.isoformat(),
+            'contentType': 'text/plain',
+            'md5': None,
+            'sha256': None,
+        })
+
     def test_get_child_by_name(self):
         child = self.node_settings.root_node.append_file('Test')
         assert_equal(child, self.node_settings.root_node.find_child_by_name('Test'))
