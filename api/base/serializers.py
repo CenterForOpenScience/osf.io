@@ -255,6 +255,9 @@ class JSONAPISerializer(ser.Serializer):
             else:
                 data['attributes'][field.field_name] = field.to_representation(attribute)
 
+        if not data['relationships']:
+            data.pop('relationships', None)
+
         if envelope:
             ret[envelope] = data
         else:
