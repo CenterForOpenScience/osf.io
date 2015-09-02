@@ -6,7 +6,7 @@ from nose.tools import *  # flake8: noqa
 import datetime
 import datetime as dt
 
-from website.models import Node
+from website.models import Node, NodeLog
 from framework.auth.core import Auth
 from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
@@ -1542,7 +1542,7 @@ class TestNodeLogList(ApiTestCase):
 
     def tearDown(self):
         super(TestNodeLogList, self).tearDown()
-        Node.remove()
+        NodeLog.remove()
 
     def test_add_tag(self):
         user_auth = Auth(self.user)
@@ -1580,7 +1580,6 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['date'], "%Y-%m-%dT%H:%M:%S.%f"),
                               self.public_project.logs[0].date)
-        assert_equal(res.json['data'][-1]['id'], self.public_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.public_project.logs[0].action)
         assert_equal(res.json['data'][0]['version'], self.public_project._version)
         assert_equal(res.json['data'][0]['name'], self.public_project.logs[0]._name)
@@ -1590,7 +1589,6 @@ class TestNodeLogList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['date'], "%Y-%m-%dT%H:%M:%S.%f"),
                               self.private_project.logs[0].date)
-        assert_equal(res.json['data'][-2]['id'], self.private_project.logs[0]._id)
         assert_equal(res.json['data'][0]['action'], self.private_project.logs[0].action)
         assert_equal(res.json['data'][0]['version'], self.private_project.logs[0]._version)
         assert_equal(res.json['data'][0]['name'], self.private_project.logs[0]._name)
