@@ -22,27 +22,35 @@
                         </ul>
                     </li>
                     <li>
-                        <a href="#structure">Structure</a>
+                        <a href="#account">Accounts</a>
                         <ul class="nav">
-                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project Organizer</a></li>
-                            <li><a href="#dashboards"><i class="fa fa-chevron-right"></i> Dashboard</a></li>
                             <li><a href="#userprofile"><i class="fa fa-chevron-right"></i> User Profile</a></li>
-                            <li><a href="#projects"><i class="fa fa-chevron-right"></i> Projects</a></li>
-                            <li><a href="#components"><i class="fa fa-chevron-right"></i> Components</a></li>
-                            <li><a href="#files"><i class="fa fa-chevron-right"></i> Files</a></li>
-                            <li><a href="#links"><i class="fa fa-chevron-right"></i> Links</a></li>
-                            <li><a href="#forks"><i class="fa fa-chevron-right"></i> Forks</a></li>
-                            <li><a href="#registrations"><i class="fa fa-chevron-right"></i> Registrations</a></li>
-                            <li><a href="#wiki"><i class="fa fa-chevron-right"></i> Collaborative Wiki</a></li>
+                            <li><a href="#twofactor"><i class="fa fa-chevron-right"></i> Two-factor Authentication</a></li>
+                            <li><a href="#notifications"><i class="fa fa-chevron-right"></i> Notifications</a></li>
                         </ul>
                     </li>
                     <li>
-                        <a href="#sharing">Sharing</a>
+                        <a href="#account">My Dashboard</a>
                         <ul class="nav">
-                            <li><a href="#contributors"><i class="fa fa-chevron-right"></i> Contributors</a></li>
+                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project Organizer</a></li>
+                            <li><a href="#createproject"><i class="fa fa-chevron-right"></i> Creating Projects</a></li>
+                        </ul>
+                    </li>
+
+                    <li>
+                        <a href="#structure">Projects</a>
+                        <ul class="nav">
+                            <li><a href="#projects"><i class="fa fa-chevron-right"></i> Projects</a></li>
+                            <li><a href="#components"><i class="fa fa-chevron-right"></i> Components</a></li>
                             <li><a href="#privacy"><i class="fa fa-chevron-right"></i> Privacy</a></li>
-                            <li><a href="#citations"><i class="fa fa-chevron-right"></i> Citations</a></li>
+                            <li><a href="#contributors"><i class="fa fa-chevron-right"></i> Contributors</a></li>
                             <li><a href="#viewonly"><i class="fa fa-chevron-right"></i> View-only Links</a></li>
+                            <li><a href="#files"><i class="fa fa-chevron-right"></i> Files</a></li>
+                            <li><a href="#wiki"><i class="fa fa-chevron-right"></i> Collaborative Wiki</a></li>
+                            <li><a href="#links"><i class="fa fa-chevron-right"></i> Links</a></li>
+                            <li><a href="#forks"><i class="fa fa-chevron-right"></i> Forks</a></li>
+                            <li><a href="#registrations"><i class="fa fa-chevron-right"></i> Registrations</a></li>
+                            <li><a href="#statistics"><i class="fa fa-chevron-right"></i> Analytics</a></li>
                             <li><a href="#comments"><i class="fa fa-chevron-right"></i> Comments</a></li>
                         </ul>
                     </li>
@@ -58,17 +66,10 @@
                             <li><a href="#drive"><i class="fa fa-chevron-right"></i> Google Drive</a></li>
                             <li><a href="#mendeley"><i class="fa fa-chevron-right"></i> Mendeley</a></li>
                             <li><a href="#zotero"><i class="fa fa-chevron-right"></i> Zotero</a></li>
-                            <li><a href="#twofactor"><i class="fa fa-chevron-right"></i> Two-factor Authentication</a></li>
-                        </ul>
-                    </li>
-                    <li>
-                        <a href="#metrics">Metrics</a>
-                        <ul class="nav">
 
-                            <li><a href="#statistics"><i class="fa fa-chevron-right"></i> Statistics</a></li>
-                            <li><a href="#notifications"><i class="fa fa-chevron-right"></i> Notifications</a></li>
                         </ul>
                     </li>
+
                 </ul>
             </div>
         </div>
@@ -121,32 +122,43 @@
                     </div>
                 </div>
             </div>
-        <div  id="structure" class="row p-t-xl">
-            <h2 class="text-center">Structuring Your Work</h2>
+        <div id="sharing" class="row p-t-xl">
+            <h2 class="text-center">Configuring your Account</h2>
             <div class="col-md-12">
-                <%include file="/public/pages/help/organizer.mako"/>
-                <%include file="/public/pages/help/dashboards.mako"/>
                 <%include file="/public/pages/help/user_profile.mako"/>
-                <%include file="/public/pages/help/projects.mako"/>
-                <%include file="/public/pages/help/components.mako"/>
-                <%include file="/public/pages/help/files.mako"/>
-                <%include file="/public/pages/help/links.mako"/>
-                <%include file="/public/pages/help/forks.mako"/>
-                <%include file="/public/pages/help/registrations.mako"/>
-                <%include file="/public/pages/help/wiki.mako"/>
+                <%include file="/public/pages/help/two-factor.mako"/>
+                <%include file="/public/pages/help/notifications.mako"/>
             </div>
         </div>
 
         <div id="sharing" class="row p-t-xl">
-            <h2 class="text-center">Sharing Your Work</h2>
+            <h2 class="text-center">My Dashboard</h2>
             <div class="col-md-12">
-                <%include file="/public/pages/help/contributors.mako"/>
+                <%include file="/public/pages/help/dashboards.mako"/>
+                <%include file="/public/pages/help/organizer.mako"/>
+                <%include file="/public/pages/help/createproject.mako"/>
+            </div>
+        </div>
+
+        <div  id="structure" class="row p-t-xl">
+            <h2 class="text-center">Project Features</h2>
+            <div class="col-md-12">
+                <%include file="/public/pages/help/projects.mako"/>
+                <%include file="/public/pages/help/components.mako"/>
                 <%include file="/public/pages/help/privacy.mako"/>
-                <%include file="/public/pages/help/citations.mako"/>
+                <%include file="/public/pages/help/contributors.mako"/>
                 <%include file="/public/pages/help/view_only.mako"/>
+                <%include file="/public/pages/help/files.mako"/>
+                <%include file="/public/pages/help/wiki.mako"/>
+                <%include file="/public/pages/help/links.mako"/>
+                <%include file="/public/pages/help/forks.mako"/>
+                <%include file="/public/pages/help/registrations.mako"/>
+                <%include file="/public/pages/help/citations.mako"/>
+                <%include file="/public/pages/help/statistics.mako"/>
                 <%include file="/public/pages/help/comments.mako"/>
             </div>
         </div>
+
 
         <div id="addons" class="row p-t-xl">
             <h2 class="text-center m-b-lg">OSF Add-ons</h2>
@@ -155,13 +167,6 @@
             </div>
         </div>
 
-        <div id="metrics" class="row p-t-xl">
-            <h2 class="text-center">Metrics</h2>
-            <div class="col-md-12">
-                <%include file="/public/pages/help/statistics.mako"/>
-                <%include file="/public/pages/help/notifications.mako"/>
-            </div>
-        </div>
     </div>
 </div>
 
