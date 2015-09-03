@@ -67,12 +67,9 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        """
-        Create a node.
-        """
-        """
+        """Create a node.
+
         :param serializer:
-        :return:
         """
         # On creation, make sure that current user is the creator
         user = self.request.user
