@@ -23,8 +23,8 @@ var highlighter = function (str, lang) {
  * Apply .table class (from Bootstrap) to all tables
  */
 var bootstrapTable = function(md) {
-    md.renderer.rules.table_open = function() { return '<table class="table">'; }
-}
+    md.renderer.rules.table_open = function() { return '<table class="table">'; };
+};
 
 // Full markdown renderer for views / wiki pages / pauses between typing
 var markdown = new MarkdownIt('commonmark', {
