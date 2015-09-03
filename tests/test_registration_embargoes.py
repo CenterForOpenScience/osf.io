@@ -280,6 +280,33 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_true(self.registration.is_deleted)
 
+    def test_cancelling_embargo_deletes_component_registrations(self):
+        component = NodeFactory(
+            creator=self.user,
+            parent=self.project,
+            title='Component'
+        )
+        subcomponent = NodeFactory(
+            creator=self.user,
+            parent=component,
+            title='Subcomponent'
+        )
+        project_registration = RegistrationFactory(project=self.project)
+        component_registration = project_registration.nodes[0]
+        subcomponent_registration = component_registration.nodes[0]
+        project_registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10)
+        )
+        project_registration.save()
+
+        rejection_token = project_registration.embargo.approval_state[self.user._id]['rejection_token']
+        project_registration.embargo.disapprove_embargo(self.user, rejection_token)
+        assert_equal(project_registration.embargo.state, Embargo.REJECTED)
+        assert_true(project_registration.is_deleted)
+        assert_true(component_registration.is_deleted)
+        assert_true(subcomponent_registration.is_deleted)
+
     def test_cancelling_embargo_for_existing_registration_does_not_delete_registration(self):
         self.registration.embargo_registration(
             self.user,
@@ -292,6 +319,35 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         self.registration.embargo.disapprove_embargo(self.user, rejection_token)
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_false(self.registration.is_deleted)
+
+    def test_rejecting_embargo_for_existing_registration_does_not_deleted_component_registrations(self):
+        component = NodeFactory(
+            creator=self.user,
+            parent=self.project,
+            title='Component'
+        )
+        subcomponent = NodeFactory(
+            creator=self.user,
+            parent=component,
+            title='Subcomponent'
+        )
+        project_registration = RegistrationFactory(project=self.project)
+        component_registration = project_registration.nodes[0]
+        subcomponent_registration = component_registration.nodes[0]
+        project_registration.embargo_registration(
+            self.user,
+            datetime.datetime.utcnow() + datetime.timedelta(days=10),
+            for_existing_registration=True
+        )
+
+        rejection_token = project_registration.embargo.approval_state[self.user._id]['rejection_token']
+        project_registration.embargo.disapprove_embargo(self.user, rejection_token)
+        project_registration.save()
+        assert_equal(project_registration.embargo.state, Embargo.REJECTED)
+        assert_false(project_registration.is_deleted)
+        assert_false(component_registration.is_deleted)
+        assert_false(subcomponent_registration.is_deleted)
+
 
     # Embargo property tests
     def test_new_registration_is_pending_registration(self):

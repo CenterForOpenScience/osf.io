@@ -3282,7 +3282,8 @@ class Embargo(EmailApprovableSanction):
 
     def _on_reject(self, user, token):
         parent_registration = Node.find_one(Q('embargo', 'eq', self))
-        parent_registration.registered_from.add_log(
+        registered_from = parent_registration.registered_from
+        registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
                 'node': parent_registration._id,
@@ -3292,6 +3293,7 @@ class Embargo(EmailApprovableSanction):
         )
         # Remove backref to parent project if embargo was for a new registration
         if not self.for_existing_registration:
+            parent_registration.delete_registration_tree(save=True)
             parent_registration.registered_from = None
         # Delete parent registration if it was created at the time the embargo was initiated
         if not self.for_existing_registration:
