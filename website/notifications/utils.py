@@ -161,6 +161,8 @@ def get_configured_projects(user):
     user_subscriptions = get_all_user_subscriptions(user)
 
     for subscription in user_subscriptions:
+        if subscription is None:
+            continue
         # If the user has opted out of emails skip
         node = subscription.owner
 
@@ -279,7 +281,7 @@ def format_user_subscriptions(user):
             event_description=user_subs_available.pop(user_subs_available.index(getattr(subscription, 'event_name')))
         )
         for subscription in get_all_user_subscriptions(user)
-        if getattr(subscription, 'event_name') in user_subs_available
+        if subscription is not None and getattr(subscription, 'event_name') in user_subs_available
     ]
     subscriptions.extend([serialize_event(user, event_description=sub) for sub in user_subs_available])
     return subscriptions
