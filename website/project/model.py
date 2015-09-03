@@ -1566,10 +1566,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param auth: All the auth information including user, API key.
         """
         #Called so validation does not have to wait until save.
-        validate_title(title)
+        new_title = validate_title(title)
 
         original_title = self.title
-        self.title = title
+        self.title = new_title
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={

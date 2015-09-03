@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 def edit_node(auth, node, **kwargs):
     post_data = request.json
     edited_field = post_data.get('name')
-    value = post_data.get('value', '')
+    value = strip_html(post_data.get('value', ''))
 
     if edited_field == 'title':
         try:
