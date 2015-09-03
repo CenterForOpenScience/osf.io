@@ -374,8 +374,8 @@ class ApiOAuth2Application(StoredObject):
                                    index=True)
     client_secret = fields.StringField(default=generate_client_secret)
 
-    active = fields.BooleanField(default=True,  # Set to False if application is deactivated
-                                 index=True)
+    is_active = fields.BooleanField(default=True,  # Set to False if application is deactivated
+                                    index=True)
 
     owner = fields.ForeignField('User',
                                 backref='created',
@@ -404,7 +404,7 @@ class ApiOAuth2Application(StoredObject):
         # Will raise a CasHttpError if deletion fails, which will also stop setting of active=False.
         resp = client.revoke_application_tokens(self.client_id, self.client_secret)  # noqa
 
-        self.active = False
+        self.is_active = False
         self.save()
         return True
 

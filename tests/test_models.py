@@ -1010,7 +1010,7 @@ class TestApiOAuth2Application(OsfTestCase):
         assert_greater(len(self.api_app.client_secret), 0)
 
     def test_new_app_is_not_flagged_as_deleted(self):
-        assert_true(self.api_app.active)
+        assert_true(self.api_app.is_active)
 
     def test_user_backref_updates_when_app_created(self):
         u = UserFactory()
@@ -1051,7 +1051,7 @@ class TestApiOAuth2Application(OsfTestCase):
         mock_method.return_value(True)
         self.api_app.deactivate()
         self.api_app.reload()
-        assert_false(self.api_app.active)
+        assert_false(self.api_app.is_active)
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_active_remains_true_when_cas_token_deletion_fails(self, mock_method):
@@ -1059,7 +1059,7 @@ class TestApiOAuth2Application(OsfTestCase):
         with assert_raises(cas.CasHTTPError):
             self.api_app.deactivate()
         self.api_app.reload()
-        assert_true(self.api_app.active)
+        assert_true(self.api_app.is_active)
 
 
 class TestNodeWikiPage(OsfTestCase):

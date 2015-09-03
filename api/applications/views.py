@@ -34,7 +34,7 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
         user_id = self.request.user._id
         return (
             Q('owner', 'eq', user_id) &
-            Q('active', 'eq', True)
+            Q('is_active', 'eq', True)
         )
 
     # overrides ListAPIView
@@ -68,7 +68,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
     def get_object(self):
         obj = get_object_or_error(ApiOAuth2Application,
                                   Q('client_id', 'eq', self.kwargs['client_id']) &
-                                  Q('active', 'eq', True))
+                                  Q('is_active', 'eq', True))
 
         self.check_object_permissions(self.request, obj)
         return obj
