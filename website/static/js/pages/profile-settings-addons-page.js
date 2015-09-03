@@ -114,6 +114,14 @@ for (var i=0; i < addonEnabledSettings.length; i++) {
    }
 }
 
+$(document).ready(function(){
+    // Keep these separate since other addons have different methods of applying and this makes it easier to troubleshoot fixes and changes
+    var makoLoadedAddons = ['dropbox', 'github', 'box', 'figshare', 'googledrive', 's3'];
+    makoLoadedAddons.forEach(function(addon){
+        $('#'+ addon + '-header').osfToggleHeight({height: 140});
+    });
+});
+
 /* Before closing the page, Check whether the newly checked addon are updated or not */
 $(window).on('beforeunload',function() {
     //new checked items but not updated
