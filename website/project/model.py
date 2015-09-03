@@ -2962,7 +2962,7 @@ class PrivateLink(StoredObject):
             "id": self._id,
             "date_created": iso8601format(self.date_created),
             "key": self.key,
-            "name": self.name,
+            "name": sanitize.unescape_entities(self.name),
             "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
                       for x in self.nodes if not x.is_deleted],
