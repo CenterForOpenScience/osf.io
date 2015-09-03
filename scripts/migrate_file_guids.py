@@ -1,6 +1,7 @@
 import sys
 import logging
 
+from modularodm import Q
 from website.app import init_app
 from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
@@ -17,6 +18,19 @@ from website.addons.osfstorage.model import OsfStorageGuidFile
 from website.addons.googledrive.model import GoogleDriveGuidFile
 
 logger = logging.getLogger(__name__)
+
+
+def paginated(model, query=None, increment=200):
+    last_id = ''
+    pages = (model.find(query).count() / increment) + 1
+    for i in xrange(pages):
+        q = Q('_id', 'gt', last_id)
+        if query:
+            q &= query
+        page = list(model.find(q).limit(increment))
+        for item in page:
+            yield item
+        last_id = item._id
 
 
 def do_migration():
@@ -39,11 +53,12 @@ def do_migration():
 
 
 def migrate_osfstorage_guids():
-    for guid in OsfStorageGuidFile.find():
+    for guid in paginated(OsfStorageGuidFile):
         referent = models.StoredFileNode.load(guid.waterbutler_path.strip('/'))
         if referent is None:
             logger.warning('OsfStorageGuidFile {} resolved to None; skipping'.format(guid._id))
             continue
+        logger.debug('Migrating guid {!r}, referent {!r}'.format(guid, referent))
         actual_guid = Guid.load(guid._id)
         assert actual_guid is not None
         actual_guid.referent = referent
@@ -52,12 +67,14 @@ def migrate_osfstorage_guids():
 
 
 def migrate_guids(guid_type, provider):
-    for guid in guid_type.find():
+    for guid in paginated(guid_type):
         # Note: No metadata is populated here
         # It will be populated whenever this guid is next viewed
         if guid.node is None:
             logger.warning('{}({})\'s node is None; skipping'.format(guid_type, guid._id))
             continue
+
+        logger.debug('Migrating guid {!r}'.format(guid))
 
         models.StoredFileNode(
             is_file=True,

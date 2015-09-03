@@ -17,6 +17,19 @@ NOW = datetime.datetime.utcnow()
 logger = logging.getLogger(__name__)
 
 
+def paginated(model, query=None, increment=200):
+    last_id = ''
+    pages = (model.find(query).count() / increment) + 1
+    for i in xrange(pages):
+        q = Q('_id', 'gt', last_id)
+        if query:
+            q &= query
+        page = list(model.find(q).limit(increment))
+        for item in page:
+            yield item
+        last_id = item._id
+
+
 def do_migration():
     logger.info('Migration: OsfStorageFileNode -> FileNode')
     migrate_filenodes()
@@ -69,43 +82,39 @@ def migrate_trashedfilenodes():
 
 
 def migrate_filenodes(increment=200):
-    pages = (osfstorage_model.OsfStorageNodeSettings.find().count() / increment) + 1
-    for i in xrange(pages):
-        logger.info('Page {} of {}'.format(i, pages))
-        page = list(osfstorage_model.OsfStorageNodeSettings.find().offset(increment * i).limit(increment))
-        for node_settings in page:
-            if node_settings.owner is None:
-                logger.warning('OsfStorageNodeSettings {} has no parent; skipping'.format(node_settings._id))
+    for node_settings in paginated(osfstorage_model.OsfStorageNodeSettings):
+        if node_settings.owner is None:
+            logger.warning('OsfStorageNodeSettings {} has no parent; skipping'.format(node_settings._id))
+            continue
+        logger.info('Migrating files for {!r}'.format(node_settings.owner))
+
+        listing = []
+        for filenode in osfstorage_model.OsfStorageFileNode.find(Q('node_settings', 'eq', node_settings._id)):
+            logger.debug('Migrating OsfStorageFileNode {}'.format(filenode._id))
+            versions = translate_versions(filenode.versions),
+            if not versions and filenode.is_file:
+                logger.error('{!r} is a file with no translatable versions, skipping'.format(filenode))
                 continue
-            logger.info('Migrating files for {!r}'.format(node_settings.owner))
+            new_node = models.StoredFileNode(
+                _id=filenode._id,
+                versions=versions,
+                node=node_settings.owner,
+                parent=None if not filenode.parent else filenode.parent._id,
+                is_file=filenode.kind == 'file',
+                provider='osfstorage',
+                name=filenode.name,
+                last_touched=NOW
+            )
 
-            listing = []
-            for filenode in osfstorage_model.OsfStorageFileNode.find(Q('node_settings', 'eq', node_settings._id)):
-                logger.debug('Migrating OsfStorageFileNode {}'.format(filenode._id))
-                versions = translate_versions(filenode.versions),
-                if not versions and filenode.is_file:
-                    logger.error('{!r} is a file with no translatable versions, skipping'.format(filenode))
-                    continue
-                new_node = models.StoredFileNode(
-                    _id=filenode._id,
-                    versions=versions,
-                    node=node_settings.owner,
-                    parent=None if not filenode.parent else filenode.parent._id,
-                    is_file=filenode.kind == 'file',
-                    provider='osfstorage',
-                    name=filenode.name,
-                    last_touched=NOW
-                )
+            # Wrapped's save will populate path and materialized_path
+            new_node.wrapped().save()
+            listing.append(new_node)
 
-                # Wrapped's save will populate path and materialized_path
-                new_node.wrapped().save()
-                listing.append(new_node)
-
-            assert node_settings.get_root()
-            for x in listing:
-                # Make sure everything transfered properly
-                if x.to_storage()['parent']:
-                    assert x.parent
+        assert node_settings.get_root()
+        for x in listing:
+            # Make sure everything transfered properly
+            if x.to_storage()['parent']:
+                assert x.parent
 
 
 def translate_versions(versions):
