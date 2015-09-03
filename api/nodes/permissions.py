@@ -1,7 +1,9 @@
-from website.models import Node, Pointer, User
 from rest_framework import permissions
 
 from framework.auth import Auth
+
+from website.models import Node, Pointer, User
+from website.util import permissions as osf_permissions
 
 def get_user_auth(request):
     user = request.user
@@ -31,7 +33,7 @@ class AdminOrPublic(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         else:
-            return node.has_permission(auth.user, 'admin')
+            return node.has_permission(auth.user, osf_permissions.ADMIN)
 
 
 class ContributorDetailPermissions(permissions.BasePermission):
@@ -45,9 +47,9 @@ class ContributorDetailPermissions(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         elif request.method == 'DELETE':
-            return node.has_permission(auth.user, 'admin') or auth.user == user
+            return node.has_permission(auth.user, osf_permissions.ADMIN) or auth.user == user
         else:
-            return node.has_permission(auth.user, 'admin')
+            return node.has_permission(auth.user, osf_permissions.ADMIN)
 
 
 class ContributorOrPublicForPointers(permissions.BasePermission):
