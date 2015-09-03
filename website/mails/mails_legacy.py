@@ -134,8 +134,7 @@ class QueuedMail(StoredObject):
     send_at = fields.DateTimeField(default=None)
     email_type = fields.StringField(default=None)
     data = fields.DictionaryField(default=None)
-    sent_at = fields.DateTimeField(index=True)
-    done = fields.BooleanField(index=True, default=False)
+    sent_at = fields.DateTimeField(index=True, default=None)
 
     def create(self, to_addr, mail, send_at, user, **context):
         self.user = user
@@ -153,25 +152,15 @@ class QueuedMail(StoredObject):
             subject=mail_struct['subject']
         )
         if callback and self.user.osf_mailing_lists.get('Open Science Framework Help'):
-            if send_mail(self.to_addr, mail, mimetype='html', **(self.data or {})):
-                self.sent_at = datetime.utcnow()
-                self.done = True
+            #TO DO: Make sure send_mail succeds at mail_sent before saving sent_at
+            send_mail(self.to_addr, mail, mimetype='html', **(self.data or {}))
+            self.sent_at = datetime.utcnow()
         else:
-            self.done = True
+            self.delete()
         self.save()
 
     def delete(self):
         self.__class__.remove_one(self)
-
-    def find_others_to(self):
-        return list(SentQueuedMail.find(Q('sent_to', 'eq', self.user)))
-
-class SentQueuedMail(StoredObject):
-    _id = fields.StringField(primary=True)
-    sent_to = fields.ForeignField('User')
-    sent_at = fields.DateTimeField(default=None)
-    email_type = fields.StringField(default=None)
-
 
 # Predefined Emails
 

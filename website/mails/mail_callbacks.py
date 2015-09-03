@@ -1,15 +1,6 @@
 # -*- coding: utf-8 -*-
 from modularodm import Q
 
-from datetime import datetime, timedelta
-
-def _week_check(email):
-    sent_emails = email.find_others_to()
-    for email_ in sent_emails:
-        if email_.sent_at > (datetime.utcnow() - timedelta(weeks=1)):
-            return False
-    return True
-
 def no_addon(email):
     if len(email.user.get_addons()) is 0:
         return True

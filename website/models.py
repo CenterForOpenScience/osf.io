@@ -17,7 +17,7 @@ from website.project.model import (
 from website.oauth.models import ApiOAuth2Application, ExternalAccount
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
-from website.mails import SentQueuedMail, QueuedMail
+from website.mails import QueuedMail
 from website.conferences.model import Conference, MailRecord
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
@@ -32,7 +32,7 @@ MODELS = (
     CitationStyle, ExternalAccount, Identifier,
     Embargo, Retraction, RegistrationApproval,
     ArchiveJob, ArchiveTarget, BlacklistGuid, Sanction,
-    SentQueuedMail, QueuedMail,
+    QueuedMail,
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)
