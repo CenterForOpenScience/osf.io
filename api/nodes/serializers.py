@@ -16,10 +16,12 @@ class NodeTagField(ser.Field):
     def to_internal_value(self, data):
         return data
 
+
 class NodeListSerializer(JSONAPIListSerializer):
     def create(self, validated_data):
         nodes = [Node(**item) for item in validated_data]
         return Node.objects.bulk_create(nodes)
+
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
