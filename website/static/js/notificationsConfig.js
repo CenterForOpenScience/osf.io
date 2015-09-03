@@ -21,7 +21,6 @@ var ViewModel = function(list) {
             dataType: 'json',
             success: function(response) {
                 for (var key in response.mailing_lists){
-                    debugger;
                     if (response.mailing_lists[key]){
                         self.subscribed.push(key);
                     }
@@ -51,7 +50,13 @@ var ViewModel = function(list) {
 
     self.submit = function () {
         var payload = {};
-        payload[self.list] = self.subscribed();
+        for (var i in self.list){
+            if ($.inArray(self.list[i], self.subscribed()) === -1) {
+                payload[self.list[i]] = false;
+            } else {
+                payload[self.list[i]] = true;
+            }
+        }
         var request = $osf.postJSON('/api/v1/settings/notifications/', payload);
         request.done(function () {
             self.changeMessage('Settings updated.', 'text-success', 5000);

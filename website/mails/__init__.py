@@ -1,1 +1,1 @@
-from mails_legacy import *
+from mails_legacy import *   # noqa

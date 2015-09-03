@@ -25,7 +25,7 @@
                         <div class="form-group">
 
                             <input type="checkbox"
-                                   data-bind="checked: subscribed['Open Science Framework General']"/>
+                                   data-bind="checked: subscribed" value="Open Science Framework General"/>
                             <label data-bind="text: list[0]"></label>
                             <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
                         </div>
@@ -34,7 +34,7 @@
                         <div class="form-group">
 
                             <input type="checkbox"
-                                   data-bind="checked: subscribed['Open Science Framework Help']"/>
+                                   data-bind="checked: subscribed" value="Open Science Framework Help"/>
                             <label data-bind="text: list[1]"></label>
                             <p class="text-muted" style="padding-left: 15px">Receive up to one help notification per week.</p>
                         </div>

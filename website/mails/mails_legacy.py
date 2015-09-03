@@ -159,6 +159,13 @@ class QueuedMail(StoredObject):
             self.delete()
         self.save()
 
+    def find_same_sent(self):
+        return list(self.__class__.find(
+            Q('email_type', 'eq', self.email_type) &
+            Q('user', 'eq', self.user) &
+            Q('sent_at', 'ne', None)
+        ))
+
     def delete(self):
         self.__class__.remove_one(self)
 
