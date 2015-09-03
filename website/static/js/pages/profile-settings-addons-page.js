@@ -131,7 +131,7 @@ $(window).on('beforeunload',function() {
 ****************/
 
 $('.addon-oauth').each(function(index, elem) {
-    // Applies to Mendeley, Zotero and Dataverse
+    // Applies to Mendeley, Zotero.  There is a separate code for dataverse in DataverseUserConfig.js
     var viewModel = new addonSettings.OAuthAddonSettingsViewModel(
         $(elem).data('addon-short-name'),
         $(elem).data('addon-name')
