@@ -155,7 +155,13 @@
                                                 ><i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>
-                                            <img class="m-v-xs" data-bind="attr: {src: contributor.gravatar_url}" width=35 height=35/>
+                                             <!-- height and width are explicitly specified for faster rendering -->
+                                            <!-- ko if: contributor.gravatar_url -->
+                                            <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
+                                            <!-- /ko -->
+                                            <!-- ko if: !contributor.gravatar_url -->
+                                            <img src="/static/img/unreg_gravatar.png" height=35 width=35 />
+                                            <!-- /ko -->
                                         </td>
 
                                         <td>
