@@ -34,13 +34,6 @@ def json_api_exception_handler(exc, context):
 
         response.data = {'errors': errors}
 
-    # Return 401 instead of 403 during unauthorized requests without having user log in with Basic Auth
-    error_message = response.data['errors'][0].get('detail')
-    errors_401 = ["Authentication credentials were not provided.", 'Incorrect authentication credentials.']
-
-    if response is not None and error_message in errors_401:
-        response.status_code = 401
-
     return response
 
 
