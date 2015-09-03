@@ -641,7 +641,7 @@ class TestNodeUpdate(ApiTestCase):
             'public': False,
         }, auth=self.user.auth, expect_errors=True)
         assert_true(res.json['data']['attributes']['public'])
-        # django returns a 200 on PATCH to read only field, it just doesn't change it.
+        # django returns a 200 on PATCH to read only field, even though it does not update the field.
         assert_equal(res.status_code, 200)
 
     def test_partial_update_public_project_logged_out(self):
