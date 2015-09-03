@@ -4,7 +4,6 @@ from website.notifications.emails import compile_subscriptions
 from website.notifications import utils, constants
 
 
-
 def get_file_subs_from_folder(addon, user, kind, path, name):
     """Find the file tree under a specified folder."""
     folder = dict(kind=kind, path=path, name=name)
@@ -133,8 +132,7 @@ def subscriptions_users_difference(emails_1, emails_2):
 def subscriptions_users_remove_duplicates(emails_1, emails_2, remove_same=False):
     emails_list = dict(emails_1)
     product_list = product(constants.NOTIFICATION_TYPES, repeat=2)
-    for combo in product_list:
-        notification_1, notification_2 = combo
+    for notification_1, notification_2 in product_list:
         if notification_2 == notification_1 and not remove_same:
             continue
         emails_list[notification_1] = list(
