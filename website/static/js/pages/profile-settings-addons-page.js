@@ -115,7 +115,7 @@ for (var i=0; i < addonEnabledSettings.length; i++) {
 }
 
 $(document).ready(function(){
-    // Keep these separate since other addons have different methods of applying and this makes it easier to troubleshoot fixes and changes
+    // Separately load addons whose data is loaded on the backend as opposed to async javascript.
     var makoLoadedAddons = ['dropbox', 'github', 'box', 'figshare', 'googledrive', 's3'];
     makoLoadedAddons.forEach(function(addon){
         $('#'+ addon + '-header').osfToggleHeight({height: 140});
