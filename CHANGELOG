@@ -2,13 +2,13 @@
 Changelog
 *********
 
-0.48.0 (unreleased)
+0.48.0 (2015-08-31)
 ===================
 
 - Add project settings that allows a project's wiki to be editable by any OSF user.
 - MD5 and SHA1 hashes appear in a file's Revisions table.
-- Update UI for OSF for meetings page.
-- Add scripts for internal storage auditing.
+- Update UI for OSF for Meetings page.
+- Various UI improvements.
 
 0.47.0 (2015-08-15)
 ===================

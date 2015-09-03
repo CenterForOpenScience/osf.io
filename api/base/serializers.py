@@ -36,14 +36,14 @@ def _url_val(val, obj, serializer, **kwargs):
         return val
 
 
-class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
+class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
     """
     HyperlinkedIdentityField that returns a nested dict with url,
     optional meta information, and link_type.
 
     Example:
 
-        children = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk',
+        children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk',
                                     link_type='related', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
 
     """
@@ -76,17 +76,17 @@ class HyperlinkedIdentityFieldWithMeta(ser.HyperlinkedIdentityField):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        url = super(HyperlinkedIdentityFieldWithMeta, self).to_representation(value)
+        url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
 
-        if self.meta is None:
-            return {'links': {self.link_type: url}}
-        else:
+        if self.meta:
             meta = {}
             for key in self.meta:
                 meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
             self.meta = meta
 
             return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
+        else:
+            return {'links': {self.link_type: url}}
 
 
 class LinksField(ser.Field):
@@ -213,7 +213,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
     allows for enveloping of both single resources and collections.  Looks to nest fields
-    according to JSON API spec. Relational fields must use HyperlinkedIdentityFieldWithMeta.
+    according to JSON API spec. Relational fields must use JSONAPIHyperlinkedIdentityField.
     Self/html links must be nested under "links".
     """
 
@@ -246,14 +246,22 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if isinstance(field, HyperlinkedIdentityFieldWithMeta):
+            if isinstance(field, JSONAPIHyperlinkedIdentityField):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':
                 data['links'] = field.to_representation(attribute)
             else:
-                data['attributes'][field.field_name] = field.to_representation(attribute)
+                if attribute is None:
+                    # We skip `to_representation` for `None` values so that
+                    # fields do not have to explicitly deal with that case.
+                    data['attributes'][field.field_name] = None
+                else:
+                    data['attributes'][field.field_name] = field.to_representation(attribute)
+
+        if not data['relationships']:
+            del data['relationships']
 
         if envelope:
             ret[envelope] = data

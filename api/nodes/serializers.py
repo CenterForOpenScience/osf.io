@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, JSONAPIListSerializer, HyperlinkedIdentityFieldWithMeta
+from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink, JSONAPIListSerializer,JSONAPIHyperlinkedIdentityField
 
 
 class NodeTagField(ser.Field):
@@ -31,7 +31,7 @@ class NodeSerializer(JSONAPISerializer):
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
     filterable_fields = frozenset(['title', 'description', 'public'])
 
-    id = ser.CharField(read_only=True, source='_id')
+    id = ser.CharField(read_only=True, source='_id', label='ID')
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
@@ -52,25 +52,24 @@ class NodeSerializer(JSONAPISerializer):
                                                             'node have implicit read permissions for all child nodes',
                               )
 
-    children = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-children', lookup_field='pk', link_type='related',
+    children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
                                                 lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
 
-    contributors = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
+    contributors = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
                                                     lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
 
-    files = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id',
+    files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id',
                                              link_type='related')
 
-    node_links = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
+    node_links = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
                                                   lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})
 
-    parent = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-detail', lookup_field='parent_id', link_type='self',
+    parent = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='self',
                                               lookup_url_kwarg='node_id')
 
-    registrations = HyperlinkedIdentityFieldWithMeta(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
+    registrations = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
                                                      lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})
 
-    # TODO: finish me
     class Meta:
         type_ = 'nodes'
         list_serializer_class = NodeListSerializer

@@ -21,8 +21,12 @@ def json_api_exception_handler(exc, context):
                 if key in top_level_error_keys:
                     errors.append({key: value})
                 else:
-                    errors.append({'detail': {key: value}})
-        elif isinstance(message, list):
+                    if isinstance(value, list):
+                        for reason in value:
+                            errors.append({'detail': reason, 'meta': {'field': key}})
+                    else:
+                        errors.append({'detail': value, 'meta': {'field': key}})
+        elif isinstance(message, (list, tuple)):
             for error in message:
                 errors.append({'detail': error})
         else:
