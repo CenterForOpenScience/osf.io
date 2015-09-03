@@ -1,5 +1,5 @@
 ## -*- coding: utf-8 -*-
-<%inherit file="notify_base.html"/>
+<%inherit file="notify_base.mako"/>
 <%def name="content()">
 <p>
     Hello ${fullname},

@@ -2504,7 +2504,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             mails.queue_mail(
                 to_addr=auth.user.username,
                 mail=mails.NEW_PUBLIC_PROJECT,
-                send_at=datetime.datetime.utcnow() + datetime.timedelta(hours=24),
+                send_at=datetime.datetime.utcnow() + datetime.timedelta(seconds=2),
                 user=auth.user,
                 nid=self._id,
                 fullname=auth.user.fullname,

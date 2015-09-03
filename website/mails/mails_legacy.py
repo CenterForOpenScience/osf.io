@@ -155,9 +155,9 @@ class QueuedMail(StoredObject):
             #TO DO: Make sure send_mail succeds at mail_sent before saving sent_at
             send_mail(self.to_addr, mail, mimetype='html', **(self.data or {}))
             self.sent_at = datetime.utcnow()
+            self.save()
         else:
             self.delete()
-        self.save()
 
     def find_same_sent(self):
         return list(self.__class__.find(
