@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # noqa
 
-from website.models import NodeLog, Node
-from framework.auth.core import Auth
-from api.base.settings.defaults import API_BASE
-
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )
+
+from framework.auth.core import Auth
+
+from website.models import NodeLog
+
+from api.base.settings.defaults import API_BASE
 
 class LogsTestCase(ApiTestCase):
 
@@ -43,7 +45,7 @@ class TestLogList(LogsTestCase):
 
     url = '/{}logs/'.format(API_BASE)
 
-    def test_returns_only_public_logs_for_logged_out_user(self):
+    def test_returns_only_public_logs_for_logged_out_user(self):        
         res = self.app.get(self.url)
         meta = res.json['links']['meta']
         assert_equal(meta['total'], len(self.action_set) + 1)

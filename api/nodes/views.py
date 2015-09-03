@@ -386,9 +386,4 @@ class NodeLogList(generics.ListAPIView, NodeMixin):
 
     def get_queryset(self):
         query = Q('__backrefs.logged.node.logs', 'q', self.get_node()._id)
-        logs = NodeLog.find(query).sort('_id')
-        log_list = []
-        for log in logs:
-            log.user_id = log.user._id
-            log_list.append(log)
-        return log_list
+        return NodeLog.find(query).sort('_id')

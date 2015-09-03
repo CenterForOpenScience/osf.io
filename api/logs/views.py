@@ -4,7 +4,6 @@ from rest_framework import generics, permissions as drf_permissions
 from website.models import Node, NodeLog
 from api.base.filters import ODMFilterMixin
 
-from api.logs import serializers
 from api.nodes import serializers as node_serializers
 
 class LogList(generics.ListAPIView, ODMFilterMixin):
@@ -12,7 +11,7 @@ class LogList(generics.ListAPIView, ODMFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-    serializer_class = serializers.LogSerializer
+    serializer_class = node_serializers.NodeLogSerializer
     ordering = ('-date', )  # default ordering
 
     # overrides ODMFilterMixin

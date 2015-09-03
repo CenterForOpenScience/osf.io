@@ -1737,8 +1737,6 @@ class TestNodeLogList(ApiTestCase):
         assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['attributes']['date'], "%Y-%m-%dT%H:%M:%S.%f"),
                               self.public_project.logs[0].date)
         assert_equal(res.json['data'][0]['attributes']['action'], self.public_project.logs[0].action)
-        assert_equal(res.json['data'][0]['attributes']['version'], self.public_project._version)
-        assert_equal(res.json['data'][0]['attributes']['name'], self.public_project.logs[0]._name)
 
     def test_log_create_on_private_project(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -1746,8 +1744,6 @@ class TestNodeLogList(ApiTestCase):
         assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['attributes']['date'], "%Y-%m-%dT%H:%M:%S.%f"),
                               self.private_project.logs[0].date)
         assert_equal(res.json['data'][0]['attributes']['action'], self.private_project.logs[0].action)
-        assert_equal(res.json['data'][0]['attributes']['version'], self.private_project.logs[0]._version)
-        assert_equal(res.json['data'][0]['attributes']['name'], self.private_project.logs[0]._name)
 
     def test_project_remove_contributor(self):
         self.public_project.add_contributor(self.contrib, auth=self.user_auth)

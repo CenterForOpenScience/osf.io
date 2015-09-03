@@ -199,25 +199,21 @@ class NodeFilesSerializer(JSONAPISerializer):
         pass
 
 class NodeLogSerializer(JSONAPISerializer):
-    date = ser.DateTimeField(read_only=True)
+
+    filterable_fields = frozenset(['action'])
+
     id = ser.CharField(read_only=True, source='_id')
+    date = ser.DateTimeField(read_only=True)
     action = ser.CharField(read_only=True)
-    version = ser.IntegerField(read_only=True, source='_version')
-    name = ser.CharField(read_only=True, source='_name')
 
     class Meta:
         type_ = 'logs'
 
     links = LinksField({
-        'self': 'get_absolute_api_v2_url',
+        'nodes': {
+            'related': Link('logs:log-nodes', kwargs={'log_id': '<_id>'})
+        },
         'user': {
-            'self': Link('users:user-detail', kwargs={'user_id': '<user_id>'})
+            'related': Link('users:user-detail', kwargs={'user_id': '<user._id>'})
         }
     })
-
-    def absolute_url(self, obj):
-        return obj.absolute_url
-
-    def get_absolute_api_v2_url(self, obj):
-        pointer_node = Node.load(obj.node._id)
-        return pointer_node.absolute_api_v2_url
