@@ -1,18 +1,24 @@
 # -*- coding: utf-8 -*-
-
-import urlparse
+from time import sleep
+import requests
+import httplib as http
 
 import pymongo
 from modularodm import fields
 
 from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
-from website.security import encrypt, decrypt
+from framework.exceptions import HTTPError
+
 from website.addons.base import (
-    AddonNodeSettingsBase, AddonUserSettingsBase, GuidFile, exceptions,
+    AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, GuidFile, exceptions,
 )
+from website.addons.base import StorageAddonBase
+from website.util import waterbutler_url_for
+
 from website.addons.dataverse.client import connect_from_settings_or_401
-from website.addons.dataverse.settings import HOST
+from website.addons.dataverse import serializer
+from website.addons.dataverse.provider import DataverseProvider
 
 
 class DataverseFile(GuidFile):
@@ -59,50 +65,20 @@ class DataverseFile(GuidFile):
                 pass
 
 
-class AddonDataverseUserSettings(AddonUserSettingsBase):
+class AddonDataverseUserSettings(AddonOAuthUserSettingsBase):
 
-    api_token = fields.StringField()
+    oauth_provider = DataverseProvider
+    serializer = serializer.DataverseSerializer
 
     # Legacy Fields
+    api_token = fields.StringField()
     dataverse_username = fields.StringField()
     encrypted_password = fields.StringField()
 
-    @property
-    def has_auth(self):
-        return bool(self.api_token)
 
-    @property
-    def dataverse_password(self):
-        if self.encrypted_password is None:
-            return None
-
-        return decrypt(self.encrypted_password)
-
-    @dataverse_password.setter
-    def dataverse_password(self, value):
-        if value is None:
-            self.encrypted_password = None
-            return
-
-        self.encrypted_password = encrypt(value)
-
-    def delete(self, save=True):
-        self.clear()
-        super(AddonDataverseUserSettings, self).delete(save)
-
-    def clear(self):
-        """Clear settings and deauthorize any associated nodes.
-
-        :param bool delete: Indicates if the settings should be deleted.
-        """
-        self.api_token = None
-        for node_settings in self.addondataversenodesettings__authorized:
-            node_settings.deauthorize(Auth(self.owner))
-            node_settings.save()
-        return self
-
-
-class AddonDataverseNodeSettings(AddonNodeSettingsBase):
+class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
+    oauth_provider = DataverseProvider
+    serializer = serializer.DataverseSerializer
 
     dataverse_alias = fields.StringField()
     dataverse = fields.StringField()
@@ -114,9 +90,14 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     study_hdl = fields.StringField()    # Now dataset_doi
     study = fields.StringField()        # Now dataset
 
-    user_settings = fields.ForeignField(
+    foreign_user_settings = fields.ForeignField(
         'addondataverseusersettings', backref='authorized'
     )
+
+    # Legacy settings objects won't have IDs
+    @property
+    def folder_name(self):
+        return self.dataset
 
     @property
     def dataset_id(self):
@@ -136,10 +117,33 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     def complete(self):
         return bool(self.has_auth and self.dataset_doi is not None)
 
-    @property
-    def has_auth(self):
-        """Whether a dataverse account is associated with this node."""
-        return bool(self.user_settings and self.user_settings.has_auth)
+    def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
+        kwargs = dict(
+            provider=self.config.short_name,
+            path=filenode.get('path', ''),
+            node=self.owner,
+            user=user,
+            view_only=True,
+        )
+        if cookie:
+            kwargs['cookie'] = cookie
+        if version:
+            kwargs['version'] = version
+        metadata_url = waterbutler_url_for(
+            'metadata',
+            **kwargs
+        )
+        res = requests.get(metadata_url)
+        if res.status_code != 200:
+            # The Dataverse API returns a 404 if the dataset has no published files
+            if res.status_code == http.NOT_FOUND and version == 'latest-published':
+                return []
+            raise HTTPError(res.status_code, data={
+                'error': res.json(),
+            })
+        # TODO: better throttling?
+        sleep(1.0 / 5.0)
+        return res.json().get('data', [])
 
     def find_or_create_file_guid(self, path):
         file_id = path.strip('/') if path else ''
@@ -149,28 +153,21 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         self.deauthorize(add_log=False)
         super(AddonDataverseNodeSettings, self).delete(save)
 
-    def set_user_auth(self, user_settings):
-        node = self.owner
-        self.user_settings = user_settings
-        node.add_log(
-            action='dataverse_node_authorized',
-            auth=Auth(user_settings.owner),
-            params={
-                'project': node.parent_id,
-                'node': node._primary_key,
-            }
-        )
-
-    def deauthorize(self, auth=None, add_log=True):
-        """Remove user authorization from this node and log the event."""
+    def clear_settings(self):
+        """Clear selected Dataverse and dataset"""
         self.dataverse_alias = None
         self.dataverse = None
         self.dataset_doi = None
         self.dataset_id = None
         self.dataset = None
-        self.user_settings = None
 
-        if add_log:
+    def deauthorize(self, auth=None, add_log=True):
+        """Remove user authorization from this node and log the event."""
+        self.clear_settings()
+        self.clear_auth()  # Also performs a save
+
+        # Log can't be added without auth
+        if add_log and auth:
             node = self.owner
             self.owner.add_log(
                 action='dataverse_node_deauthorized',
@@ -184,25 +181,18 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.api_token}
+        return {'token': self.external_account.oauth_secret}
 
     def serialize_waterbutler_settings(self):
         return {
-            'host': HOST,
+            'host': self.external_account.oauth_key,
             'doi': self.dataset_doi,
             'id': self.dataset_id,
             'name': self.dataset,
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        path = metadata['path']
-        if 'name' in metadata:
-            name = metadata['name']
-        else:
-            query_string = urlparse.urlparse(metadata['full_path']).query
-            name = urlparse.parse_qs(query_string).get('name')
-
-        url = self.owner.web_url_for('addon_view_or_download_file', path=path, provider='dataverse')
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='dataverse')
         self.owner.add_log(
             'dataverse_{0}'.format(action),
             auth=auth,
@@ -210,7 +200,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
                 'dataset': self.dataset,
-                'filename': name,
+                'filename': metadata['materialized'].strip('/'),
                 'urls': {
                     'view': url,
                     'download': url + '?action=download'
@@ -235,24 +225,6 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
 
     # backwards compatibility
     before_register = before_register_message
-
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return ('Because you have authorized the Dataverse add-on for this '
-                '{category}, forking it will also transfer your authentication '
-                'to the forked {category}.').format(category=category)
-
-        else:
-            return ('Because the Dataverse add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication to the forked '
-                    '{category}.').format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
 
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
@@ -307,7 +279,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
         else:
             message = (
                 'Dataverse authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href="{url}">Settings</a> '
+                'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                 'page.'
             ).format(
                 url=fork.web_url_for('node_setting'),
@@ -338,7 +310,7 @@ class AddonDataverseNodeSettings(AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message

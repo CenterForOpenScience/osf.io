@@ -1,28 +1,41 @@
 # -*- coding: utf-8 -*-
 import json
 import httplib as http
+from dateutil.parser import parse as parse_date
+import itertools
 
 from flask import request
-from flask import redirect
 from modularodm import Q
-from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import NoResultsFound, ValidationValueError
 
 from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
+
+from framework.status import push_status_message
 from framework.mongo.utils import to_mongo
 from framework.forms.utils import process_payload, unprocess_payload
+from framework.auth.decorators import must_be_signed
+
+from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
 
 from website import settings
+from website.exceptions import NodeStateError
 from website.project.decorators import (
     must_be_valid_project, must_be_contributor_or_public,
-    must_have_permission, must_not_be_registration
+    must_have_permission,
+    must_not_be_registration, must_be_registration,
 )
 from website.identifiers.model import Identifier
 from website.identifiers.metadata import datacite_metadata_for_node
 from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.utils import serialize_node
 from website.util.permissions import ADMIN
-from website.models import MetaSchema
-from website.models import NodeLog
+from website.models import MetaSchema, NodeLog
 from website import language
+from website.project import signals as project_signals
+from website import util
+
+from website.archiver.decorators import fail_archive_on_error
 
 from website.identifiers.client import EzidClient
 
@@ -47,6 +60,62 @@ def node_register_page(auth, node, **kwargs):
     ret.update(_view_project(node, auth, primary=True))
     return ret
 
+@must_be_valid_project
+@must_have_permission(ADMIN)
+def node_registration_retraction_get(auth, node, **kwargs):
+    """Prepares node object for registration retraction page.
+
+    :return: serialized Node to be retracted
+    :raises: 400: BAD_REQUEST if registration already pending retraction
+    """
+
+    if not node.is_registration:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'Retractions of non-registrations is not permitted.'
+        })
+    if node.is_pending_retraction:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'This registration is already pending a retraction.'
+        })
+
+    return serialize_node(node, auth, primary=True)
+
+@must_be_valid_project
+@must_have_permission(ADMIN)
+def node_registration_retraction_post(auth, node, **kwargs):
+    """Handles retraction of public registrations
+
+    :param auth: Authentication object for User
+    :return: Redirect URL for successful POST
+    """
+    if node.is_pending_retraction:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'This registration is already pending retraction'
+        })
+    if not node.is_registration:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'Retractions of non-registrations is not permitted.'
+        })
+
+    if node.root is not node:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'Retraction of non-parent registrations is not permitted.'
+        })
+
+    data = request.get_json()
+    try:
+        node.retract_registration(auth.user, data.get('justification', None))
+        node.save()
+        node.retraction.ask(node.active_contributors())
+    except NodeStateError as err:
+        raise HTTPError(http.FORBIDDEN, data=dict(message_long=err.message))
+
+    return {'redirectUrl': node.web_url_for('view_project')}
 
 @must_be_valid_project
 @must_be_contributor_or_public
@@ -115,9 +184,46 @@ def node_register_template_page(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def project_before_register(auth, node, **kwargs):
-    user = auth.user
+    """Returns prompt informing user that addons, if any, won't be registered."""
 
-    prompts = node.callback('before_register', user=user)
+    messages = {
+        'full': {
+            'addons': set(),
+            'message': 'The content and version history of <strong>{0}</strong> will be copied to the registration.',
+        },
+        'partial': {
+            'addons': set(),
+            'message': 'The current version of the content in <strong>{0}</strong> will be copied to the registration, but version history will be lost.'
+        },
+        'none': {
+            'addons': set(),
+            'message': 'The contents of <strong>{0}</strong> cannot be registered at this time,  and will not be included as part of this registration.',
+        },
+    }
+    errors = {}
+
+    addon_set = [n.get_addons() for n in itertools.chain([node], node.get_descendants_recursive(lambda n: n.primary))]
+    for addon in itertools.chain(*addon_set):
+        if not addon.complete:
+            continue
+        archive_errors = getattr(addon, 'archive_errors', None)
+        error = None
+        if archive_errors:
+            error = archive_errors()
+            if error:
+                errors[addon.config.short_name] = error
+                continue
+        name = addon.config.short_name
+        if name in settings.ADDONS_ARCHIVABLE:
+            messages[settings.ADDONS_ARCHIVABLE[name]]['addons'].add(addon.config.full_name)
+        else:
+            messages['none']['addons'].add(addon.config.full_name)
+    error_messages = errors.values()
+
+    prompts = [
+        m['message'].format(util.conjunct(m['addons']))
+        for m in messages.values() if m['addons']
+    ]
 
     if node.has_pointers_recursive:
         prompts.append(
@@ -126,7 +232,10 @@ def project_before_register(auth, node, **kwargs):
             )
         )
 
-    return {'prompts': prompts}
+    return {
+        'prompts': prompts,
+        'errors': error_messages
+    }
 
 
 @must_be_valid_project
@@ -151,13 +260,31 @@ def node_register_template_page_post(auth, node, **kwargs):
     schema = MetaSchema.find(
         Q('name', 'eq', template)
     ).sort('-schema_version')[0]
+
+    # Create the registration
     register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
+    try:
+        if data.get('registrationChoice', 'immediate') == 'embargo':
+            # Initiate embargo
+            embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
+            register.embargo_registration(auth.user, embargo_end_date)
+        else:
+            register.require_approval(auth.user)
+        register.save()
+    except ValidationValueError as err:
+        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+
+    push_status_message(language.AFTER_REGISTER_ARCHIVING,
+                        kind='info',
+                        trust=False)
 
     return {
-        'status': 'success',
-        'result': register.url,
+        'status': 'initiated',
+        'urls': {
+            'registrations': node.web_url_for('node_registrations')
+        }
     }, http.CREATED
 
 
@@ -254,3 +381,26 @@ def get_referent_by_identifier(category, value):
     if identifier.referent.url:
         return redirect(identifier.referent.url)
     raise HTTPError(http.NOT_FOUND)
+
+@fail_archive_on_error
+@must_be_signed
+@must_be_registration
+def registration_callbacks(node, payload, *args, **kwargs):
+    errors = payload.get('errors')
+    src_provider = payload['source']['provider']
+    if errors:
+        node.archive_job.update_target(
+            src_provider,
+            ARCHIVER_FAILURE,
+            errors=errors,
+        )
+    else:
+        # Dataverse requires two seperate targets, one
+        # for draft files and one for published files
+        if src_provider == 'dataverse':
+            src_provider += '-' + (payload['destination']['name'].split(' ')[-1].lstrip('(').rstrip(')').strip())
+        node.archive_job.update_target(
+            src_provider,
+            ARCHIVER_SUCCESS,
+        )
+    project_signals.archive_callback.send(node)

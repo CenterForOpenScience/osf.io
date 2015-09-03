@@ -34,12 +34,16 @@ var entry = {
     'files-page': staticPath('js/pages/files-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
+    'profile-settings-applications-list-page': staticPath('js/pages/profile-settings-applications-list-page.js'),
+    'profile-settings-applications-detail-page': staticPath('js/pages/profile-settings-applications-detail-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
     'sharing-page': staticPath('js/pages/sharing-page.js'),
     'conference-page': staticPath('js/pages/conference-page.js'),
+    'meetings-page': staticPath('js/pages/meetings-page.js'),
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
+    'registration-retraction-page': staticPath('js/pages/registration-retraction-page.js'),
     'share-search-page': staticPath('js/pages/share-search-page.js'),
     'profile-settings-addons-page': staticPath('js/pages/profile-settings-addons-page.js'),
     'twofactor-page': staticPath('js/pages/twofactor-page.js'),
@@ -68,6 +72,7 @@ var entry = {
         'js/fangorn',
         'js/citations',
         'js/osfHelpers',
+        'js/osfToggleHeight',
         'mithril'
     ]
 };
@@ -89,7 +94,7 @@ addons.addons.forEach(function(addonName) {
 });
 
 var resolve = {
-    extensions: ['', '.es6.js', '.js'],
+    extensions: ['', '.es6.js', '.js', '.min.js'],
     root: root,
     // Look for required files in bower and npm directories
     modulesDirectories: ['./website/static/vendor/bower_components', 'node_modules'],
@@ -114,9 +119,13 @@ var resolve = {
         'pagedown-ace-editor': addonsPath('wiki/static/pagedown-ace/Markdown.Editor.js'),
         'wikiPage': addonsPath('wiki/static/wikiPage.js'),
         'highlight-css': nodePath('highlight.js/styles/default.css'),
+        'pikaday-css': nodePath('pikaday/css/pikaday.css'),
         // Also alias some internal libraries for easy access
         'addons': path.join(__dirname, 'website', 'addons'),
-        'tests': staticPath('js/tests')
+        'tests': staticPath('js/tests'),
+        // GASP Items not defined as main in its package.json
+        'TweenLite' : nodePath('gsap/src/minified/TweenLite.min.js'),
+        'EasePack' : nodePath('gsap/src/minified/easing/EasePack.min.js')
     }
 };
 

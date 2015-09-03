@@ -16,11 +16,14 @@
 
 <%include file="modal_show_links.mako"/>
 
-${next.body()}
-
-## % if node['node_type'] == 'project':
-    <%include file="modal_duplicate.mako"/>
-## % endif
+% if node['is_retracted'] == True:
+    <%include file="retracted_registration.mako" args="node='${node}'"/>
+% else:
+    ${next.body()}
+##  % if node['node_type'] == 'project':
+        <%include file="modal_duplicate.mako"/>
+##  % endif
+% endif
 
 </%def>
 
@@ -31,7 +34,6 @@ ${next.body()}
 
 <script>
 
-    <% import json %>
     ## TODO: Move this logic into badges add-on
     % if 'badges' in addons_enabled and badges and badges['can_award']:
     ## TODO: port to commonjs
@@ -40,10 +42,10 @@ ${next.body()}
     ## });
     % endif
 
-    var nodeId = '${node['id']}';
-    var userApiUrl = '${user_api_url}';
-    var nodeApiUrl = '${node['api_url']}';
-    var absoluteUrl = '${node['display_absolute_url']}';
+    var nodeId = ${ node['id'] |sjson, n };
+    var userApiUrl = ${ user_api_url | sjson, n };
+    var nodeApiUrl = ${ node['api_url'] | sjson, n };
+    var absoluteUrl = ${ node['display_absolute_url'] | sjson, n };
     <%
        parent_exists = parent_node['exists']
        parent_title = ''
@@ -60,28 +62,29 @@ ${next.body()}
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
             ## TODO: Abstract me
-            username: ${json.dumps(user['username']) | n},
-            id: '${user_id}',
+            username: ${ user['username'] | sjson, n },
+            id: ${ user_id | sjson, n },
             urls: {api: userApiUrl},
-            isContributor: ${json.dumps(user.get('is_contributor', False))},
-            fullname: ${json.dumps(user['fullname']) | n}
+            isContributor: ${ user.get('is_contributor', False) | sjson, n },
+            fullname: ${ user['fullname'] | sjson, n }
         },
         node: {
             ## TODO: Abstract me
             id: nodeId,
-            title: ${json.dumps(node['title']) | n},
+            title: ${ node['title'] | sjson, n },
             urls: {
                 api: nodeApiUrl,
-                web: ${json.dumps(node['url'])},
-                update: ${json.dumps(node['update_url'])}
+                web: ${ node['url'] | sjson, n },
+                update: ${ node['update_url'] | sjson, n }
             },
-            isPublic: ${json.dumps(node.get('is_public', False))},
-            piwikSiteID: ${json.dumps(node.get('piwik_site_id', None))},
-            piwikHost: ${json.dumps(piwik_host)},
-            anonymous: ${json.dumps(node['anonymous'])},
-            category: '${node['category_short']}',
-            parentTitle: ${json.dumps(parent_title) | n},
-            parentRegisterUrl: '${parent_registration_url}',
+            isPublic: ${ node.get('is_public', False) | sjson, n },
+            isRetracted: ${ node.get('is_retracted', False) | sjson, n },
+            piwikSiteID: ${ node.get('piwik_site_id', None) | sjson, n },
+            piwikHost: ${ piwik_host | sjson, n },
+            anonymous: ${ node['anonymous'] | sjson, n },
+            category: ${ node['category_short'] | sjson, n },
+            parentTitle: ${ parent_title | sjson, n },
+            parentRegisterUrl: ${ parent_registration_url | sjson, n },
             parentExists: ${'true' if parent_exists else 'false'}
         }
     });

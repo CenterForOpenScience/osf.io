@@ -5,34 +5,24 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 
+var $osf = require('js/osfHelpers');
 
 var preRegisterMessage =  function(title, parentTitle, parentUrl, category) {
-    // TODO(hrybacki): Remove warning once Retraction/Embargoes goes is merged into production
+    var titleText = $osf.htmlEscape(title);
+    var parentTitleText = $osf.htmlEscape(parentTitle);
     if (parentUrl) {
-        return 'You are about to register the ' + category + ' <b>' + title +
-            '</b> and everything that is inside it. This will <b>not</b> register' +
-            ' its parent, <b>' + parentTitle + '</b>.' +
+        return 'You are about to register the ' + category + ' <b>' + titleText +
+            '</b> including all components and data within it. This will <b>not</b> register' +
+            ' its parent, <b>' + parentTitleText + '</b>.' +
             ' If you want to register the parent, please go <a href="' +
-            parentUrl + '">here.</a>' +
-            '<hr /><b>Important Note:</b> As early as <u>June 8, 2015</u>, registrations ' +
-            'will be made public immediately or can be embargoed for up to one year. ' +
-            'There will no longer be the option of creating a permanently private ' +
-            'registration. If you register before June 8, 2015 and leave your ' +
-            'registration private, then the registration can remain private. After June 8, 2015, ' +
-            'if you ever make it public, you will not be able to return it to private. ';
+            parentUrl + '">here.</a> After clicking Register, you will next select a registration form.';
     } else {
-        return 'You are about to register <b>' + title +
-            '</b> and everything that is inside it. Registration creates a permanent, ' +
-            'time-stamped, uneditable version of the project. If you would prefer to ' +
-            'register a particular component, please navigate to that component and then ' +
-            'initiate registration. '+
-            // TODO(hrybacki): Remove once Retraction/Embargoes goes is merged into production
-            '<hr /><b>Important Note:</b> As early as <u>June 8, 2015</u>, registrations ' +
-            'will be made public immediately or can be embargoed for up to one year. ' +
-            'There will no longer be the option of creating a permanently private ' +
-            'registration. If you register before June 8, 2015 and leave your ' +
-            'registration private, then the registration can remain private. After June 8, 2015, ' +
-            'if you ever make it public, you will not be able to return it to private.';
+        return 'You are about to register <b>' + titleText + '</b> ' +
+            'including all components and data within it. ' +
+            'Registration creates a permanent, time-stamped, uneditable version ' +
+            'of the project. If you would prefer to register only one particular ' +
+            'component, please navigate to that component and then initiate registration. ' +
+            'After clicking Register, you will next select a registration form.';
     }
 };
 
@@ -43,13 +33,13 @@ $(document).ready(function() {
 
         event.preventDefault();
         var title = node.title;
+        var titleText = $osf.htmlEscape(title);
         var parentTitle = node.parentTitle;
         var parentRegisterUrl = node.parentRegisterUrl;
         var category = node.category;
-        var bootboxTitle = 'Register Project';
+        var bootboxTitle = 'Register ' + titleText;
         if (node.category !== 'project'){
             category = 'component';
-            bootboxTitle = 'Register Component';
         }
 
         bootbox.confirm({
@@ -58,6 +48,11 @@ $(document).ready(function() {
             callback: function (confirmed) {
                 if(confirmed) {
                     window.location.href = target;
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Register'
                 }
             }
         });

@@ -297,6 +297,37 @@ class TestUploadFileHook(HookTestCase):
 
         assert_equal(res.status_code, 400)
 
+    def test_archive(self):
+        name = 'ლ(ಠ益ಠლ).unicode'
+        parent = self.node_settings.root_node.append_folder('cheesey')
+        res = self.send_upload_hook(parent, self.make_payload(name=name, hashes={'sha256': 'foo'}))
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['status'], 'success')
+        assert_is(res.json['archive'], True)
+
+        self.send_hook(
+            'osfstorage_update_metadata',
+            {},
+            payload={'metadata': {
+                'vault': 'Vault 101',
+                'archive': '101 tluaV',
+            }, 'version': res.json['version']},
+            method='put_json',
+        )
+
+        res = self.send_upload_hook(parent, self.make_payload(
+            name=name,
+            hashes={'sha256': 'foo'},
+            metadata={
+                'name': 'lakdjf',
+                'provider': 'testing',
+            }))
+
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['status'], 'success')
+        assert_is(res.json['archive'], False)
+
     # def test_upload_update_deleted(self):
     #     pass
 
@@ -314,7 +345,8 @@ class TestUpdateMetadataHook(HookTestCase):
             'metadata': {
                 'size': 123,
                 'modified': 'Mon, 16 Feb 2015 18:45:34 GMT',
-                'md5': 'askjasdlk;jsadlkjsadf'
+                'md5': 'askjasdlk;jsadlkjsadf',
+                'sha256': 'sahduashduahdushaushda',
             },
             'version': self.version._id,
             'size': 321,  # Just to make sure the field is ignored

@@ -17,6 +17,7 @@ from website.util import web_url_for
 from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
+from website.addons.base import StorageAddonBase
 
 from website.addons.github import utils
 from website.addons.github.api import GitHub
@@ -66,6 +67,10 @@ class GithubGuidFile(GuidFile):
     @property
     def name(self):
         return os.path.split(self.path)[1]
+
+    @property
+    def external_url(self):
+        return self._metadata_cache['extra']['webView']
 
     @property
     def extra(self):
@@ -199,7 +204,7 @@ class AddonGitHubUserSettings(AddonUserSettingsBase):
         super(AddonGitHubUserSettings, self).delete(save=save)
 
 
-class AddonGitHubNodeSettings(AddonNodeSettingsBase):
+class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     user = fields.StringField()
     repo = fields.StringField()
@@ -211,6 +216,10 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
     )
 
     registration_data = fields.DictionaryField()
+
+    @property
+    def folder_name(self):
+        return self.repo
 
     @property
     def has_auth(self):
@@ -399,7 +408,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         repo_permissions = 'private' if repo.private else 'public'
         if repo_permissions != node_permissions:
             message = (
-                'Warnings: This OSF {category} is {node_perm}, but the GitHub '
+                'Warning: This OSF {category} is {node_perm}, but the GitHub '
                 'repo {user} / {repo} is {repo_perm}.'.format(
                     category=node.project_or_component,
                     node_perm=node_permissions,
@@ -416,7 +425,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             else:
                 message += (
                     ' The files in this GitHub repo can be viewed on GitHub '
-                    '<a href="https://github.com/{user}/{repo}/">here</a>.'
+                    '<u><a href="https://github.com/{user}/{repo}/">here</a></u>.'
                 ).format(
                     user=self.user,
                     repo=self.repo,
@@ -439,7 +448,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
                 'by {user}. Removing this user will also remove write access '
                 'to GitHub unless another contributor re-authenticates. You '
                 'can download the contents of this repository before removing '
-                'this contributor <a href="{url}">here</a>.'
+                'this contributor <u><a href="{url}">here</a></u>.'
             ).format(
                 category=node.project_or_component,
                 user=removed.fullname,
@@ -471,7 +480,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
@@ -515,30 +524,6 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
             )
         )
 
-    def before_fork(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                'Because you have authenticated the GitHub add-on for this '
-                '{cat}, forking it will also transfer your authorization to '
-                'the forked {cat}.'
-            ).format(
-                cat=node.project_or_component,
-            )
-        return (
-            'Because this GitHub add-on has been authenticated by a different '
-            'user, forking it will not transfer authentication to the forked '
-            '{cat}.'
-        ).format(
-            cat=node.project_or_component,
-        )
-
     def after_fork(self, node, fork, user, save=True):
         """
 
@@ -564,7 +549,7 @@ class AddonGitHubNodeSettings(AddonNodeSettingsBase):
         else:
             message = (
                 'GitHub authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href={url}>Settings</a> '
+                'authorize this fork on the <u><a href={url}>Settings</a></u> '
                 'page.'
             ).format(
                 cat=fork.project_or_component,

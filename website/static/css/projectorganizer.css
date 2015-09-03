@@ -1,4 +1,4 @@
-.po-hover-multiselect { 
+.po-hover-multiselect {
     background : lightgoldenrodyellow;
 }
 
@@ -192,6 +192,12 @@ div.project-grid-menu span.pg-collapse-all {
     margin-right: 5px;
 }
 
+/* Project details box  */
+span.project-details {
+    visibility: hidden;
+}
+
+
 span.add-link-warning {
     color: #808080;
 }
@@ -205,9 +211,25 @@ span.rename-container{
     display: none;
 }
 
+div.project-details span.title {
+    display: inline;
+    overflow-x: hidden;
+    font-size: 15px;
+    overflow-x: hidden;
+}
+
+
 .project-action-icons img {
     margin-right: 4px;
     cursor:pointer;cursor:hand
+}
+
+div.project-details {
+    display: inline-block;
+    width: 100%;
+    background-color: #EEE;
+    padding: 7px;
+    margin-bottom: 10px;
 }
 
 div.contributors {
@@ -264,18 +286,12 @@ div.organize-project-controls {
     border-radius: 4px;
     outline: none;
 }
-input.typeahead.tt-input { 
+input.typeahead.tt-input {
 height: 32px ;
 }
 
 .typeahead {
     background-color: #fff;
-}
-
-.typeahead:focus {
-    -webkit-box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
-    -moz-box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
-    box-shadow: rgba(102, 175, 232, 0.576471) 0px 0px 7.668470859527588px 0px;
 }
 
 .tt-query {
@@ -288,7 +304,6 @@ height: 32px ;
 .tt-input, .typeahead {
     padding: 4px 10px;
 }
-
 
 .tt-hint {
     color: #999;
@@ -350,7 +365,7 @@ h3.category {
 /* Project Toolbar New Additions and Changes */
 
 .po-placeholder {
-    line-height: 30px; 
+    line-height: 30px;
 }
 
 #project-grid {
@@ -386,4 +401,8 @@ h3.category {
 }
 .smaller {
     font-size: 75%;
+}
+
+.registration-archiving {
+    cursor: default;
 }

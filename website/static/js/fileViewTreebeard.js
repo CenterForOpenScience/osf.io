@@ -38,7 +38,7 @@ function FileViewTreebeard(data) {
         onload: function(tree) {
             var tb = this;
             Fangorn.DefaultOptions.onload.call(tb, tree);
-            $('.osf-panel-header.osf-panel-header-flex').show();
+            $('.panel-heading.osf-panel-header-flex').show();
         },
         ondataload: function () {
             var tb = this;
@@ -73,6 +73,9 @@ function FileViewTreebeard(data) {
             if(!event) {
                 Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
             }
+            if (tree.depth > 1) {
+                Fangorn.Utils.orderFolder.call(this, tree);
+            }
             // if any of the children is the selected add a certain class.
             for (var i = 0; i < tree.children.length; i++){
                 var item = tree.children[i];
@@ -85,7 +88,9 @@ function FileViewTreebeard(data) {
         resolveRows: function (item) {
             var tb = this;
             var node = item.parent().parent();
-
+            if(item.data.permissions && !item.data.permissions.view){
+                item.css += ' tb-private-row';
+            }
             var defaultColumns = [
                 {
                     data: 'name',

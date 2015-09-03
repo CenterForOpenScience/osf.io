@@ -9,7 +9,7 @@
 </div>
 
 <div class="row">
-    <div class="col-md-10 col-md-offset-1">
+    <div class="col-lg-10 col-lg-offset-1">
 
             <div id="manageContributors" class="scripted">
                 <h3> Contributors
@@ -124,25 +124,25 @@
                     <tr>
                         <td class="col-sm-3">
                             <div>
-                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: 'Link name'}" style="width: 200px"></span>
+                                <span class="link-name m-b-xs" data-bind="text: name, tooltip: {title: 'Link name'}" style="display: block; width: 100%"></span>
                             </div>
+
                             <div class="btn-group">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual"
-                                    data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
-                                <span class="fa fa-copy" ></span>
-                            </button>
+                                <button title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button"
+                                        data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                    <i class="fa fa-copy"></i>
+                                </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>
                         </td>
                         <td class="col-sm-4">
-                           <ul class="narrow-list list-overflow" data-bind="foreach: nodesList">
+                           <ul class="private-link-list narrow-list" data-bind="foreach: nodesList">
                                <li data-bind="style:{marginLeft: $data.scale}">
                                   <span data-bind="getIcon: $data.category"></span>
                                   <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
                                </li>
                            </ul>
-                           <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
-                           <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayDefaultNodes"></button>
+
                         </td>
 
                         <td class="col-sm-2">
@@ -168,11 +168,13 @@
             </table>
 
         </div>
+
     % endif
 
     </div><!-- end col-md -->
 </div><!-- end row -->
 
+<link rel="stylesheet" href="/static/css/pages/contributor-page.css">
 
 <script id="contribTpl" type="text/html">
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
@@ -188,7 +190,7 @@
         <td class="permissions">
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
-                    <select class="form-control" data-bind="
+                    <select class="form-control input-sm" data-bind="
                         options: permissionList,
                         value: curPermission,
                         optionsText: 'text',
@@ -204,7 +206,7 @@
                 <span data-bind="text: formatPermission"></span>
             <!-- /ko -->
         </td>
-        <td>
+        <td class="text-center">
             <input
                     type="checkbox" class="no-sort biblio"
                     data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
@@ -229,7 +231,7 @@
             <!-- ko ifnot: contributor.canEdit() -->
                 <!-- ko if: canRemove -->
                     <a
-                            data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
+                            data-bind="click: function() { $data.removeSelf($parent)}, tooltip: {title: 'Remove contributor'}"
                         >
                         <i class="fa fa-times text-danger no-sort"></i>
                     </a>
@@ -245,22 +247,21 @@
         <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
         <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
         <br /><br />
+    % endif
         <div data-bind="foreach: messages">
             <div data-bind="css: cssClass">{{ text }}</div>
         </div>
-    % endif
 </%def>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    <% import json %>
 
     <script type="text/javascript">
       window.contextVars = window.contextVars || {};
-      window.contextVars.user = ${json.dumps(user)};
-      window.contextVars.isRegistration = ${json.dumps(node['is_registration'])};
-      window.contextVars.contributors = ${json.dumps(contributors)};
-      window.contextVars.adminContributors = ${json.dumps(adminContributors)};
+      window.contextVars.user = ${ user | sjson, n };
+      window.contextVars.isRegistration = ${ node['is_registration'] | sjson, n };
+      window.contextVars.contributors = ${ contributors | sjson, n };
+      window.contextVars.adminContributors = ${ adminContributors | sjson, n };
 
     </script>
     <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>

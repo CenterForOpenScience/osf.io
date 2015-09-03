@@ -14,11 +14,14 @@ def load_asset_paths():
     if settings.DEBUG_MODE:
         logger.warn('Skipping load of "webpack-assets.json" in DEBUG_MODE.')
         return
+    asset_paths = None
     try:
-        return json.load(open(settings.ASSET_HASH_PATH))
+        with open(settings.ASSET_HASH_PATH) as fp:
+            asset_paths = json.load(fp)
     except IOError:
         logger.error('No "webpack-assets.json" file found. You may need to run webpack.')
-        raise
+        pass
+    return asset_paths
 
 
 asset_paths = load_asset_paths()
@@ -27,6 +30,9 @@ def webpack_asset(path, asset_paths=asset_paths, debug=settings.DEBUG_MODE):
     """Mako filter that resolves a human-readable asset path to its name on disk
     (which may include the hash of the file).
     """
+    if not asset_paths:
+        logger.warn('webpack-assets.json has not yet been generated. Falling back to non-cache-busted assets')
+        return path
     if not debug:
         key = path.replace(base_static_path, '').replace('.js', '')
         hash_path = asset_paths[key]
@@ -35,7 +41,7 @@ def webpack_asset(path, asset_paths=asset_paths, debug=settings.DEBUG_MODE):
         return path
 
 
-def resolve_addon_path(config, file_name):
+def resolve_addon_path(addon_config, file_name):
     """Check for addon asset in source directory (e.g. website/addons/dropbox/static');
     if file is found, return path to webpack-built asset.
 
@@ -44,7 +50,7 @@ def resolve_addon_path(config, file_name):
     """
     source_path = os.path.join(
         settings.ADDON_PATH,
-        config.short_name,
+        addon_config.short_name,
         'static',
         file_name,
     )
@@ -54,7 +60,7 @@ def resolve_addon_path(config, file_name):
             'static',
             'public',
             'js',
-            config.short_name,
+            addon_config.short_name,
             file_name,
         )
     return None

@@ -174,6 +174,7 @@ def shell():
     code.interact(banner, local=context)
     return
 
+
 @task(aliases=['mongo'])
 def mongoserver(daemon=False, config=None):
     """Run the mongod process.
@@ -315,9 +316,18 @@ def elasticsearch():
 
 @task
 def migrate_search(delete=False, index=settings.ELASTIC_INDEX):
-    '''Migrate the search-enabled models.'''
+    """Migrate the search-enabled models."""
     from website.search_migration.migrate import migrate
     migrate(delete, index=index)
+
+@task
+def rebuild_search():
+    """Delete and recreate the index for elasticsearch"""
+    run("curl -s -XDELETE {uri}/{index}*".format(uri=settings.ELASTIC_URI,
+                                             index=settings.ELASTIC_INDEX))
+    run("curl -s -XPUT {uri}/{index}".format(uri=settings.ELASTIC_URI,
+                                          index=settings.ELASTIC_INDEX))
+    migrate_search()
 
 
 @task
@@ -325,6 +335,14 @@ def mailserver(port=1025):
     """Run a SMTP test server."""
     cmd = 'python -m smtpd -n -c DebuggingServer localhost:{port}'.format(port=port)
     run(bin_prefix(cmd), pty=True)
+
+
+@task
+def jshint():
+    """Run JSHint syntax check"""
+    js_folder = os.path.join(HERE, 'website', 'static', 'js')
+    cmd = 'jshint {}'.format(js_folder)
+    run(cmd, echo=True)
 
 
 @task(aliases=['flake8'])
@@ -341,8 +359,9 @@ def pip_install(req_file):
         cmd += ' --no-index --find-links={}'.format(WHEELHOUSE_PATH)
     return cmd
 
+
 @task(aliases=['req'])
-def requirements(addons=False, release=False, dev=False):
+def requirements(addons=False, release=False, dev=False, metrics=False):
     """Install python dependencies.
 
     Examples:
@@ -350,6 +369,7 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --dev
         inv requirements --addons
         inv requirements --release
+        inv requirements --metrics
     """
     if release or addons:
         addon_requirements()
@@ -358,6 +378,8 @@ def requirements(addons=False, release=False, dev=False):
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:  # then dev requirements
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    elif metrics:  # then dev requirements
+        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
     else:  # then base requirements
         req_file = os.path.join(HERE, 'requirements.txt')
     run(pip_install(req_file), echo=True)
@@ -372,6 +394,7 @@ def test_module(module=None, verbosity=2):
     args = " --verbosity={0} -s {1}".format(verbosity, module_fmt)
     # Use pty so the process buffers "correctly"
     run(bin_prefix(TEST_CMD) + args, pty=True)
+
 
 @task
 def test_osf():
@@ -392,24 +415,19 @@ def test_addons():
 
 @task
 def test(all=False, syntax=False):
-    """Alias of `invoke test_osf`.
+    """
+    Run unit tests: OSF (always), plus addons and syntax checks (optional)
     """
     if syntax:
         flake()
+        jshint()
+
+    test_osf()
 
     if all:
-        test_all()
-    else:
-        test_osf()
+        test_addons()
+        karma(single=True, browsers='PhantomJS')
 
-
-@task
-def test_all(syntax=False):
-    if syntax:
-        flake()
-    test_osf()
-    test_addons()
-    karma(single=True, browsers='PhantomJS')
 
 @task
 def karma(single=False, sauce=False, browsers=None):
@@ -468,6 +486,7 @@ def addon_requirements():
             except IOError:
                 pass
     print('Finished')
+
 
 @task
 def encryption(owner=None):
@@ -590,13 +609,12 @@ def analytics():
     import matplotlib
     matplotlib.use('Agg')
     init_app()
-    from scripts import metrics
     from scripts.analytics import (
         logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     modules = (
-        metrics, logs, addons, comments, folders, links, watch, email_invites,
+        logs, addons, comments, folders, links, watch, email_invites,
         permissions, profile, benchmarks
     )
     for module in modules:
@@ -745,6 +763,7 @@ def bundle_certs(domain, cert_path):
     )
     run(cmd)
 
+
 @task
 def clean_assets():
     """Remove built JS files."""
@@ -771,6 +790,16 @@ def webpack(clean=False, watch=False, dev=False):
     command = ' '.join(args)
     run(command, echo=True)
 
+
+@task()
+def build_js_config_files():
+    from website import settings
+    from website.app import build_js_config_files as _build_js_config_files
+    print('Building JS config files...')
+    _build_js_config_files(settings)
+    print("...Done.")
+
+
 @task()
 def assets(dev=False, watch=False):
     """Install and build static assets."""
@@ -779,9 +808,11 @@ def assets(dev=False, watch=False):
         npm += ' --production'
     run(npm, echo=True)
     bower_install()
+    build_js_config_files()
     # Always set clean=False to prevent possible mistakes
     # on prod
     webpack(clean=False, watch=watch, dev=dev)
+
 
 @task
 def generate_self_signed(domain):
@@ -792,6 +823,7 @@ def generate_self_signed(domain):
         ' -keyout {0}.key -out {0}.crt'
     ).format(domain)
     run(cmd)
+
 
 @task
 def update_citation_styles():

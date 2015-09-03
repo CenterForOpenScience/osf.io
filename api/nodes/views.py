@@ -1,28 +1,28 @@
 import requests
 
+from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from modularodm import Q
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
-from api.base.utils import get_object_or_404, waterbutler_url_for
-from api.base.filters import ODMFilterMixin, ListFilterMixin
-from .serializers import NodeSerializer, NodePointersSerializer, NodeFilesSerializer
 from api.users.serializers import ContributorSerializer
+from api.base.filters import ODMFilterMixin, ListFilterMixin
+from api.base.utils import get_object_or_error, waterbutler_url_for
+from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
-    current URL. By default, fetches the current node based on the pk kwarg.
+    current URL. By default, fetches the current node based on the node_id kwarg.
     """
 
     serializer_class = NodeSerializer
-    node_lookup_url_kwarg = 'pk'
+    node_lookup_url_kwarg = 'node_id'
 
     def get_node(self):
-        obj = get_object_or_404(Node, self.kwargs[self.node_lookup_url_kwarg])
+        obj = get_object_or_error(Node, self.kwargs[self.node_lookup_url_kwarg], 'node')
         # May raise a permission denied
         self.check_object_permissions(self.request, obj)
         return obj
@@ -67,19 +67,16 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        """
-        Create a node.
-        """
-        """
+        """Create a node.
+
         :param serializer:
-        :return:
         """
         # On creation, make sure that current user is the creator
         user = self.request.user
         serializer.save(creator=user)
 
 
-class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
+class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Projects and component details.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -92,16 +89,25 @@ class NodeDetail(generics.RetrieveUpdateAPIView, NodeMixin):
         ContributorOrPublic,
         ReadOnlyIfRegistration,
     )
+
     serializer_class = NodeSerializer
 
-    # overrides RetrieveUpdateAPIView
+    # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         return self.get_node()
 
-    # overrides RetrieveUpdateAPIView
+    # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
         return {'request': self.request}
+
+    # overrides RetrieveUpdateDestroyAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        node = self.get_object()
+        node.remove_node(auth=auth)
+        node.save()
 
 
 class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
@@ -158,7 +164,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListAPIView, NodeMixin):
+class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -181,43 +187,48 @@ class NodeChildrenList(generics.ListAPIView, NodeMixin):
             auth = Auth(None)
         else:
             auth = Auth(user)
-        children = [node for node in nodes if node.can_view(auth) and node.primary]
+        children = [node for node in nodes if node.can_view(auth) and node.primary and not node.is_deleted]
         return children
 
+    # overrides ListCreateAPIView
+    def perform_create(self, serializer):
+        user = self.request.user
+        serializer.save(creator=user, parent=self.get_node())
 
-class NodePointersList(generics.ListCreateAPIView, NodeMixin):
-    """Pointers to other nodes.
 
-    Pointers are essentially aliases or symlinks: All they do is point to another node.
+class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
+    """Node Links to other nodes.
+
+    Node Links are essentially aliases or symlinks: All they do is point to another node.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
     )
 
-    serializer_class = NodePointersSerializer
+    serializer_class = NodeLinksSerializer
 
     def get_queryset(self):
         pointers = self.get_node().nodes_pointer
         return pointers
 
 
-class NodePointerDetail(generics.RetrieveDestroyAPIView, NodeMixin):
-    """Detail of a pointer to another node.
+class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
+    """Detail of a Node Link to another node.
 
-    Pointers are essentially aliases or symlinks: All they do is point to another node.
+    Node Links are essentially aliases or symlinks: All they do is point to another node.
     """
     permission_classes = (
         ContributorOrPublicForPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
-    serializer_class = NodePointersSerializer
+    serializer_class = NodeLinksSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):
-        pointer_lookup_url_kwarg = 'pointer_id'
-        pointer = get_object_or_404(Pointer, self.kwargs[pointer_lookup_url_kwarg])
+        pointer_lookup_url_kwarg = 'node_link_id'
+        pointer = get_object_or_error(Pointer, self.kwargs[pointer_lookup_url_kwarg], 'node link')
         # May raise a permission denied
         self.check_object_permissions(self.request, pointer)
         return pointer
@@ -335,14 +346,14 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
                         'metadata': {},
                     })
         else:
-            url = waterbutler_url_for('data', provider, path, self.kwargs['pk'], cookie, obj_args)
+            url = waterbutler_url_for('data', provider, path, self.kwargs['node_id'], cookie, obj_args)
             waterbutler_request = requests.get(url)
             if waterbutler_request.status_code == 401:
                 raise PermissionDenied
             try:
                 waterbutler_data = waterbutler_request.json()['data']
             except KeyError:
-                raise ValidationError(detail='detail: Could not retrieve files information.')
+                raise ValidationError('Could not retrieve files information.')
 
             if isinstance(waterbutler_data, list):
                 for item in waterbutler_data:

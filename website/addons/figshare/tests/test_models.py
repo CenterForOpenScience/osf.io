@@ -176,7 +176,7 @@ class TestCallbacks(OsfTestCase):
 
         self.user = AuthUserFactory()
         self.consolidated_auth = Auth(user=self.user)
-        self.auth = ('test', self.user.api_keys[0]._primary_key)
+        self.auth = self.user.auth
         self.project = ProjectFactory(creator=self.user)
 
         self.non_authenticator = AuthUserFactory()
@@ -358,7 +358,9 @@ class TestCallbacks(OsfTestCase):
         assert_true(self.node_settings.figshare_type is None)
         assert_true(self.node_settings.figshare_title is None)
 
-    def test_does_not_get_copied_to_registrations(self):
+    @mock.patch('website.archiver.tasks.archive')
+    @mock.patch('website.addons.figshare.model.AddonFigShareNodeSettings.archive_errors')
+    def test_does_not_get_copied_to_registrations(self, mock_errors, mock_archive):
         registration = self.project.register_node(
             schema=None,
             auth=Auth(user=self.project.creator),
