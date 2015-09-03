@@ -36,44 +36,7 @@ class NodeSerializer(JSONAPISerializer):
     collection = ser.BooleanField(read_only=True, source='is_folder')
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
 
-<<<<<<< HEAD
-    links = LinksField({
-        'html': 'get_absolute_url',
-        'children': {
-            'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-            'count': 'get_node_count',
-        },
-        'logs': {
-            'related': Link('nodes:node-logs', kwargs={'node_id': '<pk>'}),
-        },
-        'contributors': {
-            'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-            'count': 'get_contrib_count',
-        },
-        'node_links': {
-            'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-            'count': 'get_pointers_count',
-        },
-        'registrations': {
-            'related': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-            'count': 'get_registration_count',
-        },
-        'files': {
-            'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
-        },
-        'parent': {
-            'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
-        }
-    })
-    properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
-                                                     'and dashboard. Collections are special nodes used by the Project '
-                                                     'Organizer to, as you would imagine, organize projects. '
-                                                     'A dashboard is a collection node that serves as the root of '
-                                                     'Project Organizer collections. Every user will always have '
-                                                     'one Dashboard')
-=======
     links = LinksField({'html': 'get_absolute_url'})
->>>>>>> 4776878010365b6549fdd3c3bf92fcde17c1eda9
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
