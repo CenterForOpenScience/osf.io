@@ -86,6 +86,8 @@ def add_poster_by_email(conference, message):
                 verification_key=user.verification_key,
                 _absolute=True,
             )
+            #TO DO: Make sure views actually means something, maybe trigger doesnt happen here, or check and add views
+            #at the callback, like send if more than 5 and then set data['views']
             mails.queue_mail(
                 to_addr=user,
                 mail=mails.WELCOME_OSF4M,
@@ -93,7 +95,8 @@ def add_poster_by_email(conference, message):
                 user=user,
                 conference=conference.name,
                 fullname=user.fullname,
-                presentation='presentation'
+                presentation='presentation',
+                views=5
             )
         else:
             set_password_url = None
