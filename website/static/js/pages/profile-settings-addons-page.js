@@ -114,10 +114,6 @@ for (var i=0; i < addonEnabledSettings.length; i++) {
    }
 }
 
-$(document).ready(function(){
-    $('.addon-auth-table').osfToggleHeight({height: 140});
-});
-
 /* Before closing the page, Check whether the newly checked addon are updated or not */
 $(window).on('beforeunload',function() {
     //new checked items but not updated
@@ -135,6 +131,7 @@ $(window).on('beforeunload',function() {
 ****************/
 
 $('.addon-oauth').each(function(index, elem) {
+    // Applies to Mendeley, Zotero and Dataverse
     var viewModel = new addonSettings.OAuthAddonSettingsViewModel(
         $(elem).data('addon-short-name'),
         $(elem).data('addon-name')
