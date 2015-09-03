@@ -296,7 +296,6 @@ class User(GuidStoredObject, AddonModelMixin):
     #    ...
     # }
 
-    has_made_public = fields.BooleanField(default=False)
     osf_mailing_lists = fields.DictionaryField(default={'Open Science Framework Help': True})
 
     # the date this user was registered

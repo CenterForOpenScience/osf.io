@@ -2501,18 +2501,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 if self.embargo_end_date and not self.is_pending_embargo:
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
-            if not auth.user.has_made_public:
-                auth.user.has_made_public = True
-                auth.user.save()
-                mails.queue_mail(
-                    to_addr=auth.user.username,
-                    mail=mails.NEW_PUBLIC_PROJECT,
-                    send_at=datetime.datetime.utcnow() + datetime.timedelta(hours=24),
-                    user=auth.user,
-                    nid=self._id,
-                    fullname=auth.user.fullname,
-                    project_title=self.title
-                )
+            mails.queue_mail(
+                to_addr=auth.user.username,
+                mail=mails.NEW_PUBLIC_PROJECT,
+                send_at=datetime.datetime.utcnow() + datetime.timedelta(hours=24),
+                user=auth.user,
+                nid=self._id,
+                fullname=auth.user.fullname,
+                project_title=self.title
+            )
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:
