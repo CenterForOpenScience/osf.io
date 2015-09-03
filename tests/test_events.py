@@ -653,7 +653,7 @@ class TestSubscriptionManipulations(OsfTestCase):
         result = utils.subscriptions_users_remove_duplicates(
             self.emails_1, self.emails_1, remove_same=True
         )
-        assert_equal({email_digest: [], email_transactional: [], 'none': list({'g1234', 'h1234', 'i1234'})}, result)
+        assert_equal({email_digest: [], email_transactional: [], 'none': []}, result)
 
 
 wb_path = u'5581cb50a24f710b0f4623f9'

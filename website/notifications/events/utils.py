@@ -1,5 +1,8 @@
+from itertools import product
+
 from website.notifications.emails import compile_subscriptions
 from website.notifications import utils, constants
+
 
 
 def get_file_subs_from_folder(addon, user, kind, path, name):
@@ -55,9 +58,10 @@ def compile_user_lists(files, user, source_node, node):
 def categorize_users(user, source_event, source_node, event, node):
     """Categorize users from a file subscription into three categories.
 
-    Puts users in one of three bins: Those that are moved, those that
-     need warned, those that are removed.
-    Calls move_subscription in order to move the sub and get users w/o permissions
+    Puts users in one of three bins:
+     - Moved: User has permissions on both nodes, subscribed to both
+     - Warned: User has permissions on both, not subscribed to destination
+     - Removed: Does not have permission on destination node
     :param user: User instance who started the event
     :param source_event: <guid>_event_name
     :param source_node: node from where the event happened
@@ -128,11 +132,12 @@ def subscriptions_users_difference(emails_1, emails_2):
 
 def subscriptions_users_remove_duplicates(emails_1, emails_2, remove_same=False):
     emails_list = dict(emails_1)
-    for notifications in constants.NOTIFICATION_TYPES:
-        for nt in constants.NOTIFICATION_TYPES:
-            if nt == 'none' or not remove_same and nt == notifications:
-                continue
-            emails_list[notifications] = list(
-                set(emails_list[notifications]).difference(set(emails_2[nt]))
-            )
+    product_list = product(constants.NOTIFICATION_TYPES, repeat=2)
+    for combo in product_list:
+        notification_1, notification_2 = combo
+        if notification_2 == notification_1 and not remove_same:
+            continue
+        emails_list[notification_1] = list(
+            set(emails_list[notification_1]).difference(set(emails_2[notification_2]))
+        )
     return emails_list
