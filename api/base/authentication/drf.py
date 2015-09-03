@@ -52,7 +52,7 @@ class OSFBasicAuthentication(BasicAuthentication):
 
     # Returns custom value other than "Basic" to prevent BasicAuth dialog prompt when returning 401
     def authenticate_header(self, request):
-        return 'Non-Basic realm="%s"' % self.www_authenticate_realm
+        return 'Documentation realm="%s"' % self.www_authenticate_realm
 
 class OSFCASAuthentication(authentication.BaseAuthentication):
     """Check whether the user provides a valid OAuth2 bearer token"""
