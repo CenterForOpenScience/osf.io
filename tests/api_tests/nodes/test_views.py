@@ -641,8 +641,6 @@ class TestNodeUpdate(ApiTestCase):
             'is_public': False,
         }, auth=self.user.auth, expect_errors=True)
         assert_true(res.json['data']['attributes']['public'])
-        # TODO: Figure out why the validator isn't raising when attempting to write to a read-only field
-        # assert_equal(res.status_code, 403)
 
     def test_partial_update_public_project_logged_out(self):
         res = self.app.patch_json_api(self.public_url, {'title': self.new_title}, expect_errors=True)
