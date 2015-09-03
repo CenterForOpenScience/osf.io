@@ -440,7 +440,7 @@ class File(FileNode):
         data['modified'] = parse_date(
             data['modified'],
             ignoretz=True,
-            default=datetime.datetime.now()  # Just incase nothing can be parsed
+            default=datetime.datetime.utcnow()  # Just incase nothing can be parsed
         )
 
         # if revision is none then version is the latest version
