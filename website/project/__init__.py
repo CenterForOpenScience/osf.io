@@ -6,6 +6,7 @@ from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from modularodm import Q
 from website.exceptions import NodeStateError
+from website.util.sanitize import strip_html
 
 def show_diff(seqm):
     """Unify operations between two compared strings
@@ -43,9 +44,9 @@ def new_node(category, title, user, description=None, parent=None):
 
     """
     category = category
-    title = sanitize(title.strip())
+    title = strip_html(title.strip())
     if description:
-        description = sanitize(description.strip())
+        description = strip_html(description.strip())
 
     node = Node(
         title=title,
@@ -96,7 +97,7 @@ def new_folder(title, user):
     :return Node: Created node
 
     """
-    title = sanitize(title.strip())
+    title = strip_html(title.strip())
 
     node = Node(
         title=title,
@@ -122,7 +123,7 @@ def new_private_link(name, user, nodes, anonymous):
     """
     key = str(uuid.uuid4()).replace("-", "")
     if name:
-        name = sanitize(name)
+        name = strip_html(name)
     else:
         name = "Shared project link"
 

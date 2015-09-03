@@ -20,7 +20,6 @@ from website import language
 
 from website.util import paths
 from website.util import rubeus
-from website.util import sanitize
 from website.exceptions import NodeStateError
 from website.project import clean_template_name, new_node, new_private_link
 from website.project.decorators import (
@@ -1066,7 +1065,7 @@ def project_private_link_edit(auth, **kwargs):
     private_link_id = request.json.get('pk', '')
     private_link = PrivateLink.load(private_link_id)
     if private_link:
-        private_link.name = sanitize(new_name)
+        private_link.name = strip_html(new_name)
         private_link.save()
 
 
