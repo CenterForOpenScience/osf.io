@@ -1,5 +1,8 @@
+from __future__ import unicode_literals
+
 import sys
 import logging
+import datetime
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
@@ -10,6 +13,7 @@ from framework.transactions.context import TokuTransaction
 from website.files import models
 from website.addons.osfstorage import model as osfstorage_model
 
+NOW = datetime.datetime.utcnow()
 logger = logging.getLogger(__name__)
 
 
@@ -18,6 +22,12 @@ def do_migration():
     migrate_filenodes()
     logger.info('Migration: OsfStorageTrashedFileNode -> TrashedFileNode')
     migrate_trashedfilenodes()
+
+    logger.info('Checking that all Files have been migrated...')
+    diff = osfstorage_model.OsfStorageNodeSettings.find().count() - models.FileNode.find().count()
+    if diff > 0:
+        logger.error('Missing {} FileNodes; canceling transaction')
+        raise Exception('{} unmigrated FileNodes'.format(diff))
 
     logger.info('Checking that all File versions have been migrated...')
     diff = osfstorage_model.OsfStorageFileVersion.find().count() - models.FileVersion.find().count()
@@ -33,13 +43,17 @@ def migrate_trashedfilenodes():
     for trashed in osfstorage_model.OsfStorageTrashedFileNode.find():
         logger.debug('Migrating OsfStorageTrashedFileNode {}'.format(trashed._id))
 
-        parent = osfstorage_model.OsfStorageTrashedFileNode.load(trashed.to_storage()['parent'])
-        if parent is None:
-            parent = osfstorage_model.OsfStorageFileNode.load(trashed.to_storage()['parent'])
-
         if trashed.node_settings is None:
             logger.warning('OsfStorageTrashedFileNode {} has no node_settings; skipping'.format(trashed._id))
             continue
+
+        parent_id = trashed.to_storage()['parent']
+        parent = osfstorage_model.OsfStorageTrashedFileNode.load(parent_id) or osfstorage_model.OsfStorageFileNode.load(parent_id)
+        if parent:
+            if isinstance(parent, osfstorage_model.OsfStorageFileNode):
+                parent = (parent._id, 'storedfilenode')
+            else:
+                parent = (parent._id, 'trashedfilenode')
 
         models.TrashedFileNode(
             _id=trashed._id,
@@ -54,47 +68,54 @@ def migrate_trashedfilenodes():
         ).save()
 
 
-def migrate_filenodes():
-    for node_settings in osfstorage_model.OsfStorageNodeSettings.find():
-        if node_settings.owner is None:
-            logger.warning('OsfStorageNodeSettings {} has no parent; skipping'.format(node_settings._id))
-            continue
-        logger.info('Migrating files for {}'.format(node_settings.owner.title))
-        root_node = osfstorage_model.OsfStorageFileNode.load(node_settings.to_storage()['root_node'])
-        if root_node is None:
-            logger.warning('OsfStorageNodeSettings {} has no root_node; skipping'.format(node_settings._id))
-            continue
-        list(osfstorage_model.OsfStorageFileNode.find(Q('node_settings', 'eq', node_settings._id)))
-        node_settings.root_node = migrate_top_down(node_settings, root_node)
-        node_settings.save()
+def migrate_filenodes(increment=200):
+    pages = (osfstorage_model.OsfStorageNodeSettings.find().count() / increment) + 1
+    for i in xrange(pages):
+        logger.info('Page {} of {}'.format(i, pages))
+        page = list(osfstorage_model.OsfStorageNodeSettings.find().offset(increment * i).limit(increment))
+        for node_settings in page:
+            if node_settings.owner is None:
+                logger.warning('OsfStorageNodeSettings {} has no parent; skipping'.format(node_settings._id))
+                continue
+            logger.info('Migrating files for {!r}'.format(node_settings.owner))
 
+            listing = []
+            for filenode in osfstorage_model.OsfStorageFileNode.find(Q('node_settings', 'eq', node_settings._id)):
+                logger.debug('Migrating OsfStorageFileNode {}'.format(filenode._id))
+                versions = translate_versions(filenode.versions),
+                if not versions and filenode.is_file:
+                    logger.error('{!r} is a file with no translatable versions, skipping'.format(filenode))
+                    continue
+                new_node = models.StoredFileNode(
+                    _id=filenode._id,
+                    versions=versions,
+                    node=node_settings.owner,
+                    parent=None if not filenode.parent else filenode.parent._id,
+                    is_file=filenode.kind == 'file',
+                    provider='osfstorage',
+                    name=filenode.name,
+                    last_touched=NOW
+                )
 
-def migrate_top_down(node_settings, filenode, parent=None):
-    logger.debug('Migrating OsfStorageFileNode {}'.format(filenode._id))
-    new_node = models.StoredFileNode(
-        _id=filenode._id,
-        versions=translate_versions(filenode.versions),
-        node=node_settings.owner,
-        parent=parent,
-        is_file=filenode.kind == 'file',
-        provider='osfstorage',
-        name=filenode.name,
-    )
+                # Wrapped's save will populate path and materialized_path
+                new_node.wrapped().save()
+                listing.append(new_node)
 
-    # Wrapped's save will populate path and materialized_path
-    new_node.wrapped().save()
+            assert node_settings.get_root()
+            for x in listing:
+                # Make sure everything transfered properly
+                if x.to_storage()['parent']:
+                    assert x.parent
 
-    if filenode.is_folder:
-        for child in filenode.children:
-            migrate_top_down(node_settings, child, parent=new_node)
-
-    return new_node
 
 def translate_versions(versions):
     translated = []
     for index, version in enumerate(versions):
         if version is None:
-            raise Exception('Version {} missing from database'.format(tuple(versions)[index]))
+            raise Exception('Version {} missing from database'.format(version))
+        if not version.metadata or not version.location:
+            logger.error('Version {} missing metadata or location'.format(version))
+            continue
         translated.append(translate_version(version, index))
     return translated
 
@@ -131,4 +152,10 @@ if __name__ == '__main__':
     dry = 'dry' in sys.argv
     if not dry:
         script_utils.add_file_logger(logger, __file__)
+    if 'debug' in sys.argv:
+        logger.setLevel(logging.DEBUG)
+    elif 'info' in sys.argv:
+        logger.setLevel(logging.INFO)
+    elif 'error' in sys.argv:
+        logger.setLevel(logging.ERROR)
     main(dry=dry)
