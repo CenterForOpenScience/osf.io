@@ -1,9 +1,11 @@
 from rest_framework import serializers as ser
-
-from api.base.utils import get_object_or_404
-from website.models import Node, User
-from framework.auth.core import Auth
 from rest_framework import exceptions
+
+from framework.auth.core import Auth
+
+from website.models import Node, User
+
+from api.base.utils import get_object_or_error
 from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField
 
 
@@ -173,7 +175,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
-        contributor = get_object_or_404(User, validated_data['_id'])
+        contributor = get_object_or_error(User, validated_data['_id'])
         # Node object checks for contributor existence but can still change permissions anyway
         if contributor in node.contributors:
             raise exceptions.ValidationError('{} is already a validated contributor'.format(contributor.username))

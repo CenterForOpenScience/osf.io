@@ -1,4 +1,4 @@
-from website.models import Node, Pointer, User
+from website.models import Node, Pointer
 from rest_framework import permissions
 
 from framework.auth import Auth
@@ -20,34 +20,6 @@ class ContributorOrPublic(permissions.BasePermission):
             return obj.is_public or obj.can_view(auth)
         else:
             return obj.can_edit(auth)
-
-
-class AdminOrPublic(permissions.BasePermission):
-
-    def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User)), 'obj must be a Node, got {}'.format(obj)
-        auth = get_user_auth(request)
-        node = Node.load(request.parser_context['kwargs']['node_id'])
-        if request.method in permissions.SAFE_METHODS:
-            return node.is_public or node.can_view(auth)
-        else:
-            return node.has_permission(auth.user, 'admin')
-
-
-class ContributorDetailPermissions(permissions.BasePermission):
-    """Permissions for contributor detail page."""
-
-    def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User)), 'obj must be User or Node, got {}'.format(obj)
-        auth = get_user_auth(request)
-        node = Node.load(request.parser_context['kwargs']['node_id'])
-        user = User.load(request.parser_context['kwargs']['user_id'])
-        if request.method in permissions.SAFE_METHODS:
-            return node.is_public or node.can_view(auth)
-        elif request.method == 'DELETE':
-            return node.has_permission(auth.user, 'admin') or auth.user == user
-        else:
-            return node.has_permission(auth.user, 'admin')
 
 
 class ContributorOrPublicForPointers(permissions.BasePermission):

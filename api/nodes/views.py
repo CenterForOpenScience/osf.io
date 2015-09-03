@@ -5,12 +5,19 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
-from website.models import Node, Pointer
-from api.users.serializers import ContributorSerializer
+
+from website.models import Node, Pointer, User
+
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
-from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
-from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from api.nodes.serializers import (
+    NodeSerializer,
+    NodeLinksSerializer,
+    NodeFilesSerializer,
+    NodeContributorsSerializer,
+    NodeContributorDetailSerializer
+)
+from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers, AdminOrPublic, ContributorDetailPermissions
 
 
 class NodeMixin(object):
@@ -127,7 +134,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
-    serializer_class = ContributorSerializer
+    serializer_class = NodeContributorsSerializer
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -166,7 +173,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         node = self.get_node()
-        user = get_object_or_404(User, self.kwargs['user_id'])
+        user = get_object_or_error(User, self.kwargs['user_id'])
         # May raise a permission denied
         self.check_object_permissions(self.request, user)
         if user not in node.contributors:
