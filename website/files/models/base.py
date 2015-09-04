@@ -81,6 +81,17 @@ class StoredFileNode(StoredObject):
     path = fields.StringField(required=True)
     materialized_path = fields.StringField(required=True)
 
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
+
+    # For Django compatibility
+    # TODO Find a better way
+    @property
+    def node_id(self):
+        return self.node._id
+
     @property
     def deep_url(self):
         return self.wrapped().deep_url
