@@ -155,7 +155,7 @@
                                                 ><i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>
-                                             <!-- height and width are explicitly specified for faster rendering -->
+                                            <!-- height and width are explicitly specified for faster rendering -->
                                             <!-- ko if: contributor.gravatar_url -->
                                             <img data-bind="attr: {src: contributor.gravatar_url}" height=35 width=35 />
                                             <!-- /ko -->
