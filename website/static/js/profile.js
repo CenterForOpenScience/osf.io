@@ -172,7 +172,7 @@ var TrackedMixin = function() {
     self.originalValues = ko.observable();
 };
 
-/** Determine is the model has changed from its original state */
+/** Determine if the model has changed from its original state */
 TrackedMixin.prototype.dirty = function() {
     var self = this;
     return ko.toJSON(self.trackedProperties) !== ko.toJSON(self.originalValues());
@@ -759,30 +759,30 @@ ListViewModel.prototype.removeContent = function(content) {
     var idx = this.contents().indexOf(content);
     var self = this;
 
-        bootbox.confirm({
-            title: 'Remove Institution?',
-            message: 'Are you sure you want to remove this Institution?',
-            callback: function(confirmed) {
-                if (confirmed) {
-                    self.contents.splice(idx, 1);
-                    if (!self.contentsLength()) {
-                        self.contents.push(new self.ContentModel(self));
-                    }
-                    self.submit();
-                    self.changeMessage(
-                        'Institution Removed',
-                        'text-danger',
-                        5000
-                    );
+    bootbox.confirm({
+        title: 'Remove Institution?',
+        message: 'Are you sure you want to remove this institution?',
+        callback: function(confirmed) {
+            if (confirmed) {
+                self.contents.splice(idx, 1);
+                if (!self.contentsLength()) {
+                    self.contents.push(new self.ContentModel(self));
                 }
-            },
-            buttons:{
-                confirm:{
-                    label:'Remove',
-                    className:'btn-danger'
-                }
+                self.submit();
+                self.changeMessage(
+                    'Institution Removed',
+                    'text-danger',
+                    5000
+                );
             }
-        });
+        },
+        buttons:{
+            confirm:{
+                label:'Remove',
+                className:'btn-danger'
+            }
+        }
+    });
 };
 
 ListViewModel.prototype.unserialize = function(data) {
