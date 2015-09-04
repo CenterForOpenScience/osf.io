@@ -42,7 +42,7 @@ class HookTestCase(StorageTestCase):
 
 class TestGetMetadataHook(HookTestCase):
 
-    def test_file_metata(self):
+    def test_file_metdata(self):
         path = u'kind/of/magíc.mp3'
         record = recursively_create_file(self.node_settings, path)
         version = factories.FileVersionFactory()

@@ -105,9 +105,9 @@ class TestOsfstorageFileNode(StorageTestCase):
     #     assert_equal(file, models.OsfStorageFileNode.get_file(_id, self.node_settings))
 
     def test_serialize(self):
-        file = model.OsfStorageFileNode(name='MOAR PYLONS', kind='file', node_settings=self.node_settings)
+        file = models.OsfStorageFile(name='MOAR PYLONS', node=self.node_settings.owner)
 
-        assert_equals(file.serialized(), {
+        assert_equals(file.serialize(), {
             u'id': file._id,
             u'path': file.path,
             u'name': 'MOAR PYLONS',
@@ -132,7 +132,7 @@ class TestOsfstorageFileNode(StorageTestCase):
                 'contentType': 'text/plain'
             })
 
-        assert_equals(file.serialized(), {
+        assert_equals(file.serialize(), {
             'id': file._id,
             'path': file.path,
             'name': 'MOAR PYLONS',
@@ -151,7 +151,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             'modified': date.isoformat()
         })
 
-        assert_equals(file.serialized(), {
+        assert_equals(file.serialize(), {
             'id': file._id,
             'path': file.path,
             'name': 'MOAR PYLONS',
