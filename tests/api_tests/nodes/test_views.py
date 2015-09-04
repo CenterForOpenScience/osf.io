@@ -1650,6 +1650,20 @@ class TestDeleteNodeLink(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4322
+    def test_delete_link_that_is_not_linked_to_correct_node(self):
+        project = ProjectFactory(creator=self.user)
+        # The node link belongs to a different project
+        res = self.app.delete(
+            '/{}nodes/{}/node_links/{}'.format(API_BASE, project._id, self.public_pointer._id),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], 'Node link does not belong to the requested node.')
+
 
 class TestReturnDeletedNode(ApiTestCase):
     def setUp(self):

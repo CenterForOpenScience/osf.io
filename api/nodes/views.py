@@ -249,7 +249,10 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         auth = Auth(user)
         node = self.get_node()
         pointer = self.get_object()
-        node.rm_pointer(pointer, auth)
+        try:
+            node.rm_pointer(pointer, auth=auth)
+        except ValueError as err:  # pointer doesn't belong to node
+            raise ValidationError(err.message)
         node.save()
 
 
