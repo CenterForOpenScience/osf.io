@@ -16,9 +16,9 @@ from django.core.urlresolvers import reverse
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
+from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
-from modularodm.exceptions import NoResultsFound
 
 from api.base.utils import absolute_reverse
 from framework import status
@@ -75,6 +75,7 @@ def has_anonymous_link(node, auth):
         for link in node.private_links_active
         if link.key == view_only_link
     )
+
 
 class MetaSchema(StoredObject):
 
