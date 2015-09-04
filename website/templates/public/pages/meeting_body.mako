@@ -1,5 +1,5 @@
 <h2 style="padding-bottom: 30px;">${ meeting['name'] }
-    <a>${'Posters & Talks' if meeting['poster'] and meeting['talk'] else 'Posters' if meeting['poster'] else 'Talks'}</a>
+    ${'Posters & Talks' if meeting['poster'] and meeting['talk'] else 'Posters' if meeting['poster'] else 'Talks'}
 </h2>
 
 % if meeting['logo_url']:
@@ -19,7 +19,7 @@
     <div style="display: none" id="submit">
         <h3>${'Add your posters or talks' if meeting['poster'] and meeting['talk'] else 'Add your posters' if meeting['poster'] else 'Add your talks'}</h3>
         <p>
-            Send an email to one of the following addresses from the email
+            Send an email to the following address(es) from the email
             account you would like used on the OSF:
         </p>
         <ul>
