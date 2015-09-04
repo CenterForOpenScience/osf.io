@@ -1,17 +1,11 @@
+# -*- coding: utf-8 -*-
 from rest_framework import permissions
 
-from framework.auth import Auth
+from api.base.utils import get_user_auth
 
 from website.models import Node, Pointer, User
 from website.util import permissions as osf_permissions
 
-def get_user_auth(request):
-    user = request.user
-    if user.is_anonymous():
-        auth = Auth(None)
-    else:
-        auth = Auth(user)
-    return auth
 
 class ContributorOrPublic(permissions.BasePermission):
 
