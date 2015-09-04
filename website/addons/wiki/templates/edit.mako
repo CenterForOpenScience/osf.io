@@ -81,7 +81,7 @@
                             <div class="pull-right">
                                 <!-- Version Picker -->
                                 <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
-                                    % if user['can_edit']:
+                                    % if user['can_edit_wiki_body']:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                     % endif
                                     <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
