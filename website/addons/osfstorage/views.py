@@ -149,7 +149,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
         raise HTTPError(httplib.CONFLICT, data={
             'message': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
                 name=file_node.name,
-                path=file_node.materialized_path(),
+                path=file_node.materialized_path,
             )
         })
 
