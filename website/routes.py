@@ -60,6 +60,7 @@ def get_globals():
         'cookie_name': settings.COOKIE_NAME,
         'status': status.pop_status_messages(),
         'domain': settings.DOMAIN,
+        'api_domain': settings.API_DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
         'web_url_for': util.web_url_for,
@@ -560,6 +561,27 @@ def make_url_map(app):
             OsfWebRenderer('profile/notifications.mako', trust=False),
         ),
 
+        Rule(
+            '/settings/applications/',
+            'get',
+            profile_views.oauth_application_list,
+            OsfWebRenderer('profile/oauth_app_list.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/applications/create/',
+            'get',
+            profile_views.oauth_application_register,
+            OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/applications/<client_id>/',
+            'get',
+            profile_views.oauth_application_detail,
+            OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
+        ),
+
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
@@ -862,6 +884,16 @@ def make_url_map(app):
             [
                 '/project/<pid>/statistics/',
                 '/project/<pid>/node/<nid>/statistics/',
+            ],
+            'get',
+            project_views.node.project_statistics_redirect,
+            notemplate,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/analytics/',
+                '/project/<pid>/node/<nid>/analytics/',
             ],
             'get',
             project_views.node.project_statistics,

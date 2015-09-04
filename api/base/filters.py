@@ -102,6 +102,11 @@ class ODMFilterMixin(FilterMixin):
             return self.DEFAULT_OPERATOR
 
     def get_default_odm_query(self):
+        """Return the default MODM query for the result set.
+
+        NOTE: If the client provides additional filters in query params, the filters
+        will intersected with this query.
+        """
         raise NotImplementedError('Must define get_default_odm_query')
 
     def get_query_from_request(self):
