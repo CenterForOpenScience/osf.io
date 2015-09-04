@@ -2,7 +2,6 @@
 import uuid
 
 from .model import Node, PrivateLink
-from framework.forms.utils import sanitize
 from framework.mongo.utils import from_mongo
 from modularodm import Q
 from website.exceptions import NodeStateError
@@ -17,8 +16,8 @@ seqm is a difflib.SequenceMatcher instance whose a & b are strings"""
     del_el = '<span style="background:#D16587; font-size:1.5em;">'
     del_el_close = '</span>'
     for opcode, a0, a1, b0, b1 in seqm.get_opcodes():
-        content_a = sanitize(seqm.a[a0:a1])
-        content_b = sanitize(seqm.b[b0:b1])
+        content_a = strip_html(seqm.a[a0:a1])
+        content_b = strip_html(seqm.b[b0:b1])
         if opcode == 'equal':
             output.append(content_a)
         elif opcode == 'insert':
