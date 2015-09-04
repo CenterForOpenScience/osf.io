@@ -27,7 +27,7 @@ def get_public_projects(user):
 
 def get_gravatar(user, size=None):
     if size is None:
-        size = settings.GRAVATAR_SIZE_PROFILE
+        size = settings.PROFILE_IMAGE_LARGE
     return gravatar(
         user, use_ssl=True,
         size=size
@@ -50,7 +50,7 @@ def serialize_user(user, node=None, admin=False, full=False):
         'shortname': fullname if len(fullname) < 50 else fullname[:23] + "..." + fullname[-23:],
         'gravatar_url': gravatar(
             user, use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=settings.PROFILE_IMAGE_MEDIUM
         ),
         'active': user.is_active,
     }
@@ -106,7 +106,7 @@ def serialize_user(user, node=None, admin=False, full=False):
             'activity_points': user.get_activity_points(),
             'gravatar_url': gravatar(
                 user, use_ssl=True,
-                size=settings.GRAVATAR_SIZE_PROFILE
+                size=settings.PROFILE_IMAGE_LARGE
             ),
             'is_merged': user.is_merged,
             'merged_by': merged_by,
@@ -156,7 +156,7 @@ def add_contributor_json(user, current_user=None):
         'active': user.is_active,
         'gravatar_url': gravatar(
             user, use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=settings.PROFILE_IMAGE_MEDIUM
         ),
         'profile_url': user.profile_url
     }
@@ -171,7 +171,7 @@ def serialize_unregistered(fullname, email):
             'registered': False,
             'active': False,
             'gravatar': gravatar(email, use_ssl=True,
-                                 size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR),
+                                 size=settings.PROFILE_IMAGE_MEDIUM),
             'email': email,
         }
     else:

@@ -62,7 +62,7 @@ def comment_discussion(auth, node, **kwargs):
                 'isContributor': node.is_contributor(user),
                 'gravatarUrl': privacy_info_handle(
                     gravatar(
-                        user, use_ssl=True, size=settings.GRAVATAR_SIZE_DISCUSSION,
+                        user, use_ssl=True, size=settings.PROFILE_IMAGE_SMALL
                     ),
                     anonymous
                 ),
@@ -85,7 +85,7 @@ def serialize_comment(comment, auth, anonymous=False):
             'gravatarUrl': privacy_info_handle(
                 gravatar(
                     comment.user, use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_DISCUSSION
+                    size=settings.PROFILE_IMAGE_SMALL
                 ),
                 anonymous
             ),
