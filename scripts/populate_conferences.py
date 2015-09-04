@@ -432,6 +432,8 @@ MEETING_DATA = {
         'active': True,
         'admins': [],
         'public_projects': True,
+        'poster': True,
+        'talk': True,
     },
     'SEASR2016': {
         'name': 'Southeastern Association of Shared Resources 2016',
@@ -440,6 +442,8 @@ MEETING_DATA = {
         'active': True,
         'admins': [],
         'public_projects': True,
+        'poster': True,
+        'talk': True,
     },
 }
 
