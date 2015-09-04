@@ -88,6 +88,11 @@ function FileViewTreebeard(data) {
         resolveRows: function (item) {
             var tb = this;
             var node = item.parent().parent();
+            if(tb.isMultiselected(item.id)) {
+                item.css = 'fangorn-selected';
+            } else {
+                item.css = '';
+            }
             if(item.data.permissions && !item.data.permissions.view){
                 item.css += ' tb-private-row';
             }
