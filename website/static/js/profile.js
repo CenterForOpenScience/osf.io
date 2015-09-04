@@ -340,6 +340,7 @@ BaseViewModel.prototype.submit = function() {
     } else {
         this.showMessages(true);
     }
+
 };
 
 var NameViewModel = function(urls, modes, preventUnsaved, fetchCallback) {
@@ -565,7 +566,7 @@ var SocialViewModel = function(urls, modes) {
 
     self.values = ko.computed(function() {
         return [
-            //{label: 'Personal Site', text: self.personal(), value: self.personal.url()},
+                //{label: 'Personal Site', text: self.personal(), value: self.personal.url()},
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
             {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
@@ -598,10 +599,30 @@ var SocialViewModel = function(urls, modes) {
     self.removeWebsite = function(profileWebsite) {
         var profileWebsites = ko.toJS(self.profileWebsites()),
             idx = profileWebsites.indexOf(profileWebsite);
-            self.profileWebsites.splice(idx, 1);
-        if (self.profileWebsites().length === 0) {
-            self.addWebsiteInput();
-        }
+            bootbox.confirm({
+                title: 'Remove website?',
+                message: 'Are you sure you want to remove this website from your profile?',
+                callback: function(confirmed) {
+                    if (confirmed) {
+                        self.profileWebsites.splice(idx, 1);
+                        if (!self.profileWebsites().length) {
+                            self.addWebsiteInput();
+                        }
+                        self.submit();
+                        self.changeMessage(
+                            'Website Removed',
+                            'text-danger',
+                            5000
+                        );
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Remove',
+                        className:'btn-danger'
+                    }
+                }
+            });
     };
 
     if (self.profileWebsites().length === 0) {

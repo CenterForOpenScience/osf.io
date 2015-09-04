@@ -89,14 +89,6 @@ def validate_profile_websites(profile_websites):
     if not profile_websites:
         return
     for value in profile_websites:
-        # if profile_website:
-        #     if not profile_website.startswith("http://") or not profile_website.startswith("https://"):
-        #         profile_website = "http://" + profile_website
-        #     try:
-        #         validate_url(profile_website)
-        #     except ValidationError:
-        #         # Reraise with a better message
-        #         raise ValidationError('Invalid personal URL.')
         try:
             validate_url(value)
         except ValidationError:
