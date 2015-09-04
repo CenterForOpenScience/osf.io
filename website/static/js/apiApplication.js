@@ -63,7 +63,7 @@ var ApplicationData = oop.defclass({
     serialize: function () {
         return { // Convert data to JSON-serializable format consistent with API
             name: this.name(),
-            description: this.description(),
+            description: this.description() || '',
             home_url: this.homeUrl(),
             callback_url: this.callbackUrl(),
             client_id: this.clientId,
