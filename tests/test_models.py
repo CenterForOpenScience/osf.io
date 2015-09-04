@@ -615,13 +615,13 @@ class TestUser(OsfTestCase):
             urlparse.urljoin(settings.DOMAIN, '/{0}/'.format(self.user._primary_key))
         )
 
-    def test_gravatar_url(self):
+    def test_profile_image_url(self):
         expected = filters.gravatar(
             self.user,
             use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=settings.PROFILE_IMAGE_MEDIUM
         )
-        assert_equal(self.user.gravatar_url, expected)
+        assert_equal(self.user.profile_image_url(), expected)
 
     def test_activity_points(self):
         assert_equal(self.user.get_activity_points(db=self.db),
