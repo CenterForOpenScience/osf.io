@@ -4,6 +4,7 @@ from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
 from website.models import Node
+from website.views import find_dashboard
 from framework.auth.core import Auth
 from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
@@ -718,7 +719,6 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
-
     def test_deletes_public_node_fails_if_bad_auth(self):
         res = self.app.delete_json_api(self.public_url, auth=self.user_two.auth, expect_errors=True)
         self.public_project.reload()
@@ -741,7 +741,6 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
-
     def test_deletes_private_node_logged_in_contributor(self):
         res = self.app.delete(self.private_url, auth=self.user.auth, expect_errors=True)
         self.project.reload()
@@ -755,7 +754,6 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(self.project.is_deleted, False)
         assert 'detail' in res.json['errors'][0]
 
-
     def test_deletes_private_node_logged_in_read_only_contributor(self):
         self.project.add_contributor(self.user_two, permissions=['read'])
         self.project.save()
@@ -765,12 +763,42 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(self.project.is_deleted, False)
         assert 'detail' in res.json['errors'][0]
 
-
     def test_deletes_invalid_node(self):
         res = self.app.delete(self.fake_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
         assert 'detail' in res.json['errors'][0]
 
+    def test_delete_project_with_component_returns_error(self):
+        project = ProjectFactory(creator=self.user)
+        component = NodeFactory(parent=project, creator=self.user)
+        # Return a 400 because component must be deleted before deleting the parent
+        res = self.app.delete_json_api(
+            '/{}nodes/{}/'.format(API_BASE, project._id),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(
+            errors[0]['detail'],
+            'Any child components must be deleted prior to deleting this project.'
+        )
+
+    def test_delete_dashboard_returns_error(self):
+        dashboard_node = find_dashboard(self.user)
+        res = self.app.delete_json_api(
+            '/{}nodes/{}/'.format(API_BASE, dashboard_node._id),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(
+            errors[0]['detail'],
+            'Dashboards may not be deleted.'
+        )
 
 class TestNodeContributorList(ApiTestCase):
 
@@ -1101,10 +1129,10 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
 
 
-class TestNodePointersList(ApiTestCase):
+class TestNodeLinksList(ApiTestCase):
 
     def setUp(self):
-        super(TestNodePointersList, self).setUp()
+        super(TestNodeLinksList, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.pointer_project = ProjectFactory(is_public=False, creator=self.user)
@@ -1141,7 +1169,6 @@ class TestNodePointersList(ApiTestCase):
         # a little better
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_return_private_node_pointers_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -1265,9 +1292,9 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
-class TestCreateNodePointer(ApiTestCase):
+class TestCreateNodeLink(ApiTestCase):
     def setUp(self):
-        super(TestCreateNodePointer, self).setUp()
+        super(TestCreateNodeLink, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.pointer_project = ProjectFactory(is_public=False, creator=self.user)
@@ -1293,7 +1320,6 @@ class TestCreateNodePointer(ApiTestCase):
         # a little better
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_creates_public_node_pointer_logged_in(self):
         res = self.app.post(self.public_url, self.public_payload, auth=self.user_two.auth, expect_errors=True)
@@ -1409,7 +1435,6 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
-
     def test_returns_private_files_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -1421,7 +1446,6 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_returns_addon_folders(self):
         user_auth = Auth(self.user)
@@ -1489,10 +1513,10 @@ class TestNodeFilesList(ApiTestCase):
         assert 'relationships' not in res.json['data'][0]
 
 
-class TestNodePointerDetail(ApiTestCase):
+class TestNodeLinkDetail(ApiTestCase):
 
     def setUp(self):
-        super(TestNodePointerDetail, self).setUp()
+        super(TestNodeLinkDetail, self).setUp()
         self.user = AuthUserFactory()
         self.private_project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=False)
@@ -1530,7 +1554,6 @@ class TestNodePointerDetail(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
-
     def test_returns_private_node_pointer_detail_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
         res_json = res.json['data']
@@ -1544,10 +1567,10 @@ class TestNodePointerDetail(ApiTestCase):
         assert 'detail' in res.json['errors'][0]
 
 
-class TestDeleteNodePointer(ApiTestCase):
+class TestDeleteNodeLink(ApiTestCase):
 
     def setUp(self):
-        super(TestDeleteNodePointer, self).setUp()
+        super(TestDeleteNodeLink, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
@@ -1570,7 +1593,6 @@ class TestDeleteNodePointer(ApiTestCase):
         # a little better
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_deletes_public_node_pointer_fails_if_bad_auth(self):
         node_count_before = len(self.public_project.nodes_pointer)

@@ -5,6 +5,7 @@ from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from framework.auth.core import Auth
+from website.exceptions import NodeStateError
 from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
@@ -106,7 +107,10 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         user = self.request.user
         auth = Auth(user)
         node = self.get_object()
-        node.remove_node(auth=auth)
+        try:
+            node.remove_node(auth=auth)
+        except NodeStateError as err:
+            raise ValidationError(err.message)
         node.save()
 
 
