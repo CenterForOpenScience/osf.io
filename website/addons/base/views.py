@@ -379,11 +379,11 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if request.method == 'HEAD':
         return make_response(('', 200, {
-            'Location': file_node.generate_download_url(**dict(extras, accept_url='false'))
+            'Location': file_node.generate_waterbutler_url(**dict(extras, accept_url='false'))
         }))
 
     if action == 'download':
-        return redirect(file_node.generate_download_url(**dict(extras, accept_url='false')))
+        return redirect(file_node.generate_waterbutler_url(**dict(extras, accept_url='false')))
 
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
