@@ -2,9 +2,10 @@ import furl
 
 from rest_framework import serializers as ser
 
+from website import util
 from website import settings
 from api.base.utils import absolute_reverse
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField
 
 
 class FileSerializer(JSONAPISerializer):
@@ -23,25 +24,17 @@ class FileSerializer(JSONAPISerializer):
     last_touched = ser.DateTimeField(help_text='The last time this file had information fetched about it via the OSF')
     # history = ser.ListField(ser.DictField(), help_text='A raw dump of the metadata recieved whenever infomation is fetched about it')
 
-    links = LinksField({
-        'html': 'absolute_url',
-        # 'self': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
-        'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
-        'node': {'relation': Link('nodes:node-detail', kwargs={'node_id': '<node._id>'})},
-        'versions': {'relation': Link('files:file-versions', kwargs={'file_id': '<_id>'})},
-    })
+    links = LinksField({'self': 'waterbutler_link'})
+
+    node = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='node_id', lookup_url_kwarg='node_id',
+                                             link_type='related')
 
     class Meta:
         type_ = 'files'
 
-    def absolute_url(self, obj):
-        return furl.furl(settings.DOMAIN).set(
-            path=(obj.node._id, 'files', obj.provider, obj.path.lstrip('/'))
-        ).url
-
-    def update(self, instance, validated_data):
-        # TODO
-        pass
+    @staticmethod
+    def waterbutler_link(obj):
+        return util.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path)
 
 
 class FileVersionSerializer(JSONAPISerializer):

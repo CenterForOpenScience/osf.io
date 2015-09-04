@@ -2,7 +2,7 @@ from rest_framework import generics, permissions as drf_permissions
 
 from website.files.models import File
 from website.files.models import FileVersion
-from api.base.utils import get_object_or_404
+from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
 from api.files.serializers import FileSerializer
 from api.files.serializers import FileVersionSerializer
@@ -19,7 +19,7 @@ class FileMixin(object):
     def get_file(self, check_permissions=True):
         key = self.kwargs[self.file_lookup_url_kwarg]
 
-        obj = get_object_or_404(File, key)
+        obj = get_object_or_error(File, key)
 
         if check_permissions:
             # May raise a permission denied
@@ -75,7 +75,7 @@ class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        version = get_object_or_404(FileVersion, self.kwargs[self.version_lookup_url_kwarg])
+        version = get_object_or_error(FileVersion, self.kwargs[self.version_lookup_url_kwarg])
         # May raise a permission denied
         self.check_object_permissions(self.request, version)
         return version
