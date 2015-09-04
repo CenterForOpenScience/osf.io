@@ -949,7 +949,7 @@ class User(GuidStoredObject, AddonModelMixin):
         size = size or settings.PROFILE_IMAGE_MEDIUM
         return self._gravatar_url(size)
 
-    def _gravatar_url(self, size=None):
+    def _gravatar_url(self, size):
         return filters.gravatar(
             self,
             use_ssl=True,
