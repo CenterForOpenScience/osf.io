@@ -5,6 +5,7 @@ from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 import furl
+import collections
 
 from website import util as website_util  # noqa
 from website import settings as website_settings
