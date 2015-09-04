@@ -39,6 +39,8 @@ class TrashedFileNode(StoredObject):
     """The graveyard for all deleted FileNodes"""
     _id = fields.StringField(primary=True)
 
+    last_touched = fields.DateTimeField()
+    history = fields.DictionaryField(list=True)
     versions = fields.ForeignField('FileVersion', list=True)
 
     node = fields.ForeignField('node', required=True)
@@ -312,7 +314,7 @@ class FileNode(object):
         """Move self into the TrashedFileNode collection
         and remove it from StoredFileNode
         """
-        self.trashed = self._created_trashed()
+        self.trashed = self._create_trashed()
         StoredFileNode.remove_one(self.stored_object)
 
     def copy_under(self, destination_parent, name=None):
@@ -333,16 +335,18 @@ class FileNode(object):
         if save:
             self.save()
 
-    def _created_trashed(self, save=True):
+    def _create_trashed(self, save=True):
         trashed = TrashedFileNode()
         trashed._id = self._id
         trashed.name = self.name
         trashed.path = self.path
         trashed.node = self.node
         trashed.parent = self.parent
+        trashed.history = self.history
         trashed.is_file = self.is_file
         trashed.provider = self.provider
         trashed.versions = self.versions
+        trashed.last_touched = self.last_touched
         trashed.materialized_path = self.materialized_path
         if save:
             trashed.save()
@@ -494,13 +498,24 @@ class File(FileNode):
         return count or 0
 
     def serialize(self):
-        # TODO THE REST OF THESE FIELDS
+        if not self.versions:
+            return dict(
+                super(File, self).serialize(),
+                size=None,
+                version=None,
+                modified=None,
+                contentType=None,
+                downloads=self.get_download_count(),
+            )
+
+        version = self.versions[-1]
         return dict(
             super(File, self).serialize(),
+            size=version.size,
             downloads=self.get_download_count(),
-            size=self.versions[-1].size if self.versions else None,
-            modified=self.versions[-1].date_modified.isoformat() if self.versions else None,
-            version=self.versions[-1].identifier if self.versions else None,
+            version=version.identifier if self.versions else None,
+            contentType=version.content_type if self.versions else None,
+            modified=version.date_modified.isoformat() if version.date_modified else None,
         )
 
 
@@ -516,7 +531,7 @@ class Folder(FileNode):
         return FileNode.find(Q('parent', 'eq', self._id))
 
     def delete(self, recurse=True):
-        self.trashed = self._created_trashed()
+        self.trashed = self._create_trashed()
         if recurse:
             for child in self.children:
                 child.delete()
