@@ -491,6 +491,7 @@ class File(FileNode):
             super(File, self).serialize(),
             downloads=self.get_download_count(),
             size=self.versions[-1].size if self.versions else None,
+            modified=self.versions[-1].date_modified.isoformat() if self.versions else None,
             version=self.versions[-1].identifier if self.versions else None,
         )
 
