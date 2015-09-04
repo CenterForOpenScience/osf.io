@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 
-import datetime as dt
+from datetime import datetime
 
 from framework.sessions import session, create_session, Session
 from modularodm import Q
 from framework import bcrypt
 from framework.auth.exceptions import DuplicateEmailError
-from website import mails
+from website import mails, settings
 
 from .core import User, Auth
 from .core import get_user
@@ -66,7 +66,7 @@ def register_unconfirmed(username, password, fullname):
         mails.queue_mail(
             to_addr=user.username,
             mail=mails.NO_ADDON,
-            send_at=dt.datetime.utcnow() + dt.timedelta(weeks=8),
+            send_at=datetime.utcnow() + settings.NO_ADDON_WAIT_TIME,
             user=user,
             fullname=user.fullname
         )

@@ -91,7 +91,7 @@ def add_poster_by_email(conference, message):
             mails.queue_mail(
                 to_addr=user,
                 mail=mails.WELCOME_OSF4M,
-                send_at=datetime.utcnow() + timedelta(weeks=2),
+                send_at=datetime.utcnow() + settings.WELCOME_OSF4M_WAIT_TIME,
                 user=user,
                 conference=conference.name,
                 fullname=user.fullname,
