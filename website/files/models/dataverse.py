@@ -22,7 +22,7 @@ class DataverseFile(DataverseFileNode, File):
         """Note: Dataverse only has psuedo versions, don't save them"""
         version = revision or version  # Use revision or version
 
-        resp = requests.get(self.generate_metadata_url(version=version, **kwargs))
+        resp = requests.get(self.generate_waterbutler_url(meta=True, version=version, **kwargs))
         if resp.status_code != 200:
             return None
 

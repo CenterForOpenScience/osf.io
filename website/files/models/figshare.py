@@ -23,7 +23,7 @@ class FigshareFile(FigshareFileNode, File):
         Always pass revision as None to avoid conflict.
         """
 
-        resp = requests.get(self.generate_metadata_url(**kwargs))
+        resp = requests.get(self.generate_waterbutler_url(meta=True, **kwargs))
         if resp.status_code != 200:
             logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
             return None
