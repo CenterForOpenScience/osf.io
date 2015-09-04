@@ -23,11 +23,15 @@ class NodeMixin(object):
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self):
-        node = get_object_or_error(Node, self.kwargs[self.node_lookup_url_kwarg], 'node')
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
         # Nodes that are folders/collections are treated as a separate resource, so if the client
         # requests a collection through a node endpoint, we return a 404
         if node.is_folder:
-            raise NotFound()
+            raise NotFound
         # May raise a permission denied
         self.check_object_permissions(self.request, node)
         return node
