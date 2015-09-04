@@ -32,7 +32,7 @@ class TestOAuthValidation(ApiTestCase):
     def test_missing_token_fails(self):
         res = self.app.get(self.reachable_url, auth=None, auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403)
-        assert_equal(res.json.get("detail"),
+        assert_equal(res.json.get("errors")[0]['detail'],
                      'Authentication credentials were not provided.')
 
     @mock.patch('framework.auth.cas.CasClient.profile')

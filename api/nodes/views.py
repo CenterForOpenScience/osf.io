@@ -73,12 +73,9 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        """
-        Create a node.
-        """
-        """
+        """Create a node.
+
         :param serializer:
-        :return:
         """
         # On creation, make sure that current user is the creator
         user = self.request.user
@@ -225,7 +222,8 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
 class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
     """Node Links to other nodes.
 
-    Node Links are essentially aliases or symlinks: All they do is point to another node.
+    Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
+    Node Links are a direct reference to the node that they point to.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -244,9 +242,10 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
 
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
-    """Detail of a Node Link to another node.
+    """Node Link details.
 
-    Node Links are essentially aliases or symlinks: All they do is point to another node.
+    Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
+    Node Links are a direct reference to the node that they point to.
     """
     permission_classes = (
         ContributorOrPublicForPointers,
@@ -261,11 +260,15 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        pointer_lookup_url_kwarg = 'node_link_id'
-        pointer = get_object_or_error(Pointer, self.kwargs[pointer_lookup_url_kwarg], 'node link')
+        node_link_lookup_url_kwarg = 'node_link_id'
+        node_link = get_object_or_error(
+            Pointer,
+            self.kwargs[node_link_lookup_url_kwarg],
+            'node link'
+        )
         # May raise a permission denied
-        self.check_object_permissions(self.request, pointer)
-        return pointer
+        self.check_object_permissions(self.request, node_link)
+        return node_link
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
@@ -391,7 +394,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             try:
                 waterbutler_data = waterbutler_request.json()['data']
             except KeyError:
-                raise ValidationError(detail='detail: Could not retrieve files information.')
+                raise ValidationError('Could not retrieve files information.')
 
             if isinstance(waterbutler_data, list):
                 for item in waterbutler_data:
