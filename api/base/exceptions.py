@@ -14,21 +14,27 @@ def json_api_exception_handler(exc, context):
     top_level_error_keys = ['id', 'links', 'status', 'code', 'detail', 'source', 'meta']
     errors = []
 
+    def dict_error_formatting(errors, error):
+         for key, value in error.iteritems():
+            if key in top_level_error_keys:
+                errors.append({key: value})
+            else:
+                if isinstance(value, list):
+                    for reason in value:
+                        errors.append({'detail': reason, 'meta': {'field': key}})
+                else:
+                    errors.append({'detail': value, 'meta': {'field': key}})
+
     if response:
         message = response.data
         if isinstance(message, dict):
-            for key, value in message.iteritems():
-                if key in top_level_error_keys:
-                    errors.append({key: value})
-                else:
-                    if isinstance(value, list):
-                        for reason in value:
-                            errors.append({'detail': reason, 'meta': {'field': key}})
-                    else:
-                        errors.append({'detail': value, 'meta': {'field': key}})
+            dict_error_formatting(errors, message)
         elif isinstance(message, (list, tuple)):
             for error in message:
-                errors.append({'detail': error})
+                if isinstance(error, (dict)):
+                    dict_error_formatting(errors, error)
+                else:
+                    errors.append({'detail': error})
         else:
             errors.append({'detail': message})
 
