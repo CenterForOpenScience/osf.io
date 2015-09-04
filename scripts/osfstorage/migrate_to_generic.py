@@ -91,7 +91,7 @@ def migrate_filenodes(increment=200):
         listing = []
         for filenode in osfstorage_model.OsfStorageFileNode.find(Q('node_settings', 'eq', node_settings._id)):
             logger.debug('Migrating OsfStorageFileNode {}'.format(filenode._id))
-            versions = translate_versions(filenode.versions),
+            versions = translate_versions(filenode.versions)
             if not versions and filenode.is_file:
                 logger.error('{!r} is a file with no translatable versions, skipping'.format(filenode))
                 continue
