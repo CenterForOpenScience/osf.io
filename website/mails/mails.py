@@ -152,7 +152,6 @@ class QueuedMail(StoredObject):
             subject=mail_struct['subject']
         )
         if callback and self.user.osf_mailing_lists.get('Open Science Framework Help'):
-            #TO DO: Make sure send_mail succeds at mail_sent before saving sent_at
             send_mail(self.to_addr, mail, mimetype='html', **(self.data or {}))
             self.sent_at = datetime.utcnow()
             self.save()
