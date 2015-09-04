@@ -374,13 +374,52 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['description'], strip_html(description))
         assert_equal(res.json['data']['attributes']['category'], self.category)
 
-    def test_bulk_create(self):
-        res = self.app.post_json(self.url, [self.public_project, self.private_project], auth=self.user_one.auth)
+
+class TestNodeBulkCreate(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeBulkCreate, self).setUp()
+        self.user_one = AuthUserFactory()
+        self.url = '/{}nodes/'.format(API_BASE)
+
+        self.title = 'Cool Project'
+        self.description = 'A Properly Cool Project'
+        self.category = 'data'
+
+        self.user_two = AuthUserFactory()
+
+        self.public_project = {'title': self.title,
+                               'description': self.description,
+                               'category': self.category,
+                               'public': True}
+        self.private_project = {'title': self.title,
+                                'description': self.description,
+                                'category': self.category,
+                                'public': False}
+
+        self.empty_project = {'title': "", 'description': "", "category": ""}
+
+    def test_bulk_create_logged_in(self):
+        res = self.app.post_json_api(self.url, [self.public_project, self.private_project], auth=self.user_one.auth)
         assert_equal(res.status_code, 201)
-        print res.json
+        assert_equal(len(res.json['data']), 2)
+        assert_equal(res.json['data'][0]['attributes']['title'], self.public_project['title'])
+        assert_equal(res.json['data'][1]['attributes']['title'], self.private_project['title'])
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
         assert_equal(len(res.json['data']), 2)
 
+    def test_bulk_create_all_or_nothing(self):
+        res = self.app.post_json_api(self.url, [self.public_project, self.empty_project], auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 0)
+
+    def test_bulk_create_logged_out(self):
+        # Will change from 403 to 401 with Dawn's PR
+        res = self.app.post_json_api(self.url, [self.public_project, self.private_project], expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 
 class TestNodeDetail(ApiTestCase):
