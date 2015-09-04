@@ -27,7 +27,8 @@ def paginated(model, query=None, increment=200):
         page = list(model.find(q).limit(increment))
         for item in page:
             yield item
-        last_id = item._id
+        if page:
+            last_id = item._id
 
 
 def do_migration():

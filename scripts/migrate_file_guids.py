@@ -34,7 +34,8 @@ def paginated(model, query=None, increment=200):
         page = list(model.find(q).limit(increment))
         for item in page:
             yield item
-        last_id = item._id
+        if page:
+            last_id = item._id
 
 
 def do_migration():
@@ -85,16 +86,35 @@ def migrate_guids(guid_type, provider):
             logger.warning('{}({})\'s node is None; skipping'.format(guid_type, guid._id))
             continue
 
-        logger.debug('Migrating guid {}'.format(guid._id))
+        if guid.waterbutler_path in ('/{{ revision.osfDownloadUrl }}', '/{{ currentVersion().osfDownloadUrl }}', '/{{ currentVersion().osfDownloadUrl }}', '/{{ node.urls.files }}', '/{{ revision.extra.user.url }}'):
+            logger.warning('{}({})\'s is a googlebot path; skipping'.format(guid_type, guid._id))
+            continue
 
-        models.StoredFileNode(
-            is_file=True,
-            node=guid.node,
-            provider=provider,
-            path=guid.waterbutler_path,
-            name=guid.waterbutler_path,
-            materialized_path=guid.waterbutler_path,
-        ).save()
+        logger.debug('Migrating guid {} ({})'.format(guid._id, guid.waterbutler_path))
+
+        try:
+            file_node = models.StoredFileNode(
+                is_file=True,
+                node=guid.node,
+                provider=provider,
+                path=guid.waterbutler_path,
+                name=guid.waterbutler_path,
+                materialized_path=guid.waterbutler_path,
+            )
+            file_node.save()
+        except exceptions.KeyExistsException:
+            file_node = models.StoredFileNode.find_one(
+                Q('is_file', 'eq', True) &
+                Q('provider', 'eq', provider) &
+                Q('path', 'eq', guid.waterbutler_path)
+            )
+            logger.warning('{!r}({}) has multiple guids'.format(file_node.wrapped(), guid._id))
+
+        actual_guid = Guid.load(guid._id)
+        actual_guid.referent = file_node
+        actual_guid.save()
+
+
 
 
 def main(dry=True):
