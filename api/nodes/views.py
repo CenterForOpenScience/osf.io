@@ -308,8 +308,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             else FileNode.FILE
         ).get_or_create(self.get_node(), item['path'])
 
-        if file_node.is_file:
-            file_node.update(None, item)
+        file_node.update(None, item)
 
         return file_node
 
@@ -398,4 +397,5 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
             for addon
             in self.get_node().get_addons()
             if addon.config.has_hgrid_files
+            and addon.complete
         ]
