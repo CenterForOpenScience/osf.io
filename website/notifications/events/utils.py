@@ -133,7 +133,7 @@ def subscriptions_users_remove_duplicates(emails_1, emails_2, remove_same=False)
     emails_list = dict(emails_1)
     product_list = product(constants.NOTIFICATION_TYPES, repeat=2)
     for notification_1, notification_2 in product_list:
-        if notification_2 == notification_1 and not remove_same:
+        if notification_2 == notification_1 and not remove_same or notification_2 == 'none':
             continue
         emails_list[notification_1] = list(
             set(emails_list[notification_1]).difference(set(emails_2[notification_2]))
