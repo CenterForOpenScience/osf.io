@@ -78,7 +78,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
         """Instance is not actually deleted from DB- just flagged as inactive, which hides it from list views"""
         obj = self.get_object()
         try:
-            obj.deactivate()
+            obj.deactivate(save=True)
         except cas.CasHTTPError:
             raise APIException("Could not revoke application auth tokens; please try again later")
 

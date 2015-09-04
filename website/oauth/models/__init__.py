@@ -394,7 +394,7 @@ class ApiOAuth2Application(StoredObject):
     callback_url = fields.StringField(required=True,
                                       validate=URLValidator())
 
-    def deactivate(self):
+    def deactivate(self, save=True):
         """
         Deactivate an ApiOAuth2Application
 
@@ -405,7 +405,9 @@ class ApiOAuth2Application(StoredObject):
         resp = client.revoke_application_tokens(self.client_id, self.client_secret)  # noqa
 
         self.is_active = False
-        self.save()
+
+        if save:
+            self.save()
         return True
 
     @property
