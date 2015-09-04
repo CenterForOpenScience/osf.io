@@ -51,11 +51,7 @@ var ViewModel = function(list) {
     self.submit = function () {
         var payload = {};
         for (var i in self.list){
-            if ($.inArray(self.list[i], self.subscribed()) === -1) {
-                payload[self.list[i]] = false;
-            } else {
-                payload[self.list[i]] = true;
-            }
+            payload[self.list[i]] = $.inArray(self.list[i], self.subscribed()) !== -1;
         }
         var request = $osf.postJSON('/api/v1/settings/notifications/', payload);
         request.done(function () {
