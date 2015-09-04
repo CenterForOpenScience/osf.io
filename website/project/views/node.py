@@ -49,7 +49,7 @@ logger = logging.getLogger(__name__)
 def edit_node(auth, node, **kwargs):
     post_data = request.json
     edited_field = post_data.get('name')
-    value = strip_html(post_data.get('value', ''))
+    value = post_data.get('value', '')
 
     if edited_field == 'title':
         try:
@@ -60,7 +60,7 @@ def edit_node(auth, node, **kwargs):
                 data=dict(message_long=e.message)
             )
     elif edited_field == 'description':
-        node.set_description(value, auth=auth)
+        node.set_description(strip_html(value), auth=auth)
     node.save()
     return {'status': 'success'}
 
