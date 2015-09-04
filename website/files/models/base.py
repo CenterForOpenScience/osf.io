@@ -456,7 +456,7 @@ class File(FileNode):
 
         # Transform here so it can be sortted on later
         data['modified'] = parse_date(
-            data['modified'],
+            data['modified'] or '',  # None breaks things to pass a string
             ignoretz=True,
             default=datetime.datetime.utcnow()  # Just incase nothing can be parsed
         )
@@ -494,6 +494,7 @@ class File(FileNode):
         return count or 0
 
     def serialize(self):
+        # TODO THE REST OF THESE FIELDS
         return dict(
             super(File, self).serialize(),
             downloads=self.get_download_count(),
