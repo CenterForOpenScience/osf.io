@@ -127,7 +127,7 @@
                                 <!-- Log actions are the same as their template name  + no_user -->
                                 <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>
                             <!-- /ko -->
-                            </dd>
+                        </dd>
                     </dl><!-- end foreach logs -->
                 </div>
                 <!-- /ko -->
