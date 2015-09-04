@@ -242,16 +242,14 @@
 </div>
 
 <div class="modal fade" id="renameModal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title">Wiki content has moved</h3>
-      </div>
-      <div class="modal-body">
-        <p>Your browser should refresh shortly&hellip;</p>
-      </div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="spinner-loading-wrapper">
+                <div class="logo-spin logo-xl"></div>
+                 <p class="m-t-sm fg-load-message"> Renaming wiki...  </p>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <div class="modal fade" id="deleteModal" tabindex="-1">
