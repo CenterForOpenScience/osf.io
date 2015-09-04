@@ -1,5 +1,6 @@
 import re
 import functools
+from dateutil import parser as date_parser
 
 from modularodm import Q
 from rest_framework.filters import OrderingFilter
@@ -82,8 +83,17 @@ class ODMFilterMixin(FilterMixin):
     filterable_fields which is a frozenset of strings representing the field names as they appear in the serialization.
     """
 
-    # TODO Handle simple and complex non-standard fields
+    DATETIME_QUERY_MATCHER = re.compile(r'^(?P<op>=|>|<|>=|<=)?\d{4}-\d{2}-\d{2}(?:T\d{2}\:\d{2}(?:\:\d{2}(?:\.\d+)?)?)?$')
+    DATETIME_OPERATOR_MATCHER = re.compile(r'(=|>|<|>=|<=)')
+    DATETIME_COMPARISON_OPERATORS = {
+        '>': 'gt',
+        '<': 'lt',
+        '=': 'eq',
+        '>=': 'ge',
+        '<=': 'le',
+    }
 
+    # TODO Handle simple and complex non-standard fields
     field_comparison_operators = {
         ser.CharField: 'icontains',
         ser.ListField: 'in',
@@ -94,10 +104,28 @@ class ODMFilterMixin(FilterMixin):
         if not self.serializer_class:
             raise NotImplementedError()
 
-    def get_comparison_operator(self, key):
+    def convert_value(self, value, field):
+        field_type = type(self.serializer_class._declared_fields[field])
+        if field_type == ser.DateTimeField:
+            value = re.sub(self.DATETIME_OPERATOR_MATCHER, '', value.strip())
+            value = super(ODMFilterMixin, self).convert_value(value, field)
+            return date_parser.parse(value)
+        else:
+            return super(ODMFilterMixin, self).convert_value(value, field)
+
+    def _get_datatime_operator(self, key, value):
+        match = self.DATETIME_QUERY_MATCHER.match(value)
+        op = 'eq'
+        if match and match.groupdict().get('op'):
+            op = self.DATETIME_COMPARISON_OPERATORS.get(match.groupdict().get('op'), op)
+        return op
+
+    def get_comparison_operator(self, key, value=None):
         field_type = type(self.serializer_class._declared_fields[key])
         if field_type in self.field_comparison_operators:
             return self.field_comparison_operators[field_type]
+        elif field_type == ser.DateTimeField:
+            return self._get_datatime_operator(key, value)
         else:
             return self.DEFAULT_OPERATOR
 
@@ -126,7 +154,7 @@ class ODMFilterMixin(FilterMixin):
         fields_dict = query_params_to_fields(query_params)
         if fields_dict:
             query_parts = [
-                Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value, field=key))
+                Q(self.convert_key(key=key), self.get_comparison_operator(key=key, value=value), self.convert_value(value=value, field=key))
                 for key, value in fields_dict.items() if self.is_filterable_field(key=key)
             ]
             # TODO Ensure that if you try to filter on an invalid field, it returns a useful error. Fix related test.

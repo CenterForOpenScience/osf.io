@@ -23,7 +23,7 @@ class NodeSerializer(JSONAPISerializer):
     # instance
     category_choices = Node.CATEGORY_MAP.keys()
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
-    filterable_fields = frozenset(['title', 'description', 'public'])
+    filterable_fields = frozenset(['title', 'description', 'public', 'date_created'])
 
     id = ser.CharField(read_only=True, source='_id', label='ID')
     title = ser.CharField(required=True)
