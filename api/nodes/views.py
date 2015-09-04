@@ -315,6 +315,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     def get_queryset(self):
         # Dont bother going to waterbutler for osfstorage
         if self.kwargs['provider'] == 'osfstorage':
+            self.check_object_permissions(self.request, self.get_node())
             # Kinda like /me for a user
             # The one odd case where path is not really path
             if self.kwargs['path'] == '/':
