@@ -13,7 +13,6 @@ from .serializers import NodeSerializer, NodeLinksSerializer
 from .serializers import NodeProviderSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
-from website import files
 from website.files.models import FileNode
 from website.files.models import OsfStorageFileNode
 from website.util import waterbutler_api_url_for

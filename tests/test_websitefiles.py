@@ -340,7 +340,7 @@ class TestFileObj(FilesTestCase):
     @mock.patch('website.files.models.base.requests.get')
     def test_touch(self, mock_requests):
         file = models.StoredFileNode(
-            path='afile',
+            path='/afile',
             name='name',
             is_file=True,
             node=self.node,
@@ -369,7 +369,7 @@ class TestFileObj(FilesTestCase):
     @mock.patch('website.files.models.base.requests.get')
     def test_touch_caching(self, mock_requests):
         file = models.StoredFileNode(
-            path='afile',
+            path='/afile',
             name='name',
             is_file=True,
             node=self.node,
@@ -490,7 +490,7 @@ class TestSubclasses(FilesTestCase):
         file.touch(version='zyzz', bar='baz')
 
         mock_touch.assert_has_calls([
-            mock.call(revision=None),
-            mock.call(revision='foo'),
-            mock.call(revision='zyzz', bar='baz'),
+            mock.call(),
+            mock.call(version='foo'),
+            mock.call(version='zyzz', bar='baz'),
         ])
