@@ -1,11 +1,12 @@
 import re
 import functools
+import operator
 
 from modularodm import Q
 from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
 
-from api.base.exceptions import InvalidFilter
+from api.base.exceptions import InvalidFilterError
 
 
 class ODMOrderingFilter(OrderingFilter):
@@ -27,11 +28,6 @@ def query_params_to_fields(query_params):
         for key, value in query_params.items()
         if query_pattern.match(key)
     }
-
-
-# Used to make intersection "reduce-able"
-def intersect(x, y):
-    return x & y
 
 
 class FilterMixin(object):
@@ -133,9 +129,9 @@ class ODMFilterMixin(FilterMixin):
                     query = Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value, field=key))
                     query_parts.append(query)
                 else:
-                    raise InvalidFilter()
+                    raise InvalidFilterError
             try:
-                query = functools.reduce(intersect, query_parts)
+                query = functools.reduce(operator.and_, query_parts)
             except TypeError:
                 query = None
         else:
@@ -178,7 +174,7 @@ class ListFilterMixin(FilterMixin):
                 if self.is_filterable_field(key=field_name):
                     queryset = queryset.intersection(set(self.get_filtered_queryset(field_name, value, default_queryset)))
                 else:
-                    raise InvalidFilter()
+                    raise InvalidFilterError
         return list(queryset)
 
     def get_filtered_queryset(self, field_name, value, default_queryset):
