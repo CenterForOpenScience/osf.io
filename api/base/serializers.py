@@ -263,11 +263,8 @@ class JSONAPISerializer(ser.Serializer):
         if not data['relationships']:
             del data['relationships']
 
-        if envelope:
-            ret[envelope] = data
-        else:
-            ret = data
-        return ret
+        return data
+
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
