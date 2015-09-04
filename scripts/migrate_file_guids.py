@@ -1,7 +1,11 @@
+from __future__ import unicode_literals
+
 import sys
 import logging
 
 from modularodm import Q
+from modularodm import exceptions
+
 from website.app import init_app
 from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
@@ -54,16 +58,23 @@ def do_migration():
 
 def migrate_osfstorage_guids():
     for guid in paginated(OsfStorageGuidFile):
+        if '{{' in guid.waterbutler_path:
+            logger.warning('OsfStorageGuidFile {} ({}) looks like a google bot link; skipping'.format(guid._id, guid.waterbutler_path.strip('/')))
+            continue
+
         referent = models.StoredFileNode.load(guid.waterbutler_path.strip('/'))
         if referent is None:
-            logger.warning('OsfStorageGuidFile {} resolved to None; skipping'.format(guid._id))
+            logger.warning('OsfStorageGuidFile {} ({}) resolved to None; skipping'.format(guid._id, guid.waterbutler_path.strip('/')))
             continue
-        logger.debug('Migrating guid {!r}, referent {!r}'.format(guid, referent))
+        logger.debug('Migrating guid {}'.format(guid._id))
         actual_guid = Guid.load(guid._id)
         assert actual_guid is not None
         actual_guid.referent = referent
         actual_guid.save()
-        assert actual_guid._id == referent.get_guid()._id
+        try:
+            assert actual_guid._id == referent.get_guid()._id
+        except exceptions.MultipleResultsFound:
+            logger.warning('FileNode {!r} has muliple guids referring to it.'.format(referrer.wrapped()))
 
 
 def migrate_guids(guid_type, provider):
@@ -74,7 +85,7 @@ def migrate_guids(guid_type, provider):
             logger.warning('{}({})\'s node is None; skipping'.format(guid_type, guid._id))
             continue
 
-        logger.debug('Migrating guid {!r}'.format(guid))
+        logger.debug('Migrating guid {}'.format(guid._id))
 
         models.StoredFileNode(
             is_file=True,
