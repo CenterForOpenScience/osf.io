@@ -21,6 +21,7 @@ from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
+from website.addons.base import StorageAddonBase
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
@@ -360,7 +361,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if not node_addon:
+    if not isinstance(node_addon, StorageAddonBase):
         raise HTTPError(httplib.BAD_REQUEST, {
             'message_short': 'Bad Request',
             'message_long': 'The add-on containing this file is no longer connected to the {}.'.format(node.project_or_component)

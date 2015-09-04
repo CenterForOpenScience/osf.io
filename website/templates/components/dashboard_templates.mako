@@ -103,7 +103,7 @@
     <div class="panel-body">
         <div class="row">
             <div class="col-md-12">
-                <h4>1. Drop file (or click below)</h4>
+                <h4 id="obDropzone-header">1. Drop file (or click below)</h4>
 
                 <!-- Dropzone -->
                 <div data-bind="click: clearMessages(), visible: enableUpload()" id="obDropzone" class="osf-box box-round ob-dropzone ob-dropzone-box osf-box box-round box-lt pull-left"></div>

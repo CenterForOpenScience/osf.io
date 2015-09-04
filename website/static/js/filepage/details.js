@@ -1,11 +1,13 @@
 var m = require('mithril');
 var $ = require('jquery');
+var bootbox = require('bootbox');
 var $osf = require('js/osfHelpers');
 var waterbutler = require('js/waterbutler');
 
 require('jquery-tagsinput');
 
 var util = require('./util.js');
+var makeClient = require('js/clipboard');
 
 // Helper for filtering
 function TRUTHY(item) {
@@ -19,6 +21,7 @@ var model = {
     errorMessage: undefined,
     hasUser: false,
     hasDate: false,
+    hasHashes: false,
     selectedRevision: 0
 };
 
@@ -58,6 +61,7 @@ var FileDetailTable = {
                     self.enableEditing();
                 }
                 model.hasUser = model.revisions[0] && model.revisions[0].extra && model.revisions[0].extra.user;
+                model.hasHashes = model.revisions && model.revisions[0] && model.revisions[0].extra.hashes;
                 m.endComputation();
             }).fail(function(response) {
                 m.startComputation();
@@ -95,13 +99,17 @@ var FileDetailTable = {
                     model.hasDate ? m('th', 'Date') : false,
                     model.hasUser ? m('th', 'User') : false,
                     m('th[colspan=2]', 'Download'),
+                    model.hasHashes ? m('th', 'MD5') : false,
+                    model.hasHashes ? m('th', 'SHA2') : false,
                 ].filter(TRUTHY))
             ]);
         };
 
         self.makeTableRow = function(revision, index) {
             var isSelected = index === model.selectedRevision;
-
+            var clipBoard = function(element) {
+                makeClient(element);
+            };
             return m('tr' + (isSelected ? '.active' : ''), [
                 m('td',  isSelected ? revision.displayVersion :
                   m('a', {href: parseInt(revision.displayVersion) === model.revisions.length ? self.baseUrl : revision.osfViewUrl}, revision.displayVersion)
@@ -122,6 +130,20 @@ var FileDetailTable = {
                         }
                     }, m('i.fa.fa-download'))
                 ),
+                model.hasHashes ? m('td',
+                    m('div.input-group[style="width: 180px"]',
+                        [
+                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+revision.extra.hashes.md5 + '"]', {config: clipBoard}, m('.fa.fa-copy'))),
+                            m('input[value="'+revision.extra.hashes.md5+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;"]')
+                        ]
+                    )) : false,
+                model.hasHashes ? m('td',
+                    m('div.input-group[style="width: 180px"]',
+                        [
+                            m('span.input-group-btn', m('button.btn.btn-default.btn-sm[type="button"][data-clipboard-text="'+revision.extra.hashes.sha256 + '"]',{config: clipBoard}, m('.fa.fa-copy'))),
+                            m('input[value="'+revision.extra.hashes.sha256+'"][type="text"][readonly="readonly"][style="float:left; height: 30px;"]')
+                        ]
+                    )) : false
             ].filter(TRUTHY));
         };
 
@@ -200,9 +222,9 @@ var FileDetailTable = {
                         m('input', {value: fileTags, id:'node-tags'})
                     ])
                 ]) : '',
-            // Revisions Table
-            m('#revisionsPanel.panel.panel-default', [
-                m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
+            // Details Table
+            m('#detailsPanel.panel.panel-default', [
+                m('.panel-heading.clearfix', m('h3.panel-title', 'Details')),
                 m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0', 'overflow': 'auto'}}, (function() {
                     if (!model.loaded()) {
                         return util.Spinner;
