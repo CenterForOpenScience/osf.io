@@ -366,7 +366,7 @@ class ApiOAuth2Scope(StoredObject):
                              default=lambda: str(ObjectId()))
     name = fields.StringField(unique=True, required=True, index=True)
     description = fields.StringField(required=True)
-    active = fields.BooleanField(default=True, index=True)
+    is_active = fields.BooleanField(default=True, index=True)  # TODO: Add mechanism to deactivate a scope?
 
 
 class ApiOAuth2Application(StoredObject):

@@ -4,7 +4,6 @@ Define a set of scopes to be used by COS Internal OAuth implementation, specific
 List of scopes, nomenclature, and rationale can be found in the relevant "Login as OSF- phase 2" proposal document
 """
 
-# TODO: This script may be refactored into a database-population script in the future
 from collections import namedtuple
 
 # Public scopes are described with 3 pieces of information: list of constituent scopes, a description, and whether or

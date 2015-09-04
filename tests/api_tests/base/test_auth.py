@@ -37,28 +37,32 @@ class TestOAuthValidation(ApiTestCase):
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_invalid_token_fails(self, mock_user_info):
-        mock_user_info.return_value = cas.CasResponse(authenticated=False, user=None, scope=['osf.full+read'])
+        mock_user_info.return_value = cas.CasResponse(authenticated=False, user=None,
+                                                      attributes={'accessTokenScope': ['osf.full+read']})
 
         res = self.app.get(self.reachable_url, auth='invalid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403, msg=res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_returns_unknown_user_thus_fails(self, mock_user_info):
-        mock_user_info.return_value = cas.CasResponse(authenticated=True, user='fail', scope=['osf.full+read'])
+        mock_user_info.return_value = cas.CasResponse(authenticated=True, user='fail',
+                                                      attributes={'accessTokenScope': ['osf.full+read']})
 
         res = self.app.get(self.reachable_url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403, msg=res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_authenticates_and_has_permissions(self, mock_user_info):
-        mock_user_info.return_value = cas.CasResponse(authenticated=True, user=self.user1._id, scope=['osf.full+read'])
+        mock_user_info.return_value = cas.CasResponse(authenticated=True, user=self.user1._id,
+                                                      attributes={'accessTokenScope': ['osf.full+read']})
 
         res = self.app.get(self.reachable_url, auth='some_valid_token', auth_type='jwt')
         assert_equal(res.status_code, 200, msg=res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_authenticates_but_user_lacks_object_permissions(self, mock_user_info):
-        mock_user_info.return_value = cas.CasResponse(authenticated=True, user=self.user1._id, scope=['osf.full+read'])
+        mock_user_info.return_value = cas.CasResponse(authenticated=True, user=self.user1._id,
+                                                      attributes={'accessTokenScope': ['osf.full+read']})
 
         res = self.app.get(self.unreachable_url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403, msg=res.json)
@@ -75,7 +79,7 @@ class TestOAuthScopedAccess(ApiTestCase):
 
     def _scoped_response(self, scopes_list, user=None):
         user = user or self.user
-        return cas.CasResponse(authenticated=True, user=user._id, scope=scopes_list)
+        return cas.CasResponse(authenticated=True, user=user._id, attributes={'accessTokenScope': scopes_list})
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_user_read_scope_can_read_user_view(self, mock_user_info):
@@ -111,4 +115,13 @@ class TestOAuthScopedAccess(ApiTestCase):
                              auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 200)
         assert_dict_contains_subset(payload,
-                                    res.json['data'])
+                                    res.json['data']['attributes'])
+
+    @mock.patch('framework.auth.cas.CasClient.profile')
+    def test_node_write_scope_cant_read_user_view(self, mock_user_info):
+        mock_user_info.return_value = self._scoped_response(['osf.nodes.all+write'])
+        url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
+        payload = {u'suffix': u'VIII'}
+
+        res = self.app.get(url, params=payload, auth='some_valid_token', auth_type='jwt', expect_errors=True)
+        assert_equal(res.status_code, 403)

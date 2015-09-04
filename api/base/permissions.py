@@ -28,7 +28,7 @@ class TokenHasScope(permissions.BasePermission):
         required_scopes = self._get_scopes(request, view)
 
         # Scopes are returned as a space-delimited list in the token
-        allowed_scopes = token.scope
+        allowed_scopes = token.attributes['accessTokenScope']
 
         try:
             normalized_scopes = self._normalize_scopes(allowed_scopes)

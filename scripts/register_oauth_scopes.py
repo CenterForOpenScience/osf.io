@@ -14,13 +14,12 @@ from framework.mongo import set_up_storage
 from website.oauth.models import ApiOAuth2Scope
 
 
-def get_or_create(name, description, public, save=True):
+def get_or_create(name, description, save=True):
     """
     Populate or update the database entry, as needed
 
     :param name:
     :param description:
-    :param public:
     :return:
     """
     if name != name.lower():
@@ -29,11 +28,10 @@ def get_or_create(name, description, public, save=True):
     try:
         scope_obj = ApiOAuth2Scope.find_one(Q('name', 'eq', name))
     except NoResultsFound:
-        scope_obj = ApiOAuth2Scope(name=name, description=description, public=public)
+        scope_obj = ApiOAuth2Scope(name=name, description=description)
         print "Created new database entry for: ", name
     else:
         scope_obj.description = description
-        scope_obj.public = public
         print "Updating existing database entry for: ", name
 
     if save is True:
@@ -57,10 +55,10 @@ def main(scope_dict):
     for name, scope in scope_dict.iteritems():
         # Update a scope if it exists, else populate
         if scope.public is True:
-            new_scope = get_or_create(name, scope.description, scope.public)
+            new_scope = get_or_create(name, scope.description, save=True)
         else:
             print "{} is not a publicly advertised scope; did not load into database".format(name)
-
+        # TODO: Add additional logic to delete/deactivate non-public scopes if they are already in the database?
 
 if __name__ == "__main__":
     # Create a database connection, then run program.
