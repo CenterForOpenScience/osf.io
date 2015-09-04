@@ -10,7 +10,8 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
     """Serialize data about a registered OAuth2 application"""
     id = ser.CharField(help_text='The client ID for this application (automatically generated)',
                        read_only=True,
-                       source='client_id')
+                       source='client_id',
+                       label='ID')
     client_id = ser.CharField(help_text='The client ID for this application (automatically generated)',
                               read_only=True)
 
@@ -33,11 +34,13 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
 
     home_url = ser.CharField(help_text="The full URL to this application's homepage.",
                              required=True,
-                             validators=[URLValidator()])
+                             validators=[URLValidator()],
+                             label="Home URL")
 
     callback_url = ser.CharField(help_text='The callback URL for this application (refer to OAuth documentation)',
                                  required=True,
-                                 validators=[URLValidator()])
+                                 validators=[URLValidator()],
+                                 label="Callback URL")
 
     class Meta:
         type_ = 'applications'

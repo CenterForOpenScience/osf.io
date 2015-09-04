@@ -394,7 +394,7 @@ class ApiOAuth2Application(StoredObject):
     callback_url = fields.StringField(required=True,
                                       validate=URLValidator())
 
-    def deactivate(self, save=True):
+    def deactivate(self, save=False):
         """
         Deactivate an ApiOAuth2Application
 
