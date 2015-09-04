@@ -197,23 +197,3 @@ class NodeFilesSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         # TODO
         pass
-
-class NodeLogSerializer(JSONAPISerializer):
-
-    filterable_fields = frozenset(['action'])
-
-    id = ser.CharField(read_only=True, source='_id')
-    date = ser.DateTimeField(read_only=True)
-    action = ser.CharField(read_only=True)
-
-    class Meta:
-        type_ = 'logs'
-
-    links = LinksField({
-        'nodes': {
-            'related': Link('logs:log-nodes', kwargs={'log_id': '<_id>'})
-        },
-        'user': {
-            'related': Link('users:user-detail', kwargs={'user_id': '<user._id>'})
-        }
-    })

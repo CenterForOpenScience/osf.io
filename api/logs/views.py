@@ -2,16 +2,17 @@ from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 
 from website.models import Node, NodeLog
-from api.base.filters import ODMFilterMixin
 
-from api.nodes import serializers as node_serializers
+from api.base.filters import ODMFilterMixin
+from api.logs.serializers import NodeLogSerializer
+from api.nodes.serializers import NodeSerializer
 
 class LogList(generics.ListAPIView, ODMFilterMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-    serializer_class = node_serializers.NodeLogSerializer
+    serializer_class = NodeLogSerializer
     ordering = ('-date', )  # default ordering
 
     # overrides ODMFilterMixin
@@ -31,7 +32,7 @@ class LogNodeList(generics.ListAPIView, ODMFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-    serializer_class = node_serializers.NodeSerializer
+    serializer_class = NodeSerializer
     order = ('-date', )
 
     def get_queryset(self):
