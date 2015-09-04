@@ -2,7 +2,6 @@ from __future__ import unicode_literals
 
 import os
 import bson
-import json
 import logging
 import datetime
 import requests
@@ -434,13 +433,14 @@ class File(FileNode):
         if version is not None:
             return version
 
-        # resp = requests.get(self.generate_metadata_url(revision=revision, **kwargs))
-        resp = requests.head(self.generate_metadata_url(revision=revision, **kwargs))
+        resp = requests.get(self.generate_waterbutler_url(revision=revision, meta=True, **kwargs))
         if resp.status_code != 200:
             logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
             return None
 
-        return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
+        return self.update(revision, resp.json()['data'])
+        # TODO Switch back to head requests
+        # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
     def update(self, revision, data):
         """Using revision and data update all data pretaining to self
