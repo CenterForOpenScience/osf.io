@@ -247,12 +247,20 @@ var RawNormalizedData = {
             m('.col-md-12',
                 m('div', [
                     m('ul', {className: 'nav nav-tabs'}, [
-                        m('li', m('a', {href: '#raw' + divID, 'data-toggle': 'tab'}, 'Raw')),
-                        m('li', m('a', {href: '#normalized' + divID, 'data-toggle': 'tab'}, 'Normalized'))
+                        m('li', m('a', {href: '#normalized' + divID, 'data-toggle': 'tab'}, 'Normalized')),
+                        m('li', m('a', {href: '#raw' + divID, 'data-toggle': 'tab'}, 'Raw'))
                     ]),
                     m('div', {className: 'tab-content'},
                         m('div',
-                            {className: 'tab-pane active', id:'raw' + divID},
+                            {className: 'tab-pane active', id:'normalized' + divID},
+                            m('pre',
+                                (function(){
+                                    return JSON.stringify(result.normalized, undefined, 2);
+                                }())
+                            )
+                        ),
+                        m('div',
+                            {className: 'tab-pane', id:'raw' + divID},
                             m('pre',
                                 (function(){
                                     if (result.rawfiletype === 'xml') {
@@ -262,14 +270,6 @@ var RawNormalizedData = {
                                         var rawjson = JSON.parse(result.raw);
                                         return JSON.stringify(rawjson, undefined, 2);
                                     }
-                                }())
-                            )
-                        ),
-                        m('div',
-                            {className: 'tab-pane', id:'normalized' + divID},
-                            m('pre',
-                                (function(){
-                                    return JSON.stringify(result.normalized, undefined, 2);
                                 }())
                             )
                         )
