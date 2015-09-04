@@ -832,7 +832,7 @@ class TestSendEmails(OsfTestCase):
 
         users = [factories.UserFactory() for i in range(5)]
         context = dict(
-            gravatar_url=self.user.gravatar_url,
+            gravatar_url=self.user.profile_image_url(),
             content='',
             target_user=None,
             parent_comment='',
@@ -856,7 +856,7 @@ class TestSendEmails(OsfTestCase):
 
         users = [factories.UserFactory() for i in range(5)]
         context = dict(
-            gravatar_url=self.user.gravatar_url,
+            gravatar_url=self.user.profile_image_url(),
             content='',
             target_user=None,
             parent_comment='',
@@ -1070,7 +1070,7 @@ class TestSendEmails(OsfTestCase):
     #     emails.send([self.user], 'email_transactional', self.project._id, 'comments',
     #                 timestamp=datetime.datetime.utcnow(),
     #                 user=self.project.creator,
-    #                 gravatar_url=self.user.gravatar_url,
+    #                 gravatar_url=self.user.profile_image_url(),
     #                 content='',
     #                 parent_comment='',
     #                 title=self.project.title,
@@ -1089,7 +1089,7 @@ class TestSendEmails(OsfTestCase):
             user=self.project.creator,
             node=self.project,
             timestamp=timestamp,
-            gravatar_url=self.user.gravatar_url,
+            gravatar_url=self.user.profile_image_url(),
             content='',
             parent_comment='',
             title=self.project.title,
@@ -1098,7 +1098,7 @@ class TestSendEmails(OsfTestCase):
         subject = Template(emails.EMAIL_SUBJECT_MAP['comments']).render(
             timestamp=timestamp,
             user=self.project.creator,
-            gravatar_url=self.user.gravatar_url,
+            gravatar_url=self.user.profile_image_url(),
             content='',
             parent_comment='',
             title=self.project.title,
@@ -1108,7 +1108,7 @@ class TestSendEmails(OsfTestCase):
             'comments.html.mako',
             timestamp=timestamp,
             user=self.project.creator,
-            gravatar_url=self.user.gravatar_url,
+            gravatar_url=self.user.profile_image_url(),
             content='',
             parent_comment='',
             title=self.project.title,
@@ -1136,7 +1136,7 @@ class TestSendEmails(OsfTestCase):
                             user=self.user,
                             node=self.project,
                             timestamp=datetime.datetime.utcnow().replace(tzinfo=pytz.utc),
-                            gravatar_url=self.user.gravatar_url,
+                            gravatar_url=self.user.profile_image_url(),
                             content='',
                             parent_comment='',
                             title=self.project.title,
@@ -1152,7 +1152,7 @@ class TestSendEmails(OsfTestCase):
                             user=self.user,
                             node=self.project,
                             timestamp=datetime.datetime.utcnow().replace(tzinfo=pytz.utc),
-                            gravatar_url=self.user.gravatar_url,
+                            gravatar_url=self.user.profile_image_url(),
                             content='',
                             parent_comment='',
                             title=self.project.title,
