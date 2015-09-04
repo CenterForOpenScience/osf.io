@@ -327,6 +327,13 @@ class FileNode(object):
 
         return self
 
+    def update(self, revision, data, save=True):
+        self.name = data['name']
+        self.materialized_path = data['materialized']
+        self.last_touched = datetime.datetime.utcnow()
+        if save:
+            self.save()
+
     def _created_trashed(self, save=True):
         trashed = TrashedFileNode()
         trashed._id = self._id
