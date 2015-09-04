@@ -267,37 +267,14 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
-    def test_incorrect_filtering_field_logged_in(self):
-        # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
-        url = '/{}nodes/?filter[notafield]=bogus'.format(API_BASE)
-
-        res = self.app.get(url, auth=self.user_one.auth)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_in(self.project_three._id, ids)
-        assert_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
-
     def test_incorrect_filtering_field_not_logged_in(self):
-        # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
         url = '/{}nodes/?filter[notafield]=bogus'.format(API_BASE)
 
-        res = self.app.get(url)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
 
 
 class TestNodeCreate(ApiTestCase):
@@ -832,28 +809,25 @@ class TestNodeContributorFiltering(ApiTestCase):
 
     def setUp(self):
         super(TestNodeContributorFiltering, self).setUp()
-        self.project = ProjectFactory()
-        self.password = fake.password()
-        self.project.creator.set_password(self.password)
-        self.project.creator.save()
-        self.basic_auth = (self.project.creator.username, self.password)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
 
     def test_filtering_node_with_only_bibliographic_contributors(self):
 
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
         # no filter
-        res = self.app.get(base_url, auth=self.basic_auth)
+        res = self.app.get(base_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
-        res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(len(res.json['data']), 1)
         assert_true(res.json['data'][0]['attributes'].get('bibliographic', None))
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
-        res = self.app.get(url, auth=self.basic_auth)
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 0)
 
     def test_filtering_node_with_non_bibliographic_contributor(self):
@@ -864,20 +838,28 @@ class TestNodeContributorFiltering(ApiTestCase):
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
 
         # no filter
-        res = self.app.get(base_url, auth=self.basic_auth)
+        res = self.app.get(base_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
-        res = self.app.get(url, auth=self.basic_auth)
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
         assert_true(res.json['data'][0]['attributes'].get('bibliographic', None))
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
-        res = self.app.get(url, auth=self.basic_auth)
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
         assert_false(res.json['data'][0]['attributes'].get('bibliographic', None))
+
+    def test_filtering_on_invalid_field(self):
+        url = '/{}nodes/{}/contributors/?filter[invalid]=foo'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
 
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
