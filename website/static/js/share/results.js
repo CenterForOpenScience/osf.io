@@ -242,12 +242,12 @@ var Footer = {
 var RawNormalizedData = {
     view: function(ctrl, params) {
         var result = params.result || params.missingError;
-        var divID = params.missingError ? '' : (result.normalized.shareProperties.docID + result.normalized.shareProperties.source).replace( /(:|\.|\[|\]|,)/g, '-' );
+        var divID = params.missingError ? '' : (result.normalized.shareProperties.docID + result.normalized.shareProperties.source).replace( /(:|\.|\[|\]|,|\/)/g, '-' );
         return m('.row', [
             m('.col-md-12',
                 m('div', [
                     m('ul', {className: 'nav nav-tabs'}, [
-                        m('li', m('a', {href: '#normalized' + divID, 'data-toggle': 'tab'}, 'Normalized')),
+                        m('li', {className: 'active'}, m('a', {href: '#normalized' + divID, 'data-toggle': 'tab'}, 'Normalized')),
                         m('li', m('a', {href: '#raw' + divID, 'data-toggle': 'tab'}, 'Raw'))
                     ]),
                     m('div', {className: 'tab-content'},
