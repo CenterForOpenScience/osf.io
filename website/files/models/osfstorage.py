@@ -65,13 +65,18 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def history(self):
         return [v.metadata for v in self.versions]
 
-    def serialize(self, version=-1, include_full=None):
+    def serialize(self, include_full=None, version=-1):
         ret = super(OsfStorageFile, self).serialize()
         if include_full:
             ret['fullPath'] = self.materialized_path
-            ret['md5'] = self.get_version(version).metadata.get('md5')
-            ret['sha256'] = self.get_version(version).metadata.get('sha256')
-        return ret
+
+        version = self.get_version(version)
+        return dict(
+            ret,
+            version=len(self.versions),
+            md5=version.metadata.get('md5') if version else None,
+            sha256=version.metadata.get('sha256') if version else None,
+        )
 
     def create_version(self, creator, location, metadata=None):
         latest_version = self.get_version()
@@ -102,7 +107,8 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
 
-    def serialize(self, include_full=None):
+    def serialize(self, include_full=False, version=None):
+        # Versions just for compatability
         ret = super(OsfStorageFolder, self).serialize()
         if include_full:
             ret['fullPath'] = self.materialized_path
