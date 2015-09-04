@@ -45,12 +45,13 @@
                             data-bind="click: submit"
                         >Save</button>
                         </div>
+                        
                     </form>
+
                     <!-- Flashed Messages -->
                     <div data-bind="html: message, attr: {class: messageClass}"></div>
             </div><!--view model scope ends -->
         </div>
-
         <div class="panel panel-default">
             <div class="panel-heading clearfix"><h3 class="panel-title">Configure Notification Preferences</h3></div>
                 <form id="selectNotifications" class="osf-treebeard-minimal">
