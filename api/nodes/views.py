@@ -352,6 +352,19 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         return [self.get_file_item(file) for file in files_list]
 
 
+class NodeProvider(object):
+
+    def __init__(self, provider, node, valid_methods):
+        self.path = '/'
+        self.node = node
+        self.kind = 'folder'
+        self.name = provider
+        self.provider = provider
+        self.valid_self_link_methods = valid_methods
+        self.node_id = node._id
+        self.pk = node._id
+
+
 class NodeProvidersList(generics.ListAPIView, NodeMixin):
     serializer_class = NodeProviderSerializer
 
@@ -377,16 +390,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         return valid_methods
 
     def get_provider_item(self, provider):
-        return {
-            'valid_self_link_methods': self.get_valid_self_link_methods()['folder'],
-            'path': '/',
-            'metadata': {},
-            'name': provider,
-            'provider': provider,
-            'item_type': 'folder',
-            'waterbutler_type': 'folder',
-            'node_id': self.get_node()._id,
-        }
+        return NodeProvider(provider, self.get_node(), self.get_valid_self_link_methods()['folder'])
 
     def get_queryset(self):
         return [

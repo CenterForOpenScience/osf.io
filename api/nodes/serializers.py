@@ -1,9 +1,11 @@
 from rest_framework import serializers as ser
+from rest_framework.reverse import reverse
 
+from website import util
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField
+from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField
 
 
 class NodeTagField(ser.Field):
@@ -52,7 +54,7 @@ class NodeSerializer(JSONAPISerializer):
     contributors = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
                                                     lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
 
-    files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id',
+    files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
                                              link_type='related')
 
     node_links = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
@@ -160,40 +162,36 @@ class NodeLinksSerializer(JSONAPISerializer):
         pass
 
 
+class NodeProviderHyperLink(ser.HyperlinkedRelatedField):
+    view_name = 'nodes:node-files'
+
+    def __init__(self, view_name=None, **kwargs):
+        kwargs['source'] = '*'
+        kwargs['read_only'] = True
+        self.meta = kwargs.pop('meta', None)
+        self.link_type = kwargs.pop('link_type', 'url')
+        super(NodeProviderHyperLink, self).__init__(view_name=self.view_name, **kwargs)
+
+    def get_url(self, obj, view_name, request, format):
+        return reverse(view_name, kwargs={'provider': obj.provider, 'path': '/', 'node_id': obj.node._id}, request=request, format=format)
+
+
 class NodeProviderSerializer(JSONAPISerializer):
 
-    provider = ser.CharField(read_only=True)
-    path = ser.CharField(read_only=True)
-    item_type = ser.CharField(read_only=True)
+    kind = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
+    path = ser.CharField(read_only=True)
+    provider = ser.CharField(read_only=True)
+    files = NodeProviderHyperLink(read_only=True)
+    links = LinksField({'self': 'waterbutler_link'})
 
     class Meta:
         type_ = 'files'
 
-    links = LinksField({
-        'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
-        'related': {
-            'href': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
-                    query_kwargs={'path': '<path>', 'provider': '<provider>'}),
-            'meta': {'self_methods': 'valid_self_link_methods'}
-        }
-        'self_methods': 'valid_self_link_methods',
-        'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>', 'path': '<path>', 'provider': '<provider>'}),
-    })
-
     @staticmethod
-    def get_id(obj):
-        ret = obj['provider'] + obj['path']
-        return ret
+    def waterbutler_link(obj):
+        return util.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path)
 
     @staticmethod
     def valid_self_link_methods(obj):
-        return obj['valid_self_link_methods']
-
-    def create(self, validated_data):
-        # TODO
-        pass
-
-    def update(self, instance, validated_data):
-        # TODO
-        pass
+        return obj.valid_self_link_methods
