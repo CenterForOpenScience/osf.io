@@ -17,12 +17,6 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeListSerializer(JSONAPIListSerializer):
-    def create(self, validated_data):
-        nodes = [Node(**item) for item in validated_data]
-        return Node.objects.bulk_create(nodes)
-
-
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
@@ -72,7 +66,6 @@ class NodeSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'nodes'
-        list_serializer_class = NodeListSerializer
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
