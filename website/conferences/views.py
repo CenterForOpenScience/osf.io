@@ -129,7 +129,7 @@ def add_poster_by_email(conference, message):
         osfstorage = node.get_addon('osfstorage')
         root_id = osfstorage.root_node._id
         mails.queue_mail(
-            to_addr=user,
+            to_addr=user.username,
             mail=mails.WELCOME_OSF4M,
             send_at=datetime.utcnow() + settings.WELCOME_OSF4M_WAIT_TIME,
             user=user,
