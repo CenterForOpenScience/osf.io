@@ -1,6 +1,8 @@
 import requests
 
 from modularodm import Q
+from rest_framework import status
+from rest_framework.response import Response
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
@@ -75,6 +77,14 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         return super(NodeList, self).get_serializer(*args, **kwargs)
 
     # overrides ListCreateAPIView
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response({'data': serializer.data}, status=status.HTTP_201_CREATED, headers=headers)
+
+    # overrides ListCreateAPIView
     def perform_create(self, serializer):
         """Create a node.
 
@@ -104,6 +114,12 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         return self.get_node()
+
+    # overrides RetrieveUpdateDestroyAPIView
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        return Response({'data': serializer.data})
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
