@@ -3,7 +3,12 @@
 <%def name="content()">
 <p>
 Hello ${fullname},
-Thanks for adding your {presentation or poster} from ${conference} to the conference’s <a href="http://osf.io">Open Science Framework</a>(OSF) page! Sharing virtually is an easy way to increase the impact of your research. Your project has already been viewed ${views} times!
+Thanks for adding your {presentation or poster} from ${conference} to the conference’s <a href="http://osf.io">Open Science Framework</a>(OSF) page! Sharing virtually is an easy way to increase the impact of your research.
+
+%if downloads > 4:
+Your project files have been downloaded ${downloads} times!
+%endif
+
 Have you considered adding your manuscript, data, or other research materials to the project? Adding these materials means:
 <ul>
     <li>When someone finds your poster or talk, they can see and cite the accompanying data</li>

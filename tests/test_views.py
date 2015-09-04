@@ -1421,7 +1421,7 @@ class TestUserProfile(OsfTestCase):
         email = fake.email()
         self.user.emails.append(email)
         list_name = 'foo'
-        self.user.mailing_lists[list_name] = True
+        self.user.mailchimp_mailing_lists[list_name] = True
         self.user.save()
 
         mock_client = mock.MagicMock()
@@ -1458,7 +1458,7 @@ class TestUserProfile(OsfTestCase):
         email = fake.email()
         self.user.emails.append(email)
         list_name = 'foo'
-        self.user.mailing_lists[list_name] = False
+        self.user.mailchimp_mailing_lists[list_name] = False
         self.user.save()
 
         mock_client = mock.MagicMock()
@@ -3224,9 +3224,9 @@ class TestConfigureMailingListViews(OsfTestCase):
         user.reload()
 
         # check user.mailing_lists is updated
-        assert_true(user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
+        assert_true(user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
         assert_equal(
-            user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST],
+            user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST],
             payload[settings.MAILCHIMP_GENERAL_LIST]
         )
 
@@ -3257,7 +3257,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user is not subscribed to a list
         user = AuthUserFactory()
-        user.mailing_lists = {'OSF General': False}
+        user.mailchimp_mailing_lists = {'OSF General': False}
         user.save()
 
         # user subscribes and webhook sends request to OSF
@@ -3273,7 +3273,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user field is updated on the OSF
         user.reload()
-        assert_true(user.mailing_lists[list_name])
+        assert_true(user.mailchimp_mailing_lists[list_name])
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_mailchimp_webhook_profile_action_does_not_change_user(self, mock_get_mailchimp_api):
@@ -3288,7 +3288,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user is subscribed to a list
         user = AuthUserFactory()
-        user.mailing_lists = {'OSF General': True}
+        user.mailchimp_mailing_lists = {'OSF General': True}
         user.save()
 
         # user hits subscribe again, which will update the user's existing info on mailchimp
@@ -3305,7 +3305,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user field does not change
         user.reload()
-        assert_true(user.mailing_lists[list_name])
+        assert_true(user.mailchimp_mailing_lists[list_name])
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_sync_data_from_mailchimp_unsubscribes_user(self, mock_get_mailchimp_api):
@@ -3317,7 +3317,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user is subscribed to a list
         user = AuthUserFactory()
-        user.mailing_lists = {'OSF General': True}
+        user.mailchimp_mailing_lists = {'OSF General': True}
         user.save()
 
         # user unsubscribes through mailchimp and webhook sends request
@@ -3333,7 +3333,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user field is updated on the OSF
         user.reload()
-        assert_false(user.mailing_lists[list_name])
+        assert_false(user.mailchimp_mailing_lists[list_name])
 
     def test_sync_data_from_mailchimp_fails_without_secret_key(self):
         user = AuthUserFactory()

@@ -289,7 +289,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # }
 
     # email lists to which the user has chosen a subscription setting
-    mailing_lists = fields.DictionaryField()
+    mailchimp_mailing_lists = fields.DictionaryField()
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -1165,9 +1165,9 @@ class User(GuidStoredObject, AddonModelMixin):
         security_messages.update(self.security_messages)
         self.security_messages = security_messages
 
-        for key, value in user.mailing_lists.iteritems():
+        for key, value in user.mailchimp_mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            subscription = value or self.mailing_lists.get(key)
+            subscription = value or self.mailchimp_mailing_lists.get(key)
             signals.user_merged.send(self, list_name=key, subscription=subscription)
 
             # clear subscriptions for merged user

@@ -207,7 +207,7 @@ def update_user(auth):
                             new_address=username)
 
             # Remove old primary email from subscribed mailing lists
-            for list_name, subscription in user.mailing_lists.iteritems():
+            for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
             user.username = username
@@ -230,7 +230,7 @@ def update_user(auth):
 
     # Update subscribed mailing lists with new primary email
     # TODO: move to user.save()
-    for list_name, subscription in user.mailing_lists.iteritems():
+    for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
         if subscription:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
@@ -371,7 +371,7 @@ def user_addons(auth, **kwargs):
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
     return {
-        'mailing_lists': dict(auth.user.mailing_lists.items() + auth.user.osf_mailing_lists.items())
+        'mailing_lists': dict(auth.user.mailchimp_mailing_lists.items() + auth.user.osf_mailing_lists.items())
     }
 
 @dev_only
@@ -461,7 +461,7 @@ def user_choose_mailing_lists(auth, **kwargs):
         )
 
     user.save()
-    return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists.update(user.osf_mailing_lists)}, 200
+    return {'message': 'Successfully updated mailing lists', 'result': user.mailchimp_mailing_lists.update(user.osf_mailing_lists)}, 200
 
 
 @user_merged.connect
@@ -508,11 +508,11 @@ def sync_data_from_mailchimp(**kwargs):
             raise HTTPError(404, data=dict(message_short='User not found',
                                         message_long='A user with this username does not exist'))
         if action == 'unsubscribe':
-            user.mailing_lists[list_name] = False
+            user.mailchimp_mailing_lists[list_name] = False
             user.save()
 
         elif action == 'subscribe':
-            user.mailing_lists[list_name] = True
+            user.mailchimp_mailing_lists[list_name] = True
             user.save()
 
     else:

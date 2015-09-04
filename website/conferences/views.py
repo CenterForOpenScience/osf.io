@@ -3,7 +3,7 @@
 import json
 import httplib
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -86,18 +86,6 @@ def add_poster_by_email(conference, message):
                 verification_key=user.verification_key,
                 _absolute=True,
             )
-            #TO DO: Make sure views actually means something, maybe trigger doesnt happen here, or check and add views
-            #at the callback, like send if more than 5 and then set data['views']
-            mails.queue_mail(
-                to_addr=user,
-                mail=mails.WELCOME_OSF4M,
-                send_at=datetime.utcnow() + settings.WELCOME_OSF4M_WAIT_TIME,
-                user=user,
-                conference=conference.name,
-                fullname=user.fullname,
-                presentation='presentation',
-                views=5
-            )
         else:
             set_password_url = None
 
@@ -137,6 +125,19 @@ def add_poster_by_email(conference, message):
         presentation_type=message.conference_category.lower(),
         is_spam=message.is_spam,
     )
+    if node_created and user_created:
+        osfstorage = node.get_addon('osfstorage')
+        root_id = osfstorage.root_node._id
+        mails.queue_mail(
+            to_addr=user,
+            mail=mails.WELCOME_OSF4M,
+            send_at=datetime.utcnow() + settings.WELCOME_OSF4M_WAIT_TIME,
+            user=user,
+            conference=conference.name,
+            fullname=user.fullname,
+            presentation='presentation',
+            fid=root_id
+        )
 
 
 def _render_conference_node(node, idx, conf):
