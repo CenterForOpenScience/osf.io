@@ -507,16 +507,6 @@ var SocialViewModel = function(urls, modes) {
         }
     });
 
-    //self.personal = extendLink(
-    //    // Note: Apply extenders in reverse order so that `ensureHttp` is
-    //    // applied before `url`.
-    //    ko.observable().extend({
-    //        trimmed: true,
-    //        url: true,
-    //        ensureHttp: true
-    //    }),
-    //    self, 'personal'
-    //);
     self.orcid = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
         self, 'orcid', 'http://orcid.org/'
