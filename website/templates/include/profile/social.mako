@@ -26,7 +26,7 @@
                 </div>
             </div>
 
-            <div class="padded">
+            <div class="p-t-sm p-b-sm">
                 <a class="btn btn-default" data-bind="click: addWebsiteInput">
                     Add Website
                 </a>
@@ -123,8 +123,8 @@
         <table class="table" data-bind="if: hasValues()">
             <tbody>
                 <tr data-bind="if: hasProfileWebsites()">
-                    <td data-bind="visible: profileWebsites().length > 1">Profile Websites</td>
-                    <td data-bind="visible: profileWebsites().length == 1">Profile Website</td>
+                    <td data-bind="visible: profileWebsites().length > 1">Personal Websites</td>
+                    <td data-bind="visible: profileWebsites().length === 1">Personal Website</td>
                     <td data-bind="foreach: profileWebsites"><a target="_blank" data-bind="attr.href: $data">{{ $data }}</a></br></td>
                 </tr>
             </tbody>
