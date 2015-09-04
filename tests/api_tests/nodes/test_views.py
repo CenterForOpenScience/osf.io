@@ -801,13 +801,8 @@ class TestNodeDelete(ApiTestCase):
             auth=self.user.auth,
             expect_errors=True
         )
-        assert_equal(res.status_code, 400)
-        errors = res.json['errors']
-        assert_equal(len(errors), 1)
-        assert_equal(
-            errors[0]['detail'],
-            'Dashboards may not be deleted.'
-        )
+        # Dashboards are a folder, so a 404 is returned
+        assert_equal(res.status_code, 404)
 
 class TestNodeContributorList(ApiTestCase):
 
