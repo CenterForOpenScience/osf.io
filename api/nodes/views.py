@@ -187,9 +187,9 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         auth = Auth(current_user)
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError("Must have at least one visible contributor")
-        if not node.remove_contributor(instance, auth):
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
             raise ValidationError("Must have at least one registered admin contributor")
-
 
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
