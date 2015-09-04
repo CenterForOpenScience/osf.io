@@ -6,5 +6,5 @@ class JSONAPIParser(JSONParser):
     """
     Parses JSON-serialized data. Overrides media_type.
     """
-    media_type = 'application/vnd.api+json'
+    media_type = 'application/vnd.api+json; ext="bulk"'
     renderer_class = JSONAPIRenderer
