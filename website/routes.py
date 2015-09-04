@@ -60,6 +60,7 @@ def get_globals():
         'cookie_name': settings.COOKIE_NAME,
         'status': status.pop_status_messages(),
         'domain': settings.DOMAIN,
+        'api_domain': settings.API_DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
         'web_url_for': util.web_url_for,
@@ -88,7 +89,7 @@ class OsfWebRenderer(WebRenderer):
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
 #: Use if a view only redirects or raises error
-notemplate = OsfWebRenderer('', render_mako_string)
+notemplate = OsfWebRenderer('', renderer=render_mako_string)
 
 
 # Static files (robots.txt, etc.)
@@ -412,9 +413,12 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/explore/activity/', 'get', discovery_views.activity,
-             OsfWebRenderer('public/pages/active_nodes.mako')),
-
+        Rule(
+            '/explore/activity/',
+            'get',
+            discovery_views.activity,
+            OsfWebRenderer('public/pages/active_nodes.mako', trust=False)
+        ),
     ])
 
     ### Auth ###
@@ -555,6 +559,27 @@ def make_url_map(app):
             'get',
             profile_views.user_notifications,
             OsfWebRenderer('profile/notifications.mako', trust=False),
+        ),
+
+        Rule(
+            '/settings/applications/',
+            'get',
+            profile_views.oauth_application_list,
+            OsfWebRenderer('profile/oauth_app_list.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/applications/create/',
+            'get',
+            profile_views.oauth_application_register,
+            OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/applications/<client_id>/',
+            'get',
+            profile_views.oauth_application_detail,
+            OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
         ),
 
         # TODO: Uncomment once outstanding issues with this feature are addressed
@@ -737,14 +762,23 @@ def make_url_map(app):
         Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako')),
         Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('index.mako')),
 
-        Rule([
-            '/project/<pid>/',
-            '/project/<pid>/node/<nid>/',
-        ], 'get', project_views.node.view_project, OsfWebRenderer('project/project.mako')),
+        Rule(
+            [
+                '/project/<pid>/',
+                '/project/<pid>/node/<nid>/',
+            ],
+            'get',
+            project_views.node.view_project,
+            OsfWebRenderer('project/project.mako', trust=False)
+        ),
 
         # Create a new subproject/component
-        Rule('/project/<pid>/newnode/', 'post', project_views.node.project_new_node,
-             OsfWebRenderer('', render_mako_string)),
+        Rule(
+            '/project/<pid>/newnode/',
+            'post',
+            project_views.node.project_new_node,
+            notemplate
+        ),
 
         # # TODO: Add API endpoint for tags
         # Rule('/tags/<tag>/', 'get', project_views.tag.project_tag, OsfWebRenderer('tags.mako')),
@@ -759,7 +793,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.node_contributors,
-            OsfWebRenderer('project/contributors.mako'),
+            OsfWebRenderer('project/contributors.mako', trust=False),
         ),
 
         Rule(
@@ -769,7 +803,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.node.node_setting,
-            OsfWebRenderer('project/settings.mako')
+            OsfWebRenderer('project/settings.mako', trust=False)
         ),
 
         # Permissions
@@ -780,61 +814,63 @@ def make_url_map(app):
             ],
             'post',
             project_views.node.project_set_privacy,
-            OsfWebRenderer('project/project.mako')
+            OsfWebRenderer('project/project.mako')  # TODO: Should this be notemplate? (post request)
         ),
 
         ### Logs ###
 
         # View forks
-        Rule([
-            '/project/<pid>/forks/',
-            '/project/<pid>/node/<nid>/forks/',
-        ], 'get', project_views.node.node_forks, OsfWebRenderer('project/forks.mako')),
+        Rule(
+            [
+                '/project/<pid>/forks/',
+                '/project/<pid>/node/<nid>/forks/',
+            ],
+            'get',
+            project_views.node.node_forks,
+            OsfWebRenderer('project/forks.mako', trust=False)
+        ),
 
         # Registrations
-        Rule([
-            '/project/<pid>/register/',
-            '/project/<pid>/node/<nid>/register/',
-        ], 'get', project_views.register.node_register_page,
-            OsfWebRenderer('project/register.mako')),
+        Rule(
+            [
+                '/project/<pid>/register/',
+                '/project/<pid>/node/<nid>/register/',
+            ],
+            'get',
+            project_views.register.node_register_page,
+            OsfWebRenderer('project/register.mako', trust=False)
+        ),
 
-        Rule([
-            '/project/<pid>/register/<template>/',
-            '/project/<pid>/node/<nid>/register/<template>/',
-        ], 'get', project_views.register.node_register_template_page,
-            OsfWebRenderer('project/register.mako')),
+        Rule(
+            [
+                '/project/<pid>/register/<template>/',
+                '/project/<pid>/node/<nid>/register/<template>/',
+            ],
+            'get',
+            project_views.register.node_register_template_page,
+            OsfWebRenderer('project/register.mako', trust=False)
+        ),
 
-        Rule([
-            '/project/<pid>/registrations/',
-            '/project/<pid>/node/<nid>/registrations/',
-        ], 'get', project_views.node.node_registrations,
-            OsfWebRenderer('project/registrations.mako')),
+        Rule(
+            [
+                '/project/<pid>/registrations/',
+                '/project/<pid>/node/<nid>/registrations/',
+            ],
+            'get',
+            project_views.node.node_registrations,
+            OsfWebRenderer('project/registrations.mako', trust=False)
+        ),
 
-        Rule([
-            '/project/<pid>/retraction/',
-            '/project/<pid>/node/<nid>/retraction/',
-        ], 'get', project_views.register.node_registration_retraction_get,
-            OsfWebRenderer('project/retract_registration.mako')),
-        Rule([
-            '/project/<pid>/retraction/approve/<token>/',
-            '/project/<pid>/node/<nid>/retraction/approve/<token>/',
-        ], 'get', project_views.register.node_registration_retraction_approve,
-            OsfWebRenderer('error.mako', render_mako_string)),
-        Rule([
-            '/project/<pid>/retraction/disapprove/<token>/',
-            '/project/<pid>/node/<nid>/retraction/disapprove/<token>/',
-        ], 'get', project_views.register.node_registration_retraction_disapprove,
-            OsfWebRenderer('error.mako', render_mako_string)),
-        Rule([
-            '/project/<pid>/embargo/approve/<token>/',
-            '/project/<pid>/node/<nid>/embargo/approve/<token>/',
-        ], 'get', project_views.register.node_registration_embargo_approve,
-            OsfWebRenderer('error.mako', render_mako_string)),
-        Rule([
-            '/project/<pid>/embargo/disapprove/<token>/',
-            '/project/<pid>/node/<nid>/embargo/disapprove/<token>/',
-        ], 'get', project_views.register.node_registration_embargo_disapprove,
-            OsfWebRenderer('error.mako', render_mako_string)),
+        # TODO: Can't create a registration locally, so can't test this one..?
+        Rule(
+            [
+                '/project/<pid>/retraction/',
+                '/project/<pid>/node/<nid>/retraction/',
+            ],
+            'get',
+            project_views.register.node_registration_retraction_get,
+            OsfWebRenderer('project/retract_registration.mako', trust=False)
+        ),
 
         Rule(
             '/ids/<category>/<path:value>/',
@@ -844,16 +880,31 @@ def make_url_map(app):
         ),
 
         # Statistics
-        Rule([
-            '/project/<pid>/statistics/',
-            '/project/<pid>/node/<nid>/statistics/',
-        ], 'get', project_views.node.project_statistics,
-            OsfWebRenderer('project/statistics.mako')),
+        Rule(
+            [
+                '/project/<pid>/statistics/',
+                '/project/<pid>/node/<nid>/statistics/',
+            ],
+            'get',
+            project_views.node.project_statistics_redirect,
+            notemplate,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/analytics/',
+                '/project/<pid>/node/<nid>/analytics/',
+            ],
+            'get',
+            project_views.node.project_statistics,
+            OsfWebRenderer('project/statistics.mako', trust=False)
+        ),
 
         ### Files ###
 
         # Note: Web endpoint for files view must pass `mode` = `page` to
         # include project view data and JS includes
+        # TODO: Start waterbutler to test
         Rule(
             [
                 '/project/<pid>/files/',
@@ -861,7 +912,7 @@ def make_url_map(app):
             ],
             'get',
             project_views.file.collect_file_trees,
-            OsfWebRenderer('project/files.mako'),
+            OsfWebRenderer('project/files.mako', trust=False),
             view_kwargs={'mode': 'page'},
         ),
         Rule(
@@ -871,11 +922,10 @@ def make_url_map(app):
             ],
             'get',
             addon_views.addon_view_or_download_file,
-            OsfWebRenderer('project/view_file.mako')
+            OsfWebRenderer('project/view_file.mako', trust=False)
         ),
         Rule(
             [
-
                 # Legacy Addon view file paths
                 '/project/<pid>/<provider>/files/<path:path>/',
                 '/project/<pid>/node/<nid>/<provider>/files/<path:path>/',
@@ -916,7 +966,7 @@ def make_url_map(app):
             ],
             'get',
             addon_views.addon_view_or_download_file_legacy,
-            OsfWebRenderer('project/view_file.mako'),
+            OsfWebRenderer('project/view_file.mako', trust=False),
         ),
         Rule(
             [
@@ -1281,8 +1331,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/permissions/beforepublic/',
         ], 'get', project_views.node.project_before_set_public, json_renderer),
 
-        ### Wiki ###
-
         ### Watching ###
         Rule([
             '/project/<pid>/watch/',
@@ -1302,6 +1350,7 @@ def make_url_map(app):
         Rule([
             '/watched/logs/'
         ], 'get', website_views.watched_logs_get, json_renderer),
+
         ### Accounts ###
         Rule([
             '/user/merge/'

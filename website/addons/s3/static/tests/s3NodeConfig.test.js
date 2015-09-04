@@ -1,6 +1,7 @@
 /*global describe, it, expect, example, before, after, beforeEach, afterEach, mocha, sinon*/
 'use strict';
 var $ = require('jquery');
+var bootbox = require('bootbox');
 
 var assert = require('chai').assert;
 
@@ -301,6 +302,7 @@ describe('s3NodeConfigViewModel', () => {
                         assert.isTrue(vm.loadedBucketList());
                         assert.isAbove(vm.bucketList().length, 0);
                         assert(spy.calledOnce);
+                        spy.restore();
                         done();
                     });
                 });
@@ -310,7 +312,8 @@ describe('s3NodeConfigViewModel', () => {
         var postEndpoint = makeSettingsEndpoint();
         postEndpoint.method = 'POST';
         postEndpoint.response = postEndpoint.response.result;
-        var bucket = faker.internet.domainWord();
+        // Bucket names cannot include periods
+        var bucket = faker.internet.domainWord().replace('.', '');
         postEndpoint.response.bucket = bucket;
         postEndpoint.response.has_bucket = true;
         var endpoints = [
@@ -326,6 +329,7 @@ describe('s3NodeConfigViewModel', () => {
         });
         it('submits the selected bucket to the server, and updates data on success', (done) => {
             var vm = new s3NodeConfigVM('', {url: '/api/v1/12345/s3/settings/' });
+
             vm.updateFromData()
                 .always(function() {
                     vm.selectedBucket(bucket);
@@ -334,6 +338,18 @@ describe('s3NodeConfigViewModel', () => {
                         assert.equal(vm.currentBucket(), bucket);
                         done();
                     });
+                });
+        });
+        it('alerts the user that the S3 addon does not support bucket names containing periods', (done) => {
+            var vm = new s3NodeConfigVM('', {url: '/api/v1/12345/s3/settings/'});
+            var spy = sinon.spy(bootbox, 'alert');
+            vm.updateFromData()
+                .always(function () {
+                    vm.selectedBucket('pew.pew.pew');
+                    vm.selectBucket();
+                    assert(spy.calledOnce);
+                    spy.restore();
+                    done();
                 });
         });
     });
@@ -369,7 +385,7 @@ describe('s3NodeConfigViewModel', () => {
                 user_has_auth: true,
                 user_is_owner: true,
                 node_has_auth: true,
-                valid_credentials: true                    
+                valid_credentials: true
             }),
             deleteEndpoint,
             importEndpoint,
@@ -458,7 +474,7 @@ describe('s3NodeConfigViewModel', () => {
         }
         buckets.push(name);
         var createEndpoint = {
-            method:  'POST',    
+            method:  'POST',
             url: URLS.create_bucket,
             response: {
                 buckets: buckets

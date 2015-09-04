@@ -188,6 +188,11 @@ function resolveIconView(item) {
         var template = m('span', { 'class' : iconType});
         return template;
     }
+    if (item.data.permissions){
+        if (!item.data.permissions.view) {
+            return m('span', { 'class' : iconmap.private });
+        }
+    }
     if (item.data.isDashboard) {
         return returnView('collection');
     }
@@ -228,7 +233,10 @@ function resolveIconView(item) {
  * @private
  */
 function _fangornResolveIcon(item) {
-    var privateFolder =  m('div.file-extension._folder_delete', ' '),
+    if (item.data.unavailable)
+        return m('div', {style: {width:'16px', height:'16px', background:'url(' + item.data.iconUrl+ ')', display:'inline-block', opacity: 0.4}}, '');
+
+    var privateFolder =  m('i.fa.fa-lock', ' '),
         pointerFolder = m('i.fa.fa-link', ' '),
         openFolder  = m('i.fa.fa-folder-open', ' '),
         closedFolder = m('i.fa.fa-folder', ' '),
@@ -355,8 +363,8 @@ function checkConflicts(tb, item, folder, cb) {
             tb.modal.update(m('', [
                     m('p', 'An item named "' + item.data.name + '" already exists in this location.')
                 ]), m('', [
-                    m('span.btn.btn-info', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                    m('span.btn.btn-primary', {onclick: cb.bind(tb, 'keep')}, 'Keep Both'),
                     m('span.btn.btn-primary', {onclick: cb.bind(tb, 'replace')},'Replace'),
                 ]), m('h3.break-word.modal-title', 'Replace "' + item.data.name + '"?')
             );
@@ -763,7 +771,11 @@ function _fangornDropzoneError(treebeard, file, message, xhr) {
         }
     }
     if (msgText !== 'Upload canceled.') {
-        $osf.growl('Error', msgText);
+        $osf.growl(
+            'Error',
+            'Unable to reach the provider, please try again later. If the ' +
+            'problem persists, please contact <a href="mailto:support@osf.io">support@osf.io</a>.'
+            );
     }
     treebeard.options.uploadInProgress = false;
 }
@@ -872,7 +884,7 @@ function _removeEvent (event, items, col) {
         tb.modal.dismiss();
     }
     function runDelete(item) {
-        tb.select('.tb-modal-footer .text-danger').html('<i> Deleting...</i>').css('color', 'grey');
+        tb.select('.modal-footer .btn-danger').html('<i> Deleting...</i>').removeClass('btn-danger').addClass('btn-default disabled');
         // delete from server, if successful delete from view
         var url = resolveconfigOption.call(this, item, 'resolveDeleteUrl', [item]);
         url = url || waterbutler.buildTreeBeardDelete(item);
@@ -1117,7 +1129,7 @@ function _fangornTitleColumn(item, col) {
             }
         }, item.data.name);
     }
-    if ((item.data.nodeType === 'project') || (item.data.nodeType ==='component')) {
+    if ((item.data.nodeType === 'project' || item.data.nodeType ==='component') && item.data.permissions.view) {
         return m('a.fg-file-links',{ href: '/' + item.data.nodeID.toString() + '/'},
                 item.data.name);
     }
@@ -1161,6 +1173,10 @@ function _fangornResolveRows(item) {
     item.css = '';
     if(tb.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
+    }
+
+    if(item.data.permissions && !item.data.permissions.view){
+        item.css += ' tb-private-row';
     }
 
     if(item.data.uploadState && (item.data.uploadState() === 'pending' || item.data.uploadState() === 'uploading')){
@@ -1266,10 +1282,16 @@ function expandStateLoad(item) {
     var tb = this,
         i;
     if (item.children.length > 0 && item.depth === 1) {
-        for (i = 0; i < item.children.length; i++) {
-            // if (item.children[i].data.isAddonRoot || item.children[i].data.addonFullName === 'OSF Storage' ) {
+        // NOTE: On the RPP *only*: Load the top-level project's OSF Storage
+        // but do NOT lazy-load children in order to save hundreds of requests.
+        // TODO: We might want to do this for every project, but that's TBD.
+        // /sloria
+        if (window.contextVars && window.contextVars.node && window.contextVars.node.id === 'ezcuj') {
+            tb.updateFolder(null, item.children[0]);
+        } else {
+            for (i = 0; i < item.children.length; i++) {
                 tb.updateFolder(null, item.children[i]);
-            // }
+            }
         }
     }
     if (item.children.length > 0 && item.depth === 2) {
@@ -1381,10 +1403,12 @@ var FGButton = {
             opts['data-placement'] = 'bottom';
             opts.title = args.tooltip;
         }
-        return m('div', opts, [
-            m('i', {className: iconCSS}),
-            m('span', children)
-        ]);
+        var childrenElements = [];
+        childrenElements.push(m('i', {className: iconCSS}));
+        if(children) {
+            childrenElements.push(m('span', children));
+        }
+        return m('div', opts, childrenElements);
     }
 };
 
@@ -1395,14 +1419,12 @@ var FGInput = {
         var placeholder = args.placeholder || '';
         var id = args.id || '';
         var helpTextId = args.helpTextId || '';
-        var onclick = args.onclick || noop;
         var onkeypress = args.onkeypress || noop;
         var value = args.value ? '[value="' + args.value + '"]' : '';
         return m('span', [
             m('input' + value, {
                 'id' : id,
                 className: 'tb-header-input' + extraCSS,
-                onclick: onclick,
                 onkeypress: onkeypress,
                 'data-toggle':  tooltipText ? 'tooltip' : '',
                 'title':  tooltipText,

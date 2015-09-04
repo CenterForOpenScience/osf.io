@@ -7,6 +7,7 @@ import datetime
 import hurry.filesize
 from modularodm import Q
 
+from framework import sentry
 from framework.auth.decorators import Auth
 
 from website.util import paths
@@ -324,8 +325,8 @@ class NodeProjectCollector(object):
             to_expand = False
 
         return {
-            # TODO: Remove safe_unescape_html when mako html safe comes in
-            'name': sanitize.safe_unescape_html(node.title) if can_view else u'Private Component',
+            # TODO: Remove unescape_entities when mako html safe comes in
+            'name': sanitize.unescape_entities(node.title) if can_view else u'Private Component',
             'kind': FOLDER,
             'category': node.category,
             # Once we get files into the project organizer, files would be kind of FILE
@@ -439,7 +440,7 @@ class NodeFileCollector(object):
         can_view = node.can_view(auth=self.auth)
 
         if can_view:
-            node_name = u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.safe_unescape_html(node.title))
+            node_name = u'{0}: {1}'.format(node.project_or_component.capitalize(), sanitize.unescape_entities(node.title))
         elif node.is_registration:
             node_name = u'Private Registration'
         elif node.is_fork:
@@ -487,7 +488,20 @@ class NodeFileCollector(object):
         for addon in node.get_addons():
             if addon.config.has_hgrid_files:
                 # WARNING: get_hgrid_data can return None if the addon is added but has no credentials.
-                temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
+                try:
+                    temp = addon.config.get_hgrid_data(addon, self.auth, **self.extra)
+                except Exception:
+                    sentry.log_exception()
+                    rv.append({
+                        KIND: FOLDER,
+                        'unavailable': True,
+                        'iconUrl': addon.config.icon_url,
+                        'provider': addon.config.short_name,
+                        'addonFullname': addon.config.full_name,
+                        'permissions': {'view': False, 'edit': False},
+                        'name': '{} is currently unavailable'.format(addon.config.full_name),
+                    })
+                    continue
                 rv.extend(sort_by_name(temp) or [])
         return rv
 

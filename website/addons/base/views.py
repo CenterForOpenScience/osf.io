@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import json
 import uuid
 import httplib
 import functools
@@ -22,6 +21,7 @@ from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
+from website.addons.base import StorageAddonBase
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
@@ -361,7 +361,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if not node_addon:
+    if not isinstance(node_addon, StorageAddonBase):
         raise HTTPError(httplib.BAD_REQUEST, {
             'message_short': 'Bad Request',
             'message_long': 'The add-on containing this file is no longer connected to the {}.'.format(node.project_or_component)
@@ -453,7 +453,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         },
         # Note: must be called after get_or_start_render. This is really only for github
         'size': size,
-        'extra': json.dumps(getattr(guid_file, 'extra', {})),
+        'extra': getattr(guid_file, 'extra', {}),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
         'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),

@@ -81,6 +81,8 @@ h6 {
 #home-hero h1 {
     font-size: 3.5em;
     margin-bottom: -20px;
+}
+#home-hero h1, #home-hero h3 {
     z-index: 9;
     position: relative;
 }
@@ -469,12 +471,6 @@ footer {
     -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
 }
 
-@media (min-width: 992px) {
-    .container {
-        width: 1170px !important;
-    }
-}
-
 @media (min-width: 992px) and (max-width: 1199px) {
     .student-image .quote {
         min-height: 100px;
@@ -578,18 +574,6 @@ footer {
     }
     .student-image .main {
         font-size: 1.0em !important;
-    }
-    .sign-in .btn-group {
-        width: 90%;
-        padding-left: 5%;
-    }
-    .sign-in .btn {
-        width: 100%;
-        margin-bottom: 20px;
-    }
-    #formLogin {
-        padding: 0;
-        width: 100%;
     }
     .grey-pullout {
         padding-bottom: 90px;

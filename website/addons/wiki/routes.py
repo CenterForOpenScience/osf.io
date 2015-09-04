@@ -120,6 +120,23 @@ api_routes = {
             '/project/<pid>/node/<nid>/wiki/<wname>/',
         ], 'delete', views.project_wiki_delete, json_renderer),
 
+        # Change Wiki Settings | PUT
+        Rule([
+            '/project/<pid>/wiki/settings/',
+            '/project/<pid>/node/<nid>/wiki/settings/',
+        ], 'put', views.edit_wiki_settings, json_renderer),
+
+        #Permissions Info for Settings Page | GET
+        Rule(
+            [
+                '/project/<pid>/wiki/settings/',
+                '/project/<pid>/node/<nid>/wiki/settings/'
+            ],
+            'get',
+            views.get_node_wiki_permissions,
+            json_renderer,
+        ),
+
         # Wiki Menu : GET
         Rule([
             '/project/<pid>/wiki/<wname>/grid/',

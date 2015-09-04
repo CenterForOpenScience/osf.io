@@ -27,19 +27,21 @@
                     % if not node['is_registration']:
                         <li><a href="#configureNodeAnchor">Configure ${node['node_type'].capitalize()}</a></li>
 
-                        % if 'write' in user['permissions']:
-                            <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
+                        <li><a href="#selectAddonsAnchor">Select Add-ons</a></li>
 
-                            % if addon_enabled_settings:
-                                <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
-                            % endif
+                        % if addon_enabled_settings:
+                            <li><a href="#configureAddonsAnchor">Configure Add-ons</a></li>
+                        % endif
 
-                            <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
+                        % if include_wiki_settings:
+                            <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
                         % endif
 
                         % if 'admin' in user['permissions']:
                             <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                         % endif
+
+                        <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
 
                     % endif
 
@@ -203,38 +205,38 @@
                 % endif
 
             % endif
+
         % endif  ## End Select Addons
 
-        % if user['has_read_permissions']:  ## Begin Configure Notifications
+        % if include_wiki_settings:  ## Begin Configure Wiki
 
             % if not node['is_registration']:
 
                 <div class="panel panel-default">
-                    <span id="configureNotificationsAnchor" class="anchor"></span>
+                    <span id="configureWikiAnchor" class="anchor"></span>
+
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Notifications</h3>
+                        <h3 class="panel-title">Configure Wiki</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                        <p class="text-info">These settings control who can edit your wiki. To make a wiki editable by all OSF users, make your project/component public.</p>
                     </div>
-                    <form id="notificationSettings" class="osf-treebeard-minimal">
-                        <div id="grid">
-                            <div class="notifications-loading">
-                                <i class="fa fa-spinner notifications-spin"></i>
-                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                    <form id="wikiSettings" class="osf-treebeard-minimal">
+                        <div id="wgrid">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading wiki settings...  </p>
                             </div>
                         </div>
                         <div class="help-block" style="padding-left: 15px">
-                            <p id="configureNotificationsMessage"></p>
+                            <p id="configureWikiMessage"></p>
                         </div>
                     </form>
                 </div>
 
             %endif
 
-        % endif ## End Configure Notifications
-
-
+        % endif ## End Configure Wiki
 
         % if 'admin' in user['permissions']:  ## Begin Configure Commenting
 
@@ -279,7 +281,34 @@
 
         % endif  ## End Configure Commenting
 
+        % if user['has_read_permissions']:  ## Begin Configure Notifications
 
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="configureNotificationsAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Configure Notifications</h3>
+                    </div>
+                    <div class="help-block" style="padding-left: 15px">
+                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                    </div>
+                    <form id="notificationSettings" class="osf-treebeard-minimal">
+                        <div id="grid">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                            </div>
+                        </div>
+                        <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                        </div>
+                    </form>
+                </div>
+
+            %endif
+
+        % endif ## End Configure Notifications
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
@@ -312,7 +341,7 @@
                                     registrations will be marked with a <strong>retracted</strong> tag.
                                 </div>
 
-                                %if not node['pending_retraction']:
+                                %if not node['is_pending_retraction']:
                                     <a class="btn btn-danger" href="${web_url_for('node_registration_retraction_get', pid=node['id'])}">Retract Registration</a>
                                 % else:
                                     <p><strong>This registration is already pending a retraction.</strong></p>
@@ -340,11 +369,11 @@
        template_name = data['node_settings_template']
        tpl = data['template_lookup'].get_template(template_name).render(**data)
     %>
-    ${tpl}
+    ${ tpl | n }
 </%def>
 
 % for name, capabilities in addon_capabilities.iteritems():
-    <script id="capabilities-${name}" type="text/html">${capabilities}</script>
+    <script id="capabilities-${name}" type="text/html">${ capabilities | n }</script>
 % endfor
 
 
@@ -356,15 +385,14 @@
 
 
 <%def name="javascript_bottom()">
-    <% import json %>
     ${parent.javascript_bottom()}
     <script>
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
       window.contextVars.node.description = '${node['description']}';
       window.contextVars.node.api_url = '${node['api_url']}';
-      window.contextVars.node.nodeType = '${node['node_type']}';
-      window.contextVars.nodeCategories = ${json.dumps(categories)};
+      window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
+      window.contextVars.nodeCategories = ${ categories | sjson, n };
     </script>
 
     <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>

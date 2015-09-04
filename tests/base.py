@@ -8,10 +8,12 @@ import unittest
 import functools
 import datetime as dt
 from flask import g
+from json import dumps
 
 import blinker
 import httpretty
 from webtest_plus import TestApp
+from webtest.utils import NoDefault
 
 import mock
 from faker import Factory
@@ -38,8 +40,10 @@ from website.addons.wiki.model import NodeWikiPage
 
 import website.models
 from website.signals import ALL_SIGNALS
+from website.project.signals import contributor_added
 from website.app import init_app
 from website.addons.base import AddonConfig
+from website.project.views.contributor import notify_added_contributor
 
 # Just a simple app without routing set up or backends
 test_app = init_app(
@@ -56,6 +60,7 @@ SILENT_LOGGERS = [
     'framework.auth.core',
     'website.mails',
     'website.search_migration.migrate',
+    'website.util.paths',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -143,6 +148,11 @@ class AppTestCase(unittest.TestCase):
     """Base `TestCase` for OSF tests that require the WSGI app (but no database).
     """
 
+    DISCONNECTED_SIGNALS = {
+        # disconnect notify_add_contributor so that add_contributor does not send "fake" emails in tests
+        contributor_added: [notify_added_contributor]
+    }
+
     def setUp(self):
         super(AppTestCase, self).setUp()
         self.app = TestApp(test_app)
@@ -150,11 +160,17 @@ class AppTestCase(unittest.TestCase):
         self.context.push()
         with self.context:
             g._celery_tasks = []
+        for signal in self.DISCONNECTED_SIGNALS:
+            for receiver in self.DISCONNECTED_SIGNALS[signal]:
+                signal.disconnect(receiver)
 
     def tearDown(self):
         super(AppTestCase, self).tearDown()
         with mock.patch('website.mailchimp_utils.get_mailchimp_api'):
             self.context.pop()
+        for signal in self.DISCONNECTED_SIGNALS:
+            for receiver in self.DISCONNECTED_SIGNALS[signal]:
+                signal.connect(receiver)
 
 
 class ApiAppTestCase(unittest.TestCase):
@@ -163,7 +179,43 @@ class ApiAppTestCase(unittest.TestCase):
 
     def setUp(self):
         super(ApiAppTestCase, self).setUp()
-        self.app = TestApp(django_app)
+        self.app = TestAppJSONAPI(django_app)
+
+
+class TestAppJSONAPI(TestApp):
+    """
+    Extends TestApp to add json_api_methods(post, put, patch, and delete)
+    which put content_type 'application/vnd.api+json' in header. Adheres to
+    JSON API spec.
+    """
+
+    def __init__(self, app, *args, **kwargs):
+        super(TestAppJSONAPI, self).__init__(app, *args, **kwargs)
+        self.auth = None
+        self.auth_type = 'basic'
+
+    def json_api_method(method):
+
+        def wrapper(self, url, params=NoDefault, **kw):
+            content_type = 'application/vnd.api+json'
+            if params is not NoDefault:
+                params = dumps(params, cls=self.JSONEncoder)
+            kw.update(
+                params=params,
+                content_type=content_type,
+                upload_files=None,
+            )
+            return self._gen_request(method, url, **kw)
+
+        subst = dict(lmethod=method.lower(), method=method)
+        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
+
+        return wrapper
+
+    post_json_api = json_api_method('POST')
+    put_json_api = json_api_method('PUT')
+    patch_json_api = json_api_method('PATCH')
+    delete_json_api = json_api_method('DELETE')
 
 
 class UploadTestCase(unittest.TestCase):
