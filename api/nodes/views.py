@@ -2,7 +2,7 @@ import requests
 
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
 from website.exceptions import NodeStateError
@@ -23,10 +23,14 @@ class NodeMixin(object):
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self):
-        obj = get_object_or_error(Node, self.kwargs[self.node_lookup_url_kwarg], 'node')
+        node = get_object_or_error(Node, self.kwargs[self.node_lookup_url_kwarg], 'node')
+        # Nodes that are folders/collections are treated as a separate resource, so if the client
+        # requests a collection through a node endpoint, we return a 404
+        if node.is_folder:
+            raise NotFound()
         # May raise a permission denied
-        self.check_object_permissions(self.request, obj)
-        return obj
+        self.check_object_permissions(self.request, node)
+        return node
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):

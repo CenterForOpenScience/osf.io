@@ -481,6 +481,15 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['dashboard'], False)
         assert_equal(res.json['data']['attributes']['tags'], [])
 
+    def test_requesting_folder_returns_error(self):
+        folder = NodeFactory(is_folder=True, creator=self.user)
+        res = self.app.get(
+            '/{}nodes/{}/'.format(API_BASE, folder._id),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 404)
+
 
 class TestNodeUpdate(ApiTestCase):
 
@@ -1618,7 +1627,6 @@ class TestDeleteNodeLink(ApiTestCase):
         # a little better
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_deletes_private_node_pointer_logged_in_contributor(self):
         res = self.app.delete(self.private_url, auth=self.user.auth)
