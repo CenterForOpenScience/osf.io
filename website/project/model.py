@@ -609,7 +609,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
 
-    node_license = fields.DictionaryField()
+    node_license = fields.DictionaryField(default=dict)
 
     # One of 'public', 'private'
     # TODO: Add validator
