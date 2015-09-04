@@ -1,6 +1,7 @@
 from rest_framework import generics, permissions as drf_permissions
 
 from website.files.models import File
+from website.files.models import FileNode
 from website.files.models import FileVersion
 from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
@@ -19,7 +20,7 @@ class FileMixin(object):
     def get_file(self, check_permissions=True):
         key = self.kwargs[self.file_lookup_url_kwarg]
 
-        obj = get_object_or_error(File, key)
+        obj = get_object_or_error(FileNode, key)
 
         if check_permissions:
             # May raise a permission denied
@@ -46,7 +47,7 @@ class FileList(generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         # TODO: sort
         query = self.get_query_from_request()
-        return File.find(query)
+        return FileNode.find(query)
 
 
 class FileDetail(generics.RetrieveAPIView, FileMixin):
