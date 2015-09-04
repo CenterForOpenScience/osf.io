@@ -61,7 +61,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         """
         Given an object, return the URL that hyperlinks to the object.
 
-        Returns null if lookup value is None
+        Returns None if lookup value is None
         """
 
         if getattr(obj, self.lookup_field) is None:
@@ -201,8 +201,6 @@ class WaterbutlerLink(Link):
     def resolve_url(self, obj):
         """Reverse URL lookup for WaterButler routes
         """
-        if isinstance(obj, dict):
-            return waterbutler_api_url_for(obj['node_id'], obj['provider'], obj['path'], **self.query_kwargs)
         return waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.query_kwargs)
 
 
