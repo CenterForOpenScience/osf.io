@@ -649,7 +649,7 @@ class TestUser(OsfTestCase):
         gravatar = filters.gravatar(
             user,
             use_ssl=True,
-            size=settings.GRAVATAR_SIZE_PROFILE
+            size=settings.PROFILE_IMAGE_LARGE
         )
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
