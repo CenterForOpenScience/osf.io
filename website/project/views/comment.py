@@ -149,7 +149,7 @@ def add_comment(auth, node, **kwargs):
     comment.save()
 
     context = dict(
-        gravatar_url=auth.user.gravatar_url,
+        gravatar_url=auth.user.profile_image_url(),
         content=content,
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
