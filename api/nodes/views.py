@@ -9,6 +9,7 @@ from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
+from api.base.views import JSONAPIBaseView
 from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
@@ -28,7 +29,7 @@ class NodeMixin(object):
         return obj
 
 
-class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
+class NodeList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -76,7 +77,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         serializer.save(creator=user)
 
 
-class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Projects and component details.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -110,7 +111,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(JSONAPIBaseView, generics.ListAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -140,7 +141,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         return self.get_queryset_from_request()
 
 
-class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
+class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
@@ -164,7 +165,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
+class NodeChildrenList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those

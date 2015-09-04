@@ -48,11 +48,13 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
 
     """
 
-    def __init__(self, view_name=None, **kwargs):
+    def __init__(self, view_name=None, include_source=None, include_serializer=None, **kwargs):
         kwargs['read_only'] = True
         kwargs['source'] = '*'
         self.meta = kwargs.pop('meta', None)
         self.link_type = kwargs.pop('link_type', 'url')
+        self.include_source = include_source
+        self.include_serializer = include_serializer
         super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
 
     # overrides HyperlinkedIdentityField
@@ -74,7 +76,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         Returns nested dictionary in format {'links': {'self.link_type': ... }
 
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
-        the link is represented as a links object with 'href' and 'meta' members.
+         the link is represented as a links object with 'href' and 'meta' members.
         """
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
 
@@ -88,6 +90,17 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         else:
             return {'links': {self.link_type: url}}
 
+    def include(self, instance):
+        include_source = getattr(instance, self.include_source, None)
+        serializer = None
+        if self.include_serializer == 'self':
+            serializer = self.parent
+        else:
+            serializer = self.include_serializer
+        if isinstance(include_source, list):
+            return [serializer.to_representation(item) for item in include_source]
+        else:
+            return serializer.to_representation(include_source)
 
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
@@ -236,8 +249,11 @@ class JSONAPISerializer(ser.Serializer):
         assert type_ is not None, 'Must define Meta.type_'
 
         data = collections.OrderedDict([('id', ''), ('type', type_), ('attributes', collections.OrderedDict()),
-                                        ('relationships', collections.OrderedDict()), ('links', {})])
+                                        ('relationships', collections.OrderedDict()),
+                                        ('includes', {}),
+                                        ('links', {})],)
 
+        includes = self.context['include']
         fields = [field for field in self.fields.values() if not field.write_only]
 
         for field in fields:
@@ -247,7 +263,10 @@ class JSONAPISerializer(ser.Serializer):
                 continue
 
             if isinstance(field, JSONAPIHyperlinkedIdentityField):
-                data['relationships'][field.field_name] = field.to_representation(attribute)
+                if field.field_name in includes:
+                    data['includes'][field.field_name] = field.include(attribute)
+                else:
+                    data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':

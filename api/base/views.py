@@ -1,8 +1,21 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import generics
 
 from .utils import absolute_reverse
 from api.users.serializers import UserSerializer
+
+class JSONAPIBaseView(generics.GenericAPIView):
+
+    def get_serializer_context(self):
+        context = super(JSONAPIBaseView, self).get_serializer_context()
+        includes = self.request.query_params.get('include', [])
+        if not isinstance(includes, list):
+            includes = [includes]
+        context.update({
+            'include': includes
+        })
+        return context
 
 @api_view(('GET',))
 def root(request, format=None):
