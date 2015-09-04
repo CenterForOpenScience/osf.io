@@ -5,6 +5,7 @@ from nose.tools import *  # flake8: noqa
 
 from website.models import Node
 from framework.auth.core import Auth
+from website.addons.github import model
 from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
 
@@ -1430,6 +1431,15 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
 
         self.project.add_addon('github', auth=user_auth)
+        addon = self.project.get_addon('github')
+        addon.repo = 'something'
+        addon.user = 'someone'
+        oauth_settings = model.AddonGitHubOauthSettings(github_user_id='plstowork', oauth_access_token='foo')
+        oauth_settings.save()
+        user_settings = model.AddonGitHubUserSettings(oauth_settings=oauth_settings)
+        user_settings.save()
+        addon.user_settings = user_settings
+        addon.save()
         self.project.save()
         res = self.app.get(self.private_url, auth=self.user.auth)
         data = res.json['data']
@@ -1450,20 +1460,21 @@ class TestNodeFilesList(ApiTestCase):
                 u'modified': None,
                 u'name': u'NewFile',
                 u'path': u'/',
-                u'provider': u'osfstorage',
-                u'size': None
+                u'provider': u'github',
+                u'size': None,
+                u'materialized': '/',
             }]
         }
         mock_waterbutler_request.return_value = mock_res
 
-        url = '/{}nodes/{}/files/?path=%2F&provider=osfstorage'.format(API_BASE, self.project._id)
+        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
-        assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
+        assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
 
     @mock.patch('api.nodes.views.requests.get')
     def test_handles_unauthenticated_waterbutler_request(self, mock_waterbutler_request):
-        url = '/{}nodes/{}/files/?path=%2F&provider=osfstorage'.format(API_BASE, self.project._id)
+        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         mock_res = mock.MagicMock()
         mock_res.status_code = 401
         mock_waterbutler_request.return_value = mock_res
@@ -1474,7 +1485,7 @@ class TestNodeFilesList(ApiTestCase):
 
     @mock.patch('api.nodes.views.requests.get')
     def test_handles_bad_waterbutler_request(self, mock_waterbutler_request):
-        url = '/{}nodes/{}/files/?path=%2F&provider=osfstorage'.format(API_BASE, self.project._id)
+        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         mock_res = mock.MagicMock()
         mock_res.status_code = 418
         mock_res.json.return_value = {}
@@ -1483,10 +1494,10 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert 'detail' in res.json['errors'][0]
 
-    def test_files_list_does_not_contain_empty_relationships_object(self):
+    def test_files_list_contains_relationships_object(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert 'relationships' not in res.json['data'][0]
+        assert 'relationships' in res.json['data'][0]
 
 
 class TestNodePointerDetail(ApiTestCase):
