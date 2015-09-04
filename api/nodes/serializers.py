@@ -1,11 +1,9 @@
 from rest_framework import serializers as ser
-from rest_framework.reverse import reverse
 
-from website import util
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField
+from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, NodeFileHyperLink, WaterbutlerLink
 
 
 class NodeTagField(ser.Field):
@@ -162,35 +160,26 @@ class NodeLinksSerializer(JSONAPISerializer):
         pass
 
 
-class NodeProviderHyperLink(ser.HyperlinkedRelatedField):
-    view_name = 'nodes:node-files'
-
-    def __init__(self, view_name=None, **kwargs):
-        kwargs['source'] = '*'
-        kwargs['read_only'] = True
-        self.meta = kwargs.pop('meta', None)
-        self.link_type = kwargs.pop('link_type', 'url')
-        super(NodeProviderHyperLink, self).__init__(view_name=self.view_name, **kwargs)
-
-    def get_url(self, obj, view_name, request, format):
-        return reverse(view_name, kwargs={'provider': obj.provider, 'path': '/', 'node_id': obj.node._id}, request=request, format=format)
-
-
 class NodeProviderSerializer(JSONAPISerializer):
 
+    id = ser.SerializerMethodField(read_only=True)
     kind = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
+    node = ser.CharField(source='node_id', read_only=True)
     provider = ser.CharField(read_only=True)
-    files = NodeProviderHyperLink(read_only=True)
-    links = LinksField({'self': 'waterbutler_link'})
+    files = NodeFileHyperLink(kind='folder', read_only=True, link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
+    links = LinksField({
+        'upload': WaterbutlerLink(),
+        'new_folder': WaterbutlerLink(kind='folder')
+    })
 
     class Meta:
         type_ = 'files'
 
     @staticmethod
-    def waterbutler_link(obj):
-        return util.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path)
+    def get_id(obj):
+        return '{}:{}'.format(obj.node._id, obj.provider)
 
     @staticmethod
     def valid_self_link_methods(obj):
