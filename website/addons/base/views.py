@@ -236,11 +236,13 @@ def create_waterbutler_log(payload, **kwargs):
             if str(dest_path).endswith("/") and str(src_path).endswith("/"):
                 dest_path = os.path.dirname(dest_path)
                 src_path = os.path.dirname(src_path)
-            if os.path.split(dest_path)[0] == os.path.split(src_path)[0]:
-                if dest['provider'] == src['provider']:
-                    if dest['nid'] == src['nid']:
-                        if dest['name'] != src['name']:
-                            action = LOG_ACTION_MAP['rename']
+            if (
+                os.path.split(dest_path)[0] == os.path.split(src_path)[0] and
+                dest['provider'] == src['provider'] and
+                dest['nid'] == src['nid'] and
+                dest['name'] != src['name']
+            ):
+                action = LOG_ACTION_MAP['rename']
 
         destination_node = node  # For clarity
         source_node = Node.load(payload['source']['nid'])
