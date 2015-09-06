@@ -28,6 +28,7 @@ from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
 from framework.auth import signals as auth_signals
 from framework.exceptions import PermissionsError
+from framework.tags import TaggableMixin
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
@@ -327,6 +328,9 @@ class NodeLog(StoredObject):
     FILE_REMOVED = 'file_removed'
     FILE_RESTORED = 'file_restored'
 
+    FILETAG_ADDED = 'filetag_added'
+    FILETAG_REMOVED = 'filetag_removed'
+
     ADDON_ADDED = 'addon_added'
     ADDON_REMOVED = 'addon_removed'
     COMMENT_ADDED = 'comment_added'
@@ -523,7 +527,7 @@ class NodeUpdateError(Exception):
         self.key = key
         self.reason = reason
 
-class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
+class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin, TaggableMixin):
 
     #: Whether this is a pointer or not
     primary = True
@@ -1852,42 +1856,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             project_signals.after_create_registration.send(self, dst=registered, user=auth.user)
 
         return registered
-
-    def remove_tag(self, tag, auth, save=True):
-        if tag in self.tags:
-            self.tags.remove(tag)
-            self.add_log(
-                action=NodeLog.TAG_REMOVED,
-                params={
-                    'parent_node': self.parent_id,
-                    'node': self._primary_key,
-                    'tag': tag,
-                },
-                auth=auth,
-                save=False,
-            )
-            if save:
-                self.save()
-
-    def add_tag(self, tag, auth, save=True):
-        if tag not in self.tags:
-            new_tag = Tag.load(tag)
-            if not new_tag:
-                new_tag = Tag(_id=tag)
-            new_tag.save()
-            self.tags.append(new_tag)
-            self.add_log(
-                action=NodeLog.TAG_ADDED,
-                params={
-                    'parent_node': self.parent_id,
-                    'node': self._primary_key,
-                    'tag': tag,
-                },
-                auth=auth,
-                save=False,
-            )
-            if save:
-                self.save()
 
     def add_log(self, action, params, auth, foreign_user=None, log_date=None, save=True):
         user = auth.user if auth else None

@@ -170,6 +170,8 @@
             provider: ${ provider | sjson, n },
             safeName: ${ file_name | h, sjson},
             materializedPath: ${ materialized_path | sjson, n },
+            file_guid: ${file_guid | sjson, n},
+            file_tags: ${file_tags | sjson, n},
           urls: {
               external: ${ (urls['external'] or '') | sjson, n },
         %if error is None:

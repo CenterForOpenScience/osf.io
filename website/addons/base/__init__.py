@@ -17,6 +17,7 @@ from modularodm.storage.base import KeyExistsException
 from framework.sessions import session
 from framework.mongo import StoredObject
 from framework.routing import process_rules
+from framework.tags import TaggableMixin
 from framework.guid.model import GuidStoredObject
 from framework.exceptions import (
     PermissionsError,
@@ -205,11 +206,12 @@ class AddonConfig(object):
         return os.path.join(settings.BASE_PATH, self.short_name)
 
 
-class GuidFile(GuidStoredObject):
+class GuidFile(GuidStoredObject, TaggableMixin):
 
     _metadata_cache = None
     _id = fields.StringField(primary=True)
     node = fields.ForeignField('node', required=True, index=True)
+    tags = fields.ForeignField('tag', list=True, backref='tagged')
 
     _meta = {
         'abstract': True,
