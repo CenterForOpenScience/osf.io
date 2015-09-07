@@ -70,7 +70,7 @@ function FileViewTreebeard(data) {
             var tb = this;
             Fangorn.DefaultOptions.lazyLoadOnLoad.call(tb, tree, event);
             Fangorn.Utils.setCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
-            if(!event) {
+            if(!event && tb.isMultiselected(tb.currentFileID)) {
                 Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
             }
             if (tree.depth > 1) {

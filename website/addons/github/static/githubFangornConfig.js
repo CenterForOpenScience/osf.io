@@ -266,7 +266,7 @@ function _fangornLazyLoadOnLoad (tree, event) {
         Fangorn.Utils.inheritFromParent(item, tree, ['branch']);
     });
     Fangorn.Utils.setCurrentFileID.call(tb, tree, window.contextVars.node.id, window.contextVars.file);
-    if(!event){
+    if(!event && tb.isMultiselected(tb.currentFileID)){
         Fangorn.Utils.scrollToFile.call(tb, tb.currentFileID);
     }
 }
