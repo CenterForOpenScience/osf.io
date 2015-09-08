@@ -1010,7 +1010,7 @@ class TestApiOAuth2Application(OsfTestCase):
         assert_greater(len(self.api_app.client_secret), 0)
 
     def test_new_app_is_not_flagged_as_deleted(self):
-        assert_true(self.api_app.active)
+        assert_true(self.api_app.is_active)
 
     def test_user_backref_updates_when_app_created(self):
         u = UserFactory()
@@ -1034,20 +1034,32 @@ class TestApiOAuth2Application(OsfTestCase):
             api_app = ApiOAuth2ApplicationFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
             api_app.save()
 
+    def test_long_name_raises_exception(self):
+        long_name = ('JohnJacobJingelheimerSchmidtHisNameIsMyN' * 5) + 'a'
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(name=long_name)
+            api_app.save()
+
+    def test_long_description_raises_exception(self):
+        long_desc = ('JohnJacobJingelheimerSchmidtHisNameIsMyN' * 25) + 'a'
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(description=long_desc)
+            api_app.save()
+
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_active_set_to_false_upon_successful_deletion(self, mock_method):
         mock_method.return_value(True)
-        self.api_app.deactivate()
+        self.api_app.deactivate(save=True)
         self.api_app.reload()
-        assert_false(self.api_app.active)
+        assert_false(self.api_app.is_active)
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_active_remains_true_when_cas_token_deletion_fails(self, mock_method):
         mock_method.side_effect = cas.CasHTTPError("CAS can't revoke tokens", 400, 'blank', 'blank')
         with assert_raises(cas.CasHTTPError):
-            self.api_app.deactivate()
+            self.api_app.deactivate(save=True)
         self.api_app.reload()
-        assert_true(self.api_app.active)
+        assert_true(self.api_app.is_active)
 
 
 class TestNodeWikiPage(OsfTestCase):

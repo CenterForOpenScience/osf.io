@@ -4,6 +4,7 @@ from rest_framework import exceptions
 from framework.auth.core import Auth
 
 from website.models import Node, User
+from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error
 from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField
@@ -40,7 +41,7 @@ class NodeSerializer(JSONAPISerializer):
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
 
     links = LinksField({'html': 'get_absolute_url'})
-    # TODO: When we have 'admin' permissions, make this writable for admins
+    # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
                                                             'to everyone. Private nodes require explicit read '
@@ -139,7 +140,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'bibliographic',
         'permissions'
     ])
-    id = ser.CharField(source='_id')
+    id = ser.CharField(source='_id', label='ID')
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
@@ -154,17 +155,14 @@ class NodeContributorsSerializer(JSONAPISerializer):
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.  '
                                                'Required due to issues with field defaulting to false.')
 
-    permission = ser.ChoiceField(choices=['read', 'write', 'admin'], required=False, allow_null=True,
+    permission = ser.ChoiceField(choices=[osf_permissions.READ, osf_permissions.WRITE, osf_permissions.ADMIN], required=False, allow_null=True,
                                  help_text='Highest permission the user has.  Blank input defaults write permission if '
                                            'user is being added and to current permission if user is being edited.')
-    links = LinksField({
-        'html': 'absolute_url',
-        'nodes': {
-            'relation': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
-        },
-        'detail': Link('nodes:node-contributor-detail',
-                       kwargs={'node_id': '<node_id>', 'user_id': '<pk>'})
-    })
+
+    links = LinksField({'html': 'absolute_url'})
+    nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
+                                             link_type='related')
+    detail = JSONAPIHyperlinkedIdentityField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id', link_type='related')
 
     class Meta:
         type_ = 'users'
@@ -182,7 +180,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
         bibliographic = validated_data['bibliographic']
         permissions = self.get_permissions_list(validated_data['permission']) \
-            if 'permission' in validated_data else ['read', 'write']
+            if 'permission' in validated_data else [osf_permissions.READ, osf_permissions.WRITE]
         node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
         node.reload()
         contributor.permission = node.get_permissions(contributor)[-1]
@@ -192,20 +190,20 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     @staticmethod
     def get_permissions_list(permission):
-        if permission == 'admin':
-            return ['read', 'write', 'admin']
-        elif permission == 'write':
-            return ['read', 'write']
-        elif permission == 'read':
-            return ['read']
+        if permission == osf_permissions.ADMIN:
+            return [osf_permissions.READ, osf_permissions.WRITE, osf_permissions.ADMIN]
+        elif permission == osf_permissions.WRITE:
+            return [osf_permissions.READ, osf_permissions.WRITE]
+        elif permission == osf_permissions.READ:
+            return [osf_permissions.READ]
         else:
-            return ['read', 'write']
+            return osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
-    """ Overrides node contributor serializer to make id read only and add addtional methods
+    """ Overrides node contributor serializer to make id read only and add additional methods
     """
-    id = ser.CharField(read_only=True, source='_id')
+    id = ser.CharField(read_only=True, source='_id', label='ID')
 
     def update(self, instance, validated_data):
         contributor = instance
@@ -223,30 +221,33 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         contributor.node_id = node._id
         return contributor
 
-    # checks to make sure unique admin is removing own admin privilege
     def set_contributor_permissions(self, node, permission, contributor, auth):
+        """ Set contributor permissions. Checks to make sure unique admin is
+        removing own admin privilege. Based on thw ContributorDetailPermissions
+        permissions class, the current user must be an admin.
+        """
+        assert node.has_permission(auth.user, osf_permissions.ADMIN), "Only admins can modify contributor permissions"
         permissions = self.get_permissions_list(permission)
-        if contributor is not auth.user or self.has_multiple_admins(node):
-            node.set_permissions(contributor, permissions=permissions, save=True)
-        elif permission == 'admin':
-            pass
-        else:
-            raise exceptions.ValidationError('{} is the only admin.'.format(contributor.username))
+        if not self.has_multiple_admins(node):
+            # has only one admin
+            admin = self._get_admins(node)[0]
+            if admin == contributor and osf_permissions.ADMIN not in permissions:
+                raise exceptions.ValidationError('{} is the only admin.'.format(contributor.username))
+        node.set_permissions(contributor, permissions=permissions, save=True)
+
+    def _get_admins(self, node):
+        return [
+            contributor for contributor in node.contributors
+            if node.has_permission(contributor, osf_permissions.ADMIN)
+        ]
 
     # created due to issues node.admin_contributor_ids not working
     def has_multiple_admins(self, node):
-        has_admin = False
-        for contributor in node.contributors:
-            if node.has_permission(contributor, 'admin'):
-                if has_admin:
-                    return True
-                has_admin = True
-        return False
-
+        return len(self._get_admins(node)) >= 2
 
 class NodeLinksSerializer(JSONAPISerializer):
 
-    id = ser.CharField(read_only=True, source='_id')
+    id = ser.CharField(read_only=True, source='_id', label='ID')
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
     title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
                                                                          'points to')
@@ -282,7 +283,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 
 class NodeFilesSerializer(JSONAPISerializer):
 
-    id = ser.SerializerMethodField()
+    id = ser.SerializerMethodField(label='ID')
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
     item_type = ser.CharField(read_only=True)

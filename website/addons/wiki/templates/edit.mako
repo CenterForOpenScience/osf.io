@@ -81,7 +81,7 @@
                             <div class="pull-right">
                                 <!-- Version Picker -->
                                 <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
-                                    % if user['can_edit']:
+                                    % if user['can_edit_wiki_body']:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                     % endif
                                     <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
@@ -242,16 +242,14 @@
 </div>
 
 <div class="modal fade" id="renameModal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title">Wiki content has moved</h3>
-      </div>
-      <div class="modal-body">
-        <p>Your browser should refresh shortly&hellip;</p>
-      </div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="spinner-loading-wrapper">
+                <div class="logo-spin logo-xl"></div>
+                 <p class="m-t-sm fg-load-message"> Renaming wiki...  </p>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <div class="modal fade" id="deleteModal" tabindex="-1">

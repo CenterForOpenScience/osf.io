@@ -196,7 +196,7 @@ class TestApplicationDetail(ApiTestCase):
         mock_method.return_value(True)
         res = self.app.delete(self.user1_app_url, auth=self.user1.auth)
         self.user1_app.reload()
-        assert_false(self.user1_app.active)
+        assert_false(self.user1_app.is_active)
 
     def tearDown(self):
         super(TestApplicationDetail, self).tearDown()
