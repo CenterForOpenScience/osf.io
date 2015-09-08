@@ -23,7 +23,7 @@ ADDON_PATH = os.path.join(BASE_PATH, 'addons')
 STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
-ASSET_BASE_URL = ''
+ASSET_BASE_URL = ''  # e.g. '//staging2-osf.scdn5.secure.raxcdn.com'
 ROOT = os.path.join(BASE_PATH, '..')
 BCRYPT_LOG_ROUNDS = 12
 
