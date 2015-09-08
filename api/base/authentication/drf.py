@@ -50,8 +50,11 @@ class OSFBasicAuthentication(BasicAuthentication):
             raise exceptions.NotAuthenticated()
         return (user, None)
 
-    # Returns custom value other than "Basic" to prevent BasicAuth dialog prompt when returning 401
+
     def authenticate_header(self, request):
+        """
+        Returns custom value other than "Basic" to prevent BasicAuth dialog prompt when returning 401
+        """
         return 'Documentation realm="%s"' % self.www_authenticate_realm
 
 class OSFCASAuthentication(authentication.BaseAuthentication):
