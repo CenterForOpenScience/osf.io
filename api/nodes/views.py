@@ -76,6 +76,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         query = self.get_query_from_request()
         return Node.find(query)
 
+    # overrides ListCreateAPIView
     def get_serializer(self, *args, **kwargs):
         if "data" in kwargs:
             data = kwargs["data"]
