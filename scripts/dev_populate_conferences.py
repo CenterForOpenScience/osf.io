@@ -2,30 +2,17 @@
 # encoding: utf-8
 
 import os
-import sys
-
-import argparse
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
-from framework.auth.core import User
-
-from website import settings
 from website.app import init_app
 from website.conferences.model import Conference
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description='Create conferences with a specified admin email.')
-    parser.add_argument('-u', '--user', dest='user', required=True)
-    return parser.parse_args()
-
-
 def main():
-    args = parse_args()
     init_app(set_backends=True, routes=False)
-    populate_conferences(args.user)
+    populate_conferences()
 
 
 MEETING_DATA = {
@@ -437,16 +424,10 @@ MEETING_DATA = {
 }
 
 
-def populate_conferences(email):
+def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
-        admin_objs = []
-        try:
-            user = User.find_one(Q('username', 'iexact', email))
-            admin_objs.append(user)
-        except ModularOdmException:
-            raise RuntimeError('Username {0!r} is not registered.'.format(email))
         conf = Conference(
-            endpoint=meeting, admins=admin_objs, **attrs
+            endpoint=meeting, **attrs
         )
         try:
             conf.save()
@@ -455,7 +436,6 @@ def populate_conferences(email):
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
                 setattr(conf, key, value)
-            conf.admins = admin_objs
             conf.save()
 
 
