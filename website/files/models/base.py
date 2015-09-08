@@ -395,7 +395,7 @@ class FileNode(object):
 
 class File(FileNode):
     is_file = True
-    version_idenifier = 'revision'  # For backwards compatability
+    version_identifier = 'revision'  # For backwards compatability
 
     def get_version(self, revision, required=False):
         """Find a version with identifier revision
@@ -431,7 +431,7 @@ class File(FileNode):
         :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
         """
         # For backwards compatability
-        revision = revision or kwargs.get(self.version_idenifier)
+        revision = revision or kwargs.get(self.version_identifier)
 
         version = self.get_version(revision)
         # Versions do not change. No need to refetch what we already know

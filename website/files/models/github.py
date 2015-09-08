@@ -13,4 +13,4 @@ class GithubFolder(GithubFileNode, Folder):
 
 
 class GithubFile(GithubFileNode, File):
-    version_idenifier = 'ref'
+    version_identifier = 'ref'

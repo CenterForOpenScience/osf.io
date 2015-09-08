@@ -12,4 +12,4 @@ class S3Folder(S3FileNode, Folder):
 
 
 class S3File(S3FileNode, File):
-    version_idenifier = 'version'
+    version_identifier = 'version'
