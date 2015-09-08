@@ -249,7 +249,7 @@ class AddonFileMoved(ComplexFileEvent):
         source = self.payload['source']['materialized'].rstrip('/').split('/')
         destination = self.payload['destination']['materialized'].rstrip('/').split('/')
 
-        if source[:-1] == destination[:-1]:
+        if self.node == self.source_node and source[:-1] == destination[:-1]:
             return 'renamed {kind} "<b>{source_name}</b>" to "<b>{destination_name}</b>".'.format(
                 kind=self.payload['destination']['kind'],
                 source_name=self.payload['source']['materialized'],
