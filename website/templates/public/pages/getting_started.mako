@@ -3,7 +3,7 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-    <link rel="stylesheet" href="/static/css/pages/getting-started-page.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/css/pages/getting-started-page.css">
 </%def>
 
 <%def name="content()">
@@ -165,5 +165,5 @@
     </div>
 </div>
 
-<script type="text/javascript" src="/static/vendor/youtube/youtube-loader.js"></script>
+<script type="text/javascript" src="${asset_base_url}/static/vendor/youtube/youtube-loader.js"></script>
 </%def>

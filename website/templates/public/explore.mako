@@ -5,7 +5,7 @@
     %if use_cdn:
     <script src="//cdnjs.cloudflare.com/ajax/libs/d3/3.2.2/d3.v3.min.js"></script>
     %else:
-    <script src="/static/vendor/d3/d3.v3.min.js"></script>
+    <script src="${asset_base_url}/static/vendor/d3/d3.v3.min.js"></script>
     %endif
 </%def>
 <%def name="content()">
@@ -52,7 +52,7 @@ var svg = d3.select("div#chart").append("svg")
     .attr("width", width)
     .attr("height", height);
 
-d3.json("/static/nodes_20140131.json", function(error, graph) {
+d3.json("${asset_base_url}/static/nodes_20140131.json", function(error, graph) {
   force
       .nodes(graph.nodes)
       .links(graph.links)

@@ -4,7 +4,7 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-    <link rel="stylesheet" href="/static/css/pages/wiki-page.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/css/pages/wiki-page.css">
 </%def>
 ## Use full page width
 <%def name="container_class()">container-xxl</%def>
@@ -381,5 +381,5 @@ ${parent.javascript_bottom()}
 </script>
 <script src="//${sharejs_url}/text.js"></script>
 <script src="//${sharejs_url}/share.js"></script>
-<script src=${"/static/public/js/wiki-edit-page.js" | webpack_asset}></script>
+<script src="${asset_base_url}${'/static/public/js/wiki-edit-page.js' | webpack_asset}"></script>
 </%def>

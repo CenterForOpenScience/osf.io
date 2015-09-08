@@ -70,6 +70,7 @@ def get_globals():
         'sanitize': sanitize,
         'js_str': lambda x: x.replace("'", r"\'").replace('"', r'\"'),
         'sjson': lambda s: sanitize.safe_json(s),
+        'asset_base_url': settings.ASSET_BASE_URL,
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),

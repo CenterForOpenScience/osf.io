@@ -22,7 +22,7 @@
 % if not node['piwik_site_id']:
     <div class="row m-lg">
         <div class="col-xs-12 text-center">
-            <img src="/static/img/no_analytics.png">
+            <img src="${asset_base_url}/static/img/no_analytics.png">
         </div>
     </div>
 % else:

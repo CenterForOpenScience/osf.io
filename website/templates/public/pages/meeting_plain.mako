@@ -8,8 +8,8 @@
     ${globals.includes_top()}
 
     % if sentry_dsn_js:
-    <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
-    <script src="/static/vendor/bower_components/raven-js/plugins/jquery.js"></script>
+    <script src="${asset_base_url}/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
+    <script src="${asset_base_url}/static/vendor/bower_components/raven-js/plugins/jquery.js"></script>
     <script>
         Raven.config('${ sentry_dsn_js }', {}).install();
     </script>
@@ -29,7 +29,7 @@
     </script>
     % endif
 
-    <script src="${"/static/public/js/vendor.js" | webpack_asset}"></script>
+    <script src="${asset_base_url}${'/static/public/js/vendor.js' | webpack_asset}"></script>
 
     % for url in globals.javascript_bottom():
         <script src="${url}"></script>
@@ -52,7 +52,7 @@
             $('#submit').slideToggle();
         })
     </script>
-    <script src=${"/static/public/js/conference-page.js" | webpack_asset}></script>
+    <script src="${asset_base_url}${'/static/public/js/conference-page.js' | webpack_asset}"></script>
 </body>
 
 </html>

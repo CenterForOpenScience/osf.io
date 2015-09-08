@@ -25,7 +25,7 @@ You have not created any Badges.
     New Badge
   </button>
 
-<script type="text/javascript" src="/static/vendor/dropzone/dropzone.js"></script>
+<script type="text/javascript" src="${asset_base_url}/static/vendor/dropzone/dropzone.js"></script>
 <script type="text/javascript">
 //TODO Make bootbox into a form? [with submit]
 //TODO Image uploading

@@ -174,7 +174,7 @@
     </div><!-- end col-md -->
 </div><!-- end row -->
 
-<link rel="stylesheet" href="/static/css/pages/contributor-page.css">
+<link rel="stylesheet" href="${asset_base_url}/static/css/pages/contributor-page.css">
 
 <script id="contribTpl" type="text/html">
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
@@ -264,6 +264,6 @@
       window.contextVars.adminContributors = ${ adminContributors | sjson, n };
 
     </script>
-    <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>
+    <script src="${asset_base_url}${'/static/public/js/sharing-page.js' | webpack_asset}"></script>
 
 </%def>

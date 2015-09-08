@@ -3,8 +3,8 @@
 
 <%def name="stylesheets()">
    ${parent.stylesheets()}
-   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>
-   <link rel="stylesheet" href='/static/css/user-addon-settings.css'>
+   <link rel="stylesheet" href="${asset_base_url}/static/css/pages/account-setting-page.css">
+   <link rel="stylesheet" href="${asset_base_url}/static/css/user-addon-settings.css">
 </%def>
 
 <%def name="content()">
@@ -65,7 +65,7 @@
    <script type="text/javascript">
         window.contextVars = $.extend({}, window.contextVars, {'addonEnabledSettings': ${ addon_enabled_settings | sjson, n }});
     </script>
-    <script src="${"/static/public/js/profile-settings-addons-page.js" | webpack_asset}"></script>
+    <script src="${asset_base_url}${'/static/public/js/profile-settings-addons-page.js' | webpack_asset}"></script>
 
     ## Webpack bundles
     % for js_asset in addons_js:

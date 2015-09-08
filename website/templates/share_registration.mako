@@ -15,5 +15,5 @@
             }
         });
     </script>
-    <script src=${"/static/public/js/share-embed-page.js" | webpack_asset}></script>
+    <script src="${asset_base_url}${'/static/public/js/share-embed-page.js' | webpack_asset}"></script>
 </%def>

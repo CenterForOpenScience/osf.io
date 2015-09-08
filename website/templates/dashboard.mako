@@ -88,7 +88,7 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-    <link rel="stylesheet" href="/static/css/pages/dashboard-page.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/css/pages/dashboard-page.css">
 </%def>
 
 <%def name="javascript_bottom()">
@@ -99,6 +99,6 @@
         }
     });
 </script>
-<script src=${"/static/public/js/dashboard-page.js" | webpack_asset}></script>
+<script src="${'/static/public/js/dashboard-page.js' | webpack_asset}"></script>
 
 </%def>

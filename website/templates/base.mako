@@ -14,8 +14,8 @@
     <meta name="fragment" content="!">
 
     % if sentry_dsn_js:
-    <script src="/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
-    <script src="/static/vendor/bower_components/raven-js/plugins/jquery.js"></script>
+    <script src="${asset_base_url}/static/vendor/bower_components/raven-js/dist/raven.min.js"></script>
+    <script src="${asset_base_url}/static/vendor/bower_components/raven-js/plugins/jquery.js"></script>
     <script>
         Raven.config(${ sentry_dsn_js | sjson, n }, {}).install();
     </script>
@@ -36,14 +36,14 @@
     % endif
 
     <!-- Facebook display -->
-    <meta name="og:image" content="http://centerforopenscience.org/static/img/cos_center_logo_small.png"/>
+    <meta name="og:image" content="${asset_base_url}/static/img/cos_center_logo_small.png"/>
     <meta name="og:title" content="${self.title()}"/>
     <meta name="og:ttl" content="3"/>
     <meta name="og:description" content="${self.og_description()}"/>
 
     ${includes_top()}
     ${self.stylesheets()}
-    <script src="${"/static/public/js/base-page.js" | webpack_asset}"></script>
+    <script src="${asset_base_url}${'/static/public/js/base-page.js' | webpack_asset}"></script>
     ${self.javascript()}
 
     <link href='//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One' rel='stylesheet' type='text/css'>
@@ -74,7 +74,7 @@
     <div class="container">
         <div class="row">
             <div class='col-sm-2 hidden-xs'>
-                <img class="logo" src="/static/img/circle_logo.png">
+                <img class="logo" src="${asset_base_url}/static/img/circle_logo.png">
             </div>
             <div class='col-sm-10 col-xs-12'>
                 <a data-bind="click: dismiss" class="close" href="#">&times;</a>
@@ -247,24 +247,24 @@
 
     <!-- Le styles -->
     ## TODO: Get fontawesome and select2 to play nicely with webpack
-    <link rel="stylesheet" href="/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/static/vendor/bower_components/select2/select2.css">
-    <link rel="stylesheet" href="/static/vendor/bower_components/osf-style/css/base.css">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/vendor/bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/vendor/bower_components/select2/select2.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/vendor/bower_components/osf-style/css/base.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/css/style.css">
 
     % if settings.USE_CDN_FOR_CLIENT_LIBS:
         <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
-        <script>window.jQuery || document.write('<script src="/static/vendor/bower_components/jquery/dist/jquery.min.js">\x3C/script>')</script>
+        <script>window.jQuery || document.write('<script src="${asset_base_url}/static/vendor/bower_components/jquery/dist/jquery.min.js">\x3C/script>')</script>
         <script src="//code.jquery.com/ui/1.10.3/jquery-ui.min.js"></script>
-        <script>window.jQuery.ui || document.write('<script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
+        <script>window.jQuery.ui || document.write('<script src="${asset_base_url}/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js">\x3C/script>')</script>
     % else:
-        <script src="/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
-        <script src="/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js"></script>
+        <script src="${asset_base_url}/static/vendor/bower_components/jquery/dist/jquery.min.js"></script>
+        <script src="${asset_base_url}/static/vendor/bower_components/jquery-ui/ui/minified/jquery-ui.min.js"></script>
     % endif
 
     ## NOTE: We load vendor bundle  at the top of the page because contains
     ## the webpack runtime and a number of necessary stylesheets which should be loaded before the user sees
     ## content.
-    <script src="${'/static/public/js/vendor.js' | webpack_asset}"></script>
+    <script src="${asset_base_url}${'/static/public/js/vendor.js' | webpack_asset}"></script>
 
 </%def>

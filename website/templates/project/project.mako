@@ -341,7 +341,7 @@
     <link rel='stylesheet' href='${stylesheet}' type='text/css' />
     % endfor
 
-    <link rel="stylesheet" href="/static/css/pages/project-page.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/css/pages/project-page.css">
 </%def>
 
 <%def name="javascript_bottom()">
@@ -368,7 +368,7 @@ ${parent.javascript_bottom()}
     });
 </script>
 
-<script src="${"/static/public/js/project-dashboard.js" | webpack_asset}"></script>
+<script src="${asset_base_url}${'/static/public/js/project-dashboard.js' | webpack_asset}"></script>
 
 % for asset in addon_widget_js:
 <script src="${asset | webpack_asset}"></script>

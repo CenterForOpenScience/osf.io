@@ -5,7 +5,7 @@
 
 <%def name="stylesheets()">
    ${parent.stylesheets()}
-   <link rel="stylesheet" href='/static/css/pages/account-setting-page.css'>
+   <link rel="stylesheet" href='${asset_base_url}/static/css/pages/account-setting-page.css'>
 </%def>
 
 <%def name="content()">
@@ -131,7 +131,7 @@
             </div>
         </div>
     </div>
-    <script src=${"/static/public/js/profile-account-settings-page.js" | webpack_asset}></script>
+    <script src="${asset_base_url}${'/static/public/js/profile-account-settings-page.js' | webpack_asset}"></script>
 </%def>
 
 <%def name="stylesheets()">

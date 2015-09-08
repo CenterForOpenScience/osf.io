@@ -16,8 +16,8 @@
           </a>
       </span>
       <!-- /ko -->
-      <a class="navbar-brand hidden-sm hidden-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> Open Science Framework</a>
-      <a class="navbar-brand visible-sm visible-xs" href="/"><img src="/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> OSF</a>
+      <a class="navbar-brand hidden-sm hidden-xs" href="/"><img src="${asset_base_url}/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> Open Science Framework</a>
+      <a class="navbar-brand visible-sm visible-xs" href="/"><img src="${asset_base_url}/static/img/cos-white2.png" class="osf-navbar-logo" width="27" alt="COS logo"/> OSF</a>
     </div>
     <div id="navbar" class="navbar-collapse collapse navbar-right">
       <ul class="nav navbar-nav">

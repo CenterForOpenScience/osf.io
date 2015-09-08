@@ -52,5 +52,5 @@
     <div class="help-block">No ${pluralized_node_type} to display.</div>
 % endif
 % if not skipBindings:
-    <script src=${"/static/public/js/render-nodes.js" | webpack_asset}></script>
+    <script src="${asset_base_url}${'/static/public/js/render-nodes.js' | webpack_asset}"></script>
 % endif

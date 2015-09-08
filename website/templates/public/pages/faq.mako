@@ -2,7 +2,7 @@
 <%def name="title()">FAQ</%def>
 
 <%def name="stylesheets()">
-    <link rel="stylesheet" href="/static/css/pages/getting-started-page.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/css/pages/getting-started-page.css">
 </%def>
 
 <%def name="content()">

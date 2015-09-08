@@ -25,7 +25,7 @@
     % for script in tree_js:
         <script type="text/javascript" src="${script | webpack_asset}"></script>
     % endfor
-    <script src=${"/static/public/js/files-page.js" | webpack_asset}></script>
+    <script src="${asset_base_url}${'/static/public/js/files-page.js' | webpack_asset}"></script>
     <script type="text/javascript">
         window.contextVars = window.contextVars || {};
         % if 'write' in user['permissions'] and not node['is_registration']:

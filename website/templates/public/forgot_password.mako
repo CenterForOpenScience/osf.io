@@ -31,5 +31,5 @@
 </%def>
 
 <%def name="javascript_bottom()">
-    <script src=${"/static/public/js/forgotpassword-page.js" | webpack_asset}></script>
+    <script src="${asset_base_url}${'/static/public/js/forgotpassword-page.js' | webpack_asset}"></script>
 </%def>

@@ -2,7 +2,7 @@
 <div id='dropboxAddonScope' class='addon-settings scripted'>
 
     <h4 class="addon-title">
-      <img class="addon-icon" src="${addon_icon_url}"></img>
+      <img class="addon-icon" src="${addon_icon_url}">
         Dropbox
         <!-- Delete Access Token Button -->
         <small class="authorized-by">

@@ -29,15 +29,15 @@
 
 <%def name="javascript_bottom()">
 
-<script src="/static/vendor/citeproc-js/xmldom.js"></script>
-<script src="/static/vendor/citeproc-js/citeproc.js"></script>
+<script src="${asset_base_url}/static/vendor/citeproc-js/xmldom.js"></script>
+<script src="${asset_base_url}/static/vendor/citeproc-js/citeproc.js"></script>
 
 <script>
 
     ## TODO: Move this logic into badges add-on
     % if 'badges' in addons_enabled and badges and badges['can_award']:
     ## TODO: port to commonjs
-    ## $script(['/static/addons/badges/badge-awarder.js'], function() {
+    ## $script(['${asset_base_url}/static/addons/badges/badge-awarder.js'], function() {
     ##     attachDropDown('${'{}badges/json/'.format(user_api_url)}');
     ## });
     % endif
@@ -98,9 +98,9 @@
     });
 </script>
 <script type="text/javascript"
-    src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+    src="${asset_base_url}/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 
 ## NOTE: window.contextVars must be set before loading this script
-<script src=${"/static/public/js/project-base-page.js" | webpack_asset}> </script>
+<script src="${asset_base_url}${'/static/public/js/project-base-page.js' | webpack_asset}"> </script>
 </%def>

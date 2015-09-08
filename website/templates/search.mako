@@ -2,7 +2,7 @@
 <%def name="title()">Search</%def>
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-    <link rel="stylesheet" href="/static/css/pages/search-page.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/css/pages/search-page.css">
 </%def>
 
 <%def name="content()">
@@ -171,7 +171,7 @@
                     </li>
                     <li data-bind="visible: social.scholar">
                         <a data-bind="attr.href: social.scholar">
-                            <img class="social-icons" src="/static/img/googlescholar.png"data-toggle="tooltip" title="Google Scholar">
+                            <img class="social-icons" src="${asset_base_url}/static/img/googlescholar.png" data-toggle="tooltip" title="Google Scholar">
                         </a>
                     </li>
                     <li data-bind="visible: social.impactStory">
@@ -291,7 +291,7 @@
         });
     </script>
 
-    <script src=${"/static/public/js/search-page.js" | webpack_asset}></script>
+    <script src="${asset_base_url}${'/static/public/js/search-page.js' | webpack_asset}"></script>
 
 
 </%def>

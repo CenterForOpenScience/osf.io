@@ -368,7 +368,7 @@
 <%def name="stylesheets()">
     ${parent.stylesheets()}
 
-    <link rel="stylesheet" href="/static/css/pages/project-page.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/css/pages/project-page.css">
 </%def>
 
 
@@ -381,7 +381,7 @@
       window.contextVars.nodeCategories = ${ categories | sjson, n };
     </script>
 
-    <script type="text/javascript" src=${"/static/public/js/project-settings-page.js" | webpack_asset}></script>
+    <script type="text/javascript" src="${asset_base_url}${'/static/public/js/project-settings-page.js' | webpack_asset}"></script>
 
     % for js_asset in addon_js:
     <script src="${js_asset | webpack_asset}"></script>

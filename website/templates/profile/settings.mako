@@ -92,5 +92,5 @@
         crud: ${ api_url_for('serialize_schools') | sjson, n }
     };
 </script>
-<script src=${"/static/public/js/profile-settings-page.js" | webpack_asset}></script>
+<script src="${asset_base_url}${'/static/public/js/profile-settings-page.js' | webpack_asset}"></script>
 </%def>

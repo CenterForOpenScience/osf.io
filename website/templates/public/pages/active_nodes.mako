@@ -4,7 +4,7 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-    <link rel="stylesheet" href="/static/css/pages/public-activity-page.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/css/pages/public-activity-page.css">
 </%def>
 
 <%def name="content()">

@@ -7,7 +7,7 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-    <link rel="stylesheet" href="/static/vendor/bower_components/hgrid/dist/hgrid.min.css" />
+    <link rel="stylesheet" href="${asset_base_url}/static/vendor/bower_components/hgrid/dist/hgrid.min.css" />
 </%def>
 
 <%def name="javascript_bottom()">
@@ -22,5 +22,5 @@
         })
 
     </script>
-    <script src=${"/static/public/js/conference-page.js" | webpack_asset}></script>
+    <script src="${asset_base_url}${'/static/public/js/conference-page.js' | webpack_asset}"></script>
 </%def>

@@ -2,14 +2,14 @@
 <%def name="title()">${profile["fullname"]}</%def>
 <%def name="stylesheets()">
    ${parent.stylesheets()}
-   <link rel="stylesheet" href='/static/css/pages/profile-page.css'>
+   <link rel="stylesheet" href='${asset_base_url}/static/css/pages/profile-page.css'>
 </%def>
 
 <%def name="javascript_bottom()">
 % if user['is_profile']:
     <%include file="profile/modal_change_avatar.mako"/>
 % endif
-<script src=${"/static/public/js/profile-page.js" | webpack_asset}></script>
+<script src="${asset_base_url}${'/static/public/js/profile-page.js' | webpack_asset}"></script>
 
 </%def>
 

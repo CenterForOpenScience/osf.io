@@ -39,7 +39,7 @@
           <div class="row">
             <div class="col-sm-6 hidden-xs">
               <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw"><i class="icon icon-play"></i></a>
-              <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
+              <img src="${asset_base_url}/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
             <div class="col-sm-6">
               <h2>Free. Get started today.</h2>
@@ -148,30 +148,30 @@
         </div>
         <div class="row integrations">
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/dropbox.png" class="img-responsive" alt="Dropbox logo" />
+            <img src="${asset_base_url}/static/img/front-page/dropbox.png" class="img-responsive" alt="Dropbox logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/github.png" class="img-responsive" alt="Github logo" />
+            <img src="${asset_base_url}/static/img/front-page/github.png" class="img-responsive" alt="Github logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/amazon.png" class="img-responsive" alt="Amazon S3 logo" />
+            <img src="${asset_base_url}/static/img/front-page/amazon.png" class="img-responsive" alt="Amazon S3 logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/box.png" class="img-responsive" alt="Box logo" />
+            <img src="${asset_base_url}/static/img/front-page/box.png" class="img-responsive" alt="Box logo" />
           </div>
       </div>
       <div class="row integrations">
           <div class="col-sm-3 col-xs-6">
-           <img src="/static/img/front-page/google.png" class="img-responsive"  alt="Google Drive logo" />
+           <img src="${asset_base_url}/static/img/front-page/google.png" class="img-responsive"  alt="Google Drive logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/figshare.png" class="img-responsive" alt="Figshare logo" />
+            <img src="${asset_base_url}/static/img/front-page/figshare.png" class="img-responsive" alt="Figshare logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/dataverse.png" class="img-responsive"  alt="Dataverse logo" />
+            <img src="${asset_base_url}/static/img/front-page/dataverse.png" class="img-responsive"  alt="Dataverse logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/mendeley.png" class="img-responsive" alt="Mendeley logo" />
+            <img src="${asset_base_url}/static/img/front-page/mendeley.png" class="img-responsive" alt="Mendeley logo" />
           </div>
       </div>
 
@@ -248,7 +248,7 @@
 
         <div class="row">
           <div class="col-xs-4 col-md-3">
-            <img src="/static/img/front-page/user2.jpg" class="img-circle img-responsive" alt="Richard Ball" />
+            <img src="${asset_base_url}/static/img/front-page/user2.jpg" class="img-circle img-responsive" alt="Richard Ball" />
           </div>
           <div class="col-xs-8">
             <h3>Making research reproducible &amp; verifiable</h3>
@@ -262,13 +262,13 @@
             <p>The OSF makes version control effortless. My PI, my lab mates, and I have access to previous versions of a file at any time&#151;and the most current version is always readily available.<br/><small><em>Erica Baranski, PhD Student, Social and Personality Psychology Funder Lab, UC Riverside</em></small></em></small></p>
           </div>
           <div class="col-md-3">
-            <img src="/static/img/front-page/user3.jpg" class="img-circle img-responsive" alt="Erica Baranski" />
+            <img src="${asset_base_url}/static/img/front-page/user3.jpg" class="img-circle img-responsive" alt="Erica Baranski" />
           </div>
         </div>
 
         <div class="row hidden-xs hidden-sm">
           <div class="col-md-3">
-            <img src="/static/img/front-page/user4.jpg" class="img-circle img-responsive" alt="Anne Allison" />
+            <img src="${asset_base_url}/static/img/front-page/user4.jpg" class="img-circle img-responsive" alt="Anne Allison" />
           </div>
           <div class="col-md-7">
             <h3>A centralized hub of information</h3>
@@ -313,12 +313,12 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
-    <link rel="stylesheet" href="/static/css/pages/home-page.css">
-    <link rel="stylesheet" href="/static/css/front-page.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/css/pages/home-page.css">
+    <link rel="stylesheet" href="${asset_base_url}/static/css/front-page.css">
 </%def>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    <script src=${"/static/public/js/home-page.js" | webpack_asset}></script>
+    <script src="${asset_base_url}${'/static/public/js/home-page.js' | webpack_asset}"></script>
 </%def>
 

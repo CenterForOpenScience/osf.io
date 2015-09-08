@@ -60,5 +60,5 @@
         window.contextVars.meetings = ${meetings | sjson, n};
         window.contextVars.submissions = ${submissions | sjson, n};
     </script>
-    <script src=${"/static/public/js/meetings-page.js" | webpack_asset}></script>
+    <script src="${asset_base_url}${'/static/public/js/meetings-page.js' | webpack_asset}"></script>
 </%def>

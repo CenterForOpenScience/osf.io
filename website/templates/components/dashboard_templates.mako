@@ -6,7 +6,7 @@
         <div data-bind="css: {'has-success': hasSelectedProject()}" class="form-group ob-input">
             <img
                 data-bind="click: clearSearch, visible: hasSelectedProject()"
-                class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
+                class="ob-clear-button pull-right" src="${asset_base_url}/static/img/close2.png" alt="Clear search">
             <input
             data-bind="projectSearch: {
                             data: data,
@@ -26,7 +26,7 @@
         <div data-bind="css: {'has-success': hasSelectedComponent()}" class="form-group ob-input">
             <img
                 data-bind="click: clearComponentSearch, visible: hasSelectedComponent()"
-                class="ob-clear-button pull-right" src="/static/img/close2.png" alt="Clear search">
+                class="ob-clear-button pull-right" src="${asset_base_url}/static/img/close2.png" alt="Clear search">
             <input
             data-bind="projectSearch: {
                             data: componentURL,
@@ -116,7 +116,7 @@
                         data-bind="attr: {value: progress()}, visible: showProgress()"
                             class="ob-upload-progress" max="100"></progress>
                     <img data-bind="click: clearDropzone"
-                        class="ob-clear-uploads-button pull-right" src="/static/img/close2.png" alt="Clear uploads">
+                        class="ob-clear-uploads-button pull-right" src="${asset_base_url}/static/img/close2.png" alt="Clear uploads">
                 </div>
 
             </div><!-- end col-md -->
