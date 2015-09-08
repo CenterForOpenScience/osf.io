@@ -11,7 +11,7 @@ require('bootstrap-editable');
 
 var ctx = window.contextVars;
 
-var setupEditable = function(elm, data, self) {
+var setupEditable = function(elm, data) {
     var $elm = $(elm);
     var $editable = $elm.find('.link-name');
     $editable.editable({
@@ -145,7 +145,7 @@ function ViewModel(url, nodeIsPublic) {
         var target = $tr.find('.copy-button');
         clipboard(target[0]);
         $tr.find('.remove-private-link').tooltip();
-        setupEditable(elm, data, self);
+        setupEditable(elm, data);
         $('.private-link-list').osfToggleHeight({height: 50});
     };
 
