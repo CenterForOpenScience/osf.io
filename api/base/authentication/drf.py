@@ -50,7 +50,6 @@ class OSFBasicAuthentication(BasicAuthentication):
             raise exceptions.NotAuthenticated()
         return (user, None)
 
-
     def authenticate_header(self, request):
         """
         Returns custom value other than "Basic" to prevent BasicAuth dialog prompt when returning 401
