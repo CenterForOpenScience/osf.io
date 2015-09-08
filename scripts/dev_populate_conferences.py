@@ -6,6 +6,7 @@ import os
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
+from website import settings
 from website.app import init_app
 from website.conferences.model import Conference
 
