@@ -11,7 +11,7 @@ require('bootstrap-editable');
 
 var ctx = window.contextVars;
 
-var setupEditable = function(elm, data) {
+var setupEditable = function(elm, data, self) {
     var $elm = $(elm);
     var $editable = $elm.find('.link-name');
     $editable.editable({
@@ -30,8 +30,8 @@ var setupEditable = function(elm, data) {
             params.pk = data.id;
             return JSON.stringify(params);
         },
-        success: function(response, value) {
-            data.name(value);
+        success: function(response) {
+            data.name(response);
         },
         error: $osf.handleEditableError
     });
@@ -145,7 +145,7 @@ function ViewModel(url, nodeIsPublic) {
         var target = $tr.find('.copy-button');
         clipboard(target[0]);
         $tr.find('.remove-private-link').tooltip();
-        setupEditable(elm, data);
+        setupEditable(elm, data, self);
         $('.private-link-list').osfToggleHeight({height: 50});
     };
 
