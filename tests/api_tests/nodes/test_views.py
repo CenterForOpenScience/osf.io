@@ -416,6 +416,12 @@ class TestNodeBulkCreate(ApiTestCase):
         res = self.app.get(self.url, auth=self.user_one.auth)
         assert_equal(len(res.json['data']), 0)
 
+    def test_bulk_create_100(self):
+        nodes = [self.public_project for i in range(1, 101)]
+        res = self.app.post_json_api(self.url, nodes, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 201)
+        assert_equal(len(res.json['data']), 100)
+
     def test_bulk_create_logged_out(self):
         # Will change from 403 to 401 with Dawn's PR
         res = self.app.post_json_api(self.url, [self.public_project, self.private_project], expect_errors=True)
