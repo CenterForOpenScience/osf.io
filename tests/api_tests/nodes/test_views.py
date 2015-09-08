@@ -407,6 +407,46 @@ class TestNodeBulkCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, [self.public_project, self.private_project], expect_errors=True)
         assert_equal(res.status_code, 403)
 
+class TestNodeBulkUpdate(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeBulkUpdate, self).setUp()
+        self.user = AuthUserFactory()
+
+        self.title = 'Cool Project'
+        self.new_title = 'Super Cool Project'
+        self.description = 'A Properly Cool Project'
+        self.new_description = 'An even cooler project'
+        self.category = 'data'
+
+        self.new_category = 'project'
+
+        self.user_two = AuthUserFactory()
+
+        self.public_project = ProjectFactory(title=self.title,
+                                             description=self.description,
+                                             category=self.category,
+                                             is_public=True,
+                                             creator=self.user)
+        self.public_url = '/{}nodes/'.format(API_BASE)
+
+        self.private_project = ProjectFactory(title=self.title,
+                                              description=self.description,
+                                              category=self.category,
+                                              is_public=False,
+                                              creator=self.user)
+        self.private_url = '/{}nodes/'.format(API_BASE)
+
+    def test_update_public_project_logged_out(self):
+        res = self.app.put_json_api(self.public_url, {
+            'title': self.new_title,
+            'description': self.new_description,
+            'category': self.new_category,
+            'public': True,
+        }, auth=self.user.auth, expect_errors=True)
+        print res
+        assert_equal(res.status_code, 403)
+        assert 'detail' in res.json['errors'][0]
 
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
