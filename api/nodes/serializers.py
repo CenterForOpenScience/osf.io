@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, LinksField, Link, WaterbutlerLink
+from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField
 
 
 class NodeTagField(ser.Field):
@@ -25,45 +25,18 @@ class NodeSerializer(JSONAPISerializer):
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
     filterable_fields = frozenset(['title', 'description', 'public'])
 
-    id = ser.CharField(read_only=True, source='_id')
+    id = ser.CharField(read_only=True, source='_id', label='ID')
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     tags = ser.ListField(child=NodeTagField(), required=False)
+    registration = ser.BooleanField(read_only=True, source='is_registration')
+    collection = ser.BooleanField(read_only=True, source='is_folder')
+    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
 
-    links = LinksField({
-        'html': 'get_absolute_url',
-        'children': {
-            'related': Link('nodes:node-children', kwargs={'node_id': '<pk>'}),
-            'count': 'get_node_count',
-        },
-        'contributors': {
-            'related': Link('nodes:node-contributors', kwargs={'node_id': '<pk>'}),
-            'count': 'get_contrib_count',
-        },
-        'node_links': {
-            'related': Link('nodes:node-pointers', kwargs={'node_id': '<pk>'}),
-            'count': 'get_pointers_count',
-        },
-        'registrations': {
-            'related': Link('nodes:node-registrations', kwargs={'node_id': '<pk>'}),
-            'count': 'get_registration_count',
-        },
-        'files': {
-            'related': Link('nodes:node-files', kwargs={'node_id': '<pk>'})
-        },
-        'parent': {
-            'self': Link('nodes:node-detail', kwargs={'node_id': '<parent_id>'})
-        }
-    })
-    properties = ser.SerializerMethodField(help_text='A dictionary of read-only booleans: registration, collection,'
-                                                     'and dashboard. Collections are special nodes used by the Project '
-                                                     'Organizer to, as you would imagine, organize projects. '
-                                                     'A dashboard is a collection node that serves as the root of '
-                                                     'Project Organizer collections. Every user will always have '
-                                                     'one Dashboard')
+    links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have 'admin' permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
@@ -72,7 +45,24 @@ class NodeSerializer(JSONAPISerializer):
                                                             'public and private nodes. Administrators on a parent '
                                                             'node have implicit read permissions for all child nodes',
                               )
-    # TODO: finish me
+
+    children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
+                                                lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
+
+    contributors = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
+                                                    lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
+
+    files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id',
+                                             link_type='related')
+
+    node_links = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
+                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})
+
+    parent = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='self',
+                                              lookup_url_kwarg='node_id')
+
+    registrations = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
+                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})
 
     class Meta:
         type_ = 'nodes'
@@ -105,15 +95,6 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
-
-    @staticmethod
-    def get_properties(obj):
-        ret = {
-            'registration': obj.is_registration,
-            'collection': obj.is_folder,
-            'dashboard': obj.is_dashboard,
-        }
-        return ret
 
     def create(self, validated_data):
         node = Node(**validated_data)
@@ -173,7 +154,7 @@ class NodeLinksSerializer(JSONAPISerializer):
             pointer = node.add_pointer(pointer_node, auth, save=True)
             return pointer
         except ValueError:
-            raise exceptions.ValidationError('Node Link to node {} already in list'.format(pointer_node._id))
+            raise exceptions.ValidationError('Node link to node {} already in list'.format(pointer_node._id))
 
     def update(self, instance, validated_data):
         pass
@@ -181,7 +162,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 
 class NodeFilesSerializer(JSONAPISerializer):
 
-    id = ser.CharField(read_only=True, source='_id')
+    id = ser.SerializerMethodField()
     provider = ser.CharField(read_only=True)
     path = ser.CharField(read_only=True)
     item_type = ser.CharField(read_only=True)
@@ -193,10 +174,17 @@ class NodeFilesSerializer(JSONAPISerializer):
 
     links = LinksField({
         'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
-        'self_methods': 'valid_self_link_methods',
-        'related': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
-                        query_kwargs={'path': '<path>', 'provider': '<provider>'}),
+        'related': {
+            'href': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
+                    query_kwargs={'path': '<path>', 'provider': '<provider>'}),
+            'meta': {'self_methods': 'valid_self_link_methods'}
+        }
     })
+
+    @staticmethod
+    def get_id(obj):
+        ret = obj['provider'] + obj['path']
+        return ret
 
     @staticmethod
     def valid_self_link_methods(obj):
