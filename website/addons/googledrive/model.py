@@ -123,7 +123,7 @@ class GoogleDriveProvider(ExternalProvider):
         return {
             'provider_id': info['sub'],
             'display_name': info['name'],
-            'profile_url': info['profile']
+            'profile_url': info.get('profile', None)
         }
 
     # TODO: Remove, if not used
