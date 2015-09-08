@@ -10,6 +10,8 @@ import json
 import hashlib
 from datetime import timedelta
 
+from mako.lookup import TemplateLookup
+
 os_env = os.environ
 
 def parent_dir(path):
@@ -48,6 +50,11 @@ DEBUG_MODE = False
 LOG_PATH = os.path.join(APP_PATH, 'logs')
 TEMPLATES_PATH = os.path.join(BASE_PATH, 'templates')
 ANALYTICS_PATH = os.path.join(BASE_PATH, 'analytics')
+
+SPA_CONFIG = {
+    'template_lookup': TemplateLookup(directories=[os.path.join(BASE_PATH, 'static/public/spa')]),
+    'root_template': 'index.html',
+}
 
 CORE_TEMPLATES = os.path.join(BASE_PATH, 'templates/log_templates.mako')
 BUILT_TEMPLATES = os.path.join(BASE_PATH, 'templates/_log_templates.mako')

@@ -28,6 +28,7 @@ _TPL_LOOKUP = TemplateLookup(
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
+        os.path.join(settings.BASE_PATH, 'static/spa/assets'),
     ],
     module_directory='/tmp/mako_modules'
 )

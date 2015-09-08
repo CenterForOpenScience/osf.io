@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="fragment" content="!">
+
+    <title>OSF</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    {{content-for 'head'}}
+
+    <link rel="stylesheet" href="/static/public/spa/assets/vendor.css">
+    <link rel="stylesheet" href="/static/public/spa/assets/spa.css">
+
+    <meta name="og:image" content="http://centerforopenscience.org/static/img/cos_center_logo_small.png"/>
+    <meta name="og:ttl" content="3"/>
+
+    <link href="//fonts.googleapis.com/css?family=Carrois+Gothic|Inika|Patua+One" rel="stylesheet" type="text/css">
+
+    <!-- SPA -->    
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    {{content-for 'head-footer'}}
+  </head>
+  <body>
+    {{content-for 'body'}}
+
+    <script src="/static/public/spa/assets/vendor.js"></script>
+    <script src="/static/public/spa/assets/spa.js"></script>
+
+    {{content-for 'body-footer'}}
+  </body>
+</html>

@@ -37,6 +37,7 @@ from website.addons.base import views as addon_views
 from website.discovery import views as discovery_views
 from website.conferences import views as conference_views
 from website.notifications import views as notification_views
+from website.spa import views as spa_views
 
 def get_globals():
     """Context variables that are available for every template rendered by
@@ -76,6 +77,7 @@ def get_globals():
         'access_token': session.data.get('auth_user_access_token') or '',
         'auth_url': cas.get_login_url(request.url),
         'profile_url': cas.get_profile_url(),
+        'spa_config': settings.SPA_CONFIG
     }
 
 
@@ -173,6 +175,8 @@ def make_url_map(app):
     ### Base ###
 
     process_rules(app, [
+
+        Rule('/spa/', 'get', spa_views.index, OsfWebRenderer('spa_dashboard.mako')),
 
         Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
         Rule('/reproducibility/', 'get',

@@ -90,6 +90,8 @@ src/
 website/mfrtemp/
 docs/_build
 website/static/img/badges
+spa/tmp/*
+spa/bower_components/*
 
 # GUIDS
 scripts/guid_blacklist.txt
