@@ -8,8 +8,8 @@ bucket
 
 <script type="text/html" id="s3_folder_created">
 created folder
-<span class="overflow log-folder">{{ params.path }}</span> in
-bucket {{ params.bucket }} in 
+<span class="overflow log-folder">{{ stripSlash(params.path) }}</span> in
+bucket {{ params.bucket }} in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
@@ -22,7 +22,7 @@ bucket
 </script>
 
 <script type="text/html" id="s3_file_removed">
-removed {{ params.path.endsWith('/') ? 'folder' : 'file' }} <span class="overflow" data-bind="text: params.path"></span> from
+removed {{ pathType(params.path) }} <span class="overflow">{{ stripSlash(params.path) }}</span> from
 bucket
 <span data-bind="text: params.bucket"></span> in
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
@@ -41,13 +41,20 @@ un-selected bucket
 </script>
 
 <script type="text/html" id="s3_node_authorized">
-authorized the Amazon S3 addon for 
+authorized the Amazon S3 addon for
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
 </script>
 
 <script type="text/html" id="s3_node_deauthorized">
-deauthorized the Amazon S3 addon for 
+deauthorized the Amazon S3 addon for
 <a class="log-node-title-link overflow"
     data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+</script>
+
+<script type="text/html" id="s3_node_deauthorized_no_user">
+Amazon S3 addon for
+<a class="log-node-title-link overflow"
+    data-bind="attr: {href: nodeUrl}">{{ nodeTitle }}</a>
+    deauthorized
 </script>

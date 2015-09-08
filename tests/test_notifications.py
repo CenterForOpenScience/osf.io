@@ -41,7 +41,7 @@ class TestNotificationsModels(OsfTestCase):
         self.parent = factories.ProjectFactory(creator=self.user)
         self.node = factories.NodeFactory(creator=self.user, parent=self.parent)
 
-    def test_can_read_children(self):
+    def test_has_permission_on_children(self):
         non_admin_user = factories.UserFactory()
         parent = factories.ProjectFactory()
         parent.add_contributor(contributor=non_admin_user, permissions=['read'])
@@ -53,8 +53,9 @@ class TestNotificationsModels(OsfTestCase):
         sub_component.save()
         sub_component2 = factories.NodeFactory(parent=node)
 
-        has_permission_on_child_node = node.can_read_children(non_admin_user)
-        assert_true(has_permission_on_child_node)
+        assert_true(
+            node.has_permission_on_children(non_admin_user, 'read')
+        )
 
     def test_check_user_has_permission_excludes_deleted_components(self):
         non_admin_user = factories.UserFactory()
@@ -69,8 +70,9 @@ class TestNotificationsModels(OsfTestCase):
         sub_component.save()
         sub_component2 = factories.NodeFactory(parent=node)
 
-        has_permission_on_child_node = node.can_read_children(non_admin_user)
-        assert_false(has_permission_on_child_node)
+        assert_false(
+            node.has_permission_on_children(non_admin_user,'read')
+        )
 
     def test_check_user_does_not_have_permission_on_private_node_child(self):
         non_admin_user = factories.UserFactory()
@@ -79,8 +81,10 @@ class TestNotificationsModels(OsfTestCase):
         parent.save()
         node = factories.NodeFactory(parent=parent, category='project')
         sub_component = factories.NodeFactory(parent=node)
-        has_permission_on_child_node = node.can_read_children(non_admin_user)
-        assert_false(has_permission_on_child_node)
+
+        assert_false(
+            node.has_permission_on_children(non_admin_user,'read')
+        )
 
     def test_check_user_child_node_permissions_false_if_no_children(self):
         non_admin_user = factories.UserFactory()
@@ -88,15 +92,19 @@ class TestNotificationsModels(OsfTestCase):
         parent.add_contributor(contributor=non_admin_user, permissions=['read'])
         parent.save()
         node = factories.NodeFactory(parent=parent, category='project')
-        has_permission_on_child_node = node.can_read_children(non_admin_user)
-        assert_false(has_permission_on_child_node)
+
+        assert_false(
+            node.has_permission_on_children(non_admin_user,'read')
+        )
 
     def test_check_admin_has_permissions_on_private_component(self):
         parent = factories.ProjectFactory()
         node = factories.NodeFactory(parent=parent, category='project')
         sub_component = factories.NodeFactory(parent=node)
-        has_permission_on_child_node = node.can_read_children(parent.creator)
-        assert_true(has_permission_on_child_node)
+
+        assert_true(
+            node.has_permission_on_children(parent.creator,'read')
+        )
 
     def test_check_user_private_node_child_permissions_excludes_pointers(self):
         user = factories.UserFactory()
@@ -104,8 +112,10 @@ class TestNotificationsModels(OsfTestCase):
         pointed = factories.ProjectFactory(contributor=user)
         parent.add_pointer(pointed, Auth(parent.creator))
         parent.save()
-        has_permission_on_child_nodes = parent.can_read_children(user)
-        assert_false(has_permission_on_child_nodes)
+
+        assert_false(
+            parent.has_permission_on_children(user,'read')
+        )
 
 
 class TestSubscriptionView(OsfTestCase):
@@ -410,6 +420,11 @@ class TestNotificationUtils(OsfTestCase):
                     'url': self.project.url,
                 },
                 'kind': 'folder',
+                'nodeType': 'project',
+                'category': 'project',
+                'permissions': {
+                    'view': True,
+                },
                 'children': [
                     {
                         'event': {
@@ -430,6 +445,11 @@ class TestNotificationUtils(OsfTestCase):
                         },
 
                         'kind': 'node',
+                        'nodeType': 'component',
+                        'category': 'hypothesis',
+                        'permissions': {
+                            'view': True,
+                        },
                         'children': [
                             {
                                 'event': {
@@ -457,6 +477,11 @@ class TestNotificationUtils(OsfTestCase):
                 'url': self.node.url,
             },
             'kind': 'node',
+            'nodeType': 'component',
+            'category': 'hypothesis',
+            'permissions': {
+                'view': True,
+            },
             'children': [
                 {
                     'event': {
@@ -487,6 +512,11 @@ class TestNotificationUtils(OsfTestCase):
                     'url': self.project.url,
                 },
                 'kind': 'folder',
+                'nodeType': 'project',
+                'category': 'project',
+                'permissions': {
+                    'view': True,
+                },
                 'children': [
                     {
                         'event': {
@@ -506,6 +536,11 @@ class TestNotificationUtils(OsfTestCase):
                         },
 
                         'kind': 'node',
+                        'nodeType': 'component',
+                        'category': 'hypothesis',
+                        'permissions': {
+                            'view': True,
+                        },
                         'children': [
                             {
                                 'event': {
@@ -527,6 +562,11 @@ class TestNotificationUtils(OsfTestCase):
                         },
 
                         'kind': 'node',
+                        'nodeType': 'component',
+                        'category': 'hypothesis',
+                        'permissions': {
+                            'view': True,
+                        },
                         'children': [
                             {
                                 'event': {
@@ -567,6 +607,11 @@ class TestNotificationUtils(OsfTestCase):
                 'url': project.url,
             },
             'kind': 'folder',
+            'nodeType': 'project',
+            'category': 'project',
+            'permissions': {
+                'view': True,
+            },
             'children': [
                 {
                     'event': {
@@ -602,6 +647,11 @@ class TestNotificationUtils(OsfTestCase):
                     'url': '',
                 },
                 'kind': 'folder',
+                'nodeType': 'project',
+                'category': 'project',
+                'permissions': {
+                    'view': False,
+                },
                 'children': [
                     {
                         'node': {
@@ -611,6 +661,11 @@ class TestNotificationUtils(OsfTestCase):
                         },
 
                         'kind': 'folder',
+                        'nodeType': 'component',
+                        'category': 'hypothesis',
+                        'permissions': {
+                            'view': True,
+                        },
                         'children': [
                             {
                                 'event': {
@@ -772,6 +827,54 @@ class TestSendEmails(OsfTestCase):
             event_name='comments'
         )
         self.node_subscription.save()
+
+    def test_email_transactional_sent_without_errors(self):
+
+        users = [factories.UserFactory() for i in range(5)]
+        context = dict(
+            gravatar_url=self.user.gravatar_url,
+            content='',
+            target_user=None,
+            parent_comment='',
+            url=self.node.absolute_url
+        )
+        try:
+            emails.email_transactional(
+                [u._id for u in users],
+                self.node._id,
+                'comments',
+                self.user,
+                self.project,
+                datetime.datetime.utcnow(),
+                **context
+            )
+            assert(True)
+        except Exception:
+            assert(False)
+
+    def test_email_digest_sent_without_errors(self):
+
+        users = [factories.UserFactory() for i in range(5)]
+        context = dict(
+            gravatar_url=self.user.gravatar_url,
+            content='',
+            target_user=None,
+            parent_comment='',
+            url=self.node.absolute_url
+        )
+        try:
+            emails.email_digest(
+                [u._id for u in users],
+                self.node._id,
+                'comments',
+                self.user,
+                self.project,
+                datetime.datetime.utcnow(),
+                **context
+            )
+            assert(True)
+        except Exception:
+            assert(False)
 
     @mock.patch('website.notifications.emails.send')
     def test_notify_no_subscription(self, send):
@@ -1201,3 +1304,5 @@ class TestSendDigest(OsfTestCase):
         remove_sent_digest_notifications(digest_notification_ids=[digest_id])
         with assert_raises(NoResultsFound):
             NotificationDigest.find_one(Q('_id', 'eq', digest_id))
+
+            

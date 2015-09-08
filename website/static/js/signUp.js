@@ -26,7 +26,7 @@ var ViewModel = function(submitUrl) {
         email: true,
         validation: {
             validator: function(val, other) {
-                return val === other;
+                return String(val).toLowerCase() === String(other).toLowerCase();
             },
             'message': 'Email addresses must match.',
             params: self.email1
@@ -35,7 +35,7 @@ var ViewModel = function(submitUrl) {
     self.password = ko.observable('').extend({
         required: true,
         minLength: 6,
-        maxLength: 35
+        maxLength: 256
     });
 
     // Preserve object of validated fields for use in `submit`
@@ -71,7 +71,7 @@ var ViewModel = function(submitUrl) {
             self.timeout = setTimeout(
                 function() {
                     message('');
-                    messageClass('text-info');
+                    messageClass('');
                 },
                 timeout
             );
@@ -87,7 +87,7 @@ var ViewModel = function(submitUrl) {
             self.flashMessage,
             self.flashMessageClass,
             response.message,
-            'text-info'
+            'text-info p-xs'
         );
         self.submitted(true);
     };
@@ -97,7 +97,7 @@ var ViewModel = function(submitUrl) {
             self.flashMessage,
             self.flashMessageClass,
             xhr.responseJSON.message_long,
-            'text-danger',
+            'text-danger p-xs',
             5000,
             self.flashTimeout
         );

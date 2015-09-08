@@ -137,8 +137,8 @@ class TestGithubViews(OsfTestCase):
         mock_has_auth.return_value = True
         url = self.project.api_url + 'beforeregister/'
         res = self.app.get(url, auth=self.user.auth).maybe_follow()
-        assert_equal(len(res.json['prompts']), 1)
-
+        assert_true('GitHub' in res.json['prompts'][1])
+        
     def test_get_refs_sha_no_branch(self):
         with assert_raises(HTTPError):
             utils.get_refs(self.node_settings, sha='12345')

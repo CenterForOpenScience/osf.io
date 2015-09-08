@@ -48,7 +48,7 @@ def get_targets():
 
 
 def main(dry=True):
-    init_app(set_backends=True, routes=False, mfr=False)  # Sets the storage backends on all models
+    init_app(set_backends=True, routes=False)  # Sets the storage backends on all models
     do_migration(get_targets(), dry=dry)
 
 

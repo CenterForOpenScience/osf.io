@@ -1,42 +1,45 @@
-## Template for the "Dataverse" section in the "Configure Add-ons" panel
+<!-- Authorization -->
+<div id='dataverseAddonScope' class='addon-settings addon-generic scripted'
+     data-addon-short-name="${ addon_short_name }"
+     data-addon-name="${ addon_full_name }">
 
-<div id='dataverseAddonScope' class='addon-settings scripted'>
+    <%include file="dataverse_credentials_modal.mako"/>
 
     <h4 class="addon-title">
-        Dataverse
-        <span data-bind="if: showDeleteAuth">
-            <small class="authorized-by">
-                authorized
-                    <a data-bind="click: deleteKey" class="text-danger pull-right addon-auth">Delete API Token</a>
-
-            </small>
-        </span>
+        <img class="addon-icon" src=${addon_icon_url}></img>
+        {{ properName }}
+        <small>
+            <a href="#dataverseInputCredentials" data-toggle="modal" class="pull-right text-primary">Connect Account</a>
+        </small>
     </h4>
 
-    <!-- Enter Credentials -->
-    <form data-bind="if: showInputCredentials">
-        <div class="text-info dataverse-settings" data-bind="if: credentialsChanged">
-            Your dataverse credentials may not be valid. Please re-enter your API token.
+    <div class="addon-auth-table" id="${addon_short_name}-header">
+        <!-- ko foreach: accounts -->
+        <a data-bind="click: $root.askDisconnect" class="text-danger pull-right default-authorized-by">Disconnect Account</a>
+        <div class="m-h-lg addon-auth-table" id="${addon_short_name}-header">
+            <table class="table table-hover">
+                <thead>
+                    <tr class="user-settings-addon-auth">
+                        <th class="text-muted default-authorized-by">Authorized on <a data-bind="attr.href: dataverseUrl"><em>{{ dataverseHost }}</em></a></th>
+                    </tr>
+                </thead>
+                <!-- ko if: connectedNodes().length > 0 -->
+                <tbody data-bind="foreach: connectedNodes()">
+                    <tr>
+                        <td class="authorized-nodes">
+                            <!-- ko if: title --><a data-bind="attr.href: urls.view">{{ title }}</a><!-- /ko -->
+                            <!-- ko if: !title --><em>Private project</em><!-- /ko -->
+                        </td>
+                        <td>
+                            <a data-bind="click: $parent.deauthorizeNode">
+                                <i class="fa fa-times text-danger pull-right" title="Deauthorize Project"></i>
+                            </a>
+                        </td>
+                    </tr>
+                </tbody>
+                <!-- /ko -->
+            </table>
         </div>
-        <div class="form-group">
-            <label for="apiToken">
-                API Token
-                <a href="{{urls().apiToken}}"
-                   target="_blank" class="text-muted addon-external-link">
-                    (Get from Dataverse <i class="fa fa-external-link-square"></i>)
-                </a>
-            </label>
-            <input class="form-control" name="apiToken" data-bind="value: apiToken"/>
-        </div>
-        <button data-bind="click: sendAuth" class="btn btn-success">
-            Submit
-        </button>
-    </form>
-
-    <!-- Flashed Messages -->
-    <div class="help-block">
-        <p data-bind="html: message, attr: {class: messageClass}"></p>
+        <!-- /ko -->
     </div>
 </div>
-
-<%include file="profile/addon_permissions.mako" />

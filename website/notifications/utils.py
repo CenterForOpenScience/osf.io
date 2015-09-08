@@ -144,7 +144,7 @@ def format_data(user, node_ids):
         assert node, '{} is not a valid Node.'.format(node_id)
 
         can_read = node.has_permission(user, 'read')
-        can_read_children = node.can_read_children(user)
+        can_read_children = node.has_permission_on_children(user, 'read')
 
         if not can_read and not can_read_children:
             continue
@@ -176,6 +176,11 @@ def format_data(user, node_ids):
             },
             'children': children,
             'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'nodeType': node.project_or_component,
+            'category': node.category,
+            'permissions': {
+                'view': can_read,
+            },
         }
 
         items.append(item)

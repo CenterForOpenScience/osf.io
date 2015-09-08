@@ -1,42 +1,46 @@
 # -*- coding: utf-8 -*-
-import time
-import itertools
-import httplib as http
+
 from collections import Counter
+import httplib as http
+import itertools
+import time
 
 from flask import request
-from modularodm.exceptions import ValidationValueError
+from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework import forms
 from framework import status
-from framework.flask import redirect  # VOL-aware redirect
-from framework.sessions import session
-from framework.auth import authenticate
+from framework.auth import cas
 from framework.auth import User, get_user
-from framework.exceptions import HTTPError
-from framework.auth.signals import user_registered
+from framework.auth.core import generate_confirm_token
 from framework.auth.decorators import collect_auth, must_be_logged_in
 from framework.auth.forms import PasswordForm, SetEmailAndPasswordForm
+from framework.auth.signals import user_registered
+from framework.auth.utils import validate_email
+from framework.exceptions import HTTPError
+from framework.flask import redirect  # VOL-aware redirect
+from framework.sessions import session
 from framework.transactions.handlers import no_auto_transaction
 
 from website import mails
 from website import language
+from website import security
 from website import settings
 from website.models import Node
-from website.profile import utils
-from website.project.model import has_anonymous_link
-from website.util import web_url_for, is_json_request
-from website.project.model import unreg_contributor_added
-from website.util.permissions import expand_permissions, ADMIN
+from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project,
         must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
-
+from website.project.model import has_anonymous_link
+from website.project.signals import unreg_contributor_added, contributor_added
+from website.util import web_url_for, is_json_request
+from website.util.permissions import expand_permissions, ADMIN
+from website.util import sanitize
 
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(retractions_valid=True)
 def get_node_contributors_abbrev(auth, node, **kwargs):
     anonymous = has_anonymous_link(node, auth)
-
+    formatter = 'surname'
     max_count = kwargs.get('max_count', 3)
     if 'user_ids' in kwargs:
         users = [
@@ -57,19 +61,19 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
     for index, user in enumerate(users[:max_count]):
 
         if index == max_count - 1 and len(users) > max_count:
-            separator = '&nbsp;&'
+            separator = ' &'
             others_count = str(n_contributors - 3)
         elif index == len(users) - 1:
             separator = ''
         elif index == len(users) - 2:
-            separator = '&nbsp&'
+            separator = ' &'
         else:
             separator = ','
+        contributor = user.get_summary(formatter)
+        contributor['user_id'] = user._primary_key
+        contributor['separator'] = separator
 
-        contributors.append({
-            'user_id': user._primary_key,
-            'separator': separator,
-        })
+        contributors.append(contributor)
 
     return {
         'contributors': contributors,
@@ -78,7 +82,7 @@ def get_node_contributors_abbrev(auth, node, **kwargs):
 
 
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(retractions_valid=True)
 def get_contributors(auth, node, **kwargs):
 
     # Can set limit to only receive a specified number of contributors in a call to this route
@@ -100,7 +104,7 @@ def get_contributors(auth, node, **kwargs):
     # Limit is either an int or None:
     # if int, contribs list is sliced to specified length
     # if None, contribs list is not sliced
-    contribs = utils.serialize_contributors(
+    contribs = profile_utils.serialize_contributors(
         node.visible_contributors[0:limit],
         node=node,
     )
@@ -128,7 +132,7 @@ def get_contributors_from_parent(auth, node, **kwargs):
         raise HTTPError(http.FORBIDDEN)
 
     contribs = [
-        utils.add_contributor_json(contrib)
+        profile_utils.add_contributor_json(contrib)
         for contrib in parent.visible_contributors
         if contrib._id not in node.visible_contributor_ids
     ]
@@ -159,7 +163,7 @@ def get_most_in_common_contributors(auth, node, **kwargs):
     contrib_objs = [(User.load(_id), count) for _id, count in limited]
 
     contribs = [
-        utils.add_contributor_json(most_contrib, auth.user)
+        profile_utils.add_contributor_json(most_contrib, auth.user)
         for most_contrib, count in sorted(contrib_objs, key=lambda t: (-t[1], t[0].fullname))
     ]
     return {'contributors': contribs}
@@ -187,7 +191,7 @@ def get_recently_added_contributors(auth, node, **kwargs):
     limited_contribs = itertools.islice(active_contribs, max_results)
 
     contribs = [
-        utils.add_contributor_json(contrib, auth.user)
+        profile_utils.add_contributor_json(contrib, auth.user)
         for contrib in limited_contribs
     ]
     return {'contributors': contribs}
@@ -204,6 +208,12 @@ def project_before_remove_contributor(auth, node, **kwargs):
     if not node.has_permission(auth.user, 'admin'):
         if auth.user != contributor:
             raise HTTPError(http.FORBIDDEN)
+
+    if len(node.visible_contributor_ids) == 1 \
+            and node.visible_contributor_ids[0] == contributor._id:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_long': 'Must have at least one bibliographic contributor'
+        })
 
     prompts = node.callback(
         'before_remove_contributor', removed=contributor,
@@ -232,15 +242,21 @@ def project_removecontributor(auth, node, **kwargs):
         if auth.user != contributor:
             raise HTTPError(http.FORBIDDEN)
 
+    if len(node.visible_contributor_ids) == 1 \
+            and node.visible_contributor_ids[0] == contributor._id:
+        raise HTTPError(http.FORBIDDEN, data={
+            'message_long': 'Must have at least one bibliographic contributor'
+        })
+
     outcome = node.remove_contributor(
         contributor=contributor, auth=auth,
     )
 
     if outcome:
         if auth.user == contributor:
-            status.push_status_message('Removed self from project', 'info')
-            return {'redirectUrl': '/dashboard/'}
-        status.push_status_message('Contributor removed', 'info')
+            status.push_status_message('Removed self from project', kind='success', trust=False)
+            return {'redirectUrl': web_url_for('dashboard')}
+        status.push_status_message('Contributor removed', kind='success', trust=False)
         return {}
 
     raise HTTPError(
@@ -256,7 +272,7 @@ def project_removecontributor(auth, node, **kwargs):
     )
 
 
-def deserialize_contributors(node, user_dicts, auth):
+def deserialize_contributors(node, user_dicts, auth, validate=False):
     """View helper that returns a list of User objects from a list of
     serialized users (dicts). The users in the list may be registered or
     unregistered users.
@@ -271,6 +287,7 @@ def deserialize_contributors(node, user_dicts, auth):
     :param Node node: The node to add contributors to
     :param list(dict) user_dicts: List of serialized users in the format above.
     :param Auth auth:
+    :param bool validate: Whether to validate and sanitize fields (if necessary)
     """
 
     # Add the registered contributors
@@ -279,6 +296,16 @@ def deserialize_contributors(node, user_dicts, auth):
         fullname = contrib_dict['fullname']
         visible = contrib_dict['visible']
         email = contrib_dict.get('email')
+
+        if validate is True:
+            # Validate and sanitize inputs as needed. Email will raise error if invalid.
+            # TODO Edge case bug: validation and saving are performed in same loop, so all in list
+            # up to the invalid entry will be saved. (communicate to the user what needs to be retried)
+            fullname = sanitize.strip_html(fullname)
+            if not fullname:
+                raise ValidationValueError('Full name field cannot be empty')
+            if email is not None:
+                validate_email(email)  # Will raise a ValidationError if email invalid
 
         if contrib_dict['id']:
             contributor = User.load(contrib_dict['id'])
@@ -289,6 +316,7 @@ def deserialize_contributors(node, user_dicts, auth):
                     email=email)
                 contributor.save()
             except ValidationValueError:
+                ## FIXME: This suppresses an exception if ID not found & new validation fails; get_user will return None
                 contributor = get_user(email=email)
 
         # Add unclaimed record if necessary
@@ -329,7 +357,11 @@ def project_contributors_post(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     # Prepare input data for `Node::add_contributors`
-    contribs = deserialize_contributors(node, user_dicts, auth=auth)
+    try:
+        contribs = deserialize_contributors(node, user_dicts, auth=auth, validate=True)
+    except ValidationError as e:
+        return {'status': 400, 'message': e.message}, 400
+
     node.add_contributors(contributors=contribs, auth=auth)
     node.save()
 
@@ -339,13 +371,18 @@ def project_contributors_post(auth, node, **kwargs):
     for child_id in node_ids:
         child = Node.load(child_id)
         # Only email unreg users once
-        child_contribs = deserialize_contributors(
-            child, user_dicts, auth=auth
-        )
+        try:
+            child_contribs = deserialize_contributors(
+                child, user_dicts, auth=auth, validate=True
+            )
+        except ValidationError as e:
+            return {'status': 400, 'message': e.message}, 400
+
         child.add_contributors(contributors=child_contribs, auth=auth)
         child.save()
-    # Reconnect listener
+    # Reconnect listeners
     unreg_contributor_added.connect(finalize_invitation)
+
     return {'status': 'success'}, 201
 
 
@@ -377,7 +414,8 @@ def project_manage_contributors(auth, node, **kwargs):
     if not node.is_contributor(auth.user):
         status.push_status_message(
             'You have removed yourself as a contributor from this project',
-            'info'
+            kind='success',
+            trust=False
         )
         if node.is_public:
             return {'redirectUrl': node.url}
@@ -387,7 +425,8 @@ def project_manage_contributors(auth, node, **kwargs):
     if not node.has_permission(auth.user, ADMIN):
         status.push_status_message(
             'You have removed your administrative privileges for this project',
-            'info'
+            kind='success',
+            trust=False
         )
     # Else stay on current page
     return {}
@@ -403,6 +442,15 @@ def throttle_period_expired(timestamp, throttle):
 
 def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
     unclaimed_record = unreg_user.get_unclaimed_record(node._primary_key)
+    # roll the valid token for each email, thus user cannot change email and approve a different email address
+    timestamp = unclaimed_record.get('last_sent')
+    if not throttle_period_expired(timestamp, throttle):
+        raise HTTPError(400, data=dict(
+            message_long='User account can only be claimed with an existing user once every 24 hours'
+        ))
+    unclaimed_record['token'] = generate_confirm_token()
+    unclaimed_record['claimer_email'] = claimer.username
+    unreg_user.save()
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = web_url_for(
         'claim_user_registered',
@@ -411,20 +459,18 @@ def send_claim_registered_email(claimer, unreg_user, node, throttle=24 * 3600):
         token=unclaimed_record['token'],
         _external=True,
     )
-    timestamp = unclaimed_record.get('last_sent')
-    if throttle_period_expired(timestamp, throttle):
-        # Send mail to referrer, telling them to forward verification link to claimer
-        mails.send_mail(
-            referrer.username,
-            mails.FORWARD_INVITE_REGiSTERED,
-            user=unreg_user,
-            referrer=referrer,
-            node=node,
-            claim_url=claim_url,
-            fullname=unclaimed_record['name'],
-        )
-        unclaimed_record['last_sent'] = get_timestamp()
-        unreg_user.save()
+    # Send mail to referrer, telling them to forward verification link to claimer
+    mails.send_mail(
+        referrer.username,
+        mails.FORWARD_INVITE_REGISTERED,
+        user=unreg_user,
+        referrer=referrer,
+        node=node,
+        claim_url=claim_url,
+        fullname=unclaimed_record['name'],
+    )
+    unclaimed_record['last_sent'] = get_timestamp()
+    unreg_user.save()
     # Send mail to claimer, telling them to wait for referrer
     mails.send_mail(
         claimer.username,
@@ -448,32 +494,39 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
         emailed during which the referrer will not be emailed again.
 
     """
-    invited_email = email.lower().strip()
+    claimer_email = email.lower().strip()
 
     unclaimed_record = user.get_unclaimed_record(node._primary_key)
     referrer = User.load(unclaimed_record['referrer_id'])
     claim_url = user.get_claim_url(node._primary_key, external=True)
     # If given email is the same provided by user, just send to that email
-    if unclaimed_record.get('email', None) == invited_email:
+    if unclaimed_record.get('email') == claimer_email:
         mail_tpl = mails.INVITE
-        to_addr = invited_email
+        to_addr = claimer_email
+        unclaimed_record['claimer_email'] = claimer_email
+        user.save()
     else:  # Otherwise have the referrer forward the email to the user
+        # roll the valid token for each email, thus user cannot change email and approve a different email address
+        timestamp = unclaimed_record.get('last_sent')
+        if not throttle_period_expired(timestamp, throttle):
+            raise HTTPError(400, data=dict(
+                message_long='User account can only be claimed with an existing user once every 24 hours'
+            ))
+        unclaimed_record['last_sent'] = get_timestamp()
+        unclaimed_record['token'] = generate_confirm_token()
+        unclaimed_record['claimer_email'] = claimer_email
+        user.save()
+        claim_url = user.get_claim_url(node._primary_key, external=True)
         if notify:
             pending_mail = mails.PENDING_VERIFICATION
             mails.send_mail(
-                invited_email,
+                claimer_email,
                 pending_mail,
                 user=user,
                 referrer=referrer,
                 fullname=unclaimed_record['name'],
                 node=node
             )
-        timestamp = unclaimed_record.get('last_sent')
-        if throttle_period_expired(timestamp, throttle):
-            unclaimed_record['last_sent'] = get_timestamp()
-            user.save()
-        else:  # Don't send the email to the referrer
-            return
         mail_tpl = mails.FORWARD_INVITE
         to_addr = referrer.username
     mails.send_mail(
@@ -483,10 +536,39 @@ def send_claim_email(email, user, node, notify=True, throttle=24 * 3600):
         referrer=referrer,
         node=node,
         claim_url=claim_url,
-        email=invited_email,
+        email=claimer_email,
         fullname=unclaimed_record['name']
     )
     return to_addr
+
+
+@contributor_added.connect
+def notify_added_contributor(node, contributor, throttle=None):
+    throttle = throttle or settings.CONTRIBUTOR_ADDED_EMAIL_THROTTLE
+
+    # Exclude forks and templates because the user forking/templating the project gets added
+    # via 'add_contributor' but does not need to get notified.
+    # Only email users for projects, or for components where they are not contributors on the parent node.
+    if (contributor.is_registered and not node.template_node and not node.is_fork
+            and not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
+        contributor_record = contributor.contributor_added_email_records.get(node._id, {})
+        if contributor_record:
+            timestamp = contributor_record.get('last_sent', None)
+            if timestamp:
+                if not throttle_period_expired(timestamp, throttle):
+                    return
+        else:
+            contributor.contributor_added_email_records[node._id] = {}
+
+        mails.send_mail(
+            contributor.username,
+            mails.CONTRIBUTOR_ADDED,
+            user=contributor,
+            node=node
+        )
+
+        contributor.contributor_added_email_records[node._id]['last_sent'] = get_timestamp()
+        contributor.save()
 
 
 def verify_claim_token(user, token, pid):
@@ -515,15 +597,17 @@ def claim_user_registered(auth, node, **kwargs):
     """
     current_user = auth.user
 
-    sign_out_url = web_url_for('auth_login', logout=True, next=request.path)
+    sign_out_url = web_url_for('auth_login', logout=True, next=request.url)
     if not current_user:
-        response = redirect(sign_out_url)
-        return response
+        return redirect(sign_out_url)
     # Logged in user should not be a contributor the project
     if node.is_contributor(current_user):
-        data = {'message_short': 'Already a contributor',
-                'message_long': 'The logged-in user is already a contributor to '
-                'this project. Would you like to <a href="/logout/">log out</a>?'}
+        logout_url = web_url_for('auth_logout', redirect_url=request.url)
+        data = {
+            'message_short': 'Already a contributor',
+            'message_long': ('The logged-in user is already a contributor to this '
+                'project. Would you like to <a href="{}">log out</a>?').format(logout_url)
+        }
         raise HTTPError(http.BAD_REQUEST, data=data)
     uid, pid, token = kwargs['uid'], kwargs['pid'], kwargs['token']
     unreg_user = User.load(uid)
@@ -544,15 +628,15 @@ def claim_user_registered(auth, node, **kwargs):
                 node.save()
                 status.push_status_message(
                     'You are now a contributor to this project.',
-                    'success')
+                    kind='success')
                 return redirect(node.url)
             else:
-                status.push_status_message(language.LOGIN_FAILED, 'warning')
+                status.push_status_message(language.LOGIN_FAILED, kind='warning', trust=True)
         else:
             forms.push_errors_to_status(form.errors)
     if is_json_request():
         form_ret = forms.utils.jsonify(form)
-        user_ret = utils.serialize_user(current_user, full=False)
+        user_ret = profile_utils.serialize_user(current_user, full=False)
     else:
         form_ret = form
         user_ret = current_user
@@ -579,7 +663,7 @@ def replace_unclaimed_user_with_registered(user):
         node.replace_contributor(old=unreg_user, new=user)
         node.save()
         status.push_status_message(
-            'Successfully claimed contributor.', 'success')
+            'Successfully claimed contributor.', kind='success', trust=False)
 
 
 @collect_auth
@@ -604,30 +688,38 @@ def claim_user_form(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
     # If claim token not valid, redirect to registration page
     if not verify_claim_token(user, token, pid):
-        return redirect('/account/')
+        return redirect(web_url_for('auth_login'))
     unclaimed_record = user.unclaimed_records[pid]
     user.fullname = unclaimed_record['name']
     user.update_guessed_names()
-    email = unclaimed_record['email']
+    # The email can be the original referrer email if no claimer email has been specified.
+    claimer_email = unclaimed_record.get('claimer_email') or unclaimed_record.get('email')
     form = SetEmailAndPasswordForm(request.form, token=token)
     if request.method == 'POST':
         if form.validate():
-            username, password = email, form.password.data
+            username, password = claimer_email, form.password.data
             user.register(username=username, password=password)
             # Clear unclaimed records
             user.unclaimed_records = {}
+            user.verification_key = security.random_string(20)
             user.save()
             # Authenticate user and redirect to project page
-            response = redirect('/settings/')
             node = Node.load(pid)
             status.push_status_message(language.CLAIMED_CONTRIBUTOR.format(node=node),
-                'success')
-            return authenticate(user, response)
+                                       kind='success',
+                                       trust=True)
+            # Redirect to CAS and authenticate the user with a verification key.
+            return redirect(cas.get_login_url(
+                web_url_for('user_profile', _absolute=True),
+                auto=True,
+                username=user.username,
+                verification_key=user.verification_key
+            ))
         else:
             forms.push_errors_to_status(form.errors)
     return {
         'firstname': user.given_name,
-        'email': email if email else '',
+        'email': claimer_email if claimer_email else '',
         'fullname': user.fullname,
         'form': forms.utils.jsonify(form) if is_json_request() else form,
     }
@@ -637,15 +729,24 @@ def claim_user_form(auth, **kwargs):
 @must_have_permission(ADMIN)
 @must_not_be_registration
 def invite_contributor_post(node, **kwargs):
-    """API view for inviting an unregistered user.
+    """API view for inviting an unregistered user. Performs validation, but does not actually invite the user.
+
     Expects JSON arguments with 'fullname' (required) and email (not required).
     """
     fullname = request.json.get('fullname').strip()
     email = request.json.get('email')
+    # Validate and sanitize inputs as needed. Email will raise error if invalid.
+    fullname = sanitize.strip_html(fullname)
     if email:
         email = email.lower().strip()
+        try:
+            validate_email(email)
+        except ValidationError as e:
+            return {'status': 400, 'message': e.message}, 400
+
     if not fullname:
-        return {'status': 400, 'message': 'Must provide fullname'}, 400
+        return {'status': 400, 'message': 'Full name field cannot be empty'}, 400
+
     # Check if email is in the database
     user = get_user(email=email)
     if user:
@@ -656,13 +757,13 @@ def invite_contributor_post(node, **kwargs):
             msg = 'User with this email address is already a contributor to this project.'
             return {'status': 400, 'message': msg}, 400
         else:
-            serialized = utils.add_contributor_json(user)
+            serialized = profile_utils.add_contributor_json(user)
             # use correct display name
             serialized['fullname'] = fullname
             serialized['email'] = email
     else:
         # Create a placeholder
-        serialized = utils.serialize_unregistered(fullname, email)
+        serialized = profile_utils.serialize_unregistered(fullname, email)
     return {'status': 'success', 'contributor': serialized}
 
 
@@ -678,7 +779,7 @@ def claim_user_post(node, **kwargs):
     if 'value' in reqdata:  # Submitted email address
         email = reqdata['value'].lower().strip()
         claimer = get_user(email=email)
-        if claimer:
+        if claimer and claimer.is_registered:
             send_claim_registered_email(claimer=claimer, unreg_user=user,
                 node=node)
         else:

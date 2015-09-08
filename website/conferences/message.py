@@ -66,7 +66,8 @@ class ConferenceMessage(object):
         :return: At least one header indicates spam
         """
         try:
-            sscore_header = float(self.form.get('X-Mailgun-Sscore'))
+            # Mailgun only inserts score headers for messages checked for spam.
+            sscore_header = float(self.form.get('X-Mailgun-Sscore', 0))
         except (TypeError, ValueError):
             return True
         dkim_header = self.form.get('X-Mailgun-Dkim-Check-Result')
@@ -102,7 +103,9 @@ class ConferenceMessage(object):
 
     @cached_property
     def text(self):
-        return self.form['stripped-text']
+        # Not included if there is no message body
+        # https://documentation.mailgun.com/user_manual.html#routes
+        return self.form.get('stripped-text', '')
 
     @cached_property
     def sender(self):

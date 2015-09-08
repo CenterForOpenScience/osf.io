@@ -51,7 +51,7 @@ def googledrive_config_put(node_addon, auth, **kwargs):
     }
 
 @must_be_logged_in
-def list_googledrive_user_accounts(auth):
+def googledrive_user_config_get(auth, **kwargs):
     """View for getting a JSON representation of the logged-in user's
     Google Drive user settings.
     """
@@ -92,3 +92,8 @@ def googledrive_remove_user_auth(node_addon, auth, **kwargs):
             user_settings=user.get_addon('googledrive'),
         ).serialized_node_settings
         return result
+
+@must_be_logged_in
+def list_googledrive_user_accounts(auth):
+    user_addon = auth.user.get_addon('googledrive')
+    return GoogleDriveSerializer(user_settings=user_addon).serialized_user_settings

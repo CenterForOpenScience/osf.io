@@ -23,13 +23,29 @@ from website import settings
 logger = logging.getLogger(__name__)
 
 TEMPLATE_DIR = settings.TEMPLATES_PATH
-_tpl_lookup = TemplateLookup(
+
+_TPL_LOOKUP = TemplateLookup(
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
     ],
     module_directory='/tmp/mako_modules'
 )
+
+_TPL_LOOKUP_SAFE = TemplateLookup(
+    default_filters=[
+        'unicode',  # default filter; must set explicitly when overriding
+        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+        'h',
+    ],
+    imports=['from website.util.sanitize import temp_ampersand_fixer'],  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
+    directories=[
+        TEMPLATE_DIR,
+        os.path.join(settings.BASE_PATH, 'addons/'),
+    ],
+    module_directory='/tmp/mako_modules',
+)
+
 REDIRECT_CODES = [
     http.MOVED_PERMANENTLY,
     http.FOUND,
@@ -166,12 +182,15 @@ def process_rules(app, rules, prefix=''):
 
         # Add routes
         for url in rule.routes:
-            app.add_url_rule(
-                prefix + url,
-                endpoint=endpoint + rule.endpoint_suffix,
-                view_func=wrapped_view_func,
-                methods=rule.methods,
-            )
+            try:
+                app.add_url_rule(
+                    prefix + url,
+                    endpoint=endpoint + rule.endpoint_suffix,
+                    view_func=wrapped_view_func,
+                    methods=rule.methods,
+                )
+            except AssertionError:
+                raise AssertionError('URLRule({}, {})\'s view function name is overwriting an existing endpoint'.format(prefix + url, view_func.__name__ + rule.endpoint_suffix))
 
 
 ### Renderer helpers ###
@@ -184,15 +203,31 @@ def render_jinja_string(tpl, data):
     pass
 
 mako_cache = {}
-def render_mako_string(tpldir, tplname, data):
+def render_mako_string(tpldir, tplname, data, trust=True):
+    """Render a mako template to a string.
+
+    :param tpldir:
+    :param tplname:
+    :param data:
+    :param trust: Optional. If ``False``, markup-save escaping will be enabled
+    """
+
+    # TODO: The "trust" flag is expected to be temporary, and should be removed
+    #       once all templates manually set it to False.
+
+    lookup_obj = _TPL_LOOKUP_SAFE if trust is False else _TPL_LOOKUP
 
     tpl = mako_cache.get(tplname)
     if tpl is None:
+        with open(os.path.join(tpldir, tplname)) as f:
+            tpl_text = f.read()
         tpl = Template(
-            open(os.path.join(tpldir, tplname)).read(),
-            lookup=_tpl_lookup,
+            tpl_text,
+            lookup=lookup_obj,
             input_encoding='utf-8',
             output_encoding='utf-8',
+            default_filters=lookup_obj.template_args['default_filters'],
+            imports=lookup_obj.template_args['imports']  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
         )
     # Don't cache in debug mode
     if not app.debug:
@@ -376,9 +411,10 @@ class WebRenderer(Renderer):
                 )
             )
 
-    def __init__(self, template_name, renderer=None, error_renderer=None,
+    def __init__(self, template_name,
+                 renderer=None, error_renderer=None,
                  data=None, detect_render_nested=True,
-                 template_dir=TEMPLATE_DIR):
+                 trust=True, template_dir=TEMPLATE_DIR):
         """Construct WebRenderer.
 
         :param template_name: Name of template file
@@ -389,12 +425,15 @@ class WebRenderer(Renderer):
                      to add to data from view function
         :param detect_render_nested: Auto-detect renderers for nested
             templates?
+        :param trust: Boolean: If true, turn off markup-safe escaping
         :param template_dir: Path to template directory
 
         """
         self.template_name = template_name
         self.data = data or {}
         self.detect_render_nested = detect_render_nested
+        self.trust = trust
+
         self.template_dir = template_dir
         self.renderer = self.detect_renderer(renderer, template_name)
         self.error_renderer = self.detect_renderer(
@@ -503,7 +542,8 @@ class WebRenderer(Renderer):
         # Catch errors and return appropriate debug divs
         # todo: add debug parameter
         try:
-            rendered = renderer(self.template_dir, template_name, data)
+            # TODO: Seems like Jinja2 and handlebars renderers would not work with this call sig
+            rendered = renderer(self.template_dir, template_name, data, trust=self.trust)
         except IOError:
             return '<div>Template {} not found.</div>'.format(template_name)
 

@@ -10,6 +10,7 @@ from modularodm import fields
 from framework.auth import Auth
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import StorageAddonBase
 
 from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
 
@@ -105,9 +106,7 @@ class DropboxUserSettings(AddonUserSettingsBase):
     def __repr__(self):
         return u'<DropboxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
-
-class DropboxNodeSettings(AddonNodeSettingsBase):
-
+class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     user_settings = fields.ForeignField(
         'dropboxusersettings', backref='authorized'
     )
@@ -118,6 +117,9 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     #: Note: This is unused right now
     registration_data = fields.DictionaryField()
 
+    @property
+    def folder_name(self):
+        return os.path.split(self.folder)[1]
     @property
     def display_name(self):
         return '{0}: {1}'.format(self.config.full_name, self.folder)
@@ -218,24 +220,6 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
     # backwards compatibility
     before_register = before_register_message
 
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return (u'Because you have authorized the Dropbox add-on for this '
-                '{category}, forking it will also transfer your authentication token to '
-                'the forked {category}.').format(category=category)
-
-        else:
-            return (u'Because the Dropbox add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication token to the forked '
-                    '{category}.').format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
-
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
         who authorized the Dropbox addon
@@ -291,7 +275,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
         else:
             message = (
                 u'Dropbox authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href="{url}">Settings</a> '
+                'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                 'page.'
             ).format(
                 url=fork.web_url_for('node_setting'),
@@ -322,7 +306,7 @@ class DropboxNodeSettings(AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message

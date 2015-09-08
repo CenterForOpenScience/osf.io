@@ -25,7 +25,7 @@ def github_create_repo(**kwargs):
     connection = GitHub.from_settings(user_settings)
 
     try:
-        repo = connection.create_repo(repo_name)
+        repo = connection.create_repo(repo_name, auto_init=True)
     except GitHubError:
         # TODO: Check status code
         raise HTTPError(http.BAD_REQUEST)

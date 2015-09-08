@@ -5,10 +5,7 @@
     <div class='row'>
         <div class='col-md-12'>
             <h2 id='error' data-http-status-code="${code}">${message_short}</h2>
-            <p>${message_long}</p>
-            % if referrer:
-                <p><a href="${referrer}">Back</a></p>
-            % endif
+            <p>${ message_long | unicode, n }</p>
         </div>
     </div>
 </div>

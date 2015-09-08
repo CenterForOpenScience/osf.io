@@ -28,14 +28,14 @@ ko.punches.enableAll();
  * @param {String} selector CSS selector for containing div
  * @param {String} folderPicker CSS selector for folderPicker div
  *
- * Notes: 
+ * Notes:
  * - Subclasses of this VM can be created using the oop module like: oop.extend(FolderPickerViewModel, { ... });
  * - Subclasses must:
  *   - provide a VM.messages.submitSettingsSuccess()
  *   - override VM.treebeardOptions.onPickFolder and VM.treebeardOptions.resolveLazyloadUrl
  * - Subclasses can:
  *   - implement an _updateCustomFields method to capture additional parameters in updateFromData
- */    
+ */
 var FolderPickerViewModel = oop.defclass({
     constructor: function(addonName, url, selector, folderpickerSelector) {
         var self = this;
@@ -54,6 +54,8 @@ var FolderPickerViewModel = oop.defclass({
         self.ownerName = ko.observable('');
         // whether the auth token is valid
         self.validCredentials = ko.observable(true);
+        // whether import token has been clicked
+        self.loadingImport = ko.observable(false);
         // current folder
         self.folder = ko.observable({
             name: null,
@@ -81,13 +83,13 @@ var FolderPickerViewModel = oop.defclass({
         self.messages = {
             invalidCredOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
-                    'this time. The ' + self.addonName + ' addon credentials may no longer be valid.' +
-                    ' Try deauthorizing and reauthorizing ' + self.addonName + ' on your <a href="' +
+                    'this time. The credentials associated with this ' + self.addonName + ' account may no longer be valid.' +
+                    ' Try disconnecting and reconnecting the ' + self.addonName + ' account on your <a href="' +
                     self.urls().settings + '">account settings page</a>.';
             }),
             invalidCredNotOwner: ko.pureComputed(function() {
                 return 'Could not retrieve ' + self.addonName + ' settings at ' +
-                    'this time. The ' + self.addonName + ' addon credentials may no longer be valid.' +
+                    'this time. The credentials' + self.addonName + ' addon credentials may no longer be valid.' +
                     ' Contact ' + self.ownerName() + ' to verify.';
             }),
             cantRetrieveSettings: ko.pureComputed(function() {
@@ -102,13 +104,13 @@ var FolderPickerViewModel = oop.defclass({
                     '<a href="mailto:support@osf.io">support@osf.io</a>.';
             }),
             deauthorizeSuccess: ko.pureComputed(function() {
-                return 'Deauthorized ' + self.addonName + '.';
+                return 'Disconnected ' + self.addonName + '.';
             }),
             deauthorizeFail: ko.pureComputed(function() {
-                return 'Could not deauthorize because of an error. Please try again later.';
+                return 'Could not disconnect ' + self.addonName + ' account because of an error. Please try again later.';
             }),
             connectAccountSuccess: ko.pureComputed(function() {
-                return 'Successfully created a ' + self.addonName + ' Access Token';
+                return 'Successfully connected a ' + self.addonName + ' account';
             }),
             submitSettingsSuccess: ko.pureComputed(function() {
                 throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' +
@@ -116,19 +118,19 @@ var FolderPickerViewModel = oop.defclass({
                                 '{PAGE_NAME} to view your {CONTENT_TYPE}.');
             }),
             submitSettingsError: ko.pureComputed(function() {
-                return 'Could not change settings. Please try again later.';
+                return 'Could not change ' + self.addonName + ' settings. Please try again later.';
             }),
             confirmDeauth: ko.pureComputed(function() {
-                return 'Are you sure you want to remove this ' + self.addonName + ' authorization?';
+                return 'Are you sure you want to remove this ' + self.addonName + ' account?';
             }),
             confirmAuth: ko.pureComputed(function() {
-                return 'Are you sure you want to authorize this project with your ' + self.addonName + ' access token?';
+                return 'Are you sure you want to link your ' + self.addonName + ' account with this project?';
             }),
             tokenImportSuccess: ko.pureComputed(function() {
-                return 'Successfully imported access token from profile.';
+                return 'Successfully imported ' + self.addonName + ' account from profile.';
             }),
             tokenImportError: ko.pureComputed(function() {
-                return 'Error occurred while importing access token.';
+                return 'Error occurred while importing ' + self.addonName + ' account.';
             }),
             connectError: ko.pureComputed(function() {
                 return 'Could not connect to ' + self.addonName + ' at this time. Please try again later.';
@@ -143,7 +145,17 @@ var FolderPickerViewModel = oop.defclass({
             var userHasAuth = self.userHasAuth();
             var nodeHasAuth = self.nodeHasAuth();
             var loaded = self.loadedSettings();
-            return userHasAuth && !nodeHasAuth && loaded;
+            var onclick = self.loadingImport();
+            return userHasAuth && !nodeHasAuth && loaded && !onclick;
+        });
+
+        /** Whether or not show loading icon after import button */
+        self.showLoading = ko.pureComputed(function() {
+            var userHasAuth = self.userHasAuth();
+            var nodeHasAuth = self.nodeHasAuth();
+            var loaded = self.loadedSettings();
+            var onclick = self.loadingImport();
+            return userHasAuth && !nodeHasAuth && loaded && onclick;
         });
 
         /** Whether or not to show the full settings pane. */
@@ -151,7 +163,7 @@ var FolderPickerViewModel = oop.defclass({
             return self.nodeHasAuth() && self.validCredentials();
         });
 
-        /** Whether or not to show the Create Access Token button */
+        /** Whether or not to show the Connect Account button */
         self.showTokenCreateButton = ko.pureComputed(function() {
             // Invoke the observables to ensure dependency tracking
             var userHasAuth = self.userHasAuth();
@@ -175,7 +187,7 @@ var FolderPickerViewModel = oop.defclass({
         });
 
         self.treebeardOptions = {
-            lazyLoadPreprocess: function(data) { 
+            lazyLoadPreprocess: function(data) {
                 return data;
             },
             onPickFolder: function() {
@@ -186,8 +198,8 @@ var FolderPickerViewModel = oop.defclass({
             }
         };
     },
-    /** 
-     * Change the flashed message. 
+    /**
+     * Change the flashed message.
      *
      * @param {String} text Text to show
      * @param {String} css CSS class of text to be show, defaults to 'text-info'
@@ -212,7 +224,7 @@ var FolderPickerViewModel = oop.defclass({
     },
     /**
      * Abstract hook called after updateFromData, before the promise is resolved.
-     * - use to validate the VM state after update     
+     * - use to validate the VM state after update
      **/
     afterUpdate: function() {},
     /**
@@ -220,7 +232,7 @@ var FolderPickerViewModel = oop.defclass({
      *
      * @param {Object} settings Settings passed from server response in #updateFromData
      */
-    _updateCustomFields: function(settings) {},  
+    _updateCustomFields: function(settings) {},
     /**
      * Update the view model from data returned from the server or data passed explicitly.
      *
@@ -267,7 +279,7 @@ var FolderPickerViewModel = oop.defclass({
             ret.resolve(response.result);
         });
         request.fail(function(xhr, textStatus, error) {
-            self.changeMessage(self.messages.cantRetrieveSettings(), 'text-warning');
+            self.changeMessage(self.messages.cantRetrieveSettings(), 'text-danger');
             Raven.captureMessage('Could not GET ' + self.addonName + 'settings', {
                 url: self.url,
                 textStatus: textStatus,
@@ -282,7 +294,7 @@ var FolderPickerViewModel = oop.defclass({
     },
     /**
      * Send a PUT request to change the linked folder.
-     */    
+     */
     submitSettings: function() {
         var self = this;
         function onSubmitSuccess(response) {
@@ -320,7 +332,7 @@ var FolderPickerViewModel = oop.defclass({
             xhr: xhr,
             status: status,
             error: error
-        });    
+        });
     },
     _importAuthPayload: function() {
         return {};
@@ -337,11 +349,17 @@ var FolderPickerViewModel = oop.defclass({
     importAuth: function() {
         var self = this;
         bootbox.confirm({
-            title: 'Import ' + self.addonName + ' Access Token?',
+            title: 'Import ' + self.addonName + ' Account?',
             message: self.messages.confirmAuth(),
             callback: function(confirmed) {
                 if (confirmed) {
                     self._importAuthConfirm();
+                    self.loadingImport(true);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Import'
                 }
             }
         });
@@ -360,7 +378,7 @@ var FolderPickerViewModel = oop.defclass({
             self.nodeHasAuth(false);
             self.cancelSelection();
             self.currentDisplay(null);
-            self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);     
+            self.changeMessage(self.messages.deauthorizeSuccess(), 'text-warning', 3000);
             self.loadedFolders(false);
             self.destroyPicker();
         });
@@ -373,25 +391,32 @@ var FolderPickerViewModel = oop.defclass({
             });
         });
         return request;
-    },    
+    },
     /** Pop up a confirmation to deauthorize addon from this node.
      *  Send DELETE request if confirmed.
      */
     deauthorize: function() {
         var self = this;
         bootbox.confirm({
-            title: 'Deauthorize ' + self.addonName + '?',
+            title: 'Disconnect ' + self.addonName + ' Account?',
             message: self.messages.confirmDeauth(),
             callback: function(confirmed) {
                 if (confirmed) {
                     self._deauthorizeConfirm();
+                    self.loadingImport(false);
+                }
+            },
+            buttons:{
+                confirm:{
+                    label:'Disconnect',
+                    className:'btn-danger'
                 }
             }
         });
     },
     /**
      * Must be used to update radio buttons and knockout view model simultaneously
-     */    
+     */
     cancelSelection: function() {
         this.selected(null);
     },
@@ -409,14 +434,16 @@ var FolderPickerViewModel = oop.defclass({
             this.cancelSelection();
         }
     },
-    destroyPicker: function() {        
-        this.folderpicker.destroy();
+    destroyPicker: function() {
+        if (this.folderpicker) {
+            this.folderpicker.destroy();
+        }
     },
     doActivatePicker: function(opts) {
         var self = this;
         // Show loading indicator
         self.loading(true);
-        self.folderpicker = new FolderPicker(self.folderpickerSelector, opts);        
+        self.folderpicker = new FolderPicker(self.folderpickerSelector, opts);
     },
     /**
      *  Activates the HGrid folder picker.
@@ -438,7 +465,7 @@ var FolderPickerViewModel = oop.defclass({
             ajaxOptions: {
                 error: function(xhr, textStatus, error) {
                     self.loading(false);
-                    self.changeMessage(self.messages.connectError(), 'text-warning');
+                    self.changeMessage(self.messages.connectError(), 'text-danger');
                     Raven.captureMessage('Could not GET get ' + self.addonName + ' contents.', {
                         textStatus: textStatus,
                         error: error
@@ -475,7 +502,7 @@ var FolderPickerViewModel = oop.defclass({
         if (!self.loadedFolders()) {
             self.doActivatePicker(opts);
         }
-    }    
+    }
 });
 
 module.exports = FolderPickerViewModel;

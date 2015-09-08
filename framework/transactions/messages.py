@@ -3,3 +3,4 @@
 LOCK_ERROR = 'Lock not granted. Try restarting the transaction.'
 TRANSACTION_EXISTS_ERROR = 'exception: transaction already exists'
 NO_TRANSACTION_ERROR = 'exception: no transaction exists to be rolled back'
+NO_TRANSACTION_TO_COMMIT_ERROR = 'exception: no transaction exists to be committed'

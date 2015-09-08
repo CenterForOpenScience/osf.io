@@ -9,7 +9,7 @@ from tests.factories import AuthUserFactory, ProjectFactory
 
 import urlparse
 
-from framework.auth import authenticate, Auth
+from framework.auth import Auth
 
 from website.addons.mendeley.tests.factories import (
     MendeleyAccountFactory,
@@ -17,9 +17,7 @@ from website.addons.mendeley.tests.factories import (
     MendeleyNodeSettingsFactory
 )
 
-from website.util import api_url_for
 from website.addons.mendeley.serializer import MendeleySerializer
-from website.addons.mendeley import views
 
 from utils import mock_responses
 

@@ -1,6 +1,6 @@
 <div class="col-md-12 col-sm-12">
     <span id="amazon" class="anchor"></span>
-    <h4>Amazon Simple Storage Service Add-on</h4>
+    <h4 class="m-t-lg f-w-lg">Amazon Simple Storage Service Add-on</h4>
     <p><a href="http://aws.amazon.com/s3/">Amazon Simple Storage Service </a> (Amazon S3), provides developers and IT teams
         with secure, durable, highly-scalable object storage."</p>
     <p>After linking your OSF project to Amazon s3, you can add files to your Amazon s3 bucket and those files can be

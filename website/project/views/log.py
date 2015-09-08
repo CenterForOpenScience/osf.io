@@ -10,7 +10,7 @@ from framework.auth.decorators import collect_auth
 from framework.transactions.handlers import no_auto_transaction
 
 
-from website.views import serialize_log
+from website.views import serialize_log, validate_page_num
 from website.project.model import NodeLog
 from website.project.model import has_anonymous_link
 from website.project.decorators import must_be_valid_project
@@ -30,14 +30,8 @@ def get_log(auth, log_id):
 
     return {'log': serialize_log(log, auth=auth)}
 
-def include_log(log, node, auth):
-    if log.can_view(node, auth):
-        return True
-    else:
-        logger.warn('Log on node {} is None'.format(node._id))
-        return False
 
-def _get_logs(node, count, auth, link=None, page=0):
+def _get_logs(node, count, auth, page=0):
     """
 
     :param Node node:
@@ -49,18 +43,21 @@ def _get_logs(node, count, auth, link=None, page=0):
     """
     logs_set = node.get_aggregate_logs_queryset(auth)
     total = logs_set.count()
+    pages = math.ceil(total / float(count))
+    validate_page_num(page, pages)
+
     start = page * count
     stop = start + count
     logs = [
         serialize_log(log, auth=auth, anonymous=has_anonymous_link(node, auth))
         for log in logs_set[start:stop]
     ]
-    pages = math.ceil(total / float(count))
+
     return logs, total, pages
 
 @no_auto_transaction
 @collect_auth
-@must_be_valid_project
+@must_be_valid_project(retractions_valid=True)
 def get_logs(auth, node, **kwargs):
     """
 
@@ -71,7 +68,6 @@ def get_logs(auth, node, **kwargs):
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long='Invalid value for "page".'
         ))
-    link = auth.private_key or request.args.get('view_only', '').strip('/')
 
     if not node.can_view(auth):
         raise HTTPError(http.FORBIDDEN)
@@ -87,5 +83,5 @@ def get_logs(auth, node, **kwargs):
 
     # Serialize up to `count` logs in reverse chronological order; skip
     # logs that the current user / API key cannot access
-    logs, total, pages = _get_logs(node, count, auth, link, page)
+    logs, total, pages = _get_logs(node, count, auth, page)
     return {'logs': logs, 'total': total, 'pages': pages, 'page': page}

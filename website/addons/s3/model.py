@@ -2,15 +2,15 @@
 
 import pymongo
 from modularodm import fields
-from boto.exception import BotoServerError
 
 from framework.auth.core import Auth
 
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import StorageAddonBase
 
-from website.addons.s3.utils import remove_osf_user
-from website.addons.s3 import api
+from website.addons.s3 import utils
+from website.addons.s3.settings import ENCRYPT_UPLOADS_DEFAULT
 
 class S3GuidFile(GuidFile):
     __indices__ = [
@@ -44,13 +44,15 @@ class S3GuidFile(GuidFile):
 
 class AddonS3UserSettings(AddonUserSettingsBase):
 
-    s3_osf_user = fields.StringField()
     access_key = fields.StringField()
     secret_key = fields.StringField()
 
     def to_json(self, user):
         ret = super(AddonS3UserSettings, self).to_json(user)
         ret['has_auth'] = self.has_auth
+        if self.owner:
+            ret['name'] = self.owner.display_full_name()
+            ret['profile_url'] = self.owner.profile_url
         return ret
 
     @property
@@ -59,45 +61,31 @@ class AddonS3UserSettings(AddonUserSettingsBase):
 
     @property
     def is_valid(self):
-        return api.has_access(self.access_key, self.secret_key)
+        return utils.can_list(self.access_key, self.secret_key)
 
-    def remove_iam_user(self):
-        """Remove IAM user from Amazon.
-
-        :return: True if successful, False if failed with expected error;
-            else uncaught exception is raised
-
-        """
-        try:
-            remove_osf_user(self)
-            return True
-        except BotoServerError as error:
-            if error.code in ['InvalidClientTokenId', 'ValidationError', 'AccessDenied']:
-                return False
-            raise
-
-    def revoke_auth(self, save=False):
+    def revoke_auth(self, auth=None, save=False):
         for node_settings in self.addons3nodesettings__authorized:
-            node_settings.deauthorize(save=True)
-        ret = self.remove_iam_user() if self.has_auth else True
+            node_settings.deauthorize(auth=auth, save=True)
+
         self.s3_osf_user, self.access_key, self.secret_key = None, None, None
 
         if save:
             self.save()
-        return ret
 
-    def delete(self, save=True):
-        self.revoke_auth(save=False)
-        super(AddonS3UserSettings, self).delete(save=save)
+        return True
 
 
-class AddonS3NodeSettings(AddonNodeSettingsBase):
+class AddonS3NodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
-    registration_data = fields.DictionaryField()
     bucket = fields.StringField()
+    encrypt_uploads = fields.BooleanField(default=ENCRYPT_UPLOADS_DEFAULT)
     user_settings = fields.ForeignField(
         'addons3usersettings', backref='authorized'
     )
+
+    @property
+    def folder_name(self):
+        return self.bucket
 
     def find_or_create_file_guid(self, path):
         path = path.lstrip('/')
@@ -125,9 +113,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             self.save()
 
     def deauthorize(self, auth=None, log=True, save=False):
-        self.registration_data = {}
-        self.bucket = None
-        self.user_settings = None
+        self.bucket, self.user_settings = None, None
 
         if log:
             self.owner.add_log(
@@ -156,7 +142,10 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
     def serialize_waterbutler_settings(self):
         if not self.bucket:
             raise exceptions.AddonError('Cannot serialize settings for S3 addon')
-        return {'bucket': self.bucket}
+        return {
+            'bucket': self.bucket,
+            'encrypt_uploads': self.encrypt_uploads
+        }
 
     def create_waterbutler_log(self, auth, action, metadata):
         url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='s3')
@@ -167,7 +156,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': metadata['path'],
+                'path': metadata['materialized'],
                 'bucket': self.bucket,
                 'urls': {
                     'view': url,
@@ -183,6 +172,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
 
         ret.update({
             'bucket': self.bucket or '',
+            'encrypt_uploads': self.encrypt_uploads,
             'has_bucket': self.bucket is not None,
             'user_is_owner': (
                 self.user_settings and self.user_settings.owner == user
@@ -191,7 +181,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             'node_has_auth': self.has_auth,
             'owner': None,
             'bucket_list': None,
-            'is_registration': self.owner.is_registration,
             'valid_credentials': user_settings and user_settings.is_valid,
         })
 
@@ -201,10 +190,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             ret['node_has_auth'] = True
 
         return ret
-
-    @property
-    def is_registration(self):
-        return True if self.registration_data else False
 
     @property
     def has_auth(self):
@@ -253,7 +238,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
         else:
             message = (
                 'Amazon Simple Storage authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href={url}>Settings</a> '
+                'authorize this fork on the <u><a href={url}>Settings</a></u> '
                 'page.'
             ).format(
                 cat=fork.project_or_component,
@@ -264,31 +249,6 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             clone.save()
 
         return clone, message
-
-    def before_fork(self, node, user):
-        """
-
-        :param Node node:
-        :param User user:
-        :return str: Alert message
-
-        """
-
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                'Because you have authenticated the S3 add-on for this '
-                '{cat}, forking it will also transfer your authorization to '
-                'the forked {cat}.'
-            ).format(
-                cat=node.project_or_component,
-            )
-        return (
-            'Because this S3 add-on has been authenticated by a different '
-            'user, forking it will not transfer authentication to the forked '
-            '{cat}.'
-        ).format(
-            cat=node.project_or_component,
-        )
 
     def before_remove_contributor(self, node, removed):
         """
@@ -330,7 +290,7 @@ class AddonS3NodeSettings(AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message

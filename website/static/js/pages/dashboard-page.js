@@ -25,23 +25,14 @@ var request = $.getJSON(url, function(response) {
     });
 
     // If we need to change what nodes can be registered, filter here
-    var registrationSelection = uploadSelection;
+    var registrationSelection = ko.utils.arrayFilter(allNodes, function(node) {
+        return $.inArray(node.permissions, ['admin']) !== -1;
+    });
 
     $osf.applyBindings({nodes: allNodes}, '#obGoToProject');
     $osf.applyBindings({nodes: registrationSelection, enableComponents: true}, '#obRegisterProject');
     $osf.applyBindings({nodes: uploadSelection}, '#obUploader');
-
-    function ProjectCreateViewModel() {
-        var self = this;
-        self.isOpen = ko.observable(false);
-        self.focus = ko.observable(false);
-        self.toggle = function() {
-            self.isOpen(!self.isOpen());
-            self.focus(self.isOpen());
-        };
-        self.nodes = response.nodes;
-    }
-    $osf.applyBindings(new ProjectCreateViewModel(), '#projectCreate');
+    $osf.applyBindings({nodes: allNodes}, '#obCreateProject');
 });
 request.fail(function(xhr, textStatus, error) {
     Raven.captureMessage('Could not fetch dashboard nodes.', {
@@ -87,7 +78,6 @@ $(document).ready(function() {
             filesData: data.data,
             multiselect : true
         });
-        po.legend($('#projectOrganizerInfo')[0]);
 
         ensureUserTimezone(data.timezone, data.locale, data.id);
     });

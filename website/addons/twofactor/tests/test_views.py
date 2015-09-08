@@ -1,29 +1,32 @@
 import mock
-from nose.tools import *
+from nose.tools import *  # noqa
+
+import httplib as http
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory
 from website.app import init_app
-from website.addons.twofactor.tests import _valid_code
+from website.util import api_url_for
 
-app = init_app(
-    routes=True,
-    set_backends=False,
-    settings_module='website.settings',
-)
+from framework.auth import Auth
+
+from website.addons.twofactor.tests import _valid_code
+from website.addons.twofactor.utils import serialize_settings
+
 
 class TestViews(OsfTestCase):
     @mock.patch('website.addons.twofactor.models.push_status_message')
     def setUp(self, mocked):
         super(TestViews, self).setUp()
         self.user = AuthUserFactory()
-        self.user.add_addon('twofactor')
+        self.user_addon = self.user.get_or_add_addon('twofactor')
         self.user_settings = self.user.get_addon('twofactor')
 
     def test_confirm_code(self):
         # Send a valid code to the API endpoint for the user settings.
-        res = self.app.post_json(
-            '/api/v1/settings/twofactor/',
+        url = api_url_for('twofactor_settings_put')
+        res = self.app.put_json(
+            url,
             {'code': _valid_code(self.user_settings.totp_secret)},
             auth=self.user.auth
         )
@@ -35,8 +38,9 @@ class TestViews(OsfTestCase):
         assert_equal(res.status_code, 200)
 
     def test_confirm_code_failure(self):
-        res = self.app.post_json(
-            '/api/v1/settings/twofactor/',
+        url = api_url_for('twofactor_settings_put')
+        res = self.app.put_json(
+            url,
             {'code': '0000000'},
             auth=self.user.auth,
             expect_errors=True

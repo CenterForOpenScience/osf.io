@@ -8,10 +8,12 @@ import datetime
 import httplib as http
 
 from flask import Flask
-from werkzeug.wrappers import BaseResponse
 from modularodm import Q
+from werkzeug.wrappers import BaseResponse
 
 from framework import auth
+from framework.auth import cas
+from framework.sessions import Session
 from framework.exceptions import HTTPError
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import (
@@ -22,6 +24,8 @@ from tests.factories import (
 from framework.auth import User, Auth
 from framework.auth.decorators import must_be_logged_in
 
+from website import mails
+from website import settings
 from website.util import web_url_for
 from website.project.decorators import (
     must_have_permission, must_be_contributor,
@@ -42,6 +46,52 @@ class TestAuthUtils(OsfTestCase):
 
         assert_true(user.get_confirmation_token(user.username))
 
+    @mock.patch('framework.auth.views.mails.send_mail')
+    def test_confirm_email(self, mock_mail):
+        user = UnregUserFactory()
+
+        auth.register_unconfirmed(
+            username=user.username,
+            password='gattaca',
+            fullname='Rosie',
+        )
+
+        token = user.get_confirmation_token(user.username)
+
+        res = self.app.get('/confirm/{}/{}'.format(user._id, token), allow_redirects=False)
+        res = res.follow()
+
+        assert_equal(res.status_code, 302)
+        assert_in('login?service=', res.location)
+
+        user.reload()
+        assert_equal(len(mock_mail.call_args_list), 1)
+        empty, kwargs = mock_mail.call_args
+        kwargs['user'].reload()
+
+        assert_equal(empty, ())
+        assert_equal(kwargs, {
+            'user': user,
+            'mimetype': 'html',
+            'mail': mails.WELCOME,
+            'to_addr': user.username,
+        })
+
+        self.app.set_cookie(settings.COOKIE_NAME, user.get_or_create_cookie())
+        res = self.app.get('/confirm/{}/{}'.format(user._id, token))
+
+        res = res.follow()
+
+        assert_equal(res.status_code, 302)
+        assert_in('dashboard', res.location)
+        assert_equal(len(mock_mail.call_args_list), 1)
+        session = Session.find(
+            Q('data.auth_user_id', 'eq', user._id)
+        ).sort(
+            '-date_modified'
+        ).limit(1)[0]
+        assert_equal(len(session.data['status']), 1)
+
     def test_get_user_by_id(self):
         user = UserFactory()
         assert_equal(User.load(user._id), user)
@@ -57,40 +107,6 @@ class TestAuthUtils(OsfTestCase):
             auth.get_user(email=user.username, password='wrong')
         )
 
-    def test_login_success_authenticates_user(self):
-        user = UserFactory.build(date_last_login=datetime.datetime.utcnow())
-        user.set_password('killerqueen')
-        user.save()
-        # need request context because login returns a rsponse
-        res = auth.login(user.username, 'killerqueen')
-        assert_true(isinstance(res, BaseResponse))
-        assert_equal(res.status_code, 302)
-
-    def test_login_unregistered_user(self):
-        user = UnregUserFactory()
-        user.set_password('killerqueen')
-        user.save()
-        with assert_raises(auth.LoginNotAllowedError):
-            # password is correct, but user is unregistered
-            auth.login(user.username, 'killerqueen')
-
-    def test_login_disabled_user(self):
-        """Logging in to a disabled account fails"""
-        user = UserFactory()
-        user.set_password('Leeloo')
-        user.is_disabled = True
-        user.save()
-
-        with assert_raises(auth.LoginDisabledError):
-            auth.login(user.username, 'Leeloo')
-
-    def test_login_with_incorrect_password_returns_false(self):
-        user = UserFactory.build()
-        user.set_password('rhapsody')
-        user.save()
-        with assert_raises(auth.PasswordIncorrectError):
-            auth.login(user.username, 'wrongpassword')
-
 
 class TestAuthObject(OsfTestCase):
 
@@ -102,15 +118,13 @@ class TestAuthObject(OsfTestCase):
     def test_factory(self):
         auth_obj = AuthFactory()
         assert_true(isinstance(auth_obj.user, auth.User))
-        assert_true(auth_obj.api_key)
 
     def test_from_kwargs(self):
         user = UserFactory()
         request_args = {'view_only': 'mykey'}
-        kwargs = {'user': user, 'api_key': 'myapikey', 'api_node': '123v'}
+        kwargs = {'user': user}
         auth_obj = Auth.from_kwargs(request_args, kwargs)
         assert_equal(auth_obj.user, user)
-        assert_equal(auth_obj.api_key, kwargs['api_key'])
         assert_equal(auth_obj.private_key, request_args['view_only'])
 
     def test_logged_in(self):
@@ -188,8 +202,6 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
     def test_must_be_contributor_when_user_is_contributor(self):
         result = view_that_needs_contributor(
             pid=self.project._primary_key,
-            api_key=self.contrib.auth[1],
-            api_node=self.project,
             user=self.contrib)
         assert_equal(result, self.project)
 
@@ -198,8 +210,6 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         with assert_raises(HTTPError):
             view_that_needs_contributor(
                 pid=self.project._primary_key,
-                api_key=non_contributor.auth[1],
-                api_node=non_contributor.auth[1],
                 user=non_contributor
             )
 
@@ -207,12 +217,12 @@ class TestMustBeContributorDecorator(AuthAppTestCase):
         res = view_that_needs_contributor(
             pid=self.project._primary_key,
             user=None,
-            api_key='123',
-            api_node='abc',
         )
         assert_is_redirect(res)
+        # redirects to login url
         redirect_url = res.headers['Location']
-        assert_equal(redirect_url, '/login/?next=/')
+        login_url = cas.get_login_url(service_url='http://localhost/')
+        assert_equal(redirect_url, login_url)
 
     def test_must_be_contributor_parent_admin(self):
         user = UserFactory()
@@ -261,7 +271,8 @@ class TestPermissionDecorators(AuthAppTestCase):
         mock_from_kwargs.return_value = Auth()
         resp = protected()
         assert_true(isinstance(resp, BaseResponse))
-        assert_in('/login/', resp.headers.get('location'))
+        login_url = cas.get_login_url(service_url='http://localhost/')
+        assert_in(login_url, resp.headers.get('location'))
 
     @mock.patch('website.project.decorators._kwargs_to_nodes')
     @mock.patch('framework.auth.decorators.Auth.from_kwargs')

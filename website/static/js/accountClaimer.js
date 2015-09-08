@@ -23,7 +23,8 @@ function AccountClaimer (selector) {
 function getClaimUrl() {
     var uid = $(this).data('pk');
     var pid = global.nodeId;
-    return '/api/v1/user/' + uid + '/' + pid +  '/claim/email/';
+    var viewOnlyToken = $osf.urlParams().view_only;
+    return '/api/v1/user/' + uid + '/' + pid +  '/claim/email/' + (viewOnlyToken ? '?view_only=' + viewOnlyToken : '');
 }
 
 function alertFinished(email) {
@@ -51,6 +52,11 @@ function onClickIfLoggedIn() {
                         $osf.handleJSONError
                     );
                 }
+            },
+            buttons:{
+                confirm:{
+                    label:'Claim'
+                }
             }
         });
     }
@@ -77,7 +83,7 @@ AccountClaimer.prototype = {
                 success: function(data) {
                     alertFinished(data.email);
                 },
-                error: $osf.handleEditableError,
+                error: $osf.handleJSONError,
                 display: function(value, sourceData){
                     if (sourceData && sourceData.fullname) {
                         $(this).text(sourceData.fullname);

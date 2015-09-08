@@ -1,15 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import operator
 import httplib
-import httplib as http
-import os
-
+import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from flask import request
-from modularodm.exceptions import ValidationError, NoResultsFound
+from modularodm.exceptions import ValidationError, NoResultsFound, MultipleResultsFound
 from modularodm import Q
 
 from framework import sentry
@@ -18,6 +15,7 @@ from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.exceptions import ChangePasswordError
 from framework.auth.views import send_confirm_email
+from framework.auth.signals import user_merged
 from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
@@ -25,14 +23,14 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.models import User
-from website.models import ApiKey
+from website.models import ApiOAuth2Application, User
 from website.profile import utils as profile_utils
-from website.util import web_url_for, paths
+from website.project.decorators import dev_only
+from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
-
+from website.addons.base import utils as addon_utils
 
 logger = logging.getLogger(__name__)
 
@@ -53,16 +51,16 @@ def get_public_projects(uid=None, user=None):
 
 def get_public_components(uid=None, user=None):
     user = user or User.load(uid)
-    return _render_nodes(
-        list(user.node__contributed.find(
-            (
-                Q('category', 'ne', 'project') &
-                Q('is_public', 'eq', True) &
-                Q('is_registration', 'eq', False) &
-                Q('is_deleted', 'eq', False)
-            )
-        ))
-    )
+    # TODO: This should use User.visible_contributor_to?
+    nodes = list(user.node__contributed.find(
+        (
+            Q('category', 'ne', 'project') &
+            Q('is_public', 'eq', True) &
+            Q('is_registration', 'eq', False) &
+            Q('is_deleted', 'eq', False)
+        )
+    ))
+    return _render_nodes(nodes, show_path=True)
 
 
 @must_be_logged_in
@@ -83,22 +81,51 @@ def date_or_none(date):
         return None
 
 
-@must_be_logged_in
-def update_user(auth):
-    """Update the logged-in user's profile."""
-
-    # trust the decorator to handle auth
-    user = auth.user
-
-    data = request.get_json()
-
-    # check if the user in request is the user who log in
+def validate_user(data, user):
+    """Check if the user in request is the user who log in """
     if 'id' in data:
         if data['id'] != user._id:
             raise HTTPError(httplib.FORBIDDEN)
     else:
         # raise an error if request doesn't have user id
         raise HTTPError(httplib.BAD_REQUEST, data={'message_long': '"id" is required'})
+
+@must_be_logged_in
+def resend_confirmation(auth):
+    user = auth.user
+    data = request.get_json()
+
+    validate_user(data, user)
+
+    try:
+        primary = data['email']['primary']
+        confirmed = data['email']['confirmed']
+        address = data['email']['address'].strip().lower()
+    except KeyError:
+        raise HTTPError(httplib.BAD_REQUEST)
+
+    if primary or confirmed:
+        raise HTTPError(httplib.BAD_REQUEST, data={'message_long': 'Cannnot resend confirmation for confirmed emails'})
+
+    user.add_unconfirmed_email(address)
+
+    # TODO: This setting is now named incorrectly.
+    if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+        send_confirm_email(user, email=address)
+
+    user.save()
+
+    return _profile_view(user)
+
+@must_be_logged_in
+def update_user(auth):
+    """Update the logged-in user's profile."""
+
+    # trust the decorator to handle auth
+    user = auth.user
+    data = request.get_json()
+
+    validate_user(data, user)
 
     # TODO: Expand this to support other user attributes
 
@@ -129,10 +156,7 @@ def update_user(auth):
                     user.remove_email(address)
                 except PermissionsError as e:
                     raise HTTPError(httplib.FORBIDDEN, e.message)
-            try:
-                user.remove_unconfirmed_email(address)
-            except PermissionsError as e:
-                raise HTTPError(httplib.FORBIDDEN, e.message)
+            user.remove_unconfirmed_email(address)
 
         # additions
         added_emails = [
@@ -146,7 +170,9 @@ def update_user(auth):
             try:
                 user.add_unconfirmed_email(address)
             except (ValidationError, ValueError):
-                continue
+                raise HTTPError(http.BAD_REQUEST, data=dict(
+                    message_long="Invalid Email")
+                )
 
             # TODO: This setting is now named incorrectly.
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
@@ -179,6 +205,11 @@ def update_user(auth):
                             mails.PRIMARY_EMAIL_CHANGED,
                             user=user,
                             new_address=username)
+
+            # Remove old primary email from subscribed mailing lists
+            for list_name, subscription in user.mailing_lists.iteritems():
+                if subscription:
+                    mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
             user.username = username
 
     ###################
@@ -196,6 +227,12 @@ def update_user(auth):
             user.timezone = data['timezone']
 
     user.save()
+
+    # Update subscribed mailing lists with new primary email
+    # TODO: move to user.save()
+    for list_name, subscription in user.mailing_lists.iteritems():
+        if subscription:
+            mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
     return _profile_view(user)
 
@@ -285,8 +322,13 @@ def user_profile(auth, **kwargs):
 @must_be_logged_in
 def user_account(auth, **kwargs):
     user = auth.user
+    user_addons = addon_utils.get_addons_by_config_type('user', user)
+
     return {
         'user_id': user._id,
+        'addons': user_addons,
+        'addons_js': collect_user_config_js([addon for addon in settings.ADDONS_AVAILABLE if 'user' in addon.configs]),
+        'addons_css': []
     }
 
 
@@ -303,7 +345,7 @@ def user_account_password(auth, **kwargs):
     except ChangePasswordError as error:
         push_status_message('<br />'.join(error.messages) + '.', kind='warning')
     else:
-        push_status_message('Password updated successfully.', kind='info')
+        push_status_message('Password updated successfully.', kind='success')
 
     return redirect(web_url_for('user_account'))
 
@@ -313,40 +355,16 @@ def user_addons(auth, **kwargs):
 
     user = auth.user
 
-    ret = {}
-
-    addons = [addon.config for addon in user.get_addons()]
-    addons.sort(key=operator.attrgetter("full_name"), reverse=False)
-    addons_enabled = []
-    addon_enabled_settings = []
-    user_addons_enabled = {}
-
-    # sort addon_enabled_settings alphabetically by category
-    for category in settings.ADDON_CATEGORIES:
-        for addon_config in addons:
-            if addon_config.categories[0] == category:
-                addons_enabled.append(addon_config.short_name)
-                if 'user' in addon_config.configs:
-                    short_name = addon_config.short_name
-                    addon_enabled_settings.append(short_name)
-                    user_addons_enabled[addon_config.short_name] = user.get_addon(short_name).to_json(user)
-                    # inject the MakoTemplateLookup into the template context
-                    # TODO inject only short_name and render fully client side
-                    user_addons_enabled[short_name]['template_lookup'] = addon_config.template_lookup
-                    user_addons_enabled[short_name]['user_settings_template'] = os.path.basename(addon_config.user_settings_template)
-
-    ret['addon_categories'] = settings.ADDON_CATEGORIES
-    ret['addons_available'] = [
-        addon
-        for addon in sorted(settings.ADDONS_AVAILABLE)
-        if 'user' in addon.owners and addon.short_name not in settings.SYSTEM_ADDED_ADDONS['user']
-    ]
-    ret['addons_available'].sort(key=operator.attrgetter("full_name"), reverse=False)
-    ret['addons_enabled'] = addons_enabled
-    ret['addon_enabled_settings'] = addon_enabled_settings
-    ret['user_addons_enabled'] = user_addons_enabled
-    ret['addon_js'] = collect_user_config_js(user.get_addons())
-    ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
+    ret = {
+        'addon_settings': addon_utils.get_addons_by_config_type('accounts', user),
+    }
+    accounts_addons = [addon for addon in settings.ADDONS_AVAILABLE if 'accounts' in addon.configs]
+    ret.update({
+        'addon_enabled_settings': [addon.short_name for addon in accounts_addons],
+        'addons_js': collect_user_config_js(accounts_addons),
+        'addon_capabilities': settings.ADDON_CAPABILITIES,
+        'addons_css': []
+    })
     return ret
 
 @must_be_logged_in
@@ -356,26 +374,59 @@ def user_notifications(auth, **kwargs):
         'mailing_lists': auth.user.mailing_lists
     }
 
+@dev_only
+@must_be_logged_in
+def oauth_application_list(auth, **kwargs):
+    """Return app creation page with list of known apps. API is responsible for tying list to current user."""
+    # TODO: Remove dev_only restriction when APIv2 is released into production
+    app_list_url = api_v2_url("applications/")
+    return {
+        "app_list_url": app_list_url
+    }
 
-def collect_user_config_js(addons):
+@dev_only
+@must_be_logged_in
+def oauth_application_register(auth, **kwargs):
+    """Register an API application: blank form view"""
+    # TODO: Remove dev_only restriction when APIv2 is released into production
+    app_list_url = api_v2_url("applications/")  # POST request to this url
+    return {"app_list_url": app_list_url,
+            "app_detail_url": ''}
+
+@dev_only
+@must_be_logged_in
+def oauth_application_detail(auth, **kwargs):
+    """Show detail for a single OAuth application"""
+    # TODO: Remove dev_only restriction when APIv2 is released into production
+    client_id = kwargs.get('client_id')
+
+    # The client ID must be an active and existing record, and the logged-in user must have permission to view it.
+    try:
+        #
+        record = ApiOAuth2Application.find_one(Q('client_id', 'eq', client_id))
+    except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND)
+    if record.owner != auth.user:
+        raise HTTPError(http.FORBIDDEN)
+    if record.active is False:
+        raise HTTPError(http.GONE)
+
+    app_detail_url = api_v2_url("applications/{}/".format(client_id))  # Send request to this URL
+    return {"app_list_url": '',
+            "app_detail_url": app_detail_url}
+
+def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the user addons config page.
 
     :param list addons: List of user's addon config records.
     """
     js_modules = []
-    for addon in addons:
-        js_path = paths.resolve_addon_path(addon.config, 'user-cfg.js')
+    for addon_config in addon_configs:
+        js_path = paths.resolve_addon_path(addon_config, 'user-cfg.js')
         if js_path:
             js_modules.append(js_path)
     return js_modules
-
-@must_be_logged_in
-def profile_addons(**kwargs):
-    user = kwargs['auth'].user
-    return {
-        'user_id': user._primary_key,
-    }
 
 
 @must_be_logged_in
@@ -409,6 +460,7 @@ def user_choose_mailing_lists(auth, **kwargs):
     return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
 
 
+@user_merged.connect
 def update_subscription(user, list_name, subscription):
     """ Update mailing list subscription in mailchimp.
 
@@ -420,7 +472,7 @@ def update_subscription(user, list_name, subscription):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
+            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",
@@ -464,71 +516,6 @@ def sync_data_from_mailchimp(**kwargs):
         # sentry.log_exception()
         # sentry.log_message("Unauthorized request to the OSF.")
         raise HTTPError(http.UNAUTHORIZED)
-
-@must_be_logged_in
-def get_keys(**kwargs):
-    user = kwargs['auth'].user
-    return {
-        'keys': [
-            {
-                'key': key._id,
-                'label': key.label,
-            }
-            for key in user.api_keys
-        ]
-    }
-
-
-@must_be_logged_in
-def create_user_key(**kwargs):
-
-    # Generate key
-    api_key = ApiKey(label=request.form['label'])
-    api_key.save()
-
-    # Append to user
-    user = kwargs['auth'].user
-    user.api_keys.append(api_key)
-    user.save()
-
-    # Return response
-    return {
-        'response': 'success',
-    }
-
-
-@must_be_logged_in
-def revoke_user_key(**kwargs):
-
-    # Load key
-    api_key = ApiKey.load(request.form['key'])
-
-    # Remove from user
-    user = kwargs['auth'].user
-    user.api_keys.remove(api_key)
-    user.save()
-
-    # Return response
-    return {'response': 'success'}
-
-
-@must_be_logged_in
-def user_key_history(**kwargs):
-
-    api_key = ApiKey.load(kwargs['kid'])
-    return {
-        'key': api_key._id,
-        'label': api_key.label,
-        'route': '/settings',
-        'logs': [
-            {
-                'lid': log._id,
-                'nid': log.node__logged[0]._id,
-                'route': log.node__logged[0].url,
-            }
-            for log in api_key.nodelog__created
-        ]
-    }
 
 
 @must_be_logged_in
@@ -754,3 +741,33 @@ def request_deactivation(auth):
         user=auth.user,
     )
     return {'message': 'Sent account deactivation request'}
+
+
+def redirect_to_twitter(twitter_handle):
+    """Redirect GET requests for /@TwitterHandle/ to respective the OSF user
+    account if it associated with an active account
+
+    :param uid: uid for requested User
+    :return: Redirect to User's Twitter account page
+    """
+    try:
+        user = User.find_one(Q('social.twitter', 'iexact', twitter_handle))
+    except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND, data={
+            'message_short': 'User Not Found',
+            'message_long': 'There is no active user associated with the Twitter handle: {0}.'.format(twitter_handle)
+        })
+    except MultipleResultsFound:
+        users = User.find(Q('social.twitter', 'iexact', twitter_handle))
+        message_long = 'There are multiple OSF accounts associated with the ' \
+                       'Twitter handle: <strong>{0}</strong>. <br /> Please ' \
+                       'select from the accounts below. <br /><ul>'.format(twitter_handle)
+        for user in users:
+            message_long += '<li><a href="{0}">{1}</a></li>'.format(user.url, user.fullname)
+        message_long += '</ul>'
+        raise HTTPError(http.MULTIPLE_CHOICES, data={
+            'message_short': 'Multiple Users Found',
+            'message_long': message_long
+        })
+
+    return redirect(user.url)

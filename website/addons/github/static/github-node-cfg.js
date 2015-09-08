@@ -26,34 +26,42 @@ var GithubConfigHelper = (function() {
         var $elm = $('#addonSettingsGithub');
         var $select = $elm.find('select');
 
-        bootbox.prompt('Name your new repo', function(repoName) {
+        bootbox.prompt({
+            title: 'Name your new repo',
+            placeholder: 'Repo name',
+            callback: function (repoName) {
+                // Return if cancelled
+                if (repoName === null) {
+                    return;
+                }
 
-            // Return if cancelled
-            if (repoName === null) {
-                return;
+                if (repoName === '') {
+                    displayError('Your repo must have a name');
+                    return;
+                }
+
+                $osf.postJSON(
+                    '/api/v1/github/repo/create/',
+                    {name: repoName}
+                ).done(function (response) {
+                        var repoName = response.user + ' / ' + response.repo;
+                        $select.append('<option value="' + repoName + '">' + repoName + '</option>');
+                        $select.val(repoName);
+                        updateHidden(repoName);
+                    }).fail(function () {
+                        displayError('Could not create repository');
+                    });
+            },
+            buttons:{
+                confirm:{
+                    label: 'Save',
+                    className:'btn-success'
+                }
             }
-
-            if (repoName === '') {
-                displayError('Your repo must have a name');
-                return;
-            }
-
-            $osf.postJSON(
-                '/api/v1/github/repo/create/',
-                {name: repoName}
-            ).done(function(response) {
-                var repoName = response.user + ' / ' + response.repo;
-                $select.append('<option value="' + repoName + '">' + repoName + '</option>');
-                $select.val(repoName);
-                updateHidden(repoName);
-            }).fail(function() {
-                displayError('Could not create repository');
-            });
         });
     };
 
     $(document).ready(function() {
-
         $('#githubSelectRepo').on('change', function() {
             var value = $(this).val();
             if (value) {
@@ -70,7 +78,10 @@ var GithubConfigHelper = (function() {
                 nodeApiUrl + 'github/user_auth/',
                 {}
             ).done(function() {
-                window.location.reload();
+                    if($osf.isIE()){
+                        window.location.hash = "#configureAddonsAnchor";
+                    }
+                    window.location.reload();
             }).fail(
                 $osf.handleJSONError
             );
@@ -82,8 +93,8 @@ var GithubConfigHelper = (function() {
 
         $('#githubRemoveToken').on('click', function() {
             bootbox.confirm({
-                title: 'Deauthorize GitHub?',
-                message: 'Are you sure you want to remove this GitHub authorization?',
+                title: 'Disconnect GitHub Account?',
+                message: 'Are you sure you want to remove this GitHub account?',
                 callback: function(confirm) {
                     if(confirm) {
                         $.ajax({
@@ -94,6 +105,12 @@ var GithubConfigHelper = (function() {
                     }).fail(
                         $osf.handleJSONError
                     );
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label: 'Disconnect',
+                        className: 'btn-danger'
                     }
                 }
             });

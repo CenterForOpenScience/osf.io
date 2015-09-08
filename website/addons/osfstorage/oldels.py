@@ -15,7 +15,6 @@ from framework.mongo import StoredObject
 from framework.analytics import get_basic_counters
 from website.models import NodeLog
 
-from website.addons.osfstorage import logs
 from website.addons.osfstorage import errors
 from website.addons.osfstorage.model import OsfStorageFileVersion
 
@@ -209,15 +208,6 @@ class OsfStorageFileRecord(BaseFileObject):
                 version.update_metadata(metadata)
                 return
         raise errors.VersionNotFoundError
-
-    def log(self, auth, action, version=True):
-        node_logger = logs.OsfStorageNodeLogger(
-            auth=auth,
-            node=self.node,
-            path=self.path,
-        )
-        extra = {'version': len(self.versions)} if version else None
-        node_logger.log(action, extra=extra, save=True)
 
     def delete(self, auth, log=True):
         if self.is_deleted:

@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import time
 import logging
 from datetime import datetime
@@ -7,7 +6,8 @@ from datetime import datetime
 import furl
 import pymongo
 import requests
-from modularodm import fields, StoredObject
+from modularodm import fields
+from framework.mongo import StoredObject
 from box import CredentialsV2, refresh_v2_token, BoxClientException
 
 from framework.auth import Auth
@@ -15,6 +15,7 @@ from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import StorageAddonBase
 
 from website.addons.box import settings
 from website.addons.box.utils import BoxNodeLogger
@@ -56,15 +57,6 @@ class BoxFile(GuidFile):
     @property
     def unique_identifier(self):
         return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
-
-    @property
-    def extra(self):
-        if not self._metadata_cache:
-            return {}
-
-        return {
-            'fullPath': self._metadata_cache['extra']['fullPath'],
-        }
 
 
 class BoxOAuthSettings(StoredObject):
@@ -229,7 +221,7 @@ class BoxUserSettings(AddonUserSettingsBase):
         return u'<BoxUserSettings(user={self.owner.username!r})>'.format(self=self)
 
 
-class BoxNodeSettings(AddonNodeSettingsBase):
+class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     user_settings = fields.ForeignField(
         'boxusersettings', backref='authorized'
@@ -325,7 +317,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         try:
             return {'token': self.user_settings.fetch_access_token()}
         except BoxClientException as error:
-            return HTTPError(error.status_code)
+            raise HTTPError(error.status_code, data={'message_long': error.message})
 
     def serialize_waterbutler_settings(self):
         if self.folder_id is None:
@@ -333,25 +325,18 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         return {'folder': self.folder_id}
 
     def create_waterbutler_log(self, auth, action, metadata):
-        path = metadata['path']
-        try:
-            full_path = metadata['extra']['fullPath']
-        except KeyError:
-            full_path = None
         self.owner.add_log(
             'box_{0}'.format(action),
             auth=auth,
             params={
+                'path': metadata['materialized'],
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'path': os.path.join(self.folder_id, path),
-                'name': os.path.split(metadata['path'])[-1],
                 'folder': self.folder_id,
                 'urls': {
-                    'view': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='view', path=path),
-                    'download': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='download', path=path),
+                    'view': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='view', path=metadata['path']),
+                    'download': self.owner.web_url_for('addon_view_or_download_file', provider='box', action='download', path=metadata['path']),
                 },
-                'fullPath': full_path
             },
         )
 
@@ -371,27 +356,6 @@ class BoxNodeSettings(AddonNodeSettingsBase):
 
     # backwards compatibility
     before_register = before_register_message
-
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                u'Because you have authorized the Box add-on for this '
-                '{category}, forking it will also transfer your authentication token to '
-                'the forked {category}.'
-            ).format(category=category)
-        else:
-            return (
-                u'Because the Box add-on has been authorized by a different '
-                'user, forking it will not transfer authentication token to the forked '
-                '{category}.'
-            ).format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
 
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
@@ -427,7 +391,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
         else:
             message = (
                 u'Box authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href="{url}">Settings</a> '
+                'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                 'page.'
             ).format(
                 url=fork.web_url_for('node_setting'),
@@ -460,7 +424,7 @@ class BoxNodeSettings(AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message

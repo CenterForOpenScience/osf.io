@@ -9,13 +9,13 @@
 </div>
 
 <div class="row">
-    <div class="col-md-10 col-md-offset-1">
+    <div class="col-lg-10 col-lg-offset-1">
 
             <div id="manageContributors" class="scripted">
                 <h3> Contributors
                     <!-- ko if: canEdit -->
                         <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
-                          <i class="fa fa-plus"> </i>Add
+                          <i class="fa fa-plus"></i> Add
                         </a>
                     <!-- /ko -->
                 </h3>
@@ -55,7 +55,6 @@
                             data: contributors,
                             as: 'contributor',
                             isEnabled: canEdit,
-                            afterRender: setupEditable,
                             options: {
                               containment: '#manageContributors'
                             }
@@ -99,8 +98,12 @@
 
 
     % if 'admin' in user['permissions']:
-        <h3>View-only Links</h3>
-        <div class="text-align">Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project</div>
+        <h3>View-only Links
+            <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
+              <i class="fa fa-plus"></i> Add
+            </a>
+        </h3>
+        <p>Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.</p>
         <div class="scripted" id="linkScope">
 
             <table id="privateLinkTable" class="table">
@@ -117,39 +120,29 @@
                     </tr>
                 </thead>
 
-                <tbody>
-
-                    <tr>
-                        <td colspan="3">
-                            <a href="#addPrivateLink" data-toggle="modal">
-                                Create a link
-                            </a>
-                        </td>
-                    </tr>
-
-                </tbody>
                 <tbody data-bind="foreach: {data: privateLinks, afterRender: afterRenderLink}">
                     <tr>
                         <td class="col-sm-3">
                             <div>
-                                <span class="link-name overflow-block" data-bind="text: name, tooltip: {title: 'Link name'}" style="width: 200px"></span>
+                                <span class="link-name m-b-xs" data-bind="text: name, tooltip: {title: 'Link name'}" style="display: block; width: 100%"></span>
                             </div>
+
                             <div class="btn-group">
-                            <button class="btn btn-default btn-mini copy-button" data-trigger="manual"
-                                    data-bind="attr: {data-clipboard-text: linkUrl}, tooltip: {title: 'Click to copy'}" >
-                                <span class="fa fa-copy" ></span>
-                            </button>
+                                <button title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button"
+                                        data-bind="attr: {data-clipboard-text: linkUrl}" >
+                                    <i class="fa fa-copy"></i>
+                                </button>
                                 <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                             </div>
                         </td>
                         <td class="col-sm-4">
-                           <ul class="narrow-list list-overflow" data-bind="foreach: nodesList">
+                           <ul class="private-link-list narrow-list" data-bind="foreach: nodesList">
                                <li data-bind="style:{marginLeft: $data.scale}">
-                                  <img data-bind="attr:{src: imgUrl}" /><a data-bind="text:$data.title, attr: {href: $data.url}"></a>
+                                  <span data-bind="getIcon: $data.category"></span>
+                                  <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
                                </li>
                            </ul>
-                           <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
-                           <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayDefaultNodes"></button>
+
                         </td>
 
                         <td class="col-sm-2">
@@ -175,11 +168,13 @@
             </table>
 
         </div>
+
     % endif
 
     </div><!-- end col-md -->
 </div><!-- end row -->
 
+<link rel="stylesheet" href="/static/css/pages/contributor-page.css">
 
 <script id="contribTpl" type="text/html">
     <tr data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
@@ -192,10 +187,16 @@
                 <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
-        <td>
+        <td class="permissions">
             <!-- ko if: contributor.canEdit() -->
                 <span data-bind="visible: notDeleteStaged">
-                    <a href="#" class="permission-editable no-sort" data-type="select"></a>
+                    <select class="form-control input-sm" data-bind="
+                        options: permissionList,
+                        value: curPermission,
+                        optionsText: 'text',
+                        style: { font-weight: change() ? 'normal' : 'bold' }"
+                    >
+                    </select>
                 </span>
                 <span data-bind="visible: deleteStaged">
                     <span data-bind="text: formatPermission"></span>
@@ -205,9 +206,9 @@
                 <span data-bind="text: formatPermission"></span>
             <!-- /ko -->
         </td>
-        <td>
+        <td class="text-center">
             <input
-                    type="checkbox" class="no-sort"
+                    type="checkbox" class="no-sort biblio"
                     data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
                 />
         </td>
@@ -223,14 +224,14 @@
                     </a>
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
-                    Will be removed after Save
+                    Save to Remove
                 <!-- /ko -->
             <!-- /ko -->
 
             <!-- ko ifnot: contributor.canEdit() -->
                 <!-- ko if: canRemove -->
                     <a
-                            data-bind="click: removeSelf, tooltip: {title: 'Remove contributor'}"
+                            data-bind="click: function() { $data.removeSelf($parent)}, tooltip: {title: 'Remove contributor'}"
                         >
                         <i class="fa fa-times text-danger no-sort"></i>
                     </a>
@@ -246,22 +247,21 @@
         <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
         <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
         <br /><br />
+    % endif
         <div data-bind="foreach: messages">
             <div data-bind="css: cssClass">{{ text }}</div>
         </div>
-    % endif
 </%def>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
-    <% import json %>
 
     <script type="text/javascript">
       window.contextVars = window.contextVars || {};
-      window.contextVars.user = ${json.dumps(user)};
-      window.contextVars.isRegistration = ${json.dumps(node['is_registration'])};
-      window.contextVars.contributors = ${json.dumps(contributors)};
-      window.contextVars.adminContributors = ${json.dumps(adminContributors)};
+      window.contextVars.user = ${ user | sjson, n };
+      window.contextVars.isRegistration = ${ node['is_registration'] | sjson, n };
+      window.contextVars.contributors = ${ contributors | sjson, n };
+      window.contextVars.adminContributors = ${ adminContributors | sjson, n };
 
     </script>
     <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>

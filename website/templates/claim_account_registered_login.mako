@@ -19,7 +19,7 @@
                     "form_class": "form-stacked",
                     "submit_string": "Create Account",
                     "field_name_prefix": "register_",
-                    "submit_btn_class": "btn-success",
+                    "submit_btn_class": "btn-primary",
                     "next_url": "${next}"
                 },
                 "replace": true
@@ -35,11 +35,10 @@
                     "id": "signinForm",
                     "name": "signin",
                     "method_string": "POST",
-                    "action_string": "/login/?next=${next}",
+                    "action_string": "${login_url | h}",
                     "form_class": "form-stacked",
                     "submit_string": "Sign In",
                     "submit_btn_class": "btn-primary",
-                    "next_url": "${next}"
                 },
                 "replace": true
             }'></div>

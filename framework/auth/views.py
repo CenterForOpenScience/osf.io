@@ -9,29 +9,32 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 import framework.auth
+
+from framework.auth import cas
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth import exceptions
 from framework.exceptions import HTTPError
-from framework.sessions import set_previous_url
-from framework.auth import (login, logout, get_user, DuplicateEmailError, verify_two_factor)
+from framework.auth import (logout, get_user, DuplicateEmailError)
 from framework.auth.decorators import collect_auth, must_be_logged_in
-from framework.auth.forms import (SignInForm, MergeAccountForm, RegistrationForm,
-        ResetPasswordForm, ForgotPasswordForm, ResendConfirmationForm)
-from framework.sessions import session
+from framework.auth.forms import (
+    MergeAccountForm, RegistrationForm, ResendConfirmationForm,
+    ResetPasswordForm, ForgotPasswordForm
+)
 
-import website.settings
+from website import settings
 from website import mails
 from website import language
 from website import security
 from website.models import User
 from website.util import web_url_for
+from website.util.sanitize import strip_html
 
 
 @collect_auth
 def reset_password(auth, **kwargs):
     if auth.logged_in:
-        logout()
+        return auth_logout(redirect_url=request.url)
     verification_key = kwargs['verification_key']
     form = ResetPasswordForm(request.form)
 
@@ -43,11 +46,18 @@ def reset_password(auth, **kwargs):
         raise HTTPError(400, data=error_data)
 
     if request.method == 'POST' and form.validate():
-        user_obj.verification_key = None
+        # new random verification key, allows CAS to authenticate the user w/o password one time only.
+        user_obj.verification_key = security.random_string(20)
         user_obj.set_password(form.password.data)
         user_obj.save()
-        status.push_status_message('Password reset')
-        return redirect('/account/')
+        status.push_status_message('Password reset', 'success')
+        # Redirect to CAS and authenticate the user with a verification key.
+        return redirect(cas.get_login_url(
+            web_url_for('user_account', _absolute=True),
+            auto=True,
+            username=user_obj.username,
+            verification_key=user_obj.verification_key
+        ))
 
     forms.push_errors_to_status(form.errors)
     return {
@@ -55,13 +65,9 @@ def reset_password(auth, **kwargs):
     }
 
 
-def forgot_password():
-    """Return forgot password page upon GET request. If POST, attempt to send
-    user password reset or return respective error.
+def forgot_password_post():
+    """Attempt to send user password reset or return respective error.
     """
-    if request.method == 'GET':
-        return {}
-
     form = ForgotPasswordForm(request.form, prefix='forgot_password')
 
     if form.validate():
@@ -83,18 +89,20 @@ def forgot_password():
                 reset_link=reset_link
             )
         status.push_status_message(
-            'An email with instructions on how to reset the password for the '
-            'account associated with {0} has been sent. If you do not receive '
-            'an email and believe you should have please '
-            'contact OSF Support.'.format(email)
-        )
+            ('If there is an OSF account associated with {0}, an email with instructions on how to reset '
+             'the OSF password has been sent to {0}. If you do not receive an email and believe you should '
+             'have, please contact OSF Support. ').format(email), 'success')
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
 
-def _forgot_password(*args, **kwargs):
-
-    return forgot_password(*args, **kwargs)
+@collect_auth
+def forgot_password_get(auth, *args, **kwargs):
+    """Return forgot password page upon.
+    """
+    if auth.logged_in:
+        return redirect(web_url_for('dashboard'))
+    return {}
 
 ###############################################################################
 # Log in
@@ -102,44 +110,22 @@ def _forgot_password(*args, **kwargs):
 
 # TODO: Rewrite async
 @collect_auth
-def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs):
+def auth_login(auth, **kwargs):
     """If GET request, show login page. If POST, attempt to log user in if
     login form passsed; else send forgot password email.
 
     """
+    next_url = request.args.get('next')
     if auth.logged_in:
         if not request.args.get('logout'):
-            return redirect('/dashboard/')
-        logout()
-    direct_call = registration_form or forgot_password_form
-    if request.method == 'POST' and not direct_call:
-        form = SignInForm(request.form)
-        if form.validate():
-            try:
-                session.data.update({'next_url': request.args.get('next')})
-                response = login(form.username.data, form.password.data)
-                return response
-            except exceptions.LoginDisabledError:
-                status.push_status_message(language.DISABLED, 'error')
-            except exceptions.LoginNotAllowedError:
-                status.push_status_message(language.UNCONFIRMED, 'warning')
-                # Don't go anywhere
-                return {'next_url': ''}
-            except exceptions.PasswordIncorrectError:
-                status.push_status_message(language.LOGIN_FAILED)
-        forms.push_errors_to_status(form.errors)
-
+            if next_url:
+                return redirect(next_url)
+            return redirect(web_url_for('dashboard'))
+        # redirect user to CAS for logout, return here w/o authentication
+        return auth_logout(redirect_url=request.url)
     if kwargs.get('first', False):
-        status.push_status_message('You may now log in')
+        status.push_status_message('You may now log in', 'info')
 
-    # Get next URL from GET / POST data
-    next_url = request.args.get(
-        'next',
-        request.form.get(
-            'next_url',
-            ''
-        )
-    )
     status_message = request.args.get('status', '')
     if status_message == 'expired':
         status.push_status_message('The private link you used is expired.')
@@ -150,45 +136,25 @@ def auth_login(auth, registration_form=None, forgot_password_form=None, **kwargs
         # Don't raise error if user is being logged out
         if not request.args.get('logout'):
             code = http.UNAUTHORIZED
-    return {'next_url': next_url}, code
+    # set login_url to form action, upon successful authentication specifically w/o logout=True,
+    # allows for next to be followed or a redirect to the dashboard.
+    redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
+    login_url = cas.get_login_url(redirect_url, auto=True)
+    return {'login_url': login_url}, code
 
 
-def two_factor(**kwargs):
-    """View for handling two factor code authentication
-
-    methods: GET, POST
-    """
-    if request.method != 'POST':
-        return {}
-
-    two_factor_code = request.form['twoFactorCode']
-    try:  # verify two factor for current user
-        response = verify_two_factor(session.data['two_factor_auth']['auth_user_id'],
-                                     two_factor_code)
-        return response
-    except exceptions.TwoFactorValidationError:
-        status.push_status_message(language.TWO_FACTOR_FAILED)
-        # Get next URL from GET / POST data
-        next_url = request.args.get(
-            'next',
-            request.form.get(
-                'next_url',
-                ''
-            )
-        )
-        return {'next_url': next_url}, http.UNAUTHORIZED
-
-
-def auth_logout():
+def auth_logout(redirect_url=None):
     """Log out and delete cookie.
     """
+    redirect_url = redirect_url or request.args.get('redirect_url')
     logout()
-    rv = redirect('/goodbye/')
-    rv.delete_cookie(website.settings.COOKIE_NAME)
-    return rv
+    resp = redirect(cas.get_logout_url(redirect_url if redirect_url else web_url_for('goodbye', _absolute=True)))
+    resp.delete_cookie(settings.COOKIE_NAME)
+    return resp
 
 
-def confirm_email_get(**kwargs):
+@collect_auth
+def confirm_email_get(token, auth=None, **kwargs):
     """View for email confirmation links.
     Authenticates and redirects to user settings page if confirmation is
     successful, otherwise shows an "Expired Link" error.
@@ -196,12 +162,20 @@ def confirm_email_get(**kwargs):
     methods: GET
     """
     user = User.load(kwargs['uid'])
-    is_initial_confirmation = not user.date_confirmed
     is_merge = 'confirm_merge' in request.args
-    token = kwargs['token']
+    is_initial_confirmation = not user.date_confirmed
 
     if user is None:
         raise HTTPError(http.NOT_FOUND)
+
+    if auth and auth.user and auth.user in (user, user.merged_by):
+        if not is_merge:
+            status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+            # Go to dashboard
+            return redirect(web_url_for('dashboard'))
+
+        status.push_status_message(language.MERGE_COMPLETE, 'success')
+        return redirect(web_url_for('user_account'))
 
     try:
         user.confirm_email(token, merge=is_merge)
@@ -215,18 +189,24 @@ def confirm_email_get(**kwargs):
         user.date_last_login = datetime.datetime.utcnow()
         user.save()
 
-        # Go to settings page
-        status.push_status_message(language.WELCOME_MESSAGE, 'success')
-        response = redirect('/settings/')
-    else:
-        response = redirect(web_url_for('user_account'))
+        # Send out our welcome message
+        mails.send_mail(
+            to_addr=user.username,
+            mail=mails.WELCOME,
+            mimetype='html',
+            user=user
+        )
 
-    if is_merge:
-        status.push_status_message(language.MERGE_COMPLETE, 'success')
-    else:
-        status.push_status_message(language.CONFIRMED_EMAIL, 'success')
+    # Redirect to CAS and authenticate the user with a verification key.
+    user.verification_key = security.random_string(20)
+    user.save()
 
-    return framework.auth.authenticate(user, response=response)
+    return redirect(cas.get_login_url(
+        request.url,
+        auto=True,
+        username=user.username,
+        verification_key=user.verification_key
+    ))
 
 
 def send_confirm_email(user, email):
@@ -235,10 +215,26 @@ def send_confirm_email(user, email):
     :raises: KeyError if user does not have a confirmation token for the given
         email.
     """
-    confirmation_url = user.get_confirmation_url(email, external=True, force=True)
-    mails.send_mail(email, mails.CONFIRM_EMAIL, 'plain',
+    confirmation_url = user.get_confirmation_url(
+        email,
+        external=True,
+        force=True,
+    )
+
+    try:
+        merge_target = User.find_one(Q('emails', 'eq', email))
+    except NoResultsFound:
+        merge_target = None
+
+    mails.send_mail(
+        email,
+        mails.CONFIRM_MERGE if merge_target else mails.CONFIRM_EMAIL,
+        'plain',
         user=user,
-        confirmation_url=confirmation_url)
+        confirmation_url=confirmation_url,
+        email=email,
+        merge_target=merge_target,
+    )
 
 
 def register_user(**kwargs):
@@ -253,17 +249,20 @@ def register_user(**kwargs):
 
     """
     # Verify email address match
-    if request.json['email1'] != request.json['email2']:
+    json_data = request.get_json()
+    if str(json_data['email1']).lower() != str(json_data['email2']).lower():
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long='Email addresses must match.')
         )
-    # TODO: Sanitize fields
     try:
+        full_name = request.json['fullName']
+        full_name = strip_html(full_name)
+
         user = framework.auth.register_unconfirmed(
             request.json['email1'],
             request.json['password'],
-            request.json['fullName'],
+            full_name,
         )
         framework.auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):
@@ -276,7 +275,7 @@ def register_user(**kwargs):
             )
         )
 
-    if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+    if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
         send_confirm_email(user, email=user.username)
         message = language.REGISTRATION_SUCCESS.format(email=user.username)
         return {'message': message}
@@ -286,11 +285,10 @@ def register_user(**kwargs):
 
 # TODO: Remove me
 def auth_register_post():
-    if not website.settings.ALLOW_REGISTRATION:
+    if not settings.ALLOW_REGISTRATION:
         status.push_status_message(language.REGISTRATION_UNAVAILABLE)
         return redirect('/')
     form = RegistrationForm(request.form, prefix='register')
-    set_previous_url()
 
     # Process form
     if form.validate():
@@ -303,18 +301,24 @@ def auth_register_post():
         except (ValidationValueError, DuplicateEmailError):
             status.push_status_message(
                 language.ALREADY_REGISTERED.format(email=form.username.data))
-            return auth_login(registration_form=form)
+            return auth_login()
         if user:
-            if website.settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
+            if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=user.username)
                 message = language.REGISTRATION_SUCCESS.format(email=user.username)
                 status.push_status_message(message, 'success')
-                return auth_login(registration_form=form)
+                return auth_login()
             else:
                 return redirect('/login/first/')
     else:
         forms.push_errors_to_status(form.errors)
-        return auth_login(registration_form=form)
+        return auth_login()
+
+
+def merge_user_get(**kwargs):
+    '''Web view for merging an account. Renders the form for confirmation.
+    '''
+    return forms.utils.jsonify(MergeAccountForm())
 
 
 def resend_confirmation():
@@ -340,12 +344,6 @@ def resend_confirmation():
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere
     return {'form': form}
-
-
-def merge_user_get(**kwargs):
-    '''Web view for merging an account. Renders the form for confirmation.
-    '''
-    return forms.utils.jsonify(MergeAccountForm())
 
 
 # TODO: shrink me
@@ -381,7 +379,7 @@ def merge_user_post(auth, **kwargs):
             master.merge_user(merged_user)
             master.save()
             if request.form:
-                status.push_status_message("Successfully merged {0} with this account".format(merged_username))
+                status.push_status_message("Successfully merged {0} with this account".format(merged_username), 'success')
                 return redirect("/settings/")
             return {"status": "success"}
         else:

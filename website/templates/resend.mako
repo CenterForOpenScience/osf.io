@@ -15,7 +15,7 @@
                 ${form.email(placeholder='Email address', autofocus=True)}
             </div>
 
-            <button type='submit' class='btn btn-primary'>Submit</button>
+            <button type='submit' class='btn btn-primary'>Send</button>
         </form>
     </div>
 </div>

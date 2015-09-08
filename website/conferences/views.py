@@ -8,6 +8,7 @@ from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.exceptions import HTTPError
+from framework.flask import redirect
 from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 
@@ -78,9 +79,6 @@ def add_poster_by_email(conference, message):
         )
         if user_created:
             created.append(user)
-
-        if user_created:
-            created.append(user)
             set_password_url = web_url_for(
                 'reset_password',
                 verification_key=user.verification_key,
@@ -127,7 +125,7 @@ def add_poster_by_email(conference, message):
     )
 
 
-def _render_conference_node(node, idx):
+def _render_conference_node(node, idx, conf):
     storage_settings = node.get_addon('osfstorage')
     records = storage_settings.root_node.children
     try:
@@ -139,7 +137,7 @@ def _render_conference_node(node, idx):
 
         download_url = node.web_url_for(
             'addon_view_or_download_file',
-            path=record.path,
+            path=record.path.strip('/'),
             provider='osfstorage',
             action='download',
             _absolute=True,
@@ -149,6 +147,7 @@ def _render_conference_node(node, idx):
         download_count = 0
 
     author = node.visible_contributors[0]
+    tags = [tag._id for tag in node.tags]
 
     return {
         'id': idx,
@@ -159,12 +158,16 @@ def _render_conference_node(node, idx):
         'category': 'talk' if 'talk' in node.system_tags else 'poster',
         'download': download_count,
         'downloadUrl': download_url,
+        'dateCreated': str(node.date_created),
+        'confName': conf.name,
+        'confUrl': web_url_for('conference_results', meeting=conf.endpoint),
+        'tags': ' '.join(tags)
     }
 
 
 def conference_data(meeting):
     try:
-        Conference.find_one(Q('endpoint', 'iexact', meeting))
+        conf = Conference.find_one(Q('endpoint', 'iexact', meeting))
     except ModularOdmException:
         raise HTTPError(httplib.NOT_FOUND)
 
@@ -175,10 +178,14 @@ def conference_data(meeting):
     )
 
     ret = [
-        _render_conference_node(each, idx)
+        _render_conference_node(each, idx, conf)
         for idx, each in enumerate(nodes)
     ]
     return ret
+
+
+def redirect_to_meetings(**kwargs):
+    return redirect('/meetings/')
 
 
 def conference_results(meeting):
@@ -203,8 +210,8 @@ def conference_results(meeting):
 
 
 def conference_view(**kwargs):
-
     meetings = []
+    submissions = []
     for conf in Conference.find():
         query = (
             Q('tags', 'iexact', conf.endpoint)
@@ -212,15 +219,19 @@ def conference_view(**kwargs):
             & Q('is_deleted', 'eq', False)
         )
         projects = Node.find(query)
-        submissions = projects.count()
-        if submissions < settings.CONFERNCE_MIN_COUNT:
+        for idx, node in enumerate(projects):
+            submissions.append(_render_conference_node(node, idx, conf))
+        num_submissions = projects.count()
+        if num_submissions < settings.CONFERNCE_MIN_COUNT:
             continue
         meetings.append({
             'name': conf.name,
             'active': conf.active,
             'url': web_url_for('conference_results', meeting=conf.endpoint),
-            'submissions': submissions,
+            'count': num_submissions,
         })
-    meetings.sort(key=lambda meeting: meeting['submissions'], reverse=True)
 
-    return {'meetings': meetings}
+    submissions.sort(key=lambda submission: submission['dateCreated'], reverse=True)
+    meetings.sort(key=lambda meeting: meeting['count'], reverse=True)
+
+    return {'meetings': meetings, 'submissions': submissions}

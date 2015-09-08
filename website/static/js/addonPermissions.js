@@ -17,7 +17,7 @@ var AddonPermissionsTable = {
             var apiUrl = $(this).attr('api-url')+ addonShortName + '/config/';
             bootbox.confirm({
                 title: 'Remove addon?',
-                message: 'Are you sure you want to remove the ' + addonFullname + ' authorization from this project?',
+                message: 'Are you sure you want to disconnnect the ' + addonFullname + ' account from this project?',
                 callback: function (confirm) {
                     if (confirm) {
                         $.ajax({
@@ -38,25 +38,20 @@ var AddonPermissionsTable = {
                             },
 
                             error: function () {
-                                $osf.growl('An error occurred, the project has not been deauthorized. ',
+                                $osf.growl('An error occurred, the account is still connected to the project. ',
                                     'If the issue persists, please report it to <a href="mailto:support@osf.io">support@osf.io</a>.');
                             }
                         });
                     }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Remove',
+                        className:'btn-danger'
+                    }
                 }
             });
-    });
-
-    $('#' + addonShortName + '-more').on('click', function (event) {
-        $('#' + addonShortName + '-header').removeClass('table-less');
-        $('#' + addonShortName + '-more').hide();
-        $('#' + addonShortName + '-less').show();
-    });
-    $('#' + addonShortName + '-less').on('click', function (event) {
-        $('#' + addonShortName + '-header').addClass('table-less');
-        $('#' + addonShortName + '-less').hide();
-        $('#' + addonShortName + '-more').show();
-    });
+        });
     }
 };
 

@@ -19,10 +19,7 @@ from website.util.rubeus import sort_by_name
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID, \
     ALL_MY_PROJECTS_NAME, ALL_MY_REGISTRATIONS_NAME, DISK_SAVING_MODE
 
-
-app = website.app.init_app(
-    routes=True, set_backends=False, settings_module='website.settings'
-)
+from website.util import sanitize
 
 class TestRubeus(OsfTestCase):
 
@@ -219,6 +216,48 @@ class TestRubeus(OsfTestCase):
         assert_false(private_dummy['permissions']['view'])
         assert_equal(private_dummy['name'], 'Private Component')
         assert_equal(len(private_dummy['children']), 0)
+
+    def test_get_node_name(self):
+        user = UserFactory()
+        auth = Auth(user=user)
+        another_user = UserFactory()
+        another_auth = Auth(user=another_user)
+
+        # Public (Can View)
+        public_project = ProjectFactory(is_public=True)
+        collector = rubeus.NodeFileCollector(node=public_project, auth=another_auth)
+        node_name = u'{0}: {1}'.format(public_project.project_or_component.capitalize(), sanitize.unescape_entities(public_project.title))
+        assert_equal(collector._get_node_name(public_project), node_name)
+
+        # Private  (Can't View)
+        registration_private = RegistrationFactory(creator=user)
+        registration_private.is_public = False
+        registration_private.save()
+        collector = rubeus.NodeFileCollector(node=registration_private, auth=another_auth)
+        assert_equal(collector._get_node_name(registration_private), u'Private Registration')
+
+        content = ProjectFactory(creator=user)
+        node = ProjectFactory(creator=user)
+
+        forked_private = node.fork_node(auth=auth)
+        forked_private.is_public = False
+        forked_private.save()
+        collector = rubeus.NodeFileCollector(node=forked_private, auth=another_auth)
+        assert_equal(collector._get_node_name(forked_private), u'Private Fork')
+
+        pointer_private = node.add_pointer(content, auth=auth)
+        pointer_private.is_public = False
+        pointer_private.save()
+        collector = rubeus.NodeFileCollector(node=pointer_private, auth=another_auth)
+        assert_equal(collector._get_node_name(pointer_private), u'Private Link')
+
+        private_project = ProjectFactory(is_public=False)
+        collector = rubeus.NodeFileCollector(node=private_project, auth=another_auth)
+        assert_equal(collector._get_node_name(private_project), u'Private Component')
+
+        private_node = NodeFactory(is_public=False)
+        collector = rubeus.NodeFileCollector(node=private_node, auth=another_auth)
+        assert_equal(collector._get_node_name(private_node), u'Private Component')
 
     def test_collect_components_deleted(self):
         node = NodeFactory(creator=self.project.creator, parent=self.project)
@@ -454,7 +493,6 @@ class TestSmartFolderViews(OsfTestCase):
 
     def setUp(self):
         super(TestSmartFolderViews, self).setUp()
-        self.app = TestApp(app)
         self.dash = DashboardFactory()
         self.user = self.dash.creator
         self.auth = AuthFactory(user=self.user)
@@ -463,12 +501,9 @@ class TestSmartFolderViews(OsfTestCase):
     def test_adding_project_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=self.user)
 
-        with app.test_request_context():
-            url = api_url_for('get_dashboard')
+        url = api_url_for('get_dashboard')
 
         res = self.app.get(url + ALL_MY_PROJECTS_ID)
-
-        import pprint;pp = pprint.PrettyPrinter()
 
         init_len = len(res.json[u'data'])
 
@@ -476,13 +511,11 @@ class TestSmartFolderViews(OsfTestCase):
         res = self.app.get(url + ALL_MY_PROJECTS_ID)
         assert_equal(len(res.json[u'data']), init_len + 1)
 
-
     @mock.patch('website.project.decorators.Auth.from_kwargs')
     def test_adding_registration_to_dashboard_increases_json_size_by_one(self, mock_from_kwargs):
         mock_from_kwargs.return_value = Auth(user=self.user)
 
-        with app.test_request_context():
-            url = api_url_for('get_dashboard')
+        url = api_url_for('get_dashboard')
 
         res = self.app.get(url + ALL_MY_REGISTRATIONS_ID)
         init_len = len(res.json[u'data'])

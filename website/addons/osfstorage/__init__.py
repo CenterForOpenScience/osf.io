@@ -4,12 +4,13 @@
 from . import routes, views, model, oldels
 
 MODELS = [
+    oldels.OsfStorageFileTree,
+    oldels.OsfStorageFileRecord,
     model.OsfStorageFileNode,
     model.OsfStorageGuidFile,
     model.OsfStorageFileVersion,
     model.OsfStorageNodeSettings,
-    oldels.OsfStorageFileTree,
-    oldels.OsfStorageFileRecord,
+    model.OsfStorageTrashedFileNode,
 ]
 NODE_SETTINGS_MODEL = model.OsfStorageNodeSettings
 

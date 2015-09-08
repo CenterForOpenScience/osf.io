@@ -3,32 +3,39 @@
 import abc
 import logging
 import datetime
+import functools
 import httplib as http
+import urlparse
+import uuid
 
 from flask import request
-from modularodm import Q
-from modularodm import fields
+from oauthlib.oauth2.rfc6749.errors import MissingTokenError
+from requests.exceptions import HTTPError as RequestsHTTPError
+
+from modularodm import fields, Q
 from modularodm.storage.base import KeyExistsException
+from modularodm.validators import URLValidator
 from requests_oauthlib import OAuth1Session
 from requests_oauthlib import OAuth2Session
 
-from framework.exceptions import HTTPError
-from framework.exceptions import PermissionsError
-from framework.mongo import ObjectId
-from framework.mongo import StoredObject
+from framework.auth import cas
+from framework.exceptions import HTTPError, PermissionsError
+from framework.mongo import ObjectId, StoredObject
 from framework.mongo.utils import unique_on
-from framework.sessions import get_session
-
-from website.util import web_url_for
-from requests.exceptions import HTTPError as RequestsHTTPError
-from oauthlib.oauth2.rfc6749.errors import MissingTokenError
+from framework.sessions import session
+from website import settings
 from website.oauth.utils import PROVIDER_LOOKUP
+from website.security import random_string
+from website.util import web_url_for
 
+from api.base.utils import absolute_reverse
 
 logger = logging.getLogger(__name__)
 
 OAUTH1 = 1
 OAUTH2 = 2
+
+generate_client_secret = functools.partial(random_string, length=40)
 
 
 @unique_on(['provider', 'provider_id'])
@@ -133,7 +140,6 @@ class ExternalProvider(object):
         temporary credentials to start the flow.
         """
 
-        session = get_session()
         # create a dict on the session object if it's not already there
         if session.data.get("oauth_states") is None:
             session.data['oauth_states'] = {}
@@ -206,7 +212,6 @@ class ExternalProvider(object):
         This is called in the view that handles the user once they are returned
         to the OSF after authenticating on the external service.
         """
-        session = get_session()
 
         # make sure the user has temporary credentials for this provider
         try:
@@ -349,3 +354,72 @@ class ExternalProvider(object):
         :return dict:
         """
         pass
+
+
+class ApiOAuth2Application(StoredObject):
+    """Registration and key for user-created OAuth API applications
+
+    This collection is also used by CAS to create the master list of available applications.
+    Any changes made to field names in this model must be echoed in the CAS implementation.
+    """
+    _id = fields.StringField(
+        primary=True,
+        default=lambda: str(ObjectId())
+    )
+
+    # Client ID and secret. Use separate ID field so ID format doesn't have to be restricted to database internals.
+    client_id = fields.StringField(default=lambda: uuid.uuid4().hex,  # Not *guaranteed* unique, but very unlikely
+                                   unique=True,
+                                   index=True)
+    client_secret = fields.StringField(default=generate_client_secret)
+
+    active = fields.BooleanField(default=True,  # Set to False if application is deactivated
+                                 index=True)
+
+    owner = fields.ForeignField('User',
+                                backref='created',
+                                index=True,
+                                required=True)
+
+    # User-specified application descriptors
+    name = fields.StringField(index=True, required=True)
+    description = fields.StringField(required=False)
+
+    date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
+                                        editable=False)
+
+    home_url = fields.StringField(required=True,
+                                  validate=URLValidator())
+    callback_url = fields.StringField(required=True,
+                                      validate=URLValidator())
+
+    def deactivate(self):
+        """
+        Deactivate an ApiOAuth2Application
+
+        Does not delete the database record, but revokes all tokens and sets a flag that hides this instance from API
+        """
+        client = cas.get_client()
+        # Will raise a CasHttpError if deletion fails, which will also stop setting of active=False.
+        resp = client.revoke_application_tokens(self.client_id, self.client_secret)  # noqa
+
+        self.active = False
+        self.save()
+        return True
+
+    @property
+    def url(self):
+        return '/settings/applications/{}/'.format(self.client_id)
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)
+
+    # Properties used by Django and DRF "Links: self" field
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('applications:application-detail', kwargs={'client_id': self.client_id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url

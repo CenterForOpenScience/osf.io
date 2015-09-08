@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import os
 import glob
 import importlib
@@ -8,21 +7,27 @@ from bson import ObjectId
 from flask import request
 from modularodm import fields
 from mako.lookup import TemplateLookup
+from time import sleep
 
 import furl
 import requests
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
-from framework.exceptions import PermissionsError
+from framework.sessions import session
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.guid.model import GuidStoredObject
+from framework.exceptions import (
+    PermissionsError,
+    HTTPError,
+)
 
 from website import settings
 from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
+from website.util import waterbutler_url_for
 
 from website.oauth.signals import oauth_complete
 
@@ -35,8 +40,7 @@ NODE_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
 
 USER_SETTINGS_TEMPLATE_DEFAULT = os.path.join(
     settings.TEMPLATES_PATH,
-    'project',
-    'addon',
+    'profile',
     'user_settings_default.mako',
 )
 
@@ -50,7 +54,6 @@ STATUS_EXCEPTIONS = {
     410: exceptions.FileDeletedError,
     404: exceptions.FileDoesntExistError
 }
-
 
 def _is_image(filename):
     mtype, _ = mimetypes.guess_type(filename)
@@ -232,14 +235,6 @@ class GuidFile(GuidStoredObject):
         raise NotImplementedError
 
     @property
-    def version_identifier(self):
-        raise NotImplementedError
-
-    @property
-    def unique_identifier(self):
-        raise NotImplementedError
-
-    @property
     def waterbutler_path(self):
         '''The waterbutler formatted path of the specified file.
         Must being with a /
@@ -259,10 +254,19 @@ class GuidFile(GuidStoredObject):
             raise AttributeError('No attribute name')
 
     @property
-    def file_name(self):
-        if self.revision:
-            return '{0}_{1}.html'.format(self._id, self.revision)
-        return '{0}_{1}.html'.format(self._id, self.unique_identifier)
+    def size(self):
+        try:
+            return self._metadata_cache['size']
+        except (TypeError, KeyError):
+            raise AttributeError('No attribute size')
+
+    @property
+    def materialized(self):
+        try:
+            return self._metadata_cache['materialized']
+        except (TypeError, KeyError):
+            # If materialized is not in _metadata_cache or metadata_cache is None
+            raise AttributeError('No attribute materialized')
 
     @property
     def joinable_path(self):
@@ -275,8 +279,10 @@ class GuidFile(GuidStoredObject):
             'nid': self.node._id,
             'provider': self.provider,
             'path': self.waterbutler_path,
-            'cookie': request.cookies.get(settings.COOKIE_NAME)
         })
+
+        if session and 'auth_user_access_token' in session.data:
+            url.args.add('token', session.data.get('auth_user_access_token'))
 
         if request.args.get('view_only'):
             url.args['view_only'] = request.args['view_only']
@@ -293,28 +299,20 @@ class GuidFile(GuidStoredObject):
         return url.url
 
     @property
-    def mfr_download_url(self):
-        url = self._base_butler_url
-        url.path.add('file')
-
-        url.args['mode'] = 'render'
-        url.args['action'] = 'download'
-
-        if self.revision:
-            url.args[self.version_identifier] = self.revision
-
-        if request.args.get('view_only'):
-            url.args['view_only'] = request.args['view_only']
-
+    def mfr_render_url(self):
+        url = furl.furl(settings.MFR_SERVER_URL)
+        url.path.add('render')
+        url.args['url'] = self.mfr_public_download_url
         return url.url
 
     @property
-    def public_download_url(self):
+    def mfr_public_download_url(self):
         url = furl.furl(settings.DOMAIN)
 
         url.path.add(self._id + '/')
         url.args['mode'] = 'render'
         url.args['action'] = 'download'
+        url.args['accept_url'] = 'false'
 
         if self.revision:
             url.args[self.version_identifier] = self.revision
@@ -330,25 +328,6 @@ class GuidFile(GuidStoredObject):
         url.path.add('data')
 
         return url.url
-
-    @property
-    def mfr_cache_path(self):
-        return os.path.join(
-            settings.MFR_CACHE_PATH,
-            self.node._id,
-            self.provider,
-            self.file_name,
-        )
-
-    @property
-    def mfr_temp_path(self):
-        return os.path.join(
-            settings.MFR_TEMP_PATH,
-            self.node._id,
-            self.provider,
-            # Attempt to keep the original extension of the file for MFR detection
-            self.file_name + os.path.splitext(self.name)[1]
-        )
 
     @property
     def deep_url(self):
@@ -613,11 +592,10 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
     def get_nodes_with_oauth_grants(self, external_account):
         # Generator of nodes which have grants for this external account
-        return (
-            Node.load(node_id)
-            for node_id, grants in self.oauth_grants.iteritems()
-            if external_account._id in grants.keys()
-        )
+        for node_id, grants in self.oauth_grants.iteritems():
+            node = Node.load(node_id)
+            if external_account._id in grants.keys() and not node.is_deleted:
+                yield node
 
     def get_attached_nodes(self, external_account):
         for node in self.get_nodes_with_oauth_grants(external_account):
@@ -651,6 +629,20 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         user_settings.oauth_grants = {}
         user_settings.save()
+
+        try:
+            config = settings.ADDONS_AVAILABLE_DICT[
+                self.oauth_provider.short_name
+            ]
+            Model = config.settings_models['node']
+        except KeyError:
+            pass
+        else:
+            connected = Model.find(Q('user_settings', 'eq', user_settings))
+            for node_settings in connected:
+                node_settings.user_settings = self
+                node_settings.save()
+
         self.save()
 
     def to_json(self, user):
@@ -676,9 +668,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             if node_addon and node_addon.user_settings == self:
                 node_addon.clear_auth()
 
-
 class AddonNodeSettingsBase(AddonSettingsBase):
-
     owner = fields.ForeignField('node', backref='addons')
 
     _meta = {
@@ -753,7 +743,6 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         pass
 
     def before_make_public(self, node):
-
         """
 
         :param Node node:
@@ -781,14 +770,42 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         pass
 
     def before_fork(self, node, user):
-        """
-
+        """Return warning text to display if user auth will be copied to a
+        fork.
         :param Node node:
-        :param User user:
-        :returns: Alert message
-
+        :param Uder user
+        :returns Alert message
         """
-        pass
+
+        if hasattr(self, "user_settings"):
+            if self.user_settings is None:
+                return (
+                    u'Because you have not configured the authorization for this {addon} add-on, this '
+                    u'{category} will not transfer your authentication to '
+                    u'the forked {category}.'
+                ).format(
+                    addon=self.config.full_name,
+                    category=node.project_or_component,
+                )
+
+            elif self.user_settings and self.user_settings.owner == user:
+                return (
+                    u'Because you have authorized the {addon} add-on for this '
+                    u'{category}, forking it will also transfer your authentication to '
+                    u'the forked {category}.'
+                ).format(
+                    addon=self.config.full_name,
+                    category=node.project_or_component,
+                )
+            else:
+                return (
+                    u'Because the {addon} add-on has been authorized by a different '
+                    u'user, forking it will not transfer authentication to the forked '
+                    u'{category}.'
+                ).format(
+                    addon=self.config.full_name,
+                    category=node.project_or_component,
+                )
 
     def after_fork(self, node, fork, user, save=True):
         """
@@ -839,6 +856,75 @@ class AddonNodeSettingsBase(AddonSettingsBase):
         """
         pass
 
+############
+# Archiver #
+############
+class GenericRootNode(object):
+    path = '/'
+    name = ''
+
+class StorageAddonBase(object):
+    """
+    Mixin class for traversing file trees of addons with files
+    """
+
+    root_node = GenericRootNode()
+
+    @property
+    def archive_folder_name(self):
+        name = "Archive of {addon}".format(addon=self.config.full_name)
+        folder_name = getattr(self, 'folder_name', '').lstrip('/').strip()
+        if folder_name:
+            name = name + ": {folder}".format(folder=folder_name)
+        return name
+
+    def _get_fileobj_child_metadata(self, filenode, user, cookie=None, version=None):
+        kwargs = dict(
+            provider=self.config.short_name,
+            path=filenode.get('path', ''),
+            node=self.owner,
+            user=user,
+            view_only=True,
+        )
+        if cookie:
+            kwargs['cookie'] = cookie
+        if version:
+            kwargs['version'] = version
+        metadata_url = waterbutler_url_for(
+            'metadata',
+            **kwargs
+        )
+        res = requests.get(metadata_url)
+        if res.status_code != 200:
+            raise HTTPError(res.status_code, data={
+                'error': res.json(),
+            })
+        # TODO: better throttling?
+        sleep(1.0 / 5.0)
+        return res.json().get('data', [])
+
+    def _get_file_tree(self, filenode=None, user=None, cookie=None, version=None):
+        """
+        Recursively get file metadata
+        """
+        filenode = filenode or {
+            'path': '/',
+            'kind': 'folder',
+            'name': self.root_node.name,
+        }
+        if filenode.get('kind') == 'file':
+            return filenode
+        elif 'size' in filenode:
+            return filenode
+        kwargs = {
+            'version': version,
+            'cookie': cookie,
+        }
+        filenode['children'] = [
+            self._get_file_tree(child, user, cookie=cookie)
+            for child in self._get_fileobj_child_metadata(filenode, user, **kwargs)
+        ]
+        return filenode
 
 class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     _meta = {
@@ -940,35 +1026,10 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message
-
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        if self.user_settings and self.user_settings.owner == user:
-            return (
-                u'Because you have authorized the {addon} add-on for this '
-                u'{category}, forking it will also transfer your authentication token to '
-                u'the forked {category}.'
-            ).format(
-                addon=self.config.full_name,
-                category=node.project_or_component,
-            )
-        return (
-            u'Because the {addon} add-on has been authorized by a different '
-            u'user, forking it will not transfer authentication token to the forked '
-            u'{category}.'
-        ).format(
-            addon=self.config.full_name,
-            category=node.project_or_component,
-        )
-
-    # backwards compatibility
-    before_fork = before_fork_message
 
     def after_fork(self, node, fork, user, save=True):
         """After forking, copy user settings if the user is the one who authorized
@@ -991,7 +1052,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         else:
             message = (
                 u'{addon} authorization not copied to forked {category}. You may '
-                u'authorize this fork on the <a href="{url}">Settings</a> '
+                u'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                 u'page.'
             ).format(
                 addon=self.config.full_name,

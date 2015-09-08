@@ -25,13 +25,12 @@ from mako.lookup import TemplateLookup, Template
 from framework.email import tasks
 from website import settings
 
-
 logger = logging.getLogger(__name__)
 
 EMAIL_TEMPLATES_DIR = os.path.join(settings.TEMPLATES_PATH, 'emails')
 
 _tpl_lookup = TemplateLookup(
-    directories=[EMAIL_TEMPLATES_DIR]
+    directories=[EMAIL_TEMPLATES_DIR],
 )
 
 TXT_EXT = '.txt.mako'
@@ -106,7 +105,8 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         login=login,
         username=username,
         password=password,
-        mail_server=mail_server)
+        mail_server=mail_server
+    )
 
     if settings.USE_CELERY:
         return mailer.apply_async(kwargs=kwargs, link=callback)
@@ -120,13 +120,17 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 # Predefined Emails
 
 TEST = Mail('test', subject='A test email to ${name}')
-CONFIRM_EMAIL = Mail('confirm', subject='Confirm your email address')
+
+CONFIRM_EMAIL = Mail('confirm', subject='Open Science Framework Account Verification')
+CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
+
 REMOVED_EMAIL = Mail('email_removed', subject='Email address removed from your OSF account')
 PRIMARY_EMAIL_CHANGED = Mail('primary_email_changed', subject='Primary email changed')
 INVITE = Mail('invite', subject='You have been added as a contributor to an OSF project.')
+CONTRIBUTOR_ADDED = Mail('contributor_added', subject='You have been added as a contributor to an OSF project.')
 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
-FORWARD_INVITE_REGiSTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
+FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
 PENDING_VERIFICATION = Mail('pending_invite', subject="Your account is almost ready!")
@@ -150,3 +154,81 @@ CONFERENCE_FAILED = Mail(
 
 DIGEST = Mail('digest', subject='OSF Email Digest')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
+
+# Retraction related Mail objects
+PENDING_RETRACTION_ADMIN = Mail(
+    'pending_retraction_admin',
+    subject='Retraction pending for one of your projects.'
+)
+PENDING_RETRACTION_NON_ADMIN = Mail(
+    'pending_retraction_non_admin',
+    subject='Retraction pending for one of your projects.'
+)
+# Embargo related Mail objects
+PENDING_EMBARGO_ADMIN = Mail(
+    'pending_embargo_admin',
+    subject='Registration pending for one of your projects.'
+)
+PENDING_EMBARGO_NON_ADMIN = Mail(
+    'pending_embargo_non_admin',
+    subject='Registration pending for one of your projects.'
+)
+# Registration related Mail Objects
+PENDING_REGISTRATION_ADMIN = Mail(
+    'pending_registration_admin',
+    subject='Registration pending for one of your projects.'
+)
+PENDING_REGISTRATION_NON_ADMIN = Mail(
+    'pending_registration_non_admin',
+    subject='Registration pending for one of your projects.'
+)
+FILE_OPERATION_SUCCESS = Mail(
+    'file_operation_success',
+    subject='Your ${action} has finished',
+)
+
+FILE_OPERATION_FAILED = Mail(
+    'file_operation_failed',
+    subject='Your ${action} has failed',
+)
+
+UNESCAPE = "<% from website.util.sanitize import unescape_entities %> ${unescape_entities(src.title)}"
+PROBLEM_REGISTERING = "Problem registering " + UNESCAPE
+
+ARCHIVE_SIZE_EXCEEDED_DESK = Mail(
+    'archive_size_exceeded_desk',
+    subject=PROBLEM_REGISTERING
+)
+ARCHIVE_SIZE_EXCEEDED_USER = Mail(
+    'archive_size_exceeded_user',
+    subject=PROBLEM_REGISTERING
+)
+
+ARCHIVE_COPY_ERROR_DESK = Mail(
+    'archive_copy_error_desk',
+    subject=PROBLEM_REGISTERING
+)
+ARCHIVE_COPY_ERROR_USER = Mail(
+    'archive_copy_error_user',
+    subject=PROBLEM_REGISTERING
+)
+
+ARCHIVE_UNCAUGHT_ERROR_DESK = Mail(
+    'archive_uncaught_error_desk',
+    subject=PROBLEM_REGISTERING
+)
+ARCHIVE_UNCAUGHT_ERROR_USER = Mail(
+    'archive_uncaught_error_user',
+    subject=PROBLEM_REGISTERING
+)
+
+ARCHIVE_SUCCESS = Mail(
+    'archive_success',
+    subject="Registration of " + UNESCAPE + " complete"
+)
+
+
+WELCOME = Mail(
+    'welcome',
+    subject='Welcome to the Open Science Framework'
+)

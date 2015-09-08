@@ -12,8 +12,10 @@
 
 # Status message shown at settings page on first login
 # (upon clicking primary email confirmation link)
-WELCOME_MESSAGE = ('Welcome to the OSF! Please update the following settings. If you need assistance '
-                   'in getting started, please visit the <a href="/getting-started/">Getting Started</a> page.')
+WELCOME_MESSAGE = '''
+<h1>Welcome to the OSF!</h1>
+<p>Visit our <a href="https://osf.io/getting-started/">getting started page</a> to learn about creating a project, or get inspiration from <a href="https://osf.io/explore/activity/#popularPublicProjects">popular public projects</a></p>
+'''
 
 REGISTRATION_SUCCESS = '''Registration successful. Please check {email} to confirm your email address.'''
 
@@ -26,9 +28,6 @@ ALREADY_REGISTERED = '''The email <em>{email}</em> has already been registered.'
 UNCONFIRMED = ('This login email has been registered but not confirmed. Please check your email (and spam folder).'
                ' <a href="/resend/">Click here</a> to resend your confirmation email.')
 
-# Shown upon successful email address confirmation
-CONFIRMED_EMAIL = 'Email address confirmation successful.'
-
 # Shown if the user's account is disabled
 DISABLED = '''
 Log-in failed: Deactivated account.
@@ -37,11 +36,6 @@ Log-in failed: Deactivated account.
 # Shown on incorrect password attempt
 LOGIN_FAILED = '''
 Log-in failed. Please try again or reset your password.
-'''
-
-# Shown if incorrect 2fa verification is entered at login
-TWO_FACTOR_FAILED = '''
-You entered an incorrect verification code. Please try again.
 '''
 
 # Shown at login page if user tries to access a resource that requires auth
@@ -84,10 +78,15 @@ MERGE_CONFIRMATION_REQUIRED_LONG = (
     '<p>This email is confirmed to another account. '
     'Would you like to merge <em>{user_to_merge.username}</em> with the account '
     '<em>{user.username}</em>?<p>'
-    '<a class="btn btn-success" href="?confirm_merge">Confirm merge</a> '
+    '<a class="btn btn-primary" href="?confirm_merge">Confirm merge</a> '
 )
 
 # Node Actions
+
+AFTER_REGISTER_ARCHIVING = (
+    'Files are being copied to the newly created registration, and you will receive an email '
+    'notification when the copying is finished.'
+)
 
 BEFORE_REGISTER_HAS_POINTERS = (
     'This {category} contains links to other projects. Links will be copied '
@@ -104,24 +103,44 @@ BEFORE_FORK_HAS_POINTERS = (
 )
 
 REGISTRATION_INFO = '''
-<p>Registration creates a frozen version of the project that can never be edited
-or deleted. You can register your project by selecting a registration form,  entering
-information about your project, and then confirming. You will be
-able to continue editing the original project, however, and the frozen version with
-time stamps will always be linked to the original.</p>
+
+<p>Registration creates a frozen version of the project that can never be
+edited or deleted but can be retracted. You can register your project by
+selecting a registration form, entering information about your project, and
+then confirming. You will be able to continue editing the original project,
+however, and the frozen version with timestamps will always be linked to
+the original. Retracting a registration will leave behind metadata about
+when the registration was created and retracted but removes the contents
+of the registration.</p>
 
 <ul>
+    <li>A registration can be made public immediately or entered into
+    an embargo period of up to four years. At the end of the embargo period,
+    the registration will automatically become public.</li>
 
-    <li>A registration takes the same privacy settings as the project, e.g. a public project results in a public registration.</li>
+    <li>Before initiating a registration, make sure that the project is
+    in the state that you wish to freeze. Consider turning links into
+    forks.</li>
 
-    <li>Before initiating a registration, make sure that the project is in the
-    state that you wish to freeze. Consider turning links into forks.</li>
-
-    <li>Start by selecting a registration form from the list below. You can
-    hit your browser's back button if the selected form is not
-    appropriate for your use.</li>
-
+    <li>Start by selecting a registration form from the list below. You can hit
+    your browser's back button if the selected form is not appropriate for
+    your use.</li>
 </ul>
+'''
+
+REGISTRATION_EMBARGO_INFO = '''
+<p>You can choose whether to make your registration public immediately or
+embargo it for up to four years. At the end of the embargo period the registration
+is automatically made public. After becoming public, the only way to remove a
+registration is to retract it. Retractions show only the registration title,
+contributors, and description to indicate that a registration was made and
+later retracted.</p>
+
+<p>If you choose to embargo your registration, a notification will be sent to
+all other project contributors. Other administrators will have 48 hours to
+approve or cancel creating the registration. If any other administrator rejects the
+registration, it will be canceled. If all other administrators approve or do
+nothing, the registration will be confirmed and enter its embargo period.</p>
 '''
 
 BEFORE_REGISTRATION_INFO = '''

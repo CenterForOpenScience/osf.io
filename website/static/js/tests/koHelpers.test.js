@@ -22,13 +22,13 @@ describe('koHelpers', () => {
 
     describe('mapJStoKO', () => {
         var data = {
-            thursday: "Before Friday",
+            thursday: 'Before Friday',
             object2: {
-                offer: "Greatly appreciated",
+                offer: 'Greatly appreciated',
                 other: 5
             },
             array2: [5, 4, 3, 2, 1],
-            more: "The other day",
+            more: 'The other day',
             number: 243
         };
 
