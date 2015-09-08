@@ -115,8 +115,6 @@ def migrate_guids(guid_type, provider):
         actual_guid.save()
 
 
-
-
 def main(dry=True):
     init_app(set_backends=True, routes=False)  # Sets the storage backends on all models
     with TokuTransaction():
