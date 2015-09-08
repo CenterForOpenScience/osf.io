@@ -2,11 +2,13 @@ import requests
 
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 from api.base import permissions as base_permissions
+
+from website.exceptions import NodeStateError
 from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
@@ -24,10 +26,18 @@ class NodeMixin(object):
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self):
-        obj = get_object_or_error(Node, self.kwargs[self.node_lookup_url_kwarg], 'node')
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
+        # Nodes that are folders/collections are treated as a separate resource, so if the client
+        # requests a collection through a node endpoint, we return a 404
+        if node.is_folder:
+            raise NotFound
         # May raise a permission denied
-        self.check_object_permissions(self.request, obj)
-        return obj
+        self.check_object_permissions(self.request, node)
+        return node
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
@@ -117,7 +127,10 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         user = self.request.user
         auth = Auth(user)
         node = self.get_object()
-        node.remove_node(auth=auth)
+        try:
+            node.remove_node(auth=auth)
+        except NodeStateError as err:
+            raise ValidationError(err.message)
         node.save()
 
 
@@ -276,7 +289,10 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         auth = Auth(user)
         node = self.get_node()
         pointer = self.get_object()
-        node.rm_pointer(pointer, auth)
+        try:
+            node.rm_pointer(pointer, auth=auth)
+        except ValueError as err:  # pointer doesn't belong to node
+            raise ValidationError(err.message)
         node.save()
 
 
