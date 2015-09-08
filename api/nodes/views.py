@@ -12,6 +12,8 @@ from api.base.utils import get_object_or_error, waterbutler_url_for
 from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
+from rest_framework_bulk import ListCreateBulkUpdateAPIView
+
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -28,7 +30,7 @@ class NodeMixin(object):
         return obj
 
 
-class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
+class NodeList(generics.ListCreateAPIView, ListCreateBulkUpdateAPIView, ODMFilterMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
