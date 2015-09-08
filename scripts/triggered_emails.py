@@ -6,7 +6,7 @@ from modularodm import Q
 
 from framework.transactions.context import TokuTransaction
 from website.app import init_app
-from website import mails
+from website import mails, settings
 from framework.auth import User
 
 logger = logging.getLogger(__name__)
@@ -14,9 +14,9 @@ logging.basicConfig(level=logging.INFO)
 
 def main(dry_run=True):
     #one query for 6 weeks and osf4m users, and one for 4 weeks for regular users
-    inactive_users = list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - timedelta(weeks=4)) &
+    inactive_users = list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME) &
                                     Q('conference_user', 'eq', False)))
-    inactive_users.extend(list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - timedelta(weeks=6)) &
+    inactive_users.extend(list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME - timedelta(weeks=2)) &
                                     Q('conference_user', 'eq', True))))
     inactive_emails = list(mails.QueuedMail.find(Q('email_type', 'eq', 'no_login')))
     users_sent = []
@@ -52,7 +52,7 @@ def main(dry_run=True):
         mail = user[0]
         mails_past_week = list(mails.QueuedMail.find(
             Q('user', 'eq', mail.user) &
-            Q('sent_at', 'gt', datetime.utcnow() - timedelta(days=7))
+            Q('sent_at', 'gt', datetime.utcnow() - timedelta(minutes=7))
         ))
         if not len(mails_past_week):
             if dry_run:

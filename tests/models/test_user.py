@@ -279,6 +279,7 @@ class TestUserMerging(base.OsfTestCase):
         # define expected behavior for ALL FIELDS of the User object
         default_to_master_user_fields = [
             '_id',
+            'conference_user',
             'date_confirmed',
             'date_disabled',
             'date_last_login',
