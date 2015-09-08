@@ -174,7 +174,7 @@ var _githubItemButtons = {
                         }, 'Create Folder')
                     );
                 }
-                if (item.data.addonFullname && tb.options.placement !== 'fileview') {
+                if (item.data.addonFullname) {
                     buttons.push(
                         m.component(Fangorn.Components.button, {
                             onclick: function (event) {
