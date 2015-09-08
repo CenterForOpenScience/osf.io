@@ -21,6 +21,7 @@ class DataverseFile(DataverseFileNode, File):
         """Note: Dataverse only has psuedo versions, don't save them"""
         self.name = data['name']
         self.materialized_path = data['materialized']
+        self.save()
 
         version = FileVersion(identifier=revision)
         version.update_metadata(data, save=False)
