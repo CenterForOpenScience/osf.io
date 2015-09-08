@@ -104,10 +104,10 @@ MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
 #Triggered emails
 OSF_GENERAL_LIST = 'Open Science Framework Help'
-NO_ADDON_WAIT_TIME = timedelta(seconds=8)
-NO_LOGIN_WAIT_TIME = timedelta(seconds=4)
-NEW_PUBLIC_PROJECT_WAIT_TIME = timedelta(seconds=2)
-WELCOME_OSF4M_WAIT_TIME = timedelta(seconds=2)
+NO_ADDON_WAIT_TIME = timedelta(weeks=8)
+NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
+NEW_PUBLIC_PROJECT_WAIT_TIME = timedelta(hours=24)
+WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)
 
 # TODO: Override in local.py
 MAILGUN_API_KEY = None

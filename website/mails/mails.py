@@ -155,8 +155,10 @@ class QueuedMail(StoredObject):
             send_mail(self.to_addr, mail, mimetype='html', **(self.data or {}))
             self.sent_at = datetime.utcnow()
             self.save()
+            return True
         else:
             self.delete()
+            return False
 
     def find_same_sent(self):
         return list(self.__class__.find(

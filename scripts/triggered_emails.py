@@ -52,7 +52,7 @@ def main(dry_run=True):
         mail = user[0]
         mails_past_week = list(mails.QueuedMail.find(
             Q('user', 'eq', mail.user) &
-            Q('sent_at', 'gt', datetime.utcnow() - timedelta(minutes=7))
+            Q('sent_at', 'gt', datetime.utcnow() - timedelta(days=7))
         ))
         if not len(mails_past_week):
             if dry_run:
