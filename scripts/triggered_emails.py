@@ -13,7 +13,11 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 def main(dry_run=True):
-    inactive_users = list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - timedelta(weeks=4))))
+    #one query for 6 weeks and osf4m users, and one for 4 weeks for regular users
+    inactive_users = list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - timedelta(weeks=4)) &
+                                    Q('conference_user', 'eq', False)))
+    inactive_users.extend(list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - timedelta(weeks=6)) &
+                                    Q('conference_user', 'eq', True))))
     inactive_emails = list(mails.QueuedMail.find(Q('email_type', 'eq', 'no_login')))
     users_sent = []
     for email in inactive_emails:

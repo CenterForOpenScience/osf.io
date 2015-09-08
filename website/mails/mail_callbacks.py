@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
 
+from website import settings
 from modularodm import Q
 
 def no_addon(email):
-    if len(email.user.get_addons()) is 0:
+    if len(email.user.get_addons()) is 0 and email.user.is_registered:
         return True
 
 def no_login(email):
+    if not email.user.is_registered or email.user.date_last_login > datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME:
+        return False
     return True
 
 def new_public_project(email):

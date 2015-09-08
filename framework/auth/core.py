@@ -379,6 +379,9 @@ class User(GuidStoredObject, AddonModelMixin):
     # user language and locale data (e.g. 'en_US')
     locale = fields.StringField(default='en_US')
 
+    # created_through_osf4m:
+    conference_user = fields.BooleanField(default=False)
+
     _meta = {'optimistic': True}
 
     def __repr__(self):

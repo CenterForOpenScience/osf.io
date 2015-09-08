@@ -81,11 +81,13 @@ def add_poster_by_email(conference, message):
         )
         if user_created:
             created.append(user)
+            user.conference_user = True
             set_password_url = web_url_for(
                 'reset_password',
                 verification_key=user.verification_key,
                 _absolute=True,
             )
+            user.save()
         else:
             set_password_url = None
 
