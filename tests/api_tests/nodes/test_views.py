@@ -1341,7 +1341,7 @@ class TestNodeContributorDelete(ApiTestCase):
         self.project.reload()
         assert_not_in(self.user_two, self.project.contributors)
 
-    def test_remove_contributor_non_admin(self):
+    def test_remove_contributor_non_admin_is_forbidden(self):
         self.project.add_contributor(self.user_three, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
 
         res = self.app.delete(self.url_user_three, auth=self.user_two.auth, expect_errors=True)
@@ -1385,7 +1385,6 @@ class TestNodeContributorDelete(ApiTestCase):
 
     def test_remove_self_contributor_not_unique_admin(self):
         self.project.add_permission(self.user_two, permissions.ADMIN, save=True)
-
         res = self.app.delete(self.url_user, auth=self.user.auth)
         assert_equal(res.status_code, 204)
 
