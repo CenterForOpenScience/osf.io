@@ -1,5 +1,3 @@
-import requests
-
 from framework.auth.core import _get_current_user
 
 from website.files.models.base import File, Folder, FileNode, FileVersion
@@ -17,27 +15,21 @@ class DataverseFolder(DataverseFileNode, Folder):
 
 
 class DataverseFile(DataverseFileNode, File):
+    version_identifier = 'version'
 
-    def touch(self, version=None, revision=None, **kwargs):
+    def update(self, revision, data):
         """Note: Dataverse only has psuedo versions, don't save them"""
-        version = revision or version  # Use revision or version
+        self.name = data['name']
+        self.materialized_path = data['materialized']
 
-        resp = requests.get(self.generate_waterbutler_url(meta=True, version=version, **kwargs))
-        if resp.status_code != 200:
-            return None
-
-        data = resp.json()
-        self.name = data['data']['name']
-        self.materialized_path = data['data']['materialized']
-
-        version = FileVersion(identifier=version)
-        version.update_metadata(data['data'], save=False)
+        version = FileVersion(identifier=revision)
+        version.update_metadata(data, save=False)
 
         user = _get_current_user()
         if not user or not self.node.can_edit(user=user):
             try:
                 # Users without edit permission can only see published files
-                if not data['data']['extra']['hasPublishedVersion']:
+                if not data['extra']['hasPublishedVersion']:
                     # Blank out name and path for the render
                     # Dont save because there's no reason to persist the change
                     self.name = ''
@@ -45,3 +37,4 @@ class DataverseFile(DataverseFileNode, File):
                     return (version, '<div class="alert alert-info" role="alert">This file does not exist.</div>')
             except (KeyError, IndexError):
                 pass
+        return version
