@@ -486,12 +486,27 @@ var SocialViewModel = function(urls, modes) {
     
     self.profileWebsites = ko.observableArray();
 
-    self.hasProfileWebsites = ko.computed(function() {
-        if (self.profileWebsites()) {
-            for (var i=0; i<self.profileWebsites().length; i++) {
-                if (self.profileWebsites()[i]) {
-                    return true;
-                }
+    self.profileWebsitesLength = ko.computed(function() {
+        return self.profileWebsites().length;
+    })
+
+    self.hasProfileWebsites = ko.pureComputed(function() {
+        //Check to see if any valid profileWebsites exist
+        var profileWebsites = ko.toJS(self.profileWebsites());
+        for (var i=0; i<profileWebsites.length; i++) {
+            if (profileWebsites[i]) {
+                return true;
+            }
+        }
+        return false;
+    });
+
+    self.hasEmptyWebsite = ko.pureComputed(function() {
+        //Check to see if there are any blank profile websites, to stop add button from working.
+        var profileWebsites = ko.toJS(self.profileWebsites());
+        for (var i=0; i<profileWebsites.length; i++) {
+            if (!profileWebsites[i]) {
+                return true;
             }
         }
         return false;
