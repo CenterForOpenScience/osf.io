@@ -1344,7 +1344,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param Auth auth: Consolidated authorization
         """
         if pointer not in self.nodes:
-            raise ValueError
+            raise ValueError('Node link does not belong to the requested node.')
 
         # Remove `Pointer` object; will also remove self from `nodes` list of
         # parent node
