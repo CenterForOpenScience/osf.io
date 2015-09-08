@@ -9,6 +9,7 @@ from framework.auth.core import Auth
 from website.models import User, Node
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
+from api.base.views import JSONAPIBaseView
 from api.nodes.serializers import NodeSerializer
 from .serializers import UserSerializer
 from .permissions import ReadOnlyOrCurrentUser
@@ -42,7 +43,7 @@ class UserMixin(object):
         return obj
 
 
-class UserList(generics.ListAPIView, ODMFilterMixin):
+class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """Users registered on the OSF.
 
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
@@ -70,7 +71,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
         return User.find(query)
 
 
-class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
+class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user.
     """
     permission_classes = (
@@ -88,7 +89,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
         return {'request': self.request}
 
 
-class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
     """Nodes belonging to a user.
     Return a list of nodes that the user contributes to. """
 

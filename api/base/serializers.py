@@ -5,8 +5,8 @@ from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
 
 from website.util.sanitize import strip_html
-from api.base.utils import absolute_reverse, waterbutler_url_for
 
+from api.base.utils import absolute_reverse, waterbutler_url_for
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
@@ -47,14 +47,13 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                                     link_type='related', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
 
     """
+    includable = True
 
-    def __init__(self, view_name=None, include_source=None, include_serializer=None, **kwargs):
+    def __init__(self, view_name=None, **kwargs):
         kwargs['read_only'] = True
         kwargs['source'] = '*'
         self.meta = kwargs.pop('meta', None)
         self.link_type = kwargs.pop('link_type', 'url')
-        self.include_source = include_source
-        self.include_serializer = include_serializer
         super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
 
     # overrides HyperlinkedIdentityField
@@ -89,18 +88,6 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
             return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
         else:
             return {'links': {self.link_type: url}}
-
-    def include(self, instance):
-        include_source = getattr(instance, self.include_source, None)
-        serializer = None
-        if self.include_serializer == 'self':
-            serializer = self.parent
-        else:
-            serializer = self.include_serializer
-        if isinstance(include_source, list):
-            return [serializer.to_representation(item) for item in include_source]
-        else:
-            return serializer.to_representation(include_source)
 
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
@@ -253,7 +240,7 @@ class JSONAPISerializer(ser.Serializer):
                                         ('includes', {}),
                                         ('links', {})],)
 
-        includes = self.context['include']
+        includes = self.context.get('include', [])
         fields = [field for field in self.fields.values() if not field.write_only]
 
         for field in fields:
@@ -263,8 +250,14 @@ class JSONAPISerializer(ser.Serializer):
                 continue
 
             if isinstance(field, JSONAPIHyperlinkedIdentityField):
+                # If include=field_name is appended to the query string, directly include the
+                # results rather than adding a relationship link
                 if field.field_name in includes:
-                    data['includes'][field.field_name] = field.include(attribute)
+                    data['includes'][field.field_name] = self.context['include'][field.field_name](
+                        self.context['request'],
+                        obj,
+                        no_includes=True
+                    )
                 else:
                     data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':

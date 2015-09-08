@@ -98,9 +98,9 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         return self.get_node()
 
     # overrides RetrieveUpdateDestroyAPIView
-    def get_serializer_context(self):
-        # Serializer needs the request in order to make an update to privacy
-        return {'request': self.request}
+    # def get_serializer_context(self):
+    #    # Serializer needs the request in order to make an update to privacy
+    #    return {'request': self.request}
 
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):

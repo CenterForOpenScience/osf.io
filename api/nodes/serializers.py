@@ -47,8 +47,7 @@ class NodeSerializer(JSONAPISerializer):
                               )
 
     children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
-                                               lookup_url_kwarg='node_id', meta={'count': 'get_node_count'},
-                                               include_source='nodes_primary', include_serializer='self')
+                                               lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
 
     contributors = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
                                                     lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})

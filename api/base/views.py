@@ -1,19 +1,51 @@
+from django.core.urlresolvers import resolve, reverse
+
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
 
-from .utils import absolute_reverse
+from api.base.utils import absolute_reverse
 from api.users.serializers import UserSerializer
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
+    def _get_include_partial(self, field_name):
+        """Create a partial function to fetch the values of an included field. A basic
+        example is to include a Node's children in a single response.
+
+        :param str field_name: Name of field of the view's serializer_class to load
+        results for
+        :return function (Request, type) -> dict | list:
+        """
+        include_field = self.serializer_class._declared_fields[field_name]
+        def partial(request, item, **kwargs):
+            include_value = getattr(item, include_field.lookup_field, None)
+            view_kwargs = {include_field.lookup_url_kwarg: include_value}
+            view, view_args, view_kwargs = resolve(reverse(include_field.view_name, kwargs=view_kwargs))
+            view_kwargs['request'] = request
+            view_kwargs.update(kwargs)
+            response = view(*view_args, **view_kwargs)
+            return response.data.get('data')
+        return partial
+
     def get_serializer_context(self):
+        """Inject request into the serializer context. Additionally, inject partial functions
+        (request, object -> included items) if the query string contains includes, and this
+        is the topmost call to this method (the include partials call view functions which has
+        the potential to create infinite recursion hence the inclusion of the no_includes
+        view kwarg to prevent this).
+        """
         context = super(JSONAPIBaseView, self).get_serializer_context()
-        includes = self.request.query_params.get('include', [])
-        if not isinstance(includes, list):
-            includes = [includes]
+        if self.kwargs.get('no_includes', False):
+            return context
+        includes = self.request.query_params.getlist('include')
+        includes_partials = {}
+        for include in includes:
+            include_field = self.serializer_class._declared_fields.get(include)
+            if include_field and getattr(include_field, 'includable', False):
+                includes_partials[include] = self._get_include_partial(include)
         context.update({
-            'include': includes
+            'include': includes_partials
         })
         return context
 
