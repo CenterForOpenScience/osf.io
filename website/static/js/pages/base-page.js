@@ -122,9 +122,9 @@ $(function() {
                         error: error,
                         userId: window.contextVars.userId,
                         accessToken: window.contextVars.accessToken,
-                        authUrl: window.contextVars.authUrl
+                        reauthUrl: window.contextVars.reauthUrl
                     });
-                    window.document.location = window.contextVars.authUrl;
+                    window.document.location = window.contextVars.reauthUrl;
                 }
             }
         );
