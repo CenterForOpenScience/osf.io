@@ -1,11 +1,7 @@
-import logging
-import requests
-
 from website.util.sanitize import escape_html
 from website.files.models.base import File, Folder, FileNode, FileVersion
 
 
-logger = logging.getLogger(__name__)
 __all__ = ('FigshareFile', 'FigshareFolder', 'FigshareFileNode')
 
 
@@ -18,22 +14,19 @@ class FigshareFolder(FigshareFileNode, Folder):
 
 
 class FigshareFile(FigshareFileNode, File):
-    def touch(self, revision=None, **kwargs):
+
+    def touch(self, bearer, revision=None, **kwargs):
+        return super(FigshareFile, self).touch(bearer, revision=None, **kwargs)
+
+    def update(self, revision, data):
         """Figshare does not support versioning.
         Always pass revision as None to avoid conflict.
         """
-
-        resp = requests.get(self.generate_waterbutler_url(meta=True, **kwargs))
-        if resp.status_code != 200:
-            logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
-            return None
-
-        data = resp.json()['data']
         self.name = data['name']
         self.materialized_path = data['materialized']
         self.save()
 
-        version = FileVersion(identifier=revision)
+        version = FileVersion(identifier=None)
         version.update_metadata(data, save=False)
 
         # Draft files are not renderable
