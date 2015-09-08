@@ -1034,7 +1034,7 @@ class TestNodeContributorAdd(ApiTestCase):
         self.private_project.reload()
         assert_not_in(self.user_two, self.private_project.contributors)
 
-    def test_adds_none_permission_contributor_private_project_admin(self):
+    def test_adds_none_permission_contributor_private_project_admin_uses_default_permissions(self):
         data = {
             'id': self.user_two._id,
             'permission': None,
@@ -1045,6 +1045,8 @@ class TestNodeContributorAdd(ApiTestCase):
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
+        for permission in permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS:
+            assert_true(self.private_project.has_permission(self.user_two, permission))
 
     def test_adds_already_existing_contributor_private_project_admin(self):
         self.private_project.add_contributor(self.user_two, auth=Auth(self.user), save=True)
