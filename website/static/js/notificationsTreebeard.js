@@ -83,6 +83,7 @@ function ProjectNotifications(data) {
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         divID: 'grid',
         filesData: data,
+        naturalScrollLimit : 0,
         resolveRows: function notificationResolveRows(item){
             var columns = [];
             var iconcss = '';
