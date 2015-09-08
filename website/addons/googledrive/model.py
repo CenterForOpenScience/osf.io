@@ -10,12 +10,10 @@ from website import settings
 from website.addons.base import exceptions
 from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, GuidFile
 from website.addons.base import StorageAddonBase
-from website.addons.googledrive import exceptions as drive_exceptions
 from website.addons.googledrive.serializer import GoogleDriveSerializer
 from website.oauth.models import ExternalProvider
 from website.addons.googledrive.client import GoogleAuthClient, GoogleDriveClient
 from website.addons.googledrive import settings as drive_settings
-from website.addons.googledrive.utils import GoogleDriveNodeLogger
 
 
 class GoogleDriveGuidFile(GuidFile):
