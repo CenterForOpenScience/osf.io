@@ -392,7 +392,7 @@ def assert_urls_equal(url1, url2):
 class TestFileNode(models.FileNode):
     provider = 'test_addons'
 
-    def touch(self, **kwargs):
+    def touch(self, bearer, **kwargs):
         return models.FileVersion()
 
 
@@ -521,7 +521,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(args[0].user, self.user)
         assert_equals(args[1], self.project)
         assert_equals(args[2], file_node)
-        assert_true(isinstance(args[3], file_node.touch().__class__))
+        assert_true(isinstance(args[3], file_node.touch(None).__class__))
 
     @mock.patch('website.addons.base.views.addon_view_file')
     def test_no_action_calls_view_file(self, mock_view_file):
@@ -540,7 +540,7 @@ class TestAddonFileViews(OsfTestCase):
         assert_equals(args[0].user, self.user)
         assert_equals(args[1], self.project)
         assert_equals(args[2], file_node)
-        assert_true(isinstance(args[3], file_node.touch().__class__))
+        assert_true(isinstance(args[3], file_node.touch(None).__class__))
 
     def test_download_create_guid(self):
         file_node = self.get_test_file()
