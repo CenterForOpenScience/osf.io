@@ -197,7 +197,7 @@ class TestAppJSONAPI(TestApp):
     def json_api_method(method):
 
         def wrapper(self, url, params=NoDefault, **kw):
-            content_type = 'application/vnd.api+json; ext="bulk"'
+            content_type = 'application/vnd.api+json'
             if params is not NoDefault:
                 params = dumps(params, cls=self.JSONEncoder)
             kw.update(

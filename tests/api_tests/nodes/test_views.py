@@ -383,6 +383,8 @@ class TestNodeBulkCreate(ApiTestCase):
         assert_equal(len(res.json['data']), 2)
         assert_equal(res.json['data'][0]['attributes']['title'], self.public_project['title'])
         assert_equal(res.json['data'][1]['attributes']['title'], self.private_project['title'])
+        assert_equal(res.content_type, 'application/vnd.api+json')
+
 
         res = self.app.get(self.url, auth=self.user_one.auth)
         assert_equal(len(res.json['data']), 2)
