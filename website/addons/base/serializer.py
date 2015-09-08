@@ -147,7 +147,8 @@ class OAuthAddonSerializer(AddonSerializer):
     @property
     def serialized_node_settings(self):
         result = super(OAuthAddonSerializer, self).serialized_node_settings
-        result['folder'] = {'name': self.node_settings.selected_folder_name}
+        if self.node_settings.oauth_provider.provider_name != 'dataverse':
+            result['folder'] = {'name': self.node_settings.selected_folder_name}
         return result
 
 
