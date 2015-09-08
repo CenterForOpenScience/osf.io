@@ -32,15 +32,15 @@
       </div>
     </div>
 
-    <!-- Menu toggle closed -->
-    <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
-        <div class="row tb-header-row">
-            <i class="fa fa-file p-l-xs p-r-xs"></i>
-            <div class="fangorn-toolbar-icon">
-                <i class="fa fa-angle-right"></i>
-            </div>
-        </div>
-    </div>
+      <!-- Menu toggle closed -->
+      <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
+          <div class="row tb-header-row">
+              <i class="fa fa-file p-l-xs p-r-xs"></i>
+              <div class="fangorn-toolbar-icon">
+                  <i class="fa fa-angle-right"></i>
+              </div>
+          </div>
+      </div>
   </div>
 
 <!-- The osf-logo spinner here is from mfr code base -->
