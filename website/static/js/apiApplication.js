@@ -25,18 +25,20 @@ var language = require('js/osfLanguage');
 var ApplicationData = oop.defclass({
     constructor: function (data) {  // Read in API data and store as object
         data = data || {};
+        var attributes = data.attributes || {};
 
         // User-editable fields
-        this.name = ko.observable(data.name)
-            .extend({required: true});
-        this.description = ko.observable(data.description);
-        this.homeUrl = ko.observable(data.home_url)
+        this.name = ko.observable(attributes.name)
+            .extend({required: true, maxLength:200});
+        this.description = ko.observable(attributes.description)
+            .extend({maxLength: 1000});
+        this.homeUrl = ko.observable(attributes.home_url)
             .extend({
                 url: true,
                 ensureHttp: true,
                 required: true
             });
-        this.callbackUrl = ko.observable(data.callback_url)
+        this.callbackUrl = ko.observable(attributes.callback_url)
             .extend({
                 url: true,
                 ensureHttp: true,
@@ -44,9 +46,9 @@ var ApplicationData = oop.defclass({
             });
 
         // Other fields. Owner and client ID should never change within this view.
-        this.owner = data.owner;
-        this.clientId = data.client_id;
-        this.clientSecret = ko.observable(data.client_secret);
+        this.owner = attributes.owner;
+        this.clientId = attributes.client_id;
+        this.clientSecret = ko.observable(attributes.client_secret);
         this.webDetailUrl = data.links ? data.links.html : undefined;
         this.apiDetailUrl = data.links ? data.links.self : undefined;
 
@@ -61,7 +63,7 @@ var ApplicationData = oop.defclass({
     serialize: function () {
         return { // Convert data to JSON-serializable format consistent with API
             name: this.name(),
-            description: this.description(),
+            description: this.description() || '',
             home_url: this.homeUrl(),
             callback_url: this.callbackUrl(),
             client_id: this.clientId,
