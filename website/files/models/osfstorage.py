@@ -55,7 +55,7 @@ class OsfStorageFileNode(FileNode):
 
 class OsfStorageFile(OsfStorageFileNode, File):
 
-    def touch(self, version=-1, revision=None, **kwargs):
+    def touch(self, bearer, version=-1, revision=None, **kwargs):
         try:
             return self.get_version(int(revision or version))
         except ValueError:
