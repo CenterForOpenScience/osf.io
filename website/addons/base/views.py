@@ -369,7 +369,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     file_node = FileNode.resolve_class(provider, FileNode.FILE).get_or_create(node, path)
 
-    version = file_node.touch(**extras)
+    version = file_node.touch(session.data.get('auth_user_access_token'), **extras)
 
     if version is None:
         raise HTTPError(httplib.NOT_FOUND, {

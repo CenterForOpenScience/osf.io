@@ -349,7 +349,7 @@ class TestFileObj(FilesTestCase):
         ).wrapped()
 
         mock_requests.return_value = mock.Mock(status_code=400)
-        assert_is(file.touch(), None)
+        assert_is(file.touch(None), None)
 
         mock_response = mock.Mock(status_code=200)
         mock_response.json.return_value = {
@@ -362,7 +362,7 @@ class TestFileObj(FilesTestCase):
         }
         mock_requests.return_value = mock_response
 
-        v = file.touch()
+        v = file.touch(None)
         assert_equals(v.size, 0xDEADBEEF)
         assert_equals(len(file.versions), 0)
 
@@ -388,9 +388,28 @@ class TestFileObj(FilesTestCase):
         }
         mock_requests.return_value = mock_response
 
-        v = file.touch(revision='foo')
+        v = file.touch(None, revision='foo')
         assert_equals(len(file.versions), 1)
-        assert_is(file.touch(revision='foo'), v)
+        assert_is(file.touch(None, revision='foo'), v)
+
+    @mock.patch('website.files.models.base.requests.get')
+    def test_touch_auth(self, mock_requests):
+        file = models.StoredFileNode(
+            path='/afile',
+            name='name',
+            is_file=True,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        ).wrapped()
+
+        mock_response = mock.Mock(status_code=404)
+        mock_requests.return_value = mock_response
+
+        file.touch('bearer', revision='foo')
+        assert_equal(mock_requests.call_args[1]['headers'], {
+            'Authorization': 'Bearer bearer'
+        })
 
     def test_download_url(self):
         pass
@@ -485,12 +504,12 @@ class TestSubclasses(FilesTestCase):
             materialized_path='/long/path/to/name',
         )
 
-        file.touch()
-        file.touch(version='foo')
-        file.touch(version='zyzz', bar='baz')
+        file.touch(None)
+        file.touch('bar', version='foo')
+        file.touch(None, version='zyzz', bar='baz')
 
         mock_touch.assert_has_calls([
-            mock.call(),
-            mock.call(version='foo'),
-            mock.call(version='zyzz', bar='baz'),
+            mock.call(None),
+            mock.call('bar', version='foo'),
+            mock.call(None, version='zyzz', bar='baz'),
         ])
