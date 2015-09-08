@@ -501,7 +501,7 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
-    self.hasEmptyWebsite = ko.pureComputed(function() {
+    self.hasEmptyProfileWebsite = ko.pureComputed(function() {
         //Check to see if there are any blank profile websites, to stop add button from working.
         var profileWebsites = ko.toJS(self.profileWebsites());
         for (var i=0; i<profileWebsites.length; i++) {
