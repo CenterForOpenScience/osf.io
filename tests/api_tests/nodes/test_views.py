@@ -123,6 +123,58 @@ class TestNodeFiltering(ApiTestCase):
         super(TestNodeFiltering, self).tearDown()
         Node.remove()
 
+    def test_filtering_registrations(self):
+        url = '/{}nodes/?filter[registration]=true'.format(API_BASE)
+        registration = RegistrationFactory(creator=self.user_one)
+
+        res = self.app.get(url, auth=self.user_one.auth)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_not_in(self.project_one._id, ids)
+        assert_in(registration._id, ids)
+
+    def test_filtering_by_category(self):
+        project = ProjectFactory(creator=self.user_one, category='hypothesis')
+        project2 = ProjectFactory(creator=self.user_one, category='procedure')
+        url = '/{}nodes/?filter[category]=hypothesis'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+
+        node_json = res.json['data']
+        ids = [each['id'] for each in node_json]
+
+        assert_in(project._id, ids)
+        assert_not_in(project2._id, ids)
+
+    def test_filtering_tags(self):
+        tag1, tag2 = fake.word(), fake.word()
+        self.project_one.add_tag(tag1, Auth(self.project_one.creator), save=False)
+        self.project_one.add_tag(tag2, Auth(self.project_one.creator), save=False)
+        self.project_one.save()
+
+        self.project_two.add_tag(tag1, Auth(self.project_two.creator), save=True)
+
+        # both project_one and project_two have tag1
+        url = '/{}nodes/?filter[tags]={}'.format(API_BASE, tag1)
+
+        res = self.app.get(url, auth=self.project_one.creator.auth)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+
+        # filtering two tags
+        # project_one has both tags; project_two only has one
+        url = '/{}nodes/?filter[tags]={}&filter[tags]={}'.format(API_BASE, tag1, tag2)
+
+        res = self.app.get(url, auth=self.project_one.creator.auth)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_in(self.project_one._id, ids)
+        assert_not_in(self.project_two._id, ids)
+
     def test_get_all_projects_with_no_filter_logged_in(self):
         res = self.app.get(self.url, auth=self.user_one.auth)
         node_json = res.json['data']
