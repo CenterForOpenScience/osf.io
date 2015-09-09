@@ -4,6 +4,7 @@ from modularodm import Q
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_bulk import ListCreateBulkUpdateAPIView
+from rest_framework_bulk.drf3.mixins import BulkUpdateModelMixin
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
@@ -13,9 +14,8 @@ from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
-from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer, NodeBulkUpdateSerializer
-
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer, NodeBulkUpdateSerializer
 
 
 class NodeMixin(object):
@@ -41,7 +41,7 @@ class NodeMixin(object):
         return node
 
 
-class NodeList(generics.ListCreateAPIView, ListCreateBulkUpdateAPIView, ODMFilterMixin):
+class NodeList(generics.ListCreateAPIView, ListCreateBulkUpdateAPIView, BulkUpdateModelMixin, ODMFilterMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -111,6 +111,11 @@ class NodeList(generics.ListCreateAPIView, ListCreateBulkUpdateAPIView, ODMFilte
         # On creation, make sure that current user is the creator
         user = self.request.user
         serializer.save(creator=user)
+
+
+    def bulk_update(self, request, *args, **kwargs):
+        response = BulkUpdateModelMixin.bulk_update(self, request, *args, **kwargs)
+        return Response({'data': response.data}, status=status.HTTP_200_OK)
 
 
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):

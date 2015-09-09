@@ -493,10 +493,10 @@ class TestNodeBulkUpdate(ApiTestCase):
     def test_update_public_projects_logged_in(self):
         res = self.app.put_json_api(self.url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        # assert_equal(res.json['data'][0]['id'], self.public_project._id)
-        # assert_equal(res.json['data'][1]['id'], self.public_project_two._id)
-        # assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
-        # assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
+        assert_equal(res.json['data'][0]['id'], self.public_project._id)
+        assert_equal(res.json['data'][1]['id'], self.public_project_two._id)
+        assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
+        assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
 
     def test_update_private_projects_logged_out(self):
         res = self.app.put_json_api(self.url, self.private_payload, expect_errors=True)
@@ -516,10 +516,10 @@ class TestNodeBulkUpdate(ApiTestCase):
     def test_update_private_projects_logged_in_contrib(self):
         res = self.app.put_json_api(self.url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        # assert_equal(res.json['data'][0]['id'], self.private_project._id)
-        # assert_equal(res.json['data'][1]['id'], self.private_project_two._id)
-        # assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
-        # assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
+        assert_equal(res.json['data'][0]['id'], self.private_project._id)
+        assert_equal(res.json['data'][1]['id'], self.private_project_two._id)
+        assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
+        assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
 
     def test_update_private_projects_logged_in_non_contrib(self):
         res = self.app.put_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
