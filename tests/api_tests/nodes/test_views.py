@@ -146,6 +146,36 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(project._id, ids)
         assert_not_in(project2._id, ids)
 
+    def test_filtering_by_public(self):
+        project = ProjectFactory(creator=self.user_one, is_public=True)
+        project2 = ProjectFactory(creator=self.user_one, is_public=False)
+
+        url = '/{}nodes/?filter[public]=false'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        node_json = res.json['data']
+
+        # No public projects returned
+        assert_false(
+            any([each['attributes']['public'] for each in node_json])
+        )
+
+        ids = [each['id'] for each in node_json]
+        assert_not_in(project._id, ids)
+        assert_in(project2._id, ids)
+
+        url = '/{}nodes/?filter[public]=true'.format(API_BASE)
+        res = self.app.get(url, auth=self.user_one.auth)
+        node_json = res.json['data']
+
+        # No private projects returned
+        assert_true(
+            all([each['attributes']['public'] for each in node_json])
+        )
+
+        ids = [each['id'] for each in node_json]
+        assert_not_in(project2._id, ids)
+        assert_in(project._id, ids)
+
     def test_filtering_tags(self):
         tag1, tag2 = fake.word(), fake.word()
         self.project_one.add_tag(tag1, Auth(self.project_one.creator), save=False)
