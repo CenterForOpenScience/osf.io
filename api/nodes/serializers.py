@@ -223,7 +223,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
 
     def set_contributor_permissions(self, node, permission, contributor, auth):
         """ Set contributor permissions. Checks to make sure unique admin is
-        removing own admin privilege. Based on thw ContributorDetailPermissions
+        removing own admin privilege. Based on the ContributorDetailPermissions
         permissions class, the current user must be an admin.
         """
         assert node.has_permission(auth.user, osf_permissions.ADMIN), "Only admins can modify contributor permissions"
