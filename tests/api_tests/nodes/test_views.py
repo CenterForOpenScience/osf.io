@@ -1107,7 +1107,6 @@ class TestNodeContributorUpdate(ApiTestCase):
 
         self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
-        self.project.reload()
 
         self.url_creator = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_two._id)
@@ -1214,8 +1213,6 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_admin_self_with_other_admin(self):
         self.project.add_permission(self.user_two, permissions.ADMIN, save=True)
-        self.project.reload()
-
         data = {
             'permission': permissions.WRITE,
             'bibliographic': True
@@ -1241,7 +1238,6 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_remove_all_bibliographic_statuses_contributors(self):
         self.project.set_visible(self.user_two, False, save=True)
-        self.project.reload()
         
         data = {
             'bibliographic': False
@@ -1286,7 +1282,6 @@ class TestNodeContributorDelete(ApiTestCase):
 
         self.project = ProjectFactory(creator=self.user)
         self.project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
-        self.project.reload()
 
         self.url_user = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
         self.url_user_two = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_two._id)
