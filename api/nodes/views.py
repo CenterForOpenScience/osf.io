@@ -176,7 +176,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
+class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -191,15 +191,29 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
 
     serializer_class = NodeSerializer
 
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        return (
+            Q('is_deleted', 'ne', True) &
+            Q('is_folder', 'ne', True)
+        )
+
     # overrides ListAPIView
     def get_queryset(self):
-        nodes = self.get_node().nodes
+        node = self.get_node()
+        req_query = self.get_query_from_request()
+
+        query = (
+            Q('_id', 'in', [e._id for e in node.nodes if e.primary]) &
+            req_query
+        )
+        nodes = Node.find(query)
         user = self.request.user
         if user.is_anonymous():
             auth = Auth(None)
         else:
             auth = Auth(user)
-        children = [node for node in nodes if node.can_view(auth) and node.primary and not node.is_deleted]
+        children = [each for each in nodes if each.can_view(auth)]
         return children
 
     # overrides ListCreateAPIView

@@ -1033,7 +1033,6 @@ class TestNodeChildrenList(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
-
     def test_return_private_node_children_list_logged_in_contributor(self):
         res = self.app.get(self.private_project_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -1070,6 +1069,40 @@ class TestNodeChildrenList(ApiTestCase):
         assert_not_in(child_project._id, ids)
         assert_equal(1, len(ids))
 
+    def test_node_children_list_does_not_include_node_links(self):
+        pointed_to = ProjectFactory(is_public=True)
+
+        self.public_project.add_pointer(pointed_to, auth=Auth(self.public_project.creator))
+
+        res = self.app.get(self.public_project_url, auth=self.user.auth)
+        ids = [node['id'] for node in res.json['data']]
+        assert_in(self.public_component._id, ids)  # sanity check
+
+        assert_equal(len(ids), len([e for e in self.public_project.nodes if e.primary]))
+        assert_not_in(pointed_to._id, ids)
+
+
+class TestNodeChildrenListFiltering(ApiTestCase):
+
+    def test_node_child_filtering(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+
+        title1, title2 = fake.bs(), fake.bs()
+        component = NodeFactory(title=title1, parent=project)
+        component2 = NodeFactory(title=title2, parent=project)
+
+        url = '/{}nodes/{}/children/?filter[title]={}'.format(
+            API_BASE,
+            project._id,
+            title1
+        )
+        res = self.app.get(url, auth=user.auth)
+
+        ids = [node['id'] for node in res.json['data']]
+
+        assert_in(component._id, ids)
+        assert_not_in(component2._id, ids)
 
 
 class TestNodeChildCreate(ApiTestCase):
