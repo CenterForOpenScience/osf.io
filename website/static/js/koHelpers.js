@@ -53,7 +53,6 @@ var cleanURL = function(value) {
 
     };
 
-
 addExtender('cleanup', function(value, cleaner) {
     return !!value ? cleaner(value) : '';
 });
@@ -72,17 +71,6 @@ addExtender('trimmed', function(value) {
 addExtender('trimmedURL', function(value) {
     return cleanURL(value);
 
-});
-
-addExtender('trimmedURLArray', function(values) {
-    if (values) {
-        for (var i = 0; i < values.length; i++) {   
-            values[i] = cleanURL(values[i]);
-        }
-        return values;
-    } else {
-        return values;
-    }
 });
 
 var sanitize = function(value) {
