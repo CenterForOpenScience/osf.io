@@ -400,6 +400,7 @@ class TestNodeBulkCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, [self.public_project, self.private_project], expect_errors=True)
         assert_equal(res.status_code, 401)
 
+
 class TestNodeBulkUpdate(ApiTestCase):
 
     def setUp(self):
@@ -493,8 +494,8 @@ class TestNodeBulkUpdate(ApiTestCase):
     def test_update_public_projects_logged_in(self):
         res = self.app.put_json_api(self.url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['id'], self.public_project._id)
-        assert_equal(res.json['data'][1]['id'], self.public_project_two._id)
+        assert_equal({self.public_project._id, self.public_project_two._id},
+                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
         assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
         assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
 
@@ -516,8 +517,8 @@ class TestNodeBulkUpdate(ApiTestCase):
     def test_update_private_projects_logged_in_contrib(self):
         res = self.app.put_json_api(self.url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['id'], self.private_project._id)
-        assert_equal(res.json['data'][1]['id'], self.private_project_two._id)
+        assert_equal({self.private_project._id, self.private_project_two._id},
+                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
         assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
         assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
 
@@ -539,6 +540,146 @@ class TestNodeBulkUpdate(ApiTestCase):
         self.private_project.add_contributor(self.user_two, permissions=['read'])
         self.private_project_two.add_contributor(self.user_two, permissions=['read'])
         res = self.app.put_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
+        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+        res = self.app.get(url_two, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+
+class TestNodeBulkPartialUpdate(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeBulkPartialUpdate, self).setUp()
+        self.user = AuthUserFactory()
+
+        self.title = 'Cool Project'
+        self.new_title = 'Super Cool Project'
+        self.description = 'A Properly Cool Project'
+        self.new_description = 'An even cooler project'
+        self.category = 'data'
+
+        self.new_category = 'project'
+
+        self.user_two = AuthUserFactory()
+
+        self.public_project = ProjectFactory(title=self.title,
+                                             description=self.description,
+                                             category=self.category,
+                                             is_public=True,
+                                             creator=self.user)
+
+        self.public_project_two = ProjectFactory(title=self.title,
+                                                description=self.description,
+                                                category=self.category,
+                                                is_public=True,
+                                                creator=self.user)
+
+        self.public_payload = [
+            {
+                'id': self.public_project._id,
+                'title': self.new_title,
+            },
+            {
+                'id': self.public_project_two._id,
+                'title': self.new_title,
+            }
+        ]
+
+        self.url = '/{}nodes/'.format(API_BASE)
+
+        self.private_project = ProjectFactory(title=self.title,
+                                              description=self.description,
+                                              category=self.category,
+                                              is_public=False,
+                                              creator=self.user)
+
+        self.private_project_two = ProjectFactory(title=self.title,
+                                              description=self.description,
+                                              category=self.category,
+                                              is_public=False,
+                                              creator=self.user)
+
+        self.private_payload = [
+            {
+                'id': self.private_project._id,
+                'title': self.new_title,
+            },
+            {
+                'id': self.private_project_two._id,
+                'title': self.new_title,
+            }
+        ]
+
+    def test_partial_update_public_projects_logged_out(self):
+        res = self.app.patch_json_api(self.url, self.public_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], "Authentication credentials were not provided.")
+
+        url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        url_two = '/{}nodes/{}/'.format(API_BASE, self.public_project_two._id)
+
+        res = self.app.get(url)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+        res = self.app.get(url_two)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+    def test_partial_update_public_projects_logged_in(self):
+        res = self.app.patch_json_api(self.url, self.public_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal({self.public_project._id, self.public_project_two._id},
+                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
+        assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
+        assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
+
+    def test_partial_update_private_projects_logged_out(self):
+        res = self.app.patch_json_api(self.url, self.private_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+
+        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
+        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+        res = self.app.get(url_two, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+    def test_partial_update_private_projects_logged_in_contrib(self):
+        res = self.app.patch_json_api(self.url, self.private_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal({self.private_project._id, self.private_project_two._id},
+                     {res.json['data'][0]['id'], res.json['data'][1]['id']})
+        assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
+        assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
+
+    def test_partial_update_private_projects_logged_in_non_contrib(self):
+        res = self.app.patch_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
+        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+        res = self.app.get(url_two, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+    def test_partial_update_private_projects_logged_in_read_only_contrib(self):
+        self.private_project.add_contributor(self.user_two, permissions=['read'])
+        self.private_project_two.add_contributor(self.user_two, permissions=['read'])
+        res = self.app.patch_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
