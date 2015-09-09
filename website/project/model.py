@@ -3282,8 +3282,7 @@ class Embargo(EmailApprovableSanction):
 
     def _on_reject(self, user, token):
         parent_registration = Node.find_one(Q('embargo', 'eq', self))
-        registered_from = parent_registration.registered_from
-        registered_from.add_log(
+        parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
                 'node': parent_registration._id,
