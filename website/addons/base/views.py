@@ -379,11 +379,11 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     if request.method == 'HEAD':
         return make_response(('', 200, {
-            'Location': file_node.generate_waterbutler_url(**dict(extras, accept_url='false'))
+            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None))
         }))
 
     if action == 'download':
-        return redirect(file_node.generate_waterbutler_url(**dict(extras, accept_url='false')))
+        return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None)))
 
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
@@ -414,9 +414,9 @@ def addon_view_file(auth, node, file_node, version):
         sharejs_uuid = None
 
     download_url = furl.furl(request.url.encode('utf-8')).set(args=dict(request.args, **{
+        'direct': None,
         'mode': 'render',
         'action': 'download',
-        'accept_url': 'false'
     }))
 
     render_url = furl.furl(settings.MFR_SERVER_URL).set(
