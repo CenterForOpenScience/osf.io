@@ -621,7 +621,16 @@ class TestUser(OsfTestCase):
             use_ssl=True,
             size=settings.PROFILE_IMAGE_MEDIUM
         )
+        assert_equal(self.user.profile_image_url(settings.PROFILE_IMAGE_MEDIUM), expected)
+
+    def test_profile_image_url_has_no_default_size(self):
+        expected = filters.gravatar(
+            self.user,
+            use_ssl=True,
+        )
         assert_equal(self.user.profile_image_url(), expected)
+        size = urlparse.parse_qs(urlparse.urlparse(self.user.profile_image_url()).query).get('size')
+        assert_equal(size, None)
 
     def test_activity_points(self):
         assert_equal(self.user.get_activity_points(db=self.db),
