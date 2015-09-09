@@ -296,20 +296,24 @@ class TestAddonLogs(OsfTestCase):
         payload = self.build_payload(
             action='rename',
             metadata={
-            'path': 'foo',
-            'destination': {
-                'materialized': 'foo',
-                'provider': 'github',
-                'nid': self.node._id,
-                'name': 'old.txt',
+                'path': 'foo',
             },
-            'source': {
+            source={
                 'materialized': 'foo',
                 'provider': 'github',
-                'nid': self.node._id,
+                'node': {'_id': self.node._id},
                 'name': 'new.txt',
-            }
-        })
+                'kind': 'file',
+            },
+            destination={
+                'path': 'foo',
+                'materialized': 'foo',
+                'provider': 'github',
+                'node': {'_id': self.node._id},
+                'name': 'old.txt',
+                'kind': 'file',
+            },
+        )
         self.test_app.put_json(
             url,
             payload,
