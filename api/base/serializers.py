@@ -6,7 +6,8 @@ from rest_framework import serializers as ser
 
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
-
+from api.base.utils import get_object_or_error
+from website.project.model import Node
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
@@ -202,6 +203,17 @@ class WaterbutlerLink(Link):
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
+
+    def update(self, instance, validated_data):
+        data_mapping = {item['_id']: item for item in validated_data}
+
+        ret = []
+        for obj_id, data in data_mapping.items():
+            object =  get_object_or_error(Node, obj_id, 'node')
+
+            ret.append(self.child.update(object, data))
+
+        return ret
 
     def to_representation(self, data):
         # Don't envelope when serializing collection
