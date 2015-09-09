@@ -552,6 +552,12 @@ class TestNodeBulkUpdate(ApiTestCase):
         res = self.app.get(url_two, auth=self.user.auth)
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
+    def test_bulk_update_projects_send_dictionary_not_list(self):
+        res = self.app.put_json_api(self.url, {'id': self.public_project._id, 'title': self.new_title, 'category': "project"},
+                                    auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
 
 class TestNodeBulkPartialUpdate(ApiTestCase):
 
@@ -692,6 +698,11 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         res = self.app.get(url_two, auth=self.user.auth)
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
+    def test_bulk_partial_update_projects_send_dictionary_not_list(self):
+        res = self.app.put_json_api(self.url, {'id': self.public_project._id, 'title': self.new_title, 'category': "project"},
+                                    auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
 
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
