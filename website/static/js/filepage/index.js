@@ -8,7 +8,7 @@ var waterbutler = require('js/waterbutler');
 // Local requires
 var utils = require('./util.js');
 var FileEditor = require('./editor.js');
-var FileDetailTable = require('./details.js');
+var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
 
 // Sanity
@@ -146,9 +146,9 @@ var FileViewPage = {
 
         //Hack to polyfill the Panel interface
         //Ran into problems with mithrils caching messing up with multiple "Panels"
-        self.details = m.component(FileDetailTable, self.file, self.node, self.enableEditing, self.canEdit);
-        self.details.selected = false;
-        self.details.title = 'Details';
+        self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
+        self.revisions.selected = false;
+        self.revisions.title = 'Revisions';
 
         // inform the mfr of a change in display size performed via javascript,
         // otherwise the mfr iframe will not update unless the document windows is changed.
@@ -170,13 +170,13 @@ var FileViewPage = {
         var fileViewPanelsLayout;
 
         if (panelsShown === 3) {
-            // view | edit | details
+            // view | edit | revisions
             mfrIframeParentLayout = 'col-sm-4';
             fileViewPanelsLayout = 'col-sm-8';
         } else if (panelsShown === 2) {
             if (ctrl.mfrIframeParent.is(':visible')) {
-                if (ctrl.details.selected) {
-                    // view | details
+                if (ctrl.revisions.selected) {
+                    // view | revisions
                     mfrIframeParentLayout = 'col-sm-8';
                     fileViewPanelsLayout = 'col-sm-4';
                 } else {
@@ -185,7 +185,7 @@ var FileViewPage = {
                     fileViewPanelsLayout = 'col-sm-6';
                 }
             } else {
-                // edit | details
+                // edit | revisions
                 mfrIframeParentLayout = '';
                 fileViewPanelsLayout = 'col-sm-12';
             }
@@ -195,7 +195,7 @@ var FileViewPage = {
                 mfrIframeParentLayout = 'col-sm-12';
                 fileViewPanelsLayout = '';
             } else {
-                // edit or details
+                // edit or revisions
                 mfrIframeParentLayout = '';
                 fileViewPanelsLayout = 'col-sm-12';
             }
@@ -219,7 +219,7 @@ var FileViewPage = {
                         // atleast one button must remain enabled.
                         if ((!ctrl.editor.selected || panelsShown > 1)) {
                             ctrl.editor.selected = !ctrl.editor.selected;
-                            ctrl.details.selected = false;
+                            ctrl.revisions.selected = false;
                         }
                     }
                 }, ctrl.editor.title);
@@ -242,16 +242,16 @@ var FileViewPage = {
                         // at least one button must remain enabled.
                         if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
                             ctrl.mfrIframeParent.toggle();
-                            ctrl.details.selected = false;
+                            ctrl.revisions.selected = false;
                         } else if (ctrl.mfrIframeParent.is(':visible') && !ctrl.editor){
                             ctrl.mfrIframeParent.toggle();
-                            ctrl.details.selected = true;
+                            ctrl.revisions.selected = true;
                         }
                     }
                 }, 'View'), editButton())
             ),
             m('.btn-group.m-t-xs', [
-                m('button.btn.btn-sm' + (ctrl.details.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
+                m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
                     var editable = ctrl.editor && ctrl.editor.selected;
                     var viewable = ctrl.mfrIframeParent.is(':visible');
                     if (editable || viewable){
@@ -261,28 +261,28 @@ var FileViewPage = {
                         if (editable) {
                             ctrl.editor.selected = false;
                         }
-                        ctrl.details.selected = true;
+                        ctrl.revisions.selected = true;
                     } else {
                         ctrl.mfrIframeParent.toggle();
                         if (ctrl.editor) {
                             ctrl.editor.selected = false;
                         }
-                        ctrl.details.selected = false;
+                        ctrl.revisions.selected = false;
                     }
-                }}, 'Details')
+                }}, 'Revisions')
             ])
         ]));
 
-        if (ctrl.details.selected){
+        if (ctrl.revisions.selected){
             return m('.file-view-page', m('.panel-toggler', [
-                m('.row', ctrl.details)
+                m('.row', ctrl.revisions)
             ]));
         }
         var editDisplay = (ctrl.editor && !ctrl.editor.selected) ? 'display:none' : '' ;
         ctrl.triggerResize();
         return m('.file-view-page', m('.panel-toggler', [
             m('.row[style="' + editDisplay + '"]', m('.col-sm-12', ctrl.editor),
-             m('.row[style="display:none"]', ctrl.details))
+             m('.row[style="display:none"]', ctrl.revisions))
         ]));
     }
 };

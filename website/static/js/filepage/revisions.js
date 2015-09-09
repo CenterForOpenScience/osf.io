@@ -207,24 +207,9 @@ var FileDetailTable = {
     view: function(ctrl) {
         var fileTags = ctrl.file.file_tags.join(',');
         return m('', [
-            // File Tagging Input
-            ctrl.canEdit() || ctrl.file.file_tags.length !== 0 ?
-                m('.tags.panel.panel-default', [
-                    m('.panel-heading.clearfix', m('h3.panel-title', 'Tags')),
-                    m('.panel-body', {
-                        config: function(element, isInitialized, context) {
-                            if(isInitialized) {
-                                return;
-                            }
-                            ctrl.tagsInput();
-                        }
-                    },[
-                        m('input', {value: fileTags, id:'node-tags'})
-                    ])
-                ]) : '',
-            // Details Table
-            m('#detailsPanel.panel.panel-default', [
-                m('.panel-heading.clearfix', m('h3.panel-title', 'Details')),
+            // Revisions Table
+            m('#revisionsPanel.panel.panel-default', [
+                m('.panel-heading.clearfix', m('h3.panel-title', 'Revisions')),
                 m('.panel-body', {style:{'padding-right': '0','padding-left':'0', 'padding-bottom' : '0', 'overflow': 'auto'}}, (function() {
                     if (!model.loaded()) {
                         return util.Spinner;
