@@ -3,7 +3,8 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, Link, LinksField, WaterbutlerLink, JSONAPIListSerializer, JSONAPIHyperlinkedIdentityField
+from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField, JSONAPIListSerializer
+from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
 
 
 class NodeTagField(ser.Field):
@@ -17,7 +18,7 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeSerializer(JSONAPISerializer):
+class NodeSerializer(JSONAPISerializer, BulkSerializerMixin):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
@@ -66,6 +67,7 @@ class NodeSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'nodes'
+        list_serializer_class = BulkListSerializer
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
@@ -123,6 +125,8 @@ class NodeSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
+class NodeBulkUpdateSerializer(NodeSerializer):
+    id = ser.CharField(source='_id', label='ID')
 
 class NodeLinksSerializer(JSONAPISerializer):
 

@@ -12,8 +12,11 @@ from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
-from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
+from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer, NodeBulkUpdateSerializer
+
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+
+from rest_framework_bulk import ListCreateBulkUpdateAPIView
 
 
 class NodeMixin(object):
@@ -39,7 +42,7 @@ class NodeMixin(object):
         return node
 
 
-class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
+class NodeList(generics.ListCreateAPIView, ListCreateBulkUpdateAPIView, ODMFilterMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -54,7 +57,6 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
-    serializer_class = NodeSerializer
     ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin
@@ -103,6 +105,13 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         # On creation, make sure that current user is the creator
         user = self.request.user
         serializer.save(creator=user)
+
+    # overrides ListCreateAPIView
+    def get_serializer_class(self):
+        serializer_class = NodeSerializer
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+            serializer_class = NodeBulkUpdateSerializer
+        return serializer_class
 
 
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
