@@ -445,6 +445,22 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'Accretion2015': {
+        'name': 'Observational Evidence of Gas Accretion onto Galaxies?',
+        'info_url': 'https://science.nrao.edu/science/meetings/2015/accretion2015',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
+    '2020Futures': {
+        'name': 'U.S. Radio/Millimeter/Submillimeter Science Futures in the 2020s',
+        'info_url': 'https://science.nrao.edu/science/meetings/2015/2020futures/home',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+    },
 }
 
 
