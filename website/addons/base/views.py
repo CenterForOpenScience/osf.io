@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import json
 import uuid
 import httplib
 import functools
@@ -22,6 +21,7 @@ from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
+from website.addons.base import StorageAddonBase
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
@@ -99,6 +99,23 @@ def check_access(node, user, action, key=None):
     if permission == 'read':
         if node.is_public or key in node.private_link_keys_active:
             return True
+    # Users attempting to register projects with components might not have
+    # `write` permissions for all components. This will result in a 403 for
+    # all `copyto` actions as well as `copyfrom` actions if the component
+    # in question is not public. To get around this, we have to recursively
+    # check the node's parent node to determine if they have `write`
+    # permissions up the stack.
+    # TODO(hrybacki): is there a way to tell if this is for a registration?
+    # All nodes being registered that receive the `copyto` action will have
+    # `node.is_registration` == True. However, we have no way of telling if
+    # `copyfrom` actions are originating from a node being registered.
+    if action == 'copyfrom' or (action == 'copyto' and node.is_registration):
+        parent = node.parent_node
+        while parent:
+            if parent.has_permission(user, 'write'):
+                return True
+            parent = parent.parent_node
+
     code = httplib.FORBIDDEN if user else httplib.UNAUTHORIZED
     raise HTTPError(code)
 
@@ -178,6 +195,7 @@ def get_auth(**kwargs):
 LOG_ACTION_MAP = {
     'move': NodeLog.FILE_MOVED,
     'copy': NodeLog.FILE_COPIED,
+    'rename': NodeLog.FILE_RENAMED,
     'create': NodeLog.FILE_ADDED,
     'update': NodeLog.FILE_UPDATED,
     'delete': NodeLog.FILE_REMOVED,
@@ -203,10 +221,28 @@ def create_waterbutler_log(payload, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
     if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
+
         for bundle in ('source', 'destination'):
             for key in ('provider', 'materialized', 'name', 'nid'):
                 if key not in payload[bundle]:
                     raise HTTPError(httplib.BAD_REQUEST)
+
+        dest = payload['destination']
+        src = payload['source']
+
+        if src is not None and dest is not None:
+            dest_path = dest['materialized']
+            src_path = src['materialized']
+            if str(dest_path).endswith("/") and str(src_path).endswith("/"):
+                dest_path = os.path.dirname(dest_path)
+                src_path = os.path.dirname(src_path)
+            if (
+                os.path.split(dest_path)[0] == os.path.split(src_path)[0] and
+                dest['provider'] == src['provider'] and
+                dest['nid'] == src['nid'] and
+                dest['name'] != src['name']
+            ):
+                action = LOG_ACTION_MAP['rename']
 
         destination_node = node  # For clarity
         source_node = Node.load(payload['source']['nid'])
@@ -344,7 +380,7 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     if not path:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if not node_addon:
+    if not isinstance(node_addon, StorageAddonBase):
         raise HTTPError(httplib.BAD_REQUEST, {
             'message_short': 'Bad Request',
             'message_long': 'The add-on containing this file is no longer connected to the {}.'.format(node.project_or_component)
@@ -424,6 +460,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         'provider': guid_file.provider,
         'file_path': guid_file.waterbutler_path,
         'panels_used': ['edit', 'view'],
+        'private': getattr(node_addon, 'is_private', False),
         'sharejs_uuid': sharejs_uuid,
         'urls': {
             'files': node.web_url_for('collect_file_trees'),
@@ -431,10 +468,11 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
             'sharejs': wiki_settings.SHAREJS_URL,
             'mfr': settings.MFR_SERVER_URL,
             'gravatar': get_gravatar(auth.user, 25),
+            'external': getattr(guid_file, 'external_url', None)
         },
         # Note: must be called after get_or_start_render. This is really only for github
         'size': size,
-        'extra': json.dumps(getattr(guid_file, 'extra', {})),
+        'extra': getattr(guid_file, 'extra', {}),
         #NOTE: get_or_start_render must be called first to populate name
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
         'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),

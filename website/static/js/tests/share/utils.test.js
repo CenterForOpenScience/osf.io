@@ -1,6 +1,8 @@
 /*global describe, it, expect, example, before, after, beforeEach, afterEach, mocha, sinon*/
 'use strict';
 
+var $ = require('jquery');
+
 var assert = require('chai').assert;
 var $osf = require('js/osfHelpers');
 
@@ -38,11 +40,18 @@ describe('share/utils', () => {
             results: []
         };
 
-        var endpoints = [{
-            method: 'GET',
-            url: /\/api\/v1\/share\/.*/,
-            response: emptyResponse
-        }];
+        var endpoints = [
+            {
+                method: 'GET',
+                url: /\/api\/v1\/share\/.*/,
+                response: emptyResponse
+            },
+            {
+                method: 'POST',
+                url: /\/api\/v1\/share\/.*/,
+                response: emptyResponse
+            }
+        ];
 
         before(() => {
             query = '';
@@ -113,6 +122,7 @@ describe('share/utils', () => {
         });
     });
 
+
     describe('#buildQuery', () => {
         before(() => {
             query = 'toast';
@@ -125,21 +135,44 @@ describe('share/utils', () => {
             vm.requiredFilters = [];
         });
 
+        it('creates a match_all query when the query is empty or *', () => {
+            var built;
+            query = '';
+            built = utils.buildQuery(vm);
+            assert.equal('match_all', Object.keys(built.query)[0]);
 
-        it('makes a query like query AND (optional) AND (required)', () => {
-            vm.optionalFilters.push('1');
-            vm.requiredFilters.push('2');
+            query = '*';
+            built = utils.buildQuery(vm);
+            assert.equal('match_all', Object.keys(built.query)[0]);
 
-            assert.equal('toast AND (1) AND (2)', utils.buildQuery(vm));
+            query = 'toast';
         });
 
-        it('doesn\'t create invalid queries with empty filters', () => {
-            vm.optionalFilters.push('1');
-            assert.equal('toast AND (1)', utils.buildQuery(vm));
+        it('creates a common terms query otherwise', () => {
+            var built = utils.buildQuery(vm);
+            assert.equal('common', Object.keys(built.query)[0]);
+        });
 
-            vm.optionalFilters = [];
-            vm.requiredFilters.push('2');
-            assert.equal('toast AND (2)', utils.buildQuery(vm));
+        it('creates match query filters for required filters', () => {
+            vm.requiredFilters.push('match:_all:1');
+            vm.requiredFilters.push('match:_all:2');
+            var built = utils.buildQuery(vm);
+
+            assert.equal('bool', Object.keys(built.query.filtered.filter)[0]);
+
+            $.map(built.query.filtered.filter.bool.must, function (item) {
+                assert.equal('query', Object.keys(item)[0]);
+            });
+        });
+
+        it('creates a list of should filters for the optional filters', () => {
+            vm.optionalFilters.push('match:_all:1');
+            vm.optionalFilters.push('match:_all:2');
+            var built = utils.buildQuery(vm);
+
+            $.map(built.query.filtered.filter.bool.should, function (item) {
+                assert.equal('query', Object.keys(item)[0]);
+            });
         });
     });
 

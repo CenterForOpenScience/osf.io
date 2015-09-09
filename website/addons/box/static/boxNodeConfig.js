@@ -114,6 +114,7 @@ var BoxNodeConfigViewModel = oop.extend(AddonNodeConfigViewModel, {
                 url: self.url,
                 textStatus: textStatus,
                 error: error
+
             });
             ret.reject(xhr, textStatus, error);
         });

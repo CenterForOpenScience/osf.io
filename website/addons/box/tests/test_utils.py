@@ -7,11 +7,10 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from framework.auth import Auth
 from website.project.model import NodeLog
 
-from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
 from website.addons.box.tests.factories import BoxFileFactory
-from website.addons.box.tests.utils import BoxAddonTestCase, mock_responses
+from website.addons.box.tests.utils import BoxAddonTestCase
 from website.addons.box import utils
 from website.addons.box.serializer import BoxSerializer
 from website.addons.box.model import BoxNodeSettings

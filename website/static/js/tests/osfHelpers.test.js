@@ -197,6 +197,60 @@ describe('osfHelpers', () => {
             stub.restore();
         });
 
+        describe('ajaxJSON', () => {
+            it('calls $.ajax as GET request, not crossorigin by default', () => {
+                var url = '/foo';
+                $osf.ajaxJSON('GET', url);
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'GET',
+                    data: JSON.stringify({}),
+                    contentType: 'application/json',
+                    dataType: 'json'
+                });
+            });
+            it('calls $.ajax as POST request, and isCors flags sends credentials by default', () => {
+                var url = '/foo';
+                var payload = {'bar': 42};
+
+                $osf.ajaxJSON('POST', url,
+                    {data: payload, isCors: true}
+                );
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'POST',
+                    data: JSON.stringify(payload),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    crossOrigin: true,
+                    xhrFields:
+                        {withCredentials: true}
+                });
+            });
+            it('calls $.ajax as crossorigin PATCH request, omitting credentials when specified', () => {
+                var url = '/foo';
+                var payload = {'bar': 42};
+
+                $osf.ajaxJSON('PATCH', url,
+                    {data: payload, isCors: true,
+                     fields: {xhrFields: {withCredentials: false}}
+                    });
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'PATCH',
+                    data: JSON.stringify(payload),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    crossOrigin: true,
+                    xhrFields:
+                        {withCredentials: false}
+                });
+            });
+        });
+
         describe('postJSON', () => {
             it('calls $.ajax with correct args', () => {
                 var url = '/foo';
@@ -257,15 +311,6 @@ describe('osfHelpers', () => {
     });
 
     describe('FormattableDate', () => {
-        it('should have local and utc time', () => {
-            var date = new Date();
-            var fd = new $osf.FormattableDate(date);
-            var expectedLocal = moment(date).format('YYYY-MM-DD hh:mm A');
-            assert.equal(fd.local, expectedLocal);
-            var expectedUTC = moment.utc(date).format('YYYY-MM-DD HH:mm UTC');
-            assert.equal(fd.utc, expectedUTC);
-        });
-        it('should parse date and datetime strings', () => {
             var year = 2014;
             var month = 11;
             var day = 15;
@@ -277,24 +322,57 @@ describe('osfHelpers', () => {
             var dateString = [year, month, day].join('-');
             var dateTimeString = dateString + 'T' + [hour, minute, second].join(':') + '.' + millisecond.toString();
 
+            var assertDateEqual = function(date, year, month, day, hour, minute, second, millisecond) {
+                assert.equal(date.getUTCFullYear(), year);
+                assert.equal(date.getUTCMonth(), month - 1); // Javascript months count from 0
+                assert.equal(date.getUTCDate(), day);
+                assert.equal(date.getUTCHours(), hour);
+                assert.equal(date.getUTCMinutes(), minute);
+                assert.equal(date.getUTCSeconds(), second);
+                assert.equal(date.getUTCMilliseconds(), millisecond);
+            };
+
+
+        it('should have local and utc time', () => {
+            var date = new Date();
+            var fd = new $osf.FormattableDate(date);
+            var expectedLocal = moment(date).format('YYYY-MM-DD hh:mm A');
+            assert.equal(fd.local, expectedLocal);
+            var expectedUTC = moment.utc(date).format('YYYY-MM-DD HH:mm UTC');
+            assert.equal(fd.utc, expectedUTC);
+        });
+        it('should parse date strings', () => {
             var parsedDate = new $osf.FormattableDate(dateString).date;
             var parsedDateTime = new $osf.FormattableDate(dateTimeString).date;
+            assertDateEqual(parsedDate, year, month, day, 0, 0, 0, 0);
+        });
+        it('should parse datetime strings', () => {
+            var parsedDateTime = new $osf.FormattableDate(dateTimeString).date;
+            assertDateEqual(parsedDateTime, year, month, day, hour, minute, second, millisecond);
+        });
+        it('should allow datetimes with UTC offsets', () => {
+            var parsedDateTime = null;
+            var UTCOffsets = ['+00', '+00:00', '+0000', 'Z'];
 
-            assert.equal(parsedDate.getUTCFullYear(), year);
-            assert.equal(parsedDate.getUTCMonth(), month - 1); // Javascript months count from 0
-            assert.equal(parsedDate.getUTCDate(), day);
-            assert.equal(parsedDate.getUTCHours(), 0);
-            assert.equal(parsedDate.getUTCMinutes(), 0);
-            assert.equal(parsedDate.getUTCSeconds(), 0);
-            assert.equal(parsedDate.getUTCMinutes(), 0);
+            UTCOffsets.forEach(function(offset) {
+                parsedDateTime = new $osf.FormattableDate(dateTimeString + offset).date;
+                assertDateEqual(parsedDateTime, year, month, day, hour, minute, second, millisecond);
+            });
+        });
+        it('should allow datetimes with positive offsets', () => {
+            var parsedDateTime = null;
+            var positiveOffset = '+02:00';
 
-            assert.equal(parsedDateTime.getUTCFullYear(), year);
-            assert.equal(parsedDateTime.getUTCMonth(), month - 1); // Javascript months count from 0
-            assert.equal(parsedDateTime.getUTCDate(), day);
-            assert.equal(parsedDateTime.getUTCHours(), hour);
-            assert.equal(parsedDateTime.getUTCMinutes(), minute);
-            assert.equal(parsedDateTime.getUTCSeconds(), second);
-            assert.equal(parsedDateTime.getUTCMilliseconds(), millisecond);
+            parsedDateTime = new $osf.FormattableDate(dateTimeString + positiveOffset).date;
+            assertDateEqual(parsedDateTime, year, month, day, hour - 2, minute, second, millisecond);
+
+        });
+        it('should allow datetimes with negative offsets', () => {
+            var parsedDateTime = null;
+            var negativeOffset = '-02:00';
+
+            parsedDateTime = new $osf.FormattableDate(dateTimeString + negativeOffset).date;
+            assertDateEqual(parsedDateTime, year, month, day, hour + 2, minute, second, millisecond);
         });
     });
 

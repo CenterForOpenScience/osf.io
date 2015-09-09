@@ -1,15 +1,8 @@
-from website.models import Node, Pointer
+# -*- coding: utf-8 -*-
 from rest_framework import permissions
 
-from framework.auth import Auth
-
-def get_user_auth(request):
-    user = request.user
-    if user.is_anonymous():
-        auth = Auth(None)
-    else:
-        auth = Auth(user)
-    return auth
+from website.models import Node, Pointer
+from api.base.utils import get_user_auth
 
 class ContributorOrPublic(permissions.BasePermission):
 
@@ -28,7 +21,7 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
         assert isinstance(obj, (Node, Pointer)), 'obj must be a Node or Pointer, got {}'.format(obj)
         auth = get_user_auth(request)
         parent_node = Node.load(request.parser_context['kwargs']['node_id'])
-        pointer_node = Pointer.load(request.parser_context['kwargs']['pointer_id']).node
+        pointer_node = Pointer.load(request.parser_context['kwargs']['node_link_id']).node
         if request.method in permissions.SAFE_METHODS:
             has_parent_auth = parent_node.can_view(auth)
             has_pointer_auth = pointer_node.can_view(auth)

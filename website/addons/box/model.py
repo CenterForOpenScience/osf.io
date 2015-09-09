@@ -2,6 +2,7 @@
 import logging
 
 import pymongo
+
 from box import CredentialsV2, BoxClient
 from box.client import BoxClientException
 from modularodm import fields
@@ -228,7 +229,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         )
 
     ##### Callback overrides #####
-
     def after_delete(self, node=None, user=None):
         if user:
             self.deauthorize(Auth(user=user), add_log=True)

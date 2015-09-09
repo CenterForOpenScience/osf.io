@@ -13,7 +13,7 @@
                 <input type="text" class='form-control' value="${user.username}" disabled/>
             </div>
             <div class='form-group'>
-                ${form.password(placeholder='Password', autofocus=True)}
+                ${form.password(placeholder='Password', autofocus=True) | unicode, n }
             </div>
 
             %if next_url:
@@ -22,7 +22,7 @@
             <span class='help-text'>
                 <a id="signOutLink" href='${signOutUrl}'>I am <strong>not</strong> <em>${user.fullname}</em>.</a>
             </span>
-            <button type='submit' class="btn btn-submit btn-primary pull-right">Submit</button>
+            <button type='submit' class="btn btn-submit btn-primary pull-right">Continue</button>
         </form>
 
     </div>

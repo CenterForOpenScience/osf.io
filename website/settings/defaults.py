@@ -24,14 +24,16 @@ STATIC_FOLDER = os.path.join(BASE_PATH, 'static')
 STATIC_URL_PATH = '/static'
 ASSET_HASH_PATH = os.path.join(APP_PATH, 'webpack-assets.json')
 ROOT = os.path.join(BASE_PATH, '..')
+BCRYPT_LOG_ROUNDS = 12
 
 # Hours before email confirmation tokens expire
 EMAIL_TOKEN_EXPIRATION = 24
 CITATION_STYLES_PATH = os.path.join(BASE_PATH, 'static', 'vendor', 'bower_components', 'styles')
 
-# Hours before pending embargo/retraction automatically becomes active
+# Hours before pending embargo/retraction/registration automatically becomes active
 RETRACTION_PENDING_TIME = datetime.timedelta(days=2)
 EMBARGO_PENDING_TIME = datetime.timedelta(days=2)
+REGISTRATION_APPROVAL_TIME = datetime.timedelta(days=2)
 # Date range for embargo periods
 EMBARGO_END_DATE_MIN = datetime.timedelta(days=2)
 EMBARGO_END_DATE_MAX = datetime.timedelta(days=1460)  # Four years
@@ -65,13 +67,16 @@ ELASTIC_URI = 'localhost:9200'
 ELASTIC_TIMEOUT = 10
 ELASTIC_INDEX = 'website'
 SHARE_ELASTIC_URI = ELASTIC_URI
-# Sessions
-# TODO: Override SECRET_KEY in local.py in production
-COOKIE_NAME = 'osf'
-SECRET_KEY = 'CHANGEME'
+SHARE_ELASTIC_INDEX = 'share'
+# For old indices
+SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
-# TODO: Remove after migration to OSF Storage
-COPY_GIT_REPOS = False
+# Sessions
+# TODO: Override OSF_COOKIE_DOMAIN in local.py in production
+OSF_COOKIE_DOMAIN = None
+COOKIE_NAME = 'osf'
+# TODO: Override SECRET_KEY in local.py in production
+SECRET_KEY = 'CHANGEME'
 
 # Change if using `scripts/cron.py` to manage crontab
 CRON_USER = None
@@ -236,6 +241,9 @@ DISK_SAVING_MODE = False
 # Add Contributors (most in common)
 MAX_MOST_IN_COMMON_LENGTH = 15
 
+# Seconds before another notification email can be sent to a contributor when added to a project
+CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
+
 # Google Analytics
 GOOGLE_ANALYTICS_ID = None
 GOOGLE_SITE_VERIFICATION = None
@@ -258,6 +266,7 @@ EZID_PASSWORD = 'changeme'
 EZID_FORMAT = '{namespace}osf.io/{guid}'
 
 
+USE_SHARE = True
 SHARE_REGISTRATION_URL = ''
 SHARE_API_DOCS_URL = ''
 
@@ -273,4 +282,6 @@ MAX_FILE_SIZE = MAX_ARCHIVE_SIZE  # TODO limit file size?
 ARCHIVE_TIMEOUT_TIMEDELTA = timedelta(1)  # 24 hours
 
 ENABLE_ARCHIVER = True
-###########################
+
+JWT_SECRET = 'changeme'
+JWT_ALGORITHM = 'HS256'

@@ -31,7 +31,7 @@ var _dataverseItemButtons = {
         }
         function dataversePublish(event, item, col) {
             var both = !item.data.dataverseIsPublished;
-            var url = both ? item.data.urls.publishBoth : item.data.urls.publish;
+            var url = item.data.urls.publish;
             var toPublish = both ? 'Dataverse and dataset' : 'dataset';
             var modalContent = [
                 m('h3', 'Publish this ' + toPublish + '?'),
@@ -59,7 +59,7 @@ var _dataverseItemButtons = {
                 item.notify.update('Publishing ' + toPublish, 'info', 1, 1);
                 $.osf.putJSON(
                     url,
-                    {}
+                    {'publish_both': both}
                 ).done(function (data) {
                     item.notify.update();
                     var modalContent = [
@@ -73,6 +73,7 @@ var _dataverseItemButtons = {
                         }, 'Okay')
                     ];
                     tb.modal.update(modalContent, modalActions);
+                    item.data.dataverseIsPublished = true;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
                 }).fail(function (xhr, status, error) {
@@ -124,64 +125,66 @@ var _dataverseItemButtons = {
                 }, options)
             );
         }
-        if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit) {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        _uploadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-upload',
-                    className: 'text-success'
-                }, 'Upload'),
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        dataversePublish.call(tb, event, item);
-                    },
-                    icon: 'fa fa-globe',
-                    className: 'text-success'
-                }, 'Publish')
-            );
-        } else if (item.kind === 'folder' && !item.data.addonFullname) {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        _uploadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-upload',
-                    className: 'text-success'
-                }, 'Upload')
-            );
-        } else if (item.kind === 'file') {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        _downloadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-download',
-                    className: 'text-info'
-                }, 'Download')
-            );
-            if (item.parent().data.version === 'latest' && item.data.permissions.edit) {
+        if (tb.options.placement !== 'fileview') {
+            if (item.kind === 'folder' && item.data.addonFullname && item.data.version === 'latest' && item.data.permissions.edit) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
                         onclick: function (event) {
-                            Fangorn.ButtonEvents._removeEvent.call(tb, event, [item]);
+                            _uploadEvent.call(tb, event, item);
                         },
-                        icon: 'fa fa-trash',
-                        className: 'text-danger'
-                    }, 'Delete')
+                        icon: 'fa fa-upload',
+                        className: 'text-success'
+                    }, 'Upload'),
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            dataversePublish.call(tb, event, item);
+                        },
+                        icon: 'fa fa-globe',
+                        className: 'text-primary'
+                    }, 'Publish')
                 );
-            }
-            if (item.data.permissions && item.data.permissions.view) {
+            } else if (item.kind === 'folder' && !item.data.addonFullname) {
                 buttons.push(
                     m.component(Fangorn.Components.button, {
-                        onclick: function(event) {
-                            gotoFile(item);
+                        onclick: function (event) {
+                            _uploadEvent.call(tb, event, item);
                         },
-                        icon: 'fa fa-external-link',
-                        className : 'text-info'
-                    }, 'View'));
+                        icon: 'fa fa-upload',
+                        className: 'text-success'
+                    }, 'Upload')
+                );
+            } else if (item.kind === 'file') {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            _downloadEvent.call(tb, event, item);
+                        },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download')
+                );
+                if (item.parent().data.version === 'latest' && item.data.permissions.edit) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function (event) {
+                                Fangorn.ButtonEvents._removeEvent.call(tb, event, [item]);
+                            },
+                            icon: 'fa fa-trash',
+                            className: 'text-danger'
+                        }, 'Delete')
+                    );
+                }
+                if (item.data.permissions && item.data.permissions.view) {
+                    buttons.push(
+                        m.component(Fangorn.Components.button, {
+                            onclick: function(event) {
+                                gotoFile(item);
+                            },
+                            icon: 'fa fa-external-link',
+                            className : 'text-info'
+                        }, 'View'));
 
+                }
             }
         }
         return m('span', buttons);
@@ -200,6 +203,9 @@ function gotoFile (item) {
 
 function _fangornDataverseTitle(item, col) {
     var tb = this;
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+        return Fangorn.Utils.connectCheckTemplate.call(this, item);
+    }
     var version = item.data.version === 'latest-published' ? 'Published' : 'Draft';
     if (item.data.addonFullname) {
         var contents = [m('dataverse-name', item.data.name + ' (' + version + ')')];
@@ -226,10 +232,7 @@ function _fangornDataverseTitle(item, col) {
             m('dataverse-name.fg-file-links', {
                 onclick: function () {
                     gotoFile(item);
-                },
-                'data-toggle': 'tooltip',
-                title: 'View file',
-                'data-placement': 'bottom'
+                }
             }, item.data.name
                 )
         ]);
@@ -239,10 +242,6 @@ function _fangornDataverseTitle(item, col) {
 function _fangornColumns(item) {
     var tb = this;
     var selectClass = '';
-    if (item.data.kind === 'file' && tb.currentFileID === item.id) {
-        item.css = 'fangorn-selected';
-        tb.multiselected([item]);
-    }
     var columns = [];
     columns.push({
         data : 'name',
@@ -290,7 +289,6 @@ function _canDrop(item) {
     return item.data.provider &&
         item.kind === 'folder' &&
         item.data.permissions.edit &&
-//        item.data.state === 'draft'; Outdated with merge?
         item.data.version === 'latest';
 }
 

@@ -10,5 +10,8 @@ window.contextVars = $.extend(true, {}, window.contextVars, {
     <input id="${short_name}StyleSelect" type="hidden" />
 </div>
 <div id="${short_name}Widget" class="citation-widget">
-	<div class="citation-loading"> <i class="fa fa-spinner citation-spin"></i> <p class="m-t-sm fg-load-message"> Loading citations...  </p> </div>
+        <div class="spinner-loading-wrapper">
+            <div class="logo-spin logo-lg"></div>
+            <p class="m-t-sm fg-load-message"> Loading citations...</p>
+        </div>
 </div>

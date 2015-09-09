@@ -13,7 +13,7 @@ from box.client import BoxClientException
 from tests.factories import AuthUserFactory
 
 from website.addons.box.tests.utils import (
-    BoxAddonTestCase, mock_responses, MockBox, patch_client
+    BoxAddonTestCase, MockBox, patch_client
 )
 from website.addons.box.tests.factories import BoxAccountFactory
 from website.addons.box.utils import box_addon_folder
@@ -61,7 +61,6 @@ class TestConfigViews(BoxAddonTestCase):
         assert_equal(urls['deauthorize'], self.project.api_url_for('box_remove_user_auth'))
         assert_equal(urls['importAuth'], self.project.api_url_for('box_add_user_auth'))
         assert_equal(urls['files'], self.project.web_url_for('collect_file_trees'))
-        # assert_equal(urls['share'], utils.get_share_folder_uri(self.node_settings.folder))
         # Includes endpoint for fetching folders only
         # NOTE: Querystring params are in camelCase
         assert_equal(urls['folders'], self.project.api_url_for('box_folder_list'))
@@ -281,38 +280,6 @@ class TestConfigViews(BoxAddonTestCase):
         log_params = last_log.params
         assert_equal(log_params['node'], self.project._primary_key)
         assert_equal(last_log.user, self.user)
-
-    def test_box_get_share_emails(self):
-        # project has some contributors
-        contrib = AuthUserFactory()
-        self.project.add_contributor(contrib, auth=Auth(self.user))
-        self.project.save()
-        url = api_url_for('box_get_share_emails', pid=self.project._primary_key)
-        res = self.app.get(url, auth=self.user.auth)
-        result = res.json['result']
-        assert_equal(result['emails'], [u.username for u in self.project.contributors
-                                        if u != self.user])
-
-    def test_box_get_share_emails_returns_error_if_not_authorizer(self):
-        contrib = AuthUserFactory()
-        contrib.add_addon('box')
-        contrib.save()
-        self.project.add_contributor(contrib, auth=Auth(self.user))
-        self.project.save()
-        url = api_url_for('box_get_share_emails', pid=self.project._primary_key)
-        # Non-authorizing contributor sends request
-        res = self.app.get(url, auth=contrib.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.FORBIDDEN)
-
-    def test_box_get_share_emails_requires_user_addon(self):
-        # Node doesn't have auth
-        self.node_settings.user_settings = None
-        self.node_settings.save()
-        url = api_url_for('box_get_share_emails', pid=self.project._primary_key)
-        # Non-authorizing contributor sends request
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, httplib.BAD_REQUEST)
-
 
 class TestFilebrowserViews(BoxAddonTestCase):
 

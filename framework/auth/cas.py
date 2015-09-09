@@ -2,6 +2,7 @@
 import furl
 import json
 import requests
+import httplib as http
 from lxml import etree
 
 from website import settings
@@ -9,23 +10,33 @@ from website import settings
 from framework.auth import User
 from framework.auth import authenticate
 from framework.flask import redirect
+from framework.exceptions import HTTPError
 
-class CasError(Exception):
+
+class CasError(HTTPError):
     """General CAS-related error."""
     pass
 
+
 class CasHTTPError(CasError):
     """Error raised when an unexpected error is returned from the CAS server."""
-    def __init__(self, message, status_code, headers, content):
-        super(CasError, self).__init__(message)
-        self.status_code = status_code
+    def __init__(self, code, message, headers, content):
+        super(CasHTTPError, self).__init__(code, message)
         self.headers = headers
         self.content = content
+
+    def __repr__(self):
+        return ('CasHTTPError({self.message!r}, {self.code}, '
+                'headers={self.headers}, content={self.content!r})').format(self=self)
+
+    __str__ = __repr__
 
 
 class CasTokenError(CasError):
     """Raised if an invalid token is passed by the client."""
-    pass
+    def __init__(self, message):
+        super(CasTokenError, self).__init__(http.BAD_REQUEST, message)
+
 
 class CasResponse(object):
     """A wrapper for an HTTP response returned from CAS."""
@@ -36,18 +47,6 @@ class CasResponse(object):
         self.user = user
         self.attributes = attributes or {}
 
-def parse_auth_header(header):
-    """Given a Authorization header string, e.g. 'Bearer abc123xyz', return a token
-    or raise an error if the header is invalid.
-    """
-    parts = header.split()
-    if parts[0].lower() != 'bearer':
-        raise CasTokenError('Unsupported authorization type')
-    elif len(parts) == 1:
-        raise CasTokenError('Missing token')
-    elif len(parts) > 2:
-        raise CasTokenError('Token contains spaces')
-    return parts[1]  # the token
 
 class CasClient(object):
     """HTTP client for the CAS server."""
@@ -77,6 +76,16 @@ class CasClient(object):
         url.args['service'] = service_url
         return url.url
 
+    def get_profile_url(self):
+        url = furl.furl(self.BASE_URL)
+        url.path.segments.extend(('oauth2', 'profile',))
+        return url.url
+
+    def get_application_revocation_url(self):
+        url = furl.furl(self.BASE_URL)
+        url.path.segments.extend(('oauth2', 'revoke'))
+        return url.url
+
     def service_validate(self, ticket, service_url):
         """Send request to validate ticket.
 
@@ -95,7 +104,7 @@ class CasClient(object):
         if resp.status_code == 200:
             return self._parse_service_validation(resp.content)
         else:
-            self.handle_error(resp)
+            self._handle_error(resp)
 
     def profile(self, access_token):
         """Send request to get profile information, given an access token.
@@ -104,22 +113,21 @@ class CasClient(object):
         :rtype: CasResponse
         :raises: CasError if an unexpected response is returned.
         """
-        url = furl.furl(self.BASE_URL)
-        url.path.segments.extend(('oauth2', 'profile',))
+        url = self.get_profile_url()
         headers = {
             'Authorization': 'Bearer {}'.format(access_token),
         }
-        resp = requests.get(url.url, headers=headers)
+        resp = requests.get(url, headers=headers)
         if resp.status_code == 200:
-            return self._parse_profile(resp.content)
+            return self._parse_profile(resp.content, access_token)
         else:
-            self.handle_error(resp)
+            self._handle_error(resp)
 
-    def handle_error(self, response, message='Unexpected response from CAS server'):
+    def _handle_error(self, response, message='Unexpected response from CAS server'):
         """Handle an error response from CAS."""
         raise CasHTTPError(
-            message,
-            status_code=response.status_code,
+            code=response.status_code,
+            message=message,
             headers=response.headers,
             content=response.content,
         )
@@ -135,17 +143,47 @@ class CasClient(object):
             attributes = auth_doc.xpath('./cas:attributes/*', namespaces=doc.nsmap)
             for attribute in attributes:
                 resp.attributes[unicode(attribute.xpath('local-name()'))] = unicode(attribute.text)
+            scopes = resp.attributes.get('accessTokenScope')
+            if scopes:
+                resp.attributes['accessTokenScope'] = scopes.split(' ')
         else:
             resp.authenticated = False
         return resp
 
-    def _parse_profile(self, raw):
+    def _parse_profile(self, raw, access_token):
         data = json.loads(raw)
         resp = CasResponse(authenticated=True, user=data['id'])
-        for attribute in data['attributes'].keys():
-            resp.attributes[attribute] = data['attributes'][attribute]
+        if data.get('attributes'):
+            resp.attributes.update(data['attributes'])
+        resp.attributes['accessToken'] = access_token
+        resp.attributes['accessTokenScope'] = data.get('scope', [])
         return resp
 
+    def revoke_application_tokens(self, client_id, client_secret):
+        """Revoke all tokens associated with a given CAS client_id"""
+        url = self.get_application_revocation_url()
+        data = {'client_id': client_id,
+                'client_secret': client_secret}
+
+        resp = requests.post(url, data=data)
+        if resp.status_code == 204:
+            return True
+        else:
+            self._handle_error(resp)
+
+
+def parse_auth_header(header):
+    """Given a Authorization header string, e.g. 'Bearer abc123xyz', return a token
+    or raise an error if the header is invalid.
+    """
+    parts = header.split()
+    if parts[0].lower() != 'bearer':
+        raise CasTokenError('Unsupported authorization type')
+    elif len(parts) == 1:
+        raise CasTokenError('Missing token')
+    elif len(parts) > 2:
+        raise CasTokenError('Token contains spaces')
+    return parts[1]  # the token
 
 def get_client():
     return CasClient(settings.CAS_SERVER_URL)
@@ -165,6 +203,11 @@ def get_logout_url(*args, **kwargs):
     :param kwargs: Same kwargs that `CasClient.get_logout_url` receives
     """
     return get_client().get_logout_url(*args, **kwargs)
+
+def get_profile_url():
+    """Convenience function for getting a profile URL for a user.
+    """
+    return get_client().get_profile_url()
 
 def make_response_from_ticket(ticket, service_url):
     """Given a CAS ticket and service URL, attempt to the user and return a proper

@@ -10,7 +10,7 @@ var Paginator = require('js/paginator');
 var oop = require('js/oop');
 require('knockout.punches');
 
-var $osf = require('js/osfHelpers');  // Injects 'listing' binding hanlder to to Knockout
+var $osf = require('js/osfHelpers');  // Injects 'listing' binding handler to to Knockout
 var nodeCategories = require('json!built/nodeCategories.json');
 
 ko.punches.enableAll();  // Enable knockout punches
@@ -34,7 +34,8 @@ var Log = function(params) {
       * Given an item in self.contributors, return its anchor element representation.
       */
     self._asContribLink = function(person) {
-        return '<a class="contrib-link" href="/profile/' + person.id + '/">' + person.fullname + '</a>';
+        var fullnameText = $osf.htmlEscape(person.fullname);
+        return '<a class="contrib-link" href="/profile/' + person.id + '/">' + fullnameText + '</a>';
     };
 
     /**
@@ -79,7 +80,8 @@ var Log = function(params) {
                 if (person.registered) {
                     ret += self._asContribLink(person);
                 } else {
-                    ret += '<span>' + person.fullname + '</span>';
+                    var fullnameText = $osf.htmlEscape(person.fullname);
+                    ret += '<span>' + fullnameText + '</span>';
                 }
                 if (i < self.contributors.length - 1 && self.contributors.length > 2) {
                     ret += ', ';
@@ -127,7 +129,8 @@ var LogsViewModel = oop.extend(Paginator, {
     //send request to get more logs when the more button is clicked
     fetchResults: function(){
         var self = this;
-        self.loading(true);
+        self.loading(true); // show loading indicator
+
         return $.ajax({
             type: 'get',
             url: self.url,
@@ -136,10 +139,9 @@ var LogsViewModel = oop.extend(Paginator, {
             },
             cache: false
         }).done(function(response) {
-            self.loading(false);
             // Initialize LogViewModel
-            self.logs.removeAll();
             var logModelObjects = createLogs(response.logs); // Array of Log model objects
+            self.logs.removeAll();
             for (var i=0; i<logModelObjects.length; i++) {
                 self.logs.push(logModelObjects[i]);
             }
@@ -148,7 +150,7 @@ var LogsViewModel = oop.extend(Paginator, {
             self.addNewPaginators();
         }).fail(
             $osf.handleJSONError
-        ).fail(function() {
+        ).always( function (){
             self.loading(false);
         });
 
@@ -175,7 +177,6 @@ var createLogs = function(logData){
             nodeUrl: item.node.url,
             userFullName: item.user.fullname,
             userURL: item.user.url,
-            apiKey: item.api_key,
             params: item.params,
             nodeTitle: item.node.title,
             nodeDescription: item.params.description_new,

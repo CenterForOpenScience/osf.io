@@ -1,28 +1,10 @@
 'use strict';
 
 var $ = require('jquery');
-var bootbox = require('bootbox');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
-var Fangorn = require('js/fangorn');
-require('../css/fangorn.css');
-
-
-// TODO: Refactor out shared utility code between this module, folder picker, and fangorn.js
-function resolveToggle(item) {
-    var toggleMinus = m('i.fa.fa-minus', ' '),
-        togglePlus = m('i.fa.fa-plus', ' ');
-
-    if (item.children.length > 0) {
-        if (item.open) {
-            return toggleMinus;
-        }
-        return togglePlus;
-    }
-    item.open = true;
-    return '';
-}
+var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
@@ -70,13 +52,13 @@ function subscribe(item, notification_type) {
         '/api/v1/subscriptions/',
         payload
     ).done(function(){
+        //'notfiy-success' is to override default class 'success' in treebeard
         item.notify.update('Settings updated', 'notify-success', 1, 2000);
         item.data.event.notificationType = notification_type;
     }).fail(function() {
         item.notify.update('Could not update settings', 'notify-danger', 1, 2000);
     });
 }
-
 
 function displayParentNotificationType(item){
     var notificationTypeDescriptions = {
@@ -98,38 +80,11 @@ function displayParentNotificationType(item){
 function ProjectNotifications(data) {
 
     //  Treebeard version
-    var tbOptions = {
+    var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         divID: 'grid',
         filesData: data,
-        rowHeight : 33,         // user can override or get from .tb-row height
-        resolveToggle: resolveToggle,
-        paginate : false,       // Whether the applet starts with pagination or not.
-        paginateToggle : false, // Show the buttons that allow users to switch between scroll and paginate.
-        uploads : false,         // Turns dropzone on/off.
-        resolveIcon : Fangorn.Utils.resolveIconView,
-        hideColumnTitles: true,
-        columnTitles : function notificationColumnTitles(item, col) {
-            return [
-                {
-                    title: 'Project',
-                    width: '60%',
-                    sortType : 'text',
-                    sort : false
-                },
-                {
-                    title: 'Notification Type',
-                    width : '40%',
-                    sort : false
-
-                }
-            ];
-        },
-        ontogglefolder : function (item){
-            var containerHeight = this.select('#tb-tbody').height();
-            this.options.showTotal = Math.floor(containerHeight / this.options.rowHeight) + 1;
-            this.redraw();
-        },
-        resolveRows : function notificationResolveRows(item){
+        naturalScrollLimit : 0,
+        resolveRows: function notificationResolveRows(item){
             var columns = [];
             var iconcss = '';
             // check if should not get icon
@@ -252,18 +207,8 @@ function ProjectNotifications(data) {
             }
 
             return columns;
-        },
-        sortButtonSelector : {
-            up : 'i.fa.fa-chevron-up',
-            down : 'i.fa.fa-chevron-down'
-        },
-        showFilter : false,     // Gives the option to filter by showing the filter box.
-        allowMove : false,       // Turn moving on or off.
-        hoverClass : 'fangorn-hover',
-        resolveRefreshIcon : function() {
-          return m('i.fa.fa-refresh.fa-spin');
         }
-    };
+    });
     var grid = new Treebeard(tbOptions);
     expandOnLoad.call(grid.tbController);
 }

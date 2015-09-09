@@ -1,0 +1,112 @@
+.add-query
+{
+    width: 190px;
+    margin-left: 10px;
+    display: inline-block;
+    font-weight: normal;
+}
+.navigate
+{
+    padding:25px;
+    font-size: 18px;
+}
+.remove-button
+{
+    color: #ffffff;
+}
+.search-types a
+{
+    font-size: 16px;
+}
+
+.registration a {
+    color: #666;
+}
+
+.registration small{
+    color: #000000;
+}
+
+.registration {
+    background-color: #AAA;
+    color: #ffffff;
+}
+
+.query-label
+{
+    margin-right: .5em;
+}
+.result
+{
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+.title h4
+{
+    padding: 0;
+    padding-bottom: 5px;
+    margin: 0;
+}
+.private-title
+{
+    font-weight: normal;
+    font-style: italic;
+}
+.search-field
+{
+    padding: 0;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    margin: 0;
+    line-height: 16px;
+}
+.search-field p
+{
+    margin: 0;
+}
+.description h5
+{
+    padding: 0;
+    padding-bottom: 4px;
+    margin: 0;
+    font-weight: normal;
+    line-height: 16px;
+}
+.search-tags
+{
+    padding-top: 2px;
+    line-height: 24px;
+}
+.search-tags a
+{
+    margin-right: .5em;
+}
+
+div.search-result  {
+    margin-bottom: 10pt;
+    padding: 10px;
+    border-bottom: 1px solid #d3d3d3;
+    overflow-x: hidden;
+}
+
+.search-results.search-result h5 small{
+    color: white;
+    font-size: 10pt;
+}
+
+
+.search-results.search-result {
+    overflow-x: hidden;
+
+}
+/* Search Contributors */
+.search-contributor-result td {
+    padding-right: 10px;
+}
+.search-contributor-links {
+    padding-top: 10px;
+}
+
+#searchControls .osf-search {
+    z-index: 1029; /* No larger than 1030 */
+}

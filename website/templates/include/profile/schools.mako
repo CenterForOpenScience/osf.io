@@ -17,14 +17,13 @@
 
                     <div class="well well-sm sort-handle">
                         <span>Position {{ $index() + 1 }}</span>
-                        <span data-bind="visible: $parent.hasMultiple()">
+                        <span data-bind="visible: $parent.contentsLength() > 1">
                             [ drag to reorder ]
                         </span>
                         <a
                                 class="text-danger pull-right"
-                                data-bind="click: $parent.removeContent,
-                                           visible: $parent.canRemove"
-                            >Remove</a>
+                                data-bind="click: $parent.removeContent"
+                                >Remove</a>
                     </div>
 
                     <div class="form-group">
@@ -101,18 +100,18 @@
                 </a>
             </div>
 
-            <div class="padded">
+            <div class="p-t-lg p-b-lg">
 
                 <button
                         type="button"
                         class="btn btn-default"
                         data-bind="click: cancel"
-                    >Cancel</button>
+                    >Discard changes</button>
 
                 <button
                         type="submit"
-                        class="btn btn-primary"
-                    >Submit</button>
+                        class="btn btn-success"
+                    >Save</button>
 
             </div>
 
