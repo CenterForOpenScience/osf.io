@@ -483,17 +483,40 @@ var SocialViewModel = function(urls, modes) {
     TrackedMixin.call(self);
 
     self.addons = ko.observableArray();
+    
+    self.profileWebsites = ko.observableArray();
 
-    self.personal = extendLink(
-        // Note: Apply extenders in reverse order so that `ensureHttp` is
-        // applied before `url`.
-        ko.observable().extend({
-            trimmed: true,
-            url: true,
-            ensureHttp: true
-        }),
-        self, 'personal'
-    );
+    self.hasProfileWebsites = ko.computed(function() {
+        if (self.profileWebsites()) {
+            for (var i=0; i<self.profileWebsites().length; i++) {
+                if (self.profileWebsites()[i]) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    });
+
+    self.canRemove = ko.computed(function () {
+        if (self.profileWebsites()) {
+            return self.profileWebsites().length > 1;
+        }
+        
+        else { 
+            return false;
+        }
+    });
+
+    //self.personal = extendLink(
+    //    // Note: Apply extenders in reverse order so that `ensureHttp` is
+    //    // applied before `url`.
+    //    ko.observable().extend({
+    //        trimmed: true,
+    //        url: true,
+    //        ensureHttp: true
+    //    }),
+    //    self, 'personal'
+    //);
     self.orcid = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
         self, 'orcid', 'http://orcid.org/'
@@ -524,7 +547,8 @@ var SocialViewModel = function(urls, modes) {
     );
 
     self.trackedProperties = [
-        self.personal,
+        self.profileWebsites,
+        //self.personal,
         self.orcid,
         self.researcherId,
         self.twitter,
@@ -542,7 +566,7 @@ var SocialViewModel = function(urls, modes) {
 
     self.values = ko.computed(function() {
         return [
-            {label: 'Personal Site', text: self.personal(), value: self.personal.url()},
+                //{label: 'Personal Site', text: self.personal(), value: self.personal.url()},
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
             {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
@@ -555,6 +579,9 @@ var SocialViewModel = function(urls, modes) {
 
     self.hasValues = ko.computed(function() {
         var values = self.values();
+        if (self.hasProfileWebsites()) {
+            return true;
+        }
         for (var i=0; i<self.values().length; i++) {
             if (values[i].value) {
                 return true;
@@ -563,13 +590,88 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
+    self.addWebsiteInput = function() {
+        this.profileWebsites.push(ko.observable().extend({
+            trimmedURL: true
+        }));
+    };
+    
+    self.removeWebsite = function(profileWebsite) {
+        var profileWebsites = ko.toJS(self.profileWebsites()),
+            idx = profileWebsites.indexOf(profileWebsite);
+            bootbox.confirm({
+                title: 'Remove website?',
+                message: 'Are you sure you want to remove this website from your profile?',
+                callback: function(confirmed) {
+                    if (confirmed) {
+                        self.profileWebsites.splice(idx, 1);
+                        if (!self.profileWebsites().length) {
+                            self.addWebsiteInput();
+                        }
+                        self.submit();
+                        self.changeMessage(
+                            'Website Removed',
+                            'text-danger',
+                            5000
+                        );
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Remove',
+                        className:'btn-danger'
+                    }
+                }
+            });
+    };
+
+    if (self.profileWebsites().length === 0) {
+        self.addWebsiteInput();
+    }
+
     self.fetch();
 };
 SocialViewModel.prototype = Object.create(BaseViewModel.prototype);
 $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.prototype);
 
-var ListViewModel = function(ContentModel, urls, modes) {
+SocialViewModel.prototype.serialize = function() {
+    var serializedData = ko.toJS(this);
+    var profileWebsites = serializedData.profileWebsites;
+    
+    function removeBlankValues(value) {
+        return value !== '';
+    }
+    
+    serializedData.profileWebsites = serializedData.profileWebsites.filter(removeBlankValues);
+    return serializedData;
+};
 
+SocialViewModel.prototype.unserialize = function(data) {
+    var self = this,
+        websiteValue = [];
+    $.each(data || {}, function(key, value) {
+        if (ko.isObservable(self[key]) && key === 'profileWebsites') {
+            if (!value.length) {
+                value.push('');
+            }
+
+        for (var i = 0; i < value.length; i++) {
+                websiteValue[i] = ko.observable(value[i]).extend({
+                        trimmedURL: true
+                });                 
+            }
+            self[key](websiteValue);
+        }  
+        else if (ko.isObservable(self[key])) {
+            self[key](value);
+            // Ensure that validation errors are displayed
+            self[key].notifySubscribers();
+        }
+    });
+    return self;
+};
+
+var ListViewModel = function(ContentModel, urls, modes) {
     var self = this;
     BaseViewModel.call(self, urls, modes);
 
