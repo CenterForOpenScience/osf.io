@@ -1194,7 +1194,7 @@ class TestNodeLinksList(ApiTestCase):
     def test_return_private_node_pointers_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
         assert_equal(res.status_code, 401)
-        assert 'detail' in res.json['errors'][0]
+        assert_in('detail', res.json['errors'][0])
 
     def test_return_private_node_pointers_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -1207,8 +1207,19 @@ class TestNodeLinksList(ApiTestCase):
     def test_return_private_node_pointers_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-        assert 'detail' in res.json['errors'][0]
+        assert_in('detail', res.json['errors'][0])
 
+    def test_deleted_links_not_returned(self):
+        res = self.app.get(self.public_url)
+        res_json = res.json['data']
+        original_length = len(res_json)
+
+        self.public_pointer_project.is_deleted = True
+        self.public_pointer_project.save()
+
+        res = self.app.get(self.public_url)
+        res_json = res.json['data']
+        assert_equal(len(res_json), original_length - 1)
 
 class TestNodeTags(ApiTestCase):
     def setUp(self):
