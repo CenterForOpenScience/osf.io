@@ -1327,8 +1327,12 @@ class TestNodeContributorDelete(ApiTestCase):
         assert_in(self.user_two, self.project.contributors)
 
     def test_remove_non_contributor_admin(self):
+        assert_not_in(self.user_three, self.project.contributors)
         res = self.app.delete(self.url_user_three, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+
+        self.project.reload()
+        assert_not_in(self.user_three, self.project.contributors)
 
     def test_remove_non_existing_user_admin(self):
         url_user_fake = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, 'fake')
