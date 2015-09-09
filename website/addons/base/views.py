@@ -195,6 +195,7 @@ def get_auth(**kwargs):
 LOG_ACTION_MAP = {
     'move': NodeLog.FILE_MOVED,
     'copy': NodeLog.FILE_COPIED,
+    'rename': NodeLog.FILE_RENAMED,
     'create': NodeLog.FILE_ADDED,
     'update': NodeLog.FILE_UPDATED,
     'delete': NodeLog.FILE_REMOVED,
@@ -220,10 +221,28 @@ def create_waterbutler_log(payload, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
     if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
+
         for bundle in ('source', 'destination'):
             for key in ('provider', 'materialized', 'name', 'nid'):
                 if key not in payload[bundle]:
                     raise HTTPError(httplib.BAD_REQUEST)
+
+        dest = payload['destination']
+        src = payload['source']
+
+        if src is not None and dest is not None:
+            dest_path = dest['materialized']
+            src_path = src['materialized']
+            if str(dest_path).endswith("/") and str(src_path).endswith("/"):
+                dest_path = os.path.dirname(dest_path)
+                src_path = os.path.dirname(src_path)
+            if (
+                os.path.split(dest_path)[0] == os.path.split(src_path)[0] and
+                dest['provider'] == src['provider'] and
+                dest['nid'] == src['nid'] and
+                dest['name'] != src['name']
+            ):
+                action = LOG_ACTION_MAP['rename']
 
         destination_node = node  # For clarity
         source_node = Node.load(payload['source']['nid'])

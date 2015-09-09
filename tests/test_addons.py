@@ -287,6 +287,37 @@ class TestAddonLogs(OsfTestCase):
         self.node.reload()
         assert_equal(len(self.node.logs), nlogs)
 
+    def test_action_file_rename(self):
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(
+            action='rename',
+            metadata={
+            'path': 'foo',
+            'destination': {
+                'materialized': 'foo',
+                'provider': 'github',
+                'nid': self.node._id,
+                'name': 'old.txt',
+            },
+            'source': {
+                'materialized': 'foo',
+                'provider': 'github',
+                'nid': self.node._id,
+                'name': 'new.txt',
+            }
+        })
+        self.test_app.put_json(
+            url,
+            payload,
+            headers={'Content-Type': 'application/json'}
+        )
+        self.node.reload()
+
+        assert_equal(
+            self.node.logs[-1].action,
+            'github_addon_file_renamed',
+        )
+
 
 class TestCheckAuth(OsfTestCase):
 
