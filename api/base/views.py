@@ -18,12 +18,12 @@ class JSONAPIBaseView(generics.GenericAPIView):
         :return function (Request, type) -> dict | list:
         """
         include_field = self.serializer_class._declared_fields[field_name]
-        def partial(request, item, **kwargs):
+        def partial(request, item):
             include_value = getattr(item, include_field.lookup_field, None)
             view_kwargs = {include_field.lookup_url_kwarg: include_value}
             view, view_args, view_kwargs = resolve(reverse(include_field.view_name, kwargs=view_kwargs))
             view_kwargs['request'] = request
-            view_kwargs.update(kwargs)
+            view_kwargs['no_includes'] = True
             response = view(*view_args, **view_kwargs)
             return response.data.get('data')
         return partial
@@ -102,6 +102,11 @@ def root(request, format=None):
 
         Some routes may have extra rules for links, especially if those links work with external services. Collections
         may have counts with them to indicate how many items are in that collection.
+
+        ### Includes
+        Links found in the 'relationships' dictionary of an API response can be included in a single request. For example,
+        to fetch a node and its children use a request like:
+            /nodes/<node_id>/?include=children
     """
     if request.user and not request.user.is_anonymous():
         user = request.user

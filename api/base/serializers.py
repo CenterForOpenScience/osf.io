@@ -255,8 +255,7 @@ class JSONAPISerializer(ser.Serializer):
                 if field.field_name in includes:
                     data['includes'][field.field_name] = self.context['include'][field.field_name](
                         self.context['request'],
-                        obj,
-                        no_includes=True
+                        obj
                     )
                 else:
                     data['relationships'][field.field_name] = field.to_representation(attribute)
