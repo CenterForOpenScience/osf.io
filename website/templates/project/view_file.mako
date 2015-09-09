@@ -19,13 +19,13 @@
 </div>
 <hr>
 <div class="row">
-
-  <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
-    <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
+    <div class="col-sm-2">
+  <div id="file-navigation" class="panel-toggle file-tree">
+    <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height" style="display: none">
       <div class="panel-heading clearfix osf-panel-header-flex" style="display:none">
         <div id="filesSearch"></div>
-        <div id="toggleIcon" class="pull-right">
-          <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
+        <div id="toggleIcon" class="pull-right text-right" style="width:5%">
+            <button class="btn btn-link project-toggle" style="padding:0"><i class="fa fa-angle-up"></i></button>
         </div>
       </div>
 
@@ -40,15 +40,32 @@
     </div>
 
     <!-- Menu toggle closed -->
-    <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
-      <div class="panel-heading">
-        <i class="fa fa-angle-right"></i>
+    <div class="panel panel-default osf-panel-show reset-height pointer">
+      <div class="panel-heading clearfix">
+        <h3 class="panel-title" style="padding-top:3px">File Browser</h3>
+          <div class="pull-right">
+              <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
+          </div>
       </div>
     </div>
   </div>
 
+        %if file_tags or 'write' in user['permissions']:
+    <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title">Tags</h3>
+            <div class="pull-right">
+            </div>
+        </div>
+        <div class="panel-body">
+            <input id="fileTags" value="${','.join(file_tags)}" />
+        </div>
+    </div>
+    %endif
+</div>
+
 <!-- The osf-logo spinner here is from mfr code base -->
-  <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
+  <div id="fileViewPanelLeft" class="col-sm-10 panel-expand">
     <div class="row">
         <div id="externalView" class="col-sm-9"></div>
         <div id="mfrIframeParent" class="col-sm-9">
@@ -174,10 +191,13 @@
             file_tags: ${file_tags | sjson, n},
           urls: {
               external: ${ (urls['external'] or '') | sjson, n },
-        %if error is None:
+              %if error is None:
               render: ${ urls['render'] | sjson, n },
-        %endif
+              %endif
               sharejs: ${ urls['sharejs'] | sjson, n },
+              %if tags is not UNDEFINED or file_tags is not UNDEFINED:
+              tags: ${ urls['tags'] | sjson, n },
+              %endif
             }
         },
         editor: {

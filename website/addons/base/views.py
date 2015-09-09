@@ -449,7 +449,8 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
             'sharejs': wiki_settings.SHAREJS_URL,
             'mfr': settings.MFR_SERVER_URL,
             'gravatar': get_gravatar(auth.user, 25),
-            'external': getattr(guid_file, 'external_url', None)
+            'external': getattr(guid_file, 'external_url', None),
+            'tags': node.api_url_for('file_add_tag', guid=guid_file._id),
         },
         # Note: must be called after get_or_start_render. This is really only for github
         'size': size,
