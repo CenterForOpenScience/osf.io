@@ -488,7 +488,7 @@ var SocialViewModel = function(urls, modes) {
 
     self.profileWebsitesLength = ko.computed(function() {
         return self.profileWebsites().length;
-    })
+    });
 
     self.hasProfileWebsites = ko.pureComputed(function() {
         //Check to see if any valid profileWebsites exist
