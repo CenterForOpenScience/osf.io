@@ -2487,7 +2487,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.save()
         return contributor
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True):
+    def set_privacy(self, permissions, auth=None, log=True, save=True, skip_mail=False):
         """Set the permissions for this node.
 
         :param permissions: A string, either 'public' or 'private'
@@ -2501,7 +2501,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 if self.embargo_end_date and not self.is_pending_embargo:
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
-            if auth:
+            if auth and not skip_mail:
                 mails.queue_mail(
                     to_addr=auth.user.username,
                     mail=mails.NEW_PUBLIC_PROJECT,
