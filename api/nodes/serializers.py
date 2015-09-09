@@ -33,7 +33,6 @@ class JSONAPINodeListSerializer(JSONAPIListSerializer):
         for obj_id, data in data_mapping.items():
             object =  get_object_or_error(Node, obj_id, 'node')
             ret.append(self.child.update(object, data))
-
         return ret
 
 class NodeSerializer(JSONAPISerializer, BulkSerializerMixin):

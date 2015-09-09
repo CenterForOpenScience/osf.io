@@ -3,8 +3,8 @@ import requests
 from modularodm import Q
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework_bulk import ListCreateBulkUpdateAPIView
 from rest_framework_bulk.drf3.mixins import BulkUpdateModelMixin
+from rest_framework_bulk import ListCreateBulkUpdateDestroyAPIView
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
@@ -41,7 +41,7 @@ class NodeMixin(object):
         return node
 
 
-class NodeList(generics.ListCreateAPIView, ListCreateBulkUpdateAPIView, BulkUpdateModelMixin, ODMFilterMixin):
+class NodeList(ListCreateBulkUpdateDestroyAPIView, BulkUpdateModelMixin, ODMFilterMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -116,6 +116,18 @@ class NodeList(generics.ListCreateAPIView, ListCreateBulkUpdateAPIView, BulkUpda
     def bulk_update(self, request, *args, **kwargs):
         response = BulkUpdateModelMixin.bulk_update(self, request, *args, **kwargs)
         return Response({'data': response.data}, status=status.HTTP_200_OK)
+
+    def bulk_destroy(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        filtered = self.filter_queryset(qs)
+        if not self.allow_bulk_destroy(qs, filtered):
+            return Response({'errors': [{'detail': 'Filter nodes to delete.'}]}, status=status.HTTP_400_BAD_REQUEST)
+
+        for obj in filtered:
+            self.pre_delete(obj)
+            obj.delete()
+            self.post_delete(obj)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
