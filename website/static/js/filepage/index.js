@@ -218,7 +218,6 @@ var FileViewPage = {
                     var link = $('iframe').attr('src');
                     var height = $('iframe').attr('height');
                     $('#height').val(height);
-                    updateHeight();
                 }, config: function(element, isInitialized) {
                     if(!isInitialized){
                         var button = $(element).popover();
@@ -257,17 +256,9 @@ var FileViewPage = {
                             '       \</textarea\>',
                             '       \<br/\> \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to HTML to directly embed the iFrame with custom sizing and scrolling enabled. Edit size of iFrame by clicking on Show More."\>Direct iFrame with Fixed Height and Width\<p/\>',
                             '           \<textarea id="directIFrame" onclick="this.select()" class="form-control" \>'  +
-                                            '\<iframe src="' + link + '" width="100%" scrolling="yes" height="100%" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen \>',
-                            '           \</textarea\> \<br\>',
-                            '       \<div class="collapse-group"\> \<div class="form-horizontal collapse" aria-expanded="false"\> \<div class="form-group"\> ',
-                            '           \<label class="sr-only col-sm-2" for="width"\>Width\</label\> \<div class="col-sm-4 col-sm-offset-4"\> \<div class="input-group"\>',
-                            '               \<span class="input-group-addon"\> Width \</span\> \<input type="text" class="form-control text-center" id="width" placeholder="100%" onchange="updateWidth()"\> \</div\> \</div\> \</div\> \<div class="form-group"\> ',
-                            '           \<label class="sr-only col-sm-2" for="height"\>Height\</label\> \<div class="col-sm-4 col-sm-offset-4"\> \<div class="input-group"\> ',
-                            '               \<span class="input-group-addon"\>Height\</span\> \<input type="text" class="form-control text-center" id="height" placeholder="100%" onchange="updateHeight()"\> \</div\>',
-                            '       \</div\> \</div\> \</div\>',
-                            '       \<a class="btn btn-default" id="showmore"\>Show More\</a\> ',
-                            '\</div\> \</div\> \</div\> ',
-                            '\<script\> $(function () { $(\'[data-toggle="tooltip"]\').tooltip();}); $(\'#showmore\').on(\'click\', function(e) {e.preventDefault();var $this = $(this);var $collapse = $this.closest(\'.collapse-group\').find(\'.collapse\');$collapse.collapse(\'toggle\'); if($(\'#showmore\').text() === "Show More") { $(\'#showmore\').text("Show Less"); } else { $(\'#showmore\').text("Show More"); } }); function updateWidth() { var str = $(\'#directIFrame\').html().replace(/width=(".*?")/, \'width="\' + $(\'#width\').val() +  \'"\'); $(\'#directIFrame\').html(str); } function updateHeight() { var str = $(\'#directIFrame\').html().replace(/height=(".*?")/, \'height="\' + $(\'#height\').val() +  \'"\'); $(\'#directIFrame\').html(str); } \</script\>',
+                                            '\<iframe src="' + link + '" width="100%" scrolling="yes" height="'+height+'" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen \>',
+                            '           \</textarea\> ',
+                            '\</div\> \</div\>'
                         ].join('');
                         $(element).attr('data-content', data);
                     }
