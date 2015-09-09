@@ -17,7 +17,6 @@ var Panel = utils.Panel;
 
 var EDITORS = {'text': FileEditor};
 
-
 var FileViewPage = {
     controller: function(context) {
         var self = this;
@@ -215,8 +214,67 @@ var FileViewPage = {
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             m('.btn-group.m-t-xs', [
-                m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
-            ]),
+                m('#sharebutton.btn.btn-sm.btn-primary', {onclick: function () {
+                    var link = $('iframe').attr('src');
+                    var height = $('iframe').attr('height');
+                    $('#height').val(height);
+                    updateHeight();
+                }, config: function(element, isInitialized) {
+                    if(!isInitialized){
+                        var button = $(element).popover();
+                        button.on('show.bs.popover', function(e){
+                            button.data()['bs.popover'].$tip.css('max-width', '600px').css('text-align', 'center');
+                        });
+                        if (!window.contextVars.node.isPublic) {
+                            $('#sharebutton').attr('disabled', 'disabled');
+                        }
+                        else {
+                            $('#sharebutton').removeAttr('disabled', 'disabled');
+                        }
+                        var link = $('iframe').attr('src');
+                        var height = $('iframe').attr('height');
+                        link = link.substring(0, link.indexOf('download') + 8);
+                        var url = link.substring(0, link.indexOf('render'));
+                        var style = '\<link href=\"' + url + 'static/css/mfr.css\" media=\"all\" rel=\"stylesheet\" /\>';
+                        var data = [
+                            '\<ul class="nav nav-tabs nav-justified"\>',
+                            '   \<li class="active"\>\<a href="#share" data-toggle="tab"\>Share\</a\>\</li\>', '' +
+                            '   \<li\>\<a href="#embed" data-toggle="tab"\>Embed\</a\>\</li\>',
+                            '\</ul\>\<br\>',
+                            '\<div class="tab-content"\>',
+                            '   \<div id="share" class="tab-pane fade in active"\>',
+                            '       \<input onclick="this.select()" class="form-control" type="text" value="' + link + '" /\>',
+                            '   \</div\>',
+                            '   \<div id="embed" class="tab-pane fade"\>',
+                            '       \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to HTML to dynamically render an iFrame that is automatically sized appropriately."\>Dynamically Render iFrame with JavaScript\<p/\>',
+                            '       \<textarea onclick="this.select()" class="form-control" \>' +
+                                        style + '\n' +
+                                        '\<div id="mfrIframe" class="mfr mfr-file"\>\</div\> \n',
+                                        '\<script src="' + url + 'static/js/mfr.js"\>\</script\> \n',
+                                        '\<script\> \n',
+                                        '   var mfrRender = new mfr.Render\("mfrIframe", "' + link + '"\);\n',
+                                        '\</script\> ',
+                            '       \</textarea\>',
+                            '       \<br/\> \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to HTML to directly embed the iFrame with custom sizing and scrolling enabled. Edit size of iFrame by clicking on Show More."\>Direct iFrame with Fixed Height and Width\<p/\>',
+                            '           \<textarea id="directIFrame" onclick="this.select()" class="form-control" \>'  +
+                                            '\<iframe src="' + link + '" width="100%" scrolling="yes" height="100%" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen \>',
+                            '           \</textarea\> \<br\>',
+                            '       \<div class="collapse-group"\> \<div class="form-horizontal collapse" aria-expanded="false"\> \<div class="form-group"\> ',
+                            '           \<label class="sr-only col-sm-2" for="width"\>Width\</label\> \<div class="col-sm-4 col-sm-offset-4"\> \<div class="input-group"\>',
+                            '               \<span class="input-group-addon"\> Width \</span\> \<input type="text" class="form-control text-center" id="width" placeholder="100%" onchange="updateWidth()"\> \</div\> \</div\> \</div\> \<div class="form-group"\> ',
+                            '           \<label class="sr-only col-sm-2" for="height"\>Height\</label\> \<div class="col-sm-4 col-sm-offset-4"\> \<div class="input-group"\> ',
+                            '               \<span class="input-group-addon"\>Height\</span\> \<input type="text" class="form-control text-center" id="height" placeholder="100%" onchange="updateHeight()"\> \</div\>',
+                            '       \</div\> \</div\> \</div\>',
+                            '       \<a class="btn btn-default" id="showmore"\>Show More\</a\> ',
+                            '\</div\> \</div\> \</div\> ',
+                            '\<script\> $(function () { $(\'[data-toggle="tooltip"]\').tooltip();}); $(\'#showmore\').on(\'click\', function(e) {e.preventDefault();var $this = $(this);var $collapse = $this.closest(\'.collapse-group\').find(\'.collapse\');$collapse.collapse(\'toggle\'); if($(\'#showmore\').text() === "Show More") { $(\'#showmore\').text("Show Less"); } else { $(\'#showmore\').text("Show More"); } }); function updateWidth() { var str = $(\'#directIFrame\').html().replace(/width=(".*?")/, \'width="\' + $(\'#width\').val() +  \'"\'); $(\'#directIFrame\').html(str); } function updateHeight() { var str = $(\'#directIFrame\').html().replace(/height=(".*?")/, \'height="\' + $(\'#height\').val() +  \'"\'); $(\'#directIFrame\').html(str); } \</script\>',
+                        ].join('');
+                        $(element).attr('data-content', data);
+                    }
+                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': 'Content', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share')
+            ].concat(
+                m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+            )),
             m('.btn-group.btn-group-sm.m-t-xs', [
                ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null
             ].concat(
@@ -270,6 +328,7 @@ var FileViewPage = {
         ]));
     }
 };
+
 
 module.exports = function(context) {
     // Treebeard forces all mithril to load twice, to avoid
