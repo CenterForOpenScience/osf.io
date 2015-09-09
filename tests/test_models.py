@@ -77,7 +77,7 @@ class TestUserValidation(OsfTestCase):
             self.user.save()
 
     def test_validate_social_profile_websites_empty(self):
-        self.user.social = {'profileWebsites': ['']}
+        self.user.social = {'profileWebsites': []}
         self.user.save()
 
     def test_validate_social_valid(self):
