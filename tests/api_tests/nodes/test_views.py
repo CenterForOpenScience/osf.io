@@ -481,6 +481,15 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], "Authentication credentials were not provided.")
 
+        url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        url_two = '/{}nodes/{}/'.format(API_BASE, self.public_project_two._id)
+
+        res = self.app.get(url)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+        res = self.app.get(url_two)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
     def test_update_public_projects_logged_in(self):
         res = self.app.put_json_api(self.url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -494,6 +503,16 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
 
+
+        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
+        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+        res = self.app.get(url_two, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
     def test_update_private_projects_logged_in_contrib(self):
         res = self.app.put_json_api(self.url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -504,10 +523,17 @@ class TestNodeBulkUpdate(ApiTestCase):
 
     def test_update_private_projects_logged_in_non_contrib(self):
         res = self.app.put_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
-        print res
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
+        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
+        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+        res = self.app.get(url_two, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
 
     def test_update_private_projects_logged_in_read_only_contrib(self):
         self.private_project.add_contributor(self.user_two, permissions=['read'])
@@ -516,6 +542,14 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
+        url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
+        url_two = '/{}nodes/{}/'.format(API_BASE, self.private_project_two._id)
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
+        res = self.app.get(url_two, auth=self.user.auth)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
 
 
 class TestNodeDetail(ApiTestCase):
