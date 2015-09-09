@@ -33,13 +33,6 @@ $(document).ready(function() {
         $('body').trigger('nodeLoad', data);
     });
 
-
-    $('#projectBanner').scroll(function () {
-        if ($(window).scrollTop() > 50){
-
-        }
-    });
-
     var target = 50,
     timeout = null;
     $(window).scroll(function () {
