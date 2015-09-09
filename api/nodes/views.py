@@ -3,6 +3,7 @@ import requests
 from modularodm import Q
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework_bulk import ListCreateBulkUpdateAPIView
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
@@ -15,8 +16,6 @@ from api.base.utils import get_object_or_error, waterbutler_url_for
 from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer, NodeBulkUpdateSerializer
 
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
-
-from rest_framework_bulk import ListCreateBulkUpdateAPIView
 
 
 class NodeMixin(object):
@@ -89,6 +88,13 @@ class NodeList(generics.ListCreateAPIView, ListCreateBulkUpdateAPIView, ODMFilte
         return super(NodeList, self).get_serializer(*args, **kwargs)
 
     # overrides ListCreateAPIView
+    def get_serializer_class(self):
+        serializer_class = NodeSerializer
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+            serializer_class = NodeBulkUpdateSerializer
+        return serializer_class
+
+    # overrides ListCreateAPIView
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -105,13 +111,6 @@ class NodeList(generics.ListCreateAPIView, ListCreateBulkUpdateAPIView, ODMFilte
         # On creation, make sure that current user is the creator
         user = self.request.user
         serializer.save(creator=user)
-
-    # overrides ListCreateAPIView
-    def get_serializer_class(self):
-        serializer_class = NodeSerializer
-        if self.request.method == 'PUT' or self.request.method == 'PATCH':
-            serializer_class = NodeBulkUpdateSerializer
-        return serializer_class
 
 
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
