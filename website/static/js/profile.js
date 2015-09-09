@@ -553,7 +553,6 @@ var SocialViewModel = function(urls, modes) {
 
     self.trackedProperties = [
         self.profileWebsites,
-        //self.personal,
         self.orcid,
         self.researcherId,
         self.twitter,
@@ -571,7 +570,6 @@ var SocialViewModel = function(urls, modes) {
 
     self.values = ko.computed(function() {
         return [
-                //{label: 'Personal Site', text: self.personal(), value: self.personal.url()},
             {label: 'ORCID', text: self.orcid(), value: self.orcid.url()},
             {label: 'ResearcherID', text: self.researcherId(), value: self.researcherId.url()},
             {label: 'Twitter', text: self.twitter(), value: self.twitter.url()},
