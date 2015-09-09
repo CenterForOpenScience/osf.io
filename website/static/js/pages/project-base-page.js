@@ -32,4 +32,28 @@ $(document).ready(function() {
     $.getJSON(node.urls.api, function(data) {    
         $('body').trigger('nodeLoad', data);
     });
+
+
+    $('#projectBanner').scroll(function () {
+        if ($(window).scrollTop() > 50){
+
+        }
+    });
+
+    var target = 50,
+    timeout = null;
+    $(window).scroll(function () {
+        if (!timeout) {
+            timeout = setTimeout(function () {
+                clearTimeout(timeout);
+                timeout = null;
+                if ($(window).scrollTop() >= target) {
+                    $('.cp-handle').css('margin-top', 50);
+                }
+                else {
+                     $('.cp-handle').css('margin-top', 95);
+                }
+        }, 80);
+    }
+});
 });
