@@ -1307,6 +1307,8 @@ class TestNodeContributorDelete(ApiTestCase):
         self.project.add_contributor(self.user_three, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
 
         res = self.app.delete(self.url_user_three, auth=self.user_three.auth)
+        assert_equal(res.status_code, 204)
+
         self.project.reload()
         assert_not_in(self.user_three, self.project.contributors)
 
