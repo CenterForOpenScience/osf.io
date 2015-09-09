@@ -3,6 +3,7 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
+from api.base.utils import get_object_or_error
 from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField, JSONAPIListSerializer
 from rest_framework_bulk import BulkListSerializer, BulkSerializerMixin
 
@@ -17,6 +18,23 @@ class NodeTagField(ser.Field):
     def to_internal_value(self, data):
         return data
 
+class JSONAPINodeListSerializer(JSONAPIListSerializer):
+
+    def update(self, instance, validated_data):
+        data_mapping = {item['_id']: item for item in validated_data}
+        request = self.context['request']
+        user = request.user
+        auth = Auth(user)
+        ret = []
+        for obj_id, data in data_mapping.items():
+            object =  get_object_or_error(Node, obj_id, 'node')
+            if object.can_edit(auth) is False:
+                raise exceptions.PermissionDenied()
+        for obj_id, data in data_mapping.items():
+            object =  get_object_or_error(Node, obj_id, 'node')
+            ret.append(self.child.update(object, data))
+
+        return ret
 
 class NodeSerializer(JSONAPISerializer, BulkSerializerMixin):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
@@ -65,9 +83,13 @@ class NodeSerializer(JSONAPISerializer, BulkSerializerMixin):
     registrations = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
                                                      lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})
 
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        kwargs['child'] = cls()
+        return JSONAPINodeListSerializer(*args, **kwargs)
+
     class Meta:
         type_ = 'nodes'
-        list_serializer_class = BulkListSerializer
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
@@ -125,8 +147,10 @@ class NodeSerializer(JSONAPISerializer, BulkSerializerMixin):
         instance.save()
         return instance
 
+
 class NodeBulkUpdateSerializer(NodeSerializer):
     id = ser.CharField(source='_id', label='ID')
+
 
 class NodeLinksSerializer(JSONAPISerializer):
 

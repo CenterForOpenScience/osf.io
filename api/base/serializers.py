@@ -3,12 +3,8 @@ import re
 
 from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
-from rest_framework.exceptions import PermissionDenied
 
-from framework.auth.core import Auth
-from website.project.model import Node
 from website.util.sanitize import strip_html
-from api.base.utils import get_object_or_error
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
 
@@ -206,22 +202,6 @@ class WaterbutlerLink(Link):
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
-
-    def update(self, instance, validated_data):
-        data_mapping = {item['_id']: item for item in validated_data}
-        request = self.context['request']
-        user = request.user
-        auth = Auth(user)
-        ret = []
-        for obj_id, data in data_mapping.items():
-            object =  get_object_or_error(Node, obj_id, 'node')
-            if object.can_edit(auth) is False:
-                raise PermissionDenied()
-        for obj_id, data in data_mapping.items():
-            object =  get_object_or_error(Node, obj_id, 'node')
-            ret.append(self.child.update(object, data))
-
-        return ret
 
     def to_representation(self, data):
         # Don't envelope when serializing collection
