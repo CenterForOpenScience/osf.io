@@ -273,6 +273,10 @@ class AddonFileMoved(ComplexFileEvent):
         return super(AddonFileMoved, self).text_message
 
 
+@register(NodeLog.FILE_RENAMED)
+class AddonFileRenamed(AddonFileMoved):
+    pass
+
 @register(NodeLog.FILE_COPIED)
 class AddonFileCopied(ComplexFileEvent):
     """Actual class called when a file is copied"""
