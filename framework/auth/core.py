@@ -943,7 +943,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
         As long as we use gravatar, this is just a proxy to User.gravatar_url
         """
-        size = size or settings.PROFILE_IMAGE_MEDIUM
         return self._gravatar_url(size)
 
     def _gravatar_url(self, size):
