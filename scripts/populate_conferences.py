@@ -452,6 +452,8 @@ MEETING_DATA = {
         'active': True,
         'admins': [],
         'public_projects': True,
+        'poster': True,
+        'talk': True,
     },
     '2020Futures': {
         'name': 'U.S. Radio/Millimeter/Submillimeter Science Futures in the 2020s',
@@ -460,6 +462,8 @@ MEETING_DATA = {
         'active': True,
         'admins': [],
         'public_projects': True,
+        'poster': True,
+        'talk': True,
     },
 }
 
