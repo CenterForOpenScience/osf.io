@@ -129,6 +129,10 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    def allow_bulk_destroy(self, qs, filtered):
+
+        return qs is not filtered
+
     # overrides ListBulkCreateUpdateDestroyAPIView
     def perform_destroy(self, instance):
         user = self.request.user
