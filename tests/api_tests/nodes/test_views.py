@@ -990,6 +990,16 @@ class TestNodeRegistrationList(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
+class TestNodeRegistrationListFiltering(ApiTestCase):
+
+    def test_filtering_registrations_by_title(self):
+        user = AuthUserFactory()
+
+        project = ProjectFactory(creator=self.user)
+        registration = RegistrationFactory(creator=self.user, project=self.project)
+
+        url = '/{}nodes/{}/registrations/'.format(API_BASE, self.project._id)
+
 
 class TestNodeChildrenList(ApiTestCase):
     def setUp(self):

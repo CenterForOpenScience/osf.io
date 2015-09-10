@@ -131,6 +131,19 @@ class NodeSerializer(JSONAPISerializer):
         return instance
 
 
+class NodeRegistrationSerializer(NodeSerializer):
+
+    retracted = ser.BooleanField(source='is_retracted', read_only=True,
+        help_text='Whether this registration has been retracted.')
+
+    # TODO: Finish me
+
+    # TODO: Override create?
+
+    def update(self, *args, **kwargs):
+        raise exceptions.ValidationError('Registrations cannot be modified.')
+
+
 class NodeLinksSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
