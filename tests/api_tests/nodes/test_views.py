@@ -1476,6 +1476,14 @@ class TestNodeLinkCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_in('detail', res.json['errors'][0])
 
+    def test_cannot_add_link_to_registration(self):
+        registration = RegistrationFactory(creator=self.user)
+
+        url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
+        payload = {'target_node_id': self.public_pointer_project._id}
+        res = self.app.post(url, self.public_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
 
 class TestNodeFilesList(ApiTestCase):
 
