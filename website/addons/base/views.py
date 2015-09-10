@@ -435,7 +435,7 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
     size = getattr(guid_file, 'size', None)
     if size is None:  # Size could be 0 which is a falsey value
         size = 9966699  # if we dont know the size assume its to big to edit
-
+    
     ret.update({
         'error': error.replace('\n', '') if error else None,
         'provider': guid_file.provider,
@@ -458,6 +458,8 @@ def addon_view_file(auth, node, node_addon, guid_file, extras):
         'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
         'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),
     })
-
+    
     ret.update(rubeus.collect_addon_assets(node))
+
     return ret
+    

@@ -79,6 +79,7 @@ class GithubGuidFile(GuidFile):
 
         return {
             'sha': self._metadata_cache['extra']['fileSha'],
+            'webView' : self._metadata_cache['extra']['webView']
         }
 
     def _exception_from_response(self, response):

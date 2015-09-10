@@ -285,7 +285,7 @@ function _fangornGithubTitle(item, col)  {
         return Fangorn.Utils.connectCheckTemplate.call(this, item);
     }
     if (item.data.addonFullname) {
-        var branch = item.data.branch || item.data.defaultBranch;
+        var branch = item.data.branch || item.data.defaultBranch;   //when defaultBranch commented out, branch = 'undefined'
         return m('span',[
             m('github-name', item.data.name + ' (' + branch + ')')
         ]);
