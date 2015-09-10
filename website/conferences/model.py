@@ -23,6 +23,8 @@ class Conference(StoredObject):
     admins = fields.ForeignField('user', list=True, required=False, default=None)
     #: Whether to make submitted projects public
     public_projects = fields.BooleanField(required=False, default=True)
+    poster = fields.BooleanField(default=True)
+    talk = fields.BooleanField(default=True)
 
     @classmethod
     def get_by_endpoint(cls, endpoint, active=True):
