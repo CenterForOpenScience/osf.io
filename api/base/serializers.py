@@ -267,9 +267,7 @@ class JSONAPISerializer(ser.Serializer):
             ret[envelope] = data
         else:
             ret = data
-
         return ret
-
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):

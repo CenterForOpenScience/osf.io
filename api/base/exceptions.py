@@ -15,7 +15,7 @@ def json_api_exception_handler(exc, context):
     errors = []
 
     def dict_error_formatting(errors, error):
-         for key, value in error.iteritems():
+        for key, value in error.iteritems():
             if key in top_level_error_keys:
                 errors.append({key: value})
             else:

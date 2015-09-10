@@ -98,7 +98,7 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, BulkCreateModelMixin, BulkUpd
 
     # overrides ListBulkCreateUpdateDestroyView
     def create(self, request, *args, **kwargs):
-        response =  ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
+        response = ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
         if 'data' in response.data:
             return response
         return Response({'data': response.data}, status=status.HTTP_201_CREATED)
@@ -112,7 +112,6 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, BulkCreateModelMixin, BulkUpd
         # On creation, make sure that current user is the creator
         user = self.request.user
         serializer.save(creator=user)
-
 
     def bulk_update(self, request, *args, **kwargs):
         response = BulkUpdateModelMixin.bulk_update(self, request, *args, **kwargs)

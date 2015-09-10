@@ -1,11 +1,12 @@
 from rest_framework import serializers as ser
+from rest_framework_bulk.serializers import BulkSerializerMixin
 
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
 from api.base.utils import get_object_or_error
-from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField, JSONAPIListSerializer
-from rest_framework_bulk.serializers import BulkListSerializer, BulkSerializerMixin
+from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField, \
+    JSONAPIListSerializer
 
 
 class NodeTagField(ser.Field):
@@ -27,7 +28,7 @@ class JSONAPINodeListSerializer(JSONAPIListSerializer):
         auth = Auth(user)
         ret = []
         for obj_id, data in data_mapping.items():
-            object =  get_object_or_error(Node, obj_id, 'node')
+            object = get_object_or_error(Node, obj_id, 'node')
             if object.can_edit(auth) is False:
                 raise exceptions.PermissionDenied()
         for obj_id, data in data_mapping.items():
