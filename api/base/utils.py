@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-
+import furl
+import hashlib
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
-import furl
 
 from website import util as website_util  # noqa
 from website import settings as website_settings
@@ -83,3 +83,10 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
     url.args.update(query)
     return url.url
+
+
+def token_creator(projects, user_id):
+    token = hashlib.md5()
+    token.update(str(projects))
+    token.update(user_id)
+    return token.hexdigest()
