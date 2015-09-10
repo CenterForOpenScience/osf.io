@@ -285,13 +285,27 @@ function gotoFile (item) {
         window.open(fileurl, '_self');
     }
 }
+function getParameterByName(name) {
+    /** passes in a key string, returns the value string for that key from the URL **/
+    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+        results = regex.exec(location.search);
+    return results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+}
+
 function _fangornGithubTitle(item, col)  {
     var tb = this;
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
         return Fangorn.Utils.connectCheckTemplate.call(this, item);
     }
     if (item.data.addonFullname) {
-        var branch = item.data.branch || item.data.defaultBranch;
+        var currentUrl = window.location.href;
+        if (currentUrl.indexOf("branch") == -1) {
+            var branch = item.data.branch || item.data.defaultBranch
+        }
+        else {
+            var branch = getParameterByName('branch') || item.data.defaultBranch;
+        }
         return m('span',[
             m('github-name', item.data.name + ' (' + branch + ')')
         ]);
