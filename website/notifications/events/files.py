@@ -84,7 +84,7 @@ class FileAdded(FileEvent):
 
     @property
     def event_type(self):
-        return '{}_file_updated'.format(self.waterbutler_id)
+        return u'{}_file_updated'.format(self.waterbutler_id)
 
 
 @register(NodeLog.FILE_UPDATED)
@@ -93,7 +93,7 @@ class FileUpdated(FileEvent):
 
     @property
     def event_type(self):
-        return '{}_file_updated'.format(self.waterbutler_id)
+        return u'{}_file_updated'.format(self.waterbutler_id)
 
 
 @register(NodeLog.FILE_REMOVED)
@@ -170,9 +170,9 @@ class ComplexFileEvent(FileEvent):
     @property
     def event_type(self):
         if self.payload['destination']['kind'] != u'folder':
-            return '{}_file_updated'.format(self.waterbutler_id)  # file
+            return u'{}_file_updated'.format(self.waterbutler_id)  # file
 
-        return 'file_updated'  # folder
+        return u'file_updated'  # folder
 
     @property
     def source_url(self):
