@@ -19,21 +19,21 @@ class NodeTagField(ser.Field):
     def to_internal_value(self, data):
         return data
 
+
 class JSONAPINodeListSerializer(JSONAPIListSerializer):
 
     def update(self, instance, validated_data):
         data_mapping = {item['_id']: item for item in validated_data}
         request = self.context['request']
-        user = request.user
-        auth = Auth(user)
+        auth = Auth(request.user)
         ret = []
-        for obj_id, data in data_mapping.items():
-            object = get_object_or_error(Node, obj_id, 'node')
-            if object.can_edit(auth) is False:
+        for node_id, data in data_mapping.items():
+            node = get_object_or_error(Node, node_id, 'node')
+            if node.can_edit(auth) is False:
                 raise exceptions.PermissionDenied()
-        for obj_id, data in data_mapping.items():
-            object =  get_object_or_error(Node, obj_id, 'node')
-            ret.append(self.child.update(object, data))
+            data_mapping[node_id] = [node, data]
+        for node_id, data_list in data_mapping.items():
+            ret.append(self.child.update(data_list[0], data_list[1]))
         return ret
 
 class NodeSerializer(JSONAPISerializer, BulkSerializerMixin):
