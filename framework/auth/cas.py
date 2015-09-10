@@ -81,6 +81,11 @@ class CasClient(object):
         url.path.segments.extend(('oauth2', 'profile',))
         return url.url
 
+    def get_application_revocation_url(self):
+        url = furl.furl(self.BASE_URL)
+        url.path.segments.extend(('oauth2', 'revoke'))
+        return url.url
+
     def service_validate(self, ticket, service_url):
         """Send request to validate ticket.
 
@@ -114,7 +119,7 @@ class CasClient(object):
         }
         resp = requests.get(url, headers=headers)
         if resp.status_code == 200:
-            return self._parse_profile(resp.content)
+            return self._parse_profile(resp.content, access_token)
         else:
             self._handle_error(resp)
 
@@ -138,16 +143,33 @@ class CasClient(object):
             attributes = auth_doc.xpath('./cas:attributes/*', namespaces=doc.nsmap)
             for attribute in attributes:
                 resp.attributes[unicode(attribute.xpath('local-name()'))] = unicode(attribute.text)
+            scopes = resp.attributes.get('accessTokenScope')
+            if scopes:
+                resp.attributes['accessTokenScope'] = scopes.split(' ')
         else:
             resp.authenticated = False
         return resp
 
-    def _parse_profile(self, raw):
+    def _parse_profile(self, raw, access_token):
         data = json.loads(raw)
         resp = CasResponse(authenticated=True, user=data['id'])
-        for attribute in data['attributes'].keys():
-            resp.attributes[attribute] = data['attributes'][attribute]
+        if data.get('attributes'):
+            resp.attributes.update(data['attributes'])
+        resp.attributes['accessToken'] = access_token
+        resp.attributes['accessTokenScope'] = data.get('scope', [])
         return resp
+
+    def revoke_application_tokens(self, client_id, client_secret):
+        """Revoke all tokens associated with a given CAS client_id"""
+        url = self.get_application_revocation_url()
+        data = {'client_id': client_id,
+                'client_secret': client_secret}
+
+        resp = requests.post(url, data=data)
+        if resp.status_code == 204:
+            return True
+        else:
+            self._handle_error(resp)
 
 
 def parse_auth_header(header):

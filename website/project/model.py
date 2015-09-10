@@ -15,7 +15,8 @@ from django.core.urlresolvers import reverse
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
-from modularodm.exceptions import ValidationTypeError, NoResultsFound
+from modularodm.exceptions import NoResultsFound
+from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
@@ -74,6 +75,7 @@ def has_anonymous_link(node, auth):
         if link.key == view_only_link
     )
 
+
 class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -83,7 +85,6 @@ class MetaSchema(StoredObject):
 
     # Deprecated legacy field
     metadata_version = fields.IntegerField()
-
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = fields.IntegerField()
 
@@ -313,6 +314,7 @@ class NodeLog(StoredObject):
 
     FILE_MOVED = 'addon_file_moved'
     FILE_COPIED = 'addon_file_copied'
+    FILE_RENAMED = 'addon_file_renamed'
 
     FOLDER_CREATED = 'folder_created'
 
@@ -1342,7 +1344,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param Auth auth: Consolidated authorization
         """
         if pointer not in self.nodes:
-            raise ValueError
+            raise ValueError('Node link does not belong to the requested node.')
 
         # Remove `Pointer` object; will also remove self from `nodes` list of
         # parent node

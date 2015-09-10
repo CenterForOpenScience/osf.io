@@ -1,21 +1,33 @@
 # -*- coding: utf-8 -*-
 
-import furl
 from modularodm import Q
-from rest_framework.reverse import reverse
-from api.base.exceptions import Gone
-from rest_framework.exceptions import NotFound
 from modularodm.exceptions import NoResultsFound
+from rest_framework.exceptions import NotFound
+from rest_framework.reverse import reverse
+import furl
 
 from website import util as website_util  # noqa
 from website import settings as website_settings
+from framework.auth import Auth
+from api.base.exceptions import Gone
+
+def get_user_auth(request):
+    """Given a Django request object, return an ``Auth`` object with the
+    authenticated user attached to it.
+    """
+    user = request.user
+    if user.is_anonymous():
+        auth = Auth(None)
+    else:
+        auth = Auth(user)
+    return auth
 
 
 def absolute_reverse(view_name, query_kwargs=None, args=None, kwargs=None):
     """Like django's `reverse`, except returns an absolute URL. Also add query parameters."""
     relative_url = reverse(view_name, kwargs=kwargs)
 
-    url = website_util.api_v2_url(relative_url, params=query_kwargs)
+    url = website_util.api_v2_url(relative_url, params=query_kwargs, base_prefix='')
     return url
 
 

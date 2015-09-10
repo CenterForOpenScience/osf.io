@@ -23,8 +23,11 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
-from website.oauth.models import ExternalAccount
-from website.oauth.models import ExternalProvider
+from website.oauth.models import (
+   ApiOAuth2Application,
+   ExternalAccount,
+   ExternalProvider
+)
 from website.project.model import (
     Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
     Retraction, Embargo, Sanction, RegistrationApproval, DraftRegistration, MetaSchema
@@ -128,6 +131,17 @@ class TagFactory(ModularOdmFactory):
     _id = Sequence(lambda n: "scientastic-{}".format(n))
 
 
+class ApiOAuth2ApplicationFactory(ModularOdmFactory):
+    FACTORY_FOR = ApiOAuth2Application
+
+    owner = SubFactory(UserFactory)
+
+    name = Sequence(lambda n: 'Example OAuth2 Application #{}'.format(n))
+
+    home_url = 'ftp://ftp.ncbi.nlm.nimh.gov/'
+    callback_url = 'http://example.uk'
+
+
 class PrivateLinkFactory(ModularOdmFactory):
     FACTORY_FOR = PrivateLink
 
@@ -227,7 +241,6 @@ class RegistrationFactory(AbstractNodeFactory):
         return reg
 
 
-
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer
     node = SubFactory(NodeFactory)
@@ -274,7 +287,6 @@ class EmbargoFactory(SanctionFactory):
 class RegistrationApprovalFactory(SanctionFactory):
     FACTORY_FOR = RegistrationApproval
     user = SubFactory(UserFactory)
-
 
 class NodeWikiFactory(ModularOdmFactory):
     FACTORY_FOR = NodeWikiPage
