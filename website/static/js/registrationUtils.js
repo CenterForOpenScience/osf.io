@@ -415,11 +415,6 @@ Draft.prototype.register = function(data) {
  * @property {ko.observable[Draft]} draft
  * @property {ko.observable[Question]} currentQuestion
  * @property {Object} extensions: mapping of extenstion names to their view models
- *
- * Notes:
- * - The editor can be extended by calling #extendEditor with a type and it's associated ViewModel.
- *   When the context for that type's schema template is built (see #context), that type's ViewModel
- *   is instantiated with the current scope's data as an argument
  **/
 var RegistrationEditor = function(urls, editorId) {
 
