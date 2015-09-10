@@ -98,7 +98,6 @@ class TestNodeList(ApiTestCase):
         assert_not_in(self.private._id, ids)
 
 
-
 class TestNodeFiltering(ApiTestCase):
 
     def setUp(self):
@@ -704,6 +703,7 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
 
+
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
         super(TestNodeDetail, self).setUp()
@@ -1111,6 +1111,7 @@ class TestNodeDelete(ApiTestCase):
         # Dashboards are a folder, so a 404 is returned
         assert_equal(res.status_code, 404)
 
+
 class TestNodeContributorList(ApiTestCase):
 
     def setUp(self):
@@ -1163,6 +1164,7 @@ class TestNodeContributorList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
+
 
 class TestNodeContributorFiltering(ApiTestCase):
 
@@ -1219,6 +1221,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         errors = res.json['errors']
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
+
 
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
@@ -1344,7 +1347,6 @@ class TestNodeChildrenList(ApiTestCase):
         ids = [node['id'] for node in res.json['data']]
         assert_not_in(child_project._id, ids)
         assert_equal(1, len(ids))
-
 
 
 class TestNodeChildCreate(ApiTestCase):
@@ -1574,6 +1576,7 @@ class TestNodeTags(ApiTestCase):
         res = self.app.patch_json(self.private_url, {'tags': []}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
+
 
 class TestCreateNodeLink(ApiTestCase):
     def setUp(self):

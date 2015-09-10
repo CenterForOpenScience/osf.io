@@ -263,7 +263,12 @@ class JSONAPISerializer(ser.Serializer):
         if not data['relationships']:
             del data['relationships']
 
-        return data
+        if envelope:
+            ret[envelope] = data
+        else:
+            ret = data
+
+        return ret
 
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
