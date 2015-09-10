@@ -27,7 +27,7 @@
             </div>
 
             <div class="p-t-sm p-b-sm">
-                <a class="btn btn-default disabled" data-bind="click: addWebsiteInput">
+                <a class="btn btn-default" data-bind="click: addWebsiteInput">
                     Add Website
                 </a>
             </div>
