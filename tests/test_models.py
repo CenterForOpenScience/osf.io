@@ -1034,6 +1034,11 @@ class TestApiOAuth2Application(OsfTestCase):
             api_app = ApiOAuth2ApplicationFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
             api_app.save()
 
+    def test_name_cannot_be_blank(self):
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(name='')
+            api_app.save()
+
     def test_long_name_raises_exception(self):
         long_name = ('JohnJacobJingelheimerSchmidtHisNameIsMyN' * 5) + 'a'
         with assert_raises(ValidationError):
