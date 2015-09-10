@@ -6,7 +6,7 @@ from nose.tools import *
 from website.notifications.events.base import Event, register, event_registry
 from website.notifications.events.files import (
     FileAdded, FileRemoved, FolderCreated, FileUpdated,
-    AddonFileCopied, AddonFileMoved,
+    AddonFileCopied, AddonFileMoved, AddonFileRenamed,
 )
 from website.notifications.events import utils
 from website.addons.base import signals
@@ -127,8 +127,16 @@ class TestEventExists(OsfTestCase):
     def test_get_file_copied(self):
         # Event gets AddonFileCopied from addon_file_copied
         file_copied_payload = file_copy_payload(self.node, self.node)
-        event = event_registry['addon_file_copied'](self.user, self.node, 'addon_file_copied', payload=file_copied_payload)
+        event = event_registry['addon_file_copied'](self.user, self.node, 'addon_file_copied',
+                                                    payload=file_copied_payload)
         assert_is_instance(event, AddonFileCopied)
+
+    def test_get_file_renamed(self):
+        # Event gets AddonFileCopied from addon_file_copied
+        file_rename_payload = file_renamed_payload()
+        event = event_registry['addon_file_renamed'](self.user, self.node, 'addon_file_renamed',
+                                                     payload=file_rename_payload)
+        assert_is_instance(event, AddonFileRenamed)
 
 
 class TestSignalEvent(OsfTestCase):
@@ -276,8 +284,8 @@ class TestFolderFileRenamed(OsfTestCase):
 
         # Payload
         file_renamed_payload = file_move_payload(self.project, self.project)
-        self.event = event_registry['addon_file_moved'](
-            self.user_1, self.project, 'addon_file_moved',
+        self.event = event_registry['addon_file_renamed'](
+            self.user_1, self.project, 'addon_file_renamed',
             payload=file_renamed_payload
         )
         self.sub.email_digest.append(self.user_2)
@@ -287,42 +295,21 @@ class TestFolderFileRenamed(OsfTestCase):
         self.event.payload['destination']['materialized'] = "/One/Paper14.txt"
         assert_equal(self.event.html_message, 'renamed file "<b>/One/Paper13.txt</b>" to "<b>/One/Paper14.txt</b>".')
 
-    def test_move_file_html(self):
-        self.event.payload['destination']['materialized'] = "/Two/Paper13.txt"
-        assert_not_equal(self.event.html_message, 'renamed file "<b>/One/Paper13.txt</b>" to "<b>/Two/Paper13.txt</b>".')
-
     def test_rename_folder_html(self):
         self.event.payload['destination']['kind'] = 'folder'
         self.event.payload['destination']['materialized'] = "/One/Two/Four"
         self.event.payload['source']['materialized'] = "/One/Two/Three"
         assert_equal(self.event.html_message, 'renamed folder "<b>/One/Two/Three</b>" to "<b>/One/Two/Four</b>".')
 
-    def test_move_folder_html(self):
-        self.event.payload['destination']['kind'] = 'folder'
-        self.event.payload['destination']['materialized'] = "/Five/Two/Three"
-        self.event.payload['source']['materialized'] = "/One/Two/Three"
-        assert_not_equal(self.event.html_message, 'renamed folder "<b>/One/Two/Three</b>" to "<b>/Five/Two/Three</b>".')
-
     def test_rename_file_text(self):
         self.event.payload['destination']['materialized'] = "/One/Paper14.txt"
         assert_equal(self.event.text_message, 'renamed file "/One/Paper13.txt" to "/One/Paper14.txt".')
-
-    def test_move_file_text(self):
-        self.event.payload['destination']['materialized'] = "/Two/Paper13.txt"
-        assert_not_equal(self.event.text_message,
-                         'renamed file "/One/Paper13.txt" to "/Two/Paper13.txt".')
 
     def test_rename_folder_text(self):
         self.event.payload['destination']['kind'] = 'folder'
         self.event.payload['destination']['materialized'] = "/One/Two/Four"
         self.event.payload['source']['materialized'] = "/One/Two/Three"
         assert_equal(self.event.text_message, 'renamed folder "/One/Two/Three" to "/One/Two/Four".')
-
-    def test_move_folder_text(self):
-        self.event.payload['destination']['kind'] = 'folder'
-        self.event.payload['destination']['materialized'] = "/Five/Two/Three"
-        self.event.payload['source']['materialized'] = "/One/Two/Three"
-        assert_not_equal(self.event.text_message, 'renamed folder "/One/Two/Three" to "/Five/Two/Three".')
 
 
 class TestFileMoved(OsfTestCase):
@@ -780,4 +767,45 @@ def file_copy_payload(new_node, old_node):
         (u'time', 1435157658.036183),
         ('node', u'nhgts'),
         ('project', None)])
+
+
+def file_renamed_payload():
+    return OrderedDict([
+        (u'action', u'move'),
+        (u'auth', OrderedDict([
+            (u'email', u'tgn6m@osf.io'),
+            (u'id', u'tgn6m'),
+            (u'name', u'aab')])),
+        (u'destination', OrderedDict([
+            (u'contentType', None),
+            (u'etag', u'0e9bfddcb5a59956ae60e93f32df06b174ad33b53d8a2f2cd08c780cf34a9d93'),
+            (u'extra', OrderedDict([
+                (u'downloads', 0),
+                (u'hashes', OrderedDict([
+                    (u'md5', u'79a64594dd446674ce1010007ac2bde7'),
+                    (u'sha256', u'bf710301e591f6f5ce35aa8971cfc938b39dae0fedcb9915656dded6ad025580')])),
+                (u'version', 1)])),
+            (u'kind', u'file'),
+            (u'materialized', u'Fibery/file2.pdf'),
+            (u'modified', u'2015-05-07T10:54:32'),
+            (u'name', u'file2.pdf'),
+            (u'nid', u'wp6xv'),
+            (u'path', u'/55f07134a24f71b2a24f4812'),
+            (u'provider', u'osfstorage'),
+            (u'size', 21209),
+            ('url', '/project/wp6xv/files/osfstorage/55f07134a24f71b2a24f4812/'),
+            ('node', {'url': '/wp6xv/', '_id': u'wp6xv', 'title': u'File_Notify4'}),
+            ('addon', 'OSF Storage')])),
+        (u'source', OrderedDict([
+            (u'materialized', u'Fibery/!--i--2.pdf'),
+            (u'name', u'!--i--2.pdf'), (u'nid', u'wp6xv'),
+            (u'path', u'Fibery/!--i--2.pdf'),
+            (u'provider', u'osfstorage'),
+            ('url', '/project/wp6xv/files/osfstorage/Fibery/%21--i--2.pdf/'),
+            ('node', {'url': '/wp6xv/', '_id': u'wp6xv', 'title': u'File_Notify4'}),
+            ('addon', 'OSF Storage')])),
+        (u'time', 1441905340.876648),
+        ('node', u'wp6xv'),
+        ('project', None)])
+
 

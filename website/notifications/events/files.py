@@ -182,6 +182,27 @@ class ComplexFileEvent(FileEvent):
         return url.url
 
 
+@register(NodeLog.FILE_RENAMED)
+class AddonFileRenamed(ComplexFileEvent):
+    """Actual class called when a file is renamed."""
+
+    @property
+    def html_message(self):
+        return u'renamed {kind} "<b>{source_name}</b>" to "<b>{destination_name}</b>".'.format(
+            kind=self.payload['destination']['kind'],
+            source_name=self.payload['source']['materialized'],
+            destination_name=self.payload['destination']['materialized'],
+        )
+
+    @property
+    def text_message(self):
+        return u'renamed {kind} "{source_name}" to "{destination_name}".'.format(
+            kind=self.payload['destination']['kind'],
+            source_name=self.payload['source']['materialized'],
+            destination_name=self.payload['destination']['materialized'],
+        )
+
+
 @register(NodeLog.FILE_MOVED)
 class AddonFileMoved(ComplexFileEvent):
     """Actual class called when a file is moved."""
@@ -244,38 +265,6 @@ class AddonFileMoved(ComplexFileEvent):
                                     self.timestamp, message=remove_message,
                                     gravatar_url=self.gravatar_url, url=self.source_url)
 
-    @property
-    def html_message(self):
-        source = self.payload['source']['materialized'].rstrip('/').split('/')
-        destination = self.payload['destination']['materialized'].rstrip('/').split('/')
-
-        if self.node == self.source_node and source[:-1] == destination[:-1]:
-            return u'renamed {kind} "<b>{source_name}</b>" to "<b>{destination_name}</b>".'.format(
-                kind=self.payload['destination']['kind'],
-                source_name=self.payload['source']['materialized'],
-                destination_name=self.payload['destination']['materialized'],
-            )
-
-        return super(AddonFileMoved, self).html_message
-
-    @property
-    def text_message(self):
-        source = self.payload['source']['materialized'].rstrip('/').split('/')
-        destination = self.payload['destination']['materialized'].rstrip('/').split('/')
-
-        if source[:-1] == destination[:-1]:
-            return u'renamed {kind} "{source_name}" to "{destination_name}".'.format(
-                kind=self.payload['destination']['kind'],
-                source_name=self.payload['source']['materialized'],
-                destination_name=self.payload['destination']['materialized'],
-            )
-
-        return super(AddonFileMoved, self).text_message
-
-
-@register(NodeLog.FILE_RENAMED)
-class AddonFileRenamed(AddonFileMoved):
-    pass
 
 @register(NodeLog.FILE_COPIED)
 class AddonFileCopied(ComplexFileEvent):
