@@ -6,11 +6,12 @@ import datetime
 from modularodm import Q
 from modularodm.storage.base import KeyExistsException
 
-from website.app import init_app
 from scripts import utils as script_utils
+
 from framework.transactions.context import TokuTransaction
 
 from website.files import models
+from website.app import init_app
 from website.addons.osfstorage import model as osfstorage_model
 
 NOW = datetime.datetime.utcnow()
@@ -82,7 +83,7 @@ def migrate_trashedfilenodes():
         ).save()
 
 
-def migrate_filenodes(increment=200):
+def migrate_filenodes():
     for node_settings in paginated(osfstorage_model.OsfStorageNodeSettings):
         if node_settings.owner is None:
             logger.warning('OsfStorageNodeSettings {} has no parent; skipping'.format(node_settings._id))
@@ -93,9 +94,12 @@ def migrate_filenodes(increment=200):
         for filenode in osfstorage_model.OsfStorageFileNode.find(Q('node_settings', 'eq', node_settings._id)):
             logger.debug('Migrating OsfStorageFileNode {}'.format(filenode._id))
             versions = translate_versions(filenode.versions)
-            if not versions and filenode.is_file:
-                logger.error('{!r} is a file with no translatable versions, skipping'.format(filenode))
-                continue
+            if filenode.is_file and not filenode.node.is_deleted:
+                if not filenode.versions:
+                    logger.warning('File {!r} has no versions'.format(filenode))
+                elif not versions:
+                    logger.warning('{!r} is a file with no translatable versions, skipping'.format(filenode))
+
             new_node = models.StoredFileNode(
                 _id=filenode._id,
                 versions=versions,
@@ -115,7 +119,7 @@ def migrate_filenodes(increment=200):
         for x in listing:
             # Make sure everything transfered properly
             if x.to_storage()['parent']:
-                assert x.parent
+                assert x.parent, '{!r}\'s parent {} does not exist'.format(x.wrapped(), x.to_storage()['parent'])
 
 
 def translate_versions(versions):
@@ -152,6 +156,7 @@ def translate_version(version, index):
 
 def main(dry=True):
     init_app(set_backends=True, routes=False)  # Sets the storage backends on all models
+
     with TokuTransaction():
         do_migration()
         if dry:
@@ -164,6 +169,8 @@ if __name__ == '__main__':
         script_utils.add_file_logger(logger, __file__)
     if 'debug' in sys.argv:
         logger.setLevel(logging.DEBUG)
+    elif 'warning' in sys.argv:
+        logger.setLevel(logging.WARNING)
     elif 'info' in sys.argv:
         logger.setLevel(logging.INFO)
     elif 'error' in sys.argv:
