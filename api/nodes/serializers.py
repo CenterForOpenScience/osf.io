@@ -214,7 +214,6 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
             node.set_visible(contributor, validated_data['bibliographic'], save=True)
         except ValueError as e:
             raise exceptions.ValidationError(e)
-        node.reload()
         contributor.permission = node.get_permissions(contributor)[-1]
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
