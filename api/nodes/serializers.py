@@ -23,7 +23,9 @@ class NodeTagField(ser.Field):
 class JSONAPINodeListSerializer(JSONAPIListSerializer):
 
     def update(self, instance, validated_data):
-        data_mapping = {item['_id']: item for item in validated_data}
+        data_mapping = {item.get('id', None): item for item in validated_data}
+        if None in data_mapping:
+            raise exceptions.ValidationError('Must supply id.')
         request = self.context['request']
         auth = Auth(request.user)
         ret = []
