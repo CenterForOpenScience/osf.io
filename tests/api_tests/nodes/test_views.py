@@ -605,6 +605,22 @@ class TestNodeUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
+    def test_cannot_update_a_registration(self):
+        registration = RegistrationFactory(project=self.public_project, creator=self.user)
+        original_title = registration.title
+        original_description = registration.description
+        url = '/{}nodes/{}/'.format(API_BASE, registration._id)
+        res = self.app.put_json_api(url, {
+            'title': fake.catch_phrase(),
+            'description': fake.bs(),
+            'category': 'hypothesis',
+            'public': True,
+        }, auth=self.user.auth, expect_errors=True)
+        registration.reload()
+        assert_equal(res.status_code, 403)
+        assert_equal(registration.title, original_title)
+        assert_equal(registration.description, original_description)
+
     def test_update_private_project_logged_out(self):
         res = self.app.put_json_api(self.private_url, {
             'title': self.new_title,
@@ -990,16 +1006,6 @@ class TestNodeRegistrationList(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
-class TestNodeRegistrationListFiltering(ApiTestCase):
-
-    def test_filtering_registrations_by_title(self):
-        user = AuthUserFactory()
-
-        project = ProjectFactory(creator=self.user)
-        registration = RegistrationFactory(creator=self.user, project=self.project)
-
-        url = '/{}nodes/{}/registrations/'.format(API_BASE, self.project._id)
-
 
 class TestNodeChildrenList(ApiTestCase):
     def setUp(self):
@@ -1199,6 +1205,17 @@ class TestNodeChildCreate(ApiTestCase):
 
         self.project.reload()
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
+
+    def test_cannot_create_child_on_a_registration(self):
+        registration = RegistrationFactory(project=self.project, creator=self.user)
+        url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
+        res = self.app.post_json_api(url, {
+            'title': fake.catch_phrase(),
+            'description': fake.bs(),
+            'category': 'project',
+            'public': True,
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
 
 class TestNodeLinksList(ApiTestCase):

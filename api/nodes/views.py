@@ -134,6 +134,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        ReadOnlyIfRegistration,
     )
 
     serializer_class = ContributorSerializer
@@ -190,6 +191,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
     )
 
     serializer_class = NodeSerializer
