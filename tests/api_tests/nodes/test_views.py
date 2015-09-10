@@ -779,6 +779,34 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Must supply id.')
 
 
+class TestNodeBulkDelete(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeBulkDelete, self).setUp()
+        self.user_one = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.project_one = ProjectFactory(title="Project One", is_public=True)
+        self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True)
+        self.project_three = ProjectFactory(title="Three", is_public=True)
+        self.private_project_user_one = ProjectFactory(title="Private Project User One",
+                                                       is_public=False,
+                                                       creator=self.user_one)
+        self.private_project_user_two = ProjectFactory(title="Private Project User Two",
+                                                       is_public=False,
+                                                       creator=self.user_two)
+        self.folder = FolderFactory()
+        self.dashboard = DashboardFactory()
+
+        self.url = "/{}nodes/".format(API_BASE)
+
+    def test_get_one_project_with_exact_filter_logged_in(self):
+        url = "/{}nodes/?filter[title]=Project%20One".format(API_BASE)
+
+        res = self.app.delete(url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
+        assert 'detail' in res.json['errors'][0]
+
+
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
         super(TestNodeDetail, self).setUp()
