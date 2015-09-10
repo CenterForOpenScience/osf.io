@@ -378,7 +378,6 @@ class TestNodeBulkCreate(ApiTestCase):
         assert_equal(res.json['data'][1]['attributes']['title'], self.private_project['title'])
         assert_equal(res.content_type, 'application/vnd.api+json')
 
-
         res = self.app.get(self.url, auth=self.user_one.auth)
         assert_equal(len(res.json['data']), 2)
 
@@ -389,15 +388,18 @@ class TestNodeBulkCreate(ApiTestCase):
         res = self.app.get(self.url, auth=self.user_one.auth)
         assert_equal(len(res.json['data']), 0)
 
-    def test_bulk_create_100(self):
-        nodes = [self.public_project for i in range(1, 101)]
-        res = self.app.post_json_api(self.url, nodes, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 201)
-        assert_equal(len(res.json['data']), 100)
-
     def test_bulk_create_logged_out(self):
         res = self.app.post_json_api(self.url, [self.public_project, self.private_project], expect_errors=True)
         assert_equal(res.status_code, 401)
+
+    def test_bulk_create_error_formatting(self):
+        res = self.app.post_json_api(self.url, [self.empty_project, self.empty_project], auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 2)
+        assert_equal(res.json['errors'][0]['meta']['field'], 'title')
+        assert_equal(res.json['errors'][0]['detail'], "This field may not be blank.")
+        assert_equal(res.json['errors'][1]['meta']['field'], 'title')
+        assert_equal(res.json['errors'][1]['detail'], "This field may not be blank.")
 
 
 class TestNodeBulkUpdate(ApiTestCase):
@@ -475,6 +477,28 @@ class TestNodeBulkUpdate(ApiTestCase):
                 'public': False
             }
         ]
+
+        self.empty_payload = [
+            {'id': self.public_project._id, 'title': "", 'description': "", "category": ""},
+            {'id': self.public_project_two._id, 'title': "", 'description': "", "category": ""}
+        ]
+
+    def test_update_public_projects_one_not_found(self):
+        empty_payload = [
+            {
+            'id': 12345,
+            'title': self.new_title,
+            'category': self.new_category
+            },
+            self.public_payload[0]
+        ]
+        res = self.app.put_json_api(self.url, empty_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+        url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        res = self.app.get(url)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
 
     def test_update_public_projects_logged_out(self):
         res = self.app.put_json_api(self.url, self.public_payload, expect_errors=True)
@@ -557,6 +581,22 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
 
+    def test_bulk_update_error_formatting(self):
+        res = self.app.put_json_api(self.url, self.empty_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 2)
+        assert_equal(res.json['errors'][0]['meta']['field'], 'title')
+        assert_equal(res.json['errors'][0]['detail'], "This field may not be blank.")
+        assert_equal(res.json['errors'][1]['meta']['field'], 'title')
+        assert_equal(res.json['errors'][1]['detail'], "This field may not be blank.")
+
+    def test_bulk_update_id_not_supplied(self):
+        res = self.app.put_json_api(self.url, [{'title': self.new_title, 'category': self.new_category}], auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 1)
+        assert_equal(res.json['errors'][0]['meta']['field'], 'id')
+        assert_equal(res.json['errors'][0]['detail'], "This field may not be blank.")
+
 
 class TestNodeBulkPartialUpdate(ApiTestCase):
 
@@ -621,6 +661,26 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
                 'title': self.new_title,
             }
         ]
+
+        self.empty_payload = [
+            {'id': self.public_project._id, 'title': ""},
+            {'id': self.public_project_two._id, 'title': ""}
+        ]
+
+    def test_partial_update_public_projects_one_not_found(self):
+        empty_payload = [
+            {
+            'id': 12345,
+            'title': self.new_title
+            },
+            self.public_payload[0]
+        ]
+        res = self.app.patch_json_api(self.url, empty_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+        url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        res = self.app.get(url)
+        assert_equal(res.json['data']['attributes']['title'], self.title)
 
     def test_partial_update_public_projects_logged_out(self):
         res = self.app.patch_json_api(self.url, self.public_payload, expect_errors=True)
@@ -702,6 +762,21 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
                                     auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
+    def test_bulk_partial_update_error_formatting(self):
+        res = self.app.patch_json_api(self.url, self.empty_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 2)
+        assert_equal(res.json['errors'][0]['meta']['field'], 'title')
+        assert_equal(res.json['errors'][0]['detail'], "This field may not be blank.")
+        assert_equal(res.json['errors'][1]['meta']['field'], 'title')
+        assert_equal(res.json['errors'][1]['detail'], "This field may not be blank.")
+
+    def test_bulk_partial_update_id_not_supplied(self):
+        res = self.app.patch_json_api(self.url, [{'title': self.new_title}], auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(len(res.json['errors']), 1)
+        assert_equal(res.json['errors'][0]['detail'], 'Must supply id.')
 
 
 class TestNodeDetail(ApiTestCase):
