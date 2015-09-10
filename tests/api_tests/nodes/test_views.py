@@ -595,7 +595,7 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['meta']['field'], 'id')
-        assert_equal(res.json['errors'][0]['detail'], "This field may not be blank.")
+        assert_equal(res.json['errors'][0]['detail'], "This field is required.")
 
 
 class TestNodeBulkPartialUpdate(ApiTestCase):

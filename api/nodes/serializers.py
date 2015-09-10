@@ -21,9 +21,15 @@ class NodeTagField(ser.Field):
 
 
 class JSONAPINodeListSerializer(JSONAPIListSerializer):
+    """
+    Bulk updates instances with the validated data.
+
+    Request either completely succeeds or fails. Requires
+    the request to be in the serializer context.
+    """
 
     def update(self, instance, validated_data):
-        data_mapping = {item.get('id', None): item for item in validated_data}
+        data_mapping = {item.get('_id', None): item for item in validated_data}
         if None in data_mapping:
             raise exceptions.ValidationError('Must supply id.')
         request = self.context['request']
@@ -151,7 +157,7 @@ class NodeSerializer(JSONAPISerializer, BulkSerializerMixin):
 
 
 class NodeBulkUpdateSerializer(NodeSerializer):
-    id = ser.CharField(source='_id', label='ID')
+    id = ser.CharField(source='_id', label='ID', required=True)
 
 
 class NodeLinksSerializer(JSONAPISerializer):
