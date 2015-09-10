@@ -4,13 +4,15 @@ from modularodm import Q
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework_bulk.generics import ListBulkCreateUpdateDestroyAPIView
+from rest_framework_bulk.generics import ListBulkCreateUpdateDestroyAPIView, BulkDestroyAPIView
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
 from website.exceptions import NodeStateError
 from api.users.serializers import ContributorSerializer
+from api.base.utils import token_creator, absolute_reverse
+from api.base.language import BEFORE_BULK_DELETE
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
@@ -120,28 +122,47 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
     # overrides ListBulkCreateUpdateDestroyAPIView
     def bulk_destroy(self, request, *args, **kwargs):
         qs = self.get_queryset()
-
         filtered = self.filter_queryset(qs)
-        if not self.allow_bulk_destroy(qs, filtered):
-            return Response({'errors': [{'detail': 'Filter nodes to delete.'}]}, status=status.HTTP_400_BAD_REQUEST)
+        user = self.request.user
 
-        self.perform_bulk_destroy(filtered)
+        token = token_creator(filtered, user._id)
+        url = absolute_reverse('nodes:node-bulk-delete', kwargs={'confirmation_token': token})
+        delete_warning = BEFORE_BULK_DELETE
 
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def allow_bulk_destroy(self, qs, filtered):
-
-        return qs is not filtered
+        return Response(
+            {
+                'data': {
+                    'id': 'nodes',
+                    'type': 'nodes',
+                    'attributes': {
+                        'warning_message': delete_warning
+                    }
+                },
+                'links': {
+                    'confirm_bulk_delete': url
+                }
+            }, status=status.HTTP_202_ACCEPTED)
 
     # overrides ListBulkCreateUpdateDestroyAPIView
-    def perform_destroy(self, instance):
-        user = self.request.user
-        auth = Auth(user)
-        try:
-            instance.remove_node(auth=auth)
-        except NodeStateError as err:
-            raise ValidationError(err.message)
-        instance.save()
+    # def perform_destroy(self, instance):
+    #     user = self.request.user
+    #     auth = Auth(user)
+    #     try:
+    #         instance.remove_node(auth=auth)
+    #     except NodeStateError as err:
+    #         raise ValidationError(err.message)
+    #     instance.save()
+
+class NodeBulkDelete(BulkDestroyAPIView):
+    """Bulk delete of nodes. Use extreme caution! """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+    )
+
+    # serializer_class = NodeBulkDeleteSerializer
+
+
 
 
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
