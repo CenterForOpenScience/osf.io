@@ -640,7 +640,8 @@ class TestExceptionFormatting(ApiTestCase):
         res = self.app.put_json_api(self.url, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(res.json['errors'][0]['source'], {'fullname': 'This field may not be blank.'})
+        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/fullname'})
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
     def test_updates_user_unauthorized(self):
         res = self.app.put_json_api(self.url, expect_errors=True)
