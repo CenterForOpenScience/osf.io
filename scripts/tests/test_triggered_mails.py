@@ -21,13 +21,7 @@ class TestTriggeredMails(OsfTestCase):
         self.user.date_last_login = datetime.utcnow() + timedelta(weeks=6)
         self.user.save()
         main(dry_run=False)
-        mock_queue.assert_not_called_with(
-            user=mock.ANY,
-            fullname=self.user.fullname,
-            to_addr=self.user.username,
-            mail={'callback': mock.ANY, 'template': 'no_login', 'subject': mock.ANY},
-            send_at=mock.ANY,
-        )
+        assert_false(mock_queue.called)
 
     @mock.patch('website.mails.queue_mail')
     def test_trigger_no_login_mail(self, mock_queue):

@@ -5,7 +5,7 @@ from nose.tools import *
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
 
-from scripts.triggered_mails import main
+from scripts.send_queued_mails import main
 from website import mails
 
 class TestSendQueuedMails(OsfTestCase):
@@ -16,30 +16,25 @@ class TestSendQueuedMails(OsfTestCase):
         self.user.date_last_login = datetime.utcnow()
         self.user.save()
 
+    def queue_mail(self, mail_type, user=None):
+        mails.queue_mail(
+            to_addr=self.user.username or user.username,
+            mail=mail_type,
+            send_at=datetime.utcnow(),
+            user=self.user or user,
+            fullname=self.user.fullname or user.fullname,
+        )
+
     @mock.patch('website.mails.send_mail')
-    def test_emails_to_different_people(self):
-        queued_emails = list(mails.QueuedMail.find(
-            Q('sent_at', 'ne', None)
-        ))
-        user1 = UserFactory()
-        user2 = UserFactory()
-        mails.queue_mail(to_addr=user1.username, mail=mails.NO_ADDON, send_at=datetime.utcnow(), user=user1, fullname=user1.fullname)
-        mails.queue_mail(to_addr=user2.username, mail=mails.NO_ADDON, send_at=datetime.utcnow(), user=user2, fullname=user2.fullname)
+    def test_queue_addon_mail(self, mock_send):
+        self.queue_mail(mails.NO_ADDON)
         main(dry_run=False)
-        queued_emails_new = set(mails.QueuedMail.find(
-            Q('sent_at', 'ne', None)
-        )) - set(queued_emails)
-        assert_equal(len(queued_emails_new), 2)
-
+        mock_send.assert_called_once()
 
     @mock.patch('website.mails.send_mail')
-    def test_no_two_emails_to_same_person(self):
+    def test_no_two_emails_to_same_person(self, mock_send):
         user = UserFactory()
-        mails.queue_mail(to_addr=user.username, mail=mails.NO_ADDON, send_at=datetime.utcnow(), user=user, fullname=user.fullname)
-        mails.queue_mail(to_addr=user.username, mail=mails.NO_ADDON, send_at=datetime.utcnow(), user=user, fullname=user.fullname)
+        self.queue_mail(mails.NO_ADDON, user)
+        self.queue_mail(mails.NO_ADDON, user)
         main(dry_run=False)
-        queued_emails = list(mails.QueuedMail.find(
-            Q('user', 'eq', user) &
-            Q('sent_at', 'ne', None)
-        ))
-        assert_equal(len(queued_emails), 1)
+        mock_send.assert_called_once()
