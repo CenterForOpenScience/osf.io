@@ -16,6 +16,7 @@ def json_api_exception_handler(exc, context):
 
     if response:
         message = response.data
+
         if isinstance(message, dict):
             for key, value in message.iteritems():
                 if key in top_level_error_keys:
@@ -26,9 +27,11 @@ def json_api_exception_handler(exc, context):
                             errors.append({'source': {'pointer': '/data/attributes/' + key}, 'detail': reason})
                     else:
                         errors.append({'source': {'pointer': '/data/attributes/' + key}, 'detail': value})
+
         elif isinstance(message, (list, tuple)):
             for error in message:
                 errors.append({'detail': error})
+       
         else:
             errors.append({'detail': message})
 
