@@ -3,8 +3,8 @@ import requests
 from modularodm import Q
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework_bulk.drf3.mixins import BulkUpdateModelMixin
-from rest_framework_bulk import ListCreateBulkUpdateDestroyAPIView
+from rest_framework_bulk.drf3.mixins import BulkUpdateModelMixin, BulkDestroyModelMixin, BulkCreateModelMixin
+from rest_framework_bulk.generics import ListBulkCreateUpdateDestroyAPIView
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
@@ -41,7 +41,7 @@ class NodeMixin(object):
         return node
 
 
-class NodeList(ListCreateBulkUpdateDestroyAPIView, BulkUpdateModelMixin, ODMFilterMixin):
+class NodeList(ListBulkCreateUpdateDestroyAPIView, BulkCreateModelMixin, BulkUpdateModelMixin, ODMFilterMixin, BulkDestroyModelMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -94,13 +94,14 @@ class NodeList(ListCreateBulkUpdateDestroyAPIView, BulkUpdateModelMixin, ODMFilt
             serializer_class = NodeBulkUpdateSerializer
         return serializer_class
 
-    # overrides ListCreateAPIView
+    serializer_class = NodeSerializer
+
+    # overrides ListBulkCreateUpdateDestroyView
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return Response({'data': serializer.data}, status=status.HTTP_201_CREATED, headers=headers)
+        response =  ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
+        if 'data' in response.data:
+            return response
+        return Response({'data': response.data}, status=status.HTTP_201_CREATED)
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
@@ -119,15 +120,23 @@ class NodeList(ListCreateBulkUpdateDestroyAPIView, BulkUpdateModelMixin, ODMFilt
 
     def bulk_destroy(self, request, *args, **kwargs):
         qs = self.get_queryset()
+
         filtered = self.filter_queryset(qs)
         if not self.allow_bulk_destroy(qs, filtered):
             return Response({'errors': [{'detail': 'Filter nodes to delete.'}]}, status=status.HTTP_400_BAD_REQUEST)
 
-        for obj in filtered:
-            self.pre_delete(obj)
-            obj.delete()
-            self.post_delete(obj)
+        self.perform_bulk_destroy(filtered)
+
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        try:
+            instance.remove_node(auth=auth)
+        except NodeStateError as err:
+            raise ValidationError(err.message)
+        instance.save()
 
 
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
@@ -149,12 +158,6 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         return self.get_node()
-
-    # overrides RetrieveUpdateDestroyAPIView
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        serializer = self.get_serializer(instance)
-        return Response({'data': serializer.data})
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
