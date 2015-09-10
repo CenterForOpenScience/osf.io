@@ -54,19 +54,14 @@ class TestJSONAPISerializer(ApiTestCase):
         for include in includes:
             assert_in(include, res.json['data']['includes'])
 
-    def test_each_included_fields_corresponding_view_is_called(self):
-        includs = ['children', 'contributors']
-        node_detail_calls, node_detail_wrapped = spy_on(node_views.NodeDetail.get)
-        node_views.NodeDetail.get = MethodType(node_detail_wrapped, None, node_views.NodeDetail)
-        node_contrib_calls, node_contrib_wrapped = spy_on(node_views.NodeContributorsList.get)
-        node_views.NodeContributorsList.get = MethodType(node_contrib_wrapped, None, node_views.NodeContributorsList)
-        self.app.get(
+
+    def test_sideload_attempts_with_errors_are_None(self):
+        res = self.app.get(
             self.url,
             auth=self.user.auth,
             params={
-                'include': ['children', 'contributors']
+                'include': ['parent']
             }
         )
-        assert_equal(len(node_detail_calls), 1)
-        assert_equal(len(node_contrib_calls), 1)
-        
+        assert_is_none(res.json['data']['includes']['parent'])
+	        

@@ -70,7 +70,7 @@ class TestJSONAPIBaseView(ApiTestCase):
             )
         serializer_instance = mock_to_representation.call_args[0][0]
         serialize_children = serializer_instance.context['include']['children']
-        partial_response = serialize_children(request, self.node)
+        partial_response = serialize_children(self.node)
 
         request = APIRequestFactory().get(
             self.url,
@@ -81,7 +81,7 @@ class TestJSONAPIBaseView(ApiTestCase):
             request,
             node_id=self.node._id
         )
-        assert_equal(children_response.data['data'], partial_response)
+        assert_equal(children_response.data, partial_response)
 
     @mock.patch('api.base.serializers.JSONAPISerializer.to_representation', autospec=True)                    
     def test_include_not_added_to_serializer_context_if_no_inludes_as_view_kwarg(self, mock_to_representation):

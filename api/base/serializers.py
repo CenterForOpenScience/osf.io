@@ -253,10 +253,7 @@ class JSONAPISerializer(ser.Serializer):
                 # If include=field_name is appended to the query string, directly include the
                 # results rather than adding a relationship link
                 if field.field_name in includes:
-                    data['includes'][field.field_name] = self.context['include'][field.field_name](
-                        self.context['request'],
-                        obj
-                    )
+                    data['includes'][field.field_name] = self.context['include'][field.field_name](obj)
                 else:
                     data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
