@@ -1,3 +1,4 @@
+from django.utils.translation import ugettext_lazy as _
 
-
-BEFORE_BULK_DELETE = '''ARE YOU SURE YOU WANT TO DELETE THESE PROJECTS?  THEY WILL NO LONGER BE AVAILABLE TO OTHER CONTRIBUTORS.  SEND DELETE REQUEST TO NEW URL TO CONFIRM.'''
+BEFORE_BULK_DELETE = _('Are you sure you want to delete these projects? They will no longer be '
+                       'available to other contributors.  Send delete request to new URL to confirm.')
