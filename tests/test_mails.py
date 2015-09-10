@@ -26,7 +26,7 @@ class TestQueuedMail(OsfTestCase):
         self.user.is_registered = True
         self.user.save()
 
-    def test_queue_mail(self):
+    def test_no_login_callback_for_active_user(self):
         mail = mails.QueuedMail()
         mail.create(
             to_addr=self.user.username,
@@ -37,16 +37,9 @@ class TestQueuedMail(OsfTestCase):
         )
         self.user.date_last_login = datetime.utcnow() + timedelta(seconds=10)
         self.user.save()
-        assert_equal(mail.send_mail(), False)
-        mail = mails.QueuedMail()
-        mail.create(
-            to_addr=self.user.username,
-            send_at=datetime.utcnow(),
-            user=self.user,
-            mail=mails.NO_ADDON,
-            fullname=self.user.fullname
-        )
-        assert_equal(mail.send_mail(), True)
+        assert_false(mail.send_mail())
+
+    def test_no_login_callback_for_inactive_user(self):
         self.user.date_last_login = datetime.utcnow() - timedelta(weeks=10)
         self.user.save()
         mail = mails.QueuedMail()
@@ -57,4 +50,77 @@ class TestQueuedMail(OsfTestCase):
             mail=mails.NO_LOGIN,
             fullname=self.user.fullname
         )
-        assert_equal(mail.send_mail(), True)
+        assert_true(mail.send_mail())
+
+    def test_no_addon_callback(self):
+        mail = mails.QueuedMail()
+        mail.create(
+            to_addr=self.user.username,
+            send_at=datetime.utcnow(),
+            user=self.user,
+            mail=mails.NO_ADDON,
+            fullname=self.user.fullname
+        )
+        assert_true(mail.send_mail())
+
+    def test_new_public_project_callback_for_no_project(self):
+        mail = mails.QueuedMail()
+        mail.create(
+            to_addr=self.user.username,
+            send_at=datetime.utcnow(),
+            user=self.user,
+            mail=mails.NEW_PUBLIC_PROJECT,
+            fullname=self.user.fullname,
+            project_title='Oh noes',
+            nid='',
+        )
+        assert_false(mail.send_mail())
+
+    def test_new_public_project_callback_success(self):
+        node = factories.ProjectFactory()
+        node.is_public = True
+        node.save()
+        mail = mails.QueuedMail()
+        mail.create(
+            to_addr=self.user.username,
+            send_at=datetime.utcnow(),
+            user=self.user,
+            mail=mails.NEW_PUBLIC_PROJECT,
+            fullname=self.user.fullname,
+            project_title='Oh yass',
+            nid=node._id
+        )
+        assert_true(mail.send_mail())
+
+    def test_welcome_osf4m_callback(self):
+        node = factories.ProjectFactory()
+        file_node = node.get_addon('osfstorage').root_node
+        self.user.date_last_login = datetime.utcnow() - timedelta(days=13)
+        self.user.save()
+        mail = mails.QueuedMail()
+        mail.create(
+            to_addr=self.user.username,
+            send_at=datetime.utcnow(),
+            user=self.user,
+            mail=mails.WELCOME_OSF4M,
+            fullname=self.user.fullname,
+            conference='Kill\'em conference',
+            presentation='presentation',
+            fid=file_node._id
+        )
+        assert_true(mail.send_mail())
+        assert_equal(mail.data['downloads'], 0)
+
+    def test_same_sent(self):
+        user = factories.UserFactory()
+        mail = mails.QueuedMail()
+        mail.create(
+            to_addr=user.username,
+            send_at=datetime.utcnow(),
+            user=user,
+            mail=mails.NO_ADDON,
+            fullname=user.fullname
+        )
+        assert_equal(len(mail.find_same_sent()), 0)
+        mail.send_mail()
+        assert_equal(len(mail.find_same_sent()), 1)

@@ -16,7 +16,7 @@ def main(dry_run=True):
     #one query for 6 weeks and osf4m users, and one for 4 weeks for regular users
     inactive_users = list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME) &
                                     Q('conference_user', 'eq', False)))
-    inactive_users.extend(list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME - timedelta(weeks=2)) &
+    inactive_users.extend(list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - settings.NO_LOGIN_OSF4M_WAIT_TIME) &
                                     Q('conference_user', 'eq', True))))
     inactive_emails = list(mails.QueuedMail.find(Q('email_type', 'eq', 'no_login')))
     users_sent = []
@@ -25,7 +25,7 @@ def main(dry_run=True):
     for user in set(inactive_users) - set(users_sent):
         if dry_run:
             logger.warn('Dry run mode')
-            logger.warn('Queueing up no_login email to {0}'.format(user.username))
+            logger.warn('Email of type no_login queued to {0}'.format(user.username))
         if not dry_run:
             with TokuTransaction():
                 mails.queue_mail(
@@ -35,31 +35,6 @@ def main(dry_run=True):
                     user=user,
                     fullname=user.fullname
                 )
-
-    #find all emails to be sent, pops the top one for each user(to obey the once
-    #a week requirement), checks to see if one has been sent this week, and if
-    #not send the email, otherwise leave it in the queue
-    queued_emails = list(mails.QueuedMail.find(
-        Q('send_at', 'lt', datetime.utcnow()) &
-        Q('sent_at', 'eq', None)
-    ))
-
-    user_queue = {}
-    for email in queued_emails:
-        user_queue.setdefault(email.user._id, []).append(email)
-
-    for user in user_queue.values():
-        mail = user[0]
-        mails_past_week = list(mails.QueuedMail.find(
-            Q('user', 'eq', mail.user) &
-            Q('sent_at', 'gt', datetime.utcnow() - timedelta(days=7))
-        ))
-        if not len(mails_past_week):
-            if dry_run:
-                logger.warn('Dry run mode')
-                logger.warn('Email of type {0} sent to {1}'.format(mail.email_type, mail.to_addr))
-            with TokuTransaction():
-                mail.send_mail()
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv

@@ -128,8 +128,7 @@ def add_poster_by_email(conference, message):
         is_spam=message.is_spam,
     )
     if node_created and user_created:
-        osfstorage = node.get_addon('osfstorage')
-        root_id = osfstorage.root_node._id
+        root_id = (node.get_addon('osfstorage')).root_node._id
         mails.queue_mail(
             to_addr=user.username,
             mail=mails.WELCOME_OSF4M,
