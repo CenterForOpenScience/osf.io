@@ -4,6 +4,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
+from rest_framework import status as http_status
 import furl
 
 from website import util as website_util  # noqa
@@ -83,3 +84,6 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
     url.args.update(query)
     return url.url
+
+def is_http_error_status(http_status_code):
+    return http_status.is_client_error(http_status_code) or http_status.is_server_error(http_status_code)

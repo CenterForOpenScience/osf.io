@@ -3,9 +3,8 @@ from django.core.urlresolvers import resolve, reverse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
-from rest_framework import status as http_status
 
-from api.base.utils import absolute_reverse
+from api.base.utils import absolute_reverse, is_http_error_status
 from api.users.serializers import UserSerializer
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -21,14 +20,18 @@ class JSONAPIBaseView(generics.GenericAPIView):
         include_field = self.serializer_class._declared_fields[field_name]
         def partial(item):
             include_value = getattr(item, include_field.lookup_field, None)
-            view_kwargs = {include_field.lookup_url_kwarg: include_value}
-            view, view_args, view_kwargs = resolve(reverse(include_field.view_name, kwargs=view_kwargs))
+            view, view_args, view_kwargs = resolve(
+                reverse(
+                    include_field.view_name,
+                    kwargs={include_field.lookup_url_kwarg: include_value}
+                )
+            )
             view_kwargs.update({
                 'request': self.request,
                 'no_includes': True
             })
             response = view(*view_args, **view_kwargs)
-            if http_status.is_client_error(response.status_code) or http_status.is_server_error(response.status_code):
+            if is_http_error_status(response.status_code):
                 return None
             return response.data
         return partial
