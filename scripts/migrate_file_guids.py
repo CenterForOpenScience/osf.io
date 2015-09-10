@@ -72,13 +72,15 @@ def migrate_osfstorage_guids():
         assert actual_guid is not None
         actual_guid.referent = referent
         actual_guid.save()
-        try:
-            assert actual_guid._id == referent.get_guid()._id
-        except exceptions.MultipleResultsFound:
-            logger.warning('FileNode {!r} has muliple guids referring to it.'.format(referent.wrapped()))
+        # try:
+        #     assert actual_guid._id == referent.get_guid()._id
+        # except exceptions.MultipleResultsFound:
+        #     logger.warning('FileNode {!r} has muliple guids referring to it.'.format(referent.wrapped()))
 
 
 def migrate_guids(guid_type, provider):
+    cls = models.FileNode.resolve_class(provider, models.FileNode.FILE)
+
     for guid in paginated(guid_type):
         # Note: No metadata is populated here
         # It will be populated whenever this guid is next viewed
@@ -93,19 +95,16 @@ def migrate_guids(guid_type, provider):
         logger.debug('Migrating guid {} ({})'.format(guid._id, guid.waterbutler_path))
 
         try:
-            file_node = models.StoredFileNode(
-                is_file=True,
+            file_node = cls(
                 node=guid.node,
-                provider=provider,
                 path=guid.waterbutler_path,
                 name=guid.waterbutler_path,
                 materialized_path=guid.waterbutler_path,
             )
             file_node.save()
         except exceptions.KeyExistsException:
-            file_node = models.StoredFileNode.find_one(
-                Q('is_file', 'eq', True) &
-                Q('provider', 'eq', provider) &
+            file_node = cls.find_one(
+                Q('node', 'eq', guid.node) &
                 Q('path', 'eq', guid.waterbutler_path)
             )
             logger.warning('{!r}({}) has multiple guids'.format(file_node.wrapped(), guid._id))
