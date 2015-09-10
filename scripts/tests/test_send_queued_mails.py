@@ -1,7 +1,6 @@
+import mock  # noqa
 from datetime import datetime, timedelta
 from nose.tools import *
-
-from modularodm import Q
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
@@ -17,6 +16,7 @@ class TestSendQueuedMails(OsfTestCase):
         self.user.date_last_login = datetime.utcnow()
         self.user.save()
 
+    @mock.patch('website.mails.send_mail')
     def test_emails_to_different_people(self):
         queued_emails = list(mails.QueuedMail.find(
             Q('sent_at', 'ne', None)
@@ -31,6 +31,8 @@ class TestSendQueuedMails(OsfTestCase):
         )) - set(queued_emails)
         assert_equal(len(queued_emails_new), 2)
 
+
+    @mock.patch('website.mails.send_mail')
     def test_no_two_emails_to_same_person(self):
         user = UserFactory()
         mails.queue_mail(to_addr=user.username, mail=mails.NO_ADDON, send_at=datetime.utcnow(), user=user, fullname=user.fullname)

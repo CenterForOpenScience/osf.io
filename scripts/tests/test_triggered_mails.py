@@ -1,7 +1,6 @@
+import mock  # noqa
 from datetime import datetime, timedelta
 from nose.tools import *
-
-from modularodm import Q
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory
@@ -17,19 +16,28 @@ class TestTriggeredMails(OsfTestCase):
         self.user.date_last_login = datetime.utcnow()
         self.user.save()
 
-    def test_trigger_no_login_mail(self):
+    @mock.patch('website.mails.queue_mail')
+    def test_dont_trigger_no_login_mail(self, mock_queue):
+        self.user.date_last_login = datetime.utcnow() + timedelta(weeks=6)
+        self.user.save()
         main(dry_run=False)
-        sent_emails = len(list(mails.QueuedMail.find(
-            Q('sent_at', 'ne', None)
-        )))
+        mock_queue.assert_not_called_with(
+            user=mock.ANY,
+            fullname=self.user.fullname,
+            to_addr=self.user.username,
+            mail={'callback': mock.ANY, 'template': 'no_login', 'subject': mock.ANY},
+            send_at=mock.ANY,
+        )
+
+    @mock.patch('website.mails.queue_mail')
+    def test_trigger_no_login_mail(self, mock_queue):
         self.user.date_last_login = datetime.utcnow() - timedelta(weeks=6)
         self.user.save()
         main(dry_run=False)
-        queued_emails = list(mails.QueuedMail.find(
-            Q('sent_at', 'ne', None)
-        ))
-        new_emails = len(queued_emails) - sent_emails
-        assert_equal(new_emails, 1)
-        assert_equal(queued_emails[-1].to_addr, self.user.username)
-
-
+        mock_queue.assert_called_once_with(
+            user=mock.ANY,
+            fullname=self.user.fullname,
+            to_addr=self.user.username,
+            mail={'callback': mock.ANY, 'template': 'no_login', 'subject': mock.ANY},
+            send_at=mock.ANY,
+        )
