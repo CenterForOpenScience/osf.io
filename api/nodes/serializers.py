@@ -182,7 +182,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
         permissions = self.get_permissions_list(validated_data['permission']) \
             if 'permission' in validated_data else [osf_permissions.READ, osf_permissions.WRITE]
         node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
-        node.reload()
         contributor.permission = node.get_permissions(contributor)[-1]
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id

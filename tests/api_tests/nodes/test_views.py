@@ -1363,6 +1363,7 @@ class TestNodeContributorDelete(ApiTestCase):
         assert_in(self.user, self.project.contributors)
 
     def test_can_not_remove_only_bibliographic_contributor(self):
+        self.project.add_permission(self.user_two, permissions.ADMIN, save=True)
         self.project.set_visible(self.user_two, False, save=True)
         res = self.app.delete(self.url_user, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
