@@ -23,9 +23,9 @@ def json_api_exception_handler(exc, context):
                 else:
                     if isinstance(value, list):
                         for reason in value:
-                            errors.append({'source': {key: reason}})
+                            errors.append({'source': {'pointer': '/data/attributes/' + key}, 'detail': reason})
                     else:
-                        errors.append({'source': {key: value}})
+                        errors.append({'source': {'pointer': '/data/attributes/' + key}, 'detail': value})
         elif isinstance(message, (list, tuple)):
             for error in message:
                 errors.append({'detail': error})
