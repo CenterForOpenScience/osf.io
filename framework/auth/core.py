@@ -5,6 +5,7 @@ import urlparse
 import itertools
 import datetime as dt
 
+from framework.mongo.validators import string_required
 import bson
 import pytz
 import itsdangerous
@@ -48,11 +49,6 @@ def generate_confirm_token():
 
 def generate_claim_token():
     return security.random_string(30)
-
-
-def string_required(value):
-    if value is None or value == '':
-        raise ValidationValueError('Value must not be empty.')
 
 
 def validate_history_item(item):
