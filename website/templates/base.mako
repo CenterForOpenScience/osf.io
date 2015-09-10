@@ -146,7 +146,7 @@
             % if access_token:
                 accessToken: ${ access_token | sjson, n },
                 userId: ${user_id | sjson, n},
-                authUrl: ${auth_url | sjson, n},
+                reauthUrl: ${reauth_url | sjson, n},
                 profileUrl: ${profile_url | sjson, n},
             % endif
                 cookieName: ${ cookie_name | sjson, n },
