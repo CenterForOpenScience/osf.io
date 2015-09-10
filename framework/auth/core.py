@@ -1,32 +1,33 @@
 # -*- coding: utf-8 -*-
-import re
-import logging
-import urlparse
-import itertools
 import datetime as dt
+import itertools
+import logging
+import re
+import urlparse
 
-from framework.mongo.validators import string_required
 import bson
 import pytz
 import itsdangerous
 
 from modularodm import fields, Q
-from modularodm.validators import URLValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
+from modularodm.validators import URLValidator
 
 import framework
-from framework import analytics
-from framework.sessions import session
-from framework.auth import exceptions, utils, signals
-from framework.sentry import log_exception
 from framework.addons import AddonModelMixin
-from framework.sessions.model import Session
-from framework.sessions.utils import remove_sessions_for_user
+from framework import analytics
+from framework.auth import signals, utils
+from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
+                                       MergeConfirmedRequiredError, MergeConflictError)
+from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
-from framework.bcrypt import generate_password_hash, check_password_hash
-from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
+from framework.mongo.validators import string_required
+from framework.sentry import log_exception
+from framework.sessions import session
+from framework.sessions.model import Session
+from framework.sessions.utils import remove_sessions_for_user
 
 from website import mails, settings, filters, security
 
@@ -768,7 +769,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :rtype: bool
         """
         if token not in self.email_verifications:
-            raise exceptions.InvalidTokenError()
+            raise InvalidTokenError
 
         verification = self.email_verifications[token]
         # Not all tokens are guaranteed to have expiration dates
@@ -776,7 +777,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'expiration' in verification and
             verification['expiration'] < dt.datetime.utcnow()
         ):
-            raise exceptions.ExpiredTokenError()
+            raise ExpiredTokenError
 
         return verification['email']
 
@@ -803,7 +804,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if user_to_merge and merge:
             self.merge_user(user_to_merge)
         elif user_to_merge:
-            raise exceptions.MergeConfirmedRequiredError(
+            raise MergeConfirmedRequiredError(
                 'Merge requires confirmation',
                 user=self,
                 user_to_merge=user_to_merge,
@@ -1129,7 +1130,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
-            raise exceptions.MergeConflictError("Users cannot be merged")
+            raise MergeConflictError("Users cannot be merged")
         # Move over the other user's attributes
         # TODO: confirm
         for system_tag in user.system_tags:
