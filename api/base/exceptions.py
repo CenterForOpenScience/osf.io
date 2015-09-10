@@ -10,8 +10,8 @@ def json_api_exception_handler(exc, context):
     from rest_framework.views import exception_handler
     response = exception_handler(exc, context)
 
-    # Error objects may have the following members. Title removed to avoid clash with node "title" errors.
-    top_level_error_keys = ['id', 'links', 'status', 'code', 'detail', 'source', 'meta']
+    # Error objects may have the following members. Title and id removed to avoid clash with node "title" and "id" errors.
+    top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
     errors = []
 
     def dict_error_formatting(errors, error):
