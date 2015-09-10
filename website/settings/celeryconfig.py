@@ -31,5 +31,6 @@ CELERY_IMPORTS = (
     'framework.email.tasks',
     'framework.analytics.tasks',
     'website.mailchimp_utils',
-    'website.notifications.tasks'
+    'website.notifications.tasks',
+    'website.archiver.tasks'
 )
