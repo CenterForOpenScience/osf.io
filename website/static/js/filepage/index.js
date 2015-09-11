@@ -157,6 +157,48 @@ var FileViewPage = {
         }, 1000);
 
         self.mfrIframeParent = $('#mfrIframeParent');
+
+        if(self.canEdit) {
+            var $fileName = $('#fileName');
+            $.fn.editable.defaults.mode = 'inline';
+            $fileName.editable({
+                type: 'text',
+                send: 'always',
+                url: '',
+                ajaxOptions: {
+                    type: 'put',
+                    contentType: 'application/json',
+                    dataType: 'json'
+                },
+                validate: function(value) {
+                    if($.trim(value) === ''){
+                        return 'The wiki page name cannot be empty.';
+                    } else if(value.length > 100){
+                        return 'The wiki page name cannot be more than 100 characters.';
+                    }
+                },
+                params: function(params) {
+                    return JSON.stringify(params);
+                },
+                success: function(response, value) {
+                    window.location.href = ctx.urls.base + encodeURIComponent(value) + '/';
+                },
+                error: function(response) {
+                    var msg = response.responseJSON.message_long;
+                    if (msg) {
+                        return msg;
+                    } else {
+                        // Log unexpected error with Raven
+                        Raven.captureMessage('Error in renaming wiki', {
+                            url: ctx.urls.rename,
+                            responseText: response.responseText,
+                            statusText: response.statusText
+                        });
+                        return 'An unexpected error occurred. Please try again.';
+                    }
+                }
+            });
+        }
     },
     view: function(ctrl) {
         //This code was abstracted into a panel toggler at one point

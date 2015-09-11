@@ -6,8 +6,8 @@
 <%def name="title()">${file_name | h}</%def>
 <div class="row">
   <div class="col-sm-5">
-    <h2 class="break-word">
-      ${file_name | h}
+    <h2 class="break-word editable editable-click">
+      <span id="fileName">${file_name | h}</span>
       % if file_revision:
         <small>&nbsp;${file_revision | h}</small>
       % endif
