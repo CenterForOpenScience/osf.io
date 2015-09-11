@@ -237,7 +237,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
             if node.has_permission(contributor, osf_permissions.ADMIN)
         ]
 
-    # created due to issues node.admin_contributor_ids not working
+    # Get the list of admins for just this node
     def has_multiple_admins(self, node):
         return len(self._get_admins(node)) >= 2
 
