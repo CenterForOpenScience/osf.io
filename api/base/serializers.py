@@ -1,5 +1,6 @@
 import collections
 import re
+import os
 
 from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
@@ -60,11 +61,15 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         """
         Given an object, return the URL that hyperlinks to the object.
 
-        Returns null if lookup value is None
+        Returns None if lookup value is None
         """
-
-        if getattr(obj, self.lookup_field) is None:
+        if deep_get(obj, self.lookup_field) is None:
             return None
+
+        head, tail = os.path.split(self.lookup_field.replace('.', '/'))
+        if head and tail:
+            obj = deep_get(obj, head)
+            self.lookup_field = tail
 
         return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
 

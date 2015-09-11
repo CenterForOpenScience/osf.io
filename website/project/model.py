@@ -359,6 +359,11 @@ class NodeLog(StoredObject):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
                 'with id {self._id!r}>').format(self=self)
 
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
+
     @property
     def node(self):
         """Return the :class:`Node` associated with this log."""
