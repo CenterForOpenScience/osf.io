@@ -155,7 +155,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.  '
                                                'Required due to issues with field defaulting to false.')
 
-    permission = ser.ChoiceField(choices=[osf_permissions.READ, osf_permissions.WRITE, osf_permissions.ADMIN], required=False, allow_null=True,
+    permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
                                  help_text='Highest permission the user has.  Blank input defaults write permission if '
                                            'user is being added and to current permission if user is being edited.')
 
@@ -176,13 +176,12 @@ class NodeContributorsSerializer(JSONAPISerializer):
         contributor = get_object_or_error(User, validated_data['_id'])
         # Node object checks for contributor existence but can still change permissions anyway
         if contributor in node.contributors:
-            raise exceptions.ValidationError('{} is already a validated contributor'.format(contributor.username))
+            raise exceptions.ValidationError('{} is already a contributor'.format(contributor.username))
 
         bibliographic = validated_data['bibliographic']
-        permissions = self.get_permissions_list(validated_data['permission']) \
-            if 'permission' in validated_data else [osf_permissions.READ, osf_permissions.WRITE]
+        permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
         node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
-        contributor.permission = node.get_permissions(contributor)[-1]
+        contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
         return contributor
@@ -208,30 +207,31 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         contributor = instance
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
-        if 'permission' in validated_data and validated_data['permission'] != '':
-            self.set_contributor_permissions(node, validated_data['permission'], contributor, auth)
+
+        visible = validated_data.get('bibliographic')
+        permission = validated_data.get('permission')
+        self._check_permissions(node, permission, contributor, auth)
         try:
-            node.set_visible(contributor, validated_data['bibliographic'], save=True)
+            node.update_contributor(contributor, permission, visible, auth, save=True)
         except ValueError as e:
             raise exceptions.ValidationError(e)
-        contributor.permission = node.get_permissions(contributor)[-1]
+        contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
         return contributor
 
-    def set_contributor_permissions(self, node, permission, contributor, auth):
-        """ Set contributor permissions. Checks to make sure unique admin is
+    def _check_permissions(self, node, permission, contributor, auth):
+        """ Check contributor permissions. Checks to make sure unique admin is
         removing own admin privilege. Based on the ContributorDetailPermissions
         permissions class, the current user must be an admin.
         """
         assert node.has_permission(auth.user, osf_permissions.ADMIN), "Only admins can modify contributor permissions"
-        permissions = self.get_permissions_list(permission)
+        permissions = osf_permissions.expand_permissions(permission) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
         if not self.has_multiple_admins(node):
             # has only one admin
             admin = self._get_admins(node)[0]
             if admin == contributor and osf_permissions.ADMIN not in permissions:
                 raise exceptions.ValidationError('{} is the only admin.'.format(contributor.username))
-        node.set_permissions(contributor, permissions=permissions, save=True)
 
     def _get_admins(self, node):
         return [
