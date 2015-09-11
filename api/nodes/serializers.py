@@ -184,17 +184,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
         contributor.node_id = node._id
         return contributor
 
-    @staticmethod
-    def get_permissions_list(permission):
-        if permission == osf_permissions.ADMIN:
-            return [osf_permissions.READ, osf_permissions.WRITE, osf_permissions.ADMIN]
-        elif permission == osf_permissions.WRITE:
-            return [osf_permissions.READ, osf_permissions.WRITE]
-        elif permission == osf_permissions.READ:
-            return [osf_permissions.READ]
-        else:
-            return osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
-
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """ Overrides node contributor serializer to make id read only and add additional methods
