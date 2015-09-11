@@ -29,6 +29,7 @@ from website.addons.base import exceptions
 from website.addons.base import serializer
 from website.project.model import Node
 from website.util import waterbutler_url_for
+from website.search import search
 
 from website.oauth.signals import oauth_complete
 
@@ -376,6 +377,13 @@ class GuidFile(GuidStoredObject, TaggableMixin):
         if should_raise:
             self._exception_from_response(resp)
         self._metadata_cache = resp.json()['data']
+
+    def save(self, *args, **kwargs):
+        saved_fields = super(GuidFile, self).save(*args, **kwargs)
+
+        search.update_file(self)
+
+        return saved_fields
 
 
 class AddonSettingsBase(StoredObject):

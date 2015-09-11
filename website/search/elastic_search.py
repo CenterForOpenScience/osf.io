@@ -37,7 +37,8 @@ ALIASES = {
     'component': 'Components',
     'registration': 'Registrations',
     'user': 'Users',
-    'total': 'Total'
+    'total': 'Total',
+    'file': 'Files',
 }
 
 # Prevent tokenizing and stop word removal.
@@ -366,6 +367,30 @@ def update_user(user, index=None):
     }
 
     es.index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
+
+
+@requires_search
+def update_file(file_, index=None):
+    if not file_._metadata_cache:
+        file_.enrich()
+
+    index = index or INDEX
+
+    file_doc = {
+        'id': file_._id,
+        'deep_url': file_.deep_url,
+        'tags': [tag._id for tag in file_.tags],
+        'name': file_.name,
+        'category': 'file',
+    }
+
+    es.index(
+        index=index,
+        doc_type='file',
+        body=file_doc,
+        id=file_._id,
+        refresh=True
+    )
 
 
 @requires_search
