@@ -67,7 +67,7 @@ class TestLogNodeList(LogsTestCase):
         self.public_node.save()
         res = self.app.get(self.url, auth=self.user)
         data = res.json['data']
-        nodes_link = data[0]['links']['nodes']['related']
+        nodes_link = data[0]['relationships']['nodes']['links']['url']
         res = self.app.get(nodes_link, auth=self.user)
         meta = res.json['links']['meta']
         data = res.json['data']
