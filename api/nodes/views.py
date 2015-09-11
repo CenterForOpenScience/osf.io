@@ -180,7 +180,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         node = self.get_node()
-        user = get_object_or_error(User, self.kwargs['user_id'])
+        user = get_object_or_error(User, self.kwargs['user_id'], display_name='user')
         # May raise a permission denied
         self.check_object_permissions(self.request, user)
         if user not in node.contributors:

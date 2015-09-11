@@ -105,27 +105,25 @@ class NodeSerializer(JSONAPISerializer):
         node.save()
         return node
 
-    def update(self, instance, validated_data):
+    def update(self, node, validated_data):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        assert isinstance(instance, Node), 'instance must be a Node'
+        assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
-        for attr, value in validated_data.items():
-            if attr == 'tags':
-                old_tags = set([tag._id for tag in instance.tags])
-                if value:
-                    current_tags = set(value)
-                else:
-                    current_tags = set()
-                for new_tag in (current_tags - old_tags):
-                    instance.add_tag(new_tag, auth=auth)
-                for deleted_tag in (old_tags - current_tags):
-                    instance.remove_tag(deleted_tag, auth=auth)
-            else:
-                setattr(instance, attr, value)
-        instance.save()
-        return instance
+        tags = validated_data.get('tags')
+        if tags:
+            del validated_data['tags']
+            current_tags = set(tags)
+        else:
+            current_tags = set()
+        old_tags = set([tag._id for tag in node.tags])
+        for new_tag in (current_tags - old_tags):
+            node.add_tag(new_tag, auth=auth)
+        for deleted_tag in (old_tags - current_tags):
+            node.remove_tag(deleted_tag, auth=auth)
+        node.update(validated_data, auth=auth)
+        return node
 
 
 class NodeContributorsSerializer(JSONAPISerializer):
