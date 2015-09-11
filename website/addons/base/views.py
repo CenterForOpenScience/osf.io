@@ -16,17 +16,21 @@ from framework.sessions import session
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in, must_be_signed
-
 from website import mails
 from website import settings
 from website.project import decorators
 from website.addons.base import exceptions
+from website.addons.base import signals as file_signals
 from website.addons.base import StorageAddonBase
 from website.models import User, Node, NodeLog
 from website.util import rubeus
 from website.profile.utils import get_gravatar
 from website.project.decorators import must_be_valid_project, must_be_contributor_or_public
 from website.project.utils import serialize_node
+
+
+# import so that associated listener is instantiated and gets emails
+from website.notifications.events.files import FileEvent  # noqa
 
 
 @decorators.must_have_permission('write')
@@ -195,6 +199,7 @@ def get_auth(**kwargs):
 LOG_ACTION_MAP = {
     'move': NodeLog.FILE_MOVED,
     'copy': NodeLog.FILE_COPIED,
+    'rename': NodeLog.FILE_RENAMED,
     'create': NodeLog.FILE_ADDED,
     'update': NodeLog.FILE_UPDATED,
     'delete': NodeLog.FILE_REMOVED,
@@ -220,10 +225,28 @@ def create_waterbutler_log(payload, **kwargs):
     node = kwargs['node'] or kwargs['project']
 
     if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
+
         for bundle in ('source', 'destination'):
             for key in ('provider', 'materialized', 'name', 'nid'):
                 if key not in payload[bundle]:
                     raise HTTPError(httplib.BAD_REQUEST)
+
+        dest = payload['destination']
+        src = payload['source']
+
+        if src is not None and dest is not None:
+            dest_path = dest['materialized']
+            src_path = src['materialized']
+            if str(dest_path).endswith("/") and str(src_path).endswith("/"):
+                dest_path = os.path.dirname(dest_path)
+                src_path = os.path.dirname(src_path)
+            if (
+                os.path.split(dest_path)[0] == os.path.split(src_path)[0] and
+                dest['provider'] == src['provider'] and
+                dest['nid'] == src['nid'] and
+                dest['name'] != src['name']
+            ):
+                action = LOG_ACTION_MAP['rename']
 
         destination_node = node  # For clarity
         source_node = Node.load(payload['source']['nid'])
@@ -299,6 +322,8 @@ def create_waterbutler_log(payload, **kwargs):
         metadata['path'] = metadata['path'].lstrip('/')
 
         node_addon.create_waterbutler_log(auth, action, metadata)
+
+    file_signals.file_updated.send(node=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
 
