@@ -745,11 +745,21 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/search/', 'get', {}, OsfWebRenderer('search.mako')),
-        Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako')),
-        Rule('/share/registration/', 'get', {'register': settings.SHARE_REGISTRATION_URL}, OsfWebRenderer('share_registration.mako')),
-        Rule('/share/help/', 'get', {'help': settings.SHARE_API_DOCS_URL}, OsfWebRenderer('share_api_docs.mako')),
-        Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako')),
+        Rule('/search/', 'get', {}, OsfWebRenderer('search.mako', trust=False)),
+        Rule('/share/', 'get', {}, OsfWebRenderer('share_search.mako', trust=False)),  # TODO: Couldn't test this locally
+        Rule(
+            '/share/registration/',
+            'get',
+            {'register': settings.SHARE_REGISTRATION_URL},
+            OsfWebRenderer('share_registration.mako', trust=False)
+        ),
+        Rule(  # TODO: This route/template is an iframe that loads a blank page (src='') on production
+            '/share/help/',
+            'get',
+            {'help': settings.SHARE_API_DOCS_URL},
+            OsfWebRenderer('share_api_docs.mako', trust=False)
+        ),
+        Rule('/share_dashboard/', 'get', {}, OsfWebRenderer('share_dashboard.mako', trust=False)),  # TODO: Dead route and template never existed; can be deleted
         Rule('/share/atom/', 'get', search_views.search_share_atom, xml_renderer),
         Rule('/api/v1/user/search/', 'get', search_views.search_contributor, json_renderer),
 
@@ -780,8 +790,8 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako')),
-        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('index.mako')),
+        Rule('/', 'get', website_views.index, OsfWebRenderer('index.mako', trust=False)),
+        Rule('/goodbye/', 'get', goodbye, OsfWebRenderer('index.mako', trust=False)),
 
         Rule(
             [
@@ -835,7 +845,7 @@ def make_url_map(app):
             ],
             'post',
             project_views.node.project_set_privacy,
-            OsfWebRenderer('project/project.mako')  # TODO: Should this be notemplate? (post request)
+            OsfWebRenderer('project/project.mako', trust=False)  # TODO: Should this be notemplate? (post request)
         ),
 
         ### Logs ###
@@ -882,7 +892,6 @@ def make_url_map(app):
             OsfWebRenderer('project/registrations.mako', trust=False)
         ),
 
-        # TODO: Can't create a registration locally, so can't test this one..?
         Rule(
             [
                 '/project/<pid>/retraction/',
@@ -925,7 +934,6 @@ def make_url_map(app):
 
         # Note: Web endpoint for files view must pass `mode` = `page` to
         # include project view data and JS includes
-        # TODO: Start waterbutler to test
         Rule(
             [
                 '/project/<pid>/files/',
