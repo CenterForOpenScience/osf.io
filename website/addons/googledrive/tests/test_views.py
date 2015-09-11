@@ -5,12 +5,12 @@ import datetime
 
 from nose.tools import *  # noqa
 from framework.auth import Auth
-from website.addons.googledrive.client import GoogleDriveClient
 from website.util import api_url_for, web_url_for
 from tests.base import OsfTestCase, assert_is_redirect
 from tests.factories import AuthUserFactory, ProjectFactory, ExternalAccountFactory
 
-from website.addons.googledrive.tests.utils import mock_folders
+from website.addons.googledrive.client import GoogleDriveClient
+from website.addons.googledrive.tests.utils import mock_folders as sample_folder_data
 from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
 
 class TestGoogleDriveConfigViews(OsfTestCase):
@@ -19,10 +19,7 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         super(TestGoogleDriveConfigViews, self).setUp()
         self.account = GoogleDriveAccountFactory()
         self.user = AuthUserFactory(external_accounts=[self.account])
-        # self.user = AuthUserFactory()
-        # self.user.add_addon('googledrive')
         self.user_settings = self.user.get_or_add_addon('googledrive')
-        # self.user_settings = self.user.get_addon('googledrive')
         self.project = ProjectFactory(creator=self.user)
         self.project.add_addon('googledrive', Auth(self.user))
         self.node_settings = self.project.get_addon('googledrive')
@@ -140,11 +137,11 @@ class TestGoogleDriveHgridViews(OsfTestCase):
         folderId = '12345'
         self.node_settings.set_auth(external_account=self.account, user=self.user)
         self.node_settings.save()
-        mock_drive_client_folders.return_value = mock_folders['items']
+        mock_drive_client_folders.return_value = sample_folder_data['items']
         url = self.project.api_url_for('googledrive_folders', folderId=folderId)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        assert_equal(len(res.json), len(mock_folders['items']))
+        assert_equal(len(res.json), len(sample_folder_data['items']))
 
     @mock.patch('website.addons.googledrive.views.hgrid.GoogleDriveClient.about')
     def test_googledrive_folders_returns_only_root(self, mock_about):

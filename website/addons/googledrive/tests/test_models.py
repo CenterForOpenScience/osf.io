@@ -12,17 +12,12 @@ from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
 from website.addons.base import exceptions
 
+from website.addons.googledrive import model
 from website.addons.googledrive.client import GoogleAuthClient
-from website.addons.googledrive.model import (
-    GoogleDriveUserSettings,
-    GoogleDriveNodeSettings,
-    GoogleDriveGuidFile,
-)
 from website.addons.googledrive.tests.factories import (
     GoogleDriveNodeSettingsFactory,
     GoogleDriveUserSettingsFactory,
 )
-from website.addons.googledrive import model
 
 
 class TestFileGuid(OsfTestCase):
@@ -38,7 +33,7 @@ class TestFileGuid(OsfTestCase):
         self.node_addon.save()
 
     def test_path_doesnt_crash_without_addon(self):
-        guid = GoogleDriveGuidFile(node=self.project, path='/baz/foo/bar')
+        guid = model.GoogleDriveGuidFile(node=self.project, path='/baz/foo/bar')
         self.project.delete_addon('googledrive', Auth(self.user))
 
         assert_is(self.project.get_addon('googledrive'), None)
@@ -47,7 +42,7 @@ class TestFileGuid(OsfTestCase):
         assert_true(guid.waterbutler_path)
 
     def test_path_doesnt_crash_nonconfig_addon(self):
-        guid = GoogleDriveGuidFile(node=self.project, path='/baz/foo/bar')
+        guid = model.GoogleDriveGuidFile(node=self.project, path='/baz/foo/bar')
         self.node_addon.drive_folder_id = None
         self.node_addon.folder_path = '/'
         self.node_addon.save()
@@ -57,10 +52,10 @@ class TestFileGuid(OsfTestCase):
         assert_true(guid.waterbutler_path)
 
     def test_provider(self):
-        assert_equal('googledrive', GoogleDriveGuidFile().provider)
+        assert_equal('googledrive', model.GoogleDriveGuidFile().provider)
 
     def test_correct_path(self):
-        guid = GoogleDriveGuidFile(node=self.project, path='/baz/foo/bar')
+        guid = model.GoogleDriveGuidFile(node=self.project, path='/baz/foo/bar')
 
         assert_equals(guid.path, '/baz/foo/bar')
         assert_equals(guid.waterbutler_path, '/foo/bar')
@@ -78,7 +73,7 @@ class TestFileGuid(OsfTestCase):
             }
         }
 
-        guid = GoogleDriveGuidFile(node=self.project, path='/foo/bar')
+        guid = model.GoogleDriveGuidFile(node=self.project, path='/foo/bar')
 
         guid.enrich()
         assert_equals('Ricksy', guid.unique_identifier)
@@ -139,7 +134,6 @@ class TestGoogleDriveProvider(OsfTestCase):
     @mock.patch.object(GoogleAuthClient, 'userinfo')
     def test_handle_callback(self, mock_client):
         fake_response = {'access_token': 'abc123'}
-        fake_info = mock.Mock()
         fake_info = {'sub': '12345', 'name': 'fakename', 'profile': 'fakeUrl'}
         mock_client.return_value = fake_info
         res = self.provider.handle_callback(fake_response)
@@ -165,11 +159,11 @@ class TestGoogleDriveProvider(OsfTestCase):
         mock_refresh.return_value = 'faketoken'
 
         res = self.provider._refresh_token(fake_access_token, fake_refresh_token)
-        assert_false(res, 'faketoken')
+        assert_false(res)
 
 class TestGoogleDriveUserSettings(OsfTestCase):
-
-    def _prep_oauth_case(self):
+    def setUp(self):
+        super(TestGoogleDriveUserSettings, self).setUp()
         self.node = ProjectFactory()
         self.user = self.node.creator
 
@@ -180,9 +174,14 @@ class TestGoogleDriveUserSettings(OsfTestCase):
 
         self.user_settings = self.user.get_or_add_addon('googledrive')
 
-    def test_grant_oauth_access_no_metadata(self):
-        self._prep_oauth_case()
+    def tearDown(self):
+        super(TestGoogleDriveUserSettings, self).tearDown()
+        self.user_settings.remove()
+        self.external_account.remove()
+        self.node.remove()
+        self.user.remove()
 
+    def test_grant_oauth_access_no_metadata(self):
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
@@ -195,8 +194,6 @@ class TestGoogleDriveUserSettings(OsfTestCase):
         )
 
     def test_grant_oauth_access_metadata(self):
-        self._prep_oauth_case()
-
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
@@ -214,31 +211,26 @@ class TestGoogleDriveUserSettings(OsfTestCase):
         )
 
     def test_verify_oauth_access_no_metadata(self):
-        self._prep_oauth_case()
-
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
         )
         self.user_settings.save()
 
-        assert_true(
-            self.user_settings.verify_oauth_access(
-                node=self.node,
-                external_account=self.external_account
-            )
+        account_has_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=self.external_account
         )
 
-        assert_false(
-            self.user_settings.verify_oauth_access(
-                node=self.node,
-                external_account=ExternalAccountFactory()
-            )
+        factory_account_has_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=ExternalAccountFactory()
         )
+
+        assert_true(account_has_access)
+        assert_false(factory_account_has_access)
 
     def test_verify_oauth_access_metadata(self):
-        self._prep_oauth_case()
-
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
@@ -388,7 +380,6 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
             )
 
         # user_settings was updated
-        # TODO: the call to grant_oauth_access should be mocked
         assert_true(
             self.user_settings.verify_oauth_access(
                 node=self.node,
@@ -497,27 +488,6 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
 
         with assert_raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_settings()
-    #
-    # def test_create_log(self):
-    #     action = 'file_added'
-    #     path = '12345/camera uploads/pizza.nii'
-    #     self.project = ProjectFactory()
-    #
-    #     nlog = len(self.project.logs)
-    #     self.node_settings.create_waterbutler_log(
-    #      auth=Auth(user=self.user),
-    #      action=action,
-    #      metadata={'path': path},
-    #     )
-    #
-    #     self.project.reload()
-    #
-    #     assert_equal(len(self.project.logs), nlog + 1)
-    #     assert_equal(
-    #      self.project.logs[-1].action,
-    #      'googledrive_{0}'.format(action),
-    #     )
-    #     assert_equal(self.project.logs[-1].params['path'], path)
 
     def test_fetch_access_token_with_token_not_expired(self):
         external_account = ExternalAccountFactory()

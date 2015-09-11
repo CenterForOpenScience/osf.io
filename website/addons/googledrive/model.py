@@ -124,25 +124,29 @@ class GoogleDriveProvider(ExternalProvider):
             'profile_url': info.get('profile', None)
         }
 
-    # TODO: Remove, if not used
-    def _get_folders(self):
-        """ Get a list of a user's folders"""
-        client = self._drive_client
-        return client.folders()
-
     def _refresh_token(self, access_token, refresh_token):
+        """ Handles the actual request to refresh tokens
+
+        :param str access_token: Access token (oauth key) associated with this account
+        :param str refresh_token: Refresh token used to request a new access token
+        :return dict token: New set of tokens
+        """
         client = self._auth_client
         if refresh_token:
             token = client.refresh(access_token, refresh_token)
             return token
         else:
-            exceptions.AddonError("Refresh Token is not Obtained")
+            return False
 
     def fetch_access_token(self, force_refresh=False):
         self.refresh_access_token(force=force_refresh)
         return self.account.oauth_key
 
     def refresh_access_token(self, force=False):
+        """ If the token has expired or will soon, handles refreshing and the storage of new tokens
+
+        :param bool force: Indicates whether or not to force the refreshing process, for the purpose of ensuring that authorization has not been unexpectedly removed.
+        """
         if self._needs_refresh() or force:
             token = self._refresh_token(self.account.oauth_key, self.account.refresh_token)
             self.account.oauth_key = token['access_token']
@@ -158,12 +162,12 @@ class GoogleDriveProvider(ExternalProvider):
 
 class GoogleDriveUserSettings(StorageAddonBase, AddonOAuthUserSettingsBase):
     oauth_provider = GoogleDriveProvider
-    oauth_grants = fields.DictionaryField()
     serializer = GoogleDriveSerializer
 
 
 class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = GoogleDriveProvider
+    provider_name = 'googledrive'
 
     drive_folder_id = fields.StringField(default=None)
     drive_folder_name = fields.StringField(default=None)
@@ -187,14 +191,6 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             external_account=self.external_account,
             metadata={'folder': self.drive_folder_id}
         ))
-
-    def set_folder(self, folder, auth, add_log=True):
-        self.drive_folder_id = folder['id']
-        self.folder_path = folder['path']
-
-    @property
-    def provider_name(self):
-        return 'googledrive'
 
     def folder_name(self):
         if not self.drive_folder_id:
@@ -223,13 +219,14 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_path = folder['path']
         self.drive_folder_name = folder['name']
 
-        # Tell the user's addon settings that this node is connecting
-        self.user_settings.grant_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-            metadata={'folder': self.drive_folder_id}
-        )
-        self.user_settings.save()
+        if self.external_account not in self.user_settings.external_accounts:
+            # Tell the user's addon settings that this node is connecting
+            self.user_settings.grant_oauth_access(
+                node=self.owner,
+                external_account=self.external_account,
+                metadata={'folder': self.drive_folder_id}
+            )
+            self.user_settings.save()
 
         # update this instance
         self.save()
@@ -254,16 +251,6 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         else:
             # folder = self.folder_metadata(self.drive_folder_id)
             return self.drive_folder_name
-
-    # TODO: Remove me, if not required
-    def folder_metadata(self, folder_id):
-        """
-        :param folder_id: Id of the selected folder
-        :return: subfolders,if any.
-        """
-        client = GoogleDriveClient(self.external_account.oauth_key)
-        folder = client.file_or_folder_metadata(fileId=folder_id)
-        return folder
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:

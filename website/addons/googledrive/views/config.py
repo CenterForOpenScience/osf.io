@@ -62,7 +62,7 @@ def googledrive_user_config_get(auth, **kwargs):
 @must_have_permission(permissions.WRITE)
 @must_have_addon('googledrive', 'node')
 def googledrive_import_user_auth(auth, node_addon, **kwargs):
-    """Import googledrive credentials from the currently logged-in user to a node.
+    """ Import googledrive credentials from the currently logged-in user to a node.
     """
     user = auth.user
     external_account_id = request.get_json().get('external_account_id')
