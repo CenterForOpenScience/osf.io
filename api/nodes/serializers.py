@@ -174,7 +174,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
         # Node object checks for contributor existence but can still change permissions anyway
         if contributor in node.contributors:
-            raise exceptions.ValidationError('{} is already a contributor'.format(contributor.username))
+            raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
 
         bibliographic = validated_data['bibliographic']
         permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
@@ -218,7 +218,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
             # has only one admin
             admin = self._get_admins(node)[0]
             if admin == contributor and osf_permissions.ADMIN not in permissions:
-                raise exceptions.ValidationError('{} is the only admin.'.format(contributor.username))
+                raise exceptions.ValidationError('{} is the only admin.'.format(contributor.fullname))
 
     def _get_admins(self, node):
         return [
