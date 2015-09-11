@@ -92,6 +92,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
     .. note:
          Uses celery if available
     """
+
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or tasks.send_email
     subject = mail.subject(**context)
@@ -124,6 +125,23 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         return ret
 
 def queue_mail(to_addr, mail, send_at, user, **context):
+    """
+    Queue an email to be sent using send_mail after a specified amount
+    of time and if the callback returns True. The callback is attached to
+    the template under mail.
+
+    :param to_addr: the address email is to be sent to
+    :param mail:  the type of mail. Struct following template:
+                        { 'callback': function(),
+                            'template': mako template name,
+                            'subject': mail subject }
+    :param send_at: datetime object of when to send mail
+    :param user: user object attached to mail
+    :param context: IMPORTANT kwargs to be attached to template.
+                    Sending mail will fail if wrong all kwargs are
+                    not parameters.
+    :return:
+    """
     new_mail = QueuedMail()
     new_mail.create(to_addr, mail, send_at, user, **context)
 
