@@ -111,9 +111,11 @@ var _dataverseItemButtons = {
         }
         if (item.data.addonFullname) {
             var options = [
-                m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'),
                 m('option', {selected: item.data.version === 'latest', value: 'latest'}, 'Draft')
             ];
+            if (item.data.dataverseIsPublished) {
+                options.push(m('option', {selected: item.data.version === 'latest-published', value: 'latest-published'}, 'Published'));
+            }
             buttons.push(
                 m.component(Fangorn.Components.dropdown, {
                     'label': 'Version: ',
