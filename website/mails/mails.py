@@ -175,7 +175,7 @@ class QueuedMail(StoredObject):
             self.save()
             return True
         else:
-            self.delete()
+            self.__class__.remove_one(self)
             return False
 
     def find_same_sent(self):
@@ -184,9 +184,6 @@ class QueuedMail(StoredObject):
             Q('user', 'eq', self.user) &
             Q('sent_at', 'ne', None)
         ))
-
-    def delete(self):
-        self.__class__.remove_one(self)
 
 # Predefined Emails
 
