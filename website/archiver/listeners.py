@@ -22,6 +22,7 @@ def after_register(src, dst, user):
     # Prevent circular import with app.py
     from website.archiver import tasks
     archiver_utils.before_archive(dst, user)
+    from website.archiver import tasks  # Avoid circular import in app.py
     if dst.root != dst:  # if not top-level registration
         return
     archive_tasks = [tasks.archive(job_pk=t.archive_job._id) for t in dst.node_and_primary_descendants()]
