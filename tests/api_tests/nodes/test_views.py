@@ -3,10 +3,8 @@ import mock
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
-import datetime
-import datetime as dt
-
-from website.models import Node, NodeLog
+from website.models import Node
+from website.views import find_dashboard
 from framework.auth.core import Auth
 from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
@@ -271,37 +269,14 @@ class TestNodeFiltering(ApiTestCase):
         assert_not_in(self.folder._id, ids)
         assert_not_in(self.dashboard._id, ids)
 
-    def test_incorrect_filtering_field_logged_in(self):
-        # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
-        url = '/{}nodes/?filter[notafield]=bogus'.format(API_BASE)
-
-        res = self.app.get(url, auth=self.user_one.auth)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_in(self.project_three._id, ids)
-        assert_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
-
     def test_incorrect_filtering_field_not_logged_in(self):
-        # TODO Change to check for error when the functionality changes. Currently acts as though it doesn't exist
         url = '/{}nodes/?filter[notafield]=bogus'.format(API_BASE)
 
-        res = self.app.get(url)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_in(self.project_one._id, ids)
-        assert_in(self.project_two._id, ids)
-        assert_in(self.project_three._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.dashboard._id, ids)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
 
 
 class TestNodeCreate(ApiTestCase):
@@ -328,10 +303,7 @@ class TestNodeCreate(ApiTestCase):
 
     def test_creates_public_project_logged_out(self):
         res = self.app.post_json_api(self.url, self.public_project, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
     def test_creates_public_project_logged_in(self):
@@ -344,10 +316,7 @@ class TestNodeCreate(ApiTestCase):
 
     def test_creates_private_project_logged_out(self):
         res = self.app.post_json_api(self.url, self.private_project, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
     def test_creates_private_project_logged_in_contributor(self):
@@ -412,10 +381,7 @@ class TestNodeDetail(ApiTestCase):
 
     def test_return_private_project_details_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
 
@@ -484,6 +450,15 @@ class TestNodeDetail(ApiTestCase):
         assert_equal(res.json['data']['attributes']['dashboard'], False)
         assert_equal(res.json['data']['attributes']['tags'], [])
 
+    def test_requesting_folder_returns_error(self):
+        folder = NodeFactory(is_folder=True, creator=self.user)
+        res = self.app.get(
+            '/{}nodes/{}/'.format(API_BASE, folder._id),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 404)
+
 
 class TestNodeUpdate(ApiTestCase):
 
@@ -521,10 +496,7 @@ class TestNodeUpdate(ApiTestCase):
             'category': self.new_category,
             'public': True,
         }, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
 
@@ -559,10 +531,7 @@ class TestNodeUpdate(ApiTestCase):
             'category': self.new_category,
             'public': False,
         }, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
     def test_update_private_project_logged_in_contributor(self):
@@ -635,25 +604,22 @@ class TestNodeUpdate(ApiTestCase):
         # Test non-contrib writing to public field
         url = '/{}nodes/{}/'.format(API_BASE, project._id)
         res = self.app.patch_json_api(url, {
-            'is_public': False,
+            'public': False,
         }, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
         # Test creator writing to public field (supposed to be read-only)
         res = self.app.patch_json_api(url, {
-            'is_public': False,
+            'public': False,
         }, auth=self.user.auth, expect_errors=True)
         assert_true(res.json['data']['attributes']['public'])
-        # TODO: Figure out why the validator isn't raising when attempting to write to a read-only field
-        # assert_equal(res.status_code, 403)
+        # django returns a 200 on PATCH to read only field, even though it does not update the field.
+        assert_equal(res.status_code, 200)
 
     def test_partial_update_public_project_logged_out(self):
         res = self.app.patch_json_api(self.public_url, {'title': self.new_title}, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
     def test_partial_update_public_project_logged_in(self):
@@ -675,10 +641,7 @@ class TestNodeUpdate(ApiTestCase):
 
     def test_partial_update_private_project_logged_out(self):
         res = self.app.patch_json_api(self.private_url, {'title': self.new_title}, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
     def test_partial_update_private_project_logged_in_contributor(self):
@@ -716,12 +679,8 @@ class TestNodeDelete(ApiTestCase):
 
     def test_deletes_public_node_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_deletes_public_node_fails_if_bad_auth(self):
         res = self.app.delete_json_api(self.public_url, auth=self.user_two.auth, expect_errors=True)
@@ -739,12 +698,8 @@ class TestNodeDelete(ApiTestCase):
 
     def test_deletes_private_node_logged_out(self):
         res = self.app.delete(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_deletes_private_node_logged_in_contributor(self):
         res = self.app.delete(self.private_url, auth=self.user.auth, expect_errors=True)
@@ -759,7 +714,6 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(self.project.is_deleted, False)
         assert 'detail' in res.json['errors'][0]
 
-
     def test_deletes_private_node_logged_in_read_only_contributor(self):
         self.project.add_contributor(self.user_two, permissions=['read'])
         self.project.save()
@@ -769,12 +723,37 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(self.project.is_deleted, False)
         assert 'detail' in res.json['errors'][0]
 
-
     def test_deletes_invalid_node(self):
         res = self.app.delete(self.fake_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
         assert 'detail' in res.json['errors'][0]
 
+    def test_delete_project_with_component_returns_error(self):
+        project = ProjectFactory(creator=self.user)
+        component = NodeFactory(parent=project, creator=self.user)
+        # Return a 400 because component must be deleted before deleting the parent
+        res = self.app.delete_json_api(
+            '/{}nodes/{}/'.format(API_BASE, project._id),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(
+            errors[0]['detail'],
+            'Any child components must be deleted prior to deleting this project.'
+        )
+
+    def test_delete_dashboard_returns_error(self):
+        dashboard_node = find_dashboard(self.user)
+        res = self.app.delete_json_api(
+            '/{}nodes/{}/'.format(API_BASE, dashboard_node._id),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        # Dashboards are a folder, so a 404 is returned
+        assert_equal(res.status_code, 404)
 
 class TestNodeContributorList(ApiTestCase):
 
@@ -809,10 +788,7 @@ class TestNodeContributorList(ApiTestCase):
 
     def test_return_private_contributor_list_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
 
@@ -836,28 +812,25 @@ class TestNodeContributorFiltering(ApiTestCase):
 
     def setUp(self):
         super(TestNodeContributorFiltering, self).setUp()
-        self.project = ProjectFactory()
-        self.password = fake.password()
-        self.project.creator.set_password(self.password)
-        self.project.creator.save()
-        self.basic_auth = (self.project.creator.username, self.password)
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
 
     def test_filtering_node_with_only_bibliographic_contributors(self):
 
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
         # no filter
-        res = self.app.get(base_url, auth=self.basic_auth)
+        res = self.app.get(base_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
-        res = self.app.get(url, auth=self.basic_auth, expect_errors=True)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(len(res.json['data']), 1)
         assert_true(res.json['data'][0]['attributes'].get('bibliographic', None))
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
-        res = self.app.get(url, auth=self.basic_auth)
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 0)
 
     def test_filtering_node_with_non_bibliographic_contributor(self):
@@ -868,20 +841,28 @@ class TestNodeContributorFiltering(ApiTestCase):
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
 
         # no filter
-        res = self.app.get(base_url, auth=self.basic_auth)
+        res = self.app.get(base_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)
 
         # filter for bibliographic contributors
         url = base_url + '?filter[bibliographic]=True'
-        res = self.app.get(url, auth=self.basic_auth)
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
         assert_true(res.json['data'][0]['attributes'].get('bibliographic', None))
 
         # filter for non-bibliographic contributors
         url = base_url + '?filter[bibliographic]=False'
-        res = self.app.get(url, auth=self.basic_auth)
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
         assert_false(res.json['data'][0]['attributes'].get('bibliographic', None))
+
+    def test_filtering_on_invalid_field(self):
+        url = '/{}nodes/{}/contributors/?filter[invalid]=foo'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
 
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
@@ -914,10 +895,7 @@ class TestNodeRegistrationList(ApiTestCase):
 
     def test_return_private_registrations_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
     def test_return_private_registrations_logged_in_contributor(self):
@@ -971,10 +949,7 @@ class TestNodeChildrenList(ApiTestCase):
 
     def test_return_private_node_children_list_logged_out(self):
         res = self.app.get(self.private_project_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
 
@@ -1035,10 +1010,7 @@ class TestNodeChildCreate(ApiTestCase):
 
     def test_creates_child_logged_out_user(self):
         res = self.app.post_json_api(self.url, self.child, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
 
         self.project.reload()
         assert_equal(len(self.project.nodes), 0)
@@ -1105,10 +1077,10 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
 
 
-class TestNodePointersList(ApiTestCase):
+class TestNodeLinksList(ApiTestCase):
 
     def setUp(self):
-        super(TestNodePointersList, self).setUp()
+        super(TestNodeLinksList, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.pointer_project = ProjectFactory(is_public=False, creator=self.user)
@@ -1140,12 +1112,8 @@ class TestNodePointersList(ApiTestCase):
 
     def test_return_private_node_pointers_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_return_private_node_pointers_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -1213,44 +1181,26 @@ class TestNodeTags(ApiTestCase):
 
     def test_non_authenticated_user_cannot_add_tag_to_public_project(self):
         res = self.app.patch_json(self.public_url, self.one_new_tag_json, expect_errors=True, auth=None)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
 
     def test_non_authenticated_user_cannot_add_tag_to_private_project(self):
         res = self.app.patch_json(self.private_url, self.one_new_tag_json, expect_errors=True, auth=None)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
 
     def test_non_contributor_cannot_add_tag_to_public_project(self):
         res = self.app.patch_json(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.user_two.auth)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
         assert_equal(res.status_code, 403)
 
     def test_non_contributor_cannot_add_tag_to_private_project(self):
         res = self.app.patch_json(self.private_url, self.one_new_tag_json, expect_errors=True, auth=self.user_two.auth)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
         assert_equal(res.status_code, 403)
 
     def test_read_only_contributor_cannot_add_tag_to_public_project(self):
         res = self.app.patch_json(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.read_only_contributor.auth)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
         assert_equal(res.status_code, 403)
 
     def test_read_only_contributor_cannot_add_tag_to_private_project(self):
         res = self.app.patch_json(self.private_url, self.one_new_tag_json, expect_errors=True, auth=self.read_only_contributor.auth)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
         assert_equal(res.status_code, 403)
 
     def test_tags_add_and_remove_properly(self):
@@ -1269,9 +1219,9 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
-class TestCreateNodePointer(ApiTestCase):
+class TestCreateNodeLink(ApiTestCase):
     def setUp(self):
-        super(TestCreateNodePointer, self).setUp()
+        super(TestCreateNodeLink, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.pointer_project = ProjectFactory(is_public=False, creator=self.user)
@@ -1292,12 +1242,8 @@ class TestCreateNodePointer(ApiTestCase):
 
     def test_creates_public_node_pointer_logged_out(self):
         res = self.app.post(self.public_url, self.public_payload, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_creates_public_node_pointer_logged_in(self):
         res = self.app.post(self.public_url, self.public_payload, auth=self.user_two.auth, expect_errors=True)
@@ -1311,10 +1257,7 @@ class TestCreateNodePointer(ApiTestCase):
 
     def test_creates_private_node_pointer_logged_out(self):
         res = self.app.post(self.private_url, self.private_payload, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
 
@@ -1407,12 +1350,8 @@ class TestNodeFilesList(ApiTestCase):
 
     def test_returns_private_files_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_returns_private_files_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -1425,7 +1364,6 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_returns_addon_folders(self):
         user_auth = Auth(self.user)
@@ -1493,10 +1431,10 @@ class TestNodeFilesList(ApiTestCase):
         assert 'relationships' not in res.json['data'][0]
 
 
-class TestNodePointerDetail(ApiTestCase):
+class TestNodeLinkDetail(ApiTestCase):
 
     def setUp(self):
-        super(TestNodePointerDetail, self).setUp()
+        super(TestNodeLinkDetail, self).setUp()
         self.user = AuthUserFactory()
         self.private_project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=False)
@@ -1528,12 +1466,8 @@ class TestNodePointerDetail(ApiTestCase):
 
     def test_returns_private_node_pointer_detail_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_returns_private_node_pointer_detail_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -1548,10 +1482,10 @@ class TestNodePointerDetail(ApiTestCase):
         assert 'detail' in res.json['errors'][0]
 
 
-class TestDeleteNodePointer(ApiTestCase):
+class TestDeleteNodeLink(ApiTestCase):
 
     def setUp(self):
-        super(TestDeleteNodePointer, self).setUp()
+        super(TestDeleteNodeLink, self).setUp()
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
@@ -1569,12 +1503,8 @@ class TestDeleteNodePointer(ApiTestCase):
 
     def test_deletes_public_node_pointer_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
-        assert 'detail' in res.json['errors'][0]
-
+        assert_equal(res.status_code, 401)
+        assert 'detail' in res.json['errors'][0].keys()
 
     def test_deletes_public_node_pointer_fails_if_bad_auth(self):
         node_count_before = len(self.public_project.nodes_pointer)
@@ -1595,12 +1525,8 @@ class TestDeleteNodePointer(ApiTestCase):
 
     def test_deletes_private_node_pointer_logged_out(self):
         res = self.app.delete(self.private_url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_deletes_private_node_pointer_logged_in_contributor(self):
         res = self.app.delete(self.private_url, auth=self.user.auth)
@@ -1631,6 +1557,20 @@ class TestDeleteNodePointer(ApiTestCase):
         #check that deleted pointer can not be returned
         res = self.app.get(self.private_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4322
+    def test_delete_link_that_is_not_linked_to_correct_node(self):
+        project = ProjectFactory(creator=self.user)
+        # The node link belongs to a different project
+        res = self.app.delete(
+            '/{}nodes/{}/node_links/{}'.format(API_BASE, project._id, self.public_pointer._id),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], 'Node link does not belong to the requested node.')
 
 
 class TestReturnDeletedNode(ApiTestCase):
@@ -1852,4 +1792,3 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert(self.public_project._id in res.json['errors'][0]['detail'])
-
