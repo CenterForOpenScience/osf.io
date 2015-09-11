@@ -162,12 +162,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Detail of a contributor for a node.
 
-    Contributors are users who can make changes to the node or, in the case of private nodes,
-    have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
-    contributors. From a permissions standpoint, both are the same, but bibliographic contributors
-    are included in citations, while non-bibliographic contributors are not included in citations.
-
-    Allows for a user to view, remove a contributor from, and change bibliographic and admin status for a node.
+    View, remove from, and change bibliographic and permissions for a given contributor on a given node.
     """
 
     permission_classes = (
