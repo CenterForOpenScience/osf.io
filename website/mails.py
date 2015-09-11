@@ -152,7 +152,7 @@ CONFERENCE_FAILED = Mail(
     subject='Open Science Framework Error: No files attached',
 )
 
-DIGEST = Mail('digest', subject='OSF Email Digest')
+DIGEST = Mail('digest', subject='OSF Notifications')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
 
 # Retraction related Mail objects

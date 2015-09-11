@@ -217,7 +217,8 @@ class TestAddonLogs(OsfTestCase):
             'signature': signature,
         }
 
-    def test_add_log(self):
+    @mock.patch('website.notifications.events.files.FileAdded.perform')
+    def test_add_log(self, mock_perform):
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path})
@@ -225,6 +226,9 @@ class TestAddonLogs(OsfTestCase):
         self.test_app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert_equal(len(self.node.logs), nlogs + 1)
+        # # Mocking form_message and perform so that the payload need not be exact.
+        # assert_true(mock_form_message.called, "form_message not called")
+        assert_true(mock_perform.called, "perform not called")
 
     def test_add_log_missing_args(self):
         path = 'pizza'
@@ -292,20 +296,24 @@ class TestAddonLogs(OsfTestCase):
         payload = self.build_payload(
             action='rename',
             metadata={
-            'path': 'foo',
-            'destination': {
-                'materialized': 'foo',
-                'provider': 'github',
-                'nid': self.node._id,
-                'name': 'old.txt',
+                'path': 'foo',
             },
-            'source': {
+            source={
                 'materialized': 'foo',
                 'provider': 'github',
-                'nid': self.node._id,
+                'node': {'_id': self.node._id},
                 'name': 'new.txt',
-            }
-        })
+                'kind': 'file',
+            },
+            destination={
+                'path': 'foo',
+                'materialized': 'foo',
+                'provider': 'github',
+                'node': {'_id': self.node._id},
+                'name': 'old.txt',
+                'kind': 'file',
+            },
+        )
         self.test_app.put_json(
             url,
             payload,
