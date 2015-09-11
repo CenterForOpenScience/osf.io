@@ -3,6 +3,7 @@ import datetime
 import httplib as http
 
 from flask import request
+import markupsafe
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
@@ -50,7 +51,7 @@ def reset_password(auth, **kwargs):
         user_obj.verification_key = security.random_string(20)
         user_obj.set_password(form.password.data)
         user_obj.save()
-        status.push_status_message('Password reset', 'success')
+        status.push_status_message('Password reset', kind='success', trust=False)
         # Redirect to CAS and authenticate the user with a verification key.
         return redirect(cas.get_login_url(
             web_url_for('user_account', _absolute=True),
@@ -88,10 +89,14 @@ def forgot_password_post():
                 mail=mails.FORGOT_PASSWORD,
                 reset_link=reset_link
             )
+
+        email_safe = markupsafe.escape(email)
         status.push_status_message(
-            ('If there is an OSF account associated with {0}, an email with instructions on how to reset '
-             'the OSF password has been sent to {0}. If you do not receive an email and believe you should '
-             'have, please contact OSF Support. ').format(email), 'success')
+            (u'If there is an OSF account associated with {0}, an email with instructions on how to reset '
+             u'the OSF password has been sent to {0}. If you do not receive an email and believe you should '
+             u'have, please contact OSF Support. ').format(email_safe),
+            kind='success',
+            trust=True)
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
@@ -124,15 +129,15 @@ def auth_login(auth, **kwargs):
         # redirect user to CAS for logout, return here w/o authentication
         return auth_logout(redirect_url=request.url)
     if kwargs.get('first', False):
-        status.push_status_message('You may now log in', 'info')
+        status.push_status_message('You may now log in', kind='info', trust=False)
 
     status_message = request.args.get('status', '')
     if status_message == 'expired':
-        status.push_status_message('The private link you used is expired.')
+        status.push_status_message('The private link you used is expired.', trust=False)
 
     code = http.OK
     if next_url:
-        status.push_status_message(language.MUST_LOGIN)
+        status.push_status_message(language.MUST_LOGIN, trust=False)
         # Don't raise error if user is being logged out
         if not request.args.get('logout'):
             code = http.UNAUTHORIZED
@@ -174,11 +179,11 @@ def confirm_email_get(token, auth=None, **kwargs):
 
     if auth and auth.user and auth.user in (user, user.merged_by):
         if not is_merge:
-            status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
+            status.push_status_message(language.WELCOME_MESSAGE, kind='default', jumbotron=True, trust=True)
             # Go to dashboard
             return redirect(web_url_for('dashboard'))
 
-        status.push_status_message(language.MERGE_COMPLETE, 'success')
+        status.push_status_message(language.MERGE_COMPLETE, kind='success', trust=False)
         return redirect(web_url_for('user_account'))
 
     try:
@@ -290,7 +295,7 @@ def register_user(**kwargs):
 # TODO: Remove me
 def auth_register_post():
     if not settings.ALLOW_REGISTRATION:
-        status.push_status_message(language.REGISTRATION_UNAVAILABLE)
+        status.push_status_message(language.REGISTRATION_UNAVAILABLE, trust=False)
         return redirect('/')
     form = RegistrationForm(request.form, prefix='register')
 
@@ -303,14 +308,17 @@ def auth_register_post():
                 form.fullname.data)
             framework.auth.signals.user_registered.send(user)
         except (ValidationValueError, DuplicateEmailError):
+            email = markupsafe.escape(form.username.data)
             status.push_status_message(
-                language.ALREADY_REGISTERED.format(email=form.username.data))
+                language.ALREADY_REGISTERED.format(email=email),
+                trust=True)
             return auth_login()
         if user:
             if settings.CONFIRM_REGISTRATIONS_BY_EMAIL:
                 send_confirm_email(user, email=user.username)
-                message = language.REGISTRATION_SUCCESS.format(email=user.username)
-                status.push_status_message(message, 'success')
+                email = markupsafe.escape(user.username)
+                message = language.REGISTRATION_SUCCESS.format(email=email)
+                status.push_status_message(message, kind='success', trust=True)
                 return auth_login()
             else:
                 return redirect('/login/first/')
@@ -339,11 +347,12 @@ def resend_confirmation():
                 send_confirm_email(user, clean_email)
             except KeyError:  # already confirmed, redirect to dashboard
                 status_message = 'Email has already been confirmed.'
-                type_ = 'warning'
+                kind = 'warning'
             else:
-                status_message = 'Resent email to <em>{0}</em>'.format(clean_email)
-                type_ = 'success'
-            status.push_status_message(status_message, type_)
+                safe_email = markupsafe.escape(clean_email)
+                status_message = 'Resent email to <em>{0}</em>'.format(safe_email)
+                kind = 'success'
+            status.push_status_message(status_message, kind=kind, trust=True)
         else:
             forms.push_errors_to_status(form.errors)
     # Don't go anywhere
@@ -369,25 +378,29 @@ def merge_user_post(auth, **kwargs):
             return merge_user_get(**kwargs)
         master_password = form.user_password.data
         if not master.check_password(master_password):
-            status.push_status_message("Could not authenticate. Please check your username and password.")
+            status.push_status_message("Could not authenticate. Please check your username and password.", trust=False)
             return merge_user_get(**kwargs)
         merged_username = form.merged_username.data
         merged_password = form.merged_password.data
     try:
         merged_user = User.find_one(Q("username", "eq", merged_username))
     except NoResultsFound:
-        status.push_status_message("Could not find that user. Please check the username and password.")
+        status.push_status_message("Could not find that user. Please check the username and password.", trust=False)
         return merge_user_get(**kwargs)
     if master and merged_user:
         if merged_user.check_password(merged_password):
             master.merge_user(merged_user)
             master.save()
             if request.form:
-                status.push_status_message("Successfully merged {0} with this account".format(merged_username), 'success')
+                safe_username = markupsafe.escape(merged_username)
+                status.push_status_message("Successfully merged {0} with this account".format(safe_username),
+                                           kind='success',
+                                           trust=False)
                 return redirect("/settings/")
             return {"status": "success"}
         else:
-            status.push_status_message("Could not find that user. Please check the username and password.")
+            status.push_status_message("Could not find that user. Please check the username and password.",
+                                       trust=False)
             return merge_user_get(**kwargs)
     else:
         raise HTTPError(http.BAD_REQUEST)

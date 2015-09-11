@@ -89,7 +89,7 @@ class OsfWebRenderer(WebRenderer):
         super(OsfWebRenderer, self).__init__(*args, **kwargs)
 
 #: Use if a view only redirects or raises error
-notemplate = OsfWebRenderer('', renderer=render_mako_string)
+notemplate = OsfWebRenderer('', renderer=render_mako_string)  # TODO: Convert to trust=False, eg to deal with error pages
 
 
 # Static files (robots.txt, etc.)
@@ -121,7 +121,7 @@ def goodbye():
     # Redirect to dashboard if logged in
     if _get_current_user():
         return redirect(util.web_url_for('dashboard'))
-    status.push_status_message(language.LOGOUT, 'success')
+    status.push_status_message(language.LOGOUT, kind='success', trust=False)
     return {}
 
 
@@ -290,7 +290,7 @@ def make_url_map(app):
             '/oauth/callback/<service_name>/',
             'get',
             oauth_views.oauth_callback,
-            OsfWebRenderer('util/oauth_complete.mako'),
+            OsfWebRenderer('util/oauth_complete.mako', trust=False)
         ),
     ])
 
@@ -312,7 +312,9 @@ def make_url_map(app):
                 '/dashboard/<nid>',
                 '/dashboard/',
             ],
-            'get', website_views.get_dashboard, json_renderer),
+            'get',
+            website_views.get_dashboard,
+            json_renderer),
     ], prefix='/api/v1')
 
     ### Metadata ###
@@ -453,14 +455,14 @@ def make_url_map(app):
             'get',
             auth_views.confirm_email_get,
             # View will either redirect or display error message
-            OsfWebRenderer('error.mako', render_mako_string)
+            OsfWebRenderer('error.mako', renderer=render_mako_string)
         ),
 
         Rule(
             '/resetpassword/<verification_key>/',
             ['get', 'post'],
             auth_views.reset_password,
-            OsfWebRenderer('public/resetpassword.mako', render_mako_string)
+            OsfWebRenderer('public/resetpassword.mako', trust=False)
         ),
 
         # Resend confirmation URL linked to in CAS login page
@@ -468,39 +470,70 @@ def make_url_map(app):
             '/resend/',
             ['get', 'post'],
             auth_views.resend_confirmation,
-            OsfWebRenderer('resend.mako', render_mako_string)
+            OsfWebRenderer('resend.mako', trust=False)
         ),
 
         # TODO: Remove `auth_register_post`
-        Rule('/register/', 'post', auth_views.auth_register_post,
-             OsfWebRenderer('public/login.mako')),
+        Rule('/register/',
+             'post',
+             auth_views.auth_register_post,
+             OsfWebRenderer('public/login.mako', trust=False)),
         Rule('/api/v1/register/', 'post', auth_views.register_user, json_renderer),
 
-        Rule(['/login/', '/account/'], 'get',
-             auth_views.auth_login, OsfWebRenderer('public/login.mako')),
-        Rule('/login/first/', 'get', auth_views.auth_login,
-             OsfWebRenderer('public/login.mako'),
-             endpoint_suffix='__first', view_kwargs={'first': True}),
+        Rule(
+            [
+                '/login/',
+                '/account/'
+            ],
+            'get',
+            auth_views.auth_login,
+            OsfWebRenderer('public/login.mako', trust=False)
+        ),
+        Rule(
+            '/login/first/',
+            'get',
+            auth_views.auth_login,
+            OsfWebRenderer('public/login.mako', trust=False),
+            endpoint_suffix='__first', view_kwargs={'first': True}
+        ),
         Rule('/logout/', 'get', auth_views.auth_logout, notemplate),
-        Rule('/forgotpassword/', 'get', auth_views.forgot_password_get,
-             OsfWebRenderer('public/forgot_password.mako')),
-        Rule('/forgotpassword/', 'post', auth_views.forgot_password_post,
-             OsfWebRenderer('public/login.mako')),
+        Rule(
+            '/forgotpassword/',
+            'get',
+            auth_views.forgot_password_get,
+            OsfWebRenderer('public/forgot_password.mako', trust=False)
+        ),
+        Rule(
+            '/forgotpassword/',
+            'post',
+            auth_views.forgot_password_post,
+            OsfWebRenderer('public/login.mako', trust=False)
+        ),
 
-        Rule([
-            '/midas/', '/summit/', '/accountbeta/', '/decline/'
-        ], 'get', auth_views.auth_registerbeta, OsfWebRenderer('', render_mako_string)),
+        Rule(
+            [
+                '/midas/',
+                '/summit/',
+                '/accountbeta/',
+                '/decline/'
+            ],
+            'get',
+            auth_views.auth_registerbeta,
+            notemplate),
 
-        Rule('/login/connected_tools/',
-             'get',
-             landing_page_views.connected_tools,
-             OsfWebRenderer('public/login_landing.mako')),
+        Rule(
+            '/login/connected_tools/',
+            'get',
+            landing_page_views.connected_tools,
+            OsfWebRenderer('public/login_landing.mako', trust=False)
+        ),
 
-        Rule('/login/enriched_profile/',
-             'get',
-             landing_page_views.enriched_profile,
-             OsfWebRenderer('public/login_landing.mako')),
-
+        Rule(
+            '/login/enriched_profile/',
+            'get',
+            landing_page_views.enriched_profile,
+            OsfWebRenderer('public/login_landing.mako', trust=False)
+        ),
     ])
 
     ### Profile ###
