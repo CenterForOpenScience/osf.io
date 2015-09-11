@@ -2655,6 +2655,21 @@ class TestProject(OsfTestCase):
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
 
+    @mock.patch('website.project.model.mails.queue_mail')
+    def test_set_privacy_sends_mail(self, mock_queue):
+        self.project.set_privacy('private', self.consolidate_auth)
+        self.project.set_privacy('public', self.consolidate_auth)
+        assert_true(mock_queue.called_once())
+        self.project.set_privacy('private', self.consolidate_auth)
+        self.project.set_privacy('public', self.consolidate_auth, skip_mail=False)
+        assert_true(mock_queue.called_once())
+
+    @mock.patch('website.project.model.mails.queue_mail')
+    def test_set_privacy_skips_mail(self, mock_queue):
+        self.project.set_privacy('private', self.consolidate_auth)
+        self.project.set_privacy('public', self.consolidate_auth, skip_mail=True)
+        assert_equal(mock_queue.call_count, 0)
+
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self):
         registration = RegistrationFactory(project=self.project)
         registration.embargo_registration(
