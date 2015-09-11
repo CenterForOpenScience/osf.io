@@ -142,11 +142,12 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
                 'meta': {
                     'query_parameters': request.query_params,
                     'warning_message': delete_warning,
-                    },
+                },
                 'links': {
                     'confirm_bulk_delete': url
                 }
-            }, status=status.HTTP_202_ACCEPTED)
+            }, status=status.HTTP_202_ACCEPTED
+        )
 
 
 class NodeBulkDelete(BulkDestroyAPIView, ODMFilterMixin, BulkDestroyModelMixin):
@@ -156,7 +157,7 @@ class NodeBulkDelete(BulkDestroyAPIView, ODMFilterMixin, BulkDestroyModelMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
-       # overrides ODMFilterMixin
+    # overrides ODMFilterMixin
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
