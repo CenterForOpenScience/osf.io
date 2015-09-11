@@ -4528,6 +4528,7 @@ class TestUserConfirmSignal(OsfTestCase):
 
         assert_equal(mock_signals.signals_sent(), set([auth.signals.user_confirmed]))
 
+
 class TestDraftRegistrationViews(OsfTestCase):
 
     def setUp(self, *args, **kwargs):
@@ -4583,15 +4584,19 @@ class TestDraftRegistrationViews(OsfTestCase):
     def test_register_draft_registration(self, mock_register_draft):
 
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        self.app.post_json(url, {
+        res = self.app.post_json(url, {
             'registrationChoice': 'Make registration public immediately'
         }, auth=self.auth)
+
+        assert_equal(res.status_code, http.ACCEPTED)
         assert_equal(mock_register_draft.call_args[0][0]._id, self.draft._id)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_template_make_public_creates_pending_registration(self, mock_enquque):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
+        res = self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
+
+        assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
         reg = Node.load(self.node.node__registrations[-1])
@@ -4605,7 +4610,9 @@ class TestDraftRegistrationViews(OsfTestCase):
         NodeFactory(parent=comp1)
 
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
+        res = self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.auth)
+
+        assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
         reg = Node.load(self.node.node__registrations[-1])
@@ -4616,7 +4623,7 @@ class TestDraftRegistrationViews(OsfTestCase):
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_creates_embargo(self, mock_enquque):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
-        self.app.post_json(
+        res = self.app.post_json(
             url,
             {
                 'registrationChoice': 'embargo',
@@ -4624,6 +4631,7 @@ class TestDraftRegistrationViews(OsfTestCase):
             },
             auth=self.auth)
 
+        assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
         # Most recent node is a registration
         reg = Node.load(self.node.node__registrations[-1])
@@ -4637,12 +4645,14 @@ class TestDraftRegistrationViews(OsfTestCase):
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_adds_to_parent_project_logs(self, mock_enquque):
         initial_project_logs = len(self.node.logs)
-        self.app.post(
+        res = self.app.post(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_embargo_payload,
             content_type='application/json',
             auth=self.user.auth
         )
+
+        assert_equal(res.status_code, http.ACCEPTED)
         self.node.reload()
         # Logs: Created, registered, embargo initiated
         assert_equal(len(self.node.logs), initial_project_logs + 1)
@@ -4656,7 +4666,7 @@ class TestDraftRegistrationViews(OsfTestCase):
             auth=self.user.auth
         )
 
-        assert_equal(res.status_code, 202)
+        assert_equal(res.status_code, http.ACCEPTED)
 
         registration = Node.find().sort('-registered_date')[0]
 
@@ -4675,11 +4685,12 @@ class TestDraftRegistrationViews(OsfTestCase):
             expect_errors=True
         )
 
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, http.BAD_REQUEST)
 
     def test_get_draft_registrations_gets_drafts_for_node(self):
-
         dummy = NodeFactory()
+
+        # Drafts for dummy node
         for i in range(5):
             d = DraftRegistrationFactory(
                 initiator=self.user,
@@ -4688,7 +4699,9 @@ class TestDraftRegistrationViews(OsfTestCase):
                 schema_data={}
             )
             d.save()
+
         found = [self.draft]
+        # Drafts for self.node
         for i in range(3):
             d = DraftRegistrationFactory(
                 initiator=self.user,
@@ -4699,10 +4712,12 @@ class TestDraftRegistrationViews(OsfTestCase):
             d.save()
             found.append(d)
         url = self.node.api_url_for('get_draft_registrations')
-        res = self.app.get(url, auth=self.auth).json
+
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, http.OK)
         # 3 new, 1 from setUp
-        assert_equal(len(res['drafts']), 4)
-        for draft in res['drafts']:
+        assert_equal(len(res.json['drafts']), 4)
+        for draft in res.json['drafts']:
             assert_in(draft['pk'], [f._id for f in found])
 
     def test_create_draft_registration(self):
@@ -4716,8 +4731,9 @@ class TestDraftRegistrationViews(OsfTestCase):
             'schema_data': metadata,
         }
         url = target.api_url_for('create_draft_registration')
+
         res = self.app.post_json(url, payload, auth=self.auth)
-        assert_equal(res.status_code, 201)
+        assert_equal(res.status_code, http.CREATED)
         draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
         assert_equal(draft.registration_schema, self.meta_schema)
         assert_equal(draft.registration_metadata, metadata)
@@ -4729,8 +4745,9 @@ class TestDraftRegistrationViews(OsfTestCase):
             'schema_version': 1
         }
         url = target.web_url_for('new_draft_registration')
+
         res = self.app.post(url, payload, auth=self.auth)
-        assert_equal(res.status_code, 302)
+        assert_equal(res.status_code, http.FOUND)
         draft = DraftRegistration.find_one(Q('branched_from', 'eq', target))
         assert_equal(draft.registration_schema, self.meta_schema)
 
@@ -4738,13 +4755,16 @@ class TestDraftRegistrationViews(OsfTestCase):
         metadata = {
             'summary': {'value': 'updated'}
         }
+        assert_not_equal(metadata, self.draft.registration_metadata)
         payload = {
             'schema_data': metadata,
             'schema_name': 'OSF-Standard Pre-Data Collection Registration',
             'schema_version': 1
         }
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
-        self.app.put_json(url, payload, auth=self.auth)
+
+        res = self.app.put_json(url, payload, auth=self.auth)
+        assert_equal(res.status_code, http.OK)
 
         open_ended_schema = MetaSchema.find_one(
             Q('name', 'eq', 'OSF-Standard Pre-Data Collection Registration') &
@@ -4757,7 +4777,9 @@ class TestDraftRegistrationViews(OsfTestCase):
     def test_delete_draft_registration(self):
         assert_equal(1, DraftRegistration.find().count())
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
-        self.app.delete(url, auth=self.auth)
+
+        res = self.app.delete(url, auth=self.auth)
+        assert_equal(res.status_code, http.NO_CONTENT)
         assert_equal(0, DraftRegistration.find().count())
 
     def test_get_metaschemas(self):
@@ -4766,8 +4788,10 @@ class TestDraftRegistrationViews(OsfTestCase):
         schema_names = database['metaschema'].distinct('name')
         assert_equal(len(res['meta_schemas']), len(schema_names))
         url = '/api/v1/project/schema/?include=all'
-        res = self.app.get(url).json
-        assert_equal(len(res['meta_schemas']), MetaSchema.find().count())
+
+        res = self.app.get(url)
+        assert_equal(res.status_code, http.OK)
+        assert_equal(len(res.json['meta_schemas']), MetaSchema.find().count())
 
 if __name__ == '__main__':
     unittest.main()
