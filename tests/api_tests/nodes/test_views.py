@@ -785,7 +785,7 @@ class TestNodeBulkDelete(ApiTestCase):
         super(TestNodeBulkDelete, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user_one)
+        self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user_one, category="project")
         self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True, creator=self.user_one)
         self.project_three = ProjectFactory(title="Three", is_public=True, creator=self.user_two)
         self.private_project_user_one = ProjectFactory(title="Private Project User One",
@@ -794,8 +794,6 @@ class TestNodeBulkDelete(ApiTestCase):
         self.private_project_user_two = ProjectFactory(title="Private Project User Two",
                                                        is_public=False,
                                                        creator=self.user_two)
-        self.folder = FolderFactory()
-        self.dashboard = DashboardFactory()
 
         self.url = "/{}nodes/".format(API_BASE)
         self.project_one_url = '/{}nodes/{}/'.format(API_BASE, self.project_one._id)
@@ -808,22 +806,37 @@ class TestNodeBulkDelete(ApiTestCase):
         self.private_project_one_url = '/{}nodes/{}/'.format(API_BASE, self.private_project_user_one._id)
         self.private_project_one_filtered_url = "/{}nodes/?filter[title]=Private%20Project%20User%20One".format(API_BASE)
 
+    def test_bulk_delete_public_projects_logged_in(self):
+        res = self.app.get(self.project_three_filtered_url, auth=self.user_one.auth)
+        print res
+        assert_equal(len(res.json['data']), 1)
+        res = self.app.delete_json_api(self.project_three_filtered_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 202)
+
+        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Three'
+        res = self.app.delete_json_api(delete_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 204)
+
     def test_bulk_delete_public_projects_logged_out(self):
         new_url = "/{}nodes/?filter[title]=Project".format(API_BASE)
         res = self.app.delete_json_api(new_url, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        self.project_one.reload()
 
     def test_bulk_delete_private_projects_logged_out(self):
         url = '/{}nodes/?filter[title]=Private'.format(API_BASE)
         res = self.app.delete_json_api(url, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+        self.private_project_user_one.reload()
+        self.private_project_user_two.reload()
 
     def test_bulk_delete_private_projects_logged_in_contributor(self):
+        res = self.app.get(self.private_project_one_filtered_url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 1)
         res = self.app.delete_json_api(self.private_project_one_filtered_url, auth=self.user_one.auth)
         assert_equal(res.status_code, 202)
-        self.private_project_user_one.reload()
 
         delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Private%20Project%20User%20One'
         res = self.app.delete_json_api(delete_url, auth=self.user_one.auth, expect_errors=True)
@@ -847,6 +860,7 @@ class TestNodeBulkDelete(ApiTestCase):
         delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Private%20Project%20User%20One'
         res = self.app.delete_json_api(delete_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+        self.private_project_user_one.reload()
 
     def test_bulk_delete_private_projects_logged_in_read_only_contributor(self):
         self.private_project_user_one.add_contributor(self.user_two, permissions=['read'])
@@ -864,21 +878,32 @@ class TestNodeBulkDelete(ApiTestCase):
         delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Private%20Project%20User%20One'
         res = self.app.delete_json_api(delete_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-
-    def test_bulk_delete_public_projects_logged_in(self):
-        res = self.app.delete_json_api(self.project_three_filtered_url, auth=self.user_two.auth)
-        assert_equal(res.status_code, 202)
-
-        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Three'
-        res = self.app.delete_json_api(delete_url, auth=self.user_two.auth)
-        assert_equal(res.status_code, 204)
+        self.private_project_user_one.reload()
 
     def test_bulk_delete_all_or_nothing(self):
-        pass
+        new_url = "/{}nodes/?filter[title]=Project".format(API_BASE)
+        self.private_project_user_two.add_contributor(self.user_one, permissions=['read'])
+        self.private_project_user_two.save()
+        res = self.app.get(new_url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 4)
+
+        res = self.app.delete_json_api(new_url, auth=self.user_one.auth, expect_errors=True)
+
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 5)
+        self.project_one.reload()
+        self.project_two.reload()
+        self.project_three.reload()
+        self.private_project_user_one.reload()
 
     def test_bulk_delete_incorrect_filter(self):
-        pass
-
+        url = "/{}nodes/?filter[category]=project".format(API_BASE)
+        res = self.app.delete_json_api(url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Querystring contains an invalid filter.")
 
 
 class TestNodeDetail(ApiTestCase):
