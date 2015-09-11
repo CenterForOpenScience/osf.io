@@ -72,6 +72,7 @@
                 </ul>
             </div>
         </div>
+    </div>  <!-- TODO Is this correct location for missing /div? -->
     <div class="col-sm-8 col-md-9">
 
         <div  id="start" class="p-t-xl">
@@ -121,49 +122,49 @@
                     </div>
                 </div>
             </div>
-        <div  id="structure" class="row p-t-xl">
-            <h2 class="text-center">Structuring Your Work</h2>
-            <div class="col-md-12">
-                <%include file="/public/pages/help/organizer.mako"/>
-                <%include file="/public/pages/help/dashboards.mako"/>
-                <%include file="/public/pages/help/user_profile.mako"/>
-                <%include file="/public/pages/help/projects.mako"/>
-                <%include file="/public/pages/help/components.mako"/>
-                <%include file="/public/pages/help/files.mako"/>
-                <%include file="/public/pages/help/links.mako"/>
-                <%include file="/public/pages/help/forks.mako"/>
-                <%include file="/public/pages/help/registrations.mako"/>
-                <%include file="/public/pages/help/wiki.mako"/>
+            <div  id="structure" class="row p-t-xl">
+                <h2 class="text-center">Structuring Your Work</h2>
+                <div class="col-md-12">
+                    <%include file="/public/pages/help/organizer.mako"/>
+                    <%include file="/public/pages/help/dashboards.mako"/>
+                    <%include file="/public/pages/help/user_profile.mako"/>
+                    <%include file="/public/pages/help/projects.mako"/>
+                    <%include file="/public/pages/help/components.mako"/>
+                    <%include file="/public/pages/help/files.mako"/>
+                    <%include file="/public/pages/help/links.mako"/>
+                    <%include file="/public/pages/help/forks.mako"/>
+                    <%include file="/public/pages/help/registrations.mako"/>
+                    <%include file="/public/pages/help/wiki.mako"/>
+                </div>
             </div>
-        </div>
 
-        <div id="sharing" class="row p-t-xl">
-            <h2 class="text-center">Sharing Your Work</h2>
-            <div class="col-md-12">
-                <%include file="/public/pages/help/contributors.mako"/>
-                <%include file="/public/pages/help/privacy.mako"/>
-                <%include file="/public/pages/help/citations.mako"/>
-                <%include file="/public/pages/help/view_only.mako"/>
-                <%include file="/public/pages/help/comments.mako"/>
+            <div id="sharing" class="row p-t-xl">
+                <h2 class="text-center">Sharing Your Work</h2>
+                <div class="col-md-12">
+                    <%include file="/public/pages/help/contributors.mako"/>
+                    <%include file="/public/pages/help/privacy.mako"/>
+                    <%include file="/public/pages/help/citations.mako"/>
+                    <%include file="/public/pages/help/view_only.mako"/>
+                    <%include file="/public/pages/help/comments.mako"/>
+                </div>
             </div>
-        </div>
 
-        <div id="addons" class="row p-t-xl">
-            <h2 class="text-center m-b-lg">OSF Add-ons</h2>
-            <div class="col-md-12">
-                <%include file="/public/pages/help/addons.mako"/>
+            <div id="addons" class="row p-t-xl">
+                <h2 class="text-center m-b-lg">OSF Add-ons</h2>
+                <div class="col-md-12">
+                    <%include file="/public/pages/help/addons.mako"/>
+                </div>
             </div>
-        </div>
 
-        <div id="metrics" class="row p-t-xl">
-            <h2 class="text-center">Metrics</h2>
-            <div class="col-md-12">
-                <%include file="/public/pages/help/statistics.mako"/>
-                <%include file="/public/pages/help/notifications.mako"/>
+            <div id="metrics" class="row p-t-xl">
+                <h2 class="text-center">Metrics</h2>
+                <div class="col-md-12">
+                    <%include file="/public/pages/help/statistics.mako"/>
+                    <%include file="/public/pages/help/notifications.mako"/>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
 <script type="text/javascript" src="/static/vendor/youtube/youtube-loader.js"></script>
 </%def>

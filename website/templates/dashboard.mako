@@ -95,7 +95,7 @@
 <script>
     window.contextVars = $.extend(true, {}, window.contextVars, {
         currentUser: {
-            'id': '${user_id}'
+            id: ${ user_id | sjson, n }
         }
     });
 </script>

@@ -133,10 +133,18 @@ def make_url_map(app):
 
     # Set default views to 404, using URL-appropriate renderers
     process_rules(app, [
-        Rule('/<path:_>', ['get', 'post'], HTTPError(http.NOT_FOUND),
-             OsfWebRenderer('', render_mako_string)),
-        Rule('/api/v1/<path:_>', ['get', 'post'],
-             HTTPError(http.NOT_FOUND), json_renderer),
+        Rule(
+            '/<path:_>',
+            ['get', 'post'],
+            HTTPError(http.NOT_FOUND),
+            notemplate
+        ),
+        Rule(
+            '/api/v1/<path:_>',
+            ['get', 'post'],
+            HTTPError(http.NOT_FOUND),
+            json_renderer
+        ),
     ])
 
     ### GUID ###
@@ -174,29 +182,43 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/dashboard/', 'get', website_views.dashboard, OsfWebRenderer('dashboard.mako')),
-        Rule('/reproducibility/', 'get',
-             website_views.reproducibility, OsfWebRenderer('', render_mako_string)),
+        Rule(
+            '/dashboard/',
+            'get',
+            website_views.dashboard,
+            OsfWebRenderer('dashboard.mako', trust=False)
+        ),
+        Rule(
+            '/reproducibility/',  # Redirect to RPP
+            'get',
+            website_views.reproducibility,
+            notemplate
+        ),
 
-        Rule('/about/', 'get', website_views.redirect_about, json_renderer,),
-        Rule('/howosfworks/', 'get', website_views.redirect_howosfworks, json_renderer,),
-        Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako')),
-        Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako')),
-        Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako')),
-        Rule(['/messages/', '/help/'], 'get', {}, OsfWebRenderer('public/comingsoon.mako')),
+        Rule('/about/', 'get', website_views.redirect_about, notemplate),
+        Rule('/howosfworks/', 'get', website_views.redirect_howosfworks, notemplate),
+        Rule('/faq/', 'get', {}, OsfWebRenderer('public/pages/faq.mako', trust=False)),
+        Rule('/getting-started/', 'get', {}, OsfWebRenderer('public/pages/getting_started.mako', trust=False)),
+        Rule('/explore/', 'get', {}, OsfWebRenderer('public/explore.mako', trust=False)),
+        Rule(
+            ['/messages/', '/help/'],
+            'get',
+            {},
+            OsfWebRenderer('public/comingsoon.mako', trust=False)
+        ),
 
         Rule(
             '/view/<meeting>/',
             'get',
             conference_views.conference_results,
-            OsfWebRenderer('public/pages/meeting.mako'),
+            OsfWebRenderer('public/pages/meeting.mako', trust=False),
         ),
 
         Rule(
             '/view/<meeting>/plain/',
             'get',
             conference_views.conference_results,
-            OsfWebRenderer('public/pages/meeting_plain.mako'),
+            OsfWebRenderer('public/pages/meeting_plain.mako', trust=False),
             endpoint_suffix='__plain',
         ),
 
@@ -211,18 +233,17 @@ def make_url_map(app):
             '/meetings/',
             'get',
             conference_views.conference_view,
-            OsfWebRenderer('public/pages/meeting_landing.mako'),
+            OsfWebRenderer('public/pages/meeting_landing.mako', trust=False),
         ),
 
         Rule(
             '/presentations/',
             'get',
             conference_views.redirect_to_meetings,
-            json_renderer,
+            notemplate,
         ),
 
-        Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako')),
-
+        Rule('/news/', 'get', {}, OsfWebRenderer('public/pages/news.mako', trust=False)),
     ])
 
     # Site-wide API routes

@@ -45,7 +45,7 @@
 
     <script type="text/javascript">
         window.contextVars = window.contextVars || {};
-        window.contextVars.meetingData = ${data};
+        window.contextVars.meetingData = ${ data | sjson, n };
 
         $('#addLink').on('click', function(e) {
             e.preventDefault();
