@@ -2,7 +2,6 @@ import celery
 
 from framework.tasks import handlers
 
-from website.archiver import tasks
 from website.archiver import utils as archiver_utils
 from website.archiver import (
     ARCHIVER_UNCAUGHT_ERROR,
@@ -20,6 +19,8 @@ def after_register(src, dst, user):
     :param dst: registration Node
     :param user: registration initiator
     """
+    # Prevent circular import with app.py
+    from website.archiver import tasks
     archiver_utils.before_archive(dst, user)
     if dst.root != dst:  # if not top-level registration
         return
