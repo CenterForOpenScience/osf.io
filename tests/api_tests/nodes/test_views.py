@@ -3,7 +3,9 @@ import mock
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
-from website.models import Node
+import datetime
+
+from website.models import Node, NodeLog
 from website.views import find_dashboard
 from framework.auth.core import Auth
 from website.util.sanitize import strip_html

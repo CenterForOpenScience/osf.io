@@ -6,7 +6,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError, NotFoun
 
 from framework.auth.core import Auth
 from website.exceptions import NodeStateError
-from website.models import Node, Pointer
+from website.models import Node, Pointer, NodeLog
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
