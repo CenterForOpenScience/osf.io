@@ -61,6 +61,7 @@ def unique_on(*groups):
         return cls
     return wrapper
 
+
 def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None):
     """Load an instance of Model by primary key or modularodm.Q query. Raise an appropriate
     HTTPError if no record is found or if the query fails to find a unique record
@@ -70,7 +71,7 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
       - a <basestring> representation of the record's primary key, e.g. 'abcdef'
       - a <QueryBase> subclass query to uniquely select a record, e.g.
         Q('title', 'eq', 'Entitled') & Q('version', 'eq', 1)
-    :param bool allow_deleted: allow deleleted records?
+    :param boolean allow_deleted: allow deleted records
     :param basestring display_name:
     :return: Model instance
     """
@@ -98,7 +99,8 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
         raise HTTPError(http.GONE, data=dict(
             message_long="This {name} record has been deleted".format(name=display_name)
         ))
-    return instance
+    else:
+        return instance
 
 def autoload(Model, extract_key, inject_key, func):
     """Decorator to autoload a StoredObject instance by primary key and inject into kwargs. Raises

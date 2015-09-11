@@ -8,22 +8,20 @@
         <div class="col-md-9">
           Edit draft registration
         </div>
-        <!-- TODO: uncomment to allow submit for review
         <div class="col-md-3" data-bind="with: draft">
           <span class="btn-group" data-bind="if: requiresApproval">
             <a data-bind="click: $root.submitForReview,
                           css: {
-                            'disable': isPendingReview
+                          'disable': isPendingReview
                           },
                           tooltip: {
-                            position: 'top',
-                            title: isPendingReview ? 'Request for review already sent' : 'Submit for review'
+                          position: 'top',
+                          title: isPendingReview ? 'Request for review already sent' : 'Submit for review'
                           }" class="btn btn-default" type="button">
-              <i class="fa fa-save"></i> Submit for review
+              <i class="fa fa"></i> Submit for review
             </a>
-          </span>   
+          </span>
         </div>
-        -->
       </div>
     </h3>
     <hr />
@@ -57,7 +55,7 @@
                 </ul>
               </div>
               <div class="span8 col-md-9 columns eight large-8">
-                <a id="editorPreviousQuestion" 
+                <a id="editorPreviousQuestion"
                    data-bind="click: previousQuestion,
                               onKeyPress: {
                                 keyCode: 37,
@@ -65,7 +63,7 @@
                               }" style="padding-left: 5px;">
                   <i style="display:inline-block; padding-left: 5px; padding-right: 5px;" class="fa fa-arrow-left"></i>Previous
                 </a>
-                <a id="editorNextQuestion" 
+                <a id="editorNextQuestion"
                    data-bind="click: nextQuestion,
                               onKeyPress: {
                                 keyCode: 39,
@@ -84,8 +82,13 @@
                 </p>
                 <button data-bind="click: save" type="button" class="btn btn-primary">Save
                 </button>
-                <a data-bind="click: $root.check" type="button" class="pull-right btn btn-success">Register
-                </a>
+                <span data-bind="tooltip: {
+                                   title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
+                                 }">                      
+                  <a data-bind="css: {'disabled': !canRegister()},
+                                click: $root.check" type="button" class="pull-right btn btn-success">Register
+                  </a>
+                </span>
               </div>
             </div>
           </div>

@@ -19,7 +19,6 @@ from modularodm.exceptions import ValidationError, ValidationValueError, Validat
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
-from framework.auth import cas
 from framework.sessions.model import Session
 from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
@@ -1730,7 +1729,25 @@ class TestNode(OsfTestCase):
             save=True
         )
 
-        assert_equal(len(self.node.visible_contributor_ids),1)
+    def test_create_draft_registration(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = proj.create_draft_registration(user, schema, data)
+        assert_equal(user, draft.initiator)
+        assert_equal(schema, draft.registration_schema)
+        assert_equal(data, draft.registration_metadata)
+
+    def test_create_draft_registration_adds_to_draft_registrations_list(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = proj.create_draft_registration(user, schema, data)
+        assert_equal(proj.draft_registrations[0], draft)
 
     def test_contributor_set_visibility_validation(self):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
@@ -3957,6 +3974,7 @@ class TestDraftRegistration(OsfTestCase):
         self.draft.registration_metadata = {
             'foo': {
                 'value': 'bar',
+
             },
             'a': {
                 'value': 1,
@@ -3981,7 +3999,74 @@ class TestDraftRegistration(OsfTestCase):
         })
         for key in ['foo', 'c']:
             assert_in(key, changes)
-        
+
+    def test_update_metadata_handles_conflicting_comments(self):
+        self.draft.registration_metadata = {
+            'item01': {
+                'value': 'foo',
+                'comments': [{
+                    'author': 'Bar',
+                    'created': '1970-01-01T00:00:00.000Z',
+                    'lastModified': '2015-08-05T14:58:30.574Z',
+                    'value': 'qux'
+                }]
+            }
+        }
+
+        # outdated comment to be ignored
+        changes1 = self.draft.update_metadata({
+            'item01': {
+                'value': 'foo',
+                'comments': [{
+                    'author': 'Bar',
+                    'created': '1970-01-01T00:00:00.000Z',
+                    'lastModified': '2015-07-05T14:58:30.574Z',
+                    'value': 'foobarbaz'
+                }]
+            }
+        })
+        assert_equal(changes1, [])
+        comment_one = self.draft.registration_metadata['item01']['comments'][0]
+        assert_equal(comment_one.get('value'), 'qux')
+        assert_equal(comment_one.get('author'), 'Bar')
+        assert_equal(comment_one.get('created'), '1970-01-01T00:00:00.000Z')
+        assert_equal(comment_one.get('lastModified'), '2015-08-05T14:58:30.574Z')
+
+        changes2 = self.draft.update_metadata({
+
+        })
+
+        # Totally new comment to be added
+        self.draft.update_metadata({
+            'item01': {
+                'value': 'foo',
+                'comments': [{
+                    'author': 'Bar',
+                    'created': '1970-01-01T00:00:00.000Z',
+                    'lastModified': '2015-08-05T14:58:30.574Z',
+                    'value': 'qux'},
+                    {
+                    'author': 'Baz',
+                    'created': '1971-01-01T00:00:00.000Z',
+                    'lastModified': '2014-07-09T14:58:30.574Z',
+                    'value': 'foobarbaz'
+                }]
+            }
+        }, save=True)
+        assert_equal(len(self.draft.registration_metadata['item01'].get('comments')), 2)
+        comment_one = self.draft.registration_metadata['item01']['comments'][0]
+        comment_two = self.draft.registration_metadata['item01']['comments'][1]
+
+        assert_equal(comment_one.get('value'), 'qux')
+        assert_equal(comment_one.get('author'), 'Bar')
+        assert_equal(comment_one.get('created'), '1970-01-01T00:00:00.000Z')
+        assert_equal(comment_one.get('lastModified'), '2015-08-05T14:58:30.574Z')
+
+        assert_equal(comment_two.get('value'), 'foobarbaz')
+        assert_equal(comment_two.get('author'), 'Baz')
+        assert_equal(comment_two.get('created'), '1971-01-01T00:00:00.000Z')
+        assert_equal(comment_two.get('lastModified'), '2014-07-09T14:58:30.574Z')
+
 
 if __name__ == '__main__':
     unittest.main()

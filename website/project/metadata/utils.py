@@ -4,7 +4,10 @@ def serialize_meta_schema(meta_schema):
     return {
         'schema_name': meta_schema.name,
         'schema_version': meta_schema.schema_version,
-        'schema': meta_schema.schema
+        'schema': meta_schema.schema,
+        'fulfills': meta_schema.fulfills,
+        'requires_approval': meta_schema.requires_approval,
+        'messages': meta_schema.messages
     }
 
 def serialize_draft_registration(draft, auth=None):
@@ -21,13 +24,15 @@ def serialize_draft_registration(draft, auth=None):
         'registration_schema': serialize_meta_schema(draft.registration_schema),
         'initiated': str(draft.datetime_initiated),
         'updated': str(draft.datetime_updated),
-        'config': {},  # draft.config or {},
-        'flags': {},  # draft.flags,
+        'flags': draft.flags,
         'urls': {
             'edit': node.web_url_for('edit_draft_registration_page', draft_id=draft._id),
             'before_register': node.api_url_for('project_before_register'),
             'register': node.api_url_for('register_draft_registration', draft_id=draft._id),
             'register_page': node.web_url_for('draft_before_register_page', draft_id=draft._id),
             'registrations': node.web_url_for('node_registrations')
-        }
+        },
+        'requires_approval': draft.requires_approval,
+        'is_pending_approval': draft.is_pending_review,
+        'is_approved': draft.is_approved,
     }

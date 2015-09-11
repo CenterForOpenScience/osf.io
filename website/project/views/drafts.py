@@ -20,29 +20,30 @@ from website.project.decorators import (
 )
 from website import language
 from website.project import utils as project_utils
-from website.project.model import MetaSchema, DraftRegistration
+from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
 
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
 
-# TODO: uncomment to allow submitting drafts for review
-# @must_have_permission(ADMIN)
-# @must_be_valid_project
-# def submit_draft_for_review(auth, node, draft_pk, *args, **kwargs):
-#     user = auth.user
-#
-#     draft = get_draft_or_fail(draft_pk)
-#     draft.is_pending_review = True
-#     draft.save()
-#
-#     REVIEW_EMAIL = Mail(tpl_prefix='prereg_review', subject='New Prereg Prize registration ready for review')
-#     send_mail(draft.initiator.email, REVIEW_EMAIL, user=user, src=node)
-#
-#     ret = project_utils.serialize_node(node, auth)
-#     ret['success'] = True
-#     return ret
+@autoload_draft
+@must_have_permission(ADMIN)
+@must_be_valid_project
+def submit_draft_for_review(auth, node, draft, *args, **kwargs):
+    # TODO(samchrisinger) check that old approval is None or complete
+    approval = DraftRegistrationApproval(
+        initiated_by=auth.user,
+        end_date=None,
+    )
+    approval.save()
+    draft.approval = approval
+    draft.approval.ask(node.active_contributors())
+    draft.save()
+
+    ret = project_utils.serialize_node(node, auth)
+    ret['success'] = True
+    return ret
 
 @autoload_draft
 @must_have_permission(ADMIN)
@@ -63,9 +64,16 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     register = draft.register(auth)
 
     try:
+        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
+    except KeyError:
+        raise HTTPError(http.BAD_REQUEST, data=dict(
+            message_short="No embargo end date provided",
+            message_long="Creating an embargo requires supplying a valid end date"
+        ))
+
+    try:
         if data.get('registrationChoice', 'immediate') == 'embargo':
             # Initiate embargo
-            embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
             register.embargo_registration(auth.user, embargo_end_date)
         else:
             register.require_approval(auth.user)
@@ -76,6 +84,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     push_status_message(language.AFTER_REGISTER_ARCHIVING,
                         kind='info',
                         trust=False)
+
     return {
         'status': 'initiated',
         'urls': {

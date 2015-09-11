@@ -1,6 +1,5 @@
 """Tests related to embargoes of registrations"""
 import datetime
-import httplib as http
 import json
 
 import mock
@@ -16,7 +15,6 @@ from modularodm.exceptions import ValidationValueError
 from website.exceptions import (
     InvalidSanctionRejectionToken, InvalidSanctionApprovalToken, NodeStateError,
 )
-from website import tokens
 from website.models import Embargo, Node
 from website.project.model import ensure_schemas
 
@@ -579,8 +577,9 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         )
         self.registration.embargo.reload()
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
-        assert_false(self.registration.is_pending_embargo)
-        assert_true(mock_redirect.called_with(self.registration.web_url_for('view_project')))
+        assert_false(self.registration.pending_embargo)
+        assert_equal(res.status_code, 302)
+        assert_true(self.registration._id in res.location)
 
 class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def setUp(self):
@@ -706,37 +705,3 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         self.project.reload()
         # Logs: Created, registered, embargo initiated
         assert_equal(len(self.project.logs), initial_project_logs + 1)
-
-    def test_non_contributor_GET_approval_returns_HTTPError(self):
-        non_contributor = AuthUserFactory()
-        self.registration.embargo_registration(
-            self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
-        )
-        self.registration.save()
-        assert_true(self.registration.is_pending_embargo)
-
-        approval_token = self.registration.embargo.approval_state[self.user._id]['approval_token']
-        approval_url = self.registration.web_url_for('view_project', token=approval_token)
-
-        res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
-        assert_equal(http.FORBIDDEN, res.status_code)
-        assert_true(self.registration.is_pending_embargo)
-        assert_false(self.registration.embargo_end_date)
-
-    def test_non_contributor_GET_disapproval_returns_HTTPError(self):
-        non_contributor = AuthUserFactory()
-        self.registration.embargo_registration(
-            self.user,
-            datetime.datetime.utcnow() + datetime.timedelta(days=10)
-        )
-        self.registration.save()
-        assert_true(self.registration.is_pending_embargo)
-
-        rejection_token = self.registration.embargo.approval_state[self.user._id]['rejection_token']
-        approval_url = self.registration.web_url_for('view_project', token=rejection_token)
-
-        res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
-        assert_equal(http.FORBIDDEN, res.status_code)
-        assert_true(self.registration.is_pending_embargo)
-        assert_false(self.registration.embargo_end_date)

@@ -60,7 +60,7 @@
       <div class="col-md-12">
         <div class="form-group">
           <label class="control-label" data-bind="text: title"></label>
-          <p class="help-block" data-bind="text: description"></p>          
+          <p class="help-block" data-bind="text: description"></p>
           <span data-bind="if: help" class="example-block">
             <a data-bind="click: toggleExample">Show Example</a>
             <p data-bind="visible: showExample, text: help"></p>
@@ -69,7 +69,7 @@
           <br />
           <div class="row">
             <div class="col-md-12">
-              <div class="form-group" data-bind="css: {has-success: $data.isComplete}">
+              <div class="form-group" data-bind="css: {has-success: $data.value.isValid}">
                 <span data-bind="with: $root.context($data)">
                   <span data-bind="if: $root.showValidation">
                     <p class="text-error" data-bind="validationMessage: $data.value"></p>
@@ -92,25 +92,23 @@
 </script>
 <script type="text/html" id="editor">
   <span data-bind="template: {data: $data, name: 'editorBase'}"></span>
-  <!-- TODO: uncomment to enable comments
   <div class="row">
     <div class="col-md-12">
       <div class="well" data-bind="template: {data: $data, name: 'commentable'}"></div>
     </div>
   </div>
-  -->
 </script>
 
 <!-- Commnetable -->
 <script type="text/html" id="commentable">
     <h4> Comments </h4>
     <ul class="list-group" id="commentList" data-bind="foreach: {data: comments, as: 'comment'}">
-        <li class="list-group-item">          
+        <li class="list-group-item">
           <div class="row" data-bind="if: comment.isDeleted">
             <div class="col-md-12">
               <strong><span data-bind="text: comment.getAuthor"></span></strong> deleted this comment on <em data-bind="text: comment.lastModified"></em>
             </div>
-          </div>          
+          </div>
           <div class="row" data-bind="ifnot: comment.isDeleted">
             <div class="col-md-12">
               <div class="row">
@@ -140,16 +138,16 @@
         </li>
     </ul>
     <div class="input-group">
-      <input class="form-control registration-editor-comment" type="text" 
+      <input class="form-control registration-editor-comment" type="text"
              data-bind="value: nextComment,
                         valueUpdate: 'keyup',
                         event: {'keyup': $root.save},
                         onKeyPress: {
                           keyCode: 13,
-                          listener: addComment.bind($data, root.save)
+                          listener: addComment.bind($data, $root.save)
                         }" />
       <span class="input-group-btn">
-        <button class="btn btn primary" 
+        <button class="btn btn primary"
                 data-bind="click: addComment.bind($data, $root.save),
                            enable: allowAddNext">Add</button>
       </span>
