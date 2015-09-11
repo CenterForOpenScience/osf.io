@@ -30,12 +30,11 @@ from website.oauth.models import (
 )
 from website.project.model import (
     Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
-    Retraction, Embargo, Sanction, RegistrationApproval, DraftRegistration, MetaSchema
+    Retraction, Embargo, Sanction, RegistrationApproval, DraftRegistration
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
-from website.archiver import utils as archiver_utils
 from website.archiver.model import ArchiveTarget, ArchiveJob
-from website.project import utils as project_utils
+from website.archiver import ARCHIVER_SUCCESS
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -187,7 +186,8 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, archive=False, embargo=None, approval=None, *args, **kwargs):
+                template=None, data=None, archive=False, embargo=None,
+                registration_approval=None, retraction=None, *args, **kwargs):
         save_kwargs(**kwargs)
 
         # Original project to be registered

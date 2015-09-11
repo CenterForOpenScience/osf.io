@@ -3060,23 +3060,28 @@ class Sanction(StoredObject):
         return True
 
     def add_authorizer(self, user, approved=False, save=False):
-        """Add a user as an authorizer and generate approval/disapproval tokens
-
-        :param User user:
-        :param Boolean approved: optional approval state on instantiation
-        :param Boolean save: optionally save the Sanction
-        :return Boolean: True if the user is added else False
-        """
-        if self._validate_authorizer(user):
-            if user._id not in self.approval_state:
-                self.approval_state[user._id] = {
-                    'has_approved': approved,
-                    'approval_token': security.random_string(30),
-                    'rejection_token': security.random_string(30),
-                }
-                if save:
-                    self.save()
-                return True
+        valid = self._validate_authorizer(user)
+        if valid and user._id not in self.approval_state:
+            self.approval_state[user._id] = {
+                'has_approved': approved,
+                'approval_token': tokens.encode(
+                    {
+                        'user_id': user._id,
+                        'sanction_id': self._id,
+                        'action': 'approve_{}'.format(self.SHORT_NAME)
+                    }
+                ),
+                'rejection_token': tokens.encode(
+                    {
+                        'user_id': user._id,
+                        'sanction_id': self._id,
+                        'action': 'reject_{}'.format(self.SHORT_NAME)
+                    }
+                ),
+            }
+            if save:
+                self.save()
+            return True
         return False
 
     def remove_authorizer(self, user):
