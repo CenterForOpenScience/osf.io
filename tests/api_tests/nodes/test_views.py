@@ -785,8 +785,8 @@ class TestNodeBulkDelete(ApiTestCase):
         super(TestNodeBulkDelete, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.project_one = ProjectFactory(title="Project One", is_public=True)
-        self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True)
+        self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user_one)
+        self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True, creator=self.user_one)
         self.project_three = ProjectFactory(title="Three", is_public=True)
         self.private_project_user_one = ProjectFactory(title="Private Project User One",
                                                        is_public=False,
@@ -798,13 +798,78 @@ class TestNodeBulkDelete(ApiTestCase):
         self.dashboard = DashboardFactory()
 
         self.url = "/{}nodes/".format(API_BASE)
+        self.project_one_url = '/{}nodes/{}/'.format(API_BASE, self.project_one._id)
+        self.project_two_url = '/{}nodes/{}/'.format(API_BASE, self.project_two._id)
 
-    def test_get_one_project_with_exact_filter_logged_in(self):
-        url = "/{}nodes/?filter[title]=Project%20One".format(API_BASE)
+        self.private_project_one_url = '/{}nodes/{}/'.format(API_BASE, self.private_project_user_one._id)
 
-        res = self.app.delete(url, auth=self.user_one.auth, expect_errors=True)
+    def test_bulk_delete_public_projects_logged_out(self):
+        url = "/{}nodes/?filter[title]=Project".format(API_BASE)
+        res = self.app.delete_json_api(url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_bulk_delete_public_projects_logged_in(self):
+        url = "/{}nodes/?filter[title]=Project&?filter[public]=True".format(API_BASE)
+        res = self.app.delete_json_api(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 202)
+
+        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Project&?filter[public]=True'
+        res = self.app.delete_json_api(delete_url, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 204)
-        assert 'detail' in res.json['errors'][0]
+
+        res = self.app.get(self.project_one_url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 410)
+        res = self.app.get(self.project_two_url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 410)
+
+    def test_bulk_delete_private_projects_logged_out(self):
+        url = '/{}nodes/?filter[title]=Private'.format(API_BASE)
+        res = self.app.delete_json_api(url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
+
+    def test_bulk_delete_private_projects_logged_in_contributor(self):
+        url = "/{}nodes/?filter[title]=Private%20Project%20User%20One".format(API_BASE)
+        res = self.app.delete_json_api(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 202)
+
+        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Private%20Project%20User%20One'
+        res = self.app.delete_json_api(delete_url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
+
+        res = self.app.get(self.private_project_one_url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 410)
+
+    def test_bulk_delete_private_projects_logged_in_non_contributor(self):
+        # query returns empty list because user is not a contributor
+        url = "/{}nodes/?filter[title]=Private%20Project%20User%20One".format(API_BASE)
+        res = self.app.delete_json_api(url, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+        self.private_project_user_one.add_contributor(self.user_two, permissions=['write'])
+        self.private_project_user_one.save()
+        url = "/{}nodes/?filter[title]=Private%20Project%20User%20One".format(API_BASE)
+        res = self.app.delete_json_api(url, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 202)
+
+        del self.private_project_user_one.permissions[self.user_two._id]
+        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Private%20Project%20User%20One'
+        res = self.app.delete_json_api(delete_url, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
+
+
+    def test_bulk_delete_private_projects_logged_in_read_only_contributor(self):
+        pass
+    def test_bulk_delete_projects_not_found(self):
+        pass
+
+    def test_bulk_delete_all_or_nothing(self):
+        pass
+
+    def test_bulk_delete_incorrect_filter(self):
+        pass
+
 
 
 class TestNodeDetail(ApiTestCase):
@@ -1147,7 +1212,6 @@ class TestNodeDelete(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_equal(self.public_project.is_deleted, False)
         assert 'detail' in res.json['errors'][0]
-
 
     def test_deletes_public_node_succeeds_as_owner(self):
         res = self.app.delete_json_api(self.public_url, auth=self.user.auth, expect_errors=True)
