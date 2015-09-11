@@ -22,7 +22,7 @@ class AdminOrPublic(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, (Node, User)), 'obj must be a Node or User, got {}'.format(obj)
         auth = get_user_auth(request)
-        node = Node.load(request.parser_context['kwargs']['node_id'])
+        node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         else:
@@ -35,8 +35,9 @@ class ContributorDetailPermissions(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, (Node, User)), 'obj must be User or Node, got {}'.format(obj)
         auth = get_user_auth(request)
-        node = Node.load(request.parser_context['kwargs']['node_id'])
-        user = User.load(request.parser_context['kwargs']['user_id'])
+        context = request.parser_context['kwargs']
+        node = Node.load(context[view.node_lookup_url_kwarg])
+        user = User.load(context['user_id'])
         if request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         elif request.method == 'DELETE':
