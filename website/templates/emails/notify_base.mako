@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <title>COS Email Notification Template</title>
     <meta name="description" content="Center for Open Science Notifications">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>

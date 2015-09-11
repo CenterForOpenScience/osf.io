@@ -21,10 +21,14 @@ import website.models
 from website.routes import make_url_map
 from website.addons.base import init_addon
 from website.project.model import ensure_schemas, Node
+# This import is necessary to set up the archiver signal listeners
+from website.archiver import listeners  # noqa
+
 
 def build_js_config_files(settings):
     with open(os.path.join(settings.STATIC_FOLDER, 'built', 'nodeCategories.json'), 'wb') as fp:
         json.dump(Node.CATEGORY_MAP, fp)
+
 
 def init_addons(settings, routes=True):
     """Initialize each addon in settings.ADDONS_REQUESTED.
@@ -85,6 +89,7 @@ def build_log_templates(settings):
         build_fp.write('\n')
         build_addon_log_templates(build_fp, settings)
 
+
 def do_set_backends(settings):
     logger.debug('Setting storage backends')
     set_up_storage(
@@ -93,8 +98,9 @@ def do_set_backends(settings):
         addons=settings.ADDONS_AVAILABLE,
     )
 
+
 def init_app(settings_module='website.settings', set_backends=True, routes=True,
-        attach_request_handlers=True):
+             attach_request_handlers=True):
     """Initializes the OSF. A sort of pseudo-app factory that allows you to
     bind settings, set up routing, and set storage backends, but only acts on
     a single app instance (rather than creating multiple instances).
@@ -144,5 +150,3 @@ def apply_middlewares(flask_app, settings):
         flask_app.wsgi_app = ProxyFix(flask_app.wsgi_app)
 
     return flask_app
-
-from website.archiver import listeners  # noqa
