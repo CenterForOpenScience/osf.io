@@ -1,8 +1,6 @@
 from rest_framework import serializers as ser
 from api.base.serializers import (
     JSONAPISerializer,
-    Link,
-    LinksField,
     JSONAPIHyperlinkedIdentityField
 )
 
