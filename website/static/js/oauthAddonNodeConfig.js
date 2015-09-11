@@ -41,7 +41,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         // Whether the contributor emails have been loaded from the server
         self.loadedEmails = ko.observable(false);
         // externalAccounts
-        self.accounts = ko.observable([]);
+        self.accounts = ko.observableArray();
         // List of contributor emails as a comma-separated values
         self.emailList = ko.pureComputed(function() {
             return self.emails().join([', ']);
@@ -81,7 +81,8 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                             self.urls().importAuth, {
                                 external_account_id: self.accounts()[0].id
                             }
-                        ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
+                        ).done(self.onImportSuccess.bind(self)
+                        ).fail(self.onImportError.bind(self));
                     });
                 };
                 window.open(self.urls().auth);
@@ -200,7 +201,8 @@ OauthAddonFolderPickerViewModel.prototype.connectExistingAccount = function(acco
         self.urls().importAuth, {
             external_account_id: account_id
         }
-    ).then(self.onImportSuccess.bind(self), self.onImportError.bind(self));
+    ).done(self.onImportSuccess.bind(self)
+    ).fail(self.onImportError.bind(self));
 };
 
 OauthAddonFolderPickerViewModel.prototype.updateAccounts = function(callback) {
