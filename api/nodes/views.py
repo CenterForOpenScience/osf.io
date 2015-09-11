@@ -4,8 +4,9 @@ from modularodm import Q
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework_bulk.drf3.mixins import BulkDestroyModelMixin
 from rest_framework_bulk.generics import ListBulkCreateUpdateDestroyAPIView, BulkDestroyAPIView
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, NotAuthenticated
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
@@ -125,6 +126,16 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
         token = token_creator(request.query_params, user._id)
         url = absolute_reverse('nodes:node-bulk-delete', kwargs={'confirmation_token': token})
         delete_warning = BEFORE_BULK_DELETE
+        qs = self.get_queryset()
+        filtered = self.filter_queryset(qs)
+
+        node_list = []
+        for node in filtered:
+            node_list.append(node)
+            if not node.can_edit(Auth(user)):
+                raise PermissionDenied()
+        if not node_list:
+            raise NotFound()
 
         return Response(
             {
@@ -138,7 +149,7 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
             }, status=status.HTTP_202_ACCEPTED)
 
 
-class NodeBulkDelete(BulkDestroyAPIView, ODMFilterMixin):
+class NodeBulkDelete(BulkDestroyAPIView, ODMFilterMixin, BulkDestroyModelMixin):
     """Bulk delete of nodes. Use caution! """
 
     permission_classes = (
@@ -174,7 +185,15 @@ class NodeBulkDelete(BulkDestroyAPIView, ODMFilterMixin):
         correct_token = token_creator(request.query_params, user._id)
 
         if user.is_anonymous():
-            raise PermissionDenied
+            raise NotAuthenticated
+
+        node_list = []
+        for node in filtered:
+            node_list.append(node)
+            if not node.can_edit(Auth(user)):
+                raise PermissionDenied()
+        if not node_list:
+            raise NotFound()
 
         given_token = kwargs['confirmation_token']
         if correct_token != given_token:
