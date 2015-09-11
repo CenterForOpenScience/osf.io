@@ -171,7 +171,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
-        contributor = get_object_or_error(User, validated_data['_id'])
+        contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
         # Node object checks for contributor existence but can still change permissions anyway
         if contributor in node.contributors:
             raise exceptions.ValidationError('{} is already a contributor'.format(contributor.username))
