@@ -1,7 +1,7 @@
-from django.contrib.auth.models import AnonymousUser
-from rest_framework.exceptions import PermissionDenied
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
+from django.contrib.auth.models import AnonymousUser
+from rest_framework.exceptions import NotAuthenticated
 
 from modularodm import Q
 
@@ -20,18 +20,15 @@ class UserMixin(object):
     """
 
     serializer_class = UserSerializer
-    node_lookup_url_kwarg = 'user_id'
+    user_lookup_url_kwarg = 'user_id'
 
     def get_user(self, check_permissions=True):
-        key = self.kwargs[self.node_lookup_url_kwarg]
+        key = self.kwargs[self.user_lookup_url_kwarg]
         current_user = self.request.user
 
         if key == 'me':
-            # TODO: change exception from PermissionDenied to NotAuthenticated/AuthenticationFailed
-            # TODO: for unauthorized users
-
             if isinstance(current_user, AnonymousUser):
-                raise PermissionDenied
+                raise NotAuthenticated
             else:
                 return self.request.user
 

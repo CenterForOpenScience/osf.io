@@ -12,6 +12,7 @@ from datetime import timedelta
 
 os_env = os.environ
 
+
 def parent_dir(path):
     '''Return the parent of a directory.'''
     return os.path.abspath(os.path.join(path, os.pardir))
@@ -182,23 +183,6 @@ WIKI_WHITELIST = {
         'list-style',
     ]
 }
-
-##### Celery #####
-## Default RabbitMQ broker
-BROKER_URL = 'amqp://'
-
-# Default RabbitMQ backend
-CELERY_RESULT_BACKEND = 'amqp://'
-
-# Modules to import when celery launches
-CELERY_IMPORTS = (
-    'framework.tasks',
-    'framework.tasks.signals',
-    'framework.email.tasks',
-    'framework.analytics.tasks',
-    'website.mailchimp_utils',
-    'scripts.send_digest'
-)
 
 # Add-ons
 # Load addons from addons.json
