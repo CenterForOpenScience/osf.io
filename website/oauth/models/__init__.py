@@ -22,6 +22,7 @@ from framework.auth import cas
 from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo import ObjectId, StoredObject
 from framework.mongo.utils import unique_on
+from framework.mongo.validators import string_required
 from framework.sessions import session
 from website import settings
 from website.oauth.utils import PROVIDER_LOOKUP
@@ -383,7 +384,7 @@ class ApiOAuth2Application(StoredObject):
                                 required=True)
 
     # User-specified application descriptors
-    name = fields.StringField(index=True, required=True, validate=MaxLengthValidator(200))
+    name = fields.StringField(index=True, required=True, validate=[string_required, MaxLengthValidator(200)])
     description = fields.StringField(required=False, validate=MaxLengthValidator(1000))
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,

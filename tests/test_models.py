@@ -615,13 +615,22 @@ class TestUser(OsfTestCase):
             urlparse.urljoin(settings.DOMAIN, '/{0}/'.format(self.user._primary_key))
         )
 
-    def test_gravatar_url(self):
+    def test_profile_image_url(self):
         expected = filters.gravatar(
             self.user,
             use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=settings.PROFILE_IMAGE_MEDIUM
         )
-        assert_equal(self.user.gravatar_url, expected)
+        assert_equal(self.user.profile_image_url(settings.PROFILE_IMAGE_MEDIUM), expected)
+
+    def test_profile_image_url_has_no_default_size(self):
+        expected = filters.gravatar(
+            self.user,
+            use_ssl=True,
+        )
+        assert_equal(self.user.profile_image_url(), expected)
+        size = urlparse.parse_qs(urlparse.urlparse(self.user.profile_image_url()).query).get('size')
+        assert_equal(size, None)
 
     def test_activity_points(self):
         assert_equal(self.user.get_activity_points(db=self.db),
@@ -649,7 +658,7 @@ class TestUser(OsfTestCase):
         gravatar = filters.gravatar(
             user,
             use_ssl=True,
-            size=settings.GRAVATAR_SIZE_PROFILE
+            size=settings.PROFILE_IMAGE_LARGE
         )
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
@@ -1032,6 +1041,11 @@ class TestApiOAuth2Application(OsfTestCase):
     def test_invalid_callback_url_raises_exception(self):
         with assert_raises(ValidationError):
             api_app = ApiOAuth2ApplicationFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
+            api_app.save()
+
+    def test_name_cannot_be_blank(self):
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(name='')
             api_app.save()
 
     def test_long_name_raises_exception(self):
