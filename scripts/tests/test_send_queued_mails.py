@@ -30,7 +30,7 @@ class TestSendQueuedMails(OsfTestCase):
     def test_queue_addon_mail(self, mock_send):
         self.queue_mail(mails.NO_ADDON)
         main(dry_run=False)
-        assert_equal(mock_send.call_count, 1)
+        assert_true(mock_send.called)
 
     @mock.patch('website.mails.mails.send_mail')
     def test_no_two_emails_to_same_person(self, mock_send):

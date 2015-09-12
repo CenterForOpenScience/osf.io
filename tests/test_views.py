@@ -3208,7 +3208,7 @@ class TestConfigureMailingListViews(OsfTestCase):
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
 
-    def test_user_cancel_and_choose_help_mailing_list(self):
+    def test_user_unsubscribe_and_subscribe_help_mailing_list(self):
         user = AuthUserFactory()
         url = api_url_for('user_choose_mailing_lists')
         payload = {settings.OSF_GENERAL_LIST: False}

@@ -163,6 +163,12 @@ class QueuedMail(StoredObject):
         self.save()
 
     def send_mail(self):
+        """
+        Grabs the data from this email, checks for user subscription to help mails,
+        constructs the mail object and checks callback. Then attempts to send the email
+        through send_mail()
+        :return: boolean based on whether email was sent.
+        """
         mail_struct = queue_mail_types[self.email_type]
         callback = mail_struct['callback'](self)
         mail = Mail(
