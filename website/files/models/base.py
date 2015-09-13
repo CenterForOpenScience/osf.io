@@ -82,6 +82,10 @@ class StoredFileNode(StoredObject):
     path = fields.StringField(required=True)
     materialized_path = fields.StringField(required=True)
 
+    # The User that has this file "checked out"
+    # Should only be used for OsfStorage
+    checkout = fields.AbstractForeignField('User')
+
     # For Django compatibility
     @property
     def pk(self):

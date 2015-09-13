@@ -1,10 +1,43 @@
 import furl
 
+from rest_framework.compat import OrderedDict
 from rest_framework import serializers as ser
 
 from website import settings
+from framework.auth.core import User
+from website.files.models import FileNode
 from api.base.utils import absolute_reverse
-from api.base.serializers import Link, JSONAPISerializer, LinksField, NodeFileHyperLink, WaterbutlerLink
+from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
+from api.base.serializers import Link, JSONAPISerializer, LinksField
+from api.base.serializers import JSONAPIHyperlinkedIdentityField
+
+
+class CheckoutField(JSONAPIHyperlinkedIdentityField):
+    def __init__(self, **kwargs):
+        kwargs['queryset'] = True
+        kwargs['read_only'] = False
+        kwargs['lookup_field'] = 'pk'
+        kwargs['lookup_url_kwarg'] = 'user_id'
+
+        self.meta = None
+        self.link_type = 'related'
+
+        super(ser.HyperlinkedIdentityField, self).__init__('users:user-detail', **kwargs)
+
+    @property
+    def choices(self):
+        return OrderedDict([
+            (None, None),
+            (self.context['request'].user._id, self.context['request'].user)
+        ])
+
+    def get_url(self, obj, view_name, request, format):
+        if obj is None:
+            return None
+        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+
+    def to_internal_value(self, data):
+        return User.load(data)
 
 
 class FileSerializer(JSONAPISerializer):
@@ -18,15 +51,16 @@ class FileSerializer(JSONAPISerializer):
         'last_touched',
     ])
     id = ser.CharField(read_only=True, source='_id')
-    name = ser.CharField(help_text='Display name used in the general user interface')
-    kind = ser.CharField(help_text='Either folder or file')
-    path = ser.CharField(help_text='The unique path used to reference this object')
-    provider = ser.CharField(help_text='The Add-on service this file originates from')
-    last_touched = ser.DateTimeField(help_text='The last time this file had information fetched about it via the OSF')
-    # history = ser.ListField(ser.DictField(), help_text='A raw dump of the metadata recieved whenever infomation is fetched about it')
+    name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
+    kind = ser.CharField(read_only=True, help_text='Either folder or file')
+    path = ser.CharField(read_only=True, help_text='The unique path used to reference this object')
+    provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
+    last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
 
-    files = NodeFileHyperLink(kind='folder', read_only=True, link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
-    versions = NodeFileHyperLink(kind='file', read_only=True, link_type='related', view_name='files:file-versions', kwargs=(('file_id', '_id'), ))
+    checkout = CheckoutField()
+
+    files = NodeFileHyperLink(kind='folder', link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
+    versions = NodeFileHyperLink(kind='file', link_type='related', view_name='files:file-versions', kwargs=(('file_id', '_id'), ))
 
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
@@ -38,6 +72,16 @@ class FileSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'files'
+
+    def update(self, instance, validated_data):
+        assert isinstance(instance, FileNode), 'Instance must be a FileNode'
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
+    def is_valid(self, **kwargs):
+        return super(FileSerializer, self).is_valid(clean_html=False, **kwargs)
 
 
 class FileVersionSerializer(JSONAPISerializer):
