@@ -1,0 +1,11 @@
+{
+    "dryad_doi_set" : "${user} linked the Dryad package ${folder} to ${node}",
+    "dryad_doi_unset" : "${user} unlinked the Dryad package ${folder} in ${node}",
+    "dryad_file_added" : "${user} added file ${path} in Dryad package ${folder} in ${node}",
+    "dryad_file_removed" : "${user} removed ${path} in Dryad package ${folder} in ${node}",
+    "dryad_file_updated" : "${user} updated file ${folder} in Dryad package ${folder} in ${node}",
+    "dryad_folder_created" : "${user} created folder ${folder} in Dryad package ${folder} in ${node}",
+    "dryad_node_authorized" : "${user} authorized the Dryad addon for ${node}",
+    "dryad_node_deauthorized" : "${user} deauthorized the Dryad addon for ${node}",
+    "dryad_node_deauthorized_no_user" : "Dryad addon for ${node} deauthorized"
+}

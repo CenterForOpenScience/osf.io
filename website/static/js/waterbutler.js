@@ -51,14 +51,31 @@ function toJsonBlob(item, options) {
 }
 
 module.exports = {
-    toJsonBlob: toJsonBlob,
-    buildDeleteUrl: buildCrudUrl,
-    buildUploadUrl: buildUploadUrl,
-    buildDownloadUrl: function(path, provider, nid, options) {
-        if (window.contextVars.accessToken) {
-            options = $.extend(options || {}, {token: window.contextVars.accessToken});
-        }
-        return buildCrudUrl(path, provider, nid, options);
+    buildDeleteUrl: buildUrl,
+    buildDownloadUrl: buildUrl,
+    buildUploadUrl: function _buildUploadUrl(path, provider, nid, options) {
+        var wb_options = $.extend({}, options || {}, {kind: 'files'});
+        return buildUrl(path, provider, nid, wb_options);
+    },
+    buildMetadataUrl: function _buildMetadataUrl(path, provider, nid, options) {
+        var wb_options = $.extend({}, options || {}, {meta: null});
+        return buildUrl(path, provider, nid, wb_options);
+    },
+    buildCreateFolderUrl: buildUrl,
+    buildRevisionsUrl: function _buildRevisionsUrl(path, provider, nid, options) {
+        var wb_options = $.extend({}, options || {}, {revisions: null});
+        return buildUrl(path, provider, nid, wb_options);
+    },
+    // covers upload (parent item and file name) and update (item, no file name)
+    buildTreeBeardUpload: function _buildTreeBeardUpload(item, options) {
+        var wb_options = $.extend({}, options || {}, {kind: 'file'});
+        return buildFromTreebeard(item, wb_options);
+    },
+    buildTreeBeardFileOp: buildFromTreebeard,
+    buildTreeBeardDelete: buildFromTreebeard,
+    buildTreeBeardMetadata: function _buildTreeBeardMetadata(item, options) {
+        var wb_options = $.extend({}, options || {}, {meta: null});
+        return buildFromTreebeard(item, wb_options);
     },
     buildMetadataUrl: buildMetadataUrl,
     buildCreateFolderUrl: buildCrudUrl,
