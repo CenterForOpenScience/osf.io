@@ -39,7 +39,7 @@ def do_migration():
     migrate_trashedfilenodes()
 
     logger.info('Checking that all Files have been migrated...')
-    diff = osfstorage_model.OsfStorageNodeSettings.find().count() - models.FileNode.find().count()
+    diff = osfstorage_model.OsfStorageFileNode.find().count() - models.FileNode.find().count()
     if diff > 0:
         logger.error('Missing {} FileNodes; canceling transaction')
         raise Exception('{} unmigrated FileNodes'.format(diff))
@@ -98,7 +98,7 @@ def migrate_filenodes():
                 if not filenode.versions:
                     logger.warning('File {!r} has no versions'.format(filenode))
                 elif not versions:
-                    logger.warning('{!r} is a file with no translatable versions, skipping'.format(filenode))
+                    logger.warning('{!r} is a file with no translatable versions'.format(filenode))
 
             new_node = models.StoredFileNode(
                 _id=filenode._id,
