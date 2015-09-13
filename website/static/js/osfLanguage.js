@@ -60,6 +60,12 @@ module.exports = {
                 'associated with this account.',
             deauthError: 'Could not disconnect Dropbox account at this time',
         },
+        dryad:{
+            noSettingsWarning: 'Dryad package has not yet been set.',
+            communicationFailure: 'Failed to Communicate with Dryad Servers. Try Again later.',
+            doiExistsFailure: 'Folder or files already exist in project',
+            importSuccess: 'Data imported into project files',
+        },
         figshare: {
             confirmDeauth: 'Are you sure you want to disconnect the figshare account? ' +
                 'This will revoke access to figshare for all projects you have ' +
