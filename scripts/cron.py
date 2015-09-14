@@ -29,10 +29,6 @@ def main(dry_run=True):
     analytics.hour.on(2)
     analytics.minute.on(0)  # Daily 2:00 a.m.
 
-    digest = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/send_digest.sh')))
-    digest.hour.on(2)
-    digest.minute.on(0)  # Daily 2:00 a.m.
-
     box = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/refresh_box_tokens.sh')))
     box.hour.on(2)
     box.minute.on(0)  # Daily 2:00 a.m.

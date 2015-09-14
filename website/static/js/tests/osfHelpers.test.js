@@ -205,7 +205,6 @@ describe('osfHelpers', () => {
                 assert.calledWith(stub, {
                     url: url,
                     type: 'GET',
-                    data: JSON.stringify({}),
                     contentType: 'application/json',
                     dataType: 'json'
                 });
