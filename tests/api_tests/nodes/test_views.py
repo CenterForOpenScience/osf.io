@@ -1678,8 +1678,10 @@ class TestExceptionFormatting(ApiTestCase):
         assert(isinstance(errors, list))
         assert_equal(len(errors), 2)
         errors = res.json['errors']
-        assert_items_equal([errors[0]['source'], errors[1]['source']], [{'pointer': '/data/attributes/category'}, {'pointer': '/data/attributes/title'}])
-        assert_items_equal([errors[0]['detail'], errors[1]['detail']], ['This field is required.', 'This field is required.'])
+        assert_items_equal([errors[0]['source'], errors[1]['source']],
+                           [{'pointer': '/data/attributes/category'}, {'pointer': '/data/attributes/title'}])
+        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
+                           ['This field is required.', 'This field is required.'])
 
     def test_create_node_link_no_target_formatting(self):
         url = self.private_url + 'node_links/'
