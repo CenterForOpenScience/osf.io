@@ -4,6 +4,7 @@ from rest_framework import exceptions
 from framework.auth.core import Auth
 
 from website.models import Node, User
+from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error
@@ -197,38 +198,14 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
 
         visible = validated_data.get('bibliographic')
         permission = validated_data.get('permission')
-        self._check_permissions(node, permission, contributor, auth)
         try:
             node.update_contributor(contributor, permission, visible, auth, save=True)
-        except ValueError as e:
+        except NodeStateError as e:
             raise exceptions.ValidationError(e)
         contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
         return contributor
-
-    def _check_permissions(self, node, permission, contributor, auth):
-        """ Check contributor permissions. Checks to make sure unique admin is
-        removing own admin privilege. Based on the ContributorDetailPermissions
-        permissions class, the current user must be an admin.
-        """
-        assert node.has_permission(auth.user, osf_permissions.ADMIN), "Only admins can modify contributor permissions"
-        permissions = osf_permissions.expand_permissions(permission) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
-        if not self.has_multiple_admins(node):
-            # has only one admin
-            admin = self._get_admins(node)[0]
-            if admin == contributor and osf_permissions.ADMIN not in permissions:
-                raise exceptions.ValidationError('{} is the only admin.'.format(contributor.fullname))
-
-    def _get_admins(self, node):
-        return [
-            contributor for contributor in node.contributors
-            if node.has_permission(contributor, osf_permissions.ADMIN)
-        ]
-
-    # Get the list of admins for just this node
-    def has_multiple_admins(self, node):
-        return len(self._get_admins(node)) >= 2
 
 class NodeLinksSerializer(JSONAPISerializer):
 
