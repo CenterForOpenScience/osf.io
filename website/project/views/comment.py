@@ -157,7 +157,6 @@ def add_comment(auth, node, **kwargs):
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
     sent_subscribers = notify(
-        uid=node._id,
         event="comments",
         user=auth.user,
         node=node,
@@ -168,7 +167,6 @@ def add_comment(auth, node, **kwargs):
     if is_reply(target):
         if target.user and target.user not in sent_subscribers:
             notify(
-                uid=target.user._id,
                 event='comment_replies',
                 user=auth.user,
                 node=node,

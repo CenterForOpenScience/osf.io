@@ -1540,7 +1540,7 @@ class TestUserProfileApplicationsPage(OsfTestCase):
         assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_owner_cant_access_deleted_application(self):
-        self.platform_app.active = False
+        self.platform_app.is_active = False
         self.platform_app.save()
         res = self.app.get(self.detail_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, http.GONE)

@@ -22,13 +22,6 @@
 
   <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
     <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
-      <div class="panel-heading clearfix osf-panel-header-flex" style="display:none">
-        <div id="filesSearch"></div>
-        <div id="toggleIcon" class="pull-right">
-          <div class="panel-collapse"><i class="fa fa-angle-left"></i></div>
-        </div>
-      </div>
-
       <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
           <div class="spinner-loading-wrapper">
@@ -39,12 +32,15 @@
       </div>
     </div>
 
-    <!-- Menu toggle closed -->
-    <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
-      <div class="panel-heading">
-        <i class="fa fa-angle-right"></i>
+      <!-- Menu toggle closed -->
+      <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
+          <div class="row tb-header-row">
+              <i class="fa fa-file p-l-xs p-r-xs"></i>
+              <div class="fangorn-toolbar-icon">
+                  <i class="fa fa-angle-right"></i>
+              </div>
+          </div>
       </div>
-    </div>
   </div>
 
 <!-- The osf-logo spinner here is from mfr code base -->
@@ -59,9 +55,7 @@
       <div class="file-view-panels col-sm-3"></div>
     </div>
   </div>
-
 </div>
-
 
 ## Begin Modals
 <div class="modal fade" id="connectedModal" tabindex="-1">

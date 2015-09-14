@@ -25,7 +25,7 @@ class NodeSerializer(JSONAPISerializer):
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
     filterable_fields = frozenset(['title', 'description', 'public'])
 
-    id = ser.CharField(read_only=True, source='_id')
+    id = ser.CharField(read_only=True, source='_id', label='ID')
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
