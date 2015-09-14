@@ -53,6 +53,8 @@ class TrashedFileNode(StoredObject):
     path = fields.StringField(required=True)
     materialized_path = fields.StringField(required=True)
 
+    checkout = fields.AbstractForeignField('User')
+
 
 @unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'materialized_path'])
 class StoredFileNode(StoredObject):
@@ -350,6 +352,7 @@ class FileNode(object):
         trashed.parent = self.parent
         trashed.history = self.history
         trashed.is_file = self.is_file
+        trashed.checkout = self.checkout
         trashed.provider = self.provider
         trashed.versions = self.versions
         trashed.last_touched = self.last_touched
