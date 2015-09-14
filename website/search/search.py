@@ -2,8 +2,8 @@ import logging
 
 from website import settings
 from website.search import file_util
+from website.search import file_search
 from website.search import share_search
-
 
 logger = logging.getLogger(__name__)
 
@@ -35,9 +35,10 @@ def update_node(node, index=None):
 
 @file_util.require_file_indexing
 @requires_search
-def update_file(file_node, index=None):
+def update_file(file_node, content, index=None):
     index = index or settings.ELASTIC_INDEX
-    search_engine.update_file(file_node, index=index)
+    file_search.update_to(file_node, file_node.node, content=content)
+    # search_engine.update_file(file_node, index=index)
 
 
 @file_util.require_file_indexing
@@ -49,9 +50,10 @@ def update_file_given_content(file_node, content, index=None):
 
 @file_util.require_file_indexing
 @requires_search
-def delete_file(file_node, index=None):
+def delete_file(file_node, parent_id, index=None):
     index = index or settings.ELASTIC_INDEX
-    return search_engine.delete_file(file_node, index=index)
+    return file_search.delete_from(file_node, parent_id)
+    # return search_engine.delete_file(file_node, index=index)
 
 
 @file_util.require_file_indexing
@@ -71,16 +73,32 @@ def delete_all_files(node, index=None):
 
 @file_util.require_file_indexing
 @requires_search
-def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
+def move_file(file_node, old_parent_id, new_parent_id, content=None, index=None):
     index = index or settings.ELASTIC_INDEX
-    return search_engine.move_file(file_node_id, old_parent_id, new_parent_id, index=index)
+    return file_search.move_file(
+        file_node=file_node,
+        new_file_node_id=file_node._id,
+        old_parent_id=old_parent_id,
+        new_parent_id=new_parent_id,
+        content=content,
+        index=index,
+    )
+    # return search_engine.move_file(file_node, old_parent_id, new_parent_id, index=index)
 
 
 @file_util.require_file_indexing
 @requires_search
-def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, index=None):
+def copy_file(file_node, new_file_node_id, old_parent_id, new_parent_id, content=None, index=None):
     index = index or settings.ELASTIC_INDEX
-    return search_engine.copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, index=index)
+    return file_search.copy_file(
+        old_file_node=file_node,
+        new_file_node_id=new_file_node_id,
+        old_parent_id=old_parent_id,
+        new_parent_id=new_parent_id,
+        content=content,
+        index=index,
+    )
+    # return search_engine.copy_file(file_node, new_file_node_id, old_parent_id, new_parent_id, index=index)
 
 
 @requires_search

@@ -463,7 +463,7 @@ def delete_all_files(node, index=None):
 
 @file_util.require_file_indexing
 @requires_search
-def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
+def move_file(file_node, old_parent_id, new_parent_id, index=None):
     """ Change parent of existing document in elasticsearch.
 
     :param file_node_id: path of File Node.
@@ -473,7 +473,7 @@ def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
     """
     index = index or INDEX
 
-    path = file_util.norm_path(file_node_id)
+    path = file_node._id
 
     old_parent = Node.load(old_parent_id)
     old_parent_doctype = get_doctype_from_node(old_parent)
@@ -511,7 +511,7 @@ def move_file(file_node_id, old_parent_id, new_parent_id, index=None):
 
 @file_util.require_file_indexing
 @requires_search
-def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, index=None):
+def copy_file(file_node, new_file_node_id, old_parent_id, new_parent_id, index=None):
     """ Get a document and index with a new parent.
 
     :param file_node_id: Original File Node's path.
@@ -522,7 +522,7 @@ def copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id, inde
     """
     index = index or INDEX
 
-    path = file_util.norm_path(file_node_id)
+    path = file_util.norm_path(file_node._id)
     new_path = file_util.norm_path(new_file_node_id)
     old_parent_doctype = get_doctype_from_node(Node.load(old_parent_id))
 

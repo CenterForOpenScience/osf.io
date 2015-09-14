@@ -1603,10 +1603,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return
         file_indexing.update_search_file(file_node)
 
-    def move_search_file(self, file_node, dest_node):
+    def move_search_file(self, file_node, source_node, dest_node):
         """ Update search when moving a file into a new node. """
         from website.search import file_indexing
-        file_indexing.move_search_file(file_node, self, dest_node)
+        if dest_node.is_public:
+            file_indexing.move_search_file(file_node, source_node, dest_node)
+        else:
+            file_indexing.delete_search_file(file_node, source_node)
 
     def copy_search_file(self, file_node, new_file_node, dest_node):
         """ Update search when coping a file into a new node. """
@@ -1616,7 +1619,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def delete_search_file(self, file_node):
         """ Remove a single file from search. """
         from website.search import file_indexing
-        file_indexing.delete_search_file(file_node)
+        file_indexing.delete_search_file(file_node, self)
 
     def delete_search_entry(self):
         from website import search

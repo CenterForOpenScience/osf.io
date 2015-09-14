@@ -25,27 +25,31 @@ def update_file_task(file_node_id, file_url, index=None):
 
 @app.task
 def delete_file_task(file_node_id, parent_id, index=None):
+    from website.addons.osfstorage.model import OsfStorageFileNode
     init_addons(settings, routes=False)
     do_set_backends(settings)
-
-    file_path = file_node_id
-    return search.delete_file_given_path(file_path, file_parent_id=parent_id, index=index)
+    file_node = OsfStorageFileNode.load(file_node_id)
+    return search.delete_file_given_path(file_node_id, file_parent_id=parent_id, index=index)
 
 
 @app.task
-def move_file_task(file_node_id, old_parent_id, new_parent_id):
+def move_file_task(file_node_id, old_parent_id, new_parent_id, file_url, index=None):
+    from website.addons.osfstorage.model import OsfStorageFileNode
     init_addons(settings, routes=False)
     do_set_backends(settings)
-
-    return search.move_file(file_node_id, old_parent_id, new_parent_id)
+    file_node = OsfStorageFileNode.load(file_node_id)
+    content = requests.get(file_url).content
+    return search.move_file(file_node, old_parent_id, new_parent_id, content=content)
 
 
 @app.task
-def copy_file_task(file_node_id, new_file_node_id, old_parent_id, new_parent_id):
+def copy_file_task(file_node_id, new_file_node_id, old_parent_id, new_parent_id, file_url, index=None):
+    from website.addons.osfstorage.model import OsfStorageFileNode
     init_addons(settings, routes=False)
     do_set_backends(settings)
-
-    return search.copy_file(file_node_id, new_file_node_id, old_parent_id, new_parent_id)
+    file_node = OsfStorageFileNode.load(file_node_id)
+    content = requests.get(file_url).content
+    return search.copy_file(file_node, new_file_node_id, old_parent_id, new_parent_id, content=content)
 
 
 def update_all_files_task(node):

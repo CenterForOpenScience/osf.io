@@ -46,9 +46,9 @@ def update_search_file(file_node):
 
 @file_util.require_file_indexing
 @except_search_unavailable
-def delete_search_file(file_node):
+def delete_search_file(file_node, node):
     path = file_node.path
-    parent_id = file_node.node._id
+    parent_id = node._id
     tasks.delete_file_task.delay(file_node_id=path, parent_id=parent_id)
 
 
@@ -58,7 +58,13 @@ def move_search_file(file_node, from_, to_):
     old_parent_id = from_._id
     new_parent_id = to_._id
     nid = file_node._id
-    tasks.move_file_task.delay(file_node_id=nid, old_parent_id=old_parent_id, new_parent_id=new_parent_id)
+    url = file_util.get_file_content_url(file_node)
+    tasks.move_file_task.delay(
+        file_node_id=nid,
+        old_parent_id=old_parent_id,
+        new_parent_id=new_parent_id,
+        file_url=url,
+    )
 
 
 @file_util.require_file_indexing
@@ -68,9 +74,11 @@ def copy_search_file(file_node, new_file_node, from_, to_):
     new_parent_id = to_._id
     nid = file_node._id
     new_id = new_file_node._id
+    url = file_util.get_file_content_url(file_node)
     tasks.copy_file_task.delay(
         file_node_id=nid,
         new_file_node_id=new_id,
         old_parent_id=old_parent_id,
         new_parent_id=new_parent_id,
+        file_url=url,
     )

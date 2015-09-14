@@ -19,7 +19,6 @@ from website.project.decorators import (
 )
 from website.util import rubeus
 from website.project.model import has_anonymous_link
-from website.project.model import Node
 
 from website.addons.osfstorage import model
 from website.addons.osfstorage import utils
@@ -96,8 +95,10 @@ def osfstorage_copy_hook(source, destination, name=None, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
-    handle_move(file_node=source, source_node=source.node, dest_node=destination.node)
-    return source.move_under(destination, name=name).serialized(), httplib.OK
+    old_parent = source.node
+    file_node = source.move_under(destination, name=name).serialized(), httplib.OK
+    handle_move(file_node=source, source_node=old_parent, dest_node=destination.node)
+    return file_node
 
 
 @must_be_signed
@@ -242,11 +243,14 @@ def handle_update(file_node, node):
 
 
 def handle_copy(source_file_node, new_file_node, source_node, dest_node):
+    if not file_util.is_indexed(new_file_node):
+        return
+
     if not dest_node.is_public:
         return
 
-    if not file_util.is_indexed(new_file_node):
-        return
+    if not source_node.is_public:
+        handle_update(new_file_node, dest_node)
 
     source_node.copy_search_file(file_node=source_file_node, new_file_node=new_file_node, dest_node=dest_node)
 
@@ -255,7 +259,4 @@ def handle_move(file_node, source_node, dest_node):
     if not file_util.is_indexed(file_node):
         return
 
-    if not dest_node.is_public:
-        return
-
-    source_node.move_search_file(file_node, dest_node)
+    source_node.move_search_file(file_node, source_node, dest_node)
