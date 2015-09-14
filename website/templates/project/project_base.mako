@@ -14,6 +14,10 @@
 
 <%include file="project_header.mako"/>
 
+% if status and node['node_type'] == 'project':
+    <%include file="../alert.mako"/>
+% endif
+
 <%include file="modal_show_links.mako"/>
 
 % if node['is_retracted'] == True:
