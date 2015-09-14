@@ -48,7 +48,6 @@
                                 </tr>
                             </tbody>
                         </table>
-
                         <table class="table">
                             <thead>
                                 <tr>
@@ -61,17 +60,20 @@
                                     <td style="word-break: break-all;">{{ $data.address }}</td>
                                     <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation">resend&nbsp;confirmation</a></td>
                                     <td style="width:50px;" ><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
-                                </tr>
-                                <!-- /ko -->
+                                 </tr>
+                                 <!-- /ko -->
                                 <tr>
                                     <td colspan="3">
                                         <form data-bind="submit: addEmail">
+                                        <p>If you have more than one OSF account and would like to merge them or would like to be able to log in under multiple email addresses, add your secondary email address in the field below.</p>
+
                                             <div class="form-group">
                                                 ## email input verification is not supported on safari
                                               <input placeholder="Email address" type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
                                             </div>
                                             <input type="submit" value="Add Email" class="btn btn-success">
                                         </form>
+                                       
                                         <div class="help-block">
                                             <p data-bind="html: message, attr: {class: messageClass}"></p>
                                         </div>
