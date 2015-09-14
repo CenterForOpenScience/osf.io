@@ -45,16 +45,16 @@ $(document).ready(function() {
                 $('.cp-handle').css('margin-top', 95);
             }
         }
-    }
+    };
 
-    checkPanelPosition() /*Init when refresh*/
+    checkPanelPosition(); /* Init when refreshing the page*/
     $(window).scroll(function () {
         if (!timeout) {
             timeout = setTimeout(function () {
                 clearTimeout(timeout);
                 timeout = null;
-                checkPanelPosition()
-        }, 80);
+                checkPanelPosition();
+            }, 80);
         }
     });
 

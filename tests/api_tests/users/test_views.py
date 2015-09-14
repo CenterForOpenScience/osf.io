@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import urlparse
 from nose.tools import *  # flake8: noqa
 
 from website.models import Node
@@ -71,6 +72,15 @@ class TestUsers(ApiTestCase):
         assert_not_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
+    def test_users_list_takes_profile_image_size_param(self):
+        size = 42
+        url = "/{}users/?profile_image_size={}".format(API_BASE, size)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        for user in user_json:
+            profile_image_url = user['attributes']['profile_image_url']
+            query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
+            assert_equal(int(query_dict.get('size')[0]), size)
 
 class TestUserDetail(ApiTestCase):
 
@@ -110,7 +120,15 @@ class TestUserDetail(ApiTestCase):
         user_json = res.json['data']
         assert_not_equal(user_json['attributes']['fullname'], self.user_one.fullname)
         assert_equal(user_json['attributes']['fullname'], self.user_two.fullname)
-
+        
+    def test_user_detail_takes_profile_image_size_param(self):
+        size = 42
+        url = "/{}users/{}/?profile_image_size={}".format(API_BASE, self.user_one._id, size)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        profile_image_url = user_json['attributes']['profile_image_url']
+        query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
+        assert_equal(int(query_dict.get('size')[0]), size)
 
 class TestUserNodes(ApiTestCase):
 
@@ -643,3 +661,8 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(errors[0], {'detail': 'Not found.'})
+
+    def test_basic_auth_me_wrong_password(self):
+        url = '/{}users/{}/'.format(API_BASE, 'me')
+        res = self.app.get(url, auth=(self.user.username, 'nottherightone'), expect_errors=True)
+        assert_equal(res.status_code, 401)
