@@ -73,10 +73,13 @@ var ajaxJSON = function(method, url, options) {
     var ajaxFields = {
         url: url,
         type: method,
-        data: JSON.stringify(opts.data),
         contentType: 'application/json',
         dataType: 'json'
     };
+    // Add JSON payload if not a GET request
+    if (method.toLowerCase() !== 'get') {
+        ajaxFields.data = JSON.stringify(opts.data);
+    }
     if(opts.isCors) {
         ajaxFields.crossOrigin = true;
         ajaxFields.xhrFields =  {

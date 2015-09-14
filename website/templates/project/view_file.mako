@@ -55,9 +55,7 @@
       <div class="file-view-panels col-sm-3"></div>
     </div>
   </div>
-
 </div>
-
 
 ## Begin Modals
 <div class="modal fade" id="connectedModal" tabindex="-1">
