@@ -486,10 +486,6 @@ var SocialViewModel = function(urls, modes) {
     
     self.profileWebsites = ko.observableArray();
 
-    self.profileWebsitesLength = ko.computed(function() {
-        return self.profileWebsites().length;
-    });
-
     self.hasProfileWebsites = ko.pureComputed(function() {
         //Check to see if any valid profileWebsites exist
         var profileWebsites = ko.toJS(self.profileWebsites());
@@ -502,13 +498,7 @@ var SocialViewModel = function(urls, modes) {
     });
 
     self.canRemove = ko.computed(function () {
-        if (self.profileWebsites()) {
-            return self.profileWebsites().length > 1;
-        }
-        
-        else { 
-            return false;
-        }
+        return self.profileWebsites() && self.profileWebsites().length > 1;
     });
 
     self.orcid = extendLink(
@@ -584,7 +574,7 @@ var SocialViewModel = function(urls, modes) {
 
     self.addWebsiteInput = function() {
         this.profileWebsites.push(ko.observable().extend({
-            trimmedURL: true
+            ensureHttp: true
         }));
     };
     
@@ -597,7 +587,7 @@ var SocialViewModel = function(urls, modes) {
                 callback: function(confirmed) {
                     if (confirmed) {
                         self.profileWebsites.splice(idx, 1);
-                        if (!self.profileWebsites().length) {
+                        if (self.profileWebsites().length === 0) {
                             self.addWebsiteInput();
                         }
                         self.submit();
@@ -628,8 +618,7 @@ $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.proto
 
 SocialViewModel.prototype.serialize = function() {
     var serializedData = ko.toJS(this);
-    var profileWebsites = serializedData.profileWebsites;
-    
+
     function removeBlankValues(value) {
         return value !== '';
     }
@@ -643,14 +632,13 @@ SocialViewModel.prototype.unserialize = function(data) {
         websiteValue = [];
     $.each(data || {}, function(key, value) {
         if (ko.isObservable(self[key]) && key === 'profileWebsites') {
-            if (!value.length) {
+            if (value.length === 0) {
                 value.push('');
             }
-
-        for (var i = 0; i < value.length; i++) {
+            for (var i = 0; i < value.length; i++) {
                 websiteValue[i] = ko.observable(value[i]).extend({
-                        trimmedURL: true
-                });                 
+                        ensureHttp: true
+                });
             }
             self[key](websiteValue);
         }  
