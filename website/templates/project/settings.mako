@@ -96,7 +96,6 @@
                                              valueUpdate: 'afterkeydown'",
                             class="form-control resize-vertical"></textarea>
                         </div>
-                            <span>
                             <button data-bind="click: updateAll"
                             class="btn btn-success">Save Changes</button>
                             <button data-bind="click: cancelAll"

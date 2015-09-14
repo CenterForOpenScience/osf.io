@@ -21,7 +21,7 @@ var ProjectSettings = oop.extend(
             self.title = ko.observable(params.currentTitle).extend({
                 required: {
                     params: true,
-                    message: "Title cannot be blank."
+                    message: 'Title cannot be blank.'
                 }});
             self.description = ko.observable(self.decodedDescription);
 
