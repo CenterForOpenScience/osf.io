@@ -1125,7 +1125,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_social_validation_failure(self):
         url = api_url_for('unserialize_social')
-        # profileWebsits URL is invalid
+        # profileWebsites URL is invalid
         payload = {
             'profileWebsites': ['http://invalidurl'],
             'twitter': 'howtopizza',
@@ -1142,7 +1142,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_social_multiple_websites_validation_failure(self):
         url = api_url_for('unserialize_social')
-        # profileWebsits URL is invalid
+        # profileWebsites URL is invalid
         payload = {
             'profileWebsites': ['http://goodurl.com', 'http://invalidurl'],
             'twitter': 'howtopizza',
