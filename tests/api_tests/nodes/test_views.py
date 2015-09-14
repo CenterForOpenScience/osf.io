@@ -865,6 +865,18 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
+    def test_add_contributor_is_visible_by_default(self):
+        del self.data_user_two['bibliographic']
+        res = self.app.post_json(self.public_url, self.data_user_two, auth=self.user.auth)
+
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['id'], self.user_two._id)
+
+        self.public_project.reload()
+        assert_in(self.user_two, self.public_project.contributors)
+        assert_true(self.public_project.get_visible(self.user_two))
+
+    @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_adds_bibliographic_contributor_public_project_admin(self):
         res = self.app.post_json(self.public_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
@@ -920,10 +932,10 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             'id': self.user_two._id,
         }
         res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 201)
 
         self.private_project.reload()
-        assert_not_in(self.user_two, self.private_project.contributors)
+        assert_in(self.user_two, self.private_project.contributors)
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_admin_contributor_private_project_admin(self):

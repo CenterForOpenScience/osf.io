@@ -7,7 +7,7 @@ from website.models import Node, User
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_object_or_error
+from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField
 
 
@@ -154,7 +154,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
         return user.profile_image_url(size=size)
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.  '
-                                               'Required due to issues with field defaulting to false.')
+                                     'Required due to issues with field defaulting to false.',
+                                     default=True)
 
     permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
                                  help_text='Highest permission the user has.  Blank input defaults write permission if '
@@ -163,13 +164,18 @@ class NodeContributorsSerializer(JSONAPISerializer):
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')
-    detail = JSONAPIHyperlinkedIdentityField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id', link_type='related')
-
     class Meta:
         type_ = 'users'
 
     def absolute_url(self, obj):
-        return obj.absolute_url
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        return absolute_reverse(
+            'nodes:node-contributor-detail',
+            kwargs={
+                'node_id': node_id,
+                'user_id': obj._id
+            }
+        )
 
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
