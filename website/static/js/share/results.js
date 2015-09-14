@@ -151,8 +151,10 @@ var Contributor = {
             m('a', {
                 href: '#',
                 onclick: function() {
-                    utils.updateFilter(vm, 'match:contributors.familyName:' + contributor.familyName, true);
                     utils.updateFilter(vm, 'match:contributors.givenName:' + contributor.givenName, true);
+                    if(contributor.familyName.length > 0){
+                        utils.updateFilter(vm, 'match:contributors.familyName:' + contributor.familyName, true);
+                    }
                 }
             }, contributor.name)
         ]);

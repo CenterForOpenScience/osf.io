@@ -26,7 +26,7 @@ class Event(object):
     """
     def __init__(self, user, node, action):
         self.user = user
-        self.gravatar_url = user.gravatar_url
+        self.gravatar_url = user.profile_image_url()
         self.node = node
         self.action = action
         self.timestamp = datetime.utcnow()
