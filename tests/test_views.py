@@ -37,7 +37,7 @@ from website.project.views.contributor import (
     notify_added_contributor
 )
 from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import fmt_date_or_none
+from website.profile.views import fmt_date_or_none, help_mails
 from website.util import api_url_for, web_url_for
 from website import mails, settings
 from website.util import rubeus
@@ -3230,6 +3230,20 @@ class TestConfigureMailingListViews(OsfTestCase):
             user.osf_mailing_lists[settings.OSF_GENERAL_LIST],
             payload[settings.OSF_GENERAL_LIST]
         )
+
+    def test_help_mails_subscribe(self):
+        user = UserFactory()
+        user.osf_mailing_lists['Open Science Framework Help'] = False
+        user.save()
+        help_mails(user, True)
+        assert_true(user.osf_mailing_lists['Open Science Framework Help'])
+
+    def test_help_mails_unsubscribe(self):
+        user = UserFactory()
+        user.osf_mailing_lists['Open Science Framework Help'] = True
+        user.save()
+        help_mails(user, False)
+        assert_false(user.osf_mailing_lists['Open Science Framework Help'])
 
     @unittest.skipIf(settings.USE_CELERY, 'Subscription must happen synchronously for this test')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
