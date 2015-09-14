@@ -10,7 +10,7 @@ from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
-from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
+from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer, NodeRegistrationSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
@@ -134,6 +134,7 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        ReadOnlyIfRegistration,
     )
 
     serializer_class = ContributorSerializer
@@ -152,19 +153,22 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         return self.get_queryset_from_request()
 
 
+# TODO: Support creating registrations
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
-     created for the current node."""
+    created for the current node.
+     """
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
-    serializer_class = NodeSerializer
+    serializer_class = NodeRegistrationSerializer
 
     # overrides ListAPIView
+    # TODO: Filter out retractions by default
     def get_queryset(self):
         nodes = self.get_node().node__registrations
         user = self.request.user
@@ -176,7 +180,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
+class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -187,19 +191,34 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
     )
 
     serializer_class = NodeSerializer
 
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        return (
+            Q('is_deleted', 'ne', True) &
+            Q('is_folder', 'ne', True)
+        )
+
     # overrides ListAPIView
     def get_queryset(self):
-        nodes = self.get_node().nodes
+        node = self.get_node()
+        req_query = self.get_query_from_request()
+
+        query = (
+            Q('_id', 'in', [e._id for e in node.nodes if e.primary]) &
+            req_query
+        )
+        nodes = Node.find(query)
         user = self.request.user
         if user.is_anonymous():
             auth = Auth(None)
         else:
             auth = Auth(user)
-        children = [node for node in nodes if node.can_view(auth) and node.primary and not node.is_deleted]
+        children = [each for each in nodes if each.can_view(auth)]
         return children
 
     # overrides ListCreateAPIView
@@ -208,6 +227,9 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
         serializer.save(creator=user, parent=self.get_node())
 
 
+# TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
+# currently query on a Pointer's node's attributes.
+# e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
 class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
     """Node Links to other nodes.
 
@@ -217,13 +239,17 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        ReadOnlyIfRegistration,
     )
 
     serializer_class = NodeLinksSerializer
 
     def get_queryset(self):
-        pointers = self.get_node().nodes_pointer
-        return pointers
+        return [
+            pointer for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted
+        ]
 
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
@@ -296,6 +322,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        ReadOnlyIfRegistration,
     )
 
     def get_valid_self_link_methods(self, root_folder=False):
