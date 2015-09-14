@@ -1298,6 +1298,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'Pointer to node {0} already in list'.format(node._id)
             )
 
+        if self.is_registration:
+            raise NodeStateError('Cannot add a pointer to a registration')
+
         # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
         # Also, no pointers to the dashboard project, which could cause loops as well.
         already_pointed = node.pointed
