@@ -146,11 +146,13 @@ class NodeContributorsSerializer(JSONAPISerializer):
     family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-    gravatar_url = ser.CharField(read_only=True, help_text='URL for the icon used to identify the user. '
-                                                           'Relies on http://gravatar.com ')
-    social_accounts = ser.DictField(read_only=True, source='social',
-                                    help_text='A dictionary of various social media account dentifiers including '
-                                              'an array of user-defined URLs')
+
+    profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
+
+    def get_profile_image_url(self, user):
+        size = self.context['request'].query_params.get('profile_image_size')
+        return user.profile_image_url(size=size)
+
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.  '
                                                'Required due to issues with field defaulting to false.')
 
