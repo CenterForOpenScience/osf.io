@@ -153,12 +153,12 @@ class NodeContributorsSerializer(JSONAPISerializer):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
 
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.  '
-                                     'Required due to issues with field defaulting to false.',
+    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)
 
     permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
-                                 help_text='Highest permission the user has.  Blank input defaults write permission if '
+                                 default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
+                                 help_text='Highest permission the user has.  For PUT requests blank input defaults write permission if '
                                            'user is being added and to current permission if user is being edited.')
 
     links = LinksField({'html': 'absolute_url'})
