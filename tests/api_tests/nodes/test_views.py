@@ -1088,8 +1088,8 @@ class TestNodeContributorUpdate(ApiTestCase):
         self.url_creator = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_two._id)
 
-    @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
-    @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
+    @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project', -3)
+    @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project', -2)
     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
     def test_change_contributor_permissions(self):
         data = {
@@ -1128,7 +1128,7 @@ class TestNodeContributorUpdate(ApiTestCase):
         self.project.reload()
         assert_equal(self.project.get_permissions(self.user_two), [permissions.READ])
 
-    @assert_logs(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, 'project')
+    @assert_logs(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, 'project', -2)
     @assert_logs(NodeLog.MADE_CONTRIBUTOR_VISIBLE, 'project')
     def test_change_contributor_bibliographic(self):
         data = {
@@ -1153,7 +1153,7 @@ class TestNodeContributorUpdate(ApiTestCase):
         self.project.reload()
         assert_true(self.project.get_visible(self.user_two))
 
-    @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
+    @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project', -2)
     @assert_logs(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, 'project')
     def test_change_contributor_permission_and_bibliographic(self):
         data = {
