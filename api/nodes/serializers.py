@@ -172,7 +172,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
-            'nodes:node-contribuotor-detail',
+            'nodes:node-contributor-detail',
             kwargs={
                 'node_id': node_id,
                 'user_id': obj._id
