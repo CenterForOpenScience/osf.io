@@ -11,60 +11,62 @@ var _figshareItemButtons = {
         var buttons = [];
         var tb = args.treebeard;
         var item = args.item;
-        // If File and FileRead are not defined dropzone is not supported and neither is uploads
-        if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit && item.kind === 'folder') {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-upload',
-                    className: 'text-success'
-                }, 'Upload')
-            );
-        }
-        if (item.kind === 'file' && item.data.extra && item.data.extra.status === 'public') {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        Fangorn.ButtonEvents._downloadEvent.call(tb, event, item);
-                    },
-                    icon: 'fa fa-download',
-                    className: 'text-primary'
-                }, 'Download')
-            );
-        }
-        // Files can be deleted if private or if it is in a dataset that contains more than one file
-        var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
-            (!item.parent().data.isAddonRoot && item.parent().children.length > 1);
-        if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function(event) {
-                        Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
-                    },
-                    icon: 'fa fa-file-o',
-                    className : 'text-info'
-                }, 'View'));
-        }
-        if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
-            buttons.push(
-                m.component(Fangorn.Components.button, {
-                    onclick: function (event) {
-                        Fangorn.ButtonEvents._removeEvent.call(tb, event, tb.multiselected());
-                    },
-                    icon: 'fa fa-trash',
-                    className: 'text-danger'
-                }, 'Delete')
-            );
-        }
-        if (item.kind === 'file' && item.data.permissions && item.data.permissions.view && item.data.extra.status === 'public') {
-            buttons.push(
-                m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
-                    m('i.fa.fa-external-link'),
-                    m('span', 'View on figshare')
-                ])
-            );
+        if (tb.options.placement !== 'fileview') {
+            // If File and FileRead are not defined dropzone is not supported and neither is uploads
+            if (window.File && window.FileReader && item.data.permissions && item.data.permissions.edit && item.kind === 'folder') {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            Fangorn.ButtonEvents._uploadEvent.call(tb, event, item);
+                        },
+                        icon: 'fa fa-upload',
+                        className: 'text-success'
+                    }, 'Upload')
+                );
+            }
+            if (item.kind === 'file' && item.data.extra && item.data.extra.status === 'public') {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            Fangorn.ButtonEvents._downloadEvent.call(tb, event, item);
+                        },
+                        icon: 'fa fa-download',
+                        className: 'text-primary'
+                    }, 'Download')
+                );
+            }
+            // Files can be deleted if private or if it is in a dataset that contains more than one file
+            var privateOrSiblings = (item.data.extra && item.data.extra.status !== 'public') ||
+                (!item.parent().data.isAddonRoot && item.parent().children.length > 1);
+            if (item.kind === 'file' && item.data.permissions && item.data.permissions.view) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            Fangorn.ButtonEvents._gotoFileEvent.call(tb, item);
+                        },
+                        icon: 'fa fa-file-o',
+                        className: 'text-info'
+                    }, 'View'));
+            }
+            if (item.kind === 'file' && privateOrSiblings && item.data.permissions && item.data.permissions.edit) {
+                buttons.push(
+                    m.component(Fangorn.Components.button, {
+                        onclick: function (event) {
+                            Fangorn.ButtonEvents._removeEvent.call(tb, event, tb.multiselected());
+                        },
+                        icon: 'fa fa-trash',
+                        className: 'text-danger'
+                    }, 'Delete')
+                );
+            }
+            if (item.kind === 'file' && item.data.permissions && item.data.permissions.view && item.data.extra.status === 'public') {
+                buttons.push(
+                    m('a.text-info.fangorn-toolbar-icon', {href: item.data.extra.webView}, [
+                        m('i.fa.fa-external-link'),
+                        m('span', 'View on figshare')
+                    ])
+                );
+            }
         }
         return m('span', buttons); // Tell fangorn this function is used.
     }
