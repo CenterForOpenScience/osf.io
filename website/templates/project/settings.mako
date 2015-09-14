@@ -88,14 +88,13 @@
                             <label for="title">Title:</label>
                             <input class="form-control" type="text" maxlength="200" data-bind="value: title,
                                                                                                       valueUpdate: 'afterkeydown'">
-                            <span class="text-danger" id="titleInputMessage"></span>
+                            <span class="text-danger" data-bind="validationMessage: title"></span>
                         </div>
                         <div class="form-group">
                             <label for="description">Description:</label>
                             <textarea data-bind="value: description,
                                              valueUpdate: 'afterkeydown'",
                             class="form-control resize-vertical"></textarea>
-                            <span class="text-danger" id="descriptionInputMessage"></span>
                         </div>
                             <span>
                             <button data-bind="click: updateAll"

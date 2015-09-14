@@ -16,9 +16,13 @@ var ProjectSettings = oop.extend(
             var self = this;
 
             self.titleDescriptionEditUrl = params.api_url;
-            self.decodedTitle = $osf.htmlDecode(params.currentTitle);
+            self.decodedTitle = params.currentTitle;
             self.decodedDescription = $osf.htmlDecode(params.currentDescription);
-            self.title = ko.observable(self.decodedTitle);
+            self.title = ko.observable(params.currentTitle).extend({
+                required: {
+                    params: true,
+                    message: "Title cannot be blank."
+                }});
             self.description = ko.observable(self.decodedDescription);
 
             self.disabled = params.disabled || false;
@@ -26,7 +30,6 @@ var ProjectSettings = oop.extend(
             self.UPDATE_SUCCESS_MESSAGE = 'Category, title, and description updated successfully';
             self.UPDATE_CATEGORY_ERROR_MESSAGE = 'Error updating category, please try again. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.UPDATE_TITLE_ERROR_MESSAGE = 'Title cannot be blank.';
             self.UPDATE_DESCRIPTION_ERROR_MESSAGE = 'Error updating description, please try again. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
             self.UPDATE_ERROR_MESSAGE_RAVEN = 'Error updating Node.category';
@@ -62,10 +65,6 @@ var ProjectSettings = oop.extend(
                 err: error
             });
         },
-        updateTitleError: function() {
-            var self = this;
-            self.changeMessage(self.UPDATE_TITLE_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
-        },
         updateDescriptionError: function() {
             var self = this;
             self.changeMessage(self.UPDATE_DESCRIPTION_ERROR_MESSAGE, self.MESSAGE_ERROR_CLASS);
@@ -87,18 +86,17 @@ var ProjectSettings = oop.extend(
         updateTitle: function() {
             var self = this;
             return $osf.putJSON(self.titleDescriptionEditUrl, {
-                    title: $osf.htmlEscape(self.title())
+                    title: self.title()
                 })
                 .done(function() {
                     self.decodedTitle = self.title();
                 },
-                self.updateDescription.bind(self))
-                .fail(self.updateTitleError.bind(self));
+                self.updateDescription.bind(self));
         },
         updateDescription: function() {
             var self = this;
             return $osf.putJSON(self.titleDescriptionEditUrl, {
-                    description: $osf.htmlEscape(self.description())
+                    description: self.description()
                 })
                 .done(function() {
                     self.decodedDescription = self.description();
