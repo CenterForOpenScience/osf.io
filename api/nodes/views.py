@@ -6,12 +6,24 @@ from rest_framework.exceptions import PermissionDenied, ValidationError, NotFoun
 
 from framework.auth.core import Auth
 from website.exceptions import NodeStateError
-from website.models import Node, Pointer
-from api.users.serializers import ContributorSerializer
+from website.models import Node, Pointer, User
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
-from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer, NodeRegistrationSerializer
-from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from api.nodes.serializers import (
+    NodeSerializer,
+    NodeLinksSerializer,
+    NodeFilesSerializer,
+    NodeContributorsSerializer,
+    NodeRegistrationSerializer,
+    NodeContributorDetailSerializer,
+)
+from api.nodes.permissions import (
+    AdminOrPublic,
+    ContributorOrPublic,
+    ReadOnlyIfRegistration,
+    ContributorOrPublicForPointers,
+    ContributorDetailPermissions
+)
 
 
 class NodeMixin(object):
@@ -122,7 +134,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -132,12 +144,12 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     """
 
     permission_classes = (
+        AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
         ReadOnlyIfRegistration,
     )
 
-    serializer_class = ContributorSerializer
+    serializer_class = NodeContributorsSerializer
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -145,6 +157,8 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         contributors = []
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in visible_contributors
+            contributor.permission = node.get_permissions(contributor)[-1]
+            contributor.node_id = node._id
             contributors.append(contributor)
         return contributors
 
@@ -154,6 +168,44 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
 
 
 # TODO: Support creating registrations
+class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+    """Detail of a contributor for a node.
+
+    View, remove from, and change bibliographic and permissions for a given contributor on a given node.
+    """
+
+    permission_classes = (
+        ContributorDetailPermissions,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+    )
+
+    serializer_class = NodeContributorDetailSerializer
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        user = get_object_or_error(User, self.kwargs['user_id'], display_name='user')
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        if user not in node.contributors:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+        user.permission = node.get_permissions(user)[-1]
+        user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
+        return user
+
+    # overrides DestroyAPIView
+    def perform_destroy(self, instance):
+        node = self.get_node()
+        current_user = self.request.user
+        auth = Auth(current_user)
+        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+            raise ValidationError("Must have at least one visible contributor")
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError("Must have at least one registered admin contributor")
+
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
 
