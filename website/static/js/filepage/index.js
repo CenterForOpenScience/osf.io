@@ -8,6 +8,7 @@ var waterbutler = require('js/waterbutler');
 // Local requires
 var utils = require('./util.js');
 var FileEditor = require('./editor.js');
+var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
 
@@ -217,8 +218,7 @@ var FileViewPage = {
                 m('#sharebutton.btn.btn-sm.btn-primary', {onclick: function () {
                     var link = $('iframe').attr('src');
                     var height = $('iframe').attr('height');
-                    $('#height').val(height);
-                    updateHeight();
+                    updateHeight(height);
                 }, config: function(element, isInitialized) {
                     if(!isInitialized){
                         var button = $(element).popover();
@@ -243,7 +243,10 @@ var FileViewPage = {
                             '\</ul\>\<br\>',
                             '\<div class="tab-content"\>',
                             '   \<div id="share" class="tab-pane fade in active"\>',
-                            '       \<input onclick="this.select()" class="form-control" type="text" value="' + link + '" /\>',
+                            '       \<div class="input-group"\>',
+                            '           \<span class="input-group-btn"\>\<button id="copyBtn" class="btn btn-default btn-md" type="button" style="height: 34px;" data-clipboard-text="' + link + '"\> \<div class="fa fa-copy" /\>\</button\>\</span\>',
+                            '           \<input onclick="this.select()" class="form-control" type="text" value="' + link + '" /\>',
+                            '       \</div\>',
                             '   \</div\>',
                             '   \<div id="embed" class="tab-pane fade"\>',
                             '       \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to HTML to dynamically render an iFrame that is automatically sized appropriately."\>Dynamically Render iFrame with JavaScript\<p/\>',
@@ -257,17 +260,19 @@ var FileViewPage = {
                             '       \</textarea\>',
                             '       \<br/\> \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to HTML to directly embed the iFrame with custom sizing and scrolling enabled. Edit size of iFrame by clicking on Show More."\>Direct iFrame with Fixed Height and Width\<p/\>',
                             '           \<textarea id="directIFrame" onclick="this.select()" class="form-control" \>'  +
-                                            '\<iframe src="' + link + '" width="100%" scrolling="yes" height="100%" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen \>',
-                            '           \</textarea\> ',
-                            '\<script>function updateHeight() { var str = $(\'#directIFrame\').html().replace(/height=(".*?")/, \'height="\' + $(\'#height\').val() +  \'"\'); $(\'#directIFrame\').html(str); } \</script\>',
-                            '\</div\> \</div\>'
-                        ].join('');
-                        $(element).attr('data-content', data);
+                            '\<iframe src="' + link + '" width="100%" scrolling="yes" height="100%" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen \>',
+                            '           \</textarea\>',
+                            '   \</div\>\</div\>',
+                            '\<script\>function updateHeight(height) { var str = $(\'#directIFrame\').html().replace(/height=(".*?")/, \'height="\' + height +  \'"\'); $(\'#directIFrame\').html(str); } \</script\>'
+                        ];
+                        $(element).attr('data-content', data.join(''));
+                        makeClient($('#copyBtn'));
                     }
                 }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': 'Content', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share')
-            ].concat(
+            ]),
+            m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
-            )),
+            ]),
             m('.btn-group.btn-group-sm.m-t-xs', [
                ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null
             ].concat(
