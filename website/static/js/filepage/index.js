@@ -76,6 +76,10 @@ var FileViewPage = {
             return false;
         });
 
+        $(document).on('fileviewpage:rename', function() {
+            console.log(self.file.urls.content);
+        });
+
         self.shareJSObservables = {
             activeUsers: m.prop([]),
             status: m.prop('connecting'),
@@ -159,6 +163,7 @@ var FileViewPage = {
         self.mfrIframeParent = $('#mfrIframeParent');
 
         if(self.canEdit) {
+            $(document).trigger('fileviewpage:rename');
             var $fileName = $('#fileName');
             $.fn.editable.defaults.mode = 'inline';
             $fileName.editable({
@@ -172,16 +177,17 @@ var FileViewPage = {
                 },
                 validate: function(value) {
                     if($.trim(value) === ''){
-                        return 'The wiki page name cannot be empty.';
+                        return 'The  file name cannot be empty.';
                     } else if(value.length > 100){
-                        return 'The wiki page name cannot be more than 100 characters.';
+                        return 'The file name cannot be more than 100 characters.';
                     }
                 },
                 params: function(params) {
                     return JSON.stringify(params);
                 },
                 success: function(response, value) {
-                    window.location.href = ctx.urls.base + encodeURIComponent(value) + '/';
+                    console.log(self.file);
+                    window.location.href = self.context.urls.base + encodeURIComponent(value) + '/';
                 },
                 error: function(response) {
                     var msg = response.responseJSON.message_long;
@@ -189,8 +195,8 @@ var FileViewPage = {
                         return msg;
                     } else {
                         // Log unexpected error with Raven
-                        Raven.captureMessage('Error in renaming wiki', {
-                            url: ctx.urls.rename,
+                        Raven.captureMessage('Error in renaming file', {
+                            url: self.context.urls.rename,
                             responseText: response.responseText,
                             statusText: response.statusText
                         });
