@@ -218,6 +218,7 @@ var FileViewPage = {
                     var link = $('iframe').attr('src');
                     var height = $('iframe').attr('height');
                     $('#height').val(height);
+                    updateHeight();
                 }, config: function(element, isInitialized) {
                     if(!isInitialized){
                         var button = $(element).popover();
@@ -256,8 +257,9 @@ var FileViewPage = {
                             '       \</textarea\>',
                             '       \<br/\> \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to HTML to directly embed the iFrame with custom sizing and scrolling enabled. Edit size of iFrame by clicking on Show More."\>Direct iFrame with Fixed Height and Width\<p/\>',
                             '           \<textarea id="directIFrame" onclick="this.select()" class="form-control" \>'  +
-                                            '\<iframe src="' + link + '" width="100%" scrolling="yes" height="'+height+'" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen \>',
+                                            '\<iframe src="' + link + '" width="100%" scrolling="yes" height="100%" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen \>',
                             '           \</textarea\> ',
+                            '\<script>function updateHeight() { var str = $(\'#directIFrame\').html().replace(/height=(".*?")/, \'height="\' + $(\'#height\').val() +  \'"\'); $(\'#directIFrame\').html(str); } \</script\>',
                             '\</div\> \</div\>'
                         ].join('');
                         $(element).attr('data-content', data);
