@@ -44,15 +44,6 @@ var makeRegexValidator = function(regex, message, match) {
     };
 };
 
-var cleanURL = function(value) {
-    value = $.trim(value);
-    if (!value || value.search(/^https?:\/\//i) === 0) {
-        return value;
-    }
-    return 'http://' + value;
-
-    };
-
 addExtender('cleanup', function(value, cleaner) {
     return !!value ? cleaner(value) : '';
 });
@@ -61,16 +52,11 @@ addExtender('ensureHttp', function(value) {
     if (!value || value.search(/^https?:\/\//i) === 0) {
         return value;
     }
-    return 'http://' + value;
+    return 'http://' + $.trim(value);
 });
 
 addExtender('trimmed', function(value) {
     return $.trim(value);
-});
-
-addExtender('trimmedURL', function(value) {
-    return cleanURL(value);
-
 });
 
 var sanitize = function(value) {
