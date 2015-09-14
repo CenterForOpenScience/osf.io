@@ -2260,7 +2260,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         Also checks to make sure unique admin is not removing own admin privilege.
         """
-        assert self.has_permission(auth.user, ADMIN), "Only admins can modify contributor permissions"
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError("Only admins can modify contributor permissions")
         permissions = expand_permissions(permission) or DEFAULT_CONTRIBUTOR_PERMISSIONS
         admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
         if not len(admins) > 1:
