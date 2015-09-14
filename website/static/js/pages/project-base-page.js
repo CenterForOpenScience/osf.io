@@ -33,20 +33,35 @@ $(document).ready(function() {
         $('body').trigger('nodeLoad', data);
     });
 
-    var target = 50,
+    var target = 50, smallScreenSize = 767,
     timeout = null;
+    var checkPanelPosition = function() {
+        var bodyWidth = $(document.body).width();
+        if (bodyWidth <= smallScreenSize) {
+            if ($(window).scrollTop() >= target) {
+                $('.cp-handle').css('margin-top', 50);
+            }
+            else {
+                $('.cp-handle').css('margin-top', 95);
+            }
+        }
+    }
+
+    checkPanelPosition() /*Init when refresh*/
     $(window).scroll(function () {
         if (!timeout) {
             timeout = setTimeout(function () {
                 clearTimeout(timeout);
                 timeout = null;
-                if ($(window).scrollTop() >= target) {
-                    $('.cp-handle').css('margin-top', 50);
-                }
-                else {
-                     $('.cp-handle').css('margin-top', 95);
-                }
+                checkPanelPosition()
         }, 80);
-    }
-});
+        }
+    });
+
+    $( window ).resize(function() {
+        var bodyWidth = $(document.body).width();
+        if (bodyWidth > smallScreenSize || $(window).scrollTop() < target) {
+            $('.cp-handle').css('margin-top', 95);
+        }
+    });
 });

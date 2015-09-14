@@ -7,7 +7,7 @@
         minViewWidth: 150,
         toggleWidth: 1/3,
         maxWidthProp: 2/3,
-        smallScreemSize: 767,
+        smallScreenSize: 767,
         onClose: function() {},
         onOpen: function() {}
     };
@@ -52,7 +52,7 @@
                 options.onClose.call(self);
             } else {
                 var bodyWidth = $(document.body).width();
-                if (bodyWidth <= options.smallScreemSize) {
+                if (bodyWidth <= options.smallScreenSize) {
                     width = options.maxWidthProp * bodyWidth;
                 } else {
                     width = options.toggleWidth * bodyWidth;
