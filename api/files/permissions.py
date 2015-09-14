@@ -15,8 +15,6 @@ class ContributorOrPublic(permissions.BasePermission):
             if not obj.node.can_edit(auth):
                 return False
 
-            return any(
-                obj.checkout is None,
-                obj.checkout == auth.user,
-                obj.node.has_permission(auth.user, 'admin')
-            )
+            return obj.checkout is None \
+                or obj.checkout == auth.user \
+                or obj.node.has_permission(auth.user, 'admin')
