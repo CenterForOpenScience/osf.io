@@ -158,8 +158,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
-                                 help_text='Highest permission the user has.  For PUT requests blank input defaults write permission if '
-                                           'user is being added and to current permission if user is being edited.')
+                                 help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
 
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
@@ -168,9 +167,12 @@ class NodeContributorsSerializer(JSONAPISerializer):
         type_ = 'users'
 
     def absolute_url(self, obj):
+        return obj.absolute_url
+
+    def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
-            'nodes:node-contributor-detail',
+            'nodes:node-contribuotor-detail',
             kwargs={
                 'node_id': node_id,
                 'user_id': obj._id
