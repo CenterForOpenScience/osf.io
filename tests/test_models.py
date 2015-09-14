@@ -1740,7 +1740,7 @@ class TestNode(OsfTestCase):
             save=True
         )
 
-        assert_equal(len(self.node.visible_contributor_ids),1)
+        assert_equal(len(self.node.visible_contributor_ids), 1)
 
     def test_contributor_set_visibility_validation(self):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
