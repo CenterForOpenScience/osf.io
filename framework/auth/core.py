@@ -880,7 +880,7 @@ class User(GuidStoredObject, AddonModelMixin):
     def social_links(self):
         social_user_fields = {}
         for key, val in self.social.items():
-            if val and key in self.SOCIAL_FIELDS.keys():
+            if val and key in self.SOCIAL_FIELDS:
                 if isinstance(val, list):
                     social_user_fields[key] = val
                 else:
