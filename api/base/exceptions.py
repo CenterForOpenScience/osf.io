@@ -18,13 +18,14 @@ def json_api_exception_handler(exc, context):
         message = response.data
 
         if isinstance(message, dict):
-            for key, value in message.iteritems():
-                if key in top_level_error_keys:
-                    errors.append({key: value})
+            for error_key, error_description in message.iteritems():
+                if error_key in top_level_error_keys:
+                    errors.append({error_key: error_description})
                 else:
-                    if isinstance(value, str):
-                        value = [value]
-                    errors.extend([{'source': {'pointer': '/data/attributes/' + key}, 'detail': reason} for reason in value])
+                    if isinstance(error_description, str):
+                        error_description = [error_description]
+                    errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason}
+                                   for reason in error_description])
         else:
             if isinstance(message, str):
                 message = [message]
