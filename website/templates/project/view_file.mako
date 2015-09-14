@@ -195,7 +195,7 @@
           canEdit: ${ int(user['can_edit']) | sjson, n }
         }
       });
-    window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
+      window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
     </script>
 
     <link href="/static/css/pages/file-view-page.css" rel="stylesheet">
