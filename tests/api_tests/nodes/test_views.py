@@ -905,6 +905,16 @@ class TestNodeBulkDelete(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "Querystring contains an invalid filter.")
 
+    def test_bulk_delete_incorrect_token(self):
+        res = self.app.delete_json_api(self.private_project_one_filtered_url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 202)
+
+        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Project%20Two'
+
+        res = self.app.delete_json_api(delete_url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Incorrect token.')
+
 
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
