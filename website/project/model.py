@@ -1150,7 +1150,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             }
 
             if getattr(self, 'parent', None):
-                # Append log to parent
                 self.parent.nodes.append(self)
                 self.parent.save()
                 log_params.update({'parent_node': self.parent._primary_key})

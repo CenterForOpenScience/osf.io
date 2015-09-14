@@ -1534,7 +1534,8 @@ class TestNodeChildCreate(ApiTestCase):
 
         self.project.reload()
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
-
+        assert_equal(self.project.nodes[0].logs[0].action, NodeLog.PROJECT_CREATED)
+        
     def test_creates_child_logged_in_write_contributor(self):
         self.project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user), save=True)
 
@@ -1546,6 +1547,7 @@ class TestNodeChildCreate(ApiTestCase):
 
         self.project.reload()
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
+        assert_equal(self.project.nodes[0].logs[0].action, NodeLog.PROJECT_CREATED)
 
     def test_creates_child_logged_in_read_contributor(self):
         self.project.add_contributor(self.user_two, permissions=[permissions.READ], auth=Auth(self.user), save=True)
@@ -1583,6 +1585,7 @@ class TestNodeChildCreate(ApiTestCase):
 
         self.project.reload()
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
+        assert_equal(self.project.nodes[0].logs[0].action, NodeLog.PROJECT_CREATED)
 
 
 class TestNodeLinksList(ApiTestCase):
@@ -1657,6 +1660,7 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
+    @assert_logs(NodeLog.TAG_ADDED, 'public_project')
     def test_contributor_can_add_tag_to_public_project(self):
         res = self.app.patch_json(self.public_url, self.one_new_tag_json, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -1672,6 +1676,7 @@ class TestNodeTags(ApiTestCase):
         assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
         assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
 
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project')
     def test_contributor_can_add_tag_to_private_project(self):
         res = self.app.patch_json(self.private_url, self.one_new_tag_json, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -1711,6 +1716,10 @@ class TestNodeTags(ApiTestCase):
         res = self.app.patch_json(self.private_url, self.one_new_tag_json, expect_errors=True, auth=self.read_only_contributor.auth)
         assert_equal(res.status_code, 403)
 
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -4)
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -3)
+    @assert_logs(NodeLog.TAG_REMOVED, 'private_project', -2)
+    @assert_logs(NodeLog.TAG_REMOVED, 'private_project')
     def test_tags_add_and_remove_properly(self):
         res = self.app.patch_json(self.private_url, self.one_new_tag_json, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -1753,6 +1762,7 @@ class TestCreateNodeLink(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
+    @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
     def test_creates_public_node_pointer_logged_in(self):
         res = self.app.post(self.public_url, self.public_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -1768,7 +1778,7 @@ class TestCreateNodeLink(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
-
+    @assert_logs(NodeLog.POINTER_CREATED, 'project')
     def test_creates_private_node_pointer_logged_in_contributor(self):
         res = self.app.post(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
@@ -1785,6 +1795,7 @@ class TestCreateNodeLink(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
+    @assert_logs(NodeLog.POINTER_CREATED, 'project')
     def test_create_node_pointer_contributing_node_to_non_contributing_node(self):
         res = self.app.post(self.private_url, self.user_two_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
@@ -1810,6 +1821,7 @@ class TestCreateNodeLink(ApiTestCase):
         assert_equal(res.status_code, 404)
         assert 'detail' in res.json['errors'][0]
 
+    @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
     def test_create_node_pointer_to_itself(self):
         res = self.app.post(self.public_url, self.point_to_itself_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)

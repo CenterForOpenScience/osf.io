@@ -113,7 +113,7 @@ class NodeSerializer(JSONAPISerializer):
         assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
         tags = validated_data.get('tags')
-        if tags:
+        if tags is not None:
             del validated_data['tags']
             current_tags = set(tags)
         else:
@@ -123,7 +123,8 @@ class NodeSerializer(JSONAPISerializer):
             node.add_tag(new_tag, auth=auth)
         for deleted_tag in (old_tags - current_tags):
             node.remove_tag(deleted_tag, auth=auth)
-        node.update(validated_data, auth=auth)
+        if validated_data:
+            node.update(validated_data, auth=auth)
         return node
 
 
