@@ -304,7 +304,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             fullname = sanitize.strip_html(fullname)
             if not fullname:
                 raise ValidationValueError('Full name field cannot be empty')
-            if email is not None:
+            if email:
                 validate_email(email)  # Will raise a ValidationError if email invalid
 
         if contrib_dict['id']:
