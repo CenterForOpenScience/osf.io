@@ -115,7 +115,7 @@ class StoredFileNode(StoredObject):
             # Note sometimes multiple GUIDs can exist for
             # a single object. Just go with the first one
             return Guid.find(Q('referent', 'eq', self))[0]
-        except NoResultsFound:
+        except IndexError:
             if not create:
                 return None
         return Guid.generate(self)
