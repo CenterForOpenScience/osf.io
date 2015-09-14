@@ -2209,7 +2209,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 params={
                     'project': self.parent_id,
                     'node': self._primary_key,
-                    'contributor': contributor._id,
+                    'contributors': [contributor._id],
                 },
                 auth=auth,
                 save=False,
