@@ -44,6 +44,9 @@ class JSONAPINodeListSerializer(JSONAPIListSerializer):
             ret.append(self.child.update(data_list[0], data_list[1]))
         return ret
 
+    class Meta:
+        type_ = 'nodes'
+
 class NodeSerializer(JSONAPISerializer, BulkSerializerMixin):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this

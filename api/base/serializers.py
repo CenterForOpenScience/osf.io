@@ -1,8 +1,9 @@
 import collections
 import re
 
-from rest_framework.fields import SkipField
+from rest_framework.fields import SkipField, empty
 from rest_framework import serializers as ser
+from rest_framework import exceptions
 
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
@@ -202,6 +203,7 @@ class WaterbutlerLink(Link):
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
+    DEFAULT_BULK_LIMIT = 10
 
     def to_representation(self, data):
         # Don't envelope when serializing collection
@@ -209,6 +211,19 @@ class JSONAPIListSerializer(ser.ListSerializer):
             self.child.to_representation(item, envelope=None) for item in data
         ]
 
+    # overrides ListSerializer
+    def run_validation(self, data=empty):
+        meta = getattr(self, 'Meta', None)
+        bulk_limit = getattr(meta, 'bulk_limit', self.DEFAULT_BULK_LIMIT)
+
+        num_items = len(data)
+
+        if num_items > bulk_limit:
+            raise exceptions.ValidationError(
+                detail={'non_field_errors': ['Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items)]}
+            )
+
+        return super(JSONAPIListSerializer, self).run_validation(data)
 
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also

@@ -401,6 +401,12 @@ class TestNodeBulkCreate(ApiTestCase):
         assert_equal(res.json['errors'][1]['meta']['field'], 'title')
         assert_equal(res.json['errors'][1]['detail'], "This field may not be blank.")
 
+    def test_bulk_create_limits(self):
+        node_create_list = [self.public_project] * 11
+        res = self.app.post_json_api(self.url, node_create_list, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.json['errors'][0]['meta']['field'], 'non_field_errors')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+
 
 class TestNodeBulkUpdate(ApiTestCase):
 
@@ -597,6 +603,12 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.json['errors'][0]['meta']['field'], 'id')
         assert_equal(res.json['errors'][0]['detail'], "This field is required.")
 
+    def test_bulk_update_limits(self):
+        node_update_list = [self.public_payload[0]] * 11
+        res = self.app.put_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.json['errors'][0]['meta']['field'], 'non_field_errors')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+
 
 class TestNodeBulkPartialUpdate(ApiTestCase):
 
@@ -777,6 +789,12 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], 'Must supply id.')
+
+    def test_bulk_partial_update_limits(self):
+        node_update_list = [self.public_payload[0]] * 11
+        res = self.app.patch_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.json['errors'][0]['meta']['field'], 'non_field_errors')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
 
 
 class TestNodeBulkDelete(ApiTestCase):
