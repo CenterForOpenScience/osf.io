@@ -24,7 +24,7 @@ def main():
     for user in get_users_with_personal_websites():
         logger.info(repr(user))
         logger.info(repr(user.social))
-        if not user.social.get('profileWebsites'):
+        if not user.social.get('profileWebsites', None):
             user.social['profileWebsites'] = []
             if user.social.get('personal'):
                 migrate_personal_to_profile_websites(user)
