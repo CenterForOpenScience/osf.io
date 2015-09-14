@@ -102,7 +102,7 @@ class TestUserValidation(OsfTestCase):
         assert_equal(self.user.social_links, {})
         assert_equal(len(self.user.social_links), 0)
 
-    def test_profile_website_site_unchanged(self):
+    def test_profile_website_unchanged(self):
         self.user.social = {'profileWebsites': ['http://cos.io/']}
         self.user.save()
         assert_equal(self.user.social_links['profileWebsites'], ['http://cos.io/'])
