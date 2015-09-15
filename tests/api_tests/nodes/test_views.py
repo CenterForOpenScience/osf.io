@@ -824,6 +824,25 @@ class TestNodeBulkDelete(ApiTestCase):
         self.private_project_one_url = '/{}nodes/{}/'.format(API_BASE, self.private_project_user_one._id)
         self.private_project_one_filtered_url = "/{}nodes/?filter[title]=Private%20Project%20User%20One".format(API_BASE)
 
+        self.project_delete_limits_1 = ProjectFactory(title="Best",creator=self.user_one)
+        self.project_delete_limits_2 = ProjectFactory(title="Best",creator=self.user_one)
+        self.project_delete_limits_3 = ProjectFactory(title="Best",creator=self.user_one)
+        self.project_delete_limits_4 = ProjectFactory(title="Best",creator=self.user_one)
+        self.project_delete_limits_5 = ProjectFactory(title="Best",creator=self.user_one)
+        self.project_delete_limits_6 = ProjectFactory(title="Best",creator=self.user_one)
+        self.project_delete_limits_7 = ProjectFactory(title="Best",creator=self.user_one)
+        self.project_delete_limits_8 = ProjectFactory(title="Best",creator=self.user_one)
+        self.project_delete_limits_9 = ProjectFactory(title="Best",creator=self.user_one)
+        self.project_delete_limits_10 = ProjectFactory(title="Best",creator=self.user_one)
+        self.project_delete_limits_11 = ProjectFactory(title="Best",creator=self.user_one)
+
+        self.limit_nodes = "/{}nodes/?filter[title]=Best".format(API_BASE)
+    def test_bulk_delete_url(self):
+        url = '/{}/v2/nodes/'.format(API_BASE)
+        res = self.app.get(url, {'id': self.project_one._id}, auth=self.user_one.auth)
+        assert_equal(res.status_code, 204)
+
+
     def test_bulk_delete_public_projects_logged_in(self):
         res = self.app.get(self.project_three_filtered_url, auth=self.user_one.auth)
         print res
@@ -932,6 +951,17 @@ class TestNodeBulkDelete(ApiTestCase):
         res = self.app.delete_json_api(delete_url, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Incorrect token.')
+
+    def test_bulk_delete_limits(self):
+        res = self.app.delete_json_api(self.limit_nodes, auth=self.user_one.auth, expect_errors=True)
+
+        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Best'
+
+        res = self.app.delete_json_api(delete_url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+        assert_equal(res.json['errors'][0]['meta']['field'], 'non_field_errors')
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
 
 
 class TestNodeDetail(ApiTestCase):
