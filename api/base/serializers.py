@@ -68,7 +68,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
 
         head, tail = os.path.split(self.lookup_field.replace('.', '/'))
         if head and tail:
-            obj = deep_get(obj, head)
+            obj = deep_get(obj, head.replace('/', '.'))
             self.lookup_field = tail
 
         return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
