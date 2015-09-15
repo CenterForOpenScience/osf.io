@@ -554,7 +554,7 @@ class TestNodeDetail(ApiTestCase):
 class NodeCRUDTestCase(ApiTestCase):
 
     def setUp(self):
-        super(NodeCRUDTestCase, self).setUp()        
+        super(NodeCRUDTestCase, self).setUp()
         self.user = AuthUserFactory()
         self.user_two = AuthUserFactory()
 
@@ -961,7 +961,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self.private_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.private_project._id)
         self.public_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.public_project._id)
 
-        self.user_three = AuthUserFactory()        
+        self.user_three = AuthUserFactory()
         self.data_user_two = {
             'id': self.user_two._id,
             'bibliographic': True
@@ -1265,7 +1265,7 @@ class TestNodeContributorUpdate(ApiTestCase):
         data = {
             'bibliographic': True
         }
-        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)        
+        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
         assert_equal(attributes['bibliographic'], True)
@@ -1344,7 +1344,7 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_remove_all_bibliographic_statuses_contributors(self):
         self.project.set_visible(self.user_two, False, save=True)
-        
+
         data = {
             'bibliographic': False
         }
@@ -1674,10 +1674,9 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['category'], self.child['category'])
 
         self.project.reload()
-        child_id = res.json['data']['id']
-        assert_equal(child_id, self.project.nodes[0]._id)
-        assert_equal(Node.load(child_id).logs[0].action, NodeLog.PROJECT_CREATED)
-        
+        assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
+        assert_equal(self.project.nodes[0].logs[0].action, NodeLog.PROJECT_CREATED)
+
     def test_creates_child_logged_in_write_contributor(self):
         self.project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user), save=True)
 
@@ -2350,8 +2349,8 @@ class TestExceptionFormatting(ApiTestCase):
         res = self.app.post_json_api(url, self.project_no_title, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert('title' in res.json['errors'][0]['meta']['field'])
-        assert('This field is required.' in res.json['errors'][0]['detail'])
+        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/title'})
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
     def test_node_does_not_exist_formatting(self):
         url = '/{}nodes/{}/'.format(API_BASE, '12345')
@@ -2377,18 +2376,19 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(len(errors), 2)
-        assert('category' in res.json['errors'][0]['meta']['field'])
-        assert('This field is required.' in res.json['errors'][0]['detail'])
-        assert('title' in res.json['errors'][1]['meta']['field'])
-        assert('This field is required.' in res.json['errors'][0]['detail'])
+        errors = res.json['errors']
+        assert_items_equal([errors[0]['source'], errors[1]['source']],
+                           [{'pointer': '/data/attributes/category'}, {'pointer': '/data/attributes/title'}])
+        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
+                           ['This field is required.', 'This field is required.'])
 
     def test_create_node_link_no_target_formatting(self):
         url = self.private_url + 'node_links/'
         res = self.app.post_json_api(url, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert('target_node_id' in res.json['errors'][0]['meta']['field'])
-        assert('This field is required.' in res.json['errors'][0]['detail'])
+        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/target_node_id'})
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
     def test_node_link_already_exists(self):
         url = self.private_url + 'node_links/'
