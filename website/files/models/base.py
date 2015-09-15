@@ -56,7 +56,7 @@ class TrashedFileNode(StoredObject):
     checkout = fields.AbstractForeignField('User')
 
 
-@unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'path', 'materialized_path'])
+@unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'path'])
 class StoredFileNode(StoredObject):
     """The storage backend for FileNode objects.
     This class should generally not be used or created manually as FileNode
