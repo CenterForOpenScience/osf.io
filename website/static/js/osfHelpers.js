@@ -174,7 +174,7 @@ var putJSON = function(url, data, success, error) {
 * @return {Object} xhr
 */
 var setXHRAuthorization = function (xhr, options) {
-    if (!window.XDomainRequest) {
+    if (navigator.appVersion.indexOf('MSIE 9.') === -1) {
         xhr.withCredentials = true;
         if (options) {
             options.withCredentials = true;

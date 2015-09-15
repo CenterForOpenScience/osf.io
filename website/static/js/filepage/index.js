@@ -278,7 +278,7 @@ module.exports = function(context) {
         $('#mfrIframe').html(context.file.error);
     } else {
         var url = context.file.urls.render;
-        if (window.XDomainRequest) {
+        if (navigator.appVersion.indexOf('MSIE 9.') !== -1) {
             url += url.indexOf('?') > -1 ? '&' : '?';
             url += 'cookie=' + (document.cookie.match(window.contextVars.cookieName + '=(.+?);|$')[1] || '');
         }
