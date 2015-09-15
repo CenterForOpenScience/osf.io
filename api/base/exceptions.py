@@ -40,6 +40,9 @@ def json_api_exception_handler(exc, context):
 
         response.data = {'errors': errors}
 
+        if response.status_code == 400:
+            response.data['meta'] = context['request'].data
+
     return response
 
 
