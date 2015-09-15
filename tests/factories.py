@@ -23,9 +23,14 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
-from website.oauth.models import ApiOAuth2Application, ExternalAccount, ExternalProvider
+from website.oauth.models import (
+   ApiOAuth2Application,
+   ExternalAccount,
+   ExternalProvider
+)
 from website.project.model import (
-    Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig
+    Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
+    Retraction, Embargo, Sanction, RegistrationApproval, DraftRegistration
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
@@ -181,7 +186,8 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, archive=False, embargo=None, registration_approval=None, retraction=None, *args, **kwargs):
+                template=None, data=None, archive=False, embargo=None,
+                registration_approval=None, retraction=None, *args, **kwargs):
         save_kwargs(**kwargs)
 
         # Original project to be registered
@@ -194,13 +200,11 @@ class RegistrationFactory(AbstractNodeFactory):
         #)
         schema = None
         user = user or project.creator
-        template = template or "Template1"
         data = data or "Some words"
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            template=template,
             data=data,
         )
 
@@ -532,3 +536,23 @@ class ArchiveTargetFactory(ModularOdmFactory):
 
 class ArchiveJobFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveJob
+
+class DraftRegistrationFactory(ModularOdmFactory):
+    FACTORY_FOR = DraftRegistration
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        branched_from = kwargs.get('branched_from')
+        initiator = kwargs.get('initiator')
+        registration_schema = kwargs.get('registration_schema')
+        registration_metadata = kwargs.get('registration_metadata')
+        if not branched_from:
+            project_params = {}
+            if initiator:
+                project_params['creator'] = initiator
+            branched_from = ProjectFactory(**project_params)
+        initiator = branched_from.creator
+        registration_schema = registration_schema or MetaSchema.find()[0]
+        registration_metadata = registration_metadata or {}
+        draft = branched_from.create_draft_registration(initiator, registration_schema, registration_metadata, save=True)
+        return draft

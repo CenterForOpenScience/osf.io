@@ -10,7 +10,7 @@ var iconmap = require('js/iconmap');
 
 // TODO: For some reason, this require is necessary for custom ko validators to work
 // Why?!
-require('./koHelpers');
+require('js/koHelpers');
 
 var GrowlBox = require('js/growlBox');
 
@@ -220,6 +220,25 @@ var unblock = function() {
     $.unblockUI();
 };
 
+var blockElement = function($el, message) {
+    $el.block({
+        message: message,
+        css: {
+            border: 'none',
+            padding: '15px',
+            backgroundColor: '#000',
+            '-webkit-border-radius': '10px',
+            '-moz-border-radius': '10px',
+            opacity: 0.5,
+            color: '#fff'
+        }
+    });
+};
+
+var unblockElement = function($el) {
+    $el.unblock();
+};
+
 var joinPrompts = function(prompts, base) {
     var prompt = base || '';
     if (prompts.length !==0) {
@@ -376,86 +395,6 @@ var trackPiwik = function(host, siteId, cvars, useCookies) {
     return true;
 };
 
-//////////////////
-// Data binders //
-//////////////////
-
-/**
- * Tooltip data binder. The value accessor should be an object containing
- * parameters for the tooltip.
- * Example:
- * <span data-bind='tooltip: {title: 'Tooltip text here'}'></span>
- */
-ko.bindingHandlers.tooltip = {
-    init: function(elem, valueAccessor) {
-        $(elem).tooltip(valueAccessor());
-    }
-};
-
-
-/**
- * Takes over anchor scrolling and scrolls to anchor positions within elements
- * Example:
- * <span data-bind='anchorScroll'></span>
- */
-ko.bindingHandlers.anchorScroll = {
-    init: function(elem, valueAccessor) {
-        var buffer = valueAccessor().buffer || 100;
-        var element = valueAccessor().elem || elem;
-        var offset;
-        $(element).on('click', 'a[href^="#"]', function (event) {
-            var $item = $(this);
-            var $element = $(element);
-            if(!$item.attr('data-model') && $item.attr('href') !== '#') {
-                event.preventDefault();
-                // get location of the target
-                var target = $item.attr('href');
-                // if target has a scrollbar scroll it, otherwise scroll the page
-                if ( $element.get(0).scrollHeight > $element.innerHeight() ) {
-                    offset = $(target).position();
-                    $element.scrollTop(offset.top - buffer);
-                } else {
-                    offset = $(target).offset();
-                    $(window).scrollTop(offset.top - 100); // This is fixed to 100 because of the fixed navigation menus on the page
-                }
-            }
-        });
-    }
-};
-
-/**
- * Adds class returned from iconmap to the element. The value accessor should be the
- * category of the node.
- * Example:
- * <span data-bind="getIcon: 'analysis'"></span>
- */
-ko.bindingHandlers.getIcon = {
-    init: function(elem, valueAccessor) {
-        var icon;
-        var category = valueAccessor();
-        if (Object.keys(iconmap.componentIcons).indexOf(category) >=0 ){
-            icon = iconmap.componentIcons[category];
-        }
-        else {
-            icon = iconmap.projectIcons[category];
-        }
-        $(elem).addClass(icon);
-    }
-};
-
-/**
- * Required in render_node.mako to call getIcon. As a result of modularity there
- * are overlapping scopes. To temporarily escape the parent scope and allow other binding
- * stopBinding can be used. Only other option was to redo the structure of the scopes.
- * Example:
- * <span data-bind="stopBinding: true"></span>
- */
-ko.bindingHandlers.stopBinding = {
-    init: function() {
-        return { controlsDescendantBindings: true };
-    }
-};
-
 /**
  * Allows data-bind to be called without a div so the layout of the page is not effected.
  * Example:
@@ -594,56 +533,6 @@ var tableResize = function(selector, checker) {
     }).resize(); // Trigger resize handler
 };
 
-/* A binding handler to convert lists into formatted lists, e.g.:
- * [dog] -> dog
- * [dog, cat] -> dog and cat
- * [dog, cat, fish] -> dog, cat, and fish
- *
- * This handler should not be used for user inputs.
- *
- * Example use:
- * <span data-bind="listing: {data: ['Alpha', 'Beta', 'Gamma'],
- *                            map: function(item) {return item.charAt(0) + '.';}}"></span>
- * yields
- * <span ...>A., B., and G.</span>
- */
-ko.bindingHandlers.listing = {
-    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
-        var value = valueAccessor();
-        var valueUnwrapped = ko.unwrap(value);
-        var map = valueUnwrapped.map || function(item) {return item;};
-        var data = valueUnwrapped.data || [];
-        var keys = [];
-        if (!Array.isArray(data)) {
-            keys = Object.keys(data);
-        }
-        else {
-            keys = data;
-        }
-        var index = 1;
-        var list = ko.utils.arrayMap(keys, function(key) {
-            var ret;
-            if (index === 1){
-                ret = '';
-            }
-            else if (index === 2){
-                if (valueUnwrapped.length === 2) {
-                    ret = ' and ';
-                }
-                else {
-                    ret = ', ';
-                }
-            }
-            else {
-                ret = ', and ';
-            }
-            ret += map(key, data[key]);
-            index++;
-            return ret;
-        }).join('');
-        $(element).html(list);
-    }
-};
 
 /* Responsive Affix for side nav */
 var fixAffixWidth = function() {
@@ -804,6 +693,64 @@ var confirmDangerousAction = function (options) {
     bootbox.dialog(bootboxOptions);
 };
 
+/**
+ * Maps an object to an array of {key: KEY, value: VALUE} pairs
+ *
+ * @param {Object} obj
+ * @returns {Array} array of key, value pairs
+**/
+var iterObject = function(obj) {
+    var ret = [];
+    $.each(obj, function(prop, value) {
+        ret.push({
+            key: prop,
+            value: value
+        });
+    });
+    return ret;
+};
+/** 
+ * Asserts that a value is falsey or an empty string
+ *
+ * @param {String} item
+ * @returns {Boolean} true if item is flasey or an empty string else false
+**/
+function isBlank(item) {
+    return !item || /^\s*$/.test(item || '');
+}
+/**
+ * Use a search function to get the index of an object in an array
+ *
+ * @param {Array} array
+ * @param {Function} searchFn: function that returns true when an item matching the search conditions is found
+ * @returns {Integer} index of matched item or -1 if no matching item is found
+ **/
+function indexOf(array, searchFn) {
+    var len = array.length;
+    for(var i = 0; i < len; i++) {
+        if(searchFn(array[i])) {
+            return i;
+        }
+    }
+    return -1;
+}
+/**
+ * Create a function that negates the passed value
+ *
+ * @param {Any} any: either a function or some other value; for function values the return value of the function is negated
+ * @returns {Function}: a function that returns the negated value of any (or the return value of any when called with the same arguments)
+ **/
+function not(any) {
+    return function() {
+        try {
+            return !any.apply(this, arguments);
+        }
+        catch(err) {
+            return !any;
+        }
+    };
+}
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -814,9 +761,11 @@ module.exports = window.$.osf = {
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
     block: block,
+    unblock: unblock,
+    blockElement: blockElement,
+    unblockElement: unblockElement,
     growl: growl,
     apiV2Url: apiV2Url,
-    unblock: unblock,
     joinPrompts: joinPrompts,
     mapByProperty: mapByProperty,
     isEmail: isEmail,
@@ -833,5 +782,9 @@ module.exports = window.$.osf = {
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
     isIE: isIE,
-    isSafari:isSafari
+    isSafari: isSafari,
+    indexOf: indexOf,
+    iterObject: iterObject,
+    isBlank: isBlank,
+    not: not
 };
