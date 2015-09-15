@@ -218,7 +218,34 @@ var FileViewPage = {
                 m('#sharebutton.btn.btn-sm.btn-primary', {onclick: function () {
                     var link = $('iframe').attr('src');
                     var height = $('iframe').attr('height');
-                    updateHeight(height);
+                    link = link.substring(0, link.indexOf('download') + 8);
+                    var url = link.substring(0, link.indexOf('render'));
+                    var title1 = '';
+                    var title2 = '';
+                    var style = '\<link href=\"' + url + 'static/css/mfr.css\" media=\"all\" rel=\"stylesheet\" /\>';
+                    m.render(document.getElementById('popOver'), m('', [
+                        m('ul.nav.nav-tabs.nav-justified', [
+                            m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
+                            m('li', m('a[href="#embed"][data-toggle="tab"]', 'Embed'))
+                        ]), m('br'),
+                        m('.tab-content', [
+                            m('.tab-pane.fade.in.active#share', m('.input-group', [
+                                m('span.input-group-btn', m('button#copyBtn.btn.btn-default.btn-md[type="button"][style="height: 34px"][data-clipboard-text="' + link + '"]', m('.fa.fa-copy'))),
+                                m('input.form-control[type="text"][value="'+ link +'"]')
+                            ])),
+                            m('.tab-pane.fade#embed', [
+                                m('p[data-toggle="tooltip"][data-placement="bottom"][title="'+ title1 +'"]', 'Dynamically Render iFrame with JavaScript'),
+                                m('textarea.form-control', [
+                                    style,
+                                    m('.mfr.mfr-file#mfrIframe'),
+                                ]),
+                                m('p[data-toggle="tooltip"][data-placement="bottom"][title="'+ title2 +'"]', 'Direct iFrame with Fixed Height and Width'),
+                                m('textarea.form-control#directIFrame',
+                                    m('iframe[src="' + link + '"][width="100%"][scrolling="yes"][height="' + height + '"][marginheight="0"][frameborder="0"]')
+                                )
+                            ])
+                        ])
+                    ]));
                 }, config: function(element, isInitialized) {
                     if(!isInitialized){
                         var button = $(element).popover();
@@ -231,44 +258,8 @@ var FileViewPage = {
                         else {
                             $('#sharebutton').removeAttr('disabled', 'disabled');
                         }
-                        var link = $('iframe').attr('src');
-                        var height = $('iframe').attr('height');
-                        link = link.substring(0, link.indexOf('download') + 8);
-                        var url = link.substring(0, link.indexOf('render'));
-                        var style = '\<link href=\"' + url + 'static/css/mfr.css\" media=\"all\" rel=\"stylesheet\" /\>';
-                        var data = [
-                            '\<ul class="nav nav-tabs nav-justified"\>',
-                            '   \<li class="active"\>\<a href="#share" data-toggle="tab"\>Share\</a\>\</li\>', '' +
-                            '   \<li\>\<a href="#embed" data-toggle="tab"\>Embed\</a\>\</li\>',
-                            '\</ul\>\<br\>',
-                            '\<div class="tab-content"\>',
-                            '   \<div id="share" class="tab-pane fade in active"\>',
-                            '       \<div class="input-group"\>',
-                            '           \<span class="input-group-btn"\>\<button id="copyBtn" class="btn btn-default btn-md" type="button" style="height: 34px;" data-clipboard-text="' + link + '"\> \<div class="fa fa-copy" /\>\</button\>\</span\>',
-                            '           \<input onclick="this.select()" class="form-control" type="text" value="' + link + '" /\>',
-                            '       \</div\>',
-                            '   \</div\>',
-                            '   \<div id="embed" class="tab-pane fade"\>',
-                            '       \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to HTML to dynamically render an iFrame that is automatically sized appropriately."\>Dynamically Render iFrame with JavaScript\<p/\>',
-                            '       \<textarea onclick="this.select()" class="form-control" \>' +
-                                        style + '\n' +
-                                        '\<div id="mfrIframe" class="mfr mfr-file"\>\</div\> \n',
-                                        '\<script src="' + url + 'static/js/mfr.js"\>\</script\> \n',
-                                        '\<script\> \n',
-                                        '   var mfrRender = new mfr.Render\("mfrIframe", "' + link + '"\);\n',
-                                        '\</script\> ',
-                            '       \</textarea\>',
-                            '       \<br/\> \<p data-toggle="tooltip" data-placement="bottom" title="Copy and paste to HTML to directly embed the iFrame with custom sizing and scrolling enabled. Edit size of iFrame by clicking on Show More."\>Direct iFrame with Fixed Height and Width\<p/\>',
-                            '           \<textarea id="directIFrame" onclick="this.select()" class="form-control" \>'  +
-                            '\<iframe src="' + link + '" width="100%" scrolling="yes" height="100%" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen \>',
-                            '           \</textarea\>',
-                            '   \</div\>\</div\>',
-                            '\<script\>function updateHeight(height) { var str = $(\'#directIFrame\').html().replace(/height=(".*?")/, \'height="\' + height +  \'"\'); $(\'#directIFrame\').html(str); } \</script\>'
-                        ];
-                        $(element).attr('data-content', data.join(''));
-                        makeClient($('#copyBtn'));
                     }
-                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': 'Content', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share')
+                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"/>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share')
             ]),
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
