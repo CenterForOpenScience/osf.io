@@ -307,10 +307,9 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                         '{0} / {1}'.format(repo.owner.login, repo.name)
                         for repo in repos
                     ]
-                except GitHubError as error:
-                    if error.code == http.UNAUTHORIZED:
-                        repo_names = []
-                        valid_credentials = False
+                except GitHubError:
+                    repo_names = []
+                    valid_credentials = False
                 ret.update({'repo_names': repo_names})
             ret.update({
                 'node_has_auth': True,
