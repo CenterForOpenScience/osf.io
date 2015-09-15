@@ -239,7 +239,7 @@ def create_waterbutler_log(payload, **kwargs):
         if src is not None and dest is not None:
             dest_path = dest['materialized']
             src_path = src['materialized']
-            if str(dest_path).endswith("/") and str(src_path).endswith("/"):
+            if dest_path.endswith('/') and src_path.endswith('/'):
                 dest_path = os.path.dirname(dest_path)
                 src_path = os.path.dirname(src_path)
             if (
