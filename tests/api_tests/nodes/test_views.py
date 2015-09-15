@@ -98,7 +98,6 @@ class TestNodeList(ApiTestCase):
         assert_not_in(self.private._id, ids)
 
 
-
 class TestNodeFiltering(ApiTestCase):
 
     def setUp(self):
@@ -754,6 +753,7 @@ class TestNodeDelete(ApiTestCase):
         # Dashboards are a folder, so a 404 is returned
         assert_equal(res.status_code, 404)
 
+
 class TestNodeContributorList(ApiTestCase):
 
     def setUp(self):
@@ -806,6 +806,7 @@ class TestNodeContributorList(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
+
 
 class TestNodeContributorFiltering(ApiTestCase):
 
@@ -862,6 +863,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         errors = res.json['errors']
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
+
 
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
@@ -987,7 +989,6 @@ class TestNodeChildrenList(ApiTestCase):
         ids = [node['id'] for node in res.json['data']]
         assert_not_in(child_project._id, ids)
         assert_equal(1, len(ids))
-
 
 
 class TestNodeChildCreate(ApiTestCase):
@@ -1217,6 +1218,7 @@ class TestNodeTags(ApiTestCase):
         res = self.app.patch_json(self.private_url, {'tags': []}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
+
 
 class TestCreateNodeLink(ApiTestCase):
     def setUp(self):
@@ -1648,8 +1650,8 @@ class TestExceptionFormatting(ApiTestCase):
         res = self.app.post_json_api(url, self.project_no_title, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert('title' in res.json['errors'][0]['meta']['field'])
-        assert('This field is required.' in res.json['errors'][0]['detail'])
+        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/title'})
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
     def test_node_does_not_exist_formatting(self):
         url = '/{}nodes/{}/'.format(API_BASE, '12345')
@@ -1675,19 +1677,19 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(len(errors), 2)
-        assert('category' in res.json['errors'][0]['meta']['field'])
-        assert('This field is required.' in res.json['errors'][0]['detail'])
-        assert('title' in res.json['errors'][1]['meta']['field'])
-        assert('This field is required.' in res.json['errors'][0]['detail'])
+        errors = res.json['errors']
+        assert_items_equal([errors[0]['source'], errors[1]['source']],
+                           [{'pointer': '/data/attributes/category'}, {'pointer': '/data/attributes/title'}])
+        assert_items_equal([errors[0]['detail'], errors[1]['detail']],
+                           ['This field is required.', 'This field is required.'])
 
     def test_create_node_link_no_target_formatting(self):
         url = self.private_url + 'node_links/'
         res = self.app.post_json_api(url, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert('target_node_id' in res.json['errors'][0]['meta']['field'])
-        assert('This field is required.' in res.json['errors'][0]['detail'])
-
+        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/target_node_id'})
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
     def test_node_link_already_exists(self):
         url = self.private_url + 'node_links/'
