@@ -76,7 +76,7 @@ function ViewModel(url) {
                 externalAccount.dataverseUrl = account.host_url;
                 return externalAccount;
             }));
-            $('.addon-auth-table').osfToggleHeight({height: 140});
+            $('#dataverse-header').osfToggleHeight({height: 140});
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
