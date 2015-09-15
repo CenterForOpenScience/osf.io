@@ -227,7 +227,7 @@ class AddonFileMoved(ComplexFileEvent):
         if self.payload['destination']['kind'] != u'folder':
             moved, warn, rm_users = event_utils.categorize_users(self.user, self.event_type, self.source_node,
                                                                  self.event_type, self.node)
-            warn_message = u'{} Your component-level subscription was not transferred.'.format(self.html_message)
+            warn_message = u'{} You are no longer tracking that file based on the settings you selected for the component.'.format(self.html_message)
             remove_message = (u'{} Your subscription has been removed'
                               u' due to insufficient permissions in the new component.').format(self.html_message)
         # Folder
@@ -240,7 +240,7 @@ class AddonFileMoved(ComplexFileEvent):
             moved, warn, rm_users = event_utils.compile_user_lists(files, self.user, self.source_node, self.node)
 
             # For users that don't have individual file subscription but has permission on the new node
-            warn_message = self.html_message + ' Your component-level subscription was not transferred.'
+            warn_message = u'{} You are no longer tracking that folder or files within based on the settings you selected for the component.'.format(self.html_message)
             # For users without permission on the new node
             remove_message = (u'{} Your subscription has been removed for the folder,'
                               u' or a file within,'
