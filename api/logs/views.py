@@ -1,5 +1,6 @@
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import NotFound
 
 from website.models import Node, NodeLog
 
@@ -39,7 +40,9 @@ class LogNodeList(generics.ListAPIView, ODMFilterMixin):
     def get_queryset(self):
         log = NodeLog.load(self.kwargs.get('log_id'))
         if not log:
-            return []
+            raise NotFound(
+                detail='No log matching that log_id could be found.'
+            )
         else:
             return [
                 node for node in log.node__logged
