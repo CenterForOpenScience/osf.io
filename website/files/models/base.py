@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import os
 import bson
 import logging
+import pymongo
 import datetime
 import requests
 import functools
@@ -63,6 +64,15 @@ class StoredFileNode(StoredObject):
     contains all the helpers required.
     A FileNode wraps a StoredFileNode to provider usable abstraction layer
     """
+
+    __indices__ = [{
+        'unique': False,
+        'key_or_list': [
+            ('path', pymongo.ASCENDING),
+            ('node', pymongo.ASCENDING)
+        ]
+    }]
+
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
 
     # The last time the touch method was called on this FileNode
