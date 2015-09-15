@@ -113,5 +113,5 @@ class FileVersionSerializer(JSONAPISerializer):
         fobj = self.context['view'].get_file()
         return furl.furl(settings.DOMAIN).set(
             path=(fobj.node._id, 'files', fobj.provider, fobj.path.lstrip('/')),
-            query={fobj.version_idenifier: obj.identifier}
+            query={fobj.version_identifier: obj.identifier}  # TODO this can probably just be changed to revision or version
         ).url
