@@ -146,6 +146,7 @@ class FileNodeMeta(type):
 class FileNode(object):
     """The base class for the entire files storage system.
     Use for querying on all files and folders in the database
+    Note: This is a proxy object for StoredFileNode
     """
     FOLDER, FILE, ANY = 0, 1, 2
 
@@ -166,6 +167,7 @@ class FileNode(object):
     def get_or_create(cls, node, path):
         """Tries to find a FileNode with node and path
         See FileNode.create
+        Note: Osfstorage overrides this method due to odd database constraints
         """
         path = '/' + path.lstrip('/')
         try:
@@ -173,10 +175,7 @@ class FileNode(object):
             # Currently create then find is not super feasable as create would require a
             # call to save which we choose not to call to avoid filling  the database
             # with notfound/googlebot files/url. Raising 404 errors may roll back the transaction however
-            return cls.find_one(
-                Q('node', 'eq', node) &
-                Q('path', 'eq', path)
-            )
+            return cls.find_one(Q('node', 'eq', node) & Q('path', 'eq', path))
         except NoResultsFound:
             return cls.create(node=node, path=path)
 

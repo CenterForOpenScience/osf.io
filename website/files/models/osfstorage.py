@@ -18,6 +18,21 @@ class OsfStorageFileNode(FileNode):
     def get(cls, _id, node):
         return cls.find_one(Q('_id', 'eq', _id) & Q('node', 'eq', node))
 
+    @classmethod
+    def get_or_create(cls, node, path):
+        """Override get or create for osfstorage
+        Path is always the _id of the osfstorage filenode.
+        Use load here as its way faster than find.
+        Just manually assert that node is equal to node.
+        """
+        inst = cls.load(path.strip('/'))
+        # Use _id as odms default comparison mucks up sometimes
+        if inst and inst.node._id == node._id:
+            return inst
+
+        # Dont raise anything a 404 will be raised later
+        return cls.create(node=node, path=path)
+
     @property
     def kind(self):
         return 'file' if self.is_file else 'folder'
@@ -45,10 +60,15 @@ class OsfStorageFileNode(FileNode):
             return '/{}'.format(path)
         return '/{}/'.format(path)
 
+    @property
+    def path(self):
+        """Path is dynamically computed as storedobject.path is stored
+        as an empty string to make the unique index work properly for osfstorage
+        """
+        return '/' + self._id + ('' if self.is_file else '/')
+
     def save(self):
-        path = '/' + self._id + ('' if self.is_file else '/')
-        if not self.path or self.path != path:
-            self.path = path
+        self.path = ''
         self.materialized_path = ''
         super(OsfStorageFileNode, self).save()
 
