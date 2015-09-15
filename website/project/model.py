@@ -1150,6 +1150,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             }
 
             if getattr(self, 'parent', None):
+                # Append log to parent
                 self.parent.nodes.append(self)
                 self.parent.save()
                 log_params.update({'parent_node': self.parent._primary_key})
@@ -1296,6 +1297,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise ValueError(
                 'Pointer to node {0} already in list'.format(node._id)
             )
+
+        if self.is_registration:
+            raise NodeStateError('Cannot add a pointer to a registration')
 
         # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
         # Also, no pointers to the dashboard project, which could cause loops as well.

@@ -1569,6 +1569,13 @@ class TestNode(OsfTestCase):
             }
         )
 
+    def test_add_pointer_fails_for_registrations(self):
+        node = ProjectFactory()
+        registration = RegistrationFactory(creator=self.user)
+
+        with assert_raises(NodeStateError):
+            registration.add_pointer(node, auth=self.consolidate_auth)
+
     def test_get_points_exclude_folders(self):
         user = UserFactory()
         pointer_project = ProjectFactory(is_public=True)  # project that points to another project

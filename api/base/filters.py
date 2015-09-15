@@ -84,7 +84,7 @@ class ODMFilterMixin(FilterMixin):
 
     field_comparison_operators = {
         ser.CharField: 'icontains',
-        ser.ListField: 'in',
+        ser.ListField: 'contains',
     }
 
     def __init__(self, *args, **kwargs):

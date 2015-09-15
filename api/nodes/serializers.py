@@ -28,7 +28,14 @@ class NodeSerializer(JSONAPISerializer):
     # instance
     category_choices = Node.CATEGORY_MAP.keys()
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
-    filterable_fields = frozenset(['title', 'description', 'public'])
+    filterable_fields = frozenset([
+        'title',
+        'description',
+        'public',
+        'registration',
+        'tags',
+        'category',
+    ])
 
     id = ser.CharField(read_only=True, source='_id', label='ID')
     title = ser.CharField(required=True)
@@ -45,10 +52,10 @@ class NodeSerializer(JSONAPISerializer):
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
-                                                            'to everyone. Private nodes require explicit read '
-                                                            'permission. Write and admin access are the same for '
-                                                            'public and private nodes. Administrators on a parent '
-                                                            'node have implicit read permissions for all child nodes',
+                                        'to everyone. Private nodes require explicit read '
+                                        'permission. Write and admin access are the same for '
+                                        'public and private nodes. Administrators on a parent '
+                                        'node have implicit read permissions for all child nodes',
                               )
 
     children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
@@ -217,6 +224,19 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
         return contributor
+
+class NodeRegistrationSerializer(NodeSerializer):
+
+    retracted = ser.BooleanField(source='is_retracted', read_only=True,
+        help_text='Whether this registration has been retracted.')
+
+    # TODO: Finish me
+
+    # TODO: Override create?
+
+    def update(self, *args, **kwargs):
+        raise exceptions.ValidationError('Registrations cannot be modified.')
+
 
 class NodeLinksSerializer(JSONAPISerializer):
 
