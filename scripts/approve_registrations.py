@@ -32,9 +32,16 @@ def main(dry_run=True):
                 .format(registration_approval._id, pending_registration._id)
             )
             if not dry_run:
+                if pending_registration.is_deleted:
+                    # Clean up any registration failures during archiving
+                    registration_approval.forcibly_reject()
+                    registration_approval.save()
+                    continue
+
                 with TokuTransaction():
                     try:
-                        registration_approval._on_complete(registration_approval.initiated_by)
+                        # Ensure no `User` is associated with the final approval
+                        registration_approval._on_complete(None)
                     except Exception as err:
                         logger.error(
                             'Unexpected error raised when approving registration for '

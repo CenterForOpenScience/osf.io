@@ -1,5 +1,4 @@
 'use strict';
-
 var hljs = require('highlight.js');
 require('highlight-css');
 var MarkdownIt = require('markdown-it');
@@ -20,6 +19,13 @@ var highlighter = function (str, lang) {
         return ''; // use external default escaping
     };
 
+/**
+ * Apply .table class (from Bootstrap) to all tables
+ */
+var bootstrapTable = function(md) {
+    md.renderer.rules.table_open = function() { return '<table class="table">'; };
+};
+
 // Full markdown renderer for views / wiki pages / pauses between typing
 var markdown = new MarkdownIt('commonmark', {
     highlight: highlighter
@@ -28,6 +34,8 @@ var markdown = new MarkdownIt('commonmark', {
     .use(require('markdown-it-toc'))
     .use(require('markdown-it-sanitizer'))
     .use(insDel)
+    .enable('table')
+    .use(bootstrapTable)
     .disable('strikethrough');
 
 
@@ -37,6 +45,8 @@ var markdownQuick = new MarkdownIt(('commonmark'), { })
     .disable('link')
     .disable('image')
     .use(insDel)
+    .enable('table')
+    .use(bootstrapTable)
     .disable('strikethrough');
 
 module.exports = {

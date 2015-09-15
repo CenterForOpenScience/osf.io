@@ -17,7 +17,7 @@ Embargo for
 
 <script type="text/html" id="embargo_cancelled">
 cancelled embargo of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="embargo_completed">
@@ -43,7 +43,7 @@ approved retraction of
 
 <script type="text/html" id="retraction_cancelled">
 cancelled retraction of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="retraction_initiated">
@@ -59,12 +59,17 @@ initiated registration of
 
 <script type="text/html" id="registration_cancelled">
 cancelled registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+<span class="log-node-title-link overflow" data-bind="text: nodeTitle"></span>
 </script>
 
 <script type="text/html" id="registration_approved">
 approved registration of
-<a class="log-node-title-link overflow" data-bind="text: nodeTitlegit , attr: {href: nodeUrl}"></a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle , attr: {href: nodeUrl}"></a>
+</script>
+
+<script type="text/html" id="registration_approved_no_user">
+Registration of
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> approved
 </script>
 
 ## Project related logs
@@ -151,6 +156,10 @@ to
 <script type="text/html" id="project_registered">
 registered
 <a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="project_registered_no_user">
+<a class="log-node-title-link overflow" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a> registered
 </script>
 
 <script type="text/html" id="node_forked">
@@ -257,6 +266,17 @@ invisible on
   to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
   <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
   {{/ifnot}}
+</script>
+
+<script type="text/html" id="addon_file_renamed">
+    renamed <span class="overflow">{{ params.source.materialized }}</span>
+  {{#if params.source.materialized.endsWith('/')}}
+  to <span class="overflow log-folder">{{ params.destination.materialized }}</span> in {{ params.destination.addon }} in
+  {{/if}}
+  {{#ifnot params.source.materialized.endsWith('/')}}
+  to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
+  {{/ifnot}}
+    <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
 </script>
 
 <script type="text/html" id="external_ids_added">

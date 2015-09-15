@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import httplib as http
 import mock
 import unittest  # noqa
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -11,7 +12,7 @@ from tests import factories
 
 from framework.mongo import handlers
 
-from website.project.model import Sanction, EmailApprovableSanction
+from website.project.model import Sanction, EmailApprovableSanction, ensure_schemas
 
 def valid_user():
     return factories.UserFactory(system_tags=['flag'])
@@ -53,9 +54,9 @@ class TestSanction(SanctionsTestCase):
         self.sanction.add_authorizer(self.user, save=True)
 
     def test_pending_approval(self):
-        assert_true(self.sanction.pending_approval)
+        assert_true(self.sanction.is_pending_approval)
         self.sanction.state = Sanction.APPROVED
-        assert_false(self.sanction.pending_approval)
+        assert_false(self.sanction.is_pending_approval)
 
     def test_validate_authorizer(self):
         assert_false(self.sanction._validate_authorizer(self.invalid_user))
@@ -141,6 +142,7 @@ class TestSanction(SanctionsTestCase):
         assert_true(mock_notify_non_authorizer.called_once_with(other_user))
         assert_true(mock_notify_authorizer.called_once_with(self.user))
 
+
 class TestEmailApprovableSanction(SanctionsTestCase):
 
     def setUp(self, *args, **kwargs):
@@ -183,3 +185,72 @@ class TestEmailApprovableSanction(SanctionsTestCase):
 
     def test_add_authorizer(self):
         assert_is_not_none(self.sanction.stashed_urls.get(self.user._id))
+
+    @mock.patch('website.mails.send_mail')
+    def test__notify_authorizer(self, mock_send):
+        self.sanction._notify_authorizer(self.user)
+        assert_true(mock_send.called)
+        args, kwargs = mock_send.call_args
+        assert_true(self.user.username in args)
+
+    @mock.patch('website.mails.send_mail')
+    def test__notify_non_authorizer(self, mock_send):
+        self.sanction._notify_non_authorizer(self.user)
+        assert_true(mock_send.called)
+        args, kwargs = mock_send.call_args
+        assert_true(self.user.username in args)
+
+    @mock.patch('website.mails.send_mail')
+    def test_ask(self, mock_send):
+        group = [self.user]
+        for i in range(5):
+            u = factories.UserFactory()
+            group.append(u)
+        self.sanction.ask(group)
+        authorizer = group.pop(0)
+        mock_send.assert_any_call(
+            authorizer.username,
+            self.sanction.AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,
+            user=authorizer,
+            **{}
+        )
+        for user in group:
+            mock_send.assert_any_call(
+                user.username,
+                self.sanction.NON_AUTHORIZER_NOTIFY_EMAIL_TEMPLATE,
+                user=user,
+                **{}
+            )
+
+
+class TestRegistrationApproval(OsfTestCase):
+
+    def setUp(self):
+        super(TestRegistrationApproval, self).setUp()
+        ensure_schemas()
+        self.user = factories.AuthUserFactory()
+        self.registration = factories.RegistrationFactory(creator=self.user, archive=True)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_non_contributor_GET_approval_returns_HTTPError(self, mock_enqueue):
+        non_contributor = factories.AuthUserFactory()
+
+        approval_token = self.registration.registration_approval.approval_state[self.user._id]['approval_token']
+        approval_url = self.registration.web_url_for('view_project', token=approval_token)
+
+        res = self.app.get(approval_url, auth=non_contributor.auth, expect_errors=True)
+        assert_equal(http.FORBIDDEN, res.status_code)
+        assert_true(self.registration.is_pending_registration)
+        assert_false(self.registration.is_registration_approved)
+
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_non_contributor_GET_disapproval_returns_HTTPError(self, mock_enqueue):
+        non_contributor = factories.AuthUserFactory()
+
+        rejection_token = self.registration.registration_approval.approval_state[self.user._id]['rejection_token']
+        rejection_url = self.registration.web_url_for('view_project', token=rejection_token)
+
+        res = self.app.get(rejection_url, auth=non_contributor.auth, expect_errors=True)
+        assert_equal(http.FORBIDDEN, res.status_code)
+        assert_true(self.registration.is_pending_registration)
+        assert_false(self.registration.is_registration_approved)

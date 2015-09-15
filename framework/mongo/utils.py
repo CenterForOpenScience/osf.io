@@ -61,18 +61,16 @@ def unique_on(*groups):
         return cls
     return wrapper
 
-
 def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None):
     """Load an instance of Model by primary key or modularodm.Q query. Raise an appropriate
     HTTPError if no record is found or if the query fails to find a unique record
-
     :param type Model: StoredObject subclass to query
     :param pk_or_query:
     :type pk_or_query: either
       - a <basestring> representation of the record's primary key, e.g. 'abcdef'
       - a <QueryBase> subclass query to uniquely select a record, e.g.
         Q('title', 'eq', 'Entitled') & Q('version', 'eq', 1)
-    :param boolean allow_deleted: allow deleted records
+    :param bool allow_deleted: allow deleleted records?
     :param basestring display_name:
     :return: Model instance
     """

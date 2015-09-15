@@ -59,6 +59,38 @@ var apiV2Url = function (path, options){
     return apiUrl.toString();
 };
 
+/*
+ * Perform an ajax request (cross-origin if necessary) that sends and receives JSON
+ */
+var ajaxJSON = function(method, url, options) {
+    var defaults = {
+        data: {},  // Request body (required for PUT, PATCH, POST, etc)
+        isCors: false,  // Is this sending a cross-domain request? (if true, will also send any login credentials)
+        fields: {}  // Additional fields (settings) for the JQuery AJAX call; overrides any defaults set by function
+    };
+    var opts = $.extend({}, defaults, options);
+
+    var ajaxFields = {
+        url: url,
+        type: method,
+        contentType: 'application/json',
+        dataType: 'json'
+    };
+    // Add JSON payload if not a GET request
+    if (method.toLowerCase() !== 'get') {
+        ajaxFields.data = JSON.stringify(opts.data);
+    }
+    if(opts.isCors) {
+        ajaxFields.crossOrigin = true;
+        ajaxFields.xhrFields =  {
+            withCredentials: true
+        };
+    }
+    $.extend(true, ajaxFields, opts.fields);
+
+    return $.ajax(ajaxFields);
+};
+
 
 /**
 * Posts JSON data.
@@ -82,18 +114,17 @@ var apiV2Url = function (path, options){
 */
 var postJSON = function(url, data, success, error) {
     var ajaxOpts = {
-        url: url, type: 'post',
-        data: JSON.stringify(data),
-        contentType: 'application/json', dataType: 'json'
+        data: data,
+        fields: {}
     };
     // For backwards compatibility. Prefer the Promise interface to these callbacks.
     if (typeof success === 'function') {
-        ajaxOpts.success = success;
+        ajaxOpts.fields.success = success;
     }
     if (typeof error === 'function') {
-        ajaxOpts.error = error;
+        ajaxOpts.fields.error = error;
     }
-    return $.ajax(ajaxOpts);
+    return ajaxJSON('post', url, ajaxOpts);
 };
 
 /**
@@ -111,18 +142,17 @@ var postJSON = function(url, data, success, error) {
   */
 var putJSON = function(url, data, success, error) {
     var ajaxOpts = {
-        url: url, type: 'put',
-        data: JSON.stringify(data),
-        contentType: 'application/json', dataType: 'json'
+        data: data,
+        fields: {}
     };
     // For backwards compatibility. Prefer the Promise interface to these callbacks.
     if (typeof success === 'function') {
-        ajaxOpts.success = success;
+        ajaxOpts.fields.success = success;
     }
     if (typeof error === 'function') {
-        ajaxOpts.error = error;
+        ajaxOpts.fields.error = error;
     }
-    return $.ajax(ajaxOpts);
+    return ajaxJSON('put', url, ajaxOpts);
 };
 
 /**
@@ -514,7 +544,7 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
-    $(window).resize(debounce(fixAffixWidth, 80, true));
+    $(window).resize(debounce(fixAffixWidth, 20, true));
     $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
 };
 
@@ -591,6 +621,14 @@ var _confirmationString = function() {
 var isIE = function(userAgent) {
     userAgent = userAgent || navigator.userAgent;
     return userAgent.indexOf('MSIE ') > -1 || userAgent.indexOf('Trident/') > -1;
+};
+
+/**
+*  Helper function to judge if the user browser is Safari
+*/
+var isSafari = function(userAgent) {
+    userAgent = userAgent || navigator.userAgent;
+    return (userAgent.search('Safari') >= 0 && userAgent.search('Chrome') < 0);
 };
 
 /**
@@ -718,6 +756,7 @@ function not(any) {
 module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
+    ajaxJSON: ajaxJSON,
     setXHRAuthorization: setXHRAuthorization,
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
@@ -743,6 +782,7 @@ module.exports = window.$.osf = {
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
     isIE: isIE,
+    isSafari: isSafari,
     indexOf: indexOf,
     iterObject: iterObject,
     isBlank: isBlank,

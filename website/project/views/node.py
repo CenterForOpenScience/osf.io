@@ -11,6 +11,7 @@ from modularodm.exceptions import ModularOdmException, ValidationValueError
 from framework import status
 from framework.utils import iso8601format
 from framework.mongo import StoredObject
+from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo.utils import get_or_http_error
@@ -29,11 +30,12 @@ from website.project.decorators import (
     must_not_be_registration,
     http_error_if_disk_saving_mode
 )
-from website.project.metadata.utils import serialize_meta_schema
+from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
 from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError
 from website.project.forms import NewNodeForm
+from website.project.metadata.utils import serialize_meta_schema
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
@@ -286,6 +288,7 @@ def node_setting(auth, node, **kwargs):
             config['template_lookup'] = addon.config.template_lookup
             config['addon_icon_url'] = addon.config.icon_url
             addon_enabled_settings.append(config)
+
     addon_enabled_settings = sorted(addon_enabled_settings, key=lambda addon: addon['addon_full_name'].lower())
 
     ret['addon_categories'] = settings.ADDON_CATEGORIES
@@ -299,8 +302,9 @@ def node_setting(auth, node, **kwargs):
     ret['addons_enabled'] = addons_enabled
     ret['addon_enabled_settings'] = addon_enabled_settings
     ret['addon_capabilities'] = settings.ADDON_CAPABILITIES
-
     ret['addon_js'] = collect_node_config_js(node.get_addons())
+
+    ret['include_wiki_settings'] = node.include_wiki_settings(auth.user)
 
     ret['comments'] = {
         'level': node.comment_level,
@@ -359,7 +363,9 @@ def configure_comments(node, **kwargs):
 
 @must_be_valid_project(retractions_valid=True)
 @must_be_contributor_or_public
+@process_token_or_pass
 def view_project(auth, node, **kwargs):
+
     primary = '/api/v1' not in request.path
     ret = _view_project(node, auth, primary=primary)
 
@@ -442,6 +448,11 @@ def project_statistics(auth, node, **kwargs):
         raise HTTPError(http.FORBIDDEN)
     return _view_project(node, auth, primary=True)
 
+
+@must_be_valid_project
+@must_be_contributor_or_public
+def project_statistics_redirect(auth, node, **kwargs):
+    return redirect(node.web_url_for("project_statistics", _guid=True))
 
 ###############################################################################
 # Make Private/Public
@@ -674,7 +685,6 @@ def _should_show_wiki_widget(node, user):
     else:
         return has_wiki
 
-
 def _view_project(node, auth, primary=False):
     """Build a JSON object containing everything needed to render
     project.view.mako.
@@ -720,14 +730,14 @@ def _view_project(node, auth, primary=False):
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
             'tags': [tag._primary_key for tag in node.tags],
-            'children': bool(node.nodes),
+            'children': bool(node.nodes_active),
             'is_registration': node.is_registration,
             'is_pending_registration': node.is_pending_registration,
             'is_retracted': node.is_retracted,
-            'pending_retraction': node.pending_retraction,
+            'is_pending_retraction': node.is_pending_retraction,
             'retracted_justification': getattr(node.retraction, 'justification', None),
             'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
-            'pending_embargo': node.pending_embargo,
+            'is_pending_embargo': node.is_pending_embargo,
             'registered_from_url': node.registered_from.url if node.is_registration else '',
             'registered_date': iso8601format(node.registered_date) if node.is_registration else '',
             'root_id': node.root._id,
@@ -896,9 +906,9 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
         'is_fork': node.is_fork,
         'is_pending_registration': node.is_pending_registration,
         'is_retracted': node.is_retracted,
-        'pending_retraction': node.pending_retraction,
+        'is_pending_retraction': node.is_pending_retraction,
         'embargo_end_date': node.embargo_end_date.strftime("%A, %b. %d, %Y") if node.embargo_end_date else False,
-        'pending_embargo': node.pending_embargo,
+        'is_pending_embargo': node.is_pending_embargo,
         'archiving': node.archiving,
     }
 
@@ -1033,7 +1043,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
     if anonymous and has_public_node:
         status.push_status_message(
             'Anonymized view-only links <b>DO NOT</b> '
-            'anonymize contributors of public project or component.',
+            'anonymize contributors of public projects or components.',
             trust=True
         )
 

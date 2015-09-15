@@ -64,16 +64,9 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     register = draft.register(auth)
 
     try:
-        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
-    except KeyError:
-        raise HTTPError(http.BAD_REQUEST, data=dict(
-            message_short="No embargo end date provided",
-            message_long="Creating an embargo requires supplying a valid end date"
-        ))
-
-    try:
         if data.get('registrationChoice', 'immediate') == 'embargo':
             # Initiate embargo
+            embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
             register.embargo_registration(auth.user, embargo_end_date)
         else:
             register.require_approval(auth.user)
@@ -84,7 +77,6 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     push_status_message(language.AFTER_REGISTER_ARCHIVING,
                         kind='info',
                         trust=False)
-
     return {
         'status': 'initiated',
         'urls': {

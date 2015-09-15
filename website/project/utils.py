@@ -23,7 +23,7 @@ def recent_public_registrations(n=10):
     for reg in registrations:
         if not n:
             break
-        if reg.is_retracted or reg.pending_embargo:
+        if reg.is_retracted or reg.is_pending_embargo:
             continue
         n = n - 1
         yield reg

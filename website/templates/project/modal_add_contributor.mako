@@ -155,7 +155,8 @@
                                                 ><i class="fa fa-minus"></i></a>
                                         </td>
                                         <td>
-                                            <img class="m-v-xs" data-bind="attr: {src: contributor.gravatar_url}" width=35 height=35/>
+                                            <!-- height and width are explicitly specified for faster rendering -->
+                                            <img data-bind="attr: {src: contributor.gravatar_url || '/static/img/unreg_gravatar.png'}" height=35 width=35 />
                                         </td>
 
                                         <td>
@@ -257,7 +258,7 @@
                 </span>
 
                 <span data-bind="if:selection().length && page() == 'whom'">
-                    <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Save</a>
+                    <a class="btn btn-success" data-bind="visible:nodes().length==0, click:submit">Add</a>
                     <a class="btn btn-primary" data-bind="visible:nodes().length, click:selectWhich">Next</a>
                 </span>
 

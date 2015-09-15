@@ -60,6 +60,7 @@ def get_globals():
         'cookie_name': settings.COOKIE_NAME,
         'status': status.pop_status_messages(),
         'domain': settings.DOMAIN,
+        'api_domain': settings.API_DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
         'web_url_for': util.web_url_for,
@@ -73,7 +74,7 @@ def get_globals():
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),
         'access_token': session.data.get('auth_user_access_token') or '',
-        'auth_url': cas.get_login_url(request.url),
+        'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
     }
 
@@ -410,9 +411,12 @@ def make_url_map(app):
 
     process_rules(app, [
 
-        Rule('/explore/activity/', 'get', discovery_views.activity,
-             OsfWebRenderer('public/pages/active_nodes.mako')),
-
+        Rule(
+            '/explore/activity/',
+            'get',
+            discovery_views.activity,
+            OsfWebRenderer('public/pages/active_nodes.mako', trust=False)
+        ),
     ])
 
     ### Auth ###
@@ -553,6 +557,27 @@ def make_url_map(app):
             'get',
             profile_views.user_notifications,
             OsfWebRenderer('profile/notifications.mako', trust=False),
+        ),
+
+        Rule(
+            '/settings/applications/',
+            'get',
+            profile_views.oauth_application_list,
+            OsfWebRenderer('profile/oauth_app_list.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/applications/create/',
+            'get',
+            profile_views.oauth_application_register,
+            OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/applications/<client_id>/',
+            'get',
+            profile_views.oauth_application_detail,
+            OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
         ),
 
         # TODO: Uncomment once outstanding issues with this feature are addressed
@@ -867,60 +892,6 @@ def make_url_map(app):
             project_views.register.node_registration_retraction_get,
             OsfWebRenderer('project/retract_registration.mako', trust=False)
         ),
-        Rule(
-            [
-                '/project/<pid>/retraction/approve/<token>/',
-                '/project/<pid>/node/<nid>/retraction/approve/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_retraction_approve,
-            OsfWebRenderer('error.mako', trust=False)
-        ),
-        Rule(
-            [
-                '/project/<pid>/retraction/disapprove/<token>/',
-                '/project/<pid>/node/<nid>/retraction/disapprove/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_retraction_disapprove,
-            OsfWebRenderer('error.mako', trust=False)
-        ),
-        Rule(
-            [
-                '/project/<pid>/embargo/approve/<token>/',
-                '/project/<pid>/node/<nid>/embargo/approve/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_embargo_approve,
-            OsfWebRenderer('error.mako', trust=False)
-        ),
-        Rule(
-            [
-                '/project/<pid>/embargo/disapprove/<token>/',
-                '/project/<pid>/node/<nid>/embargo/disapprove/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_embargo_disapprove,
-            OsfWebRenderer('error.mako', trust=False)
-        ),
-        Rule(
-            [
-                '/project/<pid>/registration/approve/<token>/',
-                '/project/<pid>/node/<nid>/registration/approve/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_approve,
-            OsfWebRenderer('error.mako', trust=False)
-        ),
-        Rule(
-            [
-                '/project/<pid>/registration/disapprove/<token>/',
-                '/project/<pid>/node/<nid>/registration/disapprove/<token>/',
-            ],
-            'get',
-            project_views.register.node_registration_disapprove,
-            OsfWebRenderer('error.mako', trust=False)
-        ),
 
         Rule(
             '/ids/<category>/<path:value>/',
@@ -934,6 +905,16 @@ def make_url_map(app):
             [
                 '/project/<pid>/statistics/',
                 '/project/<pid>/node/<nid>/statistics/',
+            ],
+            'get',
+            project_views.node.project_statistics_redirect,
+            notemplate,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/analytics/',
+                '/project/<pid>/node/<nid>/analytics/',
             ],
             'get',
             project_views.node.project_statistics,
@@ -1390,8 +1371,6 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/permissions/beforepublic/',
         ], 'get', project_views.node.project_before_set_public, json_renderer),
 
-        ### Wiki ###
-
         ### Watching ###
         Rule([
             '/project/<pid>/watch/',
@@ -1411,6 +1390,7 @@ def make_url_map(app):
         Rule([
             '/watched/logs/'
         ], 'get', website_views.watched_logs_get, json_renderer),
+
         ### Accounts ###
         Rule([
             '/user/merge/'
