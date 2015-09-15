@@ -126,7 +126,7 @@ var FileViewPage = {
 
 
         // Hack to delay creation of the editor
-        // until we know this is the current file revsion
+        // until we know this is the current file revision
         self.enableEditing = function() {
             // Sometimes we can get here twice, check just in case
             if (self.editor || !self.canEdit()) {
@@ -149,7 +149,7 @@ var FileViewPage = {
         self.revisions = m.component(FileRevisionsTable, self.file, self.node, self.enableEditing, self.canEdit);
         self.revisions.selected = false;
         self.revisions.title = 'Revisions';
-
+        
         // inform the mfr of a change in display size performed via javascript,
         // otherwise the mfr iframe will not update unless the document windows is changed.
         self.triggerResize = $osf.throttle(function () {
@@ -162,8 +162,6 @@ var FileViewPage = {
         //This code was abstracted into a panel toggler at one point
         //it was removed and shoved here due to issues with mithrils caching and interacting
         //With other non-mithril components on the page
-        ctrl.enableEditing();
-
         var panelsShown = (
             ((ctrl.editor && ctrl.editor.selected) ? 1 : 0) + // Editor panel is active
             (ctrl.mfrIframeParent.is(':visible') ? 1 : 0)    // View panel is active
@@ -234,8 +232,7 @@ var FileViewPage = {
                             ctrl.revisions.selected = true;
                         }
                     }
-                }, 'View'), [editButton()]
-            )
+                }, 'View'), editButton())
             ),
             m('.btn-group.m-t-xs', [
                 m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
@@ -244,11 +241,9 @@ var FileViewPage = {
                     if (editable || viewable){
                         if (viewable){
                             ctrl.mfrIframeParent.toggle();
-                            flag = true;
                         }
                         if (editable) {
                             ctrl.editor.selected = false;
-                            flag = true;
                         }
                         ctrl.revisions.selected = true;
                     } else {
@@ -261,6 +256,7 @@ var FileViewPage = {
                 }}, 'Revisions')
             ])
         ]));
+
         if (ctrl.revisions.selected){
             return m('.file-view-page', m('.panel-toggler', [
                 m('.row', ctrl.revisions)
@@ -269,7 +265,8 @@ var FileViewPage = {
         var editDisplay = (ctrl.editor && !ctrl.editor.selected) ? 'display:none' : '' ;
         ctrl.triggerResize();
         return m('.file-view-page', m('.panel-toggler', [
-            m('.row[style="' + editDisplay + '"]', m('.col-sm-12', ctrl.editor))
+            m('.row[style="' + editDisplay + '"]', m('.col-sm-12', ctrl.editor),
+             m('.row[style="display:none"]', ctrl.revisions))
         ]));
     }
 };

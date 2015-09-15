@@ -51,7 +51,7 @@
     "raw-loader": "^0.5.1",
     "share": "0.7.27",
     "style-loader": "^0.8.3",
-    "treebeard": "git://github.com/caneruguz/treebeard.git#c81b89ba6ed59e160ed5042c6208bc5fb1cc15aa",
+    "treebeard": "git://github.com/caneruguz/treebeard.git#9f1458a9f5961460dcd84c833b5da0180219f253",
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "webpack": "^1.7.2",
@@ -60,7 +60,7 @@
   "devDependencies": {
     "chai": "^2.1.1",
     "faker": "^2.1.2",
-    "jshint": "^2.8.0",
+    "jshint": "2.8.0",
     "karma": "^0.12.31",
     "karma-chrome-launcher": "^0.1.7",
     "karma-firefox-launcher": "^0.1.4",

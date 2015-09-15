@@ -2,8 +2,7 @@
 
 import logging
 import httplib
-import httplib as http
-
+import httplib as http  # TODO: Inconsistent usage of aliased import
 from dateutil.parser import parse as parse_date
 
 from flask import request
@@ -24,9 +23,10 @@ from framework.status import push_status_message
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.models import User
+from website.models import ApiOAuth2Application, User
 from website.profile import utils as profile_utils
-from website.util import web_url_for, paths
+from website.project.decorators import dev_only
+from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
 from website.views import _render_nodes
@@ -374,6 +374,46 @@ def user_notifications(auth, **kwargs):
         'mailing_lists': auth.user.mailing_lists
     }
 
+@dev_only
+@must_be_logged_in
+def oauth_application_list(auth, **kwargs):
+    """Return app creation page with list of known apps. API is responsible for tying list to current user."""
+    # TODO: Remove dev_only restriction when APIv2 is released into production
+    app_list_url = api_v2_url("applications/")
+    return {
+        "app_list_url": app_list_url
+    }
+
+@dev_only
+@must_be_logged_in
+def oauth_application_register(auth, **kwargs):
+    """Register an API application: blank form view"""
+    # TODO: Remove dev_only restriction when APIv2 is released into production
+    app_list_url = api_v2_url("applications/")  # POST request to this url
+    return {"app_list_url": app_list_url,
+            "app_detail_url": ''}
+
+@dev_only
+@must_be_logged_in
+def oauth_application_detail(auth, **kwargs):
+    """Show detail for a single OAuth application"""
+    # TODO: Remove dev_only restriction when APIv2 is released into production
+    client_id = kwargs.get('client_id')
+
+    # The client ID must be an active and existing record, and the logged-in user must have permission to view it.
+    try:
+        #
+        record = ApiOAuth2Application.find_one(Q('client_id', 'eq', client_id))
+    except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND)
+    if record.owner != auth.user:
+        raise HTTPError(http.FORBIDDEN)
+    if record.is_active is False:
+        raise HTTPError(http.GONE)
+
+    app_detail_url = api_v2_url("applications/{}/".format(client_id))  # Send request to this URL
+    return {"app_list_url": '',
+            "app_detail_url": app_detail_url}
 
 def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return

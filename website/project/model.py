@@ -16,9 +16,9 @@ from django.core.urlresolvers import reverse
 from modularodm import Q
 from modularodm import fields
 from modularodm.validators import MaxLengthValidator
+from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationTypeError
 from modularodm.exceptions import ValidationValueError
-from modularodm.exceptions import NoResultsFound
 
 from api.base.utils import absolute_reverse
 from framework import status
@@ -75,6 +75,7 @@ def has_anonymous_link(node, auth):
         for link in node.private_links_active
         if link.key == view_only_link
     )
+
 
 class MetaSchema(StoredObject):
 
@@ -318,6 +319,7 @@ class NodeLog(StoredObject):
 
     FILE_MOVED = 'addon_file_moved'
     FILE_COPIED = 'addon_file_copied'
+    FILE_RENAMED = 'addon_file_renamed'
 
     FOLDER_CREATED = 'folder_created'
 
@@ -793,6 +795,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def ids_above(self):
         parents = self.parents
         return {p._id for p in parents}
+
+    @property
+    def nodes_active(self):
+        return [x for x in self.nodes if not x.is_deleted]
 
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
@@ -1362,7 +1368,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param Auth auth: Consolidated authorization
         """
         if pointer not in self.nodes:
-            raise ValueError
+            raise ValueError('Node link does not belong to the requested node.')
 
         # Remove `Pointer` object; will also remove self from `nodes` list of
         # parent node
@@ -3275,7 +3281,7 @@ class Embargo(EmailApprovableSanction):
         if is_authorizer:
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
-            approval_time_span = settings.RETRACTION_PENDING_TIME.days * 24
+            approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
 
             registration = Node.find_one(Q('embargo', 'eq', self))
 
@@ -3514,7 +3520,7 @@ class RegistrationApproval(EmailApprovableSanction):
             approval_link = urls.get('approve', '')
             disapproval_link = urls.get('reject', '')
 
-            approval_time_span = (24 * settings.REGISTRATION_APPROVAL_TIME.days) + (settings.REGISTRATION_APPROVAL_TIME.seconds / 60)
+            approval_time_span = settings.REGISTRATION_APPROVAL_TIME.days * 24
 
             registration = Node.find_one(Q('registration_approval', 'eq', self))
 

@@ -44,14 +44,17 @@ class OSFBasicAuthentication(BasicAuthentication):
         """
         user = get_user(email=userid, password=password)
 
-        if userid and user is None:
+        if userid and not user:
             raise exceptions.AuthenticationFailed(_('Invalid username/password.'))
         elif userid is None and password is None:
             raise exceptions.NotAuthenticated()
         return (user, None)
 
     def authenticate_header(self, request):
-        return ""
+        """
+        Returns custom value other than "Basic" to prevent BasicAuth dialog prompt when returning 401
+        """
+        return 'Documentation realm="{}"'.format(self.www_authenticate_realm)
 
 class OSFCASAuthentication(authentication.BaseAuthentication):
     """Check whether the user provides a valid OAuth2 bearer token"""

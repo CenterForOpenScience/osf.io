@@ -106,15 +106,17 @@ ViewModel.prototype.selectBucket = function() {
     var self = this;
 
     self.loading(true);
-
+    
+    var ret = $.Deferred();
     if (isValidBucketName(self.selectedBucket(), false)) {
         self.loading(false);
         bootbox.alert({
             title: 'Invalid bucket name',
             message: 'Sorry, the S3 addon only supports bucket names without periods.'
         });
+        ret.reject();
     } else {
-        return $osf.postJSON(
+        $osf.postJSON(            
                 self.urls().set_bucket, {
                     's3_bucket': self.selectedBucket(),
                     'encrypt_uploads': self.encryptUploads()
@@ -125,6 +127,7 @@ ViewModel.prototype.selectBucket = function() {
                 self.changeMessage('Successfully linked S3 bucket "' + self.currentBucket() + '". Go to the <a href="' +
                     self.urls().files + '">Files page</a> to view your content.', 'text-success');
                 self.loading(false);
+                ret.resolve(response);
             })
             .fail(function (xhr, status, error) {
                 self.loading(false);
@@ -137,8 +140,10 @@ ViewModel.prototype.selectBucket = function() {
                     textStatus: status,
                     error: error
                 });
+                ret.reject();
             });
     }
+    return ret.promise();
 };
 
 ViewModel.prototype._deauthorizeNodeConfirm = function() {

@@ -278,7 +278,7 @@ var ViewModel = function(params) {
     };
 
     self._makeTagString = function(tagName) {
-        return 'tags:("' + tagName + '")';        
+        return 'tags:("' + tagName.replace(/"/g, '\\\"') + '")';        
     };
     self.addTag = function(tagName) {
         var tagString = self._makeTagString(tagName);

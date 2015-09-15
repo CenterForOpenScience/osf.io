@@ -19,6 +19,7 @@ from modularodm.exceptions import ValidationError, ValidationValueError, Validat
 from framework.analytics import get_total_activity_count
 from framework.exceptions import PermissionsError
 from framework.auth import User, Auth
+from framework.auth import cas
 from framework.sessions.model import Session
 from framework.auth import exceptions as auth_exc
 from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
@@ -47,7 +48,7 @@ from website.addons.wiki.exceptions import (
 
 from tests.base import OsfTestCase, Guid, fake, capture_signals
 from tests.factories import (
-    UserFactory, NodeFactory, PointerFactory,
+    UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
@@ -615,13 +616,22 @@ class TestUser(OsfTestCase):
             urlparse.urljoin(settings.DOMAIN, '/{0}/'.format(self.user._primary_key))
         )
 
-    def test_gravatar_url(self):
+    def test_profile_image_url(self):
         expected = filters.gravatar(
             self.user,
             use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=settings.PROFILE_IMAGE_MEDIUM
         )
-        assert_equal(self.user.gravatar_url, expected)
+        assert_equal(self.user.profile_image_url(settings.PROFILE_IMAGE_MEDIUM), expected)
+
+    def test_profile_image_url_has_no_default_size(self):
+        expected = filters.gravatar(
+            self.user,
+            use_ssl=True,
+        )
+        assert_equal(self.user.profile_image_url(), expected)
+        size = urlparse.parse_qs(urlparse.urlparse(self.user.profile_image_url()).query).get('size')
+        assert_equal(size, None)
 
     def test_activity_points(self):
         assert_equal(self.user.get_activity_points(db=self.db),
@@ -649,7 +659,7 @@ class TestUser(OsfTestCase):
         gravatar = filters.gravatar(
             user,
             use_ssl=True,
-            size=settings.GRAVATAR_SIZE_PROFILE
+            size=settings.PROFILE_IMAGE_LARGE
         )
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
@@ -991,6 +1001,80 @@ class TestGUID(OsfTestCase):
                 record_guid.referent,
                 record
             )
+
+
+class TestApiOAuth2Application(OsfTestCase):
+    def setUp(self):
+        super(TestApiOAuth2Application, self).setUp()
+        self.api_app = ApiOAuth2ApplicationFactory()
+
+    def test_must_have_owner(self):
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(owner=None)
+            api_app.save()
+
+    def test_client_id_auto_populates(self):
+        assert_greater(len(self.api_app.client_id), 0)
+
+    def test_client_secret_auto_populates(self):
+        assert_greater(len(self.api_app.client_secret), 0)
+
+    def test_new_app_is_not_flagged_as_deleted(self):
+        assert_true(self.api_app.is_active)
+
+    def test_user_backref_updates_when_app_created(self):
+        u = UserFactory()
+        api_app = ApiOAuth2ApplicationFactory(owner=u)
+        api_app.save()
+
+        backrefs = u.apioauth2application__created
+        assert_greater(len(backrefs), 0)
+
+    def test_cant_edit_creation_date(self):
+        with assert_raises(AttributeError):
+            self.api_app.date_created = datetime.datetime.utcnow()
+
+    def test_invalid_home_url_raises_exception(self):
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(home_url="Totally not a URL")
+            api_app.save()
+
+    def test_invalid_callback_url_raises_exception(self):
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
+            api_app.save()
+
+    def test_name_cannot_be_blank(self):
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(name='')
+            api_app.save()
+
+    def test_long_name_raises_exception(self):
+        long_name = ('JohnJacobJingelheimerSchmidtHisNameIsMyN' * 5) + 'a'
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(name=long_name)
+            api_app.save()
+
+    def test_long_description_raises_exception(self):
+        long_desc = ('JohnJacobJingelheimerSchmidtHisNameIsMyN' * 25) + 'a'
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(description=long_desc)
+            api_app.save()
+
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_active_set_to_false_upon_successful_deletion(self, mock_method):
+        mock_method.return_value(True)
+        self.api_app.deactivate(save=True)
+        self.api_app.reload()
+        assert_false(self.api_app.is_active)
+
+    @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
+    def test_active_remains_true_when_cas_token_deletion_fails(self, mock_method):
+        mock_method.side_effect = cas.CasHTTPError("CAS can't revoke tokens", 400, 'blank', 'blank')
+        with assert_raises(cas.CasHTTPError):
+            self.api_app.deactivate(save=True)
+        self.api_app.reload()
+        assert_true(self.api_app.is_active)
 
 
 class TestNodeWikiPage(OsfTestCase):
@@ -1674,6 +1758,13 @@ class TestNode(OsfTestCase):
             self.node.set_visible(user=reg_user1, visible=False, auth=None)
             self.node.set_visible(user=self.user, visible=False, auth=None)
             assert_equal(e.exception.message, 'Must have at least one visible contributor')
+
+    def test_active_child_nodes(self):
+        self.node.is_deleted = True
+        self.node.save()
+        self.node.reload()
+        assert_false(self.parent.nodes_active)
+
 
 class TestNodeTraversals(OsfTestCase):
 

@@ -11,6 +11,7 @@ from modularodm.exceptions import ModularOdmException, ValidationValueError
 from framework import status
 from framework.utils import iso8601format
 from framework.mongo import StoredObject
+from framework.flask import redirect
 from framework.auth.decorators import must_be_logged_in, collect_auth
 from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo.utils import from_mongo, get_or_http_error
@@ -452,6 +453,11 @@ def project_statistics(auth, node, **kwargs):
     return _view_project(node, auth, primary=True)
 
 
+@must_be_valid_project
+@must_be_contributor_or_public
+def project_statistics_redirect(auth, node, **kwargs):
+    return redirect(node.web_url_for("project_statistics", _guid=True))
+
 ###############################################################################
 # Make Private/Public
 ###############################################################################
@@ -730,7 +736,7 @@ def _view_project(node, auth, primary=False):
             'date_created': iso8601format(node.date_created),
             'date_modified': iso8601format(node.logs[-1].date) if node.logs else '',
             'tags': [tag._primary_key for tag in node.tags],
-            'children': bool(node.nodes),
+            'children': bool(node.nodes_active),
             'is_registration': node.is_registration,
             'is_pending_registration': node.is_pending_registration,
             'is_retracted': node.is_retracted,

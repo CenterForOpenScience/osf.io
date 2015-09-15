@@ -286,7 +286,8 @@ def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""
-    cmd = 'celery worker -A framework.tasks -l {0}'.format(level)
+    # beat sets up a cron, refer to website/settings/celeryconfig
+    cmd = 'celery worker -A framework.tasks -l {0} --beat'.format(level)
     run(bin_prefix(cmd))
 
 
@@ -792,6 +793,15 @@ def webpack(clean=False, watch=False, dev=False):
 
 
 @task()
+def build_js_config_files():
+    from website import settings
+    from website.app import build_js_config_files as _build_js_config_files
+    print('Building JS config files...')
+    _build_js_config_files(settings)
+    print("...Done.")
+
+
+@task()
 def assets(dev=False, watch=False):
     """Install and build static assets."""
     npm = 'npm install'
@@ -799,6 +809,7 @@ def assets(dev=False, watch=False):
         npm += ' --production'
     run(npm, echo=True)
     bower_install()
+    build_js_config_files()
     # Always set clean=False to prevent possible mistakes
     # on prod
     webpack(clean=False, watch=watch, dev=dev)

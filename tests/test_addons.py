@@ -217,7 +217,8 @@ class TestAddonLogs(OsfTestCase):
             'signature': signature,
         }
 
-    def test_add_log(self):
+    @mock.patch('website.notifications.events.files.FileAdded.perform')
+    def test_add_log(self, mock_perform):
         path = 'pizza'
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path})
@@ -225,6 +226,9 @@ class TestAddonLogs(OsfTestCase):
         self.test_app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert_equal(len(self.node.logs), nlogs + 1)
+        # # Mocking form_message and perform so that the payload need not be exact.
+        # assert_true(mock_form_message.called, "form_message not called")
+        assert_true(mock_perform.called, "perform not called")
 
     def test_add_log_missing_args(self):
         path = 'pizza'
@@ -286,6 +290,41 @@ class TestAddonLogs(OsfTestCase):
         assert_equal(res.status_code, 400)
         self.node.reload()
         assert_equal(len(self.node.logs), nlogs)
+
+    def test_action_file_rename(self):
+        url = self.node.api_url_for('create_waterbutler_log')
+        payload = self.build_payload(
+            action='rename',
+            metadata={
+                'path': 'foo',
+            },
+            source={
+                'materialized': 'foo',
+                'provider': 'github',
+                'node': {'_id': self.node._id},
+                'name': 'new.txt',
+                'kind': 'file',
+            },
+            destination={
+                'path': 'foo',
+                'materialized': 'foo',
+                'provider': 'github',
+                'node': {'_id': self.node._id},
+                'name': 'old.txt',
+                'kind': 'file',
+            },
+        )
+        self.test_app.put_json(
+            url,
+            payload,
+            headers={'Content-Type': 'application/json'}
+        )
+        self.node.reload()
+
+        assert_equal(
+            self.node.logs[-1].action,
+            'github_addon_file_renamed',
+        )
 
 
 class TestCheckAuth(OsfTestCase):
@@ -565,6 +604,20 @@ class TestAddonFileViews(OsfTestCase):
         )
 
         assert_equals(resp.status_code, 401)
+
+    def test_nonstorage_addons_raise(self):
+        resp = self.app.get(
+            self.project.web_url_for(
+                'addon_view_or_download_file',
+                path='sillywiki',
+                provider='wiki',
+                action='download'
+            ),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+
+        assert_equals(resp.status_code, 400)
 
     def test_head_returns_url(self):
         path = 'the little engine that couldnt'
