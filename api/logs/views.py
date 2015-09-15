@@ -6,6 +6,7 @@ from website.models import Node, NodeLog
 from api.base.filters import ODMFilterMixin
 from api.logs.serializers import NodeLogSerializer
 from api.nodes.serializers import NodeSerializer
+from api.nodes.utils import get_visible_nodes_for_user
 
 class LogList(generics.ListAPIView, ODMFilterMixin):
 
@@ -17,10 +18,10 @@ class LogList(generics.ListAPIView, ODMFilterMixin):
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        allowed_node_ids = set(Node.find(Q('is_public', 'eq', True)).get_keys())
+        allowed_node_ids = Node.find(Q('is_public', 'eq', True)).get_keys()
         user = self.request.user
         if not user.is_anonymous():
-            allowed_node_ids = allowed_node_ids & set(Node.find(Q('contributors', 'icontains', user._id)).get_keys())
+            allowed_node_ids = [n._id for n in get_visible_nodes_for_user(user)]
         logs_query = Q('__backrefs.logged.node.logs', 'in', list(allowed_node_ids))
         return logs_query
 
