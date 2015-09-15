@@ -27,6 +27,7 @@ from website.search.exceptions import IndexNotFoundError
 from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
 from website.project.views.contributor import get_node_contributors_abbrev
+from website.project.decorators import must_be_valid_project
 
 
 logger = logging.getLogger(__name__)
@@ -190,13 +191,17 @@ def process_project_search_results(results, **kwargs):
 
 
 @collect_auth
-def search_contributor(auth):
+# @must_be_valid_project
+def search_contributor(auth, **kwargs):
     user = auth.user if auth else None
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else []
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
     size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
+    contributors = request.args.get('get_contributors')
+    if contributors == 'true':
+        nid = request.args.get('nodeId')
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)
 

@@ -108,7 +108,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
     },
     /**
      * A simple Contributor model that receives data from the
-     * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
+     * contributor search endpoint. Adds an additional displayProjectsinCommon
      * attribute which is the human-readable display of the number of projects the
      * currently logged-in user has in common with the contributor.
      */
@@ -123,7 +123,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
             return $.getJSON(
                 '/api/v1/user/search/', {
                     query: self.query(),
-                    excludeNode: nodeId,
+                    // excludeNode: nodeId,
+                    //get_contributors: true,
+                    //nodeId: nodeId,
                     page: self.pageToGet
                 },
                 function(result) {

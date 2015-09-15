@@ -27,6 +27,7 @@ from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
 from website.views import validate_page_num
+from website.project.decorators import must_be_valid_project
 
 logger = logging.getLogger(__name__)
 
@@ -426,8 +427,9 @@ def delete_doc(elastic_document_id, node, index=None, category=None):
     es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
 
+# @must_be_valid_project
 @requires_search
-def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
+def search_contributor(query, page=0, size=10, exclude=None, current_user=None, **kwargs):
     """Search for contributors to add to a project using elastic search. Request must
     include JSON data with a "query" field.
 
@@ -478,6 +480,10 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         if user.is_active:  # exclude merged, unregistered, etc.
             current_employment = None
             education = None
+            contributor = False
+
+            if False:
+                contributor = True
 
             if user.jobs:
                 current_employment = user.jobs[0]['institution']
