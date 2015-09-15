@@ -43,7 +43,7 @@ class NodeMixin(object):
         return node
 
 
-class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
+class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin, BulkDestroyAPIView):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -92,7 +92,7 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
     # overrides ListBulkCreateUpdateDestroyAPIView
     def get_serializer_class(self):
         serializer_class = NodeSerializer
-        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+        if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
             serializer_class = NodeBulkUpdateSerializer
         return serializer_class
 
@@ -120,90 +120,21 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
         response = ListBulkCreateUpdateDestroyAPIView.bulk_update(self, request, *args, **kwargs)
         return Response({'data': response.data}, status=status.HTTP_200_OK)
 
-    # overrides ListBulkCreateUpdateDestroyAPIView
     def bulk_destroy(self, request, *args, **kwargs):
         user = self.request.user
-        token = token_creator(request.query_params, user._id)
-        url = absolute_reverse('nodes:node-bulk-delete', kwargs={'confirmation_token': token})
-        delete_warning = BEFORE_BULK_DELETE
-        qs = self.get_queryset()
-        filtered = self.filter_queryset(qs)
-
         node_list = []
-        for node in filtered:
+        for item in request.data:
+            node = get_object_or_error(Node, item[u'id'], display_name='node')
             node_list.append(node)
             if not node.can_edit(Auth(user)):
                 raise PermissionDenied()
         if not node_list:
             raise NotFound()
 
-        return Response(
-            {
-                'meta': {
-                    'query_parameters': request.query_params,
-                    'warning_message': delete_warning,
-                },
-                'links': {
-                    'confirm_bulk_delete': url
-                }
-            }, status=status.HTTP_202_ACCEPTED
-        )
+        self.perform_bulk_destroy(node_list)
 
-
-class NodeBulkDelete(BulkDestroyAPIView, ODMFilterMixin, BulkDestroyModelMixin):
-    """Bulk delete of nodes. Use caution! """
-
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-    )
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        base_query = (
-            Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
-        )
-        user = self.request.user
-        permission_query = Q('is_public', 'eq', True)
-        if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
-
-        query = base_query & permission_query
-        return query
-
-    # overrides ListBulkCreateUpdateDestroyAPIView
-    def get_queryset(self):
-        query = self.get_query_from_request()
-        return Node.find(query)
-
-    serializer_class = NodeSerializer
-
-    # overrides BulkDestroyAPIView
-    def bulk_destroy(self, request, *args, **kwargs):
-        qs = self.get_queryset()
-        filtered = self.filter_queryset(qs)
-        user = self.request.user
-        correct_token = token_creator(request.query_params, user._id)
-
-        if user.is_anonymous():
-            raise NotAuthenticated
-
-        node_list = []
-        for node in filtered:
-            node_list.append(node)
-            if not node.can_edit(Auth(user)):
-                raise PermissionDenied()
-        if not node_list:
-            raise NotFound()
-
-        given_token = kwargs['confirmation_token']
-        if correct_token != given_token:
-            raise ValidationError("Incorrect token.")
-
-        self.perform_bulk_destroy(filtered)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-    # overrides BulkDestroyAPIView
     def perform_destroy(self, instance):
         user = self.request.user
         auth = Auth(user)
