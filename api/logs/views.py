@@ -5,6 +5,7 @@ from rest_framework.exceptions import NotFound
 from website.models import Node, NodeLog
 
 from api.base.filters import ODMFilterMixin
+from api.base.utils import get_user_auth
 from api.logs.serializers import NodeLogSerializer
 from api.nodes.serializers import NodeSerializer
 from api.nodes.utils import get_visible_nodes_for_user
@@ -44,7 +45,8 @@ class LogNodeList(generics.ListAPIView, ODMFilterMixin):
                 detail='No log matching that log_id could be found.'
             )
         else:
+            auth_user = get_user_auth(self.request)
             return [
                 node for node in log.node__logged
-                if node.can_view(self.request.user)
+                if node.can_view(auth_user)
             ]
