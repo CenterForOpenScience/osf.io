@@ -225,8 +225,8 @@ var FileViewPage = {
                     var style = '\<link href=\"' + url + 'static/css/mfr.css\" media=\"all\" rel=\"stylesheet\" /\>';
                     m.render(document.getElementById('popOver'), m('', [
                         m('ul.nav.nav-tabs.nav-justified', [
-                            m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
-                            m('li', m('a[href="#embed"][data-toggle="tab"]', 'Embed'))
+                            m('li.active', m('a', {dataToggle: 'tab', href: '#share'}, 'Share')),
+                            m('li', m('a', {href:'#embed',dataToggle:'tab'}, 'Embed')),
                         ]), m('br'),
                         m('.tab-content', [
                             m('.tab-pane.fade.in.active#share', m('.input-group', [
