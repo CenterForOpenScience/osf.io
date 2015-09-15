@@ -12,6 +12,7 @@ def json_api_exception_handler(exc, context):
 
     # Error objects may have the following members. Title and id removed to avoid clash with node "title" and "id" errors.
     top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
+    resource_object_members = ['id', 'type']
     errors = []
 
     def dict_error_formatting(errors, error):
@@ -21,8 +22,13 @@ def json_api_exception_handler(exc, context):
             else:
                 if isinstance(error_description, basestring):
                     error_description = [error_description]
-                errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason}
-                               for reason in error_description])
+                for reason in error_description:
+                    if error_key in resource_object_members:
+                        errors.append({'source': {'pointer': '/data/' + error_key}, 'detail': reason})
+                    elif error_key == 'non_field_errors':
+                        errors.append({'detail': reason})
+                    else:
+                        errors.append({'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason})
 
     if response:
         message = response.data
@@ -38,8 +44,10 @@ def json_api_exception_handler(exc, context):
                     errors.append({'detail': error})
         response.data = {'errors': errors}
 
-        if response.status_code == 400:
-            response.data['meta'] = context['request'].data
+        # For bulk operations: If validation error, return request data with response.
+        request_data = context['request'].data
+        if response.status_code == 400 and isinstance(request_data, list):
+            response.data['meta'] = request_data
 
     return response
 
