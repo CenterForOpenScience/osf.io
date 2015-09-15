@@ -2250,6 +2250,7 @@ class TestProject(OsfTestCase):
         assert_not_in(user2, self.project.contributors)
         assert_not_in(user2._id, self.project.permissions)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
+        assert_equal(self.project.logs[-1].params['contributors'], [user2._id])
 
     def test_manage_contributors_cannot_remove_last_admin_contributor(self):
         user2 = UserFactory()
