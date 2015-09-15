@@ -70,8 +70,8 @@
           <div data-osf-panel="View"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'view' in panels_used else 'display: none' | n}">
-              <div class="osf-panel panel panel-default no-border reset-height" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
-                <div class="panel-heading wiki-single-heading reset-height" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
+              <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
+                <div class="panel-heading wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
                     <div class="row">
                         <div class="col-sm-6">
                             <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
