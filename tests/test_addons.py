@@ -337,27 +337,27 @@ class TestCheckAuth(OsfTestCase):
         self.node = ProjectFactory(creator=self.user)
 
     def test_has_permission(self):
-        res = views.check_access(self.node, self.user, 'upload')
+        res = views.check_access(self.node, Auth(user=self.user), 'upload')
         assert_true(res)
 
     def test_not_has_permission_read_public(self):
         self.node.is_public = True
         self.node.save()
-        res = views.check_access(self.node, None, 'download')
+        res = views.check_access(self.node, Auth(), 'download')
 
     def test_not_has_permission_read_has_link(self):
         link = new_private_link('red-special', self.user, [self.node], anonymous=False)
-        res = views.check_access(self.node, None, 'download', key=link.key)
+        res = views.check_access(self.node, Auth(private_key=link.key), 'download')
 
     def test_not_has_permission_logged_in(self):
         user2 = AuthUserFactory()
         with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.node, user2, 'download')
-        assert_equal(exc_info.exception.code, 403)
+            views.check_access(self.node, Auth(user=user2), 'download')
+        assert_equal(exc_info.exception.code, 401)
 
     def test_not_has_permission_not_logged_in(self):
         with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.node, None, 'download')
+            views.check_access(self.node, Auth(), 'download')
         assert_equal(exc_info.exception.code, 401)
 
     def test_has_permission_on_parent_node_copyto_pass_if_registration(self):
@@ -366,7 +366,7 @@ class TestCheckAuth(OsfTestCase):
         component.is_registration = True
 
         assert_false(component.has_permission(self.user, 'write'))
-        res = views.check_access(component, self.user, 'copyto')
+        res = views.check_access(component, Auth(user=self.user), 'copyto')
         assert_true(res)
 
     def test_has_permission_on_parent_node_copyto_fail_if_not_registration(self):
@@ -375,14 +375,14 @@ class TestCheckAuth(OsfTestCase):
 
         assert_false(component.has_permission(self.user, 'write'))
         with assert_raises(HTTPError):
-            views.check_access(component, self.user, 'copyto')
+            views.check_access(component, Auth(user=self.user), 'copyto')
 
     def test_has_permission_on_parent_node_copyfrom(self):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, public=False, parent=self.node)
 
         assert_false(component.has_permission(self.user, 'write'))
-        res = views.check_access(component, self.user, 'copyfrom')
+        res = views.check_access(component, Auth(user=self.user), 'copyfrom')
         assert_true(res)
 
 

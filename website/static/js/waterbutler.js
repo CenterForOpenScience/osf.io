@@ -16,6 +16,9 @@ function getDefaultOptions(path, provider) {
     if (viewOnly) {
         options.view_only = viewOnly;
     }
+    if (window.XDomainRequest) {
+        options.cookie = (document.cookie.match(window.contextVars.cookieName + '=(.+?);|$')[1] || '');
+    }
     return options;
 }
 

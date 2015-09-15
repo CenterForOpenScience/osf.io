@@ -173,9 +173,13 @@ var putJSON = function(url, data, success, error) {
 * @param  {Object} XML Http Request
 * @return {Object} xhr
 */
-var setXHRAuthorization = function (xhr) {
-    if (window.contextVars.accessToken) {
-        xhr.setRequestHeader('Authorization', 'Bearer ' + window.contextVars.accessToken);
+var setXHRAuthorization = function (xhr, options) {
+    if (!window.XDomainRequest) {
+        xhr.withCredentials = true;
+        if (options) {
+            options.withCredentials = true;
+            options.xhrFields = {withCredentials:true};
+        }
     }
     return xhr;
 };

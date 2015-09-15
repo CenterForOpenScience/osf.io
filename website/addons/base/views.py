@@ -10,11 +10,14 @@ from flask import redirect
 from flask import make_response
 from modularodm.exceptions import NoResultsFound
 
+from framework import sentry
+from framework.auth import cas
 from framework.auth import Auth
 from framework.sessions import session
+from framework.routing import json_renderer
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
-from framework.auth.decorators import must_be_logged_in, must_be_signed
+from framework.auth.decorators import must_be_logged_in, must_be_signed, collect_auth
 from website import mails
 from website import settings
 from website.files.models import FileNode
@@ -79,18 +82,18 @@ permission_map = {
 }
 
 
-def check_access(node, user, action, key=None):
+def check_access(node, auth, action):
     """Verify that user can perform requested action on resource. Raise appropriate
     error code if action cannot proceed.
     """
     permission = permission_map.get(action, None)
     if permission is None:
         raise HTTPError(httplib.BAD_REQUEST)
-    if node.has_permission(user, permission):
+    if permission == 'read' and node.can_view(auth):
         return True
-    if permission == 'read':
-        if node.is_public or key in node.private_link_keys_active:
-            return True
+    if permission == 'write' and node.can_edit(auth):
+        return True
+
     # Users attempting to register projects with components might not have
     # `write` permissions for all components. This will result in a 403 for
     # all `copyto` actions as well as `copyfrom` actions if the component
@@ -101,15 +104,15 @@ def check_access(node, user, action, key=None):
     # All nodes being registered that receive the `copyto` action will have
     # `node.is_registration` == True. However, we have no way of telling if
     # `copyfrom` actions are originating from a node being registered.
+    # TODO This is raise UNAUTHORIZED for registrations that have not been archived yet
     if action == 'copyfrom' or (action == 'copyto' and node.is_registration):
         parent = node.parent_node
         while parent:
-            if parent.has_permission(user, 'write'):
+            if parent.can_edit(auth):
                 return True
             parent = parent.parent_node
 
-    code = httplib.FORBIDDEN if user else httplib.UNAUTHORIZED
-    raise HTTPError(code)
+    raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
 
 
 def make_auth(user):
@@ -137,8 +140,30 @@ def restrict_addrs(*addrs):
 restrict_waterbutler = restrict_addrs(*settings.WATERBUTLER_ADDRS)
 
 
+@collect_auth
 @restrict_waterbutler
-def get_auth(**kwargs):
+def get_auth(auth, **kwargs):
+    if not auth.user and not auth.private_key:
+        # Central Authentication Server OAuth Bearer Token
+        authorization = request.headers.get('Authorization')
+        if authorization and authorization.startswith('Bearer '):
+            client = cas.get_client()
+            try:
+                access_token = cas.parse_auth_header(authorization)
+                cas_resp = client.profile(access_token)
+            except cas.CasError as err:
+                sentry.log_exception()
+                # NOTE: We assume that the request is an AJAX request
+                return json_renderer(err)
+            if cas_resp.authenticated:
+                auth.user = User.load(cas_resp.user)
+
+        if not auth.user:
+            auth.user = User.from_cookie(request.args.get('cookie'))
+
+        if not auth.private_key:
+            auth.private_key = request.args.get('view_only')
+
     try:
         action = request.args['action']
         node_id = request.args['nid']
@@ -146,21 +171,11 @@ def get_auth(**kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    cookie = request.args.get('cookie')
-    view_only = request.args.get('view_only')
-
-    if 'auth_user_id' in session.data:
-        user = User.load(session.data['auth_user_id'])
-    elif cookie:
-        user = User.from_cookie(cookie)
-    else:
-        user = None
-
     node = Node.load(node_id)
     if not node:
         raise HTTPError(httplib.NOT_FOUND)
 
-    check_access(node, user, action, key=view_only)
+    check_access(node, auth, action)
 
     provider_settings = node.get_addon(provider_name)
     if not provider_settings:
@@ -174,7 +189,7 @@ def get_auth(**kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     return {
-        'auth': make_auth(user),
+        'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
         'credentials': credentials,
         'settings': settings,
         'callback_url': node.api_url_for(
