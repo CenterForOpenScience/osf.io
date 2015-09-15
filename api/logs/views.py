@@ -40,4 +40,7 @@ class LogNodeList(generics.ListAPIView, ODMFilterMixin):
         if not log:
             return []
         else:
-            return log.node__logged
+            return [
+                node for node in log.node__logged
+                if node.can_view(self.request.user)
+            ]
