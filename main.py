@@ -10,6 +10,7 @@ app = init_app('website.settings', set_backends=True, routes=True)
 if __name__ == '__main__':
     host = os.environ.get('OSF_HOST', None)
     port = os.environ.get('OSF_PORT', None)
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
     if port:
         port = int(port)
 

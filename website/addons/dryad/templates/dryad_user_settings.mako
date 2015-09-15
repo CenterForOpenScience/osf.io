@@ -2,15 +2,15 @@
 <div>
     <h4 class="addon-title">
       <img class="addon-icon" src="${addon_icon_url}"></img>
-        GitHub
+        ${FULL_NAME}
         <small class="authorized-by">
             % if authorized:
-                    authorized by
-                        <em>${authorized_github_user}</em>
-                <a id="githubDelKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
+                    ORCID:
+                        <em>${authorized_dryad_user}</em>
+                <a id="dryadDelKey" class="text-danger pull-right addon-auth">Disconnect Account</a>
             % else:
-                <a id="githubAddKey" class="text-primary pull-right addon-auth">
-                    Connect Account
+                <a id="dryadAddKey" class="text-primary pull-right addon-auth">
+                    Connect ORCID
                 </a>
             % endif
         </small>

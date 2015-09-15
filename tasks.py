@@ -43,6 +43,7 @@ else:
 @task
 def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
     from website.app import init_app
     app = init_app(set_backends=True, routes=True)
     settings.API_SERVER_PORT = port
@@ -191,7 +192,7 @@ def mongoserver(daemon=False, config=None):
     if config:
         cmd += ' --config {0}'.format(config)
     if daemon:
-        cmd += " --fork"
+        cmd += " --fork --syslog"
     run(cmd, echo=True)
 
 
@@ -287,7 +288,8 @@ def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors
 def celery_worker(level="debug"):
     """Run the Celery process."""
     cmd = 'celery worker -A framework.tasks -l {0}'.format(level)
-    run(bin_prefix(cmd))
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'api.base.settings')
+    run(cmd)
 
 
 @task

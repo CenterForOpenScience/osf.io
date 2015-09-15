@@ -1,184 +1,137 @@
-import urllib
-import itertools
+import urllib, urllib2
 
-import github3
-import cachecontrol
-from requests.adapters import HTTPAdapter
+from .settings import defaults as dryad_settings
 
-from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import NotFoundError
+import xml.etree.ElementTree as ET
+import xml.dom.minidom
 
 
-# Initialize caches
-https_cache = cachecontrol.CacheControlAdapter()
-default_adapter = HTTPAdapter()
+class Dryad(object):
+	def __init__(self):
+		print "Now in Dryad Object"
+
+	@staticmethod
+	def identify():
+		response = urllib2.urlopen(dryad_settings.DRYAD_OAI_IDENTIFY)
+		html = response.read()
+		x = xml.dom.minidom.parseString(html)
+		return x
+	
+	@staticmethod
+	def list_set():
+		response = urllib2.urlopen(dryad_settings.DRYAD_OAI_LISTSET)
+		html = response.read()
+		x = xml.dom.minidom.parseString(html)
+		return x
+
+	@staticmethod
+	def list_metadataformat():
+		response = urllib2.urlopen(dryad_settings.DRYAD_OAI_LISTMETADATAFORMAT)
+		html = response.read()
+		x = xml.dom.minidom.parseString(html)
+		return x
 
 
-class GitHub(object):
+	@staticmethod
+	def dryad_request(verb="ListIdentifiers", start_date="2010-01-01", prefix="oai_dc", data_set="hdl_10255_3"):
+		val = {'verb': verb,
+			   'from': start_date,
+			   'metadataPrefix' : prefix,
+			   'set' : data_set}
+		url ="http://www.datadryad.org/oai/request"
 
-    def __init__(self, access_token=None, token_type=None):
+		data = urllib.urlencode(val)
+		req = urllib2.Request(url, data)
+		response = urllib2.urlopen(req)
+		html = response.read()
+		x = xml.dom.minidom.parseString(html)
+		return x		
 
-        self.access_token = access_token
-        if access_token and token_type:
-            self.gh3 = github3.login(token=access_token)
-            self.gh3.set_client_id(
-                github_settings.CLIENT_ID, github_settings.CLIENT_SECRET
-            )
-        else:
-            self.gh3 = github3.GitHub()
+	@staticmethod
+	def list_identifiers(start_date="2010-01-01", prefix="oai_dc", data_set="hdl_10255_3"):
+		return Dryad.dryad_request("ListIdentifiers", start_date, prefix, data_set)
 
-        # Caching libary
-        if github_settings.CACHE:
-            self.gh3._session.mount('https://api.github.com/user', default_adapter)
-            self.gh3._session.mount('https://', https_cache)
+	@staticmethod
+	def list_records(start_date="2010-01-01", prefix="oai_dc", data_set="hdl_10255_3"):
+		return Dryad.dryad_request("ListRecords", start_date, prefix, data_set)
 
-    @classmethod
-    def from_settings(cls, settings):
-        if settings:
-            return cls(
-                access_token=settings.oauth_access_token,
-                token_type=settings.oauth_token_type,
-            )
-        return cls()
+	@staticmethod
+	def get_record(identifier="oai:datadryad.org:10255/dryad.12", metadataPrefix="oai_dc"):
+		val = {'verb': "GetRecord",
+			   'identifier': start_date,
+			   'metadataPrefix' : prefix}
+		url ="http://www.datadryad.org/oai/request"
 
-    def user(self, user=None):
-        """Fetch a user or the authenticated user.
+		data = urllib.urlencode(val)
+		req = urllib2.Request(url, data)
+		response = urllib2.urlopen(req)
+		html = response.read()
+		x = xml.dom.minidom.parseString(html)
+		return x
 
-        :param user: Optional GitHub user name; will fetch authenticated
-            user if omitted
-        :return dict: GitHub API response
-        """
-        return self.gh3.user(user)
+	@staticmethod
+	def get_resumption(token="2010-01-01T00:00:00Z/9999-12-31T23:59:59Z/hdl_10255_3/oai_dc/100"):
+		val = {'resumptionToken': token}
+		url ="http://www.datadryad.org/oai/request"
 
-    def repo(self, user, repo):
-        """Get a single Github repo's info.
+		data = urllib.urlencode(val)
+		req = urllib2.Request(url, data)
+		response = urllib2.urlopen(req)
+		html = response.read()
+		x = xml.dom.minidom.parseString(html)
+		return x
 
-        :param str user: GitHub user name
-        :param str repo: GitHub repo name
-        :return: Dict of repo information
-            See http://developer.github.com/v3/repos/#get
-        """
-        rv = self.gh3.repository(user, repo)
-        if rv:
-            return rv
-        raise NotFoundError
+class Dryad_DataOne:
 
-    def repos(self):
-        return self.gh3.iter_repos(type='all', sort='full_name')
+	def __init__(self):
+		pass
 
-    def user_repos(self, user):
-        return self.gh3.iter_user_repos(user, type='all', sort='full_name')
+	@staticmethod
+	def list(start_n=0, count=20):
+		val = {'start': str(start_n ),
+			   'count': str(count) }
+		url ="http://www.datadryad.org/mn/object"
 
-    def my_org_repos(self, permissions=None):
-        permissions = permissions or ['push']
-        return itertools.chain.from_iterable(
-            team.iter_repos()
-            for team in self.gh3.iter_user_teams()
-            if team.permission in permissions
-        )
+		data = urllib.urlencode(val)
+		req = urllib2.Request(url+'?'+data)
+		response = urllib2.urlopen(req)
+		html = response.read()
+		x = xml.dom.minidom.parseString(html)
+		return x
 
-    def create_repo(self, repo, **kwargs):
-        return self.gh3.create_repo(repo, **kwargs)
+	@staticmethod			
+	def metadata(doi="doi:10.5061/dryad.1850/1"):
+		url ="http://www.datadryad.org/mn/object"
 
-    def branches(self, user, repo, branch=None):
-        """List a repo's branches or get a single branch (in a list).
+		req = urllib2.Request(url+"/"+doi)
+		response = urllib2.urlopen(req)
+		html = response.read()
+		x = xml.dom.minidom.parseString(html)
+		return x		
 
-        :param str user: GitHub user name
-        :param str repo: GitHub repo name
-        :param str branch: Branch name if getting a single branch
-        :return: List of branch dicts
-            http://developer.github.com/v3/repos/#list-branches
-        """
-        if branch:
-            return [self.repo(user, repo).branch(branch)]
-        return self.repo(user, repo).iter_branches() or []
+	@staticmethod
+	def download(doi="doi:10.5061/dryad.1850/1"):
+		url ="http://www.datadryad.org/mn/object"
 
-    # TODO: Test
-    def starball(self, user, repo, archive='tar', ref='master'):
-        """Get link for archive download.
+		req = urllib2.Request(url+"/"+doi+'/bitstream')
+		response = urllib2.urlopen(req)
+		html = response.read()
+		"""
+		f = open('fileToWriteTo', 'wb')
+		bitstreamObject.tofile(f)
+		"""
+		return html
 
-        :param str user: GitHub user name
-        :param str repo: GitHub repo name
-        :param str archive: Archive format [tar|zip]
-        :param str ref: Git reference
-        :returns: tuple: Tuple of headers and file location
-        """
+if __name__ == "__main__":
+	dryad = Dryad()
+	print dryad.identify().toprettyxml()
+	print dryad.list_set().toprettyxml()
+	print dryad.list_metadataformat().toprettyxml()
+	print dryad.list_identifiers("2010-01-01","oai_dc","hdl_10255_3").toprettyxml()
+	print dryad.list_records("2010-01-01","oai_dc","hdl_10255_3").toprettyxml()
 
-        # github3 archive method writes file to disk
-        repository = self.repo(user, repo)
-        url = repository._build_url(archive + 'ball', ref, base_url=repository._api)
-        resp = repository._get(url, allow_redirects=True, stream=True)
+	dataone = Dryad_DataOne()
+	print dataone.list().toprettyxml()
+	print dataone.metadata().toprettyxml()
+	print dataone.download()
 
-        return resp.headers, resp.content
-
-    def set_privacy(self, user, repo, private):
-        """Set privacy of GitHub repo.
-
-        :param str user: GitHub user name
-        :param str repo: GitHub repo name
-        :param bool private: Make repo private; see
-            http://developer.github.com/v3/repos/#edit
-        """
-        return self.repo(user, repo).edit(repo, private=private)
-
-    #########
-    # Hooks #
-    #########
-
-    def hooks(self, user, repo):
-        """List webhooks
-
-        :param str user: GitHub user name
-        :param str repo: GitHub repo name
-        :return list: List of commit dicts from GitHub; see
-            http://developer.github.com/v3/repos/hooks/#json-http
-        """
-        return self.repo(user, repo).iter_hooks()
-
-    def add_hook(self, user, repo, name, config, events=None, active=True):
-        """Create a webhook.
-
-        :param str user: GitHub user name
-        :param str repo: GitHub repo name
-        :return dict: Hook info from GitHub: see see
-            http://developer.github.com/v3/repos/hooks/#json-http
-        """
-        return self.repo(user, repo).create_hook(name, config, events, active)
-
-    def delete_hook(self, user, repo, _id):
-        """Delete a webhook.
-
-        :param str user: GitHub user name
-        :param str repo: GitHub repo name
-        :return bool: True if successful, False otherwise
-        :raises: NotFoundError if repo or hook cannot be located
-        """
-        repo = self.repo(user, repo)
-        hook = repo.hook(_id)
-        if hook is None:
-            raise NotFoundError
-        return repo.hook(_id).delete()
-
-    ########
-    # Auth #
-    ########
-
-    def revoke_token(self):
-
-        if self.access_token:
-            return self.gh3.revoke_authorization(self.access_token)
-
-
-def ref_to_params(branch=None, sha=None):
-
-    params = urllib.urlencode({
-        key: value
-        for key, value in {
-            'branch': branch,
-            'sha': sha,
-        }.iteritems()
-        if value
-    })
-    if params:
-        return '?' + params
-    return ''
