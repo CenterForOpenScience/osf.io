@@ -427,7 +427,7 @@ class File(FileNode):
                 return
         raise exceptions.VersionNotFoundError(location)
 
-    def touch(self, bearer, revision=None, **kwargs):
+    def touch(self, auth_header, revision=None, **kwargs):
         """The bread and butter of File, collects metadata about self
         and creates versions and updates self when required.
         If revisions is None the created version is NOT and should NOT be saved
@@ -436,7 +436,7 @@ class File(FileNode):
         If a file cannot be rendered IE figshare private files a tuple of the FileVersion and
         renderable HTML will be returned.
             >>>isinstance(file_node.touch(), tuple) # This file cannot be rendered
-        :param str or None bearer: If truthy bearer will be added as the Authorization header as "Bearer {bearer}"
+        :param str or None auth_header: If truthy it will set as the Authorization header
         :returns: None if the file is not found otherwise FileVersion or (version, Error HTML)
         """
         # For backwards compatability
@@ -448,8 +448,8 @@ class File(FileNode):
             return version
 
         headers = {}
-        if bearer:
-            headers['Authorization'] = 'Bearer {}'.format(bearer)
+        if auth_header:
+            headers['Authorization'] = auth_header
         resp = requests.get(
             self.generate_waterbutler_url(revision=revision, meta=True, **kwargs),
             headers=headers,

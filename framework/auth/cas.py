@@ -143,9 +143,6 @@ class CasClient(object):
             attributes = auth_doc.xpath('./cas:attributes/*', namespaces=doc.nsmap)
             for attribute in attributes:
                 resp.attributes[unicode(attribute.xpath('local-name()'))] = unicode(attribute.text)
-            scopes = resp.attributes.get('accessTokenScope')
-            if scopes:
-                resp.attributes['accessTokenScope'] = scopes.split(' ')
         else:
             resp.authenticated = False
         return resp
@@ -224,6 +221,6 @@ def make_response_from_ticket(ticket, service_url):
         if user.verification_key:
             user.verification_key = None
             user.save()
-        return authenticate(user, response=redirect(service_furl.url), access_token=cas_resp.attributes['accessToken'])
+        return authenticate(user, response=redirect(service_furl.url))
     # Ticket could not be validated, unauthorized.
     return redirect(service_furl.url)

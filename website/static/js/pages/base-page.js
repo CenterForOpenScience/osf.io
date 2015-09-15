@@ -17,7 +17,6 @@ require('jquery.cookie');
 require('js/crossOrigin.js');
 var $osf = require('js/osfHelpers');
 var NavbarControl = require('js/navbarControl');
-var Auth = require('js/auth');
 var Raven = require('raven-js');
 
 // Prevent IE from caching responses
@@ -111,22 +110,4 @@ $(function() {
     }
 
     new NavbarControl('.osf-nav-wrapper');
-
-    if (window.contextVars.accessToken) {
-        new Auth(window.contextVars.profileUrl).getCurrentUser().fail(
-            function (xhr, error, status) {
-                if (xhr.status === 401) { // Unauthorized
-                    Raven.captureMessage('Access Token is invalid requiring user to re-authenticate.', {
-                        location: window.document.location.toString(),
-                        status: xhr.status,
-                        error: error,
-                        userId: window.contextVars.userId,
-                        accessToken: window.contextVars.accessToken,
-                        reauthUrl: window.contextVars.reauthUrl
-                    });
-                    window.document.location = window.contextVars.reauthUrl;
-                }
-            }
-        );
-    }
 });

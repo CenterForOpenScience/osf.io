@@ -353,7 +353,7 @@ class TestCheckAuth(OsfTestCase):
         user2 = AuthUserFactory()
         with assert_raises(HTTPError) as exc_info:
             views.check_access(self.node, Auth(user=user2), 'download')
-        assert_equal(exc_info.exception.code, 401)
+        assert_equal(exc_info.exception.code, 403)
 
     def test_not_has_permission_not_logged_in(self):
         with assert_raises(HTTPError) as exc_info:

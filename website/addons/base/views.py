@@ -13,7 +13,6 @@ from modularodm.exceptions import NoResultsFound
 from framework import sentry
 from framework.auth import cas
 from framework.auth import Auth
-from framework.sessions import session
 from framework.routing import json_renderer
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
@@ -410,7 +409,16 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
 
     file_node = FileNode.resolve_class(provider, FileNode.FILE).get_or_create(node, path)
 
-    version = file_node.touch(session.data.get('auth_user_access_token'), **extras)
+    # Note: Cookie is provided for authentication to waterbutler
+    # it is overriden to force authentication as the current user
+    # the auth header is also pass to support basic auth
+    version = file_node.touch(
+        request.headers.get('Authorization'),
+        **dict(
+            extras,
+            cookie=request.cookies.get(settings.COOKIE_NAME)
+        )
+    )
 
     if version is None:
         raise HTTPError(httplib.NOT_FOUND, {
