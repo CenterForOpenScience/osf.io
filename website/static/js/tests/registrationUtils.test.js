@@ -352,7 +352,9 @@ describe('MetaSchema', () => {
             assert.equal(ms.version, params.schema_version);
             assert.equal(ms.schema.pages[0].id, params.schema.pages[0].id);
 
-            assert.isDefined(ms.schema.pages[2].questions[qid].value);
+            // qids are created in the constructor now based on length
+            // and prepended with `q'
+            assert.isDefined(ms.schema.pages[2].questions['q7'].value);
         });
     });
     describe('#flatQuestions', () => {
