@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import mock
 from nose.tools import *  # noqa
 from modularodm import Q
@@ -62,9 +63,19 @@ class TestStoredFileNode(FilesTestCase):
 
     def test_deep_url(self):
         url = self.sfn.deep_url
-        assert_true(isinstance(url, basestring))
+        assert_true(isinstance(url, unicode))
         assert_in(self.node._id, url)
         assert_in(self.sfn.path, url)
+        assert_in(self.sfn.provider, url)
+
+    def test_deep_url_unicode(self):
+        self.sfn.path = u'༼ つ ͠° ͟ ͟ʖ ͡° ༽つ'
+        self.sfn.save()
+        url = self.sfn.deep_url
+        assert_true(isinstance(url, unicode))
+        assert_in(self.node._id, url)
+        # Path is url encode
+        # assert_in(self.sfn.path, url)
         assert_in(self.sfn.provider, url)
 
     def test_wrapped(self):
@@ -406,7 +417,7 @@ class TestFileObj(FilesTestCase):
         mock_response = mock.Mock(status_code=404)
         mock_requests.return_value = mock_response
 
-        file.touch('bearer', revision='foo')
+        file.touch('Bearer bearer', revision='foo')
         assert_equal(mock_requests.call_args[1]['headers'], {
             'Authorization': 'Bearer bearer'
         })

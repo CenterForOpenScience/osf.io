@@ -324,10 +324,7 @@ def _build_guid_url(base, suffix=None):
         each.strip('/') for each in [base, suffix]
         if each
     ])
-    # The infamous unicode hack.
-    # The only line the consistently converts arbitrary basestring
-    # objects to unicode
-    return u'/{0}/'.format(u''.join(url))
+    return u'/{0}/'.format(url)
 
 
 def resolve_guid(guid, suffix=None):
