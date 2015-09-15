@@ -265,7 +265,7 @@ class FileNode(object):
         """The url that this filenodes guid should resolve to.
         Implemented here so that subclasses may override it; see dropbox
         """
-        return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/')).decode('utf-8')
+        return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/'))
 
     def __init__(self, *args, **kwargs):
         """Contructor for FileNode's subclasses

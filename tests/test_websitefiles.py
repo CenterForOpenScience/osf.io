@@ -63,7 +63,7 @@ class TestStoredFileNode(FilesTestCase):
 
     def test_deep_url(self):
         url = self.sfn.deep_url
-        assert_true(isinstance(url, unicode))
+        assert_true(isinstance(url, basestring))
         assert_in(self.node._id, url)
         assert_in(self.sfn.path, url)
         assert_in(self.sfn.provider, url)
@@ -72,7 +72,7 @@ class TestStoredFileNode(FilesTestCase):
         self.sfn.path = u'༼ つ ͠° ͟ ͟ʖ ͡° ༽つ'
         self.sfn.save()
         url = self.sfn.deep_url
-        assert_true(isinstance(url, unicode))
+        assert_true(isinstance(url, basestring))
         assert_in(self.node._id, url)
         # Path is url encode
         # assert_in(self.sfn.path, url)
