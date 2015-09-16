@@ -10,7 +10,7 @@ from website.models import Node, Pointer
 from api.users.serializers import ContributorSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
-from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
+from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer, NodeUpdateSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 
 
@@ -99,7 +99,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         ReadOnlyIfRegistration,
     )
 
-    serializer_class = NodeSerializer
+    serializer_class = NodeUpdateSerializer
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
