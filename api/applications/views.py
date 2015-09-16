@@ -14,7 +14,7 @@ from website.models import ApiOAuth2Application
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
 from api.applications.permissions import OwnerOnly
-from api.applications.serializers import ApiOAuth2ApplicationSerializer
+from api.applications.serializers import ApiOAuth2ApplicationSerializer, ApiOAuth2ApplicationUpdateSerializer
 
 
 class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
@@ -60,7 +60,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
         OwnerOnly
     )
 
-    serializer_class = ApiOAuth2ApplicationSerializer
+    serializer_class = ApiOAuth2ApplicationUpdateSerializer
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 

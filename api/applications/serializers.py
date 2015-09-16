@@ -3,6 +3,7 @@ from rest_framework import serializers as ser
 
 from website.models import ApiOAuth2Application
 
+from api.base.exceptions import Conflict
 from api.base.serializers import JSONAPISerializer, LinksField
 
 
@@ -12,6 +13,8 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
                        read_only=True,
                        source='client_id',
                        label='ID')
+    type = ser.CharField(write_only=True, required=True)
+
     client_id = ser.CharField(help_text='The client ID for this application (automatically generated)',
                               read_only=True)
 
@@ -45,6 +48,11 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'applications'
 
+    def validate_type(self, value):
+        if self.Meta.type_ != value:
+            raise Conflict()
+        return value
+
     links = LinksField({
         'html': 'absolute_url'
     })
@@ -63,3 +71,12 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class ApiOAuth2ApplicationUpdateSerializer(ApiOAuth2ApplicationSerializer):
+    id = ser.CharField(source='_id', label='ID', required=True)
+
+    def validate_id(self, value):
+        if self._args[0]._id != value:
+            raise Conflict()
+        return value

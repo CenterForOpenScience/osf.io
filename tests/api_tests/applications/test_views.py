@@ -7,7 +7,6 @@ from website.models import ApiOAuth2Application, User
 from website.util import api_v2_url
 from website.util import sanitize
 
-
 from tests.base import ApiTestCase
 from tests.factories import ApiOAuth2ApplicationFactory, AuthUserFactory
 
@@ -36,6 +35,7 @@ class TestApplicationList(ApiTestCase):
         self.user2_list_url = _get_application_list_url()
 
         self.sample_data = {
+            'type': 'applications',
             'owner': 'Value discarded',
             'client_id': 'Value discarded',
             'client_secret': 'Value discarded',
@@ -128,6 +128,44 @@ class TestApplicationDetail(ApiTestCase):
         self.user1_app = ApiOAuth2ApplicationFactory(owner=self.user1)
         self.user1_app_url = _get_application_detail_route(self.user1_app)
 
+        self.missing_id = {
+            'type': 'applications',
+            'name': 'A shiny new application',
+            'home_url': 'http://osf.io',
+            'callback_url': 'https://cos.io'
+        }
+
+        self.missing_type = {
+            'id': self.user1_app._id,
+            'name': 'A shiny new application',
+            'home_url': 'http://osf.io',
+            'callback_url': 'https://cos.io'
+        }
+
+        self.incorrect_id = {
+            'id': '12345',
+            'type': 'applications',
+            'name': 'A shiny new application',
+            'home_url': 'http://osf.io',
+            'callback_url': 'https://cos.io'
+        }
+
+        self.incorrect_type = {
+            'id': self.user1_app._id,
+            'type': 'Wrong type.',
+            'name': 'A shiny new application',
+            'home_url': 'http://osf.io',
+            'callback_url': 'https://cos.io'
+        }
+
+        self.correct =  {
+            'id': self.user1_app._id,
+            'type': 'applications',
+            'name': 'A shiny new application',
+            'home_url': 'http://osf.io',
+            'callback_url': 'https://cos.io'
+        }
+
     def test_owner_can_view(self):
         res = self.app.get(self.user1_app_url, auth=self.user1.auth)
         assert_equal(res.status_code, 200)
@@ -197,6 +235,44 @@ class TestApplicationDetail(ApiTestCase):
         res = self.app.delete(self.user1_app_url, auth=self.user1.auth)
         self.user1_app.reload()
         assert_false(self.user1_app.is_active)
+
+    def test_update_application(self):
+        res = self.app.put(self.user1_app_url, self.correct, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+    def test_update_application_incorrect_type(self):
+        res = self.app.put(self.user1_app_url, self.incorrect_type, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    def test_update_application_incorrect_id(self):
+        res = self.app.put(self.user1_app_url, self.incorrect_id, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    def test_update_application_no_type(self):
+        res = self.app.put(self.user1_app_url, self.missing_type, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_update_application_no_id(self):
+        res = self.app.put(self.user1_app_url, self.missing_id, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_partial_update_application_incorrect_type(self):
+        res = self.app.patch(self.user1_app_url, self.incorrect_type, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    def test_partial_update_application_incorrect_id(self):
+        res = self.app.patch(self.user1_app_url, self.incorrect_id, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    # PATCH does not require required fields.
+    def test_partial_update_application_no_type(self):
+        res = self.app.patch(self.user1_app_url, self.missing_type, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+    # PATCH does not require required fields.
+    def test_partial_update_application_no_id(self):
+        res = self.app.patch(self.user1_app_url, self.missing_id, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
 
     def tearDown(self):
         super(TestApplicationDetail, self).tearDown()
