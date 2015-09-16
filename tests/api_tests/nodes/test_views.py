@@ -293,11 +293,13 @@ class TestNodeCreate(ApiTestCase):
         self.public_project = {'title': self.title,
                                'description': self.description,
                                'category': self.category,
-                               'public': True}
+                               'public': True,
+                               'type': 'nodes'}
         self.private_project = {'title': self.title,
                                 'description': self.description,
                                 'category': self.category,
-                                'public': False}
+                                'public': False,
+                                'type': 'nodes'}
 
     def test_creates_public_project_logged_out(self):
         res = self.app.post_json_api(self.url, self.public_project, expect_errors=True)
@@ -334,6 +336,7 @@ class TestNodeCreate(ApiTestCase):
             'description': description,
             'category': self.category,
             'public': True,
+            'type': 'nodes'
         }, auth=self.user_one.auth)
         project_id = res.json['data']['id']
         assert_equal(res.status_code, 201)
@@ -344,6 +347,26 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['title'], strip_html(title))
         assert_equal(res.json['data']['attributes']['description'], strip_html(description))
         assert_equal(res.json['data']['attributes']['category'], self.category)
+
+    def test_creates_project_no_type(self):
+        project = {'title': self.title,
+                        'description': self.description,
+                        'category': self.category,
+                        'public': False}
+        res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+
+    def test_creates_project_incorrect_type(self):
+        project = {'title': self.title,
+                        'description': self.description,
+                        'category': self.category,
+                        'public': False,
+                        'type': 'Wrong type.'}
+        res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
 
 class TestNodeDetail(ApiTestCase):
