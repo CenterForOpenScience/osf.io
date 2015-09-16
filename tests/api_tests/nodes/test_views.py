@@ -1780,6 +1780,7 @@ class TestExceptionFormatting(ApiTestCase):
 
         self.project_no_title = {'description': self.description,
                                  'category': self.category,
+                                 'type': 'nodes',
                                  }
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
@@ -1814,7 +1815,7 @@ class TestExceptionFormatting(ApiTestCase):
         assert_equal(errors[0], {'detail': "Authentication credentials were not provided."})
 
     def test_update_project_with_no_title_or_category_formatting(self):
-        res = self.app.put_json_api(self.private_url, {'description': 'New description'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.put_json_api(self.private_url, {'type': 'nodes', 'id': self.private_project._id, 'description': 'New description'}, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(len(errors), 2)
@@ -1826,17 +1827,18 @@ class TestExceptionFormatting(ApiTestCase):
 
     def test_create_node_link_no_target_formatting(self):
         url = self.private_url + 'node_links/'
-        res = self.app.post_json_api(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(url, {'type': 'node_links'}, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
+        print res
         assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/target_node_id'})
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
     def test_node_link_already_exists(self):
         url = self.private_url + 'node_links/'
-        res = self.app.post_json_api(url, {'target_node_id': self.public_project._id}, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(url, {'type': 'node_links', 'target_node_id': self.public_project._id}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
-        res = self.app.post_json_api(url, {'target_node_id': self.public_project._id}, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(url, {'type': 'node_links', 'target_node_id': self.public_project._id}, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert(self.public_project._id in res.json['errors'][0]['detail'])
