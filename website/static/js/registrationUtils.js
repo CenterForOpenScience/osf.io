@@ -280,8 +280,7 @@ MetaSchema.prototype.flatQuestions = function() {
  * @param {Object} params.registration_schema: data to be passed to MetaSchema constructor
  * @param {Object} params.registration_metadata: saved Draft data
  * @param {User} params.initiator
- * @param {Date} params.initated
- * @param {Date} params.updated
+ * @param {Date} params.initiated
  * @param {Boolean} params.is_pending_review
  * @param {Boolean} params.approved
  * @param {Date} params.updated

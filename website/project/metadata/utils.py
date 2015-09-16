@@ -1,3 +1,6 @@
+from framework import utils
+
+
 def serialize_meta_schema(meta_schema):
     if not meta_schema:
         return None
@@ -6,6 +9,7 @@ def serialize_meta_schema(meta_schema):
         'schema_version': meta_schema.schema_version,
         'schema': meta_schema.schema
     }
+
 
 def serialize_draft_registration(draft, auth=None):
     from website.profile.utils import serialize_user  # noqa
@@ -19,8 +23,8 @@ def serialize_draft_registration(draft, auth=None):
         'initiator': serialize_user(draft.initiator, full=True),
         'registration_metadata': draft.registration_metadata,
         'registration_schema': serialize_meta_schema(draft.registration_schema),
-        'initiated': str(draft.datetime_initiated),
-        'updated': str(draft.datetime_updated),
+        'initiated': utils.iso8601format(draft.datetime_initiated),
+        'updated': utils.iso8601format(draft.datetime_updated),
         'config': {},  # draft.config or {},
         'flags': {},  # draft.flags,
         'urls': {

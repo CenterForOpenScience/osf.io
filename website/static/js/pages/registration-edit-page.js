@@ -16,7 +16,7 @@ $(document).ready(function() {
     var draftEditor = new RegistrationEditor({
         schemas: '/api/v1/project/schema/',
         create: node.urls.api + 'draft/',
-	submit: node.urls.api + 'draft/{draft_pk}/submit/',
+        submit: node.urls.api + 'draft/{draft_pk}/submit/',
         update: node.urls.api + 'draft/{draft_pk}/',
         get: node.urls.api + 'draft/{draft_pk}/'
     }, 'registrationEditor');
