@@ -108,9 +108,9 @@ class TestApplicationList(ApiTestCase):
         assert_equal(len(res.json['data']),
                      len(self.user1_apps) + 1)
 
-    def test_returns_403_when_not_logged_in(self):
+    def test_returns_401_when_not_logged_in(self):
         res = self.app.get(self.user1_list_url, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
 
     def tearDown(self):
         super(TestApplicationList, self).tearDown()
@@ -137,9 +137,9 @@ class TestApplicationDetail(ApiTestCase):
         res = self.app.get(self.user1_app_url, auth=self.user2.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_returns_403_when_not_logged_in(self):
+    def test_returns_401_when_not_logged_in(self):
         res = self.app.get(self.user1_app_url, expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_owner_can_delete(self, mock_method):
@@ -196,7 +196,7 @@ class TestApplicationDetail(ApiTestCase):
         mock_method.return_value(True)
         res = self.app.delete(self.user1_app_url, auth=self.user1.auth)
         self.user1_app.reload()
-        assert_false(self.user1_app.active)
+        assert_false(self.user1_app.is_active)
 
     def tearDown(self):
         super(TestApplicationDetail, self).tearDown()

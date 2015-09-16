@@ -119,7 +119,7 @@ class CasClient(object):
         }
         resp = requests.get(url, headers=headers)
         if resp.status_code == 200:
-            return self._parse_profile(resp.content)
+            return self._parse_profile(resp.content, access_token)
         else:
             self._handle_error(resp)
 
@@ -143,15 +143,20 @@ class CasClient(object):
             attributes = auth_doc.xpath('./cas:attributes/*', namespaces=doc.nsmap)
             for attribute in attributes:
                 resp.attributes[unicode(attribute.xpath('local-name()'))] = unicode(attribute.text)
+            scopes = resp.attributes.get('accessTokenScope')
+            if scopes:
+                resp.attributes['accessTokenScope'] = scopes.split(' ')
         else:
             resp.authenticated = False
         return resp
 
-    def _parse_profile(self, raw):
+    def _parse_profile(self, raw, access_token):
         data = json.loads(raw)
         resp = CasResponse(authenticated=True, user=data['id'])
-        for attribute in data['attributes'].keys():
-            resp.attributes[attribute] = data['attributes'][attribute]
+        if data.get('attributes'):
+            resp.attributes.update(data['attributes'])
+        resp.attributes['accessToken'] = access_token
+        resp.attributes['accessTokenScope'] = data.get('scope', [])
         return resp
 
     def revoke_application_tokens(self, client_id, client_secret):

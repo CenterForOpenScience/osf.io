@@ -41,7 +41,7 @@
                             <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                         % endif
 
-                        <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
+                        <li><a href="#configureNotificationsAnchor">Configure Email Notifications</a></li>
 
                     % endif
 
@@ -269,14 +269,14 @@
 
         % endif  ## End Configure Commenting
 
-        % if user['has_read_permissions']:  ## Begin Configure Notifications
+        % if user['has_read_permissions']:  ## Begin Configure Email Notifications
 
             % if not node['is_registration']:
 
                 <div class="panel panel-default">
                     <span id="configureNotificationsAnchor" class="anchor"></span>
                     <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Notifications</h3>
+                        <h3 class="panel-title">Configure Email Notifications</h3>
                     </div>
                     <div class="help-block" style="padding-left: 15px">
                         <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
@@ -296,7 +296,7 @@
 
             %endif
 
-        % endif ## End Configure Notifications
+        % endif ## End Configure Email Notifications
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 

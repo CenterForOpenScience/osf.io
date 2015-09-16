@@ -1,6 +1,6 @@
 
 from rest_framework import status
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, ParseError
 
 
 def json_api_exception_handler(exc, context):
@@ -41,3 +41,8 @@ def json_api_exception_handler(exc, context):
 class Gone(APIException):
     status_code = status.HTTP_410_GONE
     default_detail = ('The requested resource is no longer available.')
+
+
+class InvalidFilterError(ParseError):
+    """Raised when client passes an invalid filter in the querystring."""
+    default_detail = 'Querystring contains an invalid filter.'

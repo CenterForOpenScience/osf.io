@@ -14,7 +14,7 @@ from requests.exceptions import HTTPError as RequestsHTTPError
 
 from modularodm import fields, Q
 from modularodm.storage.base import KeyExistsException
-from modularodm.validators import URLValidator
+from modularodm.validators import MaxLengthValidator, URLValidator
 from requests_oauthlib import OAuth1Session
 from requests_oauthlib import OAuth2Session
 
@@ -22,6 +22,7 @@ from framework.auth import cas
 from framework.exceptions import HTTPError, PermissionsError
 from framework.mongo import ObjectId, StoredObject
 from framework.mongo.utils import unique_on
+from framework.mongo.validators import string_required
 from framework.sessions import session
 from website import settings
 from website.oauth.utils import PROVIDER_LOOKUP
@@ -373,8 +374,8 @@ class ApiOAuth2Application(StoredObject):
                                    index=True)
     client_secret = fields.StringField(default=generate_client_secret)
 
-    active = fields.BooleanField(default=True,  # Set to False if application is deactivated
-                                 index=True)
+    is_active = fields.BooleanField(default=True,  # Set to False if application is deactivated
+                                    index=True)
 
     owner = fields.ForeignField('User',
                                 backref='created',
@@ -382,8 +383,8 @@ class ApiOAuth2Application(StoredObject):
                                 required=True)
 
     # User-specified application descriptors
-    name = fields.StringField(index=True, required=True)
-    description = fields.StringField(required=False)
+    name = fields.StringField(index=True, required=True, validate=[string_required, MaxLengthValidator(200)])
+    description = fields.StringField(required=False, validate=MaxLengthValidator(1000))
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
                                         editable=False)
@@ -393,7 +394,7 @@ class ApiOAuth2Application(StoredObject):
     callback_url = fields.StringField(required=True,
                                       validate=URLValidator())
 
-    def deactivate(self):
+    def deactivate(self, save=False):
         """
         Deactivate an ApiOAuth2Application
 
@@ -403,8 +404,10 @@ class ApiOAuth2Application(StoredObject):
         # Will raise a CasHttpError if deletion fails, which will also stop setting of active=False.
         resp = client.revoke_application_tokens(self.client_id, self.client_secret)  # noqa
 
-        self.active = False
-        self.save()
+        self.is_active = False
+
+        if save:
+            self.save()
         return True
 
     @property

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import urlparse
 from nose.tools import *  # flake8: noqa
 
 from website.models import Node
@@ -71,6 +72,15 @@ class TestUsers(ApiTestCase):
         assert_not_in(self.user_one._id, ids)
         assert_not_in(self.user_two._id, ids)
 
+    def test_users_list_takes_profile_image_size_param(self):
+        size = 42
+        url = "/{}users/?profile_image_size={}".format(API_BASE, size)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        for user in user_json:
+            profile_image_url = user['attributes']['profile_image_url']
+            query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
+            assert_equal(int(query_dict.get('size')[0]), size)
 
 class TestUserDetail(ApiTestCase):
 
@@ -110,7 +120,15 @@ class TestUserDetail(ApiTestCase):
         user_json = res.json['data']
         assert_not_equal(user_json['attributes']['fullname'], self.user_one.fullname)
         assert_equal(user_json['attributes']['fullname'], self.user_two.fullname)
-
+        
+    def test_user_detail_takes_profile_image_size_param(self):
+        size = 42
+        url = "/{}users/{}/?profile_image_size={}".format(API_BASE, self.user_one._id, size)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        profile_image_url = user_json['attributes']['profile_image_url']
+        query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
+        assert_equal(int(query_dict.get('size')[0]), size)
 
 class TestUserNodes(ApiTestCase):
 
@@ -233,13 +251,9 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
 
     def test_get_403_path_users_me_no_user(self):
         # TODO: change expected exception from 403 to 401 for unauthorized users
-
         url = "/{}users/me/".format(API_BASE)
         res = self.app.get(url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
 
     def test_get_404_path_users_user_id_me_user_logged_in(self):
         url = "/{}users/{}/me/".format(API_BASE, self.user_one._id)
@@ -291,10 +305,7 @@ class TestUserRoutesNodeRoutes(ApiTestCase):
 
         url = "/{}users/me/nodes/".format(API_BASE)
         res = self.app.get(url, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
 
     def test_get_200_path_users_user_id_nodes_user_logged_in(self):
         url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
@@ -433,10 +444,7 @@ class TestUserUpdate(ApiTestCase):
         res = self.app.patch_json_api(self.user_one_url, {
             'fullname': self.new_user_one_data['fullname'],
         }, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
 
     def test_patch_user_without_required_field(self):
         # PATCH does not require required fields
@@ -558,17 +566,11 @@ class TestUserUpdate(ApiTestCase):
 
     def test_put_user_logged_out(self):
         res = self.app.put_json_api(self.user_one_url, self.new_user_one_data, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
 
     def test_put_wrong_user(self):
         # User tries to update someone else's user information via put
         res = self.app.put_json_api(self.user_one_url, self.new_user_one_data, auth=self.user_two.auth, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
         assert_equal(res.status_code, 403)
 
     def test_patch_wrong_user(self):
@@ -576,9 +578,6 @@ class TestUserUpdate(ApiTestCase):
         res = self.app.patch_json_api(self.user_one_url, {
             'fullname': self.new_user_one_data['fullname'],
         }, auth=self.user_two.auth, expect_errors=True)
-        # This is 403 instead of 401 because basic authentication is only for unit tests and, in order to keep from
-        # presenting a basic authentication dialog box in the front end. We may change this as we understand CAS
-        # a little better
         assert_equal(res.status_code, 403)
         self.user_one.reload()
         assert_not_equal(self.user_one.fullname, self.new_user_one_data['fullname'])
@@ -662,3 +661,8 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(errors[0], {'detail': 'Not found.'})
+
+    def test_basic_auth_me_wrong_password(self):
+        url = '/{}users/{}/'.format(API_BASE, 'me')
+        res = self.app.get(url, auth=(self.user.username, 'nottherightone'), expect_errors=True)
+        assert_equal(res.status_code, 401)

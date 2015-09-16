@@ -615,13 +615,22 @@ class TestUser(OsfTestCase):
             urlparse.urljoin(settings.DOMAIN, '/{0}/'.format(self.user._primary_key))
         )
 
-    def test_gravatar_url(self):
+    def test_profile_image_url(self):
         expected = filters.gravatar(
             self.user,
             use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=settings.PROFILE_IMAGE_MEDIUM
         )
-        assert_equal(self.user.gravatar_url, expected)
+        assert_equal(self.user.profile_image_url(settings.PROFILE_IMAGE_MEDIUM), expected)
+
+    def test_profile_image_url_has_no_default_size(self):
+        expected = filters.gravatar(
+            self.user,
+            use_ssl=True,
+        )
+        assert_equal(self.user.profile_image_url(), expected)
+        size = urlparse.parse_qs(urlparse.urlparse(self.user.profile_image_url()).query).get('size')
+        assert_equal(size, None)
 
     def test_activity_points(self):
         assert_equal(self.user.get_activity_points(db=self.db),
@@ -649,7 +658,7 @@ class TestUser(OsfTestCase):
         gravatar = filters.gravatar(
             user,
             use_ssl=True,
-            size=settings.GRAVATAR_SIZE_PROFILE
+            size=settings.PROFILE_IMAGE_LARGE
         )
         assert_equal(d['id'], user._primary_key)
         assert_equal(d['url'], user.url)
@@ -1010,7 +1019,7 @@ class TestApiOAuth2Application(OsfTestCase):
         assert_greater(len(self.api_app.client_secret), 0)
 
     def test_new_app_is_not_flagged_as_deleted(self):
-        assert_true(self.api_app.active)
+        assert_true(self.api_app.is_active)
 
     def test_user_backref_updates_when_app_created(self):
         u = UserFactory()
@@ -1034,20 +1043,37 @@ class TestApiOAuth2Application(OsfTestCase):
             api_app = ApiOAuth2ApplicationFactory(callback_url="itms://itunes.apple.com/us/app/apple-store/id375380948?mt=8")
             api_app.save()
 
+    def test_name_cannot_be_blank(self):
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(name='')
+            api_app.save()
+
+    def test_long_name_raises_exception(self):
+        long_name = ('JohnJacobJingelheimerSchmidtHisNameIsMyN' * 5) + 'a'
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(name=long_name)
+            api_app.save()
+
+    def test_long_description_raises_exception(self):
+        long_desc = ('JohnJacobJingelheimerSchmidtHisNameIsMyN' * 25) + 'a'
+        with assert_raises(ValidationError):
+            api_app = ApiOAuth2ApplicationFactory(description=long_desc)
+            api_app.save()
+
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_active_set_to_false_upon_successful_deletion(self, mock_method):
         mock_method.return_value(True)
-        self.api_app.deactivate()
+        self.api_app.deactivate(save=True)
         self.api_app.reload()
-        assert_false(self.api_app.active)
+        assert_false(self.api_app.is_active)
 
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_active_remains_true_when_cas_token_deletion_fails(self, mock_method):
         mock_method.side_effect = cas.CasHTTPError("CAS can't revoke tokens", 400, 'blank', 'blank')
         with assert_raises(cas.CasHTTPError):
-            self.api_app.deactivate()
+            self.api_app.deactivate(save=True)
         self.api_app.reload()
-        assert_true(self.api_app.active)
+        assert_true(self.api_app.is_active)
 
 
 class TestNodeWikiPage(OsfTestCase):

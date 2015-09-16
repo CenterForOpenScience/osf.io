@@ -34,7 +34,7 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
         user_id = self.request.user._id
         return (
             Q('owner', 'eq', user_id) &
-            Q('active', 'eq', True)
+            Q('is_active', 'eq', True)
         )
 
     # overrides ListAPIView
@@ -68,7 +68,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
     def get_object(self):
         obj = get_object_or_error(ApiOAuth2Application,
                                   Q('client_id', 'eq', self.kwargs['client_id']) &
-                                  Q('active', 'eq', True))
+                                  Q('is_active', 'eq', True))
 
         self.check_object_permissions(self.request, obj)
         return obj
@@ -78,7 +78,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
         """Instance is not actually deleted from DB- just flagged as inactive, which hides it from list views"""
         obj = self.get_object()
         try:
-            obj.deactivate()
+            obj.deactivate(save=True)
         except cas.CasHTTPError:
             raise APIException("Could not revoke application auth tokens; please try again later")
 

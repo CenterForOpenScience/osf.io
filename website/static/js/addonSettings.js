@@ -26,6 +26,7 @@ var ExternalAccount = oop.defclass({
         ko.utils.arrayMap(data.nodes, function(item) {
             self.connectedNodes.push(new ConnectedProject(item));
         });
+
     },
     _deauthorizeNodeConfirm: function(node) {
         var self = this;
@@ -135,6 +136,7 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             self.accounts($.map(data.accounts, function(account) {
                 return new ExternalAccount(account);
             }));
+            $('#' + self.name + '-header').osfToggleHeight({height: 140});
         });
         request.fail(function(xhr, status, error) {
             Raven.captureMessage('Error while updating addon account', {
