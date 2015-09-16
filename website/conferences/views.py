@@ -127,9 +127,9 @@ def add_poster_by_email(conference, message):
 
 def _render_conference_node(node, idx, conf):
     storage_settings = node.get_addon('osfstorage')
-    try:
-        # Grab the first child
-        record = next(storage_settings.get_root().children)
+
+    if storage_settings.get_root().children.count() > 0:
+        record = storage_settings.get_root().children[0]
         download_count = record.get_download_count()
 
         download_url = node.web_url_for(
@@ -139,7 +139,7 @@ def _render_conference_node(node, idx, conf):
             action='download',
             _absolute=True,
         )
-    except StopIteration:
+    else:
         download_url = ''
         download_count = 0
 
