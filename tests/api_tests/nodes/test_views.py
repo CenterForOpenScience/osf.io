@@ -501,6 +501,7 @@ class TestNodeUpdate(ApiTestCase):
                                              category=self.category,
                                              is_public=True,
                                              creator=self.user)
+
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
 
         self.private_project = ProjectFactory(title=self.title,
@@ -511,7 +512,6 @@ class TestNodeUpdate(ApiTestCase):
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
     def test_update_invalid_id(self):
-        # Public project, logged in, contrib
         res = self.app.put_json_api(self.public_url, {
             'id': '12345',
             'type': 'nodes',
@@ -523,7 +523,6 @@ class TestNodeUpdate(ApiTestCase):
         assert_equal(res.status_code, 409)
 
     def test_update_invalid_type(self):
-        # Public project, logged in, contrib
         res = self.app.put_json_api(self.public_url, {
             'id': self.public_project._id,
             'type': 'node',
@@ -534,9 +533,34 @@ class TestNodeUpdate(ApiTestCase):
         }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
+    def test_update_no_id(self):
+        res = self.app.put_json_api(self.public_url, {
+            'type': 'nodes',
+            'title': self.new_title,
+            'description': self.new_description,
+            'category': self.new_category,
+            'public': True,
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
+
+    def test_update_no_type(self):
+        res = self.app.put_json_api(self.public_url, {
+            'id': self.public_project._id,
+            'title': self.new_title,
+            'description': self.new_description,
+            'category': self.new_category,
+            'public': True,
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_update_public_project_logged_out(self):
         res = self.app.put_json_api(self.public_url, {
+            'id': self.public_project._id,
+            'type': 'nodes',
             'title': self.new_title,
             'description': self.new_description,
             'category': self.new_category,
@@ -545,10 +569,11 @@ class TestNodeUpdate(ApiTestCase):
         assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
-
     def test_update_public_project_logged_in(self):
         # Public project, logged in, contrib
         res = self.app.put_json_api(self.public_url, {
+            'id': self.public_project._id,
+            'type': 'nodes',
             'title': self.new_title,
             'description': self.new_description,
             'category': self.new_category,
@@ -562,6 +587,8 @@ class TestNodeUpdate(ApiTestCase):
 
         # Public project, logged in, unauthorized
         res = self.app.put_json_api(self.public_url, {
+            'id': self.private_project._id,
+            'type': 'nodes',
             'title': self.new_title,
             'description': self.new_description,
             'category': self.new_category,
@@ -572,6 +599,8 @@ class TestNodeUpdate(ApiTestCase):
 
     def test_update_private_project_logged_out(self):
         res = self.app.put_json_api(self.private_url, {
+            'id': self.private_project._id,
+            'type': 'nodes',
             'title': self.new_title,
             'description': self.new_description,
             'category': self.new_category,
@@ -582,6 +611,8 @@ class TestNodeUpdate(ApiTestCase):
 
     def test_update_private_project_logged_in_contributor(self):
         res = self.app.put_json_api(self.private_url, {
+            'id': self.private_project._id,
+            'type': 'nodes',
             'title': self.new_title,
             'description': self.new_description,
             'category': self.new_category,
@@ -595,6 +626,8 @@ class TestNodeUpdate(ApiTestCase):
 
     def test_update_private_project_logged_in_non_contributor(self):
         res = self.app.put_json_api(self.private_url, {
+            'id': self.private_project._id,
+            'type': 'nodes',
             'title': self.new_title,
             'description': self.new_description,
             'category': self.new_category,
@@ -612,6 +645,8 @@ class TestNodeUpdate(ApiTestCase):
 
         url = '/{}nodes/{}/'.format(API_BASE, project._id)
         res = self.app.put_json_api(url, {
+            'id': self.project._id,
+            'type': 'nodes',
             'title': new_title,
             'description': new_description,
             'category': self.new_category,
@@ -629,6 +664,8 @@ class TestNodeUpdate(ApiTestCase):
 
         url = '/{}nodes/{}/'.format(API_BASE, project._id)
         res = self.app.patch_json_api(url, {
+            'id': project._id,
+            'type': 'nodes',
             'title': new_title,
         }, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -650,6 +687,8 @@ class TestNodeUpdate(ApiTestCase):
         # Test non-contrib writing to public field
         url = '/{}nodes/{}/'.format(API_BASE, project._id)
         res = self.app.patch_json_api(url, {
+            'id': project._id,
+            'type': 'nodes',
             'public': False,
         }, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -657,6 +696,8 @@ class TestNodeUpdate(ApiTestCase):
 
         # Test creator writing to public field (supposed to be read-only)
         res = self.app.patch_json_api(url, {
+            'id': project._id,
+            'type': 'nodes',
             'public': False,
         }, auth=self.user.auth, expect_errors=True)
         assert_true(res.json['data']['attributes']['public'])
@@ -664,12 +705,18 @@ class TestNodeUpdate(ApiTestCase):
         assert_equal(res.status_code, 200)
 
     def test_partial_update_public_project_logged_out(self):
-        res = self.app.patch_json_api(self.public_url, {'title': self.new_title}, expect_errors=True)
+        res = self.app.patch_json_api(self.public_url, {
+            'id': self.public_project._id,
+            'type': 'nodes',
+            'title': self.new_title
+        }, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
     def test_partial_update_public_project_logged_in(self):
         res = self.app.patch_json_api(self.public_url, {
+            'id': self.public_project._id,
+            'type': 'nodes',
             'title': self.new_title,
         }, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -686,12 +733,20 @@ class TestNodeUpdate(ApiTestCase):
         assert 'detail' in res.json['errors'][0]
 
     def test_partial_update_private_project_logged_out(self):
-        res = self.app.patch_json_api(self.private_url, {'title': self.new_title}, expect_errors=True)
+        res = self.app.patch_json_api(self.private_url, {
+            'id': self.private_project._id,
+            'type': 'nodes',
+            'title': self.new_title
+        }, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
     def test_partial_update_private_project_logged_in_contributor(self):
-        res = self.app.patch_json_api(self.private_url, {'title': self.new_title}, auth=self.user.auth)
+        res = self.app.patch_json_api(self.private_url, {
+            'title': self.new_title,
+            'id': self.private_project._id,
+            'type': 'nodes',
+        }, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], self.new_title)
@@ -699,10 +754,11 @@ class TestNodeUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['category'], self.category)
 
     def test_partial_update_private_project_logged_in_non_contributor(self):
-        res = self.app.patch_json_api(self.private_url,
-                                  {'title': self.new_title},
-                                  auth=self.user_two.auth,
-                                  expect_errors=True)
+        res = self.app.patch_json_api(self.private_url,{
+            'title': self.new_title,
+            'id': self.private_project._id,
+            'type': 'nodes',
+        }, auth=self.user_two.auth,expect_errors=True)
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
