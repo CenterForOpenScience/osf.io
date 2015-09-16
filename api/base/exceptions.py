@@ -10,8 +10,9 @@ def json_api_exception_handler(exc, context):
     from rest_framework.views import exception_handler
     response = exception_handler(exc, context)
 
-    # Error objects may have the following members. Title removed to avoid clash with node "title" errors.
-    top_level_error_keys = ['id', 'links', 'status', 'code', 'detail', 'source', 'meta']
+    # Error objects may have the following members. Title and id removed to avoid clash with "title" and "id" field errors.
+    top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
+    resource_object_identifiers = ['type', 'id']
     errors = []
 
     if response:
@@ -21,6 +22,8 @@ def json_api_exception_handler(exc, context):
             for error_key, error_description in message.iteritems():
                 if error_key in top_level_error_keys:
                     errors.append({error_key: error_description})
+                elif error_key in resource_object_identifiers:
+                    errors.append({'source': {'pointer': '/data/' + error_key}, 'detail': error_description})
                 else:
                     if isinstance(error_description, basestring):
                         error_description = [error_description]
