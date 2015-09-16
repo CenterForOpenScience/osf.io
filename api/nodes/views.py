@@ -4,18 +4,16 @@ from modularodm import Q
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework_bulk.drf3.mixins import BulkDestroyModelMixin
 from rest_framework_bulk.generics import ListBulkCreateUpdateDestroyAPIView, BulkDestroyAPIView
-from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound, NotAuthenticated
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
 from website.models import Node, Pointer
 from website.exceptions import NodeStateError
 from api.users.serializers import ContributorSerializer
-from api.base.utils import token_creator, absolute_reverse
-from api.base.language import BEFORE_BULK_DELETE
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
+from api.base.serializers import JSONAPIListSerializer
 from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
 from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer, NodeBulkUpdateSerializer
 
@@ -130,6 +128,14 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin, BulkDestroyAP
                 raise PermissionDenied()
         if not node_list:
             raise NotFound()
+
+        num_items = len(node_list)
+        bulk_limit = JSONAPIListSerializer.DEFAULT_BULK_LIMIT
+
+        if num_items > bulk_limit:
+            raise ValidationError(
+                detail={'non_field_errors': ['Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items)]}
+            )
 
         self.perform_bulk_destroy(node_list)
 

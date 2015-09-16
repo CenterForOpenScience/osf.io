@@ -808,7 +808,6 @@ class TestNodeBulkDelete(ApiTestCase):
         self.user_two = AuthUserFactory()
         self.project_one = ProjectFactory(title="Project One", is_public=True, creator=self.user_one, category="project")
         self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True, creator=self.user_one)
-        self.project_three = ProjectFactory(title="Three", is_public=True, creator=self.user_two)
         self.private_project_user_one = ProjectFactory(title="Private Project User One",
                                                        is_public=False,
                                                        creator=self.user_one)
@@ -818,126 +817,81 @@ class TestNodeBulkDelete(ApiTestCase):
 
         self.url = "/{}nodes/".format(API_BASE)
         self.project_one_url = '/{}nodes/{}/'.format(API_BASE, self.project_one._id)
-
         self.project_two_url = '/{}nodes/{}/'.format(API_BASE, self.project_two._id)
-        self.project_three_url = "/{}nodes/{}/".format(API_BASE, self.project_three._id)
+        self.private_project_url = "/{}nodes/{}/".format(API_BASE, self.private_project_user_one._id)
 
-        self.project_three_filtered_url = "/{}nodes/?filter[title]=Three".format(API_BASE)
+        self.public_payload = [{'id': self.project_one._id}, {'id': self.project_two._id}]
+        self.private_payload = [{'id': self.private_project_user_one._id}]
 
-        self.private_project_one_url = '/{}nodes/{}/'.format(API_BASE, self.private_project_user_one._id)
-        self.private_project_one_filtered_url = "/{}nodes/?filter[title]=Private%20Project%20User%20One".format(API_BASE)
-
-    # TODO Why is this test failing?
     def test_bulk_delete_public_projects_logged_in(self):
-        res = self.app.get(self.project_three_filtered_url, auth=self.user_one.auth)
-        print res
-        assert_equal(len(res.json['data']), 1)
-        res = self.app.delete_json_api(self.project_three_filtered_url, auth=self.user_two.auth)
-        assert_equal(res.status_code, 202)
-
-        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Three'
-        res = self.app.delete_json_api(delete_url, auth=self.user_two.auth)
+        res = self.app.delete_json_api(self.url, self.public_payload, auth=self.user_one.auth)
         assert_equal(res.status_code, 204)
+
+        res = self.app.get(self.project_one_url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 410)
+        self.project_one.reload()
+        self.project_two.reload()
 
     def test_bulk_delete_public_projects_logged_out(self):
-        new_url = "/{}nodes/?filter[title]=Project".format(API_BASE)
-        res = self.app.delete_json_api(new_url, expect_errors=True)
+        res = self.app.delete_json_api(self.url, self.public_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-        self.project_one.reload()
 
     def test_bulk_delete_private_projects_logged_out(self):
-        url = '/{}nodes/?filter[title]=Private'.format(API_BASE)
-        res = self.app.delete_json_api(url, expect_errors=True)
+        res = self.app.delete_json_api(self.url, self.private_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
-        self.private_project_user_one.reload()
-        self.private_project_user_two.reload()
 
     def test_bulk_delete_private_projects_logged_in_contributor(self):
-        res = self.app.get(self.private_project_one_filtered_url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 1)
-        res = self.app.delete_json_api(self.private_project_one_filtered_url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 202)
-
-        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Private%20Project%20User%20One'
-        res = self.app.delete_json_api(delete_url, auth=self.user_one.auth, expect_errors=True)
+        res = self.app.delete_json_api(self.url, self.private_payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 204)
 
-        res = self.app.get(self.private_project_one_url, auth=self.user_one.auth, expect_errors=True)
+        res = self.app.get(self.private_project_url, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
         self.private_project_user_one.reload()
 
     def test_bulk_delete_private_projects_logged_in_non_contributor(self):
-        # query returns empty list because user is not a contributor
-        res = self.app.delete_json_api(self.private_project_one_filtered_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        res = self.app.delete_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
-        self.private_project_user_one.add_contributor(self.user_two, permissions=['write'])
-        self.private_project_user_one.save()
-        res = self.app.delete_json_api(self.private_project_one_filtered_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 202)
-
-        self.private_project_user_one.remove_contributor(self.user_two, Auth(self.user_one))
-        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Private%20Project%20User%20One'
-        res = self.app.delete_json_api(delete_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-        self.private_project_user_one.reload()
+        res = self.app.get(self.private_project_url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
 
     def test_bulk_delete_private_projects_logged_in_read_only_contributor(self):
         self.private_project_user_one.add_contributor(self.user_two, permissions=['read'])
         self.private_project_user_one.save()
-        res = self.app.delete_json_api(self.private_project_one_filtered_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-        self.private_project_user_one.permissions[self.user_two._id] = ['write']
-        self.private_project_user_one.save()
-        res = self.app.delete_json_api(self.private_project_one_filtered_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 202)
-
-        self.private_project_user_one.permissions[self.user_two._id] = ['read']
-        self.private_project_user_one.save()
-        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Private%20Project%20User%20One'
-        res = self.app.delete_json_api(delete_url, auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        self.private_project_user_one.reload()
-
-    def test_bulk_delete_all_or_nothing(self):
-        new_url = "/{}nodes/?filter[title]=Project".format(API_BASE)
-        self.private_project_user_two.add_contributor(self.user_one, permissions=['read'])
-        self.private_project_user_two.save()
-        res = self.app.get(new_url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 4)
-
-        res = self.app.delete_json_api(new_url, auth=self.user_one.auth, expect_errors=True)
-
+        res = self.app.delete_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 5)
-        self.project_one.reload()
-        self.project_two.reload()
-        self.project_three.reload()
-        self.private_project_user_one.reload()
+        res = self.app.get(self.private_project_url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
 
-    def test_bulk_delete_incorrect_filter(self):
-        url = "/{}nodes/?filter[category]=project".format(API_BASE)
-        res = self.app.delete_json_api(url, auth=self.user_one.auth, expect_errors=True)
+    def test_bulk_delete_all_or_nothing(self):
+        new_payload = [{'id': self.private_project_user_one._id}, {'id': self.private_project_user_two._id}]
+        res = self.app.delete_json_api(self.url, new_payload, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+        res = self.app.get(self.private_project_url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 200)
+
+        url = "/{}nodes/{}/".format(API_BASE, self.private_project_user_two._id)
+        res = self.app.get(url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+
+    def test_bulk_delete_limits(self):
+        new_payload = [{'id': self.private_project_user_one._id}]*11
+        res = self.app.delete_json_api(self.url, new_payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Querystring contains an invalid filter.")
+        assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
 
-    def test_bulk_delete_incorrect_token(self):
-        res = self.app.delete_json_api(self.private_project_one_filtered_url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 202)
+    def test_bulk_delete_not_found(self):
+        new_payload = [{'id': '12345'}]
+        res = self.app.delete_json_api(self.url, new_payload, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
-        delete_url = res.json['links']['confirm_bulk_delete'] + '?filter[title]=Project%20Two'
-
-        res = self.app.delete_json_api(delete_url, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Incorrect token.')
-
-    # TODO test bulk delete limits
 
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
