@@ -62,6 +62,8 @@ $(document).ready(function() {
         var bodyWidth = $(document.body).width();
         if (bodyWidth > smallScreenSize || $(window).scrollTop() < target) {
             $('.cp-handle').css('margin-top', 95);
+        } else if (bodyWidth < smallScreenSize || $(window).scrollTop() > target) {
+            $('.cp-handle').css('margin-top', 50);
         }
     });
 });
