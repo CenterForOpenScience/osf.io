@@ -104,11 +104,12 @@ def ensure_schema(schema, name, version=1):
         schema_obj.save()
     return schema_obj
 
+
 def ensure_schemas():
     """Import meta-data schemas from JSON to database if not already loaded
     """
     for schema in OSF_META_SCHEMAS:
-        ensure_schema(schema, schema['name'], schema.get('version', 1))
+        ensure_schema(schema, schema['name'], version=schema.get('version', 1))
 
 class MetaData(GuidStoredObject):
 
