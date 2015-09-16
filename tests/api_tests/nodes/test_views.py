@@ -1877,6 +1877,7 @@ class TestNodeChildCreate(ApiTestCase):
         registration = RegistrationFactory(project=self.project, creator=self.user)
         url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
         res = self.app.post_json_api(url, {
+            'type': 'nodes',
             'title': fake.catch_phrase(),
             'description': fake.bs(),
             'category': 'project',
