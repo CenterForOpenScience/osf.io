@@ -1376,7 +1376,7 @@ var tbOptions = {
         rowDiv.first().trigger('click');
 
         $('.gridWrapper').on('mouseout', function () {
-            tb.select('.tb-row').removeClass('po-hover');
+            rowDiv.removeClass('po-hover');
         });
     },
     createcheck : function (item, parent) {

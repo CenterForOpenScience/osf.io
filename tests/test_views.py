@@ -46,7 +46,6 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
-from website.archiver import utils as archiver_utils
 
 
 from tests.base import (
@@ -1905,7 +1904,7 @@ class TestAddingContributorViews(OsfTestCase):
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
             node=project)
-        assert_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()))
+        assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
     @mock.patch('website.mails.send_mail')
     def test_contributor_added_email_not_sent_to_unreg_user(self, send_mail):
