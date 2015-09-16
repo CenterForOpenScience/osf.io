@@ -209,7 +209,6 @@ var FileViewPage = {
                 }, ctrl.editor.title);
             }
         };
-
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
@@ -220,9 +219,6 @@ var FileViewPage = {
                     var height = $('iframe').attr('height');
                     link = link.substring(0, link.indexOf('download') + 8);
                     var url = link.substring(0, link.indexOf('render'));
-                    var title1 = '';
-                    var title2 = '';
-                    var style = m('link[href="' + url + 'static/css/mfr.css"][media="all"][rel="stylesheet"]');
                     m.render(document.getElementById('popOver'), [
                         m('ul.nav.nav-tabs.nav-justified', [
                             m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
@@ -234,17 +230,18 @@ var FileViewPage = {
                                 m('input.form-control[type="text"][value="'+ link +'"]')
                             ])),
                             m('.tab-pane.fade#embed', [
-                                m('p[data-toggle="tooltip"][data-placement="bottom"][title="'+ title1 +'"]', 'Dynamically Render iFrame with JavaScript'),
+                                m('p', 'Dynamically Render iFrame with JavaScript'),
                                 m('textarea.form-control', [
-                                    style,
-                                    m('p','poop')
+                                    m('link[href="' + url + 'static/css/mfr.css"][media="all"][rel="stylesheet"]')
+
                                 ]), m('br'),
-                                m('p[data-toggle="tooltip"][data-placement="bottom"][title="'+ title2 +'"]', 'Direct iFrame with Fixed Height and Width'),
+                                m('p', 'Direct iFrame with Fixed Height and Width'),
                                 m('textarea.form-control#directIFrame', m('p','poop')
                                 )
                             ])
                         ])
                     ]);
+                    //var mfrRender = new mfr.Render("#mfrIframe", link);
                     makeClient($('#copyBtn'));
                 }, config: function(element, isInitialized) {
                     if(!isInitialized){
