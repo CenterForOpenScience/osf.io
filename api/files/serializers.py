@@ -109,9 +109,9 @@ class FileVersionSerializer(JSONAPISerializer):
         'content_type',
     ])
     id = ser.CharField(read_only=True, source='_id')
-    size = ser.IntegerField(help_text='The size of this file at this version')
-    identifier = ser.CharField(help_text='This version\'s unique identifier from it\'s original service')
-    content_type = ser.CharField(help_text='The mime type of this file at this verison')
+    size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
+    identifier = ser.CharField(read_only=True, help_text='This version\'s unique identifier from it\'s original service')
+    content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
     links = LinksField({
         'self': 'self_url',
         'html': 'absolute_url'
