@@ -4,6 +4,33 @@ import re
 from rest_framework import serializers as ser
 from website.util.sanitize import strip_html
 from api.base.utils import absolute_reverse, waterbutler_url_for
+from rest_framework.fields import SkipField, get_attribute
+
+
+class CharFieldWithReadDefault(ser.CharField):
+
+    def get_attribute(self, instance):
+        """
+        Overwrite the error message to return a blank value is if there is no existing value.
+        This allows the display of keys that do not exist in the DB (gitHub on a new OSF account for example.)
+        """
+        try:
+            return super(CharFieldWithReadDefault, self).get_attribute(instance)
+        except SkipField:
+            return ''
+
+
+class URLFieldWithReadDefault(ser.URLField):
+
+    def get_attribute(self, instance):
+        """
+        Overwrite the error message to return a blank value is if there is no existing value.
+        This allows the display of keys that do not exist in the DB (profile_website on a new OSF account for example.)
+        """
+        try:
+            return super(URLFieldWithReadDefault, self).get_attribute(instance)
+        except SkipField:
+            return ''
 
 
 def _rapply(d, func, *args, **kwargs):
