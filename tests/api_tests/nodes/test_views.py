@@ -762,6 +762,38 @@ class TestNodeUpdate(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
+    def test_partial_update_invalid_id(self):
+        res = self.app.patch_json_api(self.public_url, {
+            'id': '12345',
+            'type': 'nodes',
+            'title': self.new_title,
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    def test_partial_update_invalid_type(self):
+        res = self.app.patch_json_api(self.public_url, {
+            'id': self.public_project._id,
+            'type': 'node',
+            'title': self.new_title,
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    # PATCH does not require required fields
+    def test_partial_update_no_id(self):
+        res = self.app.patch_json_api(self.public_url, {
+            'type': 'nodes',
+            'title': self.new_title,
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+    # PATCH does not require required fields
+    def test_partial_update_no_type(self):
+        res = self.app.patch_json_api(self.public_url, {
+            'id': self.public_project._id,
+            'title': self.new_title,
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+
 
 class TestNodeDelete(ApiTestCase):
 
