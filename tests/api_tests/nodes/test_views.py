@@ -372,7 +372,7 @@ class TestNodeBulkCreate(ApiTestCase):
 
     def test_bulk_create_logged_in(self):
         res = self.app.post_json_api(self.url, [self.public_project, self.private_project], auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
+        assert_equal(res.status_code, 203)
         assert_equal(len(res.json['data']), 2)
         assert_equal(res.json['data'][0]['attributes']['title'], self.public_project['title'])
         assert_equal(res.json['data'][1]['attributes']['title'], self.private_project['title'])
@@ -891,6 +891,10 @@ class TestNodeBulkDelete(ApiTestCase):
         new_payload = [{'id': '12345'}]
         res = self.app.delete_json_api(self.url, new_payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
+
+    def test_bulk_delete_no_payload(self):
+        res = self.app.delete_json_api(self.url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
 
 class TestNodeDetail(ApiTestCase):
