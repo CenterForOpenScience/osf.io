@@ -1830,7 +1830,6 @@ class TestExceptionFormatting(ApiTestCase):
         res = self.app.post_json_api(url, {'type': 'node_links'}, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        print res
         assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/target_node_id'})
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
