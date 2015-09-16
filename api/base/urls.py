@@ -16,6 +16,7 @@ urlpatterns = [
                          url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
                          url(r'^users/', include('api.users.urls', namespace='users')),
                          url(r'^docs/', include('rest_framework_swagger.urls')),
+                         url(r'^.*', views.error_404),
                          ))
         )
 ]

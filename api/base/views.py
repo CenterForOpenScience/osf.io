@@ -1,6 +1,6 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-
+from django.http import Http404
 from .utils import absolute_reverse
 from api.users.serializers import UserSerializer
 
@@ -75,3 +75,7 @@ def root(request, format=None):
             'users': absolute_reverse('users:user-list'),
         }
     })
+
+@api_view(('GET',))
+def error_404(request, format=None):
+    raise Http404()

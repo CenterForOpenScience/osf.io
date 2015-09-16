@@ -9,3 +9,7 @@ class TestApiBaseViews(ApiTestCase):
     def test_root_returns_200(self):
         res = self.app.get('/{}'.format(API_BASE))
         assert_equal(res.status_code, 200)
+
+    def test_not_found_returns_404(self):
+        res = self.app.get('/{}/{}'.format(API_BASE,"not_a_real_route"))
+        assert_equal(res.status_code, 404)
