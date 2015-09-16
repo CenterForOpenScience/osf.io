@@ -1,4 +1,5 @@
 import re
+import collections
 
 from rest_framework.fields import SkipField
 from rest_framework import serializers as ser

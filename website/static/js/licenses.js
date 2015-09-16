@@ -7,7 +7,7 @@ var licenses = $.map(require('list-of-licenses'), function(value, key) {
 
 var DEFAULT_LICENSE = {
     id: 'NONE',
-    name: 'None Selected',
+    name: 'None selected',
     text: 'Copyright {{year}} {{copyrightHolders}}',
     properties: ['Year', 'Copyright Holders']
 };

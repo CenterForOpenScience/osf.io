@@ -1,9 +1,12 @@
-<span class="text-muted" data-bind="text: savedLicenseName"></span>
+<span data-bind="ifnot: hideLicensePicker">
+<span id="license">License:</span>
+<span class="text-muted" data-bind="text: savedLicenseName,
+                                    style: {
+                                      cursor: allowEdit()? 'pointer' : 'auto'
+                                    },
+                                    click: togglePreview.bind($data, true)"></span>
 <span data-bind="ifnot: allowEdit">
-  <i class="fa fa-info-circle" data-bind="click: togglePreview"></i>
-</span>
-<span data-bind="if: allowEdit">
-  <i class="fa fa-pencil" data-bind="click: togglePreview"></i>
+  <i class="fa fa-info-circle" data-bind="click: togglePreview.bind($data, false)"></i>
 </span>
 <p data-bind="if: notification">
     <span data-bind="text: notification, css: {'text-danger': error, 'text-success': success}"></span>
@@ -12,6 +15,7 @@
   <div class="panel panel-default">
     <div class="panel-body">
       <div class="col-md" data-bind="if: allowEdit">
+        <span class="btn fa fa-times-circle pull-right" data-bind="click: togglePreview"></span>
             <div class="form-inline">
                 <div class="form-group">
                     <label> Choose a license: </label>
@@ -23,8 +27,9 @@
                     <button class="btn btn-success" data-bind="click: save,
                                                                css: {
                                                                  'disabled': disableSave
-                                                               }">Save</button>
+                                                               }">Save</button>                    
                 </div>
+                <hr />
             </div>
             <div class="form panel-default" data-bind="if: properties">
               <div data-bind="foreach: properties">
@@ -39,9 +44,9 @@
             </div>
         </div>
         <div class="col-md" data-bind="if: previewing">
-            <br />
             <pre data-bind="text: selectedLicenseText" ></pre>
         </div>
     </div>
   </div>
+</span>
 </span>

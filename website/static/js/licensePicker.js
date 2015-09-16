@@ -50,6 +50,9 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license, reado
     self.savedLicenseName = ko.pureComputed(function() {
         return self.savedLicense().name;
     });
+    self.savedLicenseId = ko.computed(function() {
+        return self.savedLicense().id;
+    });
 
     self.selectedLicense = ko.observable(DEFAULT_LICENSE);
     self.selectedLicenseUrl = ko.pureComputed(function() {
@@ -105,11 +108,11 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license, reado
     });
 
     self.validProps = ko.computed(function() {
-        return (!self.properties) || (self.Year.isValid() && self['Copyright Holders'].isValid());
+        return (!self.properties()) || (self.Year.isValid() && self['Copyright Holders'].isValid());
     });
 
     self.disableSave = ko.computed(function() {
-        return !self.validProps() || !self.dirty() && self.selectedLicense().id === self.savedLicense().id;
+        return !self.validProps() || !self.dirty() && self.selectedLicenseId() === self.savedLicenseId();
     });
 
     self.notification = ko.observable();
@@ -132,11 +135,22 @@ var LicensePicker = function(saveUrl, saveMethod, saveLicenseKey, license, reado
     self.allowEdit = ko.pureComputed(function() {
         return user.isAdmin && !readonly;
     });
-};
-LicensePicker.prototype.togglePreview = function() {
-    var self = this;
 
-    self.previewing(!self.previewing());
+    self.hideLicensePicker = ko.computed(function() {
+        return !user.isAdmin && self.selectedLicenseId() === DEFAULT_LICENSE.id;
+    });
+};
+LicensePicker.prototype.togglePreview = function(labelClicked) {
+    var self = this;
+    
+    if (labelClicked) {
+        if (self.allowEdit()) {       
+            self.previewing(!self.previewing()); 
+        }
+    }
+    else {
+        self.previewing(!self.previewing());
+    }
 };
 LicensePicker.prototype.onSaveSuccess = function(selectedLicense) {
     var self = this;
@@ -180,16 +194,28 @@ LicensePicker.prototype.save = function() {
     };
     if (license.id === OTHER_LICENSE.id) {
         var ret = $.Deferred();
-        bootbox.confirm(
-            'You have opted to use your own license. It is your responsiblity to upload and maintain a license file named "license.txt" and to upload that file into the OSF Storage of this project.',
-            function(confirmed) {
-                if (confirmed) {
-                    save().then(ret.resolve);
+        bootbox.dialog({
+            title: 'Please confirm your license selection',
+            message: 'You have opted to use your own license. It is your responsiblity to upload and maintain a license file named "license.txt" and to upload that file into the OSF Storage of this project.',
+            buttons: {
+                cancel: {
+                    label: 'Cancel',
+                    className: 'btn btn-default'
+                },
+                main: {
+                    label: 'Ok',
+                    className: 'btn btn-primary',
+                    callback: function(confirmed) {
+                        if (confirmed) {
+                            save().then(ret.resolve);
+                        }
+                        else {
+                            ret.reject();
+                        }
+                    }                    
                 }
-                else {
-                    ret.reject();
-                }
-            });
+            }
+        });
         return ret.promise();
     } else {
         return save();

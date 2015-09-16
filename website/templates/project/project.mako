@@ -178,7 +178,6 @@
                     </p>
                 % endif
                     <p>
-                      <span id="license">License:</span>                                   
                       <license-picker params="saveUrl: '${node['update_url']}',
                                               saveMethod: 'PUT',
                                               license: window.contextVars.node.license,
