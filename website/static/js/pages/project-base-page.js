@@ -60,9 +60,10 @@ $(document).ready(function() {
 
     $( window ).resize(function() {
         var bodyWidth = $(document.body).width();
-        if (bodyWidth > smallScreenSize || $(window).scrollTop() < target) {
+        var scrollTopPosition = $(window).scrollTop();
+        if (bodyWidth > smallScreenSize || scrollTopPosition < target) {
             $('.cp-handle').css('margin-top', 95);
-        } else if (bodyWidth < smallScreenSize || $(window).scrollTop() > target) {
+        } else if (bodyWidth < smallScreenSize || scrollTopPosition > target) {
             $('.cp-handle').css('margin-top', 50);
         }
     });
