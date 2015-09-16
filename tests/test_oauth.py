@@ -207,7 +207,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
         with self.app.app.test_request_context('/oauth/connect/mock1a/'):
 
             # make sure the user is logged in
-            authenticate(user=self.user, response=None)
+            authenticate(user=self.user, access_token=None, response=None)
 
             # auth_url is a property method - it calls out to the external
             #   service to get a temporary key and secret before returning the
@@ -248,7 +248,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
         with ctx:
 
             # make sure the user is logged in
-            authenticate(user=user, response=None)
+            authenticate(user=user, access_token=None, response=None)
 
             session.data['oauth_states'] = {
                 self.provider.short_name: {
@@ -311,7 +311,7 @@ class TestExternalProviderOAuth1(OsfTestCase):
                 query_string="oauth_token=temp_key&oauth_verifier=mock_verifier"
         ):
             # make sure the user is logged in
-            authenticate(user=malicious_user, response=None)
+            authenticate(user=malicious_user, access_token=None, response=None)
 
             with assert_raises(PermissionsError):
                 # do the key exchange
