@@ -1,17 +1,13 @@
 # -*- coding: utf-8 -*-
 import time
-import httplib
 import logging
 from datetime import datetime
 
 from box import refresh_v2_token
 
-from framework.exceptions import HTTPError
-
 from website.util import rubeus
 
 from website.addons.box import settings
-from website.addons.box.serializer import BoxSerializer
 
 
 logger = logging.getLogger(__name__)
@@ -100,36 +96,6 @@ def refresh_oauth_key(external_account, force=False):
         external_account.refresh_token = key['refresh_token']
         external_account.expires_at = datetime.utcfromtimestamp(time.time() + key['expires_in'])
         external_account.save()
-
-
-def get_folders(client):
-    """Gets a list of folders in a user's Box, including the root.
-    Each folder is represented as a dict with its display name and path.
-    """
-    metadata = client.metadata('/', list=True)
-    serializer = BoxSerializer
-    # List each folder, including the root
-    root = {
-        'name': '/ (Full Box)',
-        'path': '',
-    }
-    folders = [root] + [
-        serializer.serialize_folder(each)
-        for each in metadata['contents'] if each['is_dir']
-    ]
-    return folders
-
-
-def handle_box_error(error, msg):
-    if (error is 'invalid_request' or 'unsupported_response_type'):
-        raise HTTPError(httplib.BAD_REQUEST)
-    if (error is 'access_denied'):
-        raise HTTPError(httplib.FORBIDDEN)
-    if (error is 'server_error'):
-        raise HTTPError(httplib.INTERNAL_SERVER_ERROR)
-    if (error is 'temporarily_unavailable'):
-        raise HTTPError(httplib.SERVICE_UNAVAILABLE)
-    raise HTTPError(httplib.INTERNAL_SERVER_ERROR)
 
 
 def box_addon_folder(node_settings, auth, **kwargs):
