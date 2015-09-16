@@ -1,5 +1,6 @@
 from django.core.validators import URLValidator
 from rest_framework import serializers as ser
+from rest_framework.exceptions import ValidationError
 
 from website.models import ApiOAuth2Application
 
@@ -66,6 +67,20 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
         return instance
 
     def update(self, instance, validated_data):
+        validated_id = validated_data.get('id', None)
+        if not validated_id:
+            validated_id = validated_data.get('_id', None)
+        validated_type = validated_data.get('type', None)
+
+        errors = {}
+        if not validated_id:
+            errors['id'] = ['This field is required.']
+        if not validated_type:
+            errors['type'] = ['This field is required.']
+
+        if errors:
+            raise ValidationError(errors)
+
         assert isinstance(instance, ApiOAuth2Application), 'instance must be an ApiOAuth2Application'
         for attr, value in validated_data.iteritems():
             setattr(instance, attr, value)

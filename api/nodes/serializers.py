@@ -1,4 +1,5 @@
 from rest_framework import serializers as ser
+from rest_framework.exceptions import ValidationError
 
 from website.models import Node
 from framework.auth.core import Auth
@@ -112,6 +113,20 @@ class NodeSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
+        validated_id = validated_data.get('id', None)
+        if not validated_id:
+            validated_id = validated_data.get('_id', None)
+        validated_type = validated_data.get('type', None)
+
+        errors = {}
+        if not validated_id:
+            errors['id'] = ['This field is required.']
+        if not validated_type:
+            errors['type'] = ['This field is required.']
+
+        if errors:
+            raise ValidationError(errors)
+
         assert isinstance(instance, Node), 'instance must be a Node'
         auth = self.get_user_auth(self.context['request'])
         for attr, value in validated_data.items():
