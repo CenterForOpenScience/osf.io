@@ -170,7 +170,7 @@ var FileViewPage = {
         var fileViewPanelsLayout;
 
         if (panelsShown === 2) {
-            // view | edit 
+            // view | edit
             mfrIframeParentLayout = 'col-sm-6';
             fileViewPanelsLayout = 'col-sm-6';
         } else {
@@ -223,10 +223,10 @@ var FileViewPage = {
                     var title1 = '';
                     var title2 = '';
                     var style = '\<link href=\"' + url + 'static/css/mfr.css\" media=\"all\" rel=\"stylesheet\" /\>';
-                    m.render(document.getElementById('popOver'), m('', [
+                    m.render(document.getElementById('popOver'), [
                         m('ul.nav.nav-tabs.nav-justified', [
-                            m('li.active', m('a', {dataToggle: 'tab', href: '#share'}, 'Share')),
-                            m('li', m('a', {href:'#embed',dataToggle:'tab'}, 'Embed')),
+                            m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
+                            m('li', m('a[href="#embed"][data-toggle="tab"]', 'Embed'))
                         ]), m('br'),
                         m('.tab-content', [
                             m('.tab-pane.fade.in.active#share', m('.input-group', [
@@ -236,16 +236,15 @@ var FileViewPage = {
                             m('.tab-pane.fade#embed', [
                                 m('p[data-toggle="tooltip"][data-placement="bottom"][title="'+ title1 +'"]', 'Dynamically Render iFrame with JavaScript'),
                                 m('textarea.form-control', [
-                                    style,
-                                    m('.mfr.mfr-file#mfrIframe'),
+                                    m('p','poop')
                                 ]),
                                 m('p[data-toggle="tooltip"][data-placement="bottom"][title="'+ title2 +'"]', 'Direct iFrame with Fixed Height and Width'),
-                                m('textarea.form-control#directIFrame',
-                                    m('iframe[src="' + link + '"][width="100%"][scrolling="yes"][height="' + height + '"][marginheight="0"][frameborder="0"]')
+                                m('textarea.form-control#directIFrame', m('p','poop')
                                 )
                             ])
                         ])
-                    ]));
+                    ]);
+                    makeClient($('#copyBtn'));
                 }, config: function(element, isInitialized) {
                     if(!isInitialized){
                         var button = $(element).popover();
