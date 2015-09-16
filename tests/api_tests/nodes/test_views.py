@@ -487,6 +487,31 @@ class TestNodeUpdate(ApiTestCase):
                                               creator=self.user)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
+    def test_update_invalid_id(self):
+        # Public project, logged in, contrib
+        res = self.app.put_json_api(self.public_url, {
+            'id': '12345',
+            'type': 'nodes',
+            'title': self.new_title,
+            'description': self.new_description,
+            'category': self.new_category,
+            'public': True,
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    def test_update_invalid_type(self):
+        # Public project, logged in, contrib
+        res = self.app.put_json_api(self.public_url, {
+            'id': self.public_project._id,
+            'type': 'node',
+            'title': self.new_title,
+            'description': self.new_description,
+            'category': self.new_category,
+            'public': True,
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+
     def test_update_public_project_logged_out(self):
         res = self.app.put_json_api(self.public_url, {
             'title': self.new_title,
