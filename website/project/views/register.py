@@ -46,7 +46,7 @@ def node_register_page(auth, node, **kwargs):
     if node.is_registration:
         return serialize_node(node, auth)
     else:
-        status.push_status_message('You have been redirected to the project\'s registrations page .From here you can initiate a new Draft Registration to complete the registration process')
+        status.push_status_message('You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process')
         return redirect(node.web_url_for('node_registrations', view='draft'))
 
 @must_be_valid_project
