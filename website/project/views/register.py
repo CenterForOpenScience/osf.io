@@ -107,7 +107,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
     return {'redirectUrl': node.web_url_for('view_project')}
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_have_permission(ADMIN)
 def node_register_template_page(auth, node, **kwargs):
 
     template_name = kwargs['template'].replace(' ', '_')
