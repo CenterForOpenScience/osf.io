@@ -16,6 +16,14 @@ var saveLicenseKey = 'node_license';
 var license = licenses.MIT;
 
 describe('LicensePicker', () => {
+
+    before(() => {
+        window.contextVars = $.extend({}, window.contextVars || {}, {
+            currentUser: {
+                isAdmin: true
+            }
+        });
+    });
     var lp;
     beforeEach(() => {
         lp = new LicensePicker(saveUrl, saveMethod, saveLicenseKey, license);
@@ -69,11 +77,11 @@ describe('LicensePicker', () => {
         });
     });
     describe('#save', () => {
-        var confirmStub;
+        var dialogStub;
         var ajaxStub;
 
         beforeEach(() => {            
-            confirmStub = sinon.stub(bootbox, 'confirm');
+            dialogStub = sinon.stub(bootbox, 'dialog');
             ajaxStub = sinon.stub($, 'ajax', function() {
                 var ret = $.Deferred();
                 ret.resolve();
@@ -82,7 +90,7 @@ describe('LicensePicker', () => {
             sinon.stub(lp, 'validProps', function() {return true;});
         });
         afterEach(() => {
-            bootbox.confirm.restore();
+            bootbox.dialog.restore();
             $.ajax.restore();
             if (lp.validProps.restore) {
                 lp.validProps.restore();
@@ -91,13 +99,13 @@ describe('LicensePicker', () => {
         it('returns without saving if required fields are missing', () => {
             lp.validProps.restore();
             lp.save();
-            assert.isFalse(confirmStub.called);
+            assert.isFalse(dialogStub.called);
             assert.isFalse(ajaxStub.called);
         });
         it('asks confirmation if the user has selected the OTHER license', () => {
             lp.selectedLicenseId('OTHER');
             lp.save();
-            assert.calledOnce(confirmStub);
+            assert.calledOnce(dialogStub);
         });
         it('otherwise makes a request based on the value of saveUrl, saveMethod, and saveLicenseKey', (done) => {
             lp.selectedLicenseId('MIT');
