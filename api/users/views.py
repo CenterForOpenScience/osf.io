@@ -10,8 +10,8 @@ from website.models import User, Node
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
 from api.nodes.serializers import NodeSerializer
-from .serializers import UserSerializer
 from .permissions import ReadOnlyOrCurrentUser
+from .serializers import UserSerializer, UserUpdateSerializer
 
 
 class UserMixin(object):
@@ -73,7 +73,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     permission_classes = (
         ReadOnlyOrCurrentUser,
     )
-    serializer_class = UserSerializer
+    serializer_class = UserUpdateSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):

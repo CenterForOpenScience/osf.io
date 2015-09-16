@@ -2,6 +2,7 @@ from rest_framework import serializers as ser
 
 from website.models import User
 
+from api.base.exceptions import Conflict
 from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField
 
 class UserSerializer(JSONAPISerializer):
@@ -13,6 +14,7 @@ class UserSerializer(JSONAPISerializer):
         'id'
     ])
     id = ser.CharField(read_only=True, source='_id', label='ID')
+    type = ser.CharField(write_only=True, required=True)
     fullname = ser.CharField(required=True, label='Full name', help_text='Display name used in the general user interface')
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
@@ -43,6 +45,11 @@ class UserSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'users'
 
+    def validate_type(self, value):
+        if self.Meta.type_ != value:
+            raise Conflict()
+        return value
+
     def absolute_url(self, obj):
         return obj.absolute_url
 
@@ -52,6 +59,15 @@ class UserSerializer(JSONAPISerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class UserUpdateSerializer(UserSerializer):
+    id = ser.CharField(source='_id', label='ID', required=True)
+
+    def validate_id(self, value):
+        if self._args[0]._id != value:
+            raise Conflict()
+        return value
 
 
 class ContributorSerializer(UserSerializer):
