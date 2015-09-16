@@ -1,11 +1,15 @@
-from website.files.models.base import File, Folder
-from website.files.models.ext import PathFollowingFileNode
+from website.files.models.base import File, Folder, FileNode
+# from website.files.models.ext import PathFollowingFileNode
 
 
 __all__ = ('GoogleDriveFile', 'GoogleDriveFolder', 'GoogleDriveFileNode')
 
 
-class GoogleDriveFileNode(PathFollowingFileNode):
+# TODO make googledrive "pathfollowing"
+# A migration will need to be run that concats
+# folder_path and filenode.path
+# class GoogleDriveFileNode(PathFollowingFileNode):
+class GoogleDriveFileNode(FileNode):
     provider = 'googledrive'
     FOLDER_ATTR_NAME = 'folder_path'
 
