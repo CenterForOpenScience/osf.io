@@ -44,6 +44,10 @@ class Gone(APIException):
     status_code = status.HTTP_410_GONE
     default_detail = ('The requested resource is no longer available.')
 
+class Conflict(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = ('Resource identifier does not match server endpoint.')
+
 
 class InvalidFilterError(ParseError):
     """Raised when client passes an invalid filter in the querystring."""
