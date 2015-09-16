@@ -140,10 +140,8 @@ def node_register_template_page(auth, node, **kwargs):
             except NoResultsFound:
                 raise not_found_error
 
-        schema = meta_schema.schema
         ret = {
             'template_name': template_name,
-            'schema': json.dumps(schema),
             'metadata_version': meta_schema.metadata_version,
             'schema_version': meta_schema.schema_version,
             'registered': registered,
