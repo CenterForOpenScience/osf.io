@@ -195,6 +195,7 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_id = None
         self._update_folder_data()
         self.user_settings = None
+        self.clear_auth()
 
         self.save()
 
