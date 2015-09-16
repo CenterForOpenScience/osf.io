@@ -82,6 +82,7 @@ class TestUsers(ApiTestCase):
             query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
             assert_equal(int(query_dict.get('size')[0]), size)
 
+
 class TestUserDetail(ApiTestCase):
 
     def setUp(self):
@@ -129,6 +130,7 @@ class TestUserDetail(ApiTestCase):
         profile_image_url = user_json['attributes']['profile_image_url']
         query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
         assert_equal(int(query_dict.get('size')[0]), size)
+
 
 class TestUserNodes(ApiTestCase):
 
@@ -421,6 +423,7 @@ class TestUserUpdate(ApiTestCase):
         self.user_two.save()
 
         self.new_user_one_data = {
+            'type': 'users',
             'id': self.user_one._id,
             'fullname': 'el-Hajj Malik el-Shabazz',
             'given_name': 'Malcolm',
@@ -437,11 +440,73 @@ class TestUserUpdate(ApiTestCase):
             'researcherId': 'newResearcherId',
         }
 
+        self.missing_id = {
+            'type': 'users',
+            'fullname': 'el-Hajj Malik el-Shabazz',
+            'family_name': 'Z',
+        }
+
+        self.missing_type = {
+            'id': self.user_one._id,
+            'fullname': 'el-Hajj Malik el-Shabazz',
+            'family_name': 'Z',
+        }
+
+        self.incorrect_id = {
+            'id': '12345',
+            'type': 'users',
+            'fullname': 'el-Hajj Malik el-Shabazz',
+            'family_name': 'Z',
+        }
+
+        self.incorrect_type = {
+            'id': self.user_one._id,
+            'type': 'Wrong type.',
+            'fullname': 'el-Hajj Malik el-Shabazz',
+            'family_name': 'Z',
+        }
+
     def tearDown(self):
         super(TestUserUpdate, self).tearDown()
 
+    def test_patch_user_incorrect_type(self):
+        res = self.app.put_json_api(self.user_one_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    def test_patch_user_incorrect_id(self):
+        res = self.app.put_json_api(self.user_one_url, self.incorrect_id, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    def test_patch_user_no_type(self):
+        res = self.app.put_json_api(self.user_one_url, self.missing_type, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_patch_user_no_id(self):
+        res = self.app.put_json_api(self.user_one_url, self.missing_id, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_partial_patch_user_incorrect_type(self):
+        res = self.app.patch_json_api(self.user_one_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    def test_partial_patch_user_incorrect_id(self):
+        res = self.app.patch_json_api(self.user_one_url, self.incorrect_id, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    # PATCH does not require required fields.
+    def test_partial_patch_user_no_type(self):
+        res = self.app.patch_json_api(self.user_one_url, self.missing_type, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+    # PATCH does not require required fields.
+    def test_partial_patch_user_no_id(self):
+        res = self.app.patch_json_api(self.user_one_url, self.missing_id, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+
     def test_patch_user_logged_out(self):
         res = self.app.patch_json_api(self.user_one_url, {
+            'id': self.user_one._id,
+            'type': 'users',
             'fullname': self.new_user_one_data['fullname'],
         }, expect_errors=True)
         assert_equal(res.status_code, 401)
@@ -449,6 +514,8 @@ class TestUserUpdate(ApiTestCase):
     def test_patch_user_without_required_field(self):
         # PATCH does not require required fields
         res = self.app.patch_json_api(self.user_one_url, {
+            'id': self.user_one._id,
+            'type': 'users',
             'family_name': self.new_user_one_data['family_name'],
         }, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
@@ -459,6 +526,8 @@ class TestUserUpdate(ApiTestCase):
     def test_put_user_without_required_field(self):
         # PUT requires all required fields
         res = self.app.put_json_api(self.user_one_url, {
+            'id': self.user_one._id,
+            'type': 'users',
             'family_name': self.new_user_one_data['family_name'],
         }, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -467,6 +536,7 @@ class TestUserUpdate(ApiTestCase):
         # Test to make sure new fields are patched and old fields stay the same
         res = self.app.patch_json_api(self.user_one_url, {
             'id': self.user_one._id,
+            'type': 'users',
             'fullname': 'new_fullname',
             'gitHub': 'even_newer_github',
             'suffix': 'The Millionth'
@@ -493,6 +563,7 @@ class TestUserUpdate(ApiTestCase):
         # Test to make sure new fields are patched and old fields stay the same
         res = self.app.patch_json_api(self.user_one_url, {
             'id': self.user_one._id,
+            'type': 'users',
             'fullname': 'new_fullname',
             'suffix': 'The Millionth'
         }, auth=self.user_one.auth)
@@ -518,6 +589,7 @@ class TestUserUpdate(ApiTestCase):
         # Test to make sure new fields are patched and old fields stay the same
         res = self.app.put_json_api(self.user_one_url, {
             'id': self.user_one._id,
+            'type': 'users',
             'fullname': 'new_fullname',
             'gitHub': 'even_newer_github',
             'suffix': 'The Millionth'
@@ -576,6 +648,8 @@ class TestUserUpdate(ApiTestCase):
     def test_patch_wrong_user(self):
         # User tries to update someone else's user information via patch
         res = self.app.patch_json_api(self.user_one_url, {
+            'id': self.user_one._id,
+            'type': 'users',
             'fullname': self.new_user_one_data['fullname'],
         }, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -587,6 +661,8 @@ class TestUserUpdate(ApiTestCase):
         bad_fullname = 'Malcolm <strong>X</strong>'
         bad_family_name = 'X <script>alert("is")</script> a cool name'
         res = self.app.patch_json_api(self.user_one_url, {
+            'id': self.user_one._id,
+            'type': 'users',
             'fullname': bad_fullname,
             'family_name': bad_family_name,
         }, auth=self.user_one.auth)
@@ -609,6 +685,7 @@ class TestDeactivatedUser(ApiTestCase):
         self.user.save()
         res = self.app.get(url, auth=self.user.auth , expect_errors=True)
         assert_equal(res.status_code, 410)
+
 
 class TestExceptionFormatting(ApiTestCase):
     def setUp(self):
