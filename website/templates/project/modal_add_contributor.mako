@@ -51,7 +51,7 @@
                             <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
 
-                            <table class=" table-condensed">
+                            <table class="table-condensed">
                                 <thead data-bind="visible: foundResults">
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
@@ -148,7 +148,7 @@
                                             ></i>
                                     </th>
                                 </thead>
-                                <tbody data-bind="sortable: {data: selection, as: 'contributor', afterRender: makeAfterRender(), options: {containment: 'parent'}}">
+                                <tbody data-bind="foreach:{data:selection, as: 'contributor', afterRender:makeAfterRender()}">
                                     <tr>
                                         <td class="p-r-sm" class="osf-icon-td">
                                             <a
