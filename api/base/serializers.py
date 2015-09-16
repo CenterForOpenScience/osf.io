@@ -5,6 +5,7 @@ from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
 
 from website.util.sanitize import strip_html
+from website import settings
 from api.base.utils import absolute_reverse, waterbutler_url_for
 
 
@@ -277,3 +278,11 @@ class JSONAPISerializer(ser.Serializer):
         if clean_html is True:
             self._validated_data = _rapply(self.validated_data, strip_html)
         return ret
+
+
+def DevOnly(field):
+    """Make a field only active in ``DEV_MODE``. ::
+
+        experimental_field = DevMode(CharField(required=False))
+    """
+    return field if settings.DEV_MODE else None
