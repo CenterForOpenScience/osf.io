@@ -55,6 +55,28 @@ class TrashedFileNode(StoredObject):
     materialized_path = fields.StringField(required=True)
 
     checkout = fields.AbstractForeignField('User')
+    deleted_by = fields.AbstractForeignField('User')
+    deleted_on = fields.DateTimeField(auto_now_add=True)
+
+    @property
+    def deep_url(self):
+        """Allows deleted files to resolve to a view
+        that will provide a nice error message and http.GONE
+        """
+        return self.node.web_url_for('addon_deleted_file', trashed_id=self._id)
+
+    def restore(self):
+        """Recreate a StoredFileNode from the data in this object
+        Will re-point all guids and finally remove itself
+        :raises KeyExistsException:
+        """
+        data = self.to_storage()
+        data.pop('deleted_on')
+        data.pop('deleted_by')
+        restored = FileNode.resolve_class(self.provider, int(self.is_file))(**data)
+        restored.save()
+        TrashedFileNode.remove_one(self)
+        return restored
 
 
 @unique_on(['node', 'name', 'parent', 'is_file', 'provider', 'path'])
@@ -272,9 +294,19 @@ class FileNode(object):
     @property
     def deep_url(self):
         """The url that this filenodes guid should resolve to.
-        Implemented here so that subclasses may override it; see dropbox
+        Implemented here so that subclasses may override it or path.
+        See OsfStorage or PathFollowingNode.
         """
         return self.node.web_url_for('addon_view_or_download_file', provider=self.provider, path=self.path.strip('/'))
+
+    @property
+    def kind(self):
+        """Whether this FileNode is a file or folder as a string.
+        Used for serialization and backwards compatability
+        :rtype: str
+        :returns: 'file' or 'folder'
+        """
+        return 'file' if self.is_file else 'folder'
 
     def __init__(self, *args, **kwargs):
         """Contructor for FileNode's subclasses
@@ -302,15 +334,6 @@ class FileNode(object):
         """
         self.stored_object.save()
 
-    @property
-    def kind(self):
-        """Whether this FileNode is a file or folder as a string.
-        Used for serialization and backwards compatability
-        :rtype: str
-        :returns: 'file' or 'folder'
-        """
-        return 'file' if self.is_file else 'folder'
-
     def serialize(self, **kwargs):
         return {
             'id': self._id,
@@ -327,12 +350,15 @@ class FileNode(object):
             **kwargs
         )
 
-    def delete(self):
+    def delete(self, user=None, parent=None):
         """Move self into the TrashedFileNode collection
         and remove it from StoredFileNode
+        :param user User or None: The user that deleted this FileNode
         """
-        self.trashed = self._create_trashed()
+        trashed = self._create_trashed(user=user, parent=parent)
+        self._repoint_guids(trashed)
         StoredFileNode.remove_one(self.stored_object)
+        return trashed
 
     def copy_under(self, destination_parent, name=None):
         return utils.copy_files(self, destination_parent.node, destination_parent, name=name)
@@ -352,23 +378,31 @@ class FileNode(object):
         if save:
             self.save()
 
-    def _create_trashed(self, save=True):
-        trashed = TrashedFileNode()
-        trashed._id = self._id
-        trashed.name = self.name
-        trashed.path = self.path
-        trashed.node = self.node
-        trashed.parent = self.parent
-        trashed.history = self.history
-        trashed.is_file = self.is_file
-        trashed.checkout = self.checkout
-        trashed.provider = self.provider
-        trashed.versions = self.versions
-        trashed.last_touched = self.last_touched
-        trashed.materialized_path = self.materialized_path
+    def _create_trashed(self, save=True, user=None, parent=None):
+        trashed = TrashedFileNode(
+            _id=self._id,
+            name=self.name,
+            path=self.path,
+            node=self.node,
+            parent=parent or self.parent,
+            history=self.history,
+            is_file=self.is_file,
+            checkout=self.checkout,
+            provider=self.provider,
+            versions=self.versions,
+            last_touched=self.last_touched,
+            materialized_path=self.materialized_path,
+
+            deleted_by=user
+        )
         if save:
             trashed.save()
         return trashed
+
+    def _repoint_guids(self, updated):
+        for guid in Guid.find(Q('referent', 'eq', self)):
+            guid.referent = updated
+            guid.save()
 
     def _update_node(self, recursive=True, save=True):
         if self.parent is not None:
@@ -555,12 +589,14 @@ class Folder(FileNode):
         """
         return FileNode.find(Q('parent', 'eq', self._id))
 
-    def delete(self, recurse=True):
-        self.trashed = self._create_trashed()
+    def delete(self, recurse=True, user=None, parent=None):
+        trashed = self._create_trashed(user=user, parent=parent)
         if recurse:
             for child in self.children:
-                child.delete()
+                child.delete(user=user, parent=trashed)
+        self._repoint_guids(trashed)
         StoredFileNode.remove_one(self.stored_object)
+        return trashed
 
     def append_file(self, name, path=None, materialized_path=None, save=True):
         return self._create_child(name, FileNode.FILE, path=path, materialized_path=materialized_path, save=save)

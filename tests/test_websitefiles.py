@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import mock
+import datetime
 from nose.tools import *  # noqa
 from modularodm import Q
 from website.files import utils
@@ -261,6 +262,62 @@ class TestFileNodeObj(FilesTestCase):
         assert_equal(trashed.node, self.node)
         assert_equal(trashed.materialized_path, '/long/path/to/name')
 
+    def test_delete_with_guid(self):
+        fn = models.StoredFileNode(
+            path='afile',
+            name='name',
+            is_file=True,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        ).wrapped()
+        guid = fn.get_guid(create=True)
+        fn.delete()
+
+        trashed = models.TrashedFileNode.find_one()
+
+        guid.reload()
+
+        assert_equal(guid.referent, trashed)
+        assert_equal(trashed.path, 'afile')
+        assert_equal(trashed.node, self.node)
+        assert_equal(trashed.materialized_path, '/long/path/to/name')
+        assert_less((trashed.deleted_on - datetime.datetime.utcnow()).total_seconds(), 5)
+
+    def test_delete_with_user(self):
+        fn = models.StoredFileNode(
+            path='afile',
+            name='name',
+            is_file=True,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        ).wrapped()
+        fn.delete(user=self.user)
+
+        trashed = models.TrashedFileNode.find_one()
+        assert_equal(trashed.deleted_by, self.user)
+        assert_equal(models.StoredFileNode.load(fn._id), None)
+
+    def test_restore(self):
+        fn = models.StoredFileNode(
+            path='afile',
+            name='name',
+            is_file=True,
+            node=self.node,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        ).wrapped()
+
+        before = fn.to_storage()
+        trashed = fn.delete(user=self.user)
+
+        assert_equal(
+            trashed.restore().to_storage(),
+            before
+        )
+        assert_equal(models.TrashedFileNode.load(trashed._id), None)
+
     def test_metadata_url(self):
         pass
 
@@ -472,7 +529,32 @@ class TestFolderObj(FilesTestCase):
         assert_equal(len(list(self.parent.children)), 2)
 
     def test_delete(self):
-        pass
+        child = models.StoredFileNode(
+            path='afile',
+            name='child',
+            is_file=True,
+            node=self.node,
+            parent=self.parent._id,
+            provider='test',
+            materialized_path='/long/path/to/name',
+        ).wrapped()
+        child.save()
+
+        guid = self.parent.get_guid(create=True)
+        child_guid = child.get_guid(create=True)
+
+        trashed_parent = self.parent.delete(user=self.user)
+
+        guid.reload()
+        child_guid.reload()
+
+        assert_equal(
+            trashed_parent,
+            models.TrashedFileNode.load(child._id).parent
+        )
+
+        assert_equal(trashed_parent, guid.referent)
+        assert_equal(child_guid.referent, models.TrashedFileNode.load(child._id))
 
     def test_append_file(self):
         self.parent.append_file('Name')

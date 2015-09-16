@@ -20,6 +20,7 @@ from framework.auth.decorators import must_be_logged_in, must_be_signed, collect
 from website import mails
 from website import settings
 from website.files.models import FileNode
+from website.files.models import TrashedFileNode
 from website.project import decorators
 from website.addons.base import exceptions
 from website.addons.base import signals as file_signals
@@ -33,6 +34,15 @@ from website.project.utils import serialize_node
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
+
+FILE_GONE_ERROR_MESSAGE = u'''
+<style>
+.file-download{{display: none;}}
+.file-delete{{display: none;}}
+</style>
+<div class="alert alert-info" role="alert">
+This link to the file "{file_name}" is not longer valid.
+</div>'''
 
 
 @decorators.must_have_permission('write')
@@ -375,6 +385,43 @@ def addon_view_or_download_file_legacy(**kwargs):
         code=httplib.MOVED_PERMANENTLY
     )
 
+@must_be_valid_project
+@must_be_contributor_or_public
+def addon_deleted_file(auth, node, **kwargs):
+    """Shows a nice error message to users when they try to view
+    a deleted file
+    """
+    # Allow file_node to be passed in so other views can delegate to this one
+    trashed = kwargs.get('file_node') or TrashedFileNode.load(kwargs.get('trashed_id'))
+    if not trashed:
+        raise HTTPError(httplib.NOT_FOUND, {
+            'message_short': 'Not Found',
+            'message_long': 'This file does not exist'
+        })
+
+    ret = serialize_node(node, auth, primary=True)
+    ret.update(rubeus.collect_addon_assets(node))
+    ret.update({
+        'urls': {
+            'render': None,
+            'sharejs': None,
+            'mfr': settings.MFR_SERVER_URL,
+            'gravatar': get_gravatar(auth.user, 25),
+            'files': node.web_url_for('collect_file_trees'),
+        },
+        'extra': {},
+        'size': 9966699,  # Prevent file from being editted, just in case
+        'sharejs_uuid': None,
+        'file_name': trashed.name,
+        'file_path': trashed.path,
+        'provider': trashed.provider,
+        'materialized_path': trashed.materialized_path,
+        'error': FILE_GONE_ERROR_MESSAGE.format(file_name=trashed.name),
+        'private': getattr(node.get_addon(trashed.provider), 'is_private', False),
+    })
+
+    return ret, httplib.GONE
+
 
 @must_be_valid_project
 @must_be_contributor_or_public
@@ -421,6 +468,11 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
     )
 
     if version is None:
+        if file_node.get_guid():
+            # If this file has been successfully view before but no longer exists
+            # Show a nice error message
+            return addon_deleted_file(file_node=file_node, **kwargs)
+
         raise HTTPError(httplib.NOT_FOUND, {
             'message_short': 'Not Found',
             'message_long': 'This file does not exist'

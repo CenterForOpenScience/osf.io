@@ -924,6 +924,15 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/project/<pid>/files/deleted/<trashed_id>/',
+                '/project/<pid>/node/<nid>/files/deleted/<trashed_id>/',
+            ],
+            'get',
+            addon_views.addon_deleted_file,
+            OsfWebRenderer('project/view_file.mako', trust=False)
+        ),
+        Rule(
+            [
                 # Legacy Addon view file paths
                 '/project/<pid>/<provider>/files/<path:path>/',
                 '/project/<pid>/node/<nid>/<provider>/files/<path:path>/',
