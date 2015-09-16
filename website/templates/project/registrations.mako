@@ -157,7 +157,7 @@
             </span>
             <h4> Description: </h4> 
             <blockquote>
-              <p data-bind="html: schema.description"></p>
+              <p data-bind="text: schema.description"></p>
             </blockquote>
           </div>
         </div>
