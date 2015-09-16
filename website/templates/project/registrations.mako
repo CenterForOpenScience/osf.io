@@ -5,9 +5,11 @@
   <li role="presentation" class="active">
     <a id="registrationsControl" aria-controls="registrations" href="#registrations">Registrations</a>
   </li>
+  % if 'admin' in user['permissions']:
   <li role="presentation">
     <a id="draftsControl" aria-controls="drafts" href="#drafts">Draft Registrations</a>
   </li>
+  % endif
 </ul>
 <div class="tab-content registrations-view">
   <div role="tabpanel" class="tab-pane active" id="registrations">
