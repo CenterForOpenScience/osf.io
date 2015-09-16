@@ -15,7 +15,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
 
         :param str field_name: Name of field of the view's serializer_class to load
         results for
-        :return function (type) -> dict:
+        :return function object -> dict:
         """
         include_field = self.serializer_class._declared_fields[field_name]
         def partial(item):
@@ -114,6 +114,7 @@ def root(request, format=None):
         ### Includes
         Links found in the 'relationships' dictionary of an API response can be included in a single request. For example,
         to fetch a node and its children use a request like:
+
             /nodes/<node_id>/?include=children
     """
     if request.user and not request.user.is_anonymous():

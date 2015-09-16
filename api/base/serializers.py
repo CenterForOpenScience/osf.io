@@ -235,10 +235,14 @@ class JSONAPISerializer(ser.Serializer):
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
 
-        data = collections.OrderedDict([('id', ''), ('type', type_), ('attributes', collections.OrderedDict()),
-                                        ('relationships', collections.OrderedDict()),
-                                        ('includes', {}),
-                                        ('links', {})],)
+        data = collections.OrderedDict([
+            ('id', ''),
+            ('type', type_),
+            ('attributes', collections.OrderedDict()),
+            ('relationships', collections.OrderedDict()),
+            ('includes', {}),
+            ('links', {}),
+        ])
 
         includes = self.context.get('include', [])
         fields = [field for field in self.fields.values() if not field.write_only]
@@ -253,7 +257,7 @@ class JSONAPISerializer(ser.Serializer):
                 # If include=field_name is appended to the query string, directly include the
                 # results rather than adding a relationship link
                 if field.field_name in includes:
-                    data['includes'][field.field_name] = self.context['include'][field.field_name](obj)
+                    data['included'][field.field_name] = self.context['include'][field.field_name](obj)
                 else:
                     data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':

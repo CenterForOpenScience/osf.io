@@ -1,11 +1,14 @@
-# -*- coding: utf-8 -*-
+4# -*- coding: utf-8 -*-
 import mock
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
-from website.models import Node
 from framework.auth.core import Auth
+
+from website.models import Node
 from website.util.sanitize import strip_html
+from website.util import permissions as osf_permissions
+
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase, fake
@@ -1754,3 +1757,45 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert(self.public_project._id in res.json['errors'][0]['detail'])
+
+
+class TestIncludedFields(ApiTestCase):
+
+    def setUp(self):
+        super(TestIncludedFields, self).setUp()
+        
+        self.admin = AuthUserFactory()
+        self.admin_auth = Auth(self.admin)
+        self.contrib = AuthUserFactory()
+        self.contrib_auth = Auth(self.contrib)
+        self.node = ProjectFactory(creator=self.admin)
+        self.node.add_contributor(self.contrib, auth=self.admin_auth, save=True)
+        for i in range(2):
+            child = ProjectFactory(parent=self.node, creator=self.admin)
+            child.add_contributor(self.contrib, auth=self.admin_auth, save=True)
+        for i in range(2):
+            hidden_child = ProjectFactory(parent=self.node)
+        sub_child = ProjectFactory(creator=self.contrib, parent=hidden_child)
+
+        self.root_url = '/{0}nodes/{1}/'.format(API_BASE, self.node._id)
+
+    def test_include_children_filters_by_permissions(self):
+        url  = self.root_url + '?include=children'
+
+        admin_response = self.app.get(url, auth=self.admin.auth)
+        assert_equal(
+            len(admin_response.json['data']['includes']['children']['data']),
+            4
+        )
+        for child in admin_response.json['data']['includes']['children']['data']:
+            assert Node.load(child['id']).can_view(self.admin_auth)
+
+        contrib_response = self.app.get(url, auth=self.contrib.auth)
+        assert_equal(
+            len(contrib_response.json['data']['includes']['children']['data']),
+            2
+        )
+        for child in contrib_response.json['data']['includes']['children']['data']:
+            assert Node.load(child['id']).can_view(self.contrib_auth)        
+
+    def test_include_parent
