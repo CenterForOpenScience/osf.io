@@ -201,7 +201,7 @@ class TestUser(OsfTestCase):
     def setUp(self):
         super(TestUser, self).setUp()
         self.user = UserFactory()
-        self.consolidate_auth = Auth(user=self.user)
+        self.auth = Auth(user=self.user)
 
     def test_repr(self):
         assert_in(self.user.username, repr(self.user))
@@ -692,8 +692,8 @@ class TestUser(OsfTestCase):
         # Two users added as contributors
         user2 = UserFactory()
         user3 = UserFactory()
-        project.add_contributor(contributor=user2, auth=self.consolidate_auth)
-        project.add_contributor(contributor=user3, auth=self.consolidate_auth)
+        project.add_contributor(contributor=user2, auth=self.auth)
+        project.add_contributor(contributor=user3, auth=self.auth)
         assert_equal(user3, self.user.recently_added[0])
         assert_equal(user2, self.user.recently_added[1])
         assert_equal(len(self.user.recently_added), 2)
@@ -709,12 +709,12 @@ class TestUser(OsfTestCase):
         project2 = ProjectFactory()
 
         # Users 2 and 3 are added to original project
-        project.add_contributor(contributor=user2, auth=self.consolidate_auth)
-        project.add_contributor(contributor=user3, auth=self.consolidate_auth)
+        project.add_contributor(contributor=user2, auth=self.auth)
+        project.add_contributor(contributor=user3, auth=self.auth)
 
         # Users 2 and 3 are added to original project
-        project2.add_contributor(contributor=user2, auth=self.consolidate_auth)
-        project2.add_contributor(contributor=user4, auth=self.consolidate_auth)
+        project2.add_contributor(contributor=user2, auth=self.auth)
+        project2.add_contributor(contributor=user4, auth=self.auth)
 
         assert_equal(user4, self.user.recently_added[0])
         assert_equal(user2, self.user.recently_added[1])
@@ -730,7 +730,7 @@ class TestUser(OsfTestCase):
         for _ in range(17):
             project.add_contributor(
                 contributor=UserFactory(),
-                auth=self.consolidate_auth
+                auth=self.auth
             )
 
         assert_equal(len(self.user.recently_added), 15)
@@ -751,7 +751,7 @@ class TestUser(OsfTestCase):
     def test_get_projects_in_common(self):
         user2 = UserFactory()
         project = ProjectFactory(creator=self.user)
-        project.add_contributor(contributor=user2, auth=self.consolidate_auth)
+        project.add_contributor(contributor=user2, auth=self.auth)
         project.save()
 
         project_keys = set(self.user.node__contributed._to_primary_keys())
@@ -767,7 +767,7 @@ class TestUser(OsfTestCase):
         user3 = UserFactory()
         project = ProjectFactory(creator=self.user)
 
-        project.add_contributor(contributor=user2, auth=self.consolidate_auth)
+        project.add_contributor(contributor=user2, auth=self.auth)
         project.save()
 
         assert_equal(self.user.n_projects_in_common(user2), 1)
@@ -1105,11 +1105,11 @@ class TestUpdateNodeWiki(OsfTestCase):
         super(TestUpdateNodeWiki, self).setUp()
         # Create project with component
         self.user = UserFactory()
-        self.consolidate_auth = Auth(user=self.user)
+        self.auth = Auth(user=self.user)
         self.project = ProjectFactory()
         self.node = NodeFactory(creator=self.user, parent=self.project)
         # user updates the wiki
-        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+        self.project.update_node_wiki('home', 'Hello world', self.auth)
         self.versions = self.project.wiki_pages_versions
 
     def test_default_wiki(self):
@@ -1119,15 +1119,15 @@ class TestUpdateNodeWiki(OsfTestCase):
 
     def test_default_is_current(self):
         assert_true(self.project.get_wiki_page('home').is_current)
-        self.project.update_node_wiki('home', 'Hello world 2', self.consolidate_auth)
+        self.project.update_node_wiki('home', 'Hello world 2', self.auth)
         assert_true(self.project.get_wiki_page('home').is_current)
-        self.project.update_node_wiki('home', 'Hello world 3', self.consolidate_auth)
+        self.project.update_node_wiki('home', 'Hello world 3', self.auth)
 
     def test_wiki_content(self):
         # Wiki has correct content
         assert_equal(self.project.get_wiki_page('home').content, 'Hello world')
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.consolidate_auth)
+        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
         # Both versions have the expected content
         assert_equal(self.project.get_wiki_page('home', 2).content, 'Hola mundo')
         assert_equal(self.project.get_wiki_page('home', 1).content, 'Hello world')
@@ -1136,7 +1136,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         # Wiki is current
         assert_true(self.project.get_wiki_page('home', 1).is_current)
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.consolidate_auth)
+        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
         # New version is current, old version is not
         assert_true(self.project.get_wiki_page('home', 2).is_current)
         assert_false(self.project.get_wiki_page('home', 1).is_current)
@@ -1145,7 +1145,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         # Updates are logged
         assert_equal(self.project.logs[-1].action, 'wiki_updated')
         # user updates the wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.consolidate_auth)
+        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
         # There are two update logs
         assert_equal([log.action for log in self.project.logs].count('wiki_updated'), 2)
 
@@ -1159,7 +1159,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 1)
         # Update wiki
-        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+        self.project.update_node_wiki('home', 'Hello world', self.auth)
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 2)
         # Versions are different
@@ -1167,7 +1167,7 @@ class TestUpdateNodeWiki(OsfTestCase):
 
     def test_update_two_node_wikis(self):
         # user updates a second wiki for the same node
-        self.project.update_node_wiki('second', 'Hola mundo', self.consolidate_auth)
+        self.project.update_node_wiki('second', 'Hola mundo', self.auth)
         # each wiki only has one version
         assert_equal(len(self.versions['home']), 1)
         assert_equal(len(self.versions['second']), 1)
@@ -1181,7 +1181,7 @@ class TestUpdateNodeWiki(OsfTestCase):
         # forward slashes are not allowed
         invalid_name = 'invalid/name'
         with assert_raises(NameInvalidError):
-            self.project.update_node_wiki(invalid_name, 'more valid content', self.consolidate_auth)
+            self.project.update_node_wiki(invalid_name, 'more valid content', self.auth)
 
 
 class TestRenameNodeWiki(OsfTestCase):
@@ -1190,55 +1190,55 @@ class TestRenameNodeWiki(OsfTestCase):
         super(TestRenameNodeWiki, self).setUp()
         # Create project with component
         self.user = UserFactory()
-        self.consolidate_auth = Auth(user=self.user)
+        self.auth = Auth(user=self.user)
         self.project = ProjectFactory()
         self.node = NodeFactory(creator=self.user, parent=self.project)
         # user updates the wiki
-        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+        self.project.update_node_wiki('home', 'Hello world', self.auth)
         self.versions = self.project.wiki_pages_versions
 
     def test_rename_name_not_found(self):
         for invalid_name in [None, '', '   ', 'Unknown Name']:
             with assert_raises(PageNotFoundError):
-                self.project.rename_node_wiki(invalid_name, None, auth=self.consolidate_auth)
+                self.project.rename_node_wiki(invalid_name, None, auth=self.auth)
 
     def test_rename_new_name_invalid_none_or_blank(self):
         name = 'New Page'
-        self.project.update_node_wiki(name, 'new content', self.consolidate_auth)
+        self.project.update_node_wiki(name, 'new content', self.auth)
         for invalid_name in [None, '', '   ']:
             with assert_raises(NameEmptyError):
-                self.project.rename_node_wiki(name, invalid_name, auth=self.consolidate_auth)
+                self.project.rename_node_wiki(name, invalid_name, auth=self.auth)
 
     def test_rename_new_name_invalid_special_characters(self):
         old_name = 'old name'
         # forward slashes are not allowed
         invalid_name = 'invalid/name'
-        self.project.update_node_wiki(old_name, 'some content', self.consolidate_auth)
+        self.project.update_node_wiki(old_name, 'some content', self.auth)
         with assert_raises(NameInvalidError):
-            self.project.rename_node_wiki(old_name, invalid_name, self.consolidate_auth)
+            self.project.rename_node_wiki(old_name, invalid_name, self.auth)
 
     def test_rename_name_maximum_length(self):
         old_name = 'short name'
         new_name = 'a' * 101
-        self.project.update_node_wiki(old_name, 'some content', self.consolidate_auth)
+        self.project.update_node_wiki(old_name, 'some content', self.auth)
         with assert_raises(NameMaximumLengthError):
-            self.project.rename_node_wiki(old_name, new_name, self.consolidate_auth)
+            self.project.rename_node_wiki(old_name, new_name, self.auth)
 
     def test_rename_cannot_rename(self):
         for args in [('home', 'New Home'), ('HOME', 'New Home')]:
             with assert_raises(PageCannotRenameError):
-                self.project.rename_node_wiki(*args, auth=self.consolidate_auth)
+                self.project.rename_node_wiki(*args, auth=self.auth)
 
     def test_rename_page_not_found(self):
         for args in [('abc123', 'New Home'), (u'ˆ•¶£˙˙®¬™∆˙', 'New Home')]:
             with assert_raises(PageNotFoundError):
-                self.project.rename_node_wiki(*args, auth=self.consolidate_auth)
+                self.project.rename_node_wiki(*args, auth=self.auth)
 
     def test_rename_page(self):
         old_name = 'new page'
         new_name = 'New pAGE'
-        self.project.update_node_wiki(old_name, 'new content', self.consolidate_auth)
-        self.project.rename_node_wiki(old_name, new_name, self.consolidate_auth)
+        self.project.update_node_wiki(old_name, 'new content', self.auth)
+        self.project.rename_node_wiki(old_name, new_name, self.auth)
         page = self.project.get_wiki_page(new_name)
         assert_not_equal(old_name, page.page_name)
         assert_equal(new_name, page.page_name)
@@ -1247,8 +1247,8 @@ class TestRenameNodeWiki(OsfTestCase):
     def test_rename_page_case_sensitive(self):
         old_name = 'new page'
         new_name = 'New pAGE'
-        self.project.update_node_wiki(old_name, 'new content', self.consolidate_auth)
-        self.project.rename_node_wiki(old_name, new_name, self.consolidate_auth)
+        self.project.update_node_wiki(old_name, 'new content', self.auth)
+        self.project.rename_node_wiki(old_name, new_name, self.auth)
         new_page = self.project.get_wiki_page(new_name)
         assert_equal(new_name, new_page.page_name)
         assert_equal(self.project.logs[-1].action, NodeLog.WIKI_RENAMED)
@@ -1259,13 +1259,13 @@ class TestRenameNodeWiki(OsfTestCase):
         old_content = 'old content'
         new_content = 'new content'
         # create the old page and delete it
-        self.project.update_node_wiki(old_name, old_content, self.consolidate_auth)
+        self.project.update_node_wiki(old_name, old_content, self.auth)
         assert_in(old_name, self.project.wiki_pages_current)
-        self.project.delete_node_wiki(old_name, self.consolidate_auth)
+        self.project.delete_node_wiki(old_name, self.auth)
         assert_not_in(old_name, self.project.wiki_pages_current)
         # create the new page and rename it
-        self.project.update_node_wiki(new_name, new_content, self.consolidate_auth)
-        self.project.rename_node_wiki(new_name, old_name, self.consolidate_auth)
+        self.project.update_node_wiki(new_name, new_content, self.auth)
+        self.project.rename_node_wiki(new_name, old_name, self.auth)
         new_page = self.project.get_wiki_page(old_name)
         old_page = self.project.get_wiki_page(old_name, version=1)
         # renaming over an existing deleted page replaces it.
@@ -1276,23 +1276,23 @@ class TestRenameNodeWiki(OsfTestCase):
     def test_rename_page_conflict(self):
         existing_name = 'existing page'
         new_name = 'new page'
-        self.project.update_node_wiki(existing_name, 'old content', self.consolidate_auth)
+        self.project.update_node_wiki(existing_name, 'old content', self.auth)
         assert_in(existing_name, self.project.wiki_pages_current)
-        self.project.update_node_wiki(new_name, 'new content', self.consolidate_auth)
+        self.project.update_node_wiki(new_name, 'new content', self.auth)
         assert_in(new_name, self.project.wiki_pages_current)
         with assert_raises(PageConflictError):
-            self.project.rename_node_wiki(new_name, existing_name, self.consolidate_auth)
+            self.project.rename_node_wiki(new_name, existing_name, self.auth)
 
     def test_rename_log(self):
         # Rename wiki
-        self.project.update_node_wiki('wiki', 'content', self.consolidate_auth)
-        self.project.rename_node_wiki('wiki', 'renamed wiki', self.consolidate_auth)
+        self.project.update_node_wiki('wiki', 'content', self.auth)
+        self.project.rename_node_wiki('wiki', 'renamed wiki', self.auth)
         # Rename is logged
         assert_equal(self.project.logs[-1].action, 'wiki_renamed')
 
     def test_rename_log_specifics(self):
-        self.project.update_node_wiki('wiki', 'content', self.consolidate_auth)
-        self.project.rename_node_wiki('wiki', 'renamed wiki', self.consolidate_auth)
+        self.project.update_node_wiki('wiki', 'content', self.auth)
+        self.project.rename_node_wiki('wiki', 'renamed wiki', self.auth)
         page = self.project.get_wiki_page('renamed wiki')
         log = self.project.logs[-1]
         assert_equal('wiki_renamed', log.action)
@@ -1305,22 +1305,22 @@ class TestDeleteNodeWiki(OsfTestCase):
         super(TestDeleteNodeWiki, self).setUp()
         # Create project with component
         self.user = UserFactory()
-        self.consolidate_auth = Auth(user=self.user)
+        self.auth = Auth(user=self.user)
         self.project = ProjectFactory()
         self.node = NodeFactory(creator=self.user, parent=self.project)
         # user updates the wiki
-        self.project.update_node_wiki('home', 'Hello world', self.consolidate_auth)
+        self.project.update_node_wiki('home', 'Hello world', self.auth)
         self.versions = self.project.wiki_pages_versions
 
     def test_delete_log(self):
         # Delete wiki
-        self.project.delete_node_wiki('home', self.consolidate_auth)
+        self.project.delete_node_wiki('home', self.auth)
         # Deletion is logged
         assert_equal(self.project.logs[-1].action, 'wiki_deleted')
 
     def test_delete_log_specifics(self):
         page = self.project.get_wiki_page('home')
-        self.project.delete_node_wiki('home', self.consolidate_auth)
+        self.project.delete_node_wiki('home', self.auth)
         log = self.project.logs[-1]
         assert_equal('wiki_deleted', log.action)
         assert_equal(page._primary_key, log.params['page_id'])
@@ -1329,13 +1329,13 @@ class TestDeleteNodeWiki(OsfTestCase):
         # Number of versions is correct
         assert_equal(len(self.versions['home']), 1)
         # Delete wiki
-        self.project.delete_node_wiki('home', self.consolidate_auth)
+        self.project.delete_node_wiki('home', self.auth)
         # Number of versions is still correct
         assert_equal(len(self.versions['home']), 1)
 
     def test_wiki_delete(self):
         page = self.project.get_wiki_page('home')
-        self.project.delete_node_wiki('home', self.consolidate_auth)
+        self.project.delete_node_wiki('home', self.auth)
 
         # page was deleted
         assert_false(self.project.get_wiki_page('home'))
@@ -1352,10 +1352,10 @@ class TestDeleteNodeWiki(OsfTestCase):
 
     def test_deleted_versions(self):
         # Update wiki a second time
-        self.project.update_node_wiki('home', 'Hola mundo', self.consolidate_auth)
+        self.project.update_node_wiki('home', 'Hola mundo', self.auth)
         assert_equal(self.project.get_wiki_page('home', 2).content, 'Hola mundo')
         # Delete wiki
-        self.project.delete_node_wiki('home', self.consolidate_auth)
+        self.project.delete_node_wiki('home', self.auth)
         # Check versions
         assert_equal(self.project.get_wiki_page('home',2).content, 'Hola mundo')
         assert_equal(self.project.get_wiki_page('home', 1).content, 'Hello world')
@@ -1575,7 +1575,7 @@ class TestNode(OsfTestCase):
         registration = RegistrationFactory(creator=self.user)
 
         with assert_raises(NodeStateError):
-            registration.add_pointer(node, auth=self.consolidate_auth)
+            registration.add_pointer(node, auth=self.auth)
 
     def test_get_points_exclude_folders(self):
         user = UserFactory()
@@ -1725,7 +1725,7 @@ class TestNode(OsfTestCase):
 
     def test_update_contributor(self):
         new_contrib = AuthUserFactory()
-        self.node.add_contributor(new_contrib, permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS, auth=self.consolidate_auth)
+        self.node.add_contributor(new_contrib, permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS, auth=self.auth)
 
         assert_equal(self.node.get_permissions(new_contrib), DEFAULT_CONTRIBUTOR_PERMISSIONS)
         assert_true(self.node.get_visible(new_contrib))
@@ -1734,7 +1734,7 @@ class TestNode(OsfTestCase):
             new_contrib,
             READ,
             False,
-            auth=self.consolidate_auth
+            auth=self.auth
         )
         assert_equal(self.node.get_permissions(new_contrib), [READ])
         assert_false(self.node.get_visible(new_contrib))
@@ -1744,7 +1744,7 @@ class TestNode(OsfTestCase):
         self.node.add_contributor(
             non_admin,
             permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS,
-            auth=self.consolidate_auth
+            auth=self.auth
         )
         with assert_raises(PermissionsError):
             self.node.update_contributor(
@@ -1761,7 +1761,7 @@ class TestNode(OsfTestCase):
                 self.user,
                 WRITE,
                 True,
-                auth=self.consolidate_auth
+                auth=self.auth
             )
 
     def test_update_contributor_non_contrib_raises_error(self):
@@ -1771,7 +1771,7 @@ class TestNode(OsfTestCase):
                 non_contrib,
                 ADMIN,
                 True,
-                auth=self.consolidate_auth
+                auth=self.auth
             )        
 
     def test_contributor_manage_visibility(self):
