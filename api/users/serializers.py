@@ -1,37 +1,6 @@
 from rest_framework import serializers as ser
-from api.base.serializers import JSONAPISerializer, LinksField, Link
+from api.base.serializers import JSONAPISerializer, LinksField, Link, CharFieldWithReadDefault, URLFieldWithReadDefault
 from website.models import User
-from rest_framework.fields import SkipField, get_attribute
-
-
-class CharFieldWithReadDefault(ser.CharField):
-
-    def get_attribute(self, instance):
-        """
-        Overwrite the error message to return a blank value is if there is no existing value.
-        This allows the display of keys that do not exist in the DB (gitHub on a new OSF account for example.)
-        """
-        try:
-            return get_attribute(instance, self.source_attrs)
-        except (KeyError, AttributeError):
-            if not self.required and not self.default:
-                raise SkipField()
-            return ''
-
-
-class UrlFieldWithReadDefault(ser.URLField):
-
-    def get_attribute(self, instance):
-        """
-        Overwrite the error message to return a blank value is if there is no existing value.
-        This allows the display of keys that do not exist in the DB (profile_website on a new OSF account for example.)
-        """
-        try:
-            return get_attribute(instance, self.source_attrs)
-        except (KeyError, AttributeError):
-            if not self.required and not self.default:
-                raise SkipField()
-            return ''
 
 
 class UserSerializer(JSONAPISerializer):
@@ -57,7 +26,7 @@ class UserSerializer(JSONAPISerializer):
                                       allow_blank=True, help_text='GitHub Handle')
     scholar = CharFieldWithReadDefault(required=False, source='social.scholar',
                                        allow_blank=True, help_text='Google Scholar Account')
-    personal_website = UrlFieldWithReadDefault(required=False, source='social.personal',
+    personal_website = URLFieldWithReadDefault(required=False, source='social.personal',
                                                allow_blank=True, help_text='Personal Website')
     twitter = CharFieldWithReadDefault(required=False, source='social.twitter',
                                        allow_blank=True, help_text='Twitter Handle')
