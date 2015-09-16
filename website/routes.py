@@ -1146,16 +1146,6 @@ def make_url_map(app):
         ),
 
         Rule([
-            '/project/<pid>/get_most_in_common_contributors/',
-            '/project/<pid>/node/<nid>/get_most_in_common_contributors/',
-        ], 'get', project_views.contributor.get_most_in_common_contributors, json_renderer),
-
-        Rule([
-            '/project/<pid>/get_recently_added_contributors/',
-            '/project/<pid>/node/<nid>/get_recently_added_contributors/',
-        ], 'get', project_views.contributor.get_recently_added_contributors, json_renderer),
-
-        Rule([
             '/project/<pid>/get_editable_children/',
             '/project/<pid>/node/<nid>/get_editable_children/',
         ], 'get', project_views.node.get_editable_children, json_renderer),

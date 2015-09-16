@@ -68,6 +68,8 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.totalPages = ko.observable(0);
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
+
+        self.get_contributors();
         $.getJSON(
             nodeApiUrl + 'get_editable_children/', {},
             function(result) {
@@ -131,8 +133,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
                     page: self.pageToGet
                 },
                 function(result) {
-                    self.get_contributors();
-                    var contributors = result.users.map(function(userData, self) {
+                    var contributors = result.users.map(function(userData) {
                         return new Contributor(userData);
                     });
                     for(var i = 0; i < contributors.length; i++) {
@@ -182,74 +183,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 self.results(result.contributors);
             }
         );
-    },
-    recentlyAdded: function() {
-        var self = this;
-        self.notification(false);
-        var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + MAX_RECENT.toString();
-        return $.getJSON(
-            url, {},
-            function(result) {
-                if (!result.contributors.length) {
-                    self.notification({
-                        'message': 'All recent collaborators already included.',
-                        'level': 'info'
-                    });
-                }
-                var contribs = [];
-                var numToDisplay = result.contributors.length;
-                for (var i = 0; i < numToDisplay; i++) {
-                    contribs.push(new Contributor(result.contributors[i]));
-                }
-                self.results(contribs);
-                self.numberOfPages(1);
-            }
-        ).fail(function(xhr, textStatus, error) {
-            self.notification({
-                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
-                    'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
-                'level': 'warning'
-            });
-            Raven.captureMessage('Could not GET recentlyAdded contributors.', {
-                url: url,
-                textStatus: textStatus,
-                error: error
-            });
-        });
-    },
-    mostInCommon: function() {
-        var self = this;
-        self.notification(false);
-        var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + MAX_RECENT.toString();
-        return $.getJSON(
-            url, {},
-            function(result) {
-                if (!result.contributors.length) {
-                    self.notification({
-                        'message': 'All frequent collaborators already included.',
-                        'level': 'info'
-                    });
-                }
-                var contribs = [];
-                var numToDisplay = result.contributors.length;
-                for (var i = 0; i < numToDisplay; i++) {
-                    contribs.push(new Contributor(result.contributors[i]));
-                }
-                self.results(contribs);
-                self.numberOfPages(1);
-            }
-        ).fail(function(xhr, textStatus, error) {
-            self.notification({
-                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
-                    'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
-                'level': 'warning'
-            });
-            Raven.captureMessage('Could not GET mostInCommon contributors.', {
-                url: url,
-                textStatus: textStatus,
-                error: error
-            });
-        });
     },
     addTips: function(elements) {
         elements.forEach(function(element) {
@@ -319,8 +252,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
     },
     addAll: function() {
         var self = this;
+        var selected_ids = self.selection().map(function(user){
+            return user.id;
+        });
         $.each(self.results(), function(idx, result) {
-            if (self.selection().indexOf(result) === -1) {
+            if (selected_ids.indexOf(result.id) === -1 && self.contributors().indexOf(result.id) === -1) {
                 self.add(result);
             }
         });
@@ -437,10 +373,6 @@ ContribAdder.prototype.init = function() {
     // or cancel button.
     self.$element.on('hidden.bs.modal', function() {
         self.viewModel.clear();
-    });
-    // Load recently added contributors every time the modal is activated.
-    self.$element.on('shown.bs.modal', function() {
-        self.viewModel.recentlyAdded();
     });
 };
 

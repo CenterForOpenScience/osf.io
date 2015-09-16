@@ -33,11 +33,6 @@
                                         <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
                                     <!-- /ko -->
                                 </div>
-                                <div>
-                                    Show my
-                                    <a data-bind="click:recentlyAdded">recent collaborators</a>,
-                                    <a data-bind="click:mostInCommon">most frequent collaborators</a>
-                                </div>
                             </div>
                         </div>
                     </form>
@@ -138,7 +133,7 @@
                             </div>
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
-                            <table class="table-fixed">
+                            <table class="table-condensed">
                                 <thead data-bind="visible: selection().length">
                                     <th width="10%"></th>
                                     <th width="15%"></th>

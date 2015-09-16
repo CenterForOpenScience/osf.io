@@ -27,7 +27,6 @@ from website.search.exceptions import IndexNotFoundError
 from website.search.exceptions import MalformedQueryError
 from website.search.util import build_query
 from website.project.views.contributor import get_node_contributors_abbrev
-from website.project.decorators import must_be_valid_project
 
 
 logger = logging.getLogger(__name__)
@@ -191,8 +190,7 @@ def process_project_search_results(results, **kwargs):
 
 
 @collect_auth
-# @must_be_valid_project
-def search_contributor(auth, **kwargs):
+def search_contributor(auth):
     user = auth.user if auth else None
     nid = request.args.get('excludeNode')
     exclude = Node.load(nid).contributors if nid else []
