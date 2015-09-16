@@ -87,6 +87,26 @@ var AddContributorViewModel = oop.extend(Paginator, {
             return self.query() && !self.results().length;
         });
 
+        self.addAllVisible = ko.pureComputed(function() {
+            var selected_ids = self.selection().map(function(user){
+                return user.id;
+            });
+            for(var i = 0; i < self.results().length; i++) {
+                if(self.contributors().indexOf(self.results()[i].id) === -1 &&
+                   selected_ids.indexOf(self.results()[i].id) === -1) {
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        self.removeAllVisible = ko.pureComputed(function() {
+            if(self.selection().length > 0) {
+               return true;
+            }
+            return false;
+        });
+
         self.inviteName = ko.observable();
         self.inviteEmail = ko.observable();
 

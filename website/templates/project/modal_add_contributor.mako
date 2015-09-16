@@ -45,7 +45,7 @@
                         <div class="col-md-6">
                             <div>
                                 <span class="modal-subheader">Results</span>
-                                <a data-bind="click:addAll">Add all</a>
+                                <a data-bind="visible: addAllVisible, click:addAll">Add all</a>
                             </div>
                             <!-- ko if: notification -->
                             <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
@@ -129,7 +129,7 @@
                         <div class="col-md-6">
                             <div>
                                 <span class="modal-subheader">Adding</span>
-                                <a data-bind="click:removeAll">Remove all</a>
+                                <a data-bind="visible: removeAllVisible, click:removeAll">Remove all</a>
                             </div>
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
