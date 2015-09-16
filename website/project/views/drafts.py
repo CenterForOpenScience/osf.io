@@ -13,6 +13,7 @@ from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
 from website.exceptions import NodeStateError
+from website.util import sanitize
 from website.util.permissions import ADMIN
 from website.project.decorators import (
     must_be_valid_project,
@@ -115,8 +116,8 @@ def create_draft_registration(auth, node, *args, **kwargs):
     if not schema_name:
         raise HTTPError(http.BAD_REQUEST)
 
-    schema_version = data.get('schema_version', 1)
-    schema_data = data.get('schema_data', {})
+    schema_version = sanitize.strip_html(data.get('schema_version', 1))
+    schema_data = sanitize.strip_html(data.get('schema_data', {}))
 
     meta_schema = get_schema_or_fail(
         Q('name', 'eq', schema_name) &
