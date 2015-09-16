@@ -431,13 +431,31 @@ def delete_file_from_path(file_node_path, file_node_parent_id, index=None):
     """
     index = index or INDEX
     file_path = file_util.norm_path(file_node_path)
-    parent_type = get_doctype_from_node(Node.load(file_node_parent_id))
     es.delete(
         index=index,
-        doc_type='{}_file'.format(parent_type),
+        doc_type='project_file',
         parent=file_node_parent_id,
         id=file_path,
         refresh=True,
+        ignore=[404],
+    )
+
+    es.delete(
+        index=index,
+        doc_type='component_file',
+        parent=file_node_parent_id,
+        id=file_path,
+        refresh=True,
+        ignore=[404],
+    )
+
+    es.delete(
+        index=index,
+        doc_type='registration_file',
+        parent=file_node_parent_id,
+        id=file_path,
+        refresh=True,
+        ignore=[404],
     )
 
 

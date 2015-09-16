@@ -28,8 +28,9 @@ def delete_file_task(file_node_id, parent_id, index=None):
     from website.addons.osfstorage.model import OsfStorageFileNode
     init_addons(settings, routes=False)
     do_set_backends(settings)
-    file_node = OsfStorageFileNode.load(file_node_id)
-    return search.delete_file_given_path(file_node_id, file_parent_id=parent_id, index=index)
+    search.delete_file_given_path(file_node_id, parent_id, index=index)
+    # file_node = OsfStorageFileNode.load(file_node_id)
+    # return search.delete_file(file_node, parent_id=parent_id, index=index)
 
 
 @app.task

@@ -52,7 +52,7 @@ def update_file_given_content(file_node, content, index=None):
 @requires_search
 def delete_file(file_node, parent_id, index=None):
     index = index or settings.ELASTIC_INDEX
-    return file_search.delete_from(file_node, parent_id)
+    return file_search.delete_from(file_node, parent_id, index=index)
     # return search_engine.delete_file(file_node, index=index)
 
 
@@ -61,7 +61,7 @@ def delete_file(file_node, parent_id, index=None):
 def delete_file_given_path(file_path, file_parent_id, index=None):
     index = index or settings.ELASTIC_INDEX
     file_path = file_util.norm_path(file_path)
-    return search_engine.delete_file_from_path(file_path, file_parent_id, index=index)
+    return search_engine.delete_file_from_path(file_node_path=file_path, file_node_parent_id=file_parent_id, index=index)
 
 
 @file_util.require_file_indexing

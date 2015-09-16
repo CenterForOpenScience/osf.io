@@ -105,7 +105,7 @@ def copy_file(old_file_node, new_file_node_id, old_parent_id, new_parent_id, con
         file_node = old_file_node
         file_body = build_file_body(file_node, parent=new_parent, content=content)
 
-    if new_parent.is_public():
+    if new_parent.is_public:
         index_doc(
             id=new_file_node_id,
             parent_id=new_parent_id,

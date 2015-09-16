@@ -316,6 +316,10 @@ class OsfStorageFileNode(StoredObject):
 
     def delete(self, recurse=True):
         from website.search import file_indexing
+        logger.info('Files Deletiong activated!')
+        logger.info('Files node\'s id is {}'.format(self.node._id))
+        file_indexing.delete_search_file(self, self.node)
+
         trashed = OsfStorageTrashedFileNode()
         trashed._id = self._id
         trashed.name = self.name
@@ -325,8 +329,6 @@ class OsfStorageFileNode(StoredObject):
         trashed.node_settings = self.node_settings
 
         trashed.save()
-
-        file_indexing.delete_search_file(self)
 
         if self.is_folder and recurse:
             for child in self.children:
