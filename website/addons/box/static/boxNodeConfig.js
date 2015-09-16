@@ -2,6 +2,7 @@
 * Module that controls the Box node settings. Includes Knockout view-model
 * for syncing data, and HGrid-folderpicker for selecting a folder.
 */
+//TODO: Remove this file when the GDrive PR with js/oauthAddonNodeConfig.js is merged
 'use strict';
 
 var ko = require('knockout');
@@ -19,6 +20,7 @@ ko.punches.enableAll();
 var BoxNodeConfigViewModel = oop.extend(AddonNodeConfigViewModel, {
     constructor: function(addonName, url, selector, folderPicker) {
         var self = this;
+        //super.super used to prevent recursive requires w/ webpack
         self.super.super.constructor.call(self, addonName, url, selector, folderPicker);
         self.userAccountId = ko.observable('');
         //externalAccounts
