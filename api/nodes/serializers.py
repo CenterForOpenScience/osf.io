@@ -26,6 +26,7 @@ class NodeSerializer(JSONAPISerializer):
     filterable_fields = frozenset(['title', 'description', 'public'])
 
     id = ser.CharField(read_only=True, source='_id', label='ID')
+    type = ser.CharField(write_only=True)
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
@@ -123,6 +124,8 @@ class NodeSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
+class NodeUpdateSerializer(NodeSerializer):
+    id = ser.CharField(source='_id', label='ID', required=True)
 
 class NodeLinksSerializer(JSONAPISerializer):
 
