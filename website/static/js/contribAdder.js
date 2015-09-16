@@ -24,11 +24,15 @@ function Contributor(data) {
     $.extend(this, data);
     if (data.n_projects_in_common === 1) {
         this.displayProjectsInCommon = data.n_projects_in_common + ' project in common';
+    } else if (data.n_projects_in_common === -1) {
+        this.displayProjectsInCommon = 'Yourself';
     } else if (data.n_projects_in_common !== 0) {
         this.displayProjectsInCommon = data.n_projects_in_common + ' projects in common';
     } else {
         this.displayProjectsInCommon = '';
     }
+    this.added = false;
+
 }
 
 var AddContributorViewModel = oop.extend(Paginator, {
@@ -57,6 +61,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         });
         self.query = ko.observable();
         self.results = ko.observableArray([]);
+        self.contributors = ko.observableArray([]);
         self.selection = ko.observableArray();
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
@@ -123,15 +128,20 @@ var AddContributorViewModel = oop.extend(Paginator, {
             return $.getJSON(
                 '/api/v1/user/search/', {
                     query: self.query(),
-                    // excludeNode: nodeId,
-                    //get_contributors: true,
-                    //nodeId: nodeId,
                     page: self.pageToGet
                 },
                 function(result) {
-                    var contributors = result.users.map(function(userData) {
+                    self.get_contributors();
+                    var contributors = result.users.map(function(userData, self) {
                         return new Contributor(userData);
                     });
+                    for(var i = 0; i < contributors.length; i++) {
+                        if (self.contributors().indexOf(contributors[i].id) !== -1) {
+                            contributors[i].added = true;
+                        } else {
+                            contributors[i].added = false;
+                        }
+                    }
                     self.results(contributors);
                     self.currentPage(result.page);
                     self.numberOfPages(result.pages);
@@ -143,6 +153,19 @@ var AddContributorViewModel = oop.extend(Paginator, {
             self.currentPage(0);
             self.totalPages(0);
         }
+    },
+    get_contributors: function() {
+        var self = this;
+        self.notification(false);
+        return $.getJSON(
+            nodeApiUrl + 'get_contributors/', {},
+            function(result) {
+                var contributors = result.contributors.map(function(userData) {
+                    return userData.id;
+                });
+                self.contributors(contributors);
+            }
+        );
     },
     importFromParent: function() {
         var self = this;

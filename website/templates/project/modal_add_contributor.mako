@@ -64,8 +64,15 @@
                                         <td class="p-r-sm osf-icon-td" >
                                             <a
                                                     class="btn btn-success contrib-button btn-mini"
-                                                    data-bind="click:$root.add, tooltip: {title: 'Add contributor'}"
-                                                ><i class="fa fa-plus"></i></a>
+                                                    data-bind="visible: !contributor.added,
+                                                               click:$root.add,
+                                                               tooltip: {title: 'Add contributor'}"
+                                                ><i class="fa fa-fw fa-plus"></i></a>
+                                            <a
+                                                class="btn btn-info contrib-button btn-mini"
+                                                data-bind="visible: contributor.added,
+                                                           tooltip: {title: 'Already added'}"
+                                                ><i class="fa fa-fw fa-check"></i></a>
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->

@@ -199,9 +199,6 @@ def search_contributor(auth, **kwargs):
     query = bleach.clean(request.args.get('query', ''), tags=[], strip=True)
     page = int(bleach.clean(request.args.get('page', '0'), tags=[], strip=True))
     size = int(bleach.clean(request.args.get('size', '5'), tags=[], strip=True))
-    contributors = request.args.get('get_contributors')
-    if contributors == 'true':
-        nid = request.args.get('nodeId')
     return search.search_contributor(query=query, page=page, size=size,
                                      exclude=exclude, current_user=user)
 
