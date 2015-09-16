@@ -12,6 +12,7 @@ from framework.mongo.utils import get_or_http_error, autoload
 from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
+from website.exceptions import NodeStateError
 from website.util.permissions import ADMIN
 from website.project.decorators import (
     must_be_valid_project,
@@ -62,17 +63,20 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     data = request.get_json()
     register = draft.register(auth)
 
-    try:
-        if data.get('registrationChoice', 'immediate') == 'embargo':
-            # Initiate embargo
-            embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
+    if data.get('registrationChoice', 'immediate') == 'embargo':
+        # Initiate embargo
+        embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
+        try:
             register.embargo_registration(auth.user, embargo_end_date)
-        else:
+        except ValidationValueError as err:
+            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+    else:
+        try:
             register.require_approval(auth.user)
-        register.save()
-    except ValidationValueError as err:
-        raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+        except NodeStateError as err:
+            raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
+    register.save()
     push_status_message(language.AFTER_REGISTER_ARCHIVING,
                         kind='info',
                         trust=False)
