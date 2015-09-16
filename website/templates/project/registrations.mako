@@ -59,6 +59,8 @@
               <i class="fa fa-plus"></i>
               New Draft Registration
             </a>
+            % else:
+              Only project administrators can create, edit, or submit new draft registrations.
             % endif
           </div>    
           <br />
