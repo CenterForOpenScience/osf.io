@@ -41,12 +41,17 @@ class BoxSerializer(OAuthAddonSerializer):
 
     @property
     def serialized_urls(self):
+        ret = self.addon_serialized_urls
+        ret.update({'settings': web_url_for('user_addons')})
+        return ret
+
+    @property
+    def addon_serialized_urls(self):
         node = self.node_settings.owner
 
         return {
             'auth': api_url_for('oauth_connect',
                                 service_name='box'),
-            'settings': web_url_for('user_addons'),
             'importAuth': node.api_url_for('box_add_user_auth'),
             'files': node.web_url_for('collect_file_trees'),
             'folders': node.api_url_for('box_folder_list'),
@@ -78,7 +83,7 @@ class BoxSerializer(OAuthAddonSerializer):
         result = {
             'userIsOwner': user_is_owner,
             'nodeHasAuth': node_settings.has_auth,
-            'urls': self.serialized_urls,
+            'urls': self.addon_serialized_urls,
             'validCredentials': valid_credentials,
             'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
         }

@@ -61,7 +61,7 @@ def box_set_config(node_addon, user_addon, auth, **kwargs):
                 'name': path.replace('All Files', '') if path != 'All Files' else '/ (Full Box)',
                 'path': path,
             },
-            'urls': serializer.serialized_urls,
+            'urls': serializer.addon_serialized_urls,
         },
         'message': 'Successfully updated settings.',
     }
