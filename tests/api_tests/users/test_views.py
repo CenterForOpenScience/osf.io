@@ -493,15 +493,13 @@ class TestUserUpdate(ApiTestCase):
         res = self.app.patch_json_api(self.user_one_url, self.incorrect_id, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
-    # PATCH does not require required fields.
     def test_partial_patch_user_no_type(self):
         res = self.app.patch_json_api(self.user_one_url, self.missing_type, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 400)
 
-    # PATCH does not require required fields.
     def test_partial_patch_user_no_id(self):
         res = self.app.patch_json_api(self.user_one_url, self.missing_id, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 400)
 
     def test_patch_user_logged_out(self):
         res = self.app.patch_json_api(self.user_one_url, {

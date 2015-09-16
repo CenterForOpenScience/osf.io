@@ -202,8 +202,10 @@ class TestApplicationDetail(ApiTestCase):
         user1_app = self.user1_app
         new_name = "The instance formerly known as Prince"
         res = self.app.patch(self.user1_app_url,
-                             {"name": new_name},
-                             auth=self.user1.auth)
+                             {"name": new_name,
+                              'id': self.user1_app._id,
+                              'type': 'applications'
+                             }, auth=self.user1.auth)
         user1_app.reload()
         assert_equal(res.status_code, 200)
         assert_dict_contains_subset({'client_id': user1_app.client_id,
@@ -219,8 +221,10 @@ class TestApplicationDetail(ApiTestCase):
     def test_updating_an_instance_does_not_change_the_number_of_instances(self):
         new_name = "The instance formerly known as Prince"
         res = self.app.patch(self.user1_app_url,
-                             {"name": new_name},
-                             auth=self.user1.auth)
+                             {"name": new_name,
+                              'id': self.user1_app._id,
+                              'type': 'applications',
+                              }, auth=self.user1.auth)
         assert_equal(res.status_code, 200)
 
         list_url = _get_application_list_url()
@@ -264,15 +268,13 @@ class TestApplicationDetail(ApiTestCase):
         res = self.app.patch(self.user1_app_url, self.incorrect_id, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
-    # PATCH does not require required fields.
     def test_partial_update_application_no_type(self):
         res = self.app.patch(self.user1_app_url, self.missing_type, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 400)
 
-    # PATCH does not require required fields.
     def test_partial_update_application_no_id(self):
         res = self.app.patch(self.user1_app_url, self.missing_id, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 400)
 
     def tearDown(self):
         super(TestApplicationDetail, self).tearDown()
