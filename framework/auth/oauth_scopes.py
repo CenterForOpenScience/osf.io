@@ -84,53 +84,52 @@ class ComposedScopes(object):
 # List of all publicly documented scopes, mapped to composed scopes defined above.
 #   Return as sets to enable fast comparisons of provided scopes vs those required by a given node
 # These are the ***only*** scopes that will be recognized from CAS
-public_scopes = {  # TODO: Move (most of) this list to a database
-                   # TODO: Consolidate language
-    'osf.users.all+read': scope(parts=frozenset(ComposedScopes.USERS_READ),
-                                description='Read your profile data',
-                                public=True),
-    'osf.users.all+write': scope(parts=frozenset(ComposedScopes.USERS_WRITE),
-                                 description='Read and edit your profile data',
-                                 public=True),
-
-    'osf.nodes.metadata+read': scope(parts=frozenset(ComposedScopes.NODE_METADATA_READ),
-                                     description='Read a list of all public and private nodes accessible to this '
-                                                 'account, and view associated metadata such as project descriptions '
-                                                 'and titles',
-                                     public=True),
-    'osf.nodes.metadata+write': scope(parts=frozenset(ComposedScopes.NODE_METADATA_WRITE),
-                                      description='Read a list of all public and private nodes accessible to this '
-                                                  'account, and view and edit associated metadata such as project '
-                                                  'descriptions and titles',
-                                      public=True),
-
-    'osf.nodes.data+read': scope(parts=frozenset(ComposedScopes.NODE_DATA_READ),
-                                 description='List and view files associated with any public or private projects '
-                                             'accessible to this account.',
-                                 public=True),
-    'osf.nodes.data+write': scope(parts=frozenset(ComposedScopes.NODE_DATA_WRITE),
-                                  description='List, view, and update files associated with any public or private '
-                                              'projects accessible to this account.',
-                                  public=True),
-
-    'osf.nodes.access+read': scope(parts=frozenset(ComposedScopes.NODE_ACCESS_READ),
-                                   description='View the contributors list and any established registrations '
-                                               'associated with public or private projects',
-                                   public=True),
-    'osf.nodes.access+write': scope(parts=frozenset(ComposedScopes.NODE_ACCESS_WRITE),
-                                    description='View and edit the contributors list associated with public or '
-                                                'private projects accessible to this account. Also view and create '
-                                                'registrations.',
-                                    public=True),  # TODO: Language: Does registrations endpoint allow creation of registrations? Is that planned?
-
-    'osf.nodes.all+read': scope(parts=frozenset(ComposedScopes.NODE_ALL_READ),
-                                description='View all metadata, files, and access rights associated with all public '
-                                            'and private projects accessible to this account.',
-                                public=True),
-    'osf.nodes.all+write': scope(parts=frozenset(ComposedScopes.NODE_ALL_WRITE),
-                                 description='View and edit all metadata, files, and access rights associated with '
-                                             'all public and private projects accessible to this account.',
-                                 public=True),
+public_scopes = {
+    # 'osf.users.all+read': scope(parts=frozenset(ComposedScopes.USERS_READ),
+    #                             description='Read your profile data',
+    #                             public=True),
+    # 'osf.users.all+write': scope(parts=frozenset(ComposedScopes.USERS_WRITE),
+    #                              description='Read and edit your profile data',
+    #                              public=True),
+    #
+    # 'osf.nodes.metadata+read': scope(parts=frozenset(ComposedScopes.NODE_METADATA_READ),
+    #                                  description='Read a list of all public and private nodes accessible to this '
+    #                                              'account, and view associated metadata such as project descriptions '
+    #                                              'and titles',
+    #                                  public=True),
+    # 'osf.nodes.metadata+write': scope(parts=frozenset(ComposedScopes.NODE_METADATA_WRITE),
+    #                                   description='Read a list of all public and private nodes accessible to this '
+    #                                               'account, and view and edit associated metadata such as project '
+    #                                               'descriptions and titles',
+    #                                   public=True),
+    #
+    # 'osf.nodes.data+read': scope(parts=frozenset(ComposedScopes.NODE_DATA_READ),
+    #                              description='List and view files associated with any public or private projects '
+    #                                          'accessible to this account.',
+    #                              public=True),
+    # 'osf.nodes.data+write': scope(parts=frozenset(ComposedScopes.NODE_DATA_WRITE),
+    #                               description='List, view, and update files associated with any public or private '
+    #                                           'projects accessible to this account.',
+    #                               public=True),
+    #
+    # 'osf.nodes.access+read': scope(parts=frozenset(ComposedScopes.NODE_ACCESS_READ),
+    #                                description='View the contributors list and any established registrations '
+    #                                            'associated with public or private projects',
+    #                                public=True),
+    # 'osf.nodes.access+write': scope(parts=frozenset(ComposedScopes.NODE_ACCESS_WRITE),
+    #                                 description='View and edit the contributors list associated with public or '
+    #                                             'private projects accessible to this account. Also view and create '
+    #                                             'registrations.',
+    #                                 public=True),  # TODO: Language: Does registrations endpoint allow creation of registrations? Is that planned?
+    #
+    # 'osf.nodes.all+read': scope(parts=frozenset(ComposedScopes.NODE_ALL_READ),
+    #                             description='View all metadata, files, and access rights associated with all public '
+    #                                         'and private projects accessible to this account.',
+    #                             public=True),
+    # 'osf.nodes.all+write': scope(parts=frozenset(ComposedScopes.NODE_ALL_WRITE),
+    #                              description='View and edit all metadata, files, and access rights associated with '
+    #                                          'all public and private projects accessible to this account.',
+    #                              public=True),
 
     'osf.full+read': scope(parts=frozenset(ComposedScopes.FULL_READ),
                            description='View all information associated with this account, including for '
@@ -141,12 +140,28 @@ public_scopes = {  # TODO: Move (most of) this list to a database
                                         'private projects.',
                             public=True),
 
-    # Undocumented scopes that can not be requested by third parties (per CAS restriction)
-    'osf.admin': scope(parts=frozenset(ComposedScopes.ADMIN_LEVEL),
-                       description='This permission should only be granted to OSF administrators. Allows a site to '
-                                   'create, read, edit, and delete all information associated with this account.',
-                       public=False),
+    # # Undocumented scopes that can not be requested by third parties (per CAS restriction)
+    # 'osf.admin': scope(parts=frozenset(ComposedScopes.ADMIN_LEVEL),
+    #                    description='This permission should only be granted to OSF administrators. Allows a site to '
+    #                                'create, read, edit, and delete all information associated with this account.',
+    #                    public=False),
 }
+
+
+def normalize_scopes(scopes):
+    """
+    Given a list of public-facing scope names from a CAS token, return the list of internal scopes
+
+    This is useful for converting a single broad scope name (from CAS) into the small constituent parts
+        (as used by views)
+
+    :param list scopes: a list public facing scopes
+    """
+    all_scopes = set()
+    for sc in scopes:
+        scope_tuple = public_scopes[sc]
+        all_scopes |= scope_tuple.parts
+    return all_scopes
 
 
 if __name__ == '__main__':
