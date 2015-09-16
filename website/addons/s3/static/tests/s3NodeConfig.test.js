@@ -335,7 +335,7 @@ describe('s3NodeConfigViewModel', () => {
                     vm.selectedBucket(bucket);
                     var promise = vm.selectBucket();
                     promise.always(function() {
-                        assert.equal(vm.currentBucket(), bucket);
+                        assert.equal(vm.currentBucket(), bucket, 'currentBucket not equal to ' + bucket);
                         done();
                     });
                 });
