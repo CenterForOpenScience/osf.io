@@ -20,8 +20,8 @@ $(document).ready(function() {
 
     var draftManager = new RegistrationManager(node, '#draftRegistrationScope', {
         list: node.urls.api + 'draft/',
-	submit: node.urls.api + 'draft/{draft_pk}/submit/',
-        get: node.urls.api + 'draft/{draft_pk}/',
+        // TODO: uncomment when we support draft submission for review
+        //submit: node.urls.api + 'draft/{draft_pk}/submit/',
         delete: node.urls.api + 'draft/{draft_pk}/',
         schemas: '/api/v1/project/schema/',
         edit: node.urls.web + 'draft/{draft_pk}/'
