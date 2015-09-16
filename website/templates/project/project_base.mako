@@ -14,7 +14,7 @@
 
 <%include file="project_header.mako"/>
 
-% if status and node and node['node_type'] == 'project':
+% if status and node:
     <%include file="../alert.mako"/>
 % endif
 

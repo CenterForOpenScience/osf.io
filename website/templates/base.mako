@@ -225,10 +225,8 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
-            % if status:
-                % if (not node) or (node and node['node_type'] != 'project'):
-                    <%include file="alert.mako"/>
-                % endif
+            % if status and (not node):
+                <%include file="alert.mako"/>
             % endif
             ${self.content()}
         </div><!-- end container -->
