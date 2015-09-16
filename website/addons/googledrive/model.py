@@ -197,6 +197,8 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             return None
 
         if self.folder_path != '/':
+            # `urllib` does not properly handle unicode.
+            # encode input to `str`, decode output back to `unicode`
             return urllib.unquote(os.path.split(self.folder_path)[1].encode('utf-8')).decode('utf-8')
 
     def clear_auth(self):
