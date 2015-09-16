@@ -341,22 +341,6 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    def get_valid_self_link_methods(self, root_folder=False):
-        valid_methods = {'file': ['GET'], 'folder': [], }
-        user = self.request.user
-        if user is None or user.is_anonymous():
-            return valid_methods
-
-        permissions = self.get_node().get_permissions(user)
-        if 'write' in permissions:
-            valid_methods['file'].append('POST')
-            valid_methods['file'].append('DELETE')
-            valid_methods['folder'].append('POST')
-            if not root_folder:
-                valid_methods['folder'].append('DELETE')
-
-        return valid_methods
-
     def get_file_item(self, item):
         file_node = FileNode.resolve_class(
             item['provider'],
@@ -410,13 +394,12 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
 class NodeProvider(object):
 
-    def __init__(self, provider, node, valid_methods):
+    def __init__(self, provider, node):
         self.path = '/'
         self.node = node
         self.kind = 'folder'
         self.name = provider
         self.provider = provider
-        self.valid_self_link_methods = valid_methods
         self.node_id = node._id
         self.pk = node._id
 
@@ -429,24 +412,8 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         ContributorOrPublic,
     )
 
-    def get_valid_self_link_methods(self, root_folder=False):
-        valid_methods = {'file': ['GET'], 'folder': [], }
-        user = self.request.user
-        if user is None or user.is_anonymous():
-            return valid_methods
-
-        permissions = self.get_node().get_permissions(user)
-        if 'write' in permissions:
-            valid_methods['file'].append('POST')
-            valid_methods['file'].append('DELETE')
-            valid_methods['folder'].append('POST')
-            if not root_folder:
-                valid_methods['folder'].append('DELETE')
-
-        return valid_methods
-
     def get_provider_item(self, provider):
-        return NodeProvider(provider, self.get_node(), self.get_valid_self_link_methods()['folder'])
+        return NodeProvider(provider, self.get_node())
 
     def get_queryset(self):
         return [
