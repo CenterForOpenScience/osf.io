@@ -222,7 +222,7 @@ var FileViewPage = {
                     var url = link.substring(0, link.indexOf('render'));
                     var title1 = '';
                     var title2 = '';
-                    var style = '\<link href=\"' + url + 'static/css/mfr.css\" media=\"all\" rel=\"stylesheet\" /\>';
+                    var style = m('link[href="' + url + 'static/css/mfr.css"][media="all"][rel="stylesheet"]');
                     m.render(document.getElementById('popOver'), [
                         m('ul.nav.nav-tabs.nav-justified', [
                             m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
@@ -236,8 +236,9 @@ var FileViewPage = {
                             m('.tab-pane.fade#embed', [
                                 m('p[data-toggle="tooltip"][data-placement="bottom"][title="'+ title1 +'"]', 'Dynamically Render iFrame with JavaScript'),
                                 m('textarea.form-control', [
+                                    style,
                                     m('p','poop')
-                                ]),
+                                ]), m('br'),
                                 m('p[data-toggle="tooltip"][data-placement="bottom"][title="'+ title2 +'"]', 'Direct iFrame with Fixed Height and Width'),
                                 m('textarea.form-control#directIFrame', m('p','poop')
                                 )
@@ -249,7 +250,7 @@ var FileViewPage = {
                     if(!isInitialized){
                         var button = $(element).popover();
                         button.on('show.bs.popover', function(e){
-                            button.data()['bs.popover'].$tip.css('max-width', '600px').css('text-align', 'center');
+                            button.data()['bs.popover'].$tip.css('max-width', '600px').css('text-align', 'center').css('width', '450px');
                         });
                         if (!window.contextVars.node.isPublic) {
                             $('#sharebutton').attr('disabled', 'disabled');
@@ -258,7 +259,7 @@ var FileViewPage = {
                             $('#sharebutton').removeAttr('disabled', 'disabled');
                         }
                     }
-                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"/>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share')
+                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"/>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true', 'data-viewport': '#popOver'}, 'Share')
             ]),
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
