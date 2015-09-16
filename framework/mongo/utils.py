@@ -100,13 +100,16 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
         ))
     return instance
 
+
 def autoload(Model, extract_key, inject_key, func):
     """Decorator to autoload a StoredObject instance by primary key and inject into kwargs. Raises
     an appropriate HTTPError (see #get_or_http_error)
 
-    :param type Model: StoredObject subclass to query
-    :param basetring extract_key: kwargs key to extract Model instance's primary key
-    :param basestring inject_key: kwargs key to inject loaded Model instance into kwargs
+    :param type Model: database collection model to query (should be a subclass of StoredObject)
+    :param basestring extract_key: named URL field containing the desired primary key to be fetched
+        from the database
+    :param basestring inject_key: name the instance will be accessible as when it's injected as an
+        argument to the function
 
     Example usage: ::
       def get_node(node_id):
@@ -115,11 +118,6 @@ def autoload(Model, extract_key, inject_key, func):
 
       becomes
 
-      @autoload(Node, 'node_id', 'node')
-      def get_node(node):
-          ...
-
-    Alternatively:
       import functools
       autoload_node = functools.partial(autoload, Node, 'node_id', 'node')
 
