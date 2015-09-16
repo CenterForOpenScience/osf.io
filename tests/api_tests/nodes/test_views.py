@@ -1107,6 +1107,7 @@ class TestNodeChildCreate(ApiTestCase):
 
         self.url = '/{}nodes/{}/children/'.format(API_BASE, self.project._id)
         self.child = {
+            'type': 'nodes',
             'title': 'child',
             'description': 'this is a child project',
             'category': 'project',
@@ -1163,6 +1164,7 @@ class TestNodeChildCreate(ApiTestCase):
         description = 'An <script>alert("even cooler")</script> child'
 
         res = self.app.post_json_api(self.url, {
+            'type': 'nodes',
             'title': title,
             'description': description,
             'category': 'project',
@@ -1179,6 +1181,28 @@ class TestNodeChildCreate(ApiTestCase):
 
         self.project.reload()
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
+
+    def test_creates_child_no_type(self):
+        child = {
+            'title': 'child',
+            'description': 'this is a child project',
+            'category': 'project',
+        }
+        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+
+    def test_creates_child_incorrect_type(self):
+        child = {
+            'type': 'Wrong type.',
+            'title': 'child',
+            'description': 'this is a child project',
+            'category': 'project',
+        }
+        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
 
 class TestNodeLinksList(ApiTestCase):
