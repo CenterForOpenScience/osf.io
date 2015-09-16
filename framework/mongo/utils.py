@@ -74,9 +74,9 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
     :param basestring display_name:
     :return: Model instance
     """
+
     display_name = display_name or ''
 
-    instance = None
     if isinstance(pk_or_query, QueryBase):
         try:
             instance = Model.find_one(pk_or_query)
