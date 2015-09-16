@@ -85,9 +85,8 @@ class FileSerializer(JSONAPISerializer):
         type_ = 'files'
 
     def get_size(self, obj):
-        version = obj.get_version()
-        if version:
-            return version.size
+        if obj.versions:
+            return obj.versions[-1].size
         return None
 
     def update(self, instance, validated_data):
