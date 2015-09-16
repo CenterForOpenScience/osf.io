@@ -1355,19 +1355,19 @@ class TestCreateNodeLink(ApiTestCase):
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.pointer_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.project._id)
-        self.private_payload = {'target_node_id': self.pointer_project._id}
+        self.private_payload = {'type': 'node_links', 'target_node_id': self.pointer_project._id}
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.public_project._id)
-        self.public_payload = {'target_node_id': self.public_pointer_project._id}
+        self.public_payload = {'type': 'node_links', 'target_node_id': self.public_pointer_project._id}
         self.fake_url = '/{}nodes/{}/node_links/'.format(API_BASE, 'fdxlq')
-        self.fake_payload = {'target_node_id': 'fdxlq'}
-        self.point_to_itself_payload = {'target_node_id': self.public_project._id}
+        self.fake_payload = {'type': 'node_links', 'target_node_id': 'fdxlq'}
+        self.point_to_itself_payload = {'type': 'node_links', 'target_node_id': self.public_project._id}
 
         self.user_two = AuthUserFactory()
         self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
         self.user_two_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.user_two_project._id)
-        self.user_two_payload = {'target_node_id': self.user_two_project._id}
+        self.user_two_payload = {'type': 'node_links', 'target_node_id': self.user_two_project._id}
 
     def test_creates_public_node_pointer_logged_out(self):
         res = self.app.post(self.public_url, self.public_payload, expect_errors=True)
@@ -1450,6 +1450,19 @@ class TestCreateNodeLink(ApiTestCase):
         res = self.app.post(self.public_url, self.public_payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert 'detail' in res.json['errors'][0]
+
+    def test_create_node_pointer_no_type(self):
+        payload = {'target_node_id': self.user_two_project._id}
+        res = self.app.post(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+
+    def test_create_node_pointer_incorrect_type(self):
+        payload = {'type': 'Wrong type.', 'target_node_id': self.user_two_project._id}
+        res = self.app.post(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
 
 class TestNodeFilesList(ApiTestCase):

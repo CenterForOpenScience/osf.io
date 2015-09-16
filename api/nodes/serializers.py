@@ -143,12 +143,18 @@ class NodeUpdateSerializer(NodeSerializer):
 class NodeLinksSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id')
+    type = ser.CharField(write_only=True, required=True)
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
     title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
                                                                          'points to')
 
     class Meta:
         type_ = 'node_links'
+
+    def validate_type(self, value):
+        if self.Meta.type_ != value:
+            raise Conflict()
+        return value
 
     links = LinksField({
         'html': 'get_absolute_url',
