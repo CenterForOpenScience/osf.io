@@ -1,4 +1,4 @@
-"""Views fo the node settings page."""
+"""Views for the node settings page."""
 # -*- coding: utf-8 -*-
 import os
 import httplib as http
