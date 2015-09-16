@@ -57,22 +57,6 @@ class BoxSerializer(OAuthAddonSerializer):
             'accounts': node.api_url_for('box_get_user_settings'),
         }
 
-    @property
-    def addon_serialized_urls(self):
-        node = self.node_settings.owner
-
-        return {
-            'settings': web_url_for('user_addons'),
-            'importAuth': node.api_url_for('box_add_user_auth'),
-            'files': node.web_url_for('collect_file_trees'),
-            'folders': node.api_url_for('box_folder_list'),
-            'config': node.api_url_for('box_set_config'),
-            'emails': node.api_url_for('box_get_share_emails'),
-            'share': 'https://app.box.com/files/0/f/{0}'.format(self.node_settings.folder_id),
-            'deauthorize': node.api_url_for('box_remove_user_auth'),
-            'accounts': node.api_url_for('box_get_user_settings'),
-        }
-
     def serialize_settings(self, node_settings, current_user, client=None):
         """View helper that returns a dictionary representation of a
         BoxNodeSettings record. Provides the return value for the
@@ -88,7 +72,7 @@ class BoxSerializer(OAuthAddonSerializer):
             try:
                 client = client or BoxClient(user_settings.external_accounts[0].oauth_key)
                 client.get_user_info()
-            except BoxClientException:
+            except (BoxClientException, IndexError):
                 valid_credentials = False
 
         result = {
