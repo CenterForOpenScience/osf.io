@@ -1,6 +1,6 @@
 import furl
+from modularodm import Q
 
-from rest_framework.compat import OrderedDict
 from rest_framework import serializers as ser
 
 from website import settings
@@ -13,9 +13,13 @@ from api.base.serializers import JSONAPIHyperlinkedIdentityField
 
 
 class CheckoutField(JSONAPIHyperlinkedIdentityField):
+
+    default_error_messages = {'invalid_data': 'Checkout must be either the current user or null'}
+
     def __init__(self, **kwargs):
         kwargs['queryset'] = True
         kwargs['read_only'] = False
+        kwargs['allow_null'] = True
         kwargs['lookup_field'] = 'pk'
         kwargs['lookup_url_kwarg'] = 'user_id'
 
@@ -24,12 +28,8 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
 
         super(ser.HyperlinkedIdentityField, self).__init__('users:user-detail', **kwargs)
 
-    @property
-    def choices(self):
-        return OrderedDict([
-            (None, None),
-            (self.context['request'].user._id, self.context['request'].user)
-        ])
+    def get_queryset(self):
+        return User.find(Q('_id', 'eq', self.context['request'].user._id))
 
     def get_url(self, obj, view_name, request, format):
         if obj is None:
@@ -37,7 +37,16 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
         return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
 
     def to_internal_value(self, data):
-        return User.load(data)
+        if data is None:
+            return None
+        try:
+            return next(
+                user for user in
+                self.get_queryset()
+                if user._id == data
+            )
+        except StopIteration:
+            self.fail('invalid_data')
 
 
 class FileSerializer(JSONAPISerializer):
@@ -47,6 +56,7 @@ class FileSerializer(JSONAPISerializer):
         'node',
         'kind',
         'path',
+        'size',
         'provider',
         'last_touched',
     ])
@@ -54,6 +64,7 @@ class FileSerializer(JSONAPISerializer):
     name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     kind = ser.CharField(read_only=True, help_text='Either folder or file')
     path = ser.CharField(read_only=True, help_text='The unique path used to reference this object')
+    size = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
 
@@ -72,6 +83,12 @@ class FileSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'files'
+
+    def get_size(self, obj):
+        version = obj.get_version()
+        if version:
+            return version.size
+        return None
 
     def update(self, instance, validated_data):
         assert isinstance(instance, FileNode), 'Instance must be a FileNode'

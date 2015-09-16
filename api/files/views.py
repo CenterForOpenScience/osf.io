@@ -7,6 +7,7 @@ from website.files.models import FileVersion
 from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
 from api.files.serializers import FileSerializer
+from api.files.permissions import CheckedOutOrAdmin
 from api.files.permissions import ContributorOrPublic
 from api.files.serializers import FileVersionSerializer
 
@@ -60,6 +61,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        CheckedOutOrAdmin,
     )
 
     # overrides RetrieveAPIView
