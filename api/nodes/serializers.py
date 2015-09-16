@@ -3,6 +3,7 @@ from rest_framework import serializers as ser
 from website.models import Node
 from framework.auth.core import Auth
 from rest_framework import exceptions
+from api.base.exceptions import Conflict
 from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField
 
 
@@ -26,7 +27,7 @@ class NodeSerializer(JSONAPISerializer):
     filterable_fields = frozenset(['title', 'description', 'public'])
 
     id = ser.CharField(read_only=True, source='_id', label='ID')
-    type = ser.CharField(write_only=True)
+    type = ser.CharField(write_only=True, required=True)
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
@@ -67,6 +68,11 @@ class NodeSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'nodes'
+
+    def validate_type(self, value):
+        if self.Meta.type_ != value:
+            raise Conflict()
+        return value
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
@@ -124,8 +130,15 @@ class NodeSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
+
 class NodeUpdateSerializer(NodeSerializer):
     id = ser.CharField(source='_id', label='ID', required=True)
+
+    def validate_id(self, value):
+        if self._args[0]._id != value:
+            raise Conflict()
+        return value
+
 
 class NodeLinksSerializer(JSONAPISerializer):
 
