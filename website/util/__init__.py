@@ -2,6 +2,7 @@
 
 import collections
 import re
+import urllib
 import logging
 import urlparse
 
@@ -138,7 +139,8 @@ def is_json_request():
 
 
 def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
-    """Reverse URL lookup for WaterButler routes
+    """DEPRECATED Use waterbutler_api_url_for
+    Reverse URL lookup for WaterButler routes
     :param str route: The action to preform, upload, download, delete...
     :param str provider: The name of the requested provider
     :param str path: The path of the requested file or folder
@@ -168,5 +170,13 @@ def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
 
     url.args['view_only'] = view_only
 
+    url.args.update(kwargs)
+    return url.url
+
+def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
+    assert path.startswith('/'), 'Path must always start with /'
+    url = furl.furl(website_settings.WATERBUTLER_URL)
+    segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
+    url.path.segments.extend([urllib.quote(x.encode('utf-8')) for x in segments])
     url.args.update(kwargs)
     return url.url
