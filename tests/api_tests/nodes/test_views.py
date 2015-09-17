@@ -66,7 +66,8 @@ class TestNodeList(ApiTestCase):
         assert_not_in(self.private._id, ids)
 
     def test_return_public_node_list_logged_out_user(self):
-        res = self.app.get(self.url)
+        res = self.app.get(self.url, expect_errors=True)
+        print res
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         ids = [each['id'] for each in res.json['data']]
@@ -376,11 +377,16 @@ class TestNodeCreate(ApiTestCase):
 
         self.user_two = AuthUserFactory()
 
-        self.public_project = {'title': self.title,
-                               'description': self.description,
-                               'category': self.category,
-                               'public': True,
-                               'type': 'nodes'}
+        self.public_project = {
+            'type': 'nodes',
+            'attributes':
+                {
+                    'title': self.title,
+                    'description': self.description,
+                    'category': self.category,
+                    'public': True,
+                }
+        }
         self.private_project = {'title': self.title,
                                 'description': self.description,
                                 'category': self.category,
@@ -393,11 +399,12 @@ class TestNodeCreate(ApiTestCase):
         assert_in('detail', res.json['errors'][0])
 
     def test_creates_public_project_logged_in(self):
-        res = self.app.post_json_api(self.url, self.public_project, auth=self.user_one.auth)
+        res = self.app.post_json_api(self.url, self.public_project, expect_errors=True, auth=self.user_one.auth)
+        print res
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], self.public_project['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.public_project['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.public_project['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.public_project['attributes']['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.public_project['attributes']['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.public_project['attributes']['category'])
         assert_equal(res.content_type, 'application/vnd.api+json')
         pid = res.json['data']['id']
         project = Node.load(pid)
