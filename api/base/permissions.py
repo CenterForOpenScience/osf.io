@@ -1,3 +1,6 @@
+import operator
+
+
 def PermissionWithGetter(Base, getter):
     """A psuedo class for checking permissions
     of subresources without having to redefine permission classes
@@ -6,7 +9,7 @@ def PermissionWithGetter(Base, getter):
         def get_object(self, request, view, obj):
             if callable(getter):
                 return getter(request, view, obj)
-            return getattr(obj, getter)
+            return operator.attrgetter(getter)(obj)
 
         def has_object_permission(self, request, view, obj):
             obj = self.get_object(request, view, obj)
