@@ -61,9 +61,7 @@ def draft_before_register_page(auth, node, draft, *args, **kwargs):
 @http_error_if_disk_saving_mode
 def register_draft_registration(auth, node, draft, *args, **kwargs):
 
-    # TODO(hrybacki): Move to framework.utils.rapply once @sam's PR#4027 is merged.
-    from api.base.serializers import _rapply
-    data = _rapply(request.get_json(), sanitize.strip_html)
+    data = request.get_json()
     register = draft.register(auth)
 
     if data.get('registrationChoice', 'immediate') == 'embargo':
