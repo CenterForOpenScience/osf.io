@@ -253,6 +253,8 @@ class JSONAPISerializer(ser.Serializer):
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':
                 data['links'] = field.to_representation(attribute)
+            elif field.field_name == 'attributes':
+                data['attributes'] = obj.attributes
             else:
                 if attribute is None:
                     # We skip `to_representation` for `None` values so that
