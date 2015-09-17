@@ -11,6 +11,9 @@ from website import settings as website_settings
 from framework.auth import Auth
 from api.base.exceptions import Gone
 
+# These values are copied from rest_framework.fields.BooleanField
+# BooleanField cannot be imported here without raising an
+# ImproperlyConfigured error
 TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
 FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
 

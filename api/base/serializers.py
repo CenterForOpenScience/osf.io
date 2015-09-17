@@ -88,8 +88,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                 if utils.is_falsy(show_related_counts):
                     continue
             meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
-        self.meta = meta
-        return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
+        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
 class LinksField(ser.Field):
