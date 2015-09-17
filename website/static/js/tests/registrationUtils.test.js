@@ -354,7 +354,7 @@ describe('MetaSchema', () => {
 
             // qids are created in the constructor now based on length
             // and prepended with `q'
-            assert.isDefined(ms.schema.pages[2].questions.'q7'.value);
+            assert.isDefined(ms.schema.pages[2].questions.q7.value);
         });
     });
     describe('#flatQuestions', () => {
