@@ -182,8 +182,8 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         if (license.id === OTHER_LICENSE.id) {
             var ret = $.Deferred();
             bootbox.dialog({
-                title: 'Please confirm your license selection',
-                message: 'You have opted to use your own license. It is your responsiblity to upload and maintain a license file named "license.txt" and to upload that file into the OSF Storage of this project.',
+                title: 'Your Own License',
+                message: 'You have opted to use your own license. Please upload a license file named "license.txt" into the OSF Storage of this project.',
                 buttons: {
                     cancel: {
                         label: 'Cancel',
