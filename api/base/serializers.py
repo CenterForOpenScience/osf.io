@@ -1,12 +1,15 @@
 import collections
 import re
 
+from rest_framework.reverse import reverse
+from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
 
-from website.util.sanitize import strip_html
+from api.base.utils import absolute_reverse
+
 from website import settings
-from api.base.utils import absolute_reverse, waterbutler_url_for
-from rest_framework.fields import SkipField
+from website.util.sanitize import strip_html
+from website.util import waterbutler_api_url_for
 
 
 class CharFieldWithReadDefault(ser.CharField):
@@ -87,7 +90,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         """
         Given an object, return the URL that hyperlinks to the object.
 
-        Returns null if lookup value is None
+        Returns None if lookup value is None
         """
 
         if getattr(obj, self.lookup_field) is None:
@@ -169,7 +172,9 @@ def _tpl(val):
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
     if attr_name:
-        attribute_value = getattr(obj, attr_name, ser.empty)
+        attribute_value = obj
+        for attr_segment in attr_name.split('.'):
+            attribute_value = getattr(attribute_value, attr_segment, ser.empty)
         if attribute_value is not ser.empty:
             return attribute_value
         elif attr_name in obj:
@@ -218,14 +223,36 @@ class WaterbutlerLink(Link):
     """Link object to use in conjunction with Links field. Builds a Waterbutler URL for files.
     """
 
-    def __init__(self, args=None, kwargs=None, **kw):
-        # self.endpoint = endpoint
-        super(WaterbutlerLink, self).__init__(None, args, kwargs, None, **kw)
+    def __init__(self, must_be_file=None, must_be_folder=None, **kwargs):
+        self.kwargs = kwargs
+        self.must_be_file = must_be_file
+        self.must_be_folder = must_be_folder
 
     def resolve_url(self, obj):
         """Reverse URL lookup for WaterButler routes
         """
-        return waterbutler_url_for(obj['waterbutler_type'], obj['provider'], obj['path'], obj['node_id'], obj['cookie'], obj['args'])
+        if self.must_be_folder is True and not obj.path.endswith('/'):
+            return None
+        if self.must_be_file is True and obj.path.endswith('/'):
+            return None
+        return waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
+
+
+class NodeFileHyperLink(JSONAPIHyperlinkedIdentityField):
+    def __init__(self, kind=None, kwargs=None, **kws):
+        self.kind = kind
+        self.kwargs = []
+        for kw in (kwargs or []):
+            if isinstance(kw, basestring):
+                kw = (kw, kw)
+            assert isinstance(kw, tuple) and len(kw) == 2
+            self.kwargs.append(kw)
+        super(NodeFileHyperLink, self).__init__(**kws)
+
+    def get_url(self, obj, view_name, request, format):
+        if self.kind and obj.kind != self.kind:
+            return None
+        return reverse(view_name, kwargs={attr_name: getattr(obj, attr) for (attr_name, attr) in self.kwargs}, request=request, format=format)
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
