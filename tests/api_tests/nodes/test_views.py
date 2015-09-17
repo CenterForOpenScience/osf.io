@@ -787,9 +787,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['category'], self.category)
 
     def test_write_to_public_field_non_contrib_forbidden(self):
-        title = "Cool project"
-        description = 'A Properly Cool Project'
-        category = 'data'
         # Test non-contrib writing to public field
         res = self.app.patch_json_api(self.public_url, {
             'public': False,
@@ -799,7 +796,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
-    @assert_not_logs(NodeLog.UPDATED_FIELDS, 'public_project')
+    # id and type are getting logged as updated fields
+    @assert_logs(NodeLog.UPDATED_FIELDS, 'public_project', -1)
+    @assert_logs(NodeLog.UPDATED_FIELDS, 'public_project')
     def test_write_to_public_field_does_not_update(self):
         # Test creator writing to public field (supposed to be read-only)
         res = self.app.patch_json_api(self.public_url, {
@@ -1989,13 +1988,12 @@ class TestNodeTags(ApiTestCase):
         self.one_new_tag_json = {'id': self.public_project._id, 'type':'nodes', 'tags': ['new-tag']}
         self.private_payload = {'id': self.private_project._id, 'type':'nodes', 'tags': ['new-tag']}
 
-
     def test_public_project_starts_with_no_tags(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
-    @assert_logs(NodeLog.TAG_ADDED, 'public_project')
+    @assert_logs(NodeLog.TAG_ADDED, 'public_project', -2)
     def test_contributor_can_add_tag_to_public_project(self):
         res = self.app.patch_json(self.public_url, self.one_new_tag_json, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -2011,7 +2009,7 @@ class TestNodeTags(ApiTestCase):
         assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
         assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
 
-    @assert_logs(NodeLog.TAG_ADDED, 'private_project')
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -2)
     def test_contributor_can_add_tag_to_private_project(self):
         res = self.app.patch_json(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -2049,12 +2047,12 @@ class TestNodeTags(ApiTestCase):
 
     def test_read_only_contributor_cannot_add_tag_to_private_project(self):
         res = self.app.patch_json(self.private_url, self.private_payload, expect_errors=True, auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 403)\
 
-    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -4)
-    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -3)
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -7)
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -5)
+    @assert_logs(NodeLog.TAG_REMOVED, 'private_project', -4)
     @assert_logs(NodeLog.TAG_REMOVED, 'private_project', -2)
-    @assert_logs(NodeLog.TAG_REMOVED, 'private_project')
     def test_tags_add_and_remove_properly(self):
         res = self.app.patch_json(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
