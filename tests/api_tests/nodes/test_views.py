@@ -128,7 +128,7 @@ class TestNodeFiltering(ApiTestCase):
         Node.remove()
 
     def test_filtering_registrations(self):
-        url = '/{}nodes/?filter[registration]=true'.format(API_BASE)
+        url = '/{}nodes/?filter[attributes][registration]=true'.format(API_BASE)
         registration = RegistrationFactory(creator=self.user_one)
 
         res = self.app.get(url, auth=self.user_one.auth)
@@ -803,9 +803,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
-    # id and type are getting logged as updated fields
-    @assert_logs(NodeLog.UPDATED_FIELDS, 'public_project', -1)
-    @assert_logs(NodeLog.UPDATED_FIELDS, 'public_project')
+    @assert_not_logs(NodeLog.UPDATED_FIELDS, 'public_project')
     def test_write_to_public_field_does_not_update(self):
         # Test creator writing to public field (supposed to be read-only)
         res = self.app.patch_json_api(self.public_url, {
@@ -1992,17 +1990,18 @@ class TestNodeTags(ApiTestCase):
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
-        self.one_new_tag_json = {'id': self.public_project._id, 'type':'nodes', 'tags': ['new-tag']}
-        self.private_payload = {'id': self.private_project._id, 'type':'nodes', 'tags': ['new-tag']}
+        self.one_new_tag_json = {'id': self.public_project._id, 'type':'nodes', 'attributes': {'tags': ['new-tag']}}
+        self.private_payload = {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags': ['new-tag']}}
 
     def test_public_project_starts_with_no_tags(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
-    @assert_logs(NodeLog.TAG_ADDED, 'public_project', -2)
+    @assert_logs(NodeLog.TAG_ADDED, 'public_project')
     def test_contributor_can_add_tag_to_public_project(self):
-        res = self.app.patch_json(self.public_url, self.one_new_tag_json, auth=self.user.auth)
+        res = self.app.patch_json(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
+        print res
         assert_equal(res.status_code, 200)
         # Ensure data is correct from the PATCH response
         assert_equal(len(res.json['data']['attributes']['tags']), 1)
@@ -2016,7 +2015,7 @@ class TestNodeTags(ApiTestCase):
         assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
         assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
 
-    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -2)
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project')
     def test_contributor_can_add_tag_to_private_project(self):
         res = self.app.patch_json(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -2056,10 +2055,10 @@ class TestNodeTags(ApiTestCase):
         res = self.app.patch_json(self.private_url, self.private_payload, expect_errors=True, auth=self.read_only_contributor.auth)
         assert_equal(res.status_code, 403)\
 
-    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -7)
-    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -5)
-    @assert_logs(NodeLog.TAG_REMOVED, 'private_project', -4)
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -4)
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -3)
     @assert_logs(NodeLog.TAG_REMOVED, 'private_project', -2)
+    @assert_logs(NodeLog.TAG_REMOVED, 'private_project')
     def test_tags_add_and_remove_properly(self):
         res = self.app.patch_json(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -2067,12 +2066,12 @@ class TestNodeTags(ApiTestCase):
         assert_equal(len(res.json['data']['attributes']['tags']), 1)
         assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
         # Ensure removing and adding tag data is correct from the PATCH response
-        res = self.app.patch_json(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'tags': ['newer-tag']}, auth=self.user.auth)
+        res = self.app.patch_json(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags':['newer-tag']}}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 1)
         assert_equal(res.json['data']['attributes']['tags'][0], 'newer-tag')
         # Ensure removing tag data is correct from the PATCH response
-        res = self.app.patch_json(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'tags': []}, auth=self.user.auth)
+        res = self.app.patch_json(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags': []}}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
