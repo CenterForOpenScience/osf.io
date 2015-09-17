@@ -18,8 +18,8 @@ class CoreScopes(object):
     USERS_READ = 'users+read'
     USERS_WRITE = 'users+write'
 
-    NODE_BASE_READ = 'nodes.basic+read'
-    NODE_BASE_WRITE = 'nodes.basic+write'
+    NODE_BASE_READ = 'nodes.base+read'
+    NODE_BASE_WRITE = 'nodes.base+write'
 
     NODE_CHILDREN_READ = 'nodes.children+read'
     NODE_CHILDREN_WRITE = 'nodes.children+write'

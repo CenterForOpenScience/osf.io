@@ -1,17 +1,20 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
-from django.contrib.auth.models import AnonymousUser
 from rest_framework.exceptions import NotAuthenticated
+from django.contrib.auth.models import AnonymousUser
 
 from modularodm import Q
 
-from website.models import User, Node
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
+
+from website.models import User, Node
+
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
+
 from .serializers import UserSerializer
 from .permissions import ReadOnlyOrCurrentUser
 
@@ -46,17 +49,17 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
     """
-
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
-
-    serializer_class = UserSerializer
-    ordering = ('-date_registered')
 
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    serializer_class = UserSerializer
+
+    ordering = ('-date_registered')
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -78,12 +81,13 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     """
     permission_classes = (
         ReadOnlyOrCurrentUser,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
-    serializer_class = UserSerializer
 
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE]
+
+    serializer_class = UserSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -97,17 +101,17 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
 class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     """Nodes belonging to a user.
-    Return a list of nodes that the user contributes to. """
-
+    Return a list of nodes that the user contributes to.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
-
-    serializer_class = NodeSerializer
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]
+
+    serializer_class = NodeSerializer
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
