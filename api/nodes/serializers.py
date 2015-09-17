@@ -150,6 +150,9 @@ class NodeSerializer(JSONAPISerializer):
             raise ValidationError(errors)
 
         validated_data.update(validated_data.pop('attributes', {}))
+        validated_data.pop('_id')
+        validated_data.pop('type')
+
         assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
         tags = validated_data.get('tags')
