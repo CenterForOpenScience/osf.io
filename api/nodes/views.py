@@ -328,7 +328,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             else FileNode.FILE
         ).get_or_create(self.get_node(), item['path'])
 
-        file_node.update(None, item)
+        file_node.update(None, item, user=self.request.user)
 
         return file_node
 
@@ -358,7 +358,11 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             meta=True
         )
 
-        waterbutler_request = requests.get(url)
+        waterbutler_request = requests.get(
+            url,
+            cookies=self.request.COOKIES,
+            headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
+        )
         if waterbutler_request.status_code == 401:
             raise PermissionDenied
         try:

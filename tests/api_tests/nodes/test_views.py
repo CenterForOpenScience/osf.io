@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import mock
+import base64
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
@@ -1406,12 +1407,20 @@ class TestNodeFilesList(ApiTestCase):
                 u'materialized': '/',
             }]
         }
+        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
         mock_waterbutler_request.return_value = mock_res
 
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
-        res = self.app.get(url, auth=self.user.auth)
+        res = self.app.get(url, auth=self.user.auth, headers={
+            'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
+        })
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
+        mock_waterbutler_request.assert_called_once_with(
+            'http://localhost:7777/v1/resources/{}/providers/github/?meta=True'.format(self.project._id),
+            cookies={'foo':'bar'},
+            headers={'Authorization': auth_header}
+        )
 
     @mock.patch('api.nodes.views.requests.get')
     def test_handles_unauthenticated_waterbutler_request(self, mock_waterbutler_request):
