@@ -7,7 +7,7 @@
       <div id="embargo-addon" data-bind="with: $root.embargoAddon">
         <hr />
         
-        <p class="help-block">${language.REGISTRATION_EMBARGO_INFO}</p>
+        <p class="help-block">${language.REGISTRATION_EMBARGO_INFO | n}</p>
         <div class="form-group">
           <label class="control-label">Registration Choice</label>
           <select class="form-control" data-bind="options: registrationOptions,

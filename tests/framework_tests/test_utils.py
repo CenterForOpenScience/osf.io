@@ -11,6 +11,7 @@ from framework.exceptions import HTTPError
 
 from website.models import Node
 
+
 class MongoUtilsTestCase(DbTestCase):
 
     def test_get_or_http_error_by_pk_found(self):
@@ -19,8 +20,8 @@ class MongoUtilsTestCase(DbTestCase):
         assert_equal(found, n)
 
     def test_get_or_http_error_by_pk_not_found(self):
-        fail = lambda: get_or_http_error(Node, 'blah')
-        assert_raises(HTTPError, fail)
+        with assert_raises(HTTPError):
+            get_or_http_error(Node, 'blah')
 
     def test_get_or_http_error_by_query_found(self):
         n = factories.NodeFactory()
@@ -31,15 +32,15 @@ class MongoUtilsTestCase(DbTestCase):
         assert_equal(found, n)
 
     def test_get_or_http_error_by_query_not_found(self):
-        fail = lambda: get_or_http_error(Node, Q('_id', 'eq', 'blah'))
-        assert_raises(HTTPError, fail)
+        with assert_raises(HTTPError):
+            get_or_http_error(Node, Q('_id', 'eq', 'blah'))
 
     def test_get_or_http_error_by_query_not_unique(self):
         title = 'TITLE'
         factories.NodeFactory(title=title)
         factories.NodeFactory(title=title)
-        fail = lambda: get_or_http_error(Node, Q('title', 'eq', title))
-        assert_raises(HTTPError, fail)
+        with assert_raises(HTTPError):
+            get_or_http_error(Node, Q('title', 'eq', title))
 
     def test_autoload(self):
 

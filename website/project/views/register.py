@@ -46,7 +46,9 @@ def node_register_page(auth, node, **kwargs):
     if node.is_registration:
         return serialize_node(node, auth)
     else:
-        status.push_status_message('You have been redirected to the project\'s registrations page .From here you can initiate a new Draft Registration to complete the registration process')
+        status.push_status_message(
+            'You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process',
+            trust=False)
         return redirect(node.web_url_for('node_registrations', view='draft'))
 
 @must_be_valid_project
@@ -107,7 +109,7 @@ def node_registration_retraction_post(auth, node, **kwargs):
     return {'redirectUrl': node.web_url_for('view_project')}
 
 @must_be_valid_project
-@must_be_contributor_or_public
+@must_have_permission(ADMIN)
 def node_register_template_page(auth, node, **kwargs):
 
     template_name = kwargs['template'].replace(' ', '_')
@@ -138,10 +140,8 @@ def node_register_template_page(auth, node, **kwargs):
             except NoResultsFound:
                 raise not_found_error
 
-        schema = meta_schema.schema
         ret = {
             'template_name': template_name,
-            'schema': json.dumps(schema),
             'metadata_version': meta_schema.metadata_version,
             'schema_version': meta_schema.schema_version,
             'registered': registered,
@@ -151,7 +151,10 @@ def node_register_template_page(auth, node, **kwargs):
         ret.update(_view_project(node, auth, primary=True))
         return ret
     else:
-        status.push_status_message('You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process')
+        status.push_status_message(
+            'You have been redirected to the project\'s registrations page. From here you can initiate a new Draft Registration to complete the registration process',
+            trust=False
+        )
         return redirect(node.web_url_for('node_registrations', view=kwargs.get('template')))
 
 @must_be_valid_project  # returns project

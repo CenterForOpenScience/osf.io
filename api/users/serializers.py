@@ -1,7 +1,8 @@
 from rest_framework import serializers as ser
-from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField
+
 from website.models import User
 
+from api.base.serializers import JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -18,7 +19,12 @@ class UserSerializer(JSONAPISerializer):
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-    gravatar_url = ser.URLField(required=False, read_only=True, help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
+
+    profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
+
+    def get_profile_image_url(self, user):
+        size = self.context['request'].query_params.get('profile_image_size')
+        return user.profile_image_url(size=size)
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
     gitHub = ser.CharField(required=False, label='GitHub', source='social.github', allow_blank=True, help_text='GitHub Handle')

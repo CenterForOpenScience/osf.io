@@ -5,9 +5,11 @@
   <li role="presentation" class="active">
     <a id="registrationsControl" aria-controls="registrations" href="#registrations">Registrations</a>
   </li>
+  % if 'admin' in user['permissions']:
   <li role="presentation">
     <a id="draftsControl" aria-controls="drafts" href="#drafts">Draft Registrations</a>
   </li>
+  % endif
 </ul>
 <div class="tab-content registrations-view">
   <div role="tabpanel" class="tab-pane active" id="registrations">
@@ -59,6 +61,8 @@
               <i class="fa fa-plus"></i>
               New Draft Registration
             </a>
+            % else:
+              Only project administrators can create, edit, or submit new draft registrations.
             % endif
           </div>    
           <br />
@@ -155,7 +159,7 @@
             </span>
             <h4> Description: </h4> 
             <blockquote>
-              <p data-bind="html: schema.description"></p>
+              <p data-bind="text: schema.description"></p>
             </blockquote>
           </div>
         </div>

@@ -7,6 +7,7 @@ import sys
 import logging
 
 from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 from framework.mongo.utils import from_mongo
 
@@ -56,8 +57,8 @@ def main(dry_run):
                     Q('name', 'eq', ' '.join(name.split('_'))) &
                     Q('schema_version', 'eq', 2)
                 )
-            except Exception:
-                logger.info('No MetaSchema matching name: {0}, version: {1} found'.format(name, 2))
+            except NoResultsFound:
+                logger.error('No MetaSchema matching name: {0}, version: {1} found'.format(name, 2))
                 # Skip over missing schemas
                 continue
             node.registered_schema = meta_schema

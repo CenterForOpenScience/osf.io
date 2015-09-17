@@ -274,7 +274,7 @@ ko.bindingHandlers.listing = {
             index++;
             return ret;
         }).join('');
-        $(element).html(list);
+        $(element).text(list);
     }
 };
 
