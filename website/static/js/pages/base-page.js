@@ -129,4 +129,16 @@ $(function() {
             }
         );
     }
+
+    // TODO: Remove after migration
+    (function () {
+        var $maintenanceAlert = $('#maintenanceAlert');
+        var dismissed = $.cookie('maintenanceAlert') === '0';
+        if (!dismissed) {
+            $maintenanceAlert.show();
+        }
+        $maintenanceAlert.on('click', '.close', function() {
+            $.cookie('maintenanceAlert', '0', {expires: 1, path: '/'});
+        });
+    }());
 });
