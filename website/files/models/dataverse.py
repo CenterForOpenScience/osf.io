@@ -17,8 +17,11 @@ class DataverseFolder(DataverseFileNode, Folder):
 class DataverseFile(DataverseFileNode, File):
     version_identifier = 'version'
 
-    def update(self, revision, data):
-        """Note: Dataverse only has psuedo versions, don't save them"""
+    def update(self, revision, data, user=None):
+        """Note: Dataverse only has psuedo versions, don't save them
+        Dataverse requires a user for the weird check below
+        and Django dies when _get_current_user is called
+        """
         self.name = data['name']
         self.materialized_path = data['materialized']
         self.save()
@@ -26,7 +29,7 @@ class DataverseFile(DataverseFileNode, File):
         version = FileVersion(identifier=revision)
         version.update_metadata(data, save=False)
 
-        user = _get_current_user()
+        user = user or _get_current_user()
         if not user or not self.node.can_edit(user=user):
             try:
                 # Users without edit permission can only see published files
