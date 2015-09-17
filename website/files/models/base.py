@@ -371,7 +371,11 @@ class FileNode(object):
 
         return self
 
-    def update(self, revision, data, save=True):
+    def update(self, revision, data, save=True, user=None):
+        """Note: User is a kwargs here because of special requirements of
+        dataverse and django
+        See dataversefile.update
+        """
         self.name = data['name']
         self.materialized_path = data['materialized']
         self.last_touched = datetime.datetime.utcnow()
@@ -505,7 +509,7 @@ class File(FileNode):
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
-    def update(self, revision, data):
+    def update(self, revision, data, user=None):
         """Using revision and data update all data pretaining to self
         :param str or None revision: The revision that data points to
         :param dict data: Metadata recieved from waterbutler

@@ -4,11 +4,13 @@ from rest_framework import permissions as drf_permissions
 from website.files.models import File
 from website.files.models import FileNode
 from website.files.models import FileVersion
-from api.base.utils import get_object_or_error
+
 from api.base.filters import ODMFilterMixin
-from api.files.serializers import FileSerializer
+from api.base.utils import get_object_or_error
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.permissions import ContributorOrPublic
+from api.files.permissions import ReadOnlyIfRegistration
+from api.files.serializers import FileSerializer
 from api.files.serializers import FileVersionSerializer
 
 
@@ -62,6 +64,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         CheckedOutOrAdmin,
+        ReadOnlyIfRegistration,
     )
 
     # overrides RetrieveAPIView

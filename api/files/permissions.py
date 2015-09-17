@@ -26,3 +26,13 @@ class CheckedOutOrAdmin(permissions.BasePermission):
         return obj.checkout is None \
             or obj.checkout == auth.user \
             or obj.node.has_permission(auth.user, 'admin')
+
+
+class ReadOnlyIfRegistration(permissions.BasePermission):
+    """Makes PUT and POST forbidden for registrations."""
+
+    def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, FileNode), 'obj must be a FileNode, got {}'.format(obj)
+        if obj.node.is_registration:
+            return request.method in permissions.SAFE_METHODS
+        return True

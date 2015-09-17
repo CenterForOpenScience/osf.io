@@ -18,7 +18,7 @@ class FigshareFile(FigshareFileNode, File):
     def touch(self, bearer, revision=None, **kwargs):
         return super(FigshareFile, self).touch(bearer, revision=None, **kwargs)
 
-    def update(self, revision, data):
+    def update(self, revision, data, user=None):
         """Figshare does not support versioning.
         Always pass revision as None to avoid conflict.
         """

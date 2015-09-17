@@ -140,11 +140,14 @@ def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
         url.args['cookie'] = user.get_or_create_cookie()
     elif website_settings.COOKIE_NAME in request.cookies:
         url.args['cookie'] = request.cookies[website_settings.COOKIE_NAME]
-    elif 'Authorization' in request.headers:
-        url.args['token'] = request.headers['Authorization'].replace('Bearer ', '')
 
-    if 'view_only' in request.args:
-        url.args['view_only'] = request.args['view_only']
+    view_only = False
+    if 'view_only' in kwargs:
+        view_only = kwargs.get('view_only')
+    else:
+        view_only = request.args.get('view_only')
+
+    url.args['view_only'] = view_only
 
     url.args.update(kwargs)
     return url.url
