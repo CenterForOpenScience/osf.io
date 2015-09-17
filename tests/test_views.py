@@ -4164,7 +4164,7 @@ class TestDashboardViews(OsfTestCase):
 
     def test_registered_components_with_are_accessible_from_dashboard(self):
         project = ProjectFactory(creator=self.creator, is_public=False)
-        component = NodeFactory(creator=self.creator, is_parent=project)
+        component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
         project.register_node(
