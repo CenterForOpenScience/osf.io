@@ -10,7 +10,6 @@ from framework import sentry
 from framework.auth import cas
 from framework.routing import Rule
 from framework.flask import redirect
-from framework.sessions import session
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
@@ -73,7 +72,6 @@ def get_globals():
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),
-        'access_token': session.data.get('auth_user_access_token') or '',
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
     }
@@ -922,6 +920,15 @@ def make_url_map(app):
             ],
             'get',
             addon_views.addon_view_or_download_file,
+            OsfWebRenderer('project/view_file.mako', trust=False)
+        ),
+        Rule(
+            [
+                '/project/<pid>/files/deleted/<trashed_id>/',
+                '/project/<pid>/node/<nid>/files/deleted/<trashed_id>/',
+            ],
+            'get',
+            addon_views.addon_deleted_file,
             OsfWebRenderer('project/view_file.mako', trust=False)
         ),
         Rule(

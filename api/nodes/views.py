@@ -1,18 +1,17 @@
 import requests
-
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
-from website.exceptions import NodeStateError
-from website.models import Node, Pointer, User
+
+from api.files.serializers import FileSerializer
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_error, waterbutler_url_for
+from api.base.utils import get_object_or_error
 from api.nodes.serializers import (
     NodeSerializer,
     NodeLinksSerializer,
-    NodeFilesSerializer,
+    NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
     NodeContributorDetailSerializer,
@@ -24,6 +23,12 @@ from api.nodes.permissions import (
     ContributorOrPublicForPointers,
     ContributorDetailPermissions
 )
+
+from website.exceptions import NodeStateError
+from website.files.models import FileNode
+from website.files.models import OsfStorageFileNode
+from website.models import Node, Pointer, User
+from website.util import waterbutler_api_url_for
 
 
 class NodeMixin(object):
@@ -369,7 +374,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     the links as we provide them before you use them, and not to reverse engineer the structure of the links as they
     are at any given time.
     """
-    serializer_class = NodeFilesSerializer
+    serializer_class = FileSerializer
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -393,73 +398,106 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
         return valid_methods
 
-    def get_file_item(self, item, cookie, obj_args):
-        file_item = {
-            'valid_self_link_methods': self.get_valid_self_link_methods()[item['kind']],
-            'provider': item['provider'],
-            'path': item['path'],
-            'name': item['name'],
-            'node_id': self.get_node()._primary_key,
-            'cookie': cookie,
-            'args': obj_args,
-            'waterbutler_type': 'file',
-            'item_type': item['kind'],
-        }
-        if file_item['item_type'] == 'folder':
-            file_item['metadata'] = {}
-        else:
-            file_item['metadata'] = {
-                'content_type': item['contentType'],
-                'modified': item['modified'],
-                'size': item['size'],
-                'extra': item['extra'],
-            }
-        return file_item
+    def get_file_item(self, item):
+        file_node = FileNode.resolve_class(
+            item['provider'],
+            FileNode.FOLDER if item['kind'] == 'folder'
+            else FileNode.FILE
+        ).get_or_create(self.get_node(), item['path'])
+
+        file_node.update(None, item, user=self.request.user)
+
+        return file_node
 
     def get_queryset(self):
-        query_params = self.request.query_params
+        # Dont bother going to waterbutler for osfstorage
+        if self.kwargs['provider'] == 'osfstorage':
+            self.check_object_permissions(self.request, self.get_node())
+            # Kinda like /me for a user
+            # The one odd case where path is not really path
+            if self.kwargs['path'] == '/':
+                return list(self.get_node().get_addon('osfstorage').get_root().children)
 
-        addons = self.get_node().get_addons()
+            fobj = OsfStorageFileNode.find_one(
+                Q('node', 'eq', self.get_node()._id) &
+                Q('path', 'eq', self.kwargs['path'])
+            )
+
+            if fobj.is_file:
+                return [fobj]
+
+            return list(fobj.children)
+
+        url = waterbutler_api_url_for(
+            self.get_node()._id,
+            self.kwargs['provider'],
+            self.kwargs['path'],
+            meta=True
+        )
+
+        waterbutler_request = requests.get(
+            url,
+            cookies=self.request.COOKIES,
+            headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
+        )
+        if waterbutler_request.status_code == 401:
+            raise PermissionDenied
+        try:
+            files_list = waterbutler_request.json()['data']
+        except KeyError:
+            raise ValidationError(detail='detail: Could not retrieve files information.')
+
+        if isinstance(files_list, dict):
+            files_list = [files_list]
+
+        return [self.get_file_item(file) for file in files_list]
+
+
+class NodeProvider(object):
+
+    def __init__(self, provider, node, valid_methods):
+        self.path = '/'
+        self.node = node
+        self.kind = 'folder'
+        self.name = provider
+        self.provider = provider
+        self.valid_self_link_methods = valid_methods
+        self.node_id = node._id
+        self.pk = node._id
+
+
+class NodeProvidersList(generics.ListAPIView, NodeMixin):
+    serializer_class = NodeProviderSerializer
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublic,
+    )
+
+    def get_valid_self_link_methods(self, root_folder=False):
+        valid_methods = {'file': ['GET'], 'folder': [], }
         user = self.request.user
-        cookie = None if self.request.user.is_anonymous() else user.get_or_create_cookie()
-        node_id = self.get_node()._id
-        obj_args = self.request.parser_context['args']
+        if user is None or user.is_anonymous():
+            return valid_methods
 
-        provider = query_params.get('provider')
-        path = query_params.get('path', '/')
-        files = []
+        permissions = self.get_node().get_permissions(user)
+        if 'write' in permissions:
+            valid_methods['file'].append('POST')
+            valid_methods['file'].append('DELETE')
+            valid_methods['folder'].append('POST')
+            if not root_folder:
+                valid_methods['folder'].append('DELETE')
 
-        if provider is None:
-            valid_self_link_methods = self.get_valid_self_link_methods(True)
-            for addon in addons:
-                if addon.config.has_hgrid_files:
-                    files.append({
-                        'valid_self_link_methods': valid_self_link_methods['folder'],
-                        'provider': addon.config.short_name,
-                        'name': addon.config.short_name,
-                        'path': path,
-                        'node_id': node_id,
-                        'cookie': cookie,
-                        'args': obj_args,
-                        'waterbutler_type': 'file',
-                        'item_type': 'folder',
-                        'metadata': {},
-                    })
-        else:
-            url = waterbutler_url_for('data', provider, path, self.kwargs['node_id'], cookie, obj_args)
-            waterbutler_request = requests.get(url)
-            if waterbutler_request.status_code == 401:
-                raise PermissionDenied
-            try:
-                waterbutler_data = waterbutler_request.json()['data']
-            except KeyError:
-                raise ValidationError('Could not retrieve files information.')
+        return valid_methods
 
-            if isinstance(waterbutler_data, list):
-                for item in waterbutler_data:
-                    file = self.get_file_item(item, cookie, obj_args)
-                    files.append(file)
-            else:
-                files.append(self.get_file_item(waterbutler_data, cookie, obj_args))
+    def get_provider_item(self, provider):
+        return NodeProvider(provider, self.get_node(), self.get_valid_self_link_methods()['folder'])
 
-        return files
+    def get_queryset(self):
+        return [
+            self.get_provider_item(addon.config.short_name)
+            for addon
+            in self.get_node().get_addons()
+            if addon.config.has_hgrid_files
+            and addon.complete
+        ]
