@@ -8,7 +8,9 @@ var assert = require('chai').assert;
 var utils = require('tests/utils');
 var faker = require('faker');
 
-var s3NodeConfigVM = require('../s3NodeConfig')._S3NodeConfigViewModel;
+var s3NodeConfig = require('../s3NodeConfig');
+var s3NodeConfigVM = s3NodeConfig._S3NodeConfigViewModel;
+var isValidBucketName = s3NodeConfig._isValidBucketName;
 
 var API_BASE = '/api/v1/12345/s3';
 var SETTINGS_URL = [API_BASE, 'settings', ''].join('/');
@@ -77,6 +79,19 @@ var s3ViewModelSettings = {
 };
 
 describe('s3NodeConfigViewModel', () => {
+    describe('isValidBucketName', () => {
+        assert.isTrue(isValidBucketName('valid'));
+        assert.isFalse(isValidBucketName('not.valid', false));
+        assert.isFalse(isValidBucketName('no'));
+        assert.isFalse(isValidBucketName(''));
+        var chars = [];
+        for (var i = 0, len = 64; i < len; i++) {
+            chars.push('a');
+        }
+        var tooLong = chars.join('');
+        assert.isFalse(isValidBucketName(tooLong));
+    });
+
     describe('ViewModel', () => {
         it('imports default settings if not given during instantiation', (done) => {
             // Default settings defined in s3NodeConfig.js
@@ -313,7 +328,7 @@ describe('s3NodeConfigViewModel', () => {
         postEndpoint.method = 'POST';
         postEndpoint.response = postEndpoint.response.result;
         // Bucket names cannot include periods
-        var bucket = faker.internet.domainWord().replace('.', '');
+        var bucket = 'validbucket';
         postEndpoint.response.bucket = bucket;
         postEndpoint.response.has_bucket = true;
         var endpoints = [
@@ -335,7 +350,7 @@ describe('s3NodeConfigViewModel', () => {
                     vm.selectedBucket(bucket);
                     var promise = vm.selectBucket();
                     promise.always(function() {
-                        assert.equal(vm.currentBucket(), bucket);
+                        assert.equal(vm.currentBucket(), bucket, 'currentBucket not equal to ' + bucket);
                         done();
                     });
                 });

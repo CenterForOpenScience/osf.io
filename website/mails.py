@@ -130,7 +130,7 @@ INVITE = Mail('invite', subject='You have been added as a contributor to an OSF 
 CONTRIBUTOR_ADDED = Mail('contributor_added', subject='You have been added as a contributor to an OSF project.')
 
 FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
-FORWARD_INVITE_REGiSTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
+FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
 PENDING_VERIFICATION = Mail('pending_invite', subject="Your account is almost ready!")
@@ -152,7 +152,7 @@ CONFERENCE_FAILED = Mail(
     subject='Open Science Framework Error: No files attached',
 )
 
-DIGEST = Mail('digest', subject='OSF Email Digest')
+DIGEST = Mail('digest', subject='OSF Notifications')
 TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
 
 # Retraction related Mail objects

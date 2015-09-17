@@ -2,15 +2,28 @@ import requests
 
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
-from website.models import Node, Pointer
-from api.users.serializers import ContributorSerializer
+from website.exceptions import NodeStateError
+from website.models import Node, Pointer, User
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, waterbutler_url_for
-from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
-from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from api.nodes.serializers import (
+    NodeSerializer,
+    NodeLinksSerializer,
+    NodeFilesSerializer,
+    NodeContributorsSerializer,
+    NodeRegistrationSerializer,
+    NodeContributorDetailSerializer,
+)
+from api.nodes.permissions import (
+    AdminOrPublic,
+    ContributorOrPublic,
+    ReadOnlyIfRegistration,
+    ContributorOrPublicForPointers,
+    ContributorDetailPermissions
+)
 
 
 class NodeMixin(object):
@@ -22,10 +35,18 @@ class NodeMixin(object):
     node_lookup_url_kwarg = 'node_id'
 
     def get_node(self):
-        obj = get_object_or_error(Node, self.kwargs[self.node_lookup_url_kwarg], 'node')
+        node = get_object_or_error(
+            Node,
+            self.kwargs[self.node_lookup_url_kwarg],
+            display_name='node'
+        )
+        # Nodes that are folders/collections are treated as a separate resource, so if the client
+        # requests a collection through a node endpoint, we return a 404
+        if node.is_folder:
+            raise NotFound
         # May raise a permission denied
-        self.check_object_permissions(self.request, obj)
-        return obj
+        self.check_object_permissions(self.request, node)
+        return node
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
@@ -67,12 +88,9 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        """
-        Create a node.
-        """
-        """
+        """Create a node.
+
         :param serializer:
-        :return:
         """
         # On creation, make sure that current user is the creator
         user = self.request.user
@@ -109,11 +127,14 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         user = self.request.user
         auth = Auth(user)
         node = self.get_object()
-        node.remove_node(auth=auth)
+        try:
+            node.remove_node(auth=auth)
+        except NodeStateError as err:
+            raise ValidationError(err.message)
         node.save()
 
 
-class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -123,11 +144,12 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     """
 
     permission_classes = (
+        AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        ReadOnlyIfRegistration,
     )
 
-    serializer_class = ContributorSerializer
+    serializer_class = NodeContributorsSerializer
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -135,6 +157,8 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         contributors = []
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in visible_contributors
+            contributor.permission = node.get_permissions(contributor)[-1]
+            contributor.node_id = node._id
             contributors.append(contributor)
         return contributors
 
@@ -143,19 +167,60 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         return self.get_queryset_from_request()
 
 
+# TODO: Support creating registrations
+class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+    """Detail of a contributor for a node.
+
+    View, remove from, and change bibliographic and permissions for a given contributor on a given node.
+    """
+
+    permission_classes = (
+        ContributorDetailPermissions,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+    )
+
+    serializer_class = NodeContributorDetailSerializer
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        user = get_object_or_error(User, self.kwargs['user_id'], display_name='user')
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        if user not in node.contributors:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+        user.permission = node.get_permissions(user)[-1]
+        user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
+        return user
+
+    # overrides DestroyAPIView
+    def perform_destroy(self, instance):
+        node = self.get_node()
+        current_user = self.request.user
+        auth = Auth(current_user)
+        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+            raise ValidationError("Must have at least one visible contributor")
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError("Must have at least one registered admin contributor")
+
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
-     created for the current node."""
+    created for the current node.
+     """
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
     )
 
-    serializer_class = NodeSerializer
+    serializer_class = NodeRegistrationSerializer
 
     # overrides ListAPIView
+    # TODO: Filter out retractions by default
     def get_queryset(self):
         nodes = self.get_node().node__registrations
         user = self.request.user
@@ -167,7 +232,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
+class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -178,19 +243,34 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
     )
 
     serializer_class = NodeSerializer
 
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        return (
+            Q('is_deleted', 'ne', True) &
+            Q('is_folder', 'ne', True)
+        )
+
     # overrides ListAPIView
     def get_queryset(self):
-        nodes = self.get_node().nodes
+        node = self.get_node()
+        req_query = self.get_query_from_request()
+
+        query = (
+            Q('_id', 'in', [e._id for e in node.nodes if e.primary]) &
+            req_query
+        )
+        nodes = Node.find(query)
         user = self.request.user
         if user.is_anonymous():
             auth = Auth(None)
         else:
             auth = Auth(user)
-        children = [node for node in nodes if node.can_view(auth) and node.primary and not node.is_deleted]
+        children = [each for each in nodes if each.can_view(auth)]
         return children
 
     # overrides ListCreateAPIView
@@ -199,27 +279,36 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
         serializer.save(creator=user, parent=self.get_node())
 
 
+# TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
+# currently query on a Pointer's node's attributes.
+# e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
 class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
     """Node Links to other nodes.
 
-    Node Links are essentially aliases or symlinks: All they do is point to another node.
+    Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
+    Node Links are a direct reference to the node that they point to.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        ReadOnlyIfRegistration,
     )
 
     serializer_class = NodeLinksSerializer
 
     def get_queryset(self):
-        pointers = self.get_node().nodes_pointer
-        return pointers
+        return [
+            pointer for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted
+        ]
 
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
-    """Detail of a Node Link to another node.
+    """Node Link details.
 
-    Node Links are essentially aliases or symlinks: All they do is point to another node.
+    Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
+    Node Links are a direct reference to the node that they point to.
     """
     permission_classes = (
         ContributorOrPublicForPointers,
@@ -230,11 +319,15 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        pointer_lookup_url_kwarg = 'node_link_id'
-        pointer = get_object_or_error(Pointer, self.kwargs[pointer_lookup_url_kwarg], 'node link')
+        node_link_lookup_url_kwarg = 'node_link_id'
+        node_link = get_object_or_error(
+            Pointer,
+            self.kwargs[node_link_lookup_url_kwarg],
+            'node link'
+        )
         # May raise a permission denied
-        self.check_object_permissions(self.request, pointer)
-        return pointer
+        self.check_object_permissions(self.request, node_link)
+        return node_link
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
@@ -242,7 +335,10 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         auth = Auth(user)
         node = self.get_node()
         pointer = self.get_object()
-        node.rm_pointer(pointer, auth)
+        try:
+            node.rm_pointer(pointer, auth=auth)
+        except ValueError as err:  # pointer doesn't belong to node
+            raise ValidationError(err.message)
         node.save()
 
 
@@ -278,6 +374,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        ReadOnlyIfRegistration,
     )
 
     def get_valid_self_link_methods(self, root_folder=False):
@@ -356,7 +453,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             try:
                 waterbutler_data = waterbutler_request.json()['data']
             except KeyError:
-                raise ValidationError(detail='detail: Could not retrieve files information.')
+                raise ValidationError('Could not retrieve files information.')
 
             if isinstance(waterbutler_data, list):
                 for item in waterbutler_data:

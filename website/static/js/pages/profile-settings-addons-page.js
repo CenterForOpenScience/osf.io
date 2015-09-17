@@ -4,6 +4,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
+require('js/osfToggleHeight');
 
 var $osf = require('js/osfHelpers');
 var AddonPermissionsTable = require('js/addonPermissions');

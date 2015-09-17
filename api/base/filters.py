@@ -1,9 +1,12 @@
 import re
 import functools
+import operator
 
 from modularodm import Q
 from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
+
+from api.base.exceptions import InvalidFilterError
 
 
 class ODMOrderingFilter(OrderingFilter):
@@ -25,11 +28,6 @@ def query_params_to_fields(query_params):
         for key, value in query_params.items()
         if query_pattern.match(key)
     }
-
-
-# Used to make intersection "reduce-able"
-def intersect(x, y):
-    return x & y
 
 
 class FilterMixin(object):
@@ -86,7 +84,7 @@ class ODMFilterMixin(FilterMixin):
 
     field_comparison_operators = {
         ser.CharField: 'icontains',
-        ser.ListField: 'in',
+        ser.ListField: 'contains',
     }
 
     def __init__(self, *args, **kwargs):
@@ -102,6 +100,11 @@ class ODMFilterMixin(FilterMixin):
             return self.DEFAULT_OPERATOR
 
     def get_default_odm_query(self):
+        """Return the default MODM query for the result set.
+
+        NOTE: If the client provides additional filters in query params, the filters
+        will intersected with this query.
+        """
         raise NotImplementedError('Must define get_default_odm_query')
 
     def get_query_from_request(self):
@@ -120,13 +123,15 @@ class ODMFilterMixin(FilterMixin):
 
         fields_dict = query_params_to_fields(query_params)
         if fields_dict:
-            query_parts = [
-                Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value, field=key))
-                for key, value in fields_dict.items() if self.is_filterable_field(key=key)
-            ]
-            # TODO Ensure that if you try to filter on an invalid field, it returns a useful error. Fix related test.
+            query_parts = []
+            for key, value in fields_dict.items():
+                if self.is_filterable_field(key=key):
+                    query = Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value, field=key))
+                    query_parts.append(query)
+                else:
+                    raise InvalidFilterError
             try:
-                query = functools.reduce(intersect, query_parts)
+                query = functools.reduce(operator.and_, query_parts)
             except TypeError:
                 query = None
         else:
@@ -168,6 +173,8 @@ class ListFilterMixin(FilterMixin):
             for field_name, value in fields_dict.items():
                 if self.is_filterable_field(key=field_name):
                     queryset = queryset.intersection(set(self.get_filtered_queryset(field_name, value, default_queryset)))
+                else:
+                    raise InvalidFilterError
         return list(queryset)
 
     def get_filtered_queryset(self, field_name, value, default_queryset):

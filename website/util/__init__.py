@@ -9,6 +9,7 @@ import furl
 from flask import request, url_for
 
 from website import settings as website_settings
+from api.base import settings as api_settings
 
 # Keep me: Makes rubeus importable from website.util
 from . import rubeus  # noqa
@@ -69,7 +70,7 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
 def api_v2_url(path_str,
                params=None,
                base_route=website_settings.API_DOMAIN,
-               base_prefix='',
+               base_prefix=api_settings.API_BASE,
                **kwargs):
     """
     Convenience function for APIv2 usage: Concatenates parts of the absolute API url based on arguments provided

@@ -24,7 +24,7 @@ function Submissions(data) {
                 {
                      title: 'Author',
                      width : '15%',
-                     sortType : 'number',
+                     sortType : 'text',
                      sort : true
                 },
                 {
@@ -36,7 +36,7 @@ function Submissions(data) {
                 {
                     title: 'Downloads',
                     width: '15%',
-                    sortType: 'date',
+                    sortType: 'number',
                     sort: true
                 },
                 {

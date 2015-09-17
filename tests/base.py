@@ -8,10 +8,12 @@ import unittest
 import functools
 import datetime as dt
 from flask import g
+from json import dumps
 
 import blinker
 import httpretty
 from webtest_plus import TestApp
+from webtest.utils import NoDefault
 
 import mock
 from faker import Factory
@@ -177,7 +179,43 @@ class ApiAppTestCase(unittest.TestCase):
 
     def setUp(self):
         super(ApiAppTestCase, self).setUp()
-        self.app = TestApp(django_app)
+        self.app = TestAppJSONAPI(django_app)
+
+
+class TestAppJSONAPI(TestApp):
+    """
+    Extends TestApp to add json_api_methods(post, put, patch, and delete)
+    which put content_type 'application/vnd.api+json' in header. Adheres to
+    JSON API spec.
+    """
+
+    def __init__(self, app, *args, **kwargs):
+        super(TestAppJSONAPI, self).__init__(app, *args, **kwargs)
+        self.auth = None
+        self.auth_type = 'basic'
+
+    def json_api_method(method):
+
+        def wrapper(self, url, params=NoDefault, **kw):
+            content_type = 'application/vnd.api+json'
+            if params is not NoDefault:
+                params = dumps(params, cls=self.JSONEncoder)
+            kw.update(
+                params=params,
+                content_type=content_type,
+                upload_files=None,
+            )
+            return self._gen_request(method, url, **kw)
+
+        subst = dict(lmethod=method.lower(), method=method)
+        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
+
+        return wrapper
+
+    post_json_api = json_api_method('POST')
+    put_json_api = json_api_method('PUT')
+    patch_json_api = json_api_method('PATCH')
+    delete_json_api = json_api_method('DELETE')
 
 
 class UploadTestCase(unittest.TestCase):

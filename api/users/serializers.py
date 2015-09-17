@@ -2,6 +2,10 @@ from rest_framework import serializers as ser
 from api.base.serializers import JSONAPISerializer, LinksField, Link, CharFieldWithReadDefault, URLFieldWithReadDefault
 from website.models import User
 
+from api.base.serializers import (
+    JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
+)
+
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -11,15 +15,19 @@ class UserSerializer(JSONAPISerializer):
         'family_name',
         'id'
     ])
-    id = ser.CharField(read_only=True, source='_id')
-    fullname = ser.CharField(required=True, help_text='Display name used in the general user interface')
+    id = ser.CharField(read_only=True, source='_id', label='ID')
+    fullname = ser.CharField(required=True, label='Full name', help_text='Display name used in the general user interface')
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-    gravatar_url = ser.URLField(required=False, read_only=True,
-                                help_text='URL for the icon used to identify the user. Relies on http://gravatar.com ')
+
+    profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
+
+    def get_profile_image_url(self, user):
+        size = self.context['request'].query_params.get('profile_image_size')
+        return user.profile_image_url(size=size)
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
     gitHub = CharFieldWithReadDefault(required=False, source='social.github',
@@ -39,12 +47,9 @@ class UserSerializer(JSONAPISerializer):
     researcherId = CharFieldWithReadDefault(required=False, source='social.researcherId',
                                             allow_blank=True, help_text='ResearcherId Account')
 
-    links = LinksField({
-        'html': 'absolute_url',
-        'nodes': {
-            'relation': Link('users:user-nodes', kwargs={'user_id': '<pk>'})
-        }
-    })
+    links = LinksField({'html': 'absolute_url'})
+    nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
+                                             link_type='related')
 
     class Meta:
         type_ = 'users'
@@ -65,11 +70,3 @@ class UserSerializer(JSONAPISerializer):
                 setattr(instance, attr, value)
         instance.save()
         return instance
-
-
-class ContributorSerializer(UserSerializer):
-
-    local_filterable = frozenset(['bibliographic'])
-    filterable_fields = frozenset.union(UserSerializer.filterable_fields, local_filterable)
-
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not')
