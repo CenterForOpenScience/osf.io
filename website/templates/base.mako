@@ -143,12 +143,6 @@
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
-            % if access_token:
-                accessToken: ${ access_token | sjson, n },
-                userId: ${user_id | sjson, n},
-                reauthUrl: ${reauth_url | sjson, n},
-                profileUrl: ${profile_url | sjson, n},
-            % endif
                 cookieName: ${ cookie_name | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n }
             });
@@ -225,9 +219,20 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
+            ## TODO: Remove after migration
+            <div id="maintenanceAlert" style="display:none" class="m-t-md">
+                <div class='alert alert-block alert-info fade in'>
+                  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                  The Open Science Framework will be offline for scheduled maintenance and upgrades today starting at 5:00pm PT / 8:00pm ET / 12:00am GMT.  Maintenance is scheduled to be completed within 30 minutes. Our apologies for any inconvenience.
+                </div>
+            </div>
+
             % if status and not node:
                 <%include file="alert.mako"/>
             % endif
+
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->
