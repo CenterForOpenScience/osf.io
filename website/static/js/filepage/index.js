@@ -219,7 +219,7 @@ var FileViewPage = {
                 m('#sharebutton.btn.btn-sm.btn-primary.file-share', {onclick: function () {
                     var link = $('iframe').attr('src');
                     var height = $('iframe').attr('height');
-                    link = link.substring(0, link.indexOf('download') + 8);
+                    link = link.substring(0, link.indexOf('download') + 8) + '%26mode=render';
                     var url = link.substring(0, link.indexOf('render'));
                     m.render(document.getElementById('popOver'), [
                         m('ul.nav.nav-tabs.nav-justified', [
@@ -234,6 +234,7 @@ var FileViewPage = {
                             m('.tab-pane.fade#embed', [
                                 m('p', 'Dynamically Render iFrame with JavaScript'),
                                 m('textarea.form-control[readonly][type="text"][value="' +
+                                    '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
                                     '<link href="' + url + 'static/css/mfr.css" media="all" rel="stylesheet">' +
                                     '<div id="mfrIframe" class="mfr mfr-file">\</div>' +
                                     '<script src="' + url + 'static/js/mfr.js">' +
