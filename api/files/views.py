@@ -1,12 +1,15 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
+from framework.auth.oauth_scopes import CoreScopes
+
 from website.files.models import File
 from website.files.models import FileNode
 from website.files.models import FileVersion
 
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
+from api.base import permissions as base_permissions
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.permissions import ContributorOrPublic
 from api.files.permissions import ReadOnlyIfRegistration
@@ -41,7 +44,12 @@ class FileList(generics.ListAPIView, ODMFilterMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
     serializer_class = FileSerializer
     ordering = ('-last_touched', )
 
@@ -59,13 +67,18 @@ class FileList(generics.ListAPIView, ODMFilterMixin):
 class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     """Details about a specific file.
     """
-    serializer_class = FileSerializer
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         CheckedOutOrAdmin,
         ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    serializer_class = FileSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -73,26 +86,37 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
 
 class FileVersionsList(generics.ListAPIView, FileMixin):
-    """Details about a specific file.
+    """List of versions for the file requested.
     """
-    serializer_class = FileVersionSerializer
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    serializer_class = FileVersionSerializer
 
     def get_queryset(self):
         return self.get_file().versions
 
 
 class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
-
-    serializer_class = FileVersionSerializer
+    """Details about a specific file version.
+    """
     version_lookup_url_kwarg = 'version_id'
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    serializer_class = FileVersionSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):
