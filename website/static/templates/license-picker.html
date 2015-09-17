@@ -1,12 +1,12 @@
 <span data-bind="ifnot: hideLicensePicker">
 <span id="license">License:</span>
-<span class="text-muted" data-bind="text: savedLicenseName,
+<span class="text-muted editable" data-bind="text: savedLicenseName,
                                     style: {
                                       cursor: allowEdit()? 'pointer' : 'auto'
                                     },
                                     click: togglePreview.bind($data, true)"></span>
 <span data-bind="ifnot: allowEdit">
-  <i class="fa fa-info-circle" data-bind="click: togglePreview.bind($data, false)"></i>
+  <span style="cursor: pointer" class="fa fa-info-circle" data-bind="click: togglePreview.bind($data, false)"></span>
 </span>
 <p data-bind="if: notification">
     <span data-bind="text: notification, css: {'text-danger': error, 'text-success': success}"></span>
