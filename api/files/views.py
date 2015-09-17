@@ -1,15 +1,14 @@
 from rest_framework import generics
 from rest_framework import permissions as drf_permissions
 
-from website.files.models import File
 from website.files.models import FileNode
 from website.files.models import FileVersion
 
-from api.base.filters import ODMFilterMixin
+from api.base.permissions import PermissionWithGetter
 from api.base.utils import get_object_or_error
+from api.nodes.permissions import ContributorOrPublic
+from api.nodes.permissions import ReadOnlyIfRegistration
 from api.files.permissions import CheckedOutOrAdmin
-from api.files.permissions import ContributorOrPublic
-from api.files.permissions import ReadOnlyIfRegistration
 from api.files.serializers import FileSerializer
 from api.files.serializers import FileVersionSerializer
 
@@ -23,37 +22,12 @@ class FileMixin(object):
     file_lookup_url_kwarg = 'file_id'
 
     def get_file(self, check_permissions=True):
-        key = self.kwargs[self.file_lookup_url_kwarg]
-
-        obj = get_object_or_error(FileNode, key)
+        obj = get_object_or_error(FileNode, self.kwargs[self.file_lookup_url_kwarg])
 
         if check_permissions:
             # May raise a permission denied
             self.check_object_permissions(self.request, obj)
-        return obj
-
-
-class FileList(generics.ListAPIView, ODMFilterMixin):
-    """Files that the OSF has metadata about
-
-    You can filter on users by their id, name, path, provider
-    """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-    )
-    serializer_class = FileSerializer
-    ordering = ('-last_touched', )
-
-    # overrides ODMFilterMixin
-    def get_default_odm_query(self):
-        return File._filter()
-
-    # overrides ListAPIView
-    def get_queryset(self):
-        # TODO: sort
-        query = self.get_query_from_request()
-        return FileNode.find(query)
+        return obj.wrapped()
 
 
 class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
@@ -62,10 +36,13 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     serializer_class = FileSerializer
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
         CheckedOutOrAdmin,
-        ReadOnlyIfRegistration,
+        PermissionWithGetter(ContributorOrPublic, 'node'),
+        PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
     )
+
+    def get_node(self):
+        return self.get_file().node
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -78,11 +55,15 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
     serializer_class = FileVersionSerializer
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        PermissionWithGetter(ContributorOrPublic, 'node'),
     )
 
     def get_queryset(self):
         return self.get_file().versions
+
+
+def node_from_version(request, view, obj):
+    return view.get_file(check_permissions=False).node
 
 
 class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
@@ -91,12 +72,15 @@ class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
     version_lookup_url_kwarg = 'version_id'
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        PermissionWithGetter(ContributorOrPublic, node_from_version)
     )
 
     # overrides RetrieveAPIView
     def get_object(self):
-        version = get_object_or_error(FileVersion, self.kwargs[self.version_lookup_url_kwarg])
+        file = self.get_file()
+        maybe_verison = file.get_version(self.kwargs[self.version_lookup_url_kwarg])
+
         # May raise a permission denied
-        self.check_object_permissions(self.request, version)
-        return version
+        # Kinda hacky but versions have no reference to node or file
+        self.check_object_permissions(self.request, file)
+        return get_object_or_error(FileVersion, getattr(maybe_verison, '_id', ''))
