@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from nose.tools import *  # flake8: noqa
+import httplib as http
 
 from tests.base import ApiTestCase
 from tests import factories
@@ -25,7 +26,7 @@ class TestApiBaseSerializers(ApiTestCase):
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
             link = relation['links'].values()[0]
-            assert_not_in('count', link.get('meta', {}))
+            assert_not_in('count', link['meta'])
 
     def test_counts_included_in_link_fields_with_related_counts_query_param(self):
 
@@ -35,7 +36,7 @@ class TestApiBaseSerializers(ApiTestCase):
             field = NodeSerializer._declared_fields[key]
             if (field.meta or {}).get('count'):            
                 link = relation['links'].values()[0]
-                assert_in('count', link.get('meta', {}))
+                assert_in('count', link['meta'])
 
     def test_related_counts_excluded_query_param_false(self):
 
@@ -43,5 +44,9 @@ class TestApiBaseSerializers(ApiTestCase):
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
             link = relation['links'].values()[0]
-            assert_not_in('count', link.get('meta', {}))
+            assert_not_in('count', link['meta'])
 
+    def test_invalid_param_raises_bad_request(self):
+
+        res = self.app.get(self.url, params={'related_counts': 'fish'}, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)

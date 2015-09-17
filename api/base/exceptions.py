@@ -42,6 +42,11 @@ class Gone(APIException):
     default_detail = ('The requested resource is no longer available.')
 
 
-class InvalidFilterError(ParseError):
+class InvalidQueryStringValue(ParseError):
+    """Raised when client passes an invalid value to a querystring parameter."""
+    default_detail = 'Querystring contains an invalid value.'
+
+
+class InvalidFilterError(InvalidQueryStringValue):
     """Raised when client passes an invalid filter in the querystring."""
     default_detail = 'Querystring contains an invalid filter.'

@@ -10,6 +10,7 @@ from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
 from api.base import utils
+from api.base.exceptions import InvalidQueryStringValue
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
@@ -85,9 +86,12 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         for key in self.meta or {}:
             if key == 'count':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
-                if utils.is_falsy(show_related_counts):
+                if utils.is_truthy(show_related_counts):
+                    meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+                elif utils.is_falsy(show_related_counts):
                     continue
-            meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+                else:
+                    raise InvalidQueryStringValue(detail="Acceptable values for the related_counts query param are 'true' or 'false'; '{0}' given.".format(show_related_counts))
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
