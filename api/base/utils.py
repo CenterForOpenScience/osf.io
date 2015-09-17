@@ -4,6 +4,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
+from rest_framework.fields import BooleanField
 import furl
 
 from website import util as website_util  # noqa
@@ -11,14 +12,11 @@ from website import settings as website_settings
 from framework.auth import Auth
 from api.base.exceptions import Gone
 
-TRUTHY = set(['true', 'True', 1, '1'])
-FALSY = set(['false', 'False', 0, '0'])
-
 def is_truthy(value):
-    return value in TRUTHY
+    return value in BooleanField.TRUE_VALUES
 
 def is_falsy(value):
-    return value in FALSY
+    return value in BooleanField.FALSE_VALUES
 
 def get_user_auth(request):
     """Given a Django request object, return an ``Auth`` object with the
