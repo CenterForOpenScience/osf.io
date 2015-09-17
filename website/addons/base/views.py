@@ -107,7 +107,8 @@ def check_access(node, auth, action, cas_resp):
             required_scope = oauth_scopes.CoreScopes.NODE_FILE_READ
         else:
             required_scope = oauth_scopes.CoreScopes.NODE_FILE_WRITE
-        if required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
+        if not cas_resp.authenticated \
+           or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
             raise HTTPError(httplib.FORBIDDEN)
 
     if permission == 'read' and node.can_view(auth):

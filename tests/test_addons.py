@@ -2,7 +2,6 @@
 
 import time
 import mock
-import unittest
 from nose.tools import *  # noqa
 
 import webtest
@@ -10,6 +9,7 @@ import furl
 import itsdangerous
 from modularodm import storage
 
+from framework.auth import cas
 from framework.auth import signing
 from framework.auth.core import Auth
 from framework.exceptions import HTTPError
@@ -20,7 +20,7 @@ from website import settings
 from website.files import models
 from website.files.models.base import PROVIDER_MAP
 from website.util import api_url_for, rubeus
-from website.addons.base import exceptions, GuidFile
+from website.addons.base import GuidFile
 from website.project import new_private_link
 from website.project.views.node import _view_project as serialize_node
 from website.addons.base import AddonConfig, AddonNodeSettingsBase, views
@@ -167,6 +167,13 @@ class TestAddonAuth(OsfTestCase):
         test_app = webtest.TestApp(flask_app)
         url = self.build_url()
         res = test_app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    @mock.patch('website.addons.base.views.cas.get_client')
+    def test_auth_bad_bearer_token(self, mock_cas_client):
+        mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=cas.CasResponse(authenticated=False)))
+        url = self.build_url()
+        res = self.test_app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
         assert_equal(res.status_code, 403)
 
 
@@ -337,27 +344,27 @@ class TestCheckAuth(OsfTestCase):
         self.node = ProjectFactory(creator=self.user)
 
     def test_has_permission(self):
-        res = views.check_access(self.node, Auth(user=self.user), 'upload')
+        res = views.check_access(self.node, Auth(user=self.user), 'upload', None)
         assert_true(res)
 
     def test_not_has_permission_read_public(self):
         self.node.is_public = True
         self.node.save()
-        res = views.check_access(self.node, Auth(), 'download')
+        res = views.check_access(self.node, Auth(), 'download', None)
 
     def test_not_has_permission_read_has_link(self):
         link = new_private_link('red-special', self.user, [self.node], anonymous=False)
-        res = views.check_access(self.node, Auth(private_key=link.key), 'download')
+        res = views.check_access(self.node, Auth(private_key=link.key), 'download', None)
 
     def test_not_has_permission_logged_in(self):
         user2 = AuthUserFactory()
         with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.node, Auth(user=user2), 'download')
+            views.check_access(self.node, Auth(user=user2), 'download', None)
         assert_equal(exc_info.exception.code, 403)
 
     def test_not_has_permission_not_logged_in(self):
         with assert_raises(HTTPError) as exc_info:
-            views.check_access(self.node, Auth(), 'download')
+            views.check_access(self.node, Auth(), 'download', None)
         assert_equal(exc_info.exception.code, 401)
 
     def test_has_permission_on_parent_node_copyto_pass_if_registration(self):
@@ -366,7 +373,7 @@ class TestCheckAuth(OsfTestCase):
         component.is_registration = True
 
         assert_false(component.has_permission(self.user, 'write'))
-        res = views.check_access(component, Auth(user=self.user), 'copyto')
+        res = views.check_access(component, Auth(user=self.user), 'copyto', None)
         assert_true(res)
 
     def test_has_permission_on_parent_node_copyto_fail_if_not_registration(self):
@@ -375,15 +382,99 @@ class TestCheckAuth(OsfTestCase):
 
         assert_false(component.has_permission(self.user, 'write'))
         with assert_raises(HTTPError):
-            views.check_access(component, Auth(user=self.user), 'copyto')
+            views.check_access(component, Auth(user=self.user), 'copyto', None)
 
     def test_has_permission_on_parent_node_copyfrom(self):
         component_admin = AuthUserFactory()
-        component = ProjectFactory(creator=component_admin, public=False, parent=self.node)
+        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
 
         assert_false(component.has_permission(self.user, 'write'))
-        res = views.check_access(component, Auth(user=self.user), 'copyfrom')
+        res = views.check_access(component, Auth(user=self.user), 'copyfrom', None)
         assert_true(res)
+
+
+class TestCheckOAuth(OsfTestCase):
+
+    def setUp(self):
+        super(TestCheckOAuth, self).setUp()
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+    def test_has_permission_private_not_authenticated(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
+        cas_resp = cas.CasResponse(authenticated=False)
+
+        assert_false(component.has_permission(self.user, 'write'))
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(component, Auth(user=self.user), 'download', cas_resp)
+        assert_equal(exc_info.exception.code, 403)
+
+    def test_has_permission_private_no_scope_forbidden(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
+        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
+                                   attributes={'accessTokenScope': {}})
+
+        assert_false(component.has_permission(self.user, 'write'))
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(component, Auth(user=self.user), 'download', cas_resp)
+        assert_equal(exc_info.exception.code, 403)
+
+    def test_has_permission_public_irrelevant_scope_allowed(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, is_public=True, parent=self.node)
+        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
+                                   attributes={'accessTokenScope': {'osf.users.all+read'}})
+
+        assert_false(component.has_permission(self.user, 'write'))
+        res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
+        assert_true(res)
+
+    def test_has_permission_private_irrelevant_scope_forbidden(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
+        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
+                                   attributes={'accessTokenScope': {'osf.users.all+read'}})
+
+        assert_false(component.has_permission(self.user, 'write'))
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(component, Auth(user=self.user), 'download', cas_resp)
+        assert_equal(exc_info.exception.code, 403)
+
+    def test_has_permission_decommissioned_scope_no_error(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
+        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
+                                   attributes={'accessTokenScope': {
+                                       'decommissioned.scope+write',
+                                       'osf.nodes.data+read',
+                                   }})
+
+        assert_false(component.has_permission(self.user, 'write'))
+        res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
+        assert_true(res)
+
+    def test_has_permission_write_scope_read_action(self):
+        component_admin = AuthUserFactory()
+        component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
+        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
+                                   attributes={'accessTokenScope': {'osf.nodes.data+write'}})
+
+        assert_false(component.has_permission(self.user, 'write'))
+        res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
+        assert_true(res)
+
+    def test_has_permission_read_scope_write_action_forbidden(self):
+        component = ProjectFactory(creator=self.user, is_public=False, parent=self.node)
+        cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
+                                   attributes={'accessTokenScope': {'osf.nodes.data+read'}})
+
+        assert_true(component.has_permission(self.user, 'write'))
+        with assert_raises(HTTPError) as exc_info:
+            views.check_access(component, Auth(user=self.user), 'upload', cas_resp)
+        assert_equal(exc_info.exception.code, 403)
+
 
 
 class OsfFileTestCase(OsfTestCase):

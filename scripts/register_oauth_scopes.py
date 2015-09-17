@@ -68,7 +68,7 @@ def do_populate():
 
     for name, scope in scope_dict.iteritems():
         # Update a scope if it exists, else populate
-        if scope.public is True:
+        if scope.is_public is True:
             get_or_create(name, scope.description, save=True)
         else:
             logger.info("{} is not a publicly advertised scope; did not load into database".format(name))
