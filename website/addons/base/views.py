@@ -13,6 +13,7 @@ from modularodm.exceptions import NoResultsFound
 from framework import sentry
 from framework.auth import cas
 from framework.auth import Auth
+from framework.auth import oauth_scopes
 from framework.routing import json_renderer
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
@@ -91,13 +92,25 @@ permission_map = {
 }
 
 
-def check_access(node, auth, action):
+def check_access(node, auth, action, cas_resp):
     """Verify that user can perform requested action on resource. Raise appropriate
     error code if action cannot proceed.
     """
     permission = permission_map.get(action, None)
     if permission is None:
         raise HTTPError(httplib.BAD_REQUEST)
+
+    if cas_resp:
+        if permission == 'read':
+            if node.is_public:
+                return True
+            required_scope = oauth_scopes.CoreScopes.NODE_FILE_READ
+        else:
+            required_scope = oauth_scopes.CoreScopes.NODE_FILE_WRITE
+        if not cas_resp.authenticated \
+           or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
+            raise HTTPError(httplib.FORBIDDEN)
+
     if permission == 'read' and node.can_view(auth):
         return True
     if permission == 'write' and node.can_edit(auth):
@@ -152,6 +165,7 @@ restrict_waterbutler = restrict_addrs(*settings.WATERBUTLER_ADDRS)
 @collect_auth
 @restrict_waterbutler
 def get_auth(auth, **kwargs):
+    cas_resp = None
     if not auth.user and not auth.private_key:
         # Central Authentication Server OAuth Bearer Token
         authorization = request.headers.get('Authorization')
@@ -184,7 +198,7 @@ def get_auth(auth, **kwargs):
     if not node:
         raise HTTPError(httplib.NOT_FOUND)
 
-    check_access(node, auth, action)
+    check_access(node, auth, action, cas_resp)
 
     provider_settings = node.get_addon(provider_name)
     if not provider_settings:

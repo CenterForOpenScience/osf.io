@@ -1,13 +1,16 @@
 import requests
+
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
+from framework.auth.oauth_scopes import CoreScopes
 
-from api.files.serializers import FileSerializer
+from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error
+from api.files.serializers import FileSerializer
 from api.nodes.serializers import (
     NodeSerializer,
     NodeLinksSerializer,
@@ -68,8 +71,14 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
     serializer_class = NodeSerializer
+
     ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin
@@ -114,7 +123,11 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = NodeSerializer
 
@@ -125,6 +138,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
+        # TODO: The method it overrides already returns request (plus more stuff). Why does this method exist?
         return {'request': self.request}
 
     # overrides RetrieveUpdateDestroyAPIView
@@ -147,12 +161,15 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     contributors. From a permissions standpoint, both are the same, but bibliographic contributors
     are included in citations, while non-bibliographic contributors are not included in citations.
     """
-
     permission_classes = (
         AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
 
     serializer_class = NodeContributorsSerializer
 
@@ -178,12 +195,15 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     View, remove from, and change bibliographic and permissions for a given contributor on a given node.
     """
-
     permission_classes = (
         ContributorDetailPermissions,
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
 
     serializer_class = NodeContributorDetailSerializer
 
@@ -220,7 +240,11 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = NodeRegistrationSerializer
 
@@ -249,7 +273,11 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
+    required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
 
     serializer_class = NodeSerializer
 
@@ -297,7 +325,11 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeLinksSerializer
 
@@ -318,7 +350,11 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublicForPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeLinksSerializer
 
@@ -374,29 +410,17 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     the links as we provide them before you use them, and not to reverse engineer the structure of the links as they
     are at any given time.
     """
-    serializer_class = FileSerializer
-
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
 
-    def get_valid_self_link_methods(self, root_folder=False):
-        valid_methods = {'file': ['GET'], 'folder': [], }
-        user = self.request.user
-        if user is None or user.is_anonymous():
-            return valid_methods
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-        permissions = self.get_node().get_permissions(user)
-        if 'write' in permissions:
-            valid_methods['file'].append('POST')
-            valid_methods['file'].append('DELETE')
-            valid_methods['folder'].append('POST')
-            if not root_folder:
-                valid_methods['folder'].append('DELETE')
-
-        return valid_methods
+    serializer_class = FileSerializer
 
     def get_file_item(self, item):
         file_node = FileNode.resolve_class(
@@ -410,7 +434,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         return file_node
 
     def get_queryset(self):
-        # Dont bother going to waterbutler for osfstorage
+        # Don't bother going to waterbutler for osfstorage
         if self.kwargs['provider'] == 'osfstorage':
             self.check_object_permissions(self.request, self.get_node())
             # Kinda like /me for a user
@@ -455,43 +479,30 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
 class NodeProvider(object):
 
-    def __init__(self, provider, node, valid_methods):
+    def __init__(self, provider, node):
         self.path = '/'
         self.node = node
         self.kind = 'folder'
         self.name = provider
         self.provider = provider
-        self.valid_self_link_methods = valid_methods
         self.node_id = node._id
         self.pk = node._id
 
 
 class NodeProvidersList(generics.ListAPIView, NodeMixin):
-    serializer_class = NodeProviderSerializer
-
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        base_permissions.TokenHasScope,
     )
 
-    def get_valid_self_link_methods(self, root_folder=False):
-        valid_methods = {'file': ['GET'], 'folder': [], }
-        user = self.request.user
-        if user is None or user.is_anonymous():
-            return valid_methods
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-        permissions = self.get_node().get_permissions(user)
-        if 'write' in permissions:
-            valid_methods['file'].append('POST')
-            valid_methods['file'].append('DELETE')
-            valid_methods['folder'].append('POST')
-            if not root_folder:
-                valid_methods['folder'].append('DELETE')
-
-        return valid_methods
+    serializer_class = NodeProviderSerializer
 
     def get_provider_item(self, provider):
-        return NodeProvider(provider, self.get_node(), self.get_valid_self_link_methods()['folder'])
+        return NodeProvider(provider, self.get_node())
 
     def get_queryset(self):
         return [
