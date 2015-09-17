@@ -11,6 +11,15 @@ from website import settings as website_settings
 from framework.auth import Auth
 from api.base.exceptions import Gone
 
+TRUTHY = set(['true', 'True', 1, '1'])
+FALSY = set(['false', 'False', 0, '0'])
+
+def is_truthy(value):
+    return value in TRUTHY
+
+def is_falsy(value):
+    return value in FALSY
+
 def get_user_auth(request):
     """Given a Django request object, return an ``Auth`` object with the
     authenticated user attached to it.
