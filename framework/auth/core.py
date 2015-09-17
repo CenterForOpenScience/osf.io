@@ -128,7 +128,7 @@ def get_user(email=None, password=None, verification_key=None):
             logger.error(err)
             user = None
         if user and not user.check_password(password):
-            return None
+            return False
         return user
     if verification_key:
         query_list.append(Q('verification_key', 'eq', verification_key))
