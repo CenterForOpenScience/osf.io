@@ -1,6 +1,6 @@
 
 from rest_framework import status
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, ParseError
 
 
 def json_api_exception_handler(exc, context):
@@ -16,21 +16,20 @@ def json_api_exception_handler(exc, context):
 
     if response:
         message = response.data
+
         if isinstance(message, dict):
-            for key, value in message.iteritems():
-                if key in top_level_error_keys:
-                    errors.append({key: value})
+            for error_key, error_description in message.iteritems():
+                if error_key in top_level_error_keys:
+                    errors.append({error_key: error_description})
                 else:
-                    if isinstance(value, list):
-                        for reason in value:
-                            errors.append({'detail': reason, 'meta': {'field': key}})
-                    else:
-                        errors.append({'detail': value, 'meta': {'field': key}})
-        elif isinstance(message, (list, tuple)):
-            for error in message:
-                errors.append({'detail': error})
+                    if isinstance(error_description, basestring):
+                        error_description = [error_description]
+                    errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason}
+                                   for reason in error_description])
         else:
-            errors.append({'detail': message})
+            if isinstance(message, basestring):
+                message = [message]
+            errors.extend([{'detail': error} for error in message])
 
         response.data = {'errors': errors}
 
@@ -41,3 +40,8 @@ def json_api_exception_handler(exc, context):
 class Gone(APIException):
     status_code = status.HTTP_410_GONE
     default_detail = ('The requested resource is no longer available.')
+
+
+class InvalidFilterError(ParseError):
+    """Raised when client passes an invalid filter in the querystring."""
+    default_detail = 'Querystring contains an invalid filter.'

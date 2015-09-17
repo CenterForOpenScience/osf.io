@@ -29,7 +29,7 @@ class TestOAuthValidation(ApiTestCase):
 
     def test_missing_token_fails(self):
         res = self.app.get(self.reachable_url, auth=None, auth_type='jwt', expect_errors=True)
-        assert_equal(res.status_code, 403)
+        assert_equal(res.status_code, 401)
         assert_equal(res.json.get("errors")[0]['detail'],
                      'Authentication credentials were not provided.')
 
@@ -38,14 +38,14 @@ class TestOAuthValidation(ApiTestCase):
         mock_user_info.return_value = cas.CasResponse(authenticated=False, user=None)
 
         res = self.app.get(self.reachable_url, auth='invalid_token', auth_type='jwt', expect_errors=True)
-        assert_equal(res.status_code, 403, msg=res.json)
+        assert_equal(res.status_code, 401, msg=res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_returns_unknown_user_thus_fails(self, mock_user_info):
         mock_user_info.return_value = cas.CasResponse(authenticated=True, user='fail')
 
         res = self.app.get(self.reachable_url, auth='some_valid_token', auth_type='jwt', expect_errors=True)
-        assert_equal(res.status_code, 403, msg=res.json)
+        assert_equal(res.status_code, 401, msg=res.json)
 
     @mock.patch('framework.auth.cas.CasClient.profile')
     def test_valid_token_authenticates_and_has_permissions(self, mock_user_info):

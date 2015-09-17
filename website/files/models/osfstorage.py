@@ -1,0 +1,135 @@
+from __future__ import unicode_literals
+
+import os
+
+from modularodm import Q
+
+from website.files import exceptions
+from website.files.models.base import File, Folder, FileNode, FileVersion
+
+
+__all__ = ('OsfStorageFile', 'OsfStorageFolder', 'OsfStorageFileNode')
+
+
+class OsfStorageFileNode(FileNode):
+    provider = 'osfstorage'
+
+    @classmethod
+    def get(cls, _id, node):
+        return cls.find_one(Q('_id', 'eq', _id) & Q('node', 'eq', node))
+
+    @classmethod
+    def get_or_create(cls, node, path):
+        """Override get or create for osfstorage
+        Path is always the _id of the osfstorage filenode.
+        Use load here as its way faster than find.
+        Just manually assert that node is equal to node.
+        """
+        inst = cls.load(path.strip('/'))
+        # Use _id as odms default comparison mucks up sometimes
+        if inst and inst.node._id == node._id:
+            return inst
+
+        # Dont raise anything a 404 will be raised later
+        return cls.create(node=node, path=path)
+
+    @property
+    def kind(self):
+        return 'file' if self.is_file else 'folder'
+
+    @property
+    def materialized_path(self):
+        """creates the full path to a the given filenode
+        Note: Possibly high complexity/ many database calls
+        USE SPARINGLY
+        """
+        if not self.parent:
+            return '/'
+        # Note: ODM cache can be abused here
+        # for highly nested folders calling
+        # list(self.__class__.find(Q(nodesetting),Q(folder))
+        # may result in a massive increase in performance
+        def lineage():
+            current = self
+            while current:
+                yield current
+                current = current.parent
+
+        path = os.path.join(*reversed([x.name for x in lineage()]))
+        if self.is_file:
+            return '/{}'.format(path)
+        return '/{}/'.format(path)
+
+    @property
+    def path(self):
+        """Path is dynamically computed as storedobject.path is stored
+        as an empty string to make the unique index work properly for osfstorage
+        """
+        return '/' + self._id + ('' if self.is_file else '/')
+
+    def save(self):
+        self.path = ''
+        self.materialized_path = ''
+        super(OsfStorageFileNode, self).save()
+
+
+class OsfStorageFile(OsfStorageFileNode, File):
+
+    def touch(self, bearer, version=-1, revision=None, **kwargs):
+        try:
+            return self.get_version(int(revision or version))
+        except ValueError:
+            return None
+
+    @property
+    def history(self):
+        return [v.metadata for v in self.versions]
+
+    def serialize(self, include_full=None, version=-1):
+        ret = super(OsfStorageFile, self).serialize()
+        if include_full:
+            ret['fullPath'] = self.materialized_path
+
+        version = self.get_version(version)
+        return dict(
+            ret,
+            version=len(self.versions),
+            md5=version.metadata.get('md5') if version else None,
+            sha256=version.metadata.get('sha256') if version else None,
+        )
+
+    def create_version(self, creator, location, metadata=None):
+        latest_version = self.get_version()
+        version = FileVersion(identifier=len(self.versions) + 1, creator=creator, location=location)
+
+        if latest_version and latest_version.is_duplicate(version):
+            return latest_version
+
+        if metadata:
+            version.update_metadata(metadata)
+
+        version._find_matching_archive(save=False)
+
+        version.save()
+        self.versions.append(version)
+        self.save()
+
+        return version
+
+    def get_version(self, version=-1, required=False):
+        try:
+            return self.versions[version]
+        except IndexError:
+            if required:
+                raise exceptions.VersionNotFoundError(version)
+            return None
+
+
+class OsfStorageFolder(OsfStorageFileNode, Folder):
+
+    def serialize(self, include_full=False, version=None):
+        # Versions just for compatability
+        ret = super(OsfStorageFolder, self).serialize()
+        if include_full:
+            ret['fullPath'] = self.materialized_path
+        return ret

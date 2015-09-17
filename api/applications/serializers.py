@@ -8,33 +8,39 @@ from api.base.serializers import JSONAPISerializer, LinksField
 
 class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
     """Serialize data about a registered OAuth2 application"""
-    client_id = ser.CharField(help_text="The client ID for this application (automatically generated)",
+    id = ser.CharField(help_text='The client ID for this application (automatically generated)',
+                       read_only=True,
+                       source='client_id',
+                       label='ID')
+    client_id = ser.CharField(help_text='The client ID for this application (automatically generated)',
                               read_only=True)
 
-    client_secret = ser.CharField(help_text="The client secret for this application (automatically generated)",
+    client_secret = ser.CharField(help_text='The client secret for this application (automatically generated)',
                                   read_only=True)  # TODO: May change this later
 
-    owner = ser.CharField(help_text="The id of the user who owns this application",
+    owner = ser.CharField(help_text='The id of the user who owns this application',
                           read_only=True,  # Don't let user register an application in someone else's name
                           source='owner._id')
 
-    name = ser.CharField(help_text="A short, descriptive name for this application",
+    name = ser.CharField(help_text='A short, descriptive name for this application',
                          required=True)
 
-    description = ser.CharField(help_text="An optional description displayed to all users of this application",
+    description = ser.CharField(help_text='An optional description displayed to all users of this application',
                                 required=False,
                                 allow_blank=True)
 
-    date_created = ser.DateTimeField(help_text="The date this application was generated (automatically filled in)",
+    date_created = ser.DateTimeField(help_text='The date this application was generated (automatically filled in)',
                                      read_only=True)
 
     home_url = ser.CharField(help_text="The full URL to this application's homepage.",
                              required=True,
-                             validators=[URLValidator()])
+                             validators=[URLValidator()],
+                             label="Home URL")
 
-    callback_url = ser.CharField(help_text="The callback URL for this application (refer to OAuth documentation)",
+    callback_url = ser.CharField(help_text='The callback URL for this application (refer to OAuth documentation)',
                                  required=True,
-                                 validators=[URLValidator()])
+                                 validators=[URLValidator()],
+                                 label="Callback URL")
 
     class Meta:
         type_ = 'applications'

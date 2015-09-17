@@ -5,6 +5,9 @@
         <div class="form-group">
             <label>Full Name (e.g. Rosalind Elsie Franklin)</label>
             <input class="form-control" data-bind="value: full" />
+            <div data-bind="visible: showMessages, css:'text-danger'">
+                <p data-bind="validationMessage: full"></p>
+            </div>
         </div>
 
         <span class="help-block">
