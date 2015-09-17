@@ -183,6 +183,9 @@
                                               license: window.contextVars.node.license,
                                               saveLicenseKey: 'node_license',
                                               readonly: ${ node['is_registration'] | sjson, n}">
+                        <span id="license">License:</span>
+                        <span class="text-muted"> ${node['license'].get('name', 'None selected')} </span>
+
                       </license-picker>
                     </p>
             </div>
