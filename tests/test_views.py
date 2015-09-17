@@ -4787,7 +4787,7 @@ class TestDraftRegistrationViews(OsfTestCase):
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
 
         res = self.app.delete(url, auth=AuthUserFactory, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
+        assert_equal(res.status_code, http.UNAUTHORIZED)
         assert_equal(1, DraftRegistration.find().count())
 
     def test_get_metaschemas(self):
