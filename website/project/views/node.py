@@ -1063,7 +1063,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
 def project_private_link_edit(auth, **kwargs):
     name = request.json.get('value', '')
     try:
-        new_name = validate_title(name)
+        validate_title(name)
     except ValidationValueError as e:
         raise HTTPError(
             http.BAD_REQUEST,
@@ -1073,7 +1073,8 @@ def project_private_link_edit(auth, **kwargs):
     private_link_id = request.json.get('pk', '')
     private_link = PrivateLink.load(private_link_id)
     if private_link:
-        private_link.name = new_name
+        new_name = strip_html(name)
+        private_link.name = strip_html(new_name)
         private_link.save()
         return new_name
     else:

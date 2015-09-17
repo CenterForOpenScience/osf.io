@@ -514,7 +514,7 @@ def validate_title(value):
     if len(value) > 200:
         raise ValidationValueError('Title cannot exceed 200 characters.')
 
-    return value
+    return True
 
 
 def validate_user(value):
@@ -1567,10 +1567,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param auth: All the auth information including user, API key.
         """
         #Called so validation does not have to wait until save.
-        new_title = validate_title(title)
+        validate_title(title)
 
         original_title = self.title
-        self.title = new_title
+        self.title = sanitize.strip_html(title)
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
