@@ -6,8 +6,8 @@ from rest_framework import serializers as ser
 
 from website.util.sanitize import strip_html
 from website import settings
-from api.base.utils import absolute_reverse, waterbutler_url_for
 
+from api.base import utils
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
@@ -79,18 +79,15 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         """
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
 
-        if self.meta:
-            meta = {}
-            for key in self.meta:
-                if key == 'count':
-                    if not self.context['request'].query_params.get('related_counts', False):
-                        continue
-                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
-            self.meta = meta
-
-            return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
-        else:
-            return {'links': {self.link_type: url}}
+        meta = {}
+        for key in self.meta or {}:
+            if key == 'count':
+                show_related_counts = self.context['request'].query_params.get('related_counts', False)
+                if utils.is_falsy(show_related_counts):
+                    continue
+            meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+        self.meta = meta
+        return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
 
 
 class LinksField(ser.Field):
@@ -182,7 +179,7 @@ class Link(object):
         for item in kwarg_values:
             if kwarg_values[item] is None:
                 return None
-        return absolute_reverse(
+        return utils.absolute_reverse(
             self.endpoint,
             args=arg_values,
             kwargs=kwarg_values,
@@ -202,7 +199,7 @@ class WaterbutlerLink(Link):
     def resolve_url(self, obj):
         """Reverse URL lookup for WaterButler routes
         """
-        return waterbutler_url_for(obj['waterbutler_type'], obj['provider'], obj['path'], obj['node_id'], obj['cookie'], obj['args'])
+        return utils.waterbutler_url_for(obj['waterbutler_type'], obj['provider'], obj['path'], obj['node_id'], obj['cookie'], obj['args'])
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
