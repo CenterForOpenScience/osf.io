@@ -214,7 +214,7 @@ var FileViewPage = {
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             m('.btn-group.m-t-xs', [
-                m('#sharebutton.btn.btn-sm.btn-primary', {onclick: function () {
+                m('#sharebutton.btn.btn-sm.btn-primary.file-share', {onclick: function () {
                     var link = $('iframe').attr('src');
                     var height = $('iframe').attr('height');
                     link = link.substring(0, link.indexOf('download') + 8);

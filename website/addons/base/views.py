@@ -38,6 +38,7 @@ from website.notifications.events.files import FileEvent  # noqa
 FILE_GONE_ERROR_MESSAGE = u'''
 <style>
 .file-download{{display: none;}}
+.file-share{{display: none;}}
 .file-delete{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
