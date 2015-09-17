@@ -18,6 +18,7 @@ var Panel = utils.Panel;
 
 var EDITORS = {'text': FileEditor};
 
+
 var FileViewPage = {
     controller: function(context) {
         var self = this;
@@ -209,6 +210,7 @@ var FileViewPage = {
                 }, ctrl.editor.title);
             }
         };
+
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
@@ -251,7 +253,7 @@ var FileViewPage = {
                         var button = $(element).popover();
                         button.on('show.bs.popover', function(e){
                             //max-width used to override, and width used to create space for the mithril object to be injected
-                            button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', '450px').css('width', '450px');
+                            button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', '600px').css('width', '450px');
                         });
                         if (!window.contextVars.node.isPublic) {
                             $('#sharebutton').attr('disabled', 'disabled');
@@ -318,7 +320,6 @@ var FileViewPage = {
         ]));
     }
 };
-
 
 module.exports = function(context) {
     // Treebeard forces all mithril to load twice, to avoid
