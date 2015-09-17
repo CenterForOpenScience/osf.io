@@ -2972,6 +2972,7 @@ class PrivateLink(StoredObject):
             "anonymous": self.anonymous
         }
 
+
 class Sanction(StoredObject):
     """Sanction object is a generic way to track approval states"""
 
@@ -3109,6 +3110,7 @@ class Sanction(StoredObject):
             else:
                 self._notify_non_authorizer(contrib)
 
+
 class EmailApprovableSanction(Sanction):
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
@@ -3186,6 +3188,7 @@ class EmailApprovableSanction(Sanction):
             'reject': self._rejection_url(user._id)
         }
         self.save()
+
 
 class Embargo(EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
@@ -3330,6 +3333,7 @@ class Embargo(EmailApprovableSanction):
         """Add user to approval list if user is admin and token verifies."""
         self.approve(user, token)
 
+
 class Retraction(EmailApprovableSanction):
     """Retraction object for public registrations."""
 
@@ -3460,6 +3464,7 @@ class Retraction(EmailApprovableSanction):
     def disapprove_retraction(self, user, token):
         self.reject(user, token)
 
+
 class RegistrationApproval(EmailApprovableSanction):
 
     DISPLAY_NAME = 'Approval'
@@ -3574,6 +3579,7 @@ class RegistrationApproval(EmailApprovableSanction):
             auth=Auth(user),
         )
 
+
 class DraftRegistration(AddonModelMixin, StoredObject):
 
     is_draft_registration = True
@@ -3582,7 +3588,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
     datetime_initiated = fields.DateTimeField(auto_now_add=True)
     datetime_updated = fields.DateTimeField(auto_now=True)
-
+    # Original Node a draft registration is associated with
     branched_from = fields.ForeignField('node')
 
     initiator = fields.ForeignField('user')
