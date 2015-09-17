@@ -46,29 +46,6 @@ describe('LicensePicker', () => {
 
         });
     });
-    describe('notifications', () => {
-        var timer;
-        before(() => {
-            timer = sinon.useFakeTimers();
-        });
-        after(() => {
-            timer.restore();
-        });
-        it('are cleared after a 2.5 second interval if no new notication is set', (done) => {
-            lp.notification('NOTIFY, NOTIFY, NOTIFY');
-            timer.tick(2501);
-            assert.equal(lp.notification(),  null);
-            done();
-        });
-        it('are not cleared after a 2.5 second interval if a new notification is set', (done) => {
-            lp.notification('NOTIFY, NOTIFY, NOTIFY');
-            timer.tick(2000);
-            lp.notification('Another');
-            timer.tick(501);
-            assert.equal(lp.notification(),  'Another');
-            done();
-        });
-    });
     describe('#togglePreview', () => {
         it('toggles the VM preview state', () => {
             assert.isFalse(lp.previewing());

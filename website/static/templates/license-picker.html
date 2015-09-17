@@ -8,8 +8,8 @@
 <span data-bind="ifnot: allowEdit">
   <span style="cursor: pointer" class="fa fa-info-circle" data-bind="click: togglePreview.bind($data, false)"></span>
 </span>
-<p data-bind="if: notification">
-    <span data-bind="text: notification, css: {'text-danger': error, 'text-success': success}"></span>
+<p data-bind="if: message">
+  <span data-bind="text: message, css: messageClass"></span>
 </p>
 <span data-bind="if: previewing">
   <div class="panel panel-default">
