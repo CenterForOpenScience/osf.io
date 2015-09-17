@@ -338,6 +338,22 @@ class TestWebsiteUtils(unittest.TestCase):
             assert_equal(outputs[i], i + 1)
         assert_equal(type(outputs), tuple)
 
+    def test_rapply_on_set(self):
+        inputs = set(i for i in range(5))
+        add_one = lambda n: n + 1
+        outputs = util.rapply(inputs, add_one)
+        for i in inputs:
+            assert_in(i + 1, outputs)
+        assert_true(isinstance(outputs, set))
+
+    def test_rapply_on_str(self):
+        input = "bob"
+        convert = lambda s: s.upper()
+        outputs = util.rapply(input, convert)
+
+        assert_equal("BOB", outputs)
+        assert_true(isinstance(outputs, basestring))
+
     def test_rapply_preserves_args_and_kwargs(self):
         def zero_if_not_check(item, check, checkFn=lambda n: n):
             if check and checkFn(item):

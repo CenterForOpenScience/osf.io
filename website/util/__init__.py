@@ -30,29 +30,25 @@ waterbutler_action_map = {
     'create_folder': 'file',
 }
 
-# Function courtesty of @brianjgeiger, moved from API utils
-def rapply(collection, func, *args, **kwargs):
-    """Recursively apply a function to all values in a dict or list
 
-    :param dict | list collection:
+# Function courtesty of @brianjgeiger and @abought, moved from API utils
+def rapply(data, func, *args, **kwargs):
+    """Recursively apply a function to all values in an iterable
+    :param dict | list | basestring data: iterable to apply func to
     :param function func:
     """
-    if isinstance(collection, collections.Mapping):
+    if isinstance(data, collections.Mapping):
         return {
             key: rapply(value, func, *args, **kwargs)
-            for key, value in collection.iteritems()
+            for key, value in data.iteritems()
         }
-    elif isinstance(collection, list):
-        return [
-            rapply(item, func, *args, **kwargs) for item in collection
-        ]
-    elif isinstance(collection, tuple):
-        return tuple(
-            rapply(item, func, *args, **kwargs) for item in collection
+    elif isinstance(data, collections.Iterable) and not isinstance(data, basestring):
+        desired_type = type(data)
+        return desired_type(
+            rapply(item, func, *args, **kwargs) for item in data
         )
     else:
-        return func(collection, *args, **kwargs)
-
+        return func(data, *args, **kwargs)
 
 def conjunct(words, conj='and'):
     words = list(words)
