@@ -78,9 +78,9 @@ class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         file = self.get_file()
-        maybe_verison = file.get_version(self.kwargs[self.version_lookup_url_kwarg])
+        maybe_version = file.get_version(self.kwargs[self.version_lookup_url_kwarg])
 
         # May raise a permission denied
         # Kinda hacky but versions have no reference to node or file
         self.check_object_permissions(self.request, file)
-        return get_object_or_error(FileVersion, getattr(maybe_verison, '_id', ''))
+        return get_object_or_error(FileVersion, getattr(maybe_version, '_id', ''))
