@@ -152,7 +152,7 @@ restrict_waterbutler = restrict_addrs(*settings.WATERBUTLER_ADDRS)
 @collect_auth
 @restrict_waterbutler
 def get_auth(auth, **kwargs):
-    if not auth.user and not auth.private_key:
+    if not auth.user:
         # Central Authentication Server OAuth Bearer Token
         authorization = request.headers.get('Authorization')
         if authorization and authorization.startswith('Bearer '):
@@ -169,9 +169,6 @@ def get_auth(auth, **kwargs):
 
         if not auth.user:
             auth.user = User.from_cookie(request.args.get('cookie'))
-
-        if not auth.private_key:
-            auth.private_key = request.args.get('view_only')
 
     try:
         action = request.args['action']
