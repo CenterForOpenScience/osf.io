@@ -114,11 +114,11 @@ class ExternalProvider(object):
     # Default to OAuth v2.0.
     _oauth_version = OAUTH2
 
-    def __init__(self):
+    def __init__(self, account=None):
         super(ExternalProvider, self).__init__()
 
         # provide an unauthenticated session by default
-        self.account = None
+        self.account = account
 
     def __repr__(self):
         return '<{name}: {status}>'.format(
