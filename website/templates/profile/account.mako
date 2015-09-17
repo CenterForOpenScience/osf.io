@@ -60,8 +60,8 @@
                                     <td style="word-break: break-all;">{{ $data.address }}</td>
                                     <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation">resend&nbsp;confirmation</a></td>
                                     <td style="width:50px;" ><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
-                                 </tr>
-                                 <!-- /ko -->
+                                </tr>
+                                <!-- /ko -->
                                 <tr>
                                     <td colspan="3">
                                         <form data-bind="submit: addEmail">
