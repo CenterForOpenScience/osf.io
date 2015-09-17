@@ -611,6 +611,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
 
+    # Representation of a nodes's license
+    # {
+    #  'id':  <id>,
+    #  'name': <name>,
+    #  'text': <license text>,
+    #  'properties' (optional): ['Year' (optional), 'Copyright Holders' (optional)]
+    # }
     node_license = fields.DictionaryField(default=dict)
 
     # One of 'public', 'private'
@@ -679,19 +686,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         node_license = self.node_license
         if not node_license and self.parent_node:
             return self.parent_node.license
-        if node_license.get('id') == 'OTHER':
-            node_license['url'] = self.license_file_url
         return node_license
-
-    @property
-    def license_file_url(self):
-        node_license = self.node_license
-        if not node_license and self.parent_node:
-            return self.parent_node.license_file_url
-        elif node_license.get('id') == 'OTHER':
-            return self.url + 'osfstorage/files/license.txt'
-        else:
-            return node_license.get('url')
 
     @property
     def category_display(self):
@@ -2927,7 +2922,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not self.is_registration:
             raise NodeStateError('Only registrations can require registration approval')
         if not self.has_permission(user, 'admin'):
-            raise PermissionsError('Only admins can intiate a registration approval')
+            raise PermissionsError('Only admins can initiate a registration approval')
 
         approval = self._initiate_approval(user)
 
