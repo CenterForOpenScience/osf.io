@@ -1,7 +1,6 @@
 from rest_framework import serializers as ser
-from api.base.serializers import JSONAPISerializer, LinksField, Link, CharFieldWithReadDefault, URLFieldWithReadDefault
+from api.base.serializers import CharFieldWithReadDefault, URLFieldWithReadDefault
 from website.models import User
-
 from api.base.serializers import (
     JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 )

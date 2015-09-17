@@ -1,13 +1,12 @@
 import collections
 import re
 
-from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
 
 from website.util.sanitize import strip_html
 from website import settings
 from api.base.utils import absolute_reverse, waterbutler_url_for
-from rest_framework.fields import SkipField, get_attribute
+from rest_framework.fields import SkipField
 
 
 class CharFieldWithReadDefault(ser.CharField):
