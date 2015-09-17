@@ -234,6 +234,7 @@ var FileViewPage = {
                             m('.tab-pane.fade#embed', [
                                 m('p', 'Dynamically Render iFrame with JavaScript'),
                                 m('textarea.form-control[readonly][type="text"][value="' +
+                                    '<link href="' + url + 'static/css/mfr.css" media="all" rel="stylesheet">' +
                                     '<div id="mfrIframe" class="mfr mfr-file">\</div>' +
                                     '<script src="' + url + 'static/js/mfr.js">' +
                                     '</script> <script>' +
