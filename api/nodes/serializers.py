@@ -24,12 +24,35 @@ class NodeTagField(ser.Field):
         return data
 
 
+class NodeAttributesSerializer(JSONAPISerializer):
+    category_choices = Node.CATEGORY_MAP.keys()
+    category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
+
+    title = ser.CharField(required=True)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
+    date_created = ser.DateTimeField(read_only=True)
+    date_modified = ser.DateTimeField(read_only=True)
+    registration = ser.BooleanField(read_only=True, source='is_registration')
+    collection = ser.BooleanField(read_only=True, source='is_folder')
+    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
+    # tags = ser.ListField(child=NodeTagField(), required=False)
+    public = ser.BooleanField(source='is_public', read_only=True,
+                              help_text='Nodes that are made public will give read-only access '
+                                        'to everyone. Private nodes require explicit read '
+                                        'permission. Write and admin access are the same for '
+                                        'public and private nodes. Administrators on a parent '
+                                        'node have implicit read permissions for all child nodes',
+                              )
+
+    class Meta:
+        type_ = 'nodes'
+
+
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
-    category_choices = Node.CATEGORY_MAP.keys()
-    category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
     filterable_fields = frozenset([
         'title',
         'description',
@@ -41,25 +64,11 @@ class NodeSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
-    title = ser.CharField(required=True)
-    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
-    tags = ser.ListField(child=NodeTagField(), required=False)
-    registration = ser.BooleanField(read_only=True, source='is_registration')
-    collection = ser.BooleanField(read_only=True, source='is_folder')
-    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
+    attributes = NodeAttributesSerializer()
 
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
-    public = ser.BooleanField(source='is_public', read_only=True,
-                              help_text='Nodes that are made public will give read-only access '
-                                        'to everyone. Private nodes require explicit read '
-                                        'permission. Write and admin access are the same for '
-                                        'public and private nodes. Administrators on a parent '
-                                        'node have implicit read permissions for all child nodes',
-                              )
+
 
     children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
                                                 lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
@@ -117,6 +126,7 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     def create(self, validated_data):
+        validated_data.update(validated_data.pop('attributes', {}))
         node = Node(**validated_data)
         node.save()
         return node
@@ -139,6 +149,7 @@ class NodeSerializer(JSONAPISerializer):
         if errors:
             raise ValidationError(errors)
 
+        validated_data.update(validated_data.pop('attributes', {}))
         assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
         tags = validated_data.get('tags')
