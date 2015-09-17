@@ -61,13 +61,15 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
-    serializer_class = NodeSerializer
-    ordering = ('-date_modified', )  # default ordering
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+    serializer_class = NodeSerializer
+
+    ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -111,13 +113,13 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
-
-    serializer_class = NodeSerializer
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+    serializer_class = NodeSerializer
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -149,17 +151,16 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     contributors. From a permissions standpoint, both are the same, but bibliographic contributors
     are included in citations, while non-bibliographic contributors are not included in citations.
     """
-
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
-
-    serializer_class = ContributorSerializer
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+
+    serializer_class = ContributorSerializer
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -183,13 +184,13 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
-
-    serializer_class = NodeSerializer
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
+
+    serializer_class = NodeSerializer
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -214,13 +215,13 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
-
-    serializer_class = NodeSerializer
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
     required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
+
+    serializer_class = NodeSerializer
 
     # overrides ListAPIView
     def get_queryset(self):
@@ -248,13 +249,13 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
-
-    serializer_class = NodeLinksSerializer
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
+
+    serializer_class = NodeLinksSerializer
 
     def get_queryset(self):
         pointers = self.get_node().nodes_pointer
@@ -270,13 +271,13 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublicForPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
-
-    serializer_class = NodeLinksSerializer
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
+
+    serializer_class = NodeLinksSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -333,13 +334,13 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
-        base_permissions.TokenHasScope
+        base_permissions.TokenHasScope,
     )
-
-    serializer_class = FileSerializer
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    serializer_class = FileSerializer
 
     def get_file_item(self, item):
         file_node = FileNode.resolve_class(
@@ -353,7 +354,7 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
         return file_node
 
     def get_queryset(self):
-        # Dont bother going to waterbutler for osfstorage
+        # Don't bother going to waterbutler for osfstorage
         if self.kwargs['provider'] == 'osfstorage':
             self.check_object_permissions(self.request, self.get_node())
             # Kinda like /me for a user
@@ -405,12 +406,16 @@ class NodeProvider(object):
 
 
 class NodeProvidersList(generics.ListAPIView, NodeMixin):
-    serializer_class = NodeProviderSerializer
-
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    serializer_class = NodeProviderSerializer
 
     def get_provider_item(self, provider):
         return NodeProvider(provider, self.get_node())
