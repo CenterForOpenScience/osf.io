@@ -686,6 +686,21 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return None
 
     @property
+    def attributes(self):
+        return OrderedDict([
+            ('title', self.title),
+            ('description', self.description),
+            ('category', self.category),
+            ('date_created', self.date_created),
+            ('date_modified', self.date_modified),
+            # ('tags', self.tags),
+            ('registration', self.is_registration),
+            ('collection', self.is_folder),
+            ('dashboard', self.is_dashboard),
+            ('public', self.is_public)
+        ])
+
+    @property
     def is_pending_registration(self):
         if not self.is_registration:
             return False
