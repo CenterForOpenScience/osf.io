@@ -77,6 +77,7 @@ class FileSerializer(JSONAPISerializer):
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),
         'upload': WaterbutlerLink(),
+        'delete': WaterbutlerLink(),
         'download': WaterbutlerLink(must_be_file=True),
         'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder')
     })
@@ -107,9 +108,8 @@ class FileVersionSerializer(JSONAPISerializer):
         'identifier',
         'content_type',
     ])
-    id = ser.CharField(read_only=True, source='_id')
+    id = ser.CharField(read_only=True, source='identifier')
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
-    identifier = ser.CharField(read_only=True, help_text='This version\'s unique identifier from it\'s original service')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
     links = LinksField({
         'self': 'self_url',
@@ -121,7 +121,7 @@ class FileVersionSerializer(JSONAPISerializer):
 
     def self_url(self, obj):
         return absolute_reverse('files:version-detail', kwargs={
-            'version_id': obj._id,
+            'version_id': obj.identifier,
             'file_id': self.context['view'].kwargs['file_id']
         })
 
