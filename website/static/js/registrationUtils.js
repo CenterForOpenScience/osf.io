@@ -325,15 +325,23 @@ var Draft = function(params, metaSchema) {
         if (self.schemaData) {
             var schema = self.schema();
             $.each(schema.pages, function(i, page) {
+                var completedQuestions = 0;
                 $.each(page.questions, function(qid, question) {
                     var q = self.schemaData[qid];
-                    if(q && !$osf.isBlank(q.value)) {
-                        complete++;
+                    // questions with an uploader have the question.value attr instead
+                    if (q && q.question) {
+                        if(!$osf.isBlank(q.question.value))
+                            completedQuestions++;
+                    } else {
+                        if(q && !$osf.isBlank(q.value))
+                            completedQuestions++;
                     }
-                    total++;
+                    if ( completedQuestions === Object.keys(page.questions).length )
+                        complete++;
                 });
+                total++;
             });
-	    return Math.ceil(100 * (complete / total));
+            return Math.ceil(100 * (complete / total));
         }
         return 0;
     });
@@ -726,6 +734,10 @@ RegistrationEditor.prototype.create = function(schemaData) {
         schema_version: metaSchema.version,
         schema_data: schemaData
     }).then(self.updateData.bind(self));
+};
+RegistrationEditor.prototype.getCompletion = function() {
+    var self = this;
+    return self.draft().completion();
 };
 RegistrationEditor.prototype.putSaveData = function(payload) {
     var self = this;
