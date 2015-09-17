@@ -2,6 +2,7 @@
 
 import time
 import mock
+import unittest
 from nose.tools import *  # noqa
 
 import webtest
