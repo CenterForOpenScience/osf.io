@@ -250,7 +250,8 @@ var FileViewPage = {
                     if(!isInitialized){
                         var button = $(element).popover();
                         button.on('show.bs.popover', function(e){
-                            button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', '600px').css('width', '450px');
+                            //max-width used to override, and width used to create space for the mithril object to be injected
+                            button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', '450px').css('width', '450px');
                         });
                         if (!window.contextVars.node.isPublic) {
                             $('#sharebutton').attr('disabled', 'disabled');
