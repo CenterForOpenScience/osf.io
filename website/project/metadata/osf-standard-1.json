@@ -11,7 +11,7 @@
                         "type": "select",
                         "label": "Is data collection for this project underway or complete?",
                         "caption": "Please choose",
-                        "options": ["No", "Yes"]
+                        "options": ["No, no data has been collected", "Yes, data collection is underway or complete"]
                     },
                     {
                         "id": "looked",
