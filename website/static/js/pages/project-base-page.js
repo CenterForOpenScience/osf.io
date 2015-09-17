@@ -37,12 +37,13 @@ $(document).ready(function() {
     timeout = null;
     var checkPanelPosition = function() {
         var bodyWidth = $(document.body).width();
+        var scrollTopPosition = $(window).scrollTop();
         if (bodyWidth <= smallScreenSize) {
-            if ($(window).scrollTop() >= target) {
+            if (scrollTopPosition >= target) {
                 $('.cp-handle').css('margin-top', 50);
             }
             else {
-                $('.cp-handle').css('margin-top', 95);
+                $('.cp-handle').css('margin-top', 95 - scrollTopPosition);
             }
         }
     };
@@ -54,7 +55,7 @@ $(document).ready(function() {
                 clearTimeout(timeout);
                 timeout = null;
                 checkPanelPosition();
-            }, 80);
+            }, 10);
         }
     });
 
