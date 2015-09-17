@@ -243,8 +243,11 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id', label='ID')
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
-    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
-                                                                         'points to')
+
+    # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
+    # include this field in the future.
+    # title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
+    #                                                                      'points to')
 
     class Meta:
         type_ = 'node_links'
