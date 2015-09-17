@@ -227,27 +227,30 @@ var FileViewPage = {
                         m('.tab-content', [
                             m('.tab-pane.fade.in.active#share', m('.input-group', [
                                 m('span.input-group-btn', m('button#copyBtn.btn.btn-default.btn-md[type="button"][style="height: 34px"][data-clipboard-text="' + link + '"]', m('.fa.fa-copy'))),
-                                m('input.form-control[type="text"][value="'+ link +'"]')
+                                m('input.form-control[readonly][type="text"][value="'+ link +'"]')
                             ])),
                             m('.tab-pane.fade#embed', [
                                 m('p', 'Dynamically Render iFrame with JavaScript'),
-                                m('textarea.form-control', [
-                                    m('link[href="' + url + 'static/css/mfr.css"][media="all"][rel="stylesheet"]')
-
-                                ]), m('br'),
+                                m('textarea.form-control[readonly][type="text"][value="' +
+                                    '<div id="mfrIframe" class="mfr mfr-file">\</div>' +
+                                    '<script src="' + url + 'static/js/mfr.js">' +
+                                    '</script> <script>' +
+                                        'var mfrRender = new mfr.Render("mfrIframe", "' + link + '");' +
+                                    '</script>' + '"]'
+                                ), m('br'),
                                 m('p', 'Direct iFrame with Fixed Height and Width'),
-                                m('textarea.form-control#directIFrame', m('p','poop')
+                                m('textarea.form-control[readonly]#directIFrame[value="' +
+                                    '<iframe src="' + link + '" width="100%" scrolling="yes" height="' + height + '" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen>"]'
                                 )
                             ])
                         ])
                     ]);
-                    //var mfrRender = new mfr.Render("#mfrIframe", link);
                     makeClient($('#copyBtn'));
                 }, config: function(element, isInitialized) {
                     if(!isInitialized){
                         var button = $(element).popover();
                         button.on('show.bs.popover', function(e){
-                            button.data()['bs.popover'].$tip.css('max-width', '600px').css('text-align', 'center').css('width', '450px');
+                            button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', '600px').css('width', '450px');
                         });
                         if (!window.contextVars.node.isPublic) {
                             $('#sharebutton').attr('disabled', 'disabled');
@@ -256,7 +259,7 @@ var FileViewPage = {
                             $('#sharebutton').removeAttr('disabled', 'disabled');
                         }
                     }
-                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"/>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true', 'data-viewport': '#popOver'}, 'Share')
+                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"/>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share')
             ]),
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
