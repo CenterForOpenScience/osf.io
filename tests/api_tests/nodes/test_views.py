@@ -387,11 +387,15 @@ class TestNodeCreate(ApiTestCase):
                     'public': True,
                 }
         }
-        self.private_project = {'title': self.title,
-                                'description': self.description,
-                                'category': self.category,
-                                'public': False,
-                                'type': 'nodes'}
+        self.private_project = {
+            'type': 'nodes',
+            'attributes': {
+                'title': self.title,
+                'description': self.description,
+                'category': self.category,
+                'public': False
+            }
+        }
 
     def test_creates_public_project_logged_out(self):
         res = self.app.post_json_api(self.url, self.public_project, expect_errors=True)
@@ -400,7 +404,6 @@ class TestNodeCreate(ApiTestCase):
 
     def test_creates_public_project_logged_in(self):
         res = self.app.post_json_api(self.url, self.public_project, expect_errors=True, auth=self.user_one.auth)
-        print res
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['title'], self.public_project['attributes']['title'])
         assert_equal(res.json['data']['attributes']['description'], self.public_project['attributes']['description'])
@@ -419,9 +422,9 @@ class TestNodeCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, self.private_project, auth=self.user_one.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['title'], self.private_project['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.private_project['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.private_project['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.private_project['attributes']['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.private_project['attributes']['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.private_project['attributes']['category'])
         pid = res.json['data']['id']
         project = Node.load(pid)
         assert_equal(project.logs[-1].action, NodeLog.PROJECT_CREATED)
@@ -431,12 +434,13 @@ class TestNodeCreate(ApiTestCase):
         description = 'An <script>alert("even cooler")</script> project'
 
         res = self.app.post_json_api(self.url, {
-            'title': title,
-            'description': description,
-            'category': self.category,
-            'public': True,
-            'type': 'nodes'
-        }, auth=self.user_one.auth)
+            'attributes': {
+                'title': title,
+                'description': description,
+                'category': self.category,
+                'public': True
+            },
+            'type': 'nodes'} , auth=self.user_one.auth)
         project_id = res.json['data']['id']
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
@@ -451,21 +455,27 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['category'], self.category)
 
     def test_creates_project_no_type(self):
-        project = {'title': self.title,
-                        'description': self.description,
-                        'category': self.category,
-                        'public': False}
+        project = {
+            'attributes': {
+                'title': self.title,
+                'description': self.description,
+                'category': self.category,
+                'public': False
+            }}
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_creates_project_incorrect_type(self):
-        project = {'title': self.title,
-                        'description': self.description,
-                        'category': self.category,
-                        'public': False,
-                        'type': 'Wrong type.'}
+        project = {
+            'attributes': {
+                'title': self.title,
+                'description': self.description,
+                'category': self.category,
+                'public': False
+            },
+        'type': 'Wrong type.'}
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
@@ -581,6 +591,7 @@ class TestNodeDetail(ApiTestCase):
         )
         assert_equal(res.status_code, 404)
 
+
 class NodeCRUDTestCase(ApiTestCase):
 
     def setUp(self):
@@ -619,32 +630,35 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.put_json_api(self.public_url, {
             'id': '12345',
             'type': 'nodes',
-            'title': self.new_title,
-            'description': self.new_description,
-            'category': self.new_category,
-            'public': True,
-        }, auth=self.user.auth, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+                'description': self.new_description,
+                'category': self.new_category,
+                'public': True,
+        }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_update_invalid_type(self):
         res = self.app.put_json_api(self.public_url, {
             'id': self.public_project._id,
             'type': 'node',
-            'title': self.new_title,
-            'description': self.new_description,
-            'category': self.new_category,
-            'public': True,
-        }, auth=self.user.auth, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+                'description': self.new_description,
+                'category': self.new_category,
+                'public': True,
+        }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_update_no_id(self):
         res = self.app.put_json_api(self.public_url, {
             'type': 'nodes',
-            'title': self.new_title,
-            'description': self.new_description,
-            'category': self.new_category,
-            'public': True,
-        }, auth=self.user.auth, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+                'description': self.new_description,
+                'category': self.new_category,
+                'public': True,
+        }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
@@ -652,11 +666,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_update_no_type(self):
         res = self.app.put_json_api(self.public_url, {
             'id': self.public_project._id,
-            'title': self.new_title,
-            'description': self.new_description,
-            'category': self.new_category,
-            'public': True,
-        }, auth=self.user.auth, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+                'description': self.new_description,
+                'category': self.new_category,
+                'public': True,
+        }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
@@ -665,11 +680,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.put_json_api(self.public_url, {
             'id': self.public_project._id,
             'type': 'nodes',
-            'title': self.new_title,
-            'description': self.new_description,
-            'category': self.new_category,
-            'public': True,
-        }, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+                'description': self.new_description,
+                'category': self.new_category,
+                'public': True,
+        }}, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
@@ -678,11 +694,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.put_json_api(self.public_url, {
             'id': self.public_project._id,
             'type': 'nodes',
-            'title': self.new_title,
-            'description': self.new_description,
-            'category': self.new_category,
-            'public': True,
-        }, auth=self.user.auth)
+            'attributes': {
+                'title': self.new_title,
+                'description': self.new_description,
+                'category': self.new_category,
+                'public': True,
+        }}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], self.new_title)
@@ -693,11 +710,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.put_json_api(self.public_url, {
             'id': self.private_project._id,
             'type': 'nodes',
-            'title': self.new_title,
-            'description': self.new_description,
-            'category': self.new_category,
-            'public': True,
-        }, auth=self.user_two.auth, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+                'description': self.new_description,
+                'category': self.new_category,
+                'public': True,
+        }}, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
@@ -707,11 +725,14 @@ class TestNodeUpdate(NodeCRUDTestCase):
         original_description = registration.description
         url = '/{}nodes/{}/'.format(API_BASE, registration._id)
         res = self.app.put_json_api(url, {
-            'title': fake.catch_phrase(),
-            'description': fake.bs(),
-            'category': 'hypothesis',
-            'public': True,
-        }, auth=self.user.auth, expect_errors=True)
+            'id': registration._id,
+            'type': 'nodes',
+            'attributes': {
+                'title': fake.catch_phrase(),
+                'description': fake.bs(),
+                'category': 'hypothesis',
+             'public': True,
+        }}, auth=self.user.auth, expect_errors=True)
         registration.reload()
         assert_equal(res.status_code, 403)
         assert_equal(registration.title, original_title)
@@ -721,11 +742,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.put_json_api(self.private_url, {
             'id': self.private_project._id,
             'type': 'nodes',
-            'title': self.new_title,
-            'description': self.new_description,
-            'category': self.new_category,
-            'public': False,
-        }, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+                'description': self.new_description,
+                'category': self.new_category,
+                'public': False,
+        }}, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
@@ -734,11 +756,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.put_json_api(self.private_url, {
             'id': self.private_project._id,
             'type': 'nodes',
-            'title': self.new_title,
-            'description': self.new_description,
-            'category': self.new_category,
-            'public': False,
-        }, auth=self.user.auth)
+            'attributes': {
+                'title': self.new_title,
+                'description': self.new_description,
+                'category': self.new_category,
+                'public': False,
+        }}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], self.new_title)
@@ -749,11 +772,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.put_json_api(self.private_url, {
             'id': self.private_project._id,
             'type': 'nodes',
-            'title': self.new_title,
-            'description': self.new_description,
-            'category': self.new_category,
-            'public': False,
-        }, auth=self.user_two.auth, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+                'description': self.new_description,
+                'category': self.new_category,
+                'public': False,
+        }}, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
@@ -765,11 +789,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.put_json_api(self.public_url, {
             'id': self.public_project._id,
             'type': 'nodes',
-            'title': new_title,
-            'description': new_description,
-            'category': self.new_category,
-            'public': True,
-        }, auth=self.user.auth)
+            'attributes': {
+                'title': new_title,
+                'description ': new_description,
+                'category': self.new_category,
+                'public': True,
+        }}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], strip_html(new_title))
@@ -781,8 +806,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.patch_json_api(self.public_url, {
             'id': self.public_project._id,
             'type': 'nodes',
-            'title': new_title,
-        }, auth=self.user.auth)
+            'attributes': {
+                'title': new_title,
+        }}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
@@ -796,7 +822,8 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_write_to_public_field_non_contrib_forbidden(self):
         # Test non-contrib writing to public field
         res = self.app.patch_json_api(self.public_url, {
-            'public': False,
+            'attributes': {
+                'public': False},
             'id': self.public_project._id,
             'type': 'nodes',
         }, auth=self.user_two.auth, expect_errors=True)
@@ -809,8 +836,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.patch_json_api(self.public_url, {
             'id': self.public_project._id,
             'type': 'nodes',
-            'public': False,
-        }, auth=self.user.auth, expect_errors=True)
+            'attributes': {
+                'public': False,
+        }}, auth=self.user.auth, expect_errors=True)
         assert_true(res.json['data']['attributes']['public'])
         # django returns a 200 on PATCH to read only field, even though it does not update the field.
         assert_equal(res.status_code, 200)
@@ -819,8 +847,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.patch_json_api(self.public_url, {
             'id': self.public_project._id,
             'type': 'nodes',
-            'title': self.new_title
-        }, expect_errors=True)
+            'attributes': {
+                'title': self.new_title
+        }}, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
@@ -829,8 +858,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.patch_json_api(self.public_url, {
             'id': self.public_project._id,
             'type': 'nodes',
+            'attributes': {
             'title': self.new_title,
-        }, auth=self.user.auth)
+        }}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], self.new_title)
@@ -840,7 +870,8 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_partial_update_public_project_logged_in_but_unauthorized(self):
         # Public resource, logged in, unauthorized
         res = self.app.patch_json_api(self.public_url, {
-            'title': self.new_title,
+            'attributes': {
+                'title': self.new_title},
             'id': self.public_project._id,
             'type': 'nodes',
         }, auth=self.user_two.auth, expect_errors=True)
@@ -851,15 +882,17 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.patch_json_api(self.private_url, {
             'id': self.private_project._id,
             'type': 'nodes',
-            'title': self.new_title
-        }, expect_errors=True)
+            'attributes': {
+                'title': self.new_title
+        }}, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
     @assert_logs(NodeLog.UPDATED_FIELDS, 'private_project')
     def test_partial_update_private_project_logged_in_contributor(self):
         res = self.app.patch_json_api(self.private_url, {
-            'title': self.new_title,
+            'attributes': {
+                'title': self.new_title},
             'id': self.private_project._id,
             'type': 'nodes',
         }, auth=self.user.auth)
@@ -870,8 +903,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['category'], self.category)
 
     def test_partial_update_private_project_logged_in_non_contributor(self):
-        res = self.app.patch_json_api(self.private_url,{
-            'title': self.new_title,
+        res = self.app.patch_json_api(self.private_url, {
+            'attributes': {
+                'title': self.new_title},
             'id': self.private_project._id,
             'type': 'nodes',
         }, auth=self.user_two.auth,expect_errors=True)
@@ -882,23 +916,26 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.patch_json_api(self.public_url, {
             'id': '12345',
             'type': 'nodes',
-            'title': self.new_title,
-        }, auth=self.user.auth, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+        }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_partial_update_invalid_type(self):
         res = self.app.patch_json_api(self.public_url, {
             'id': self.public_project._id,
             'type': 'node',
-            'title': self.new_title,
-        }, auth=self.user.auth, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+        }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_partial_update_no_id(self):
         res = self.app.patch_json_api(self.public_url, {
             'type': 'nodes',
-            'title': self.new_title,
-        }, auth=self.user.auth, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+        }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
@@ -906,8 +943,9 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_partial_update_no_type(self):
         res = self.app.patch_json_api(self.public_url, {
             'id': self.public_project._id,
-            'title': self.new_title,
-        }, auth=self.user.auth, expect_errors=True)
+            'attributes': {
+                'title': self.new_title,
+        }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
