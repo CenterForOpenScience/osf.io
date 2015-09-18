@@ -533,7 +533,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     __indices__ = [{
         'unique': False,
         'key_or_list': [
-            ('tags', pymongo.ASCENDING),
+            ('tags.$', pymongo.ASCENDING),
             ('is_public', pymongo.ASCENDING),
             ('is_deleted', pymongo.ASCENDING),
         ]
