@@ -616,7 +616,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     #  'id':  <id>,
     #  'name': <name>,
     #  'text': <license text>,
-    #  'properties' (optional): ['Year' (optional), 'Copyright Holders' (optional)]
+    #  'year' (optional): <year>,
+    #  'copyrightHolders' (optional): <copyright_holders>
     # }
     node_license = fields.DictionaryField(default=dict)
 
