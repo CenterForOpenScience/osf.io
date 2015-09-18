@@ -1,9 +1,7 @@
 import httplib as http
-import warnings
 
 from rest_framework import status
 from rest_framework.exceptions import APIException, ParseError
-
 
 def json_api_exception_handler(exc, context):
     """ Custom exception handler that returns errors object as an array """
@@ -27,7 +25,6 @@ def json_api_exception_handler(exc, context):
                 }
             ])
         elif isinstance(message, dict):
-            warnings.warn('Passing a <dict> value for a DRF exception detail is deprecated. Please switch to using a subclass of JSONAPIException instead.')
             for error_key, error_description in message.iteritems():
                 if error_key in top_level_error_keys:
                     errors.append({error_key: error_description})
@@ -47,11 +44,14 @@ def json_api_exception_handler(exc, context):
 
 
 class JSONAPIException(APIException):
-    """
-    :param str detail: a human-readable explanation specific to this occurrence of the problem.
-    param dict source: an object containing references to the source of the error, optionally including any of the following members:
-    :parm str dict.pointer: a JSON Pointer [RFC6901] to the associated entity in the request document [e.g. "/data" for a primary data object, or "/data/attributes/title" for a specific attribute]self.
-    :param str dict.parameter: a string indicating which URI query parameter caused the error.
+    """Inherits from the base DRF API exception and adds extra metadata to support JSONAPI error objects
+
+    :param str detail: a human-readable explanation specific to this occurrence of the problem
+    param dict source: an object containing references to the source of the error, optionally including
+    any of the following members:
+    :parm str dict.pointer: a JSON Pointer [RFC6901] to the associated entity in the request document
+    e.g. "/data" for a primary data object, or "/data/attributes/title" for a specific attribute
+    :param str dict.parameter: a string indicating which URI query parameter caused the error
     """
     def __init__(self, detail=None, source=None):
         super(JSONAPIException, self).__init__(detail=detail)
