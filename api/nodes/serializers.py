@@ -46,9 +46,6 @@ class NodeAttributesSerializer(JSONAPISerializer):
                                         'node have implicit read permissions for all child nodes',
                               )
 
-    class Meta:
-        type_ = 'nodes'
-
 
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
