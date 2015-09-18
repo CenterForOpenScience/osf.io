@@ -130,10 +130,10 @@ class TestNodeFiltering(ApiTestCase):
         Node.remove()
 
     def test_filtering_registrations(self):
-        url = '/{}nodes/?filter[attributes][registration]=true'.format(API_BASE)
+        url = '/{}nodes/?filter[registration]=true'.format(API_BASE)
         registration = RegistrationFactory(creator=self.user_one)
 
-        res = self.app.get(url, auth=self.user_one.auth)
+        res = self.app.get(url, auth=self.user_one.auth, expect_errors=True)
         node_json = res.json['data']
 
         ids = [each['id'] for each in node_json]
@@ -466,7 +466,7 @@ class TestNodeCreate(ApiTestCase):
             }}
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_creates_project_incorrect_type(self):
@@ -662,7 +662,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 'public': True,
         }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
 
     def test_update_no_type(self):
@@ -675,7 +675,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 'public': True,
         }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_update_public_project_logged_out(self):
@@ -939,7 +939,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 'title': self.new_title,
         }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
 
     def test_partial_update_no_type(self):
@@ -949,7 +949,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                 'title': self.new_title,
         }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
 
@@ -1942,7 +1942,7 @@ class TestNodeChildCreate(ApiTestCase):
         }}
         res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_creates_child_incorrect_type(self):
@@ -2243,7 +2243,7 @@ class TestNodeLinkCreate(ApiTestCase):
         payload = {'target_node_id': self.user_two_project._id}
         res = self.app.post(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_create_node_pointer_incorrect_type(self):
@@ -2604,7 +2604,7 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/title'})
-        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
     def test_node_does_not_exist_formatting(self):
         url = '/{}nodes/{}/'.format(API_BASE, '12345')
