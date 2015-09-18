@@ -73,10 +73,13 @@ var ajaxJSON = function(method, url, options) {
     var ajaxFields = {
         url: url,
         type: method,
-        data: JSON.stringify(opts.data),
         contentType: 'application/json',
         dataType: 'json'
     };
+    // Add JSON payload if not a GET request
+    if (method.toLowerCase() !== 'get') {
+        ajaxFields.data = JSON.stringify(opts.data);
+    }
     if(opts.isCors) {
         ajaxFields.crossOrigin = true;
         ajaxFields.xhrFields =  {
@@ -173,9 +176,13 @@ var putJSON = function(url, data, success, error) {
 * @param  {Object} XML Http Request
 * @return {Object} xhr
 */
-var setXHRAuthorization = function (xhr) {
-    if (window.contextVars.accessToken) {
-        xhr.setRequestHeader('Authorization', 'Bearer ' + window.contextVars.accessToken);
+var setXHRAuthorization = function (xhr, options) {
+    if (navigator.appVersion.indexOf('MSIE 9.') === -1) {
+        xhr.withCredentials = true;
+        if (options) {
+            options.withCredentials = true;
+            options.xhrFields = {withCredentials:true};
+        }
     }
     return xhr;
 };
