@@ -9,6 +9,7 @@ import urlparse
 import uuid
 
 from flask import request
+from collections import OrderedDict
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from requests.exceptions import HTTPError as RequestsHTTPError
 
@@ -435,6 +436,15 @@ class ApiOAuth2Application(StoredObject):
     @property
     def absolute_api_v2_url(self):
         return absolute_reverse('applications:application-detail', kwargs={'client_id': self.client_id})
+
+    @property
+    def attributes(self):
+        return OrderedDict([
+            ('name', self.name),
+            ('description', self.description),
+            ('home_url', self.home_url),
+            ('callback_url', self.callback_url),
+        ])
 
     # used by django and DRF
     def get_absolute_url(self):

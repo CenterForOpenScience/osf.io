@@ -8,6 +8,24 @@ from api.base.exceptions import Conflict
 from api.base.serializers import JSONAPISerializer, LinksField
 
 
+class ApiOAuth2ApplicationAttributesSerializer(JSONAPISerializer):
+    name = ser.CharField(help_text='A short, descriptive name for this application',
+                         required=True)
+
+    description = ser.CharField(help_text='An optional description displayed to all users of this application',
+                                required=False,
+                                allow_blank=True)
+    home_url = ser.CharField(help_text="The full URL to this application's homepage.",
+                             required=True,
+                             validators=[URLValidator()],
+                             label="Home URL")
+
+    callback_url = ser.CharField(help_text='The callback URL for this application (refer to OAuth documentation)',
+                                 required=True,
+                                 validators=[URLValidator()],
+                                 label="Callback URL")
+
+
 class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
     """Serialize data about a registered OAuth2 application"""
     id = ser.CharField(help_text='The client ID for this application (automatically generated)',
@@ -15,6 +33,8 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
                        source='client_id',
                        label='ID')
     type = ser.CharField(write_only=True, required=True)
+
+    attributes = ApiOAuth2ApplicationAttributesSerializer()
 
     client_id = ser.CharField(help_text='The client ID for this application (automatically generated)',
                               read_only=True)
@@ -26,25 +46,9 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
                           read_only=True,  # Don't let user register an application in someone else's name
                           source='owner._id')
 
-    name = ser.CharField(help_text='A short, descriptive name for this application',
-                         required=True)
-
-    description = ser.CharField(help_text='An optional description displayed to all users of this application',
-                                required=False,
-                                allow_blank=True)
-
     date_created = ser.DateTimeField(help_text='The date this application was generated (automatically filled in)',
                                      read_only=True)
 
-    home_url = ser.CharField(help_text="The full URL to this application's homepage.",
-                             required=True,
-                             validators=[URLValidator()],
-                             label="Home URL")
-
-    callback_url = ser.CharField(help_text='The callback URL for this application (refer to OAuth documentation)',
-                                 required=True,
-                                 validators=[URLValidator()],
-                                 label="Callback URL")
 
     class Meta:
         type_ = 'applications'
@@ -62,6 +66,7 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def create(self, validated_data):
+        validated_data.update(validated_data.pop('attributes', {}))
         instance = ApiOAuth2Application(**validated_data)
         instance.save()
         return instance
@@ -80,6 +85,10 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
 
         if errors:
             raise ValidationError(errors)
+
+        validated_data.update(validated_data.pop('attributes', {}))
+        validated_data.pop('_id')
+        validated_data.pop('type')
 
         assert isinstance(instance, ApiOAuth2Application), 'instance must be an ApiOAuth2Application'
         for attr, value in validated_data.iteritems():
