@@ -1266,7 +1266,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def test_adds_contributor_without_bibliographic_private_project_admin(self):
         data = {
             'id': self.user_two._id,
-            'type': 'users'
+            'type': 'users',
+            'attributes': {}
         }
         res = self.app.post_json(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
@@ -1454,10 +1455,13 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
     def test_change_contributor_permissions(self):
         data = {
-            'permission': permissions.ADMIN,
-            'bibliographic': True
-        }
-        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'permission': permissions.ADMIN,
+                'bibliographic': True
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
         assert_equal(attributes['permission'], permissions.ADMIN)
@@ -1466,10 +1470,13 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user_two), [permissions.READ, permissions.WRITE, permissions.ADMIN])
 
         data = {
-            'permission': permissions.WRITE,
-            'bibliographic': True
-        }
-        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'permission': permissions.WRITE,
+                'bibliographic': True
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
         assert_equal(attributes['permission'], permissions.WRITE)
@@ -1478,10 +1485,13 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user_two), [permissions.READ, permissions.WRITE])
 
         data = {
-            'permission': permissions.READ,
-            'bibliographic': True
-        }
-        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'permission': permissions.READ,
+                'bibliographic': True
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
         assert_equal(attributes['permission'], permissions.READ)
@@ -1493,9 +1503,12 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.MADE_CONTRIBUTOR_VISIBLE, 'project')
     def test_change_contributor_bibliographic(self):
         data = {
-            'bibliographic': False
-        }
-        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'bibliographic': False
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
         assert_equal(attributes['bibliographic'], False)
@@ -1504,9 +1517,10 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_false(self.project.get_visible(self.user_two))
 
         data = {
-            'bibliographic': True
-        }
-        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+            'attributes': {
+                'bibliographic': True
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
         assert_equal(attributes['bibliographic'], True)
@@ -1518,10 +1532,13 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, 'project')
     def test_change_contributor_permission_and_bibliographic(self):
         data = {
-            'permission': permissions.READ,
-            'bibliographic': False
-        }
-        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'permission': permissions.READ,
+                'bibliographic': False
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
         assert_equal(attributes['permission'], permissions.READ)
@@ -1534,10 +1551,13 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_not_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
     def test_not_change_contributor(self):
         data = {
-            'permission': None,
-            'bibliographic': True
-        }
-        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'permission': None,
+                'bibliographic': True
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
         assert_equal(attributes['permission'], permissions.WRITE)
@@ -1549,10 +1569,13 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_invalid_change_inputs_contributor(self):
         data = {
-            'permission': 'invalid',
-            'bibliographic': 'invalid'
-        }
-        res = self.app.put_json(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'permission': 'invalid',
+                'bibliographic': 'invalid'
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(self.project.get_permissions(self.user_two), [permissions.READ, permissions.WRITE])
         assert_true(self.project.get_visible(self.user_two))
@@ -1561,10 +1584,13 @@ class TestNodeContributorUpdate(ApiTestCase):
     def test_change_admin_self_with_other_admin(self):
         self.project.add_permission(self.user_two, permissions.ADMIN, save=True)
         data = {
-            'permission': permissions.WRITE,
-            'bibliographic': True
-        }
-        res = self.app.put_json(self.url_creator, data, auth=self.user.auth)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'permission': permissions.WRITE,
+                'bibliographic': True
+        }}
+        res = self.app.put_json_api(self.url_creator, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
         assert_equal(attributes['permission'], permissions.WRITE)
@@ -1574,10 +1600,13 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_admin_self_without_other_admin(self):
         data = {
-            'permission': permissions.WRITE,
-            'bibliographic': True
-        }
-        res = self.app.put_json(self.url_creator, data, auth=self.user.auth, expect_errors=True)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'permission': permissions.WRITE,
+                'bibliographic': True
+        }}
+        res = self.app.put_json_api(self.url_creator, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
         self.project.reload()
@@ -1587,9 +1616,12 @@ class TestNodeContributorUpdate(ApiTestCase):
         self.project.set_visible(self.user_two, False, save=True)
 
         data = {
-            'bibliographic': False
-        }
-        res = self.app.put_json(self.url_creator, data, auth=self.user.auth, expect_errors=True)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'bibliographic': False
+        }}
+        res = self.app.put_json_api(self.url_creator, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
         self.project.reload()
@@ -1597,10 +1629,13 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_non_admin_auth(self):
         data = {
-            'permission': permissions.READ,
-            'bibliographic': False
-        }
-        res = self.app.put_json(self.url_contributor, data, auth=self.user_two.auth, expect_errors=True)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'permission': permissions.READ,
+                'bibliographic': False
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
         self.project.reload()
@@ -1609,10 +1644,13 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_not_logged_in(self):
         data = {
-            'permission': permissions.READ,
-            'bibliographic': False
-        }
-        res = self.app.put_json(self.url_contributor, data, expect_errors=True)
+            'id': self.user._id,
+            'type': 'users',
+            'attributes': {
+                'permission': permissions.READ,
+                'bibliographic': False
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, expect_errors=True)
         assert_equal(res.status_code, 401)
 
         self.project.reload()

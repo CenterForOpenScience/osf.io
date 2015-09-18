@@ -62,6 +62,7 @@ class NodeSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
+
     attributes = NodeAttributesSerializer()
 
     links = LinksField({'html': 'get_absolute_url'})
@@ -176,10 +177,11 @@ class NodeUpdateSerializer(NodeSerializer):
             raise Conflict()
         return value
 
+
 class NodeContributorAttributesSerializer(JSONAPISerializer):
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
+    middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
     family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
@@ -206,7 +208,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     ])
     id = ser.CharField(source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
-    attributes = NodeContributorAttributesSerializer()
+    attributes = NodeContributorAttributesSerializer(source='contributor_attributes')
 
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
@@ -240,8 +242,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def create(self, validated_data):
-        validated_data.update(validated_data.pop('attributes', {}))
-
+        validated_data.update(validated_data.pop('contributor_attributes', {}))
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
         contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
@@ -369,6 +370,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         pass
+
 
 class NodeProviderSerializer(JSONAPISerializer):
 
