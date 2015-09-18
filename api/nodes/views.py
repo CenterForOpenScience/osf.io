@@ -126,12 +126,12 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
     )
-    
+
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = NodeUpdateSerializer
-   
+
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         return self.get_node()

@@ -23,9 +23,9 @@ def json_api_exception_handler(exc, context):
                 if error_key in top_level_error_keys:
                     errors.append({error_key: error_description})
                 elif error_key in resource_object_identifiers:
-                     if isinstance(error_description, basestring):
-                            error_description = [error_description]
-                     errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
+                    if isinstance(error_description, basestring):
+                        error_description = [error_description]
+                    errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
                 elif error_key == 'attributes':
                     for property, description in message[error_key].iteritems():
                         if isinstance(description, basestring):
