@@ -11,6 +11,7 @@ from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error
 from api.files.serializers import FileSerializer
+from api.users.views import UserMixin
 from api.nodes.serializers import (
     NodeSerializer,
     NodeLinksSerializer,
@@ -30,7 +31,7 @@ from api.nodes.permissions import (
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.files.models import OsfStorageFileNode
-from website.models import Node, Pointer, User
+from website.models import Node, Pointer
 from website.util import waterbutler_api_url_for
 
 
@@ -189,8 +190,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         return self.get_queryset_from_request()
 
 
-# TODO: Support creating registrations
-class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node.
 
     View, remove from, and change bibliographic and permissions for a given contributor on a given node.
@@ -210,7 +210,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     # overrides RetrieveAPIView
     def get_object(self):
         node = self.get_node()
-        user = get_object_or_error(User, self.kwargs['user_id'], display_name='user')
+        user = self.get_user()
         # May raise a permission denied
         self.check_object_permissions(self.request, user)
         if user not in node.contributors:
@@ -231,6 +231,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         if not removed:
             raise ValidationError("Must have at least one registered admin contributor")
 
+# TODO: Support creating registrations
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
 
