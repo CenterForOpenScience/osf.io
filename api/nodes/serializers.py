@@ -208,7 +208,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
     type = ser.CharField(write_only=True, required=True)
     attributes = NodeContributorAttributesSerializer()
 
-
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')

@@ -18,7 +18,6 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
-    NodeContributorDetailSerializer,
     NodeContributorUpdateSerializer
 )
 from api.nodes.permissions import (
