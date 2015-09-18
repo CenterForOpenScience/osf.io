@@ -26,6 +26,7 @@ from tests.factories import (
 )
 from tests.utils import assert_logs, assert_not_logs
 
+
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
         super(TestWelcomeToApi, self).setUp()
@@ -793,10 +794,11 @@ class TestNodeUpdate(NodeCRUDTestCase):
             'type': 'nodes',
             'attributes': {
                 'title': new_title,
-                'description ': new_description,
+                'description': new_description,
                 'category': self.new_category,
                 'public': True,
-        }}, auth=self.user.auth)
+            }
+        }, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], strip_html(new_title))
