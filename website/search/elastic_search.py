@@ -307,48 +307,6 @@ def update_node(node, index=None):
 
 @file_util.require_file_indexing
 @requires_search
-def update_file(file_node, index=None):
-    """Add file to elasticsearch.
-
-    :param file_node: Node to be updated.
-    :return True if file was indexed.
-    """
-    index = index or INDEX
-    if not file_util.is_indexed(file_node):
-        return False
-
-    file_size = file_util.get_file_size(file_node)
-    if not file_size < settings.MAX_INDEXED_FILE_SIZE:
-        return False
-
-    name = file_node.name
-    parent_node = file_node.node
-    parent_id = parent_node._id
-    parent_node_type = get_doctype_from_node(parent_node)
-    path = file_util.norm_path(file_node.path)
-    file_content = file_util.get_file_content(file_node)
-    doc_type = get_doctype_from_filenode(file_node)
-    file_doc = {
-        'name': name,
-        'path': path,
-        'parent_id': parent_id,
-        'attachment': base64.encodestring(file_content),
-        'category': 'file'
-    }
-
-    es.index(
-        index=index,
-        doc_type=doc_type,
-        parent=parent_id,
-        id=file_util.norm_path(file_node.path),
-        body=file_doc,
-        refresh=True,
-    )
-    return True
-
-
-@file_util.require_file_indexing
-@requires_search
 def update_file_from_content(file_node, content, index=None):
     """ Add file to elasticsearch with the given content.
 
@@ -387,35 +345,6 @@ def update_file_from_content(file_node, content, index=None):
         parent=parent_id,
         id=file_path,
         body=file_doc,
-        refresh=True,
-    )
-    return True
-
-
-@file_util.require_file_indexing
-@requires_search
-def delete_file(file_node, index=None):
-    """ Remove file from elasticsearch.
-
-    :param file_node.
-    :return True if document deleted
-    """
-    index = index or INDEX
-
-    path = file_util.norm_path(file_node.path)
-    parent_id = file_node.node._id
-
-    if not file_util.is_indexed(file_node):
-        return False
-
-    if not file_util.get_file_size(file_node) <= settings.MAX_FILE_SIZE:
-        return False
-
-    es.delete(
-        index=index,
-        doc_type=get_doctype_from_filenode(file_node),
-        parent=parent_id,
-        id=path,
         refresh=True,
     )
     return True
@@ -477,93 +406,6 @@ def delete_all_files(node, index=None):
         doc_type='{}_file'.format(get_doctype_from_node(node)),
         body=body,
     )
-
-
-@file_util.require_file_indexing
-@requires_search
-def move_file(file_node, old_parent_id, new_parent_id, index=None):
-    """ Change parent of existing document in elasticsearch.
-
-    :param file_node_id: path of File Node.
-    :param old_parent_id: pre-move parent of File Node.
-    :param new_parent_id: post-move parent of File Node.
-    :return: True if sucessfully moved.
-    """
-    index = index or INDEX
-
-    path = file_node._id
-
-    old_parent = Node.load(old_parent_id)
-    old_parent_doctype = get_doctype_from_node(old_parent)
-
-    doc = es.get(
-        index=index,
-        doc_type='{}_file'.format(old_parent_doctype),
-        id=path,
-        parent=old_parent_id,
-    )['_source']
-
-    es.delete(
-        index=index,
-        doc_type='{}_file'.format(old_parent_doctype),
-        parent=old_parent_id,
-        id=path,
-        refresh=True,
-    )
-
-    doc['parent_id'] = new_parent_id
-    new_parent = Node.load(new_parent_id)
-    new_parent_type = get_doctype_from_node(new_parent)
-
-    es.index(
-        index=index,
-        doc_type='{}_file'.format(new_parent_type),
-        parent=new_parent_id,
-        id=path,
-        body=doc,
-        refresh=True,
-    )
-
-    return True
-
-
-@file_util.require_file_indexing
-@requires_search
-def copy_file(file_node, new_file_node_id, old_parent_id, new_parent_id, index=None):
-    """ Get a document and index with a new parent.
-
-    :param file_node_id: Original File Node's path.
-    :param new_file_node_id: New File Node's path.
-    :param old_parent_id: Original File Node's parent's id.
-    :param new_parent_id: New File Node's parent's id.
-    :return: True if move sucessful.
-    """
-    index = index or INDEX
-
-    path = file_util.norm_path(file_node._id)
-    new_path = file_util.norm_path(new_file_node_id)
-    old_parent_doctype = get_doctype_from_node(Node.load(old_parent_id))
-
-    doc = es.get(
-        index=index,
-        doc_type='{}_file'.format(old_parent_doctype),
-        id=path,
-        parent=old_parent_id,
-    )['_source']
-
-    doc['parent_id'] = new_parent_id
-    new_parent = Node.load(new_parent_id)
-    new_parent_type = get_doctype_from_node(new_parent)
-
-    es.index(
-        index=index,
-        doc_type='{}_file'.format(new_parent_type),
-        id=new_path,
-        parent=new_parent_id,
-        body=doc,
-        refresh=True,
-    )
-    return True
 
 
 def bulk_update_contributors(nodes, index=INDEX):
