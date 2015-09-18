@@ -78,7 +78,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         });
         self.selectedLicenseId(license.id);
 
-        self.Year = ko.observable(license.Year || new Date().getFullYear()).extend({
+        self.year = ko.observable(license.year || new Date().getFullYear()).extend({
             required: true,
             pattern: {
                 params: /^\d{4}\s*$/,
@@ -89,20 +89,20 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
                 message: 'Future years are not allowed'
             }
         });
-        self['Copyright Holders'] = ko.observable(license['Copyright Holders'] || '').extend({
+        self.copyrightHolders = ko.observable(license.copyrightHolders || '').extend({
             required: true
         });
         self.dirty = ko.computed(function() {
             var savedLicense = self.savedLicense();
-            return self.Year() !== savedLicense.Year || self['Copyright Holders']() !== savedLicense['Copyright Holders'];
+            return self.year() !== savedLicense.year || self.copyrightHolders() !== savedLicense.copyrightHolders;
         });
         self.properties = ko.computed(function() {
             var props = self.selectedLicense().properties;
             if (props) {
-                return $.map(props, function(prop) {
+                return $.map(props, function(prop, key) {
                     return {
-                        name: prop,
-                        value: self[prop]
+                        name: prop.label,
+                        value: self[key]
                     };
                 });
             }
@@ -110,12 +110,22 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         });
         self.selectedLicenseText = ko.computed(function() {
             return self.selectedLicense().text
-                .replace('{{year}}', self.Year())
-                .replace('{{copyrightHolders}}', self['Copyright Holders']());
+                .replace('{{year}}', self.year())
+                .replace('{{copyrightHolders}}', self.copyrightHolders());
         });
 
         self.validProps = ko.computed(function() {
-            return (!self.properties()) || (self.Year.isValid() && self['Copyright Holders'].isValid());
+            var props = self.properties();
+            if (props) {
+                var valid = true;
+                $.each(props, function(i, prop) {
+                    valid = valid && prop.value.isValid();
+                });
+                return valid;
+            }
+            else {
+                return true;
+            }
         });
 
         self.disableSave = ko.computed(function() {
@@ -167,10 +177,11 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
 
         var payload = {};
         var selectedLicense = self.selectedLicense();
-        selectedLicense.Year = self.Year();
-        selectedLicense['Copyright Holders'] = self['Copyright Holders']();
+        selectedLicense.year = self.year();
+        selectedLicense.copyrightHolders = self.copyrightHolders();
 
         payload[self.saveLicenseKey] = selectedLicense;
+        delete payload[self.saveLicenseKey].properties;
         var save = function() {
             return $.ajax({
                 url: self.saveUrl,
@@ -190,7 +201,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
                         className: 'btn btn-default'
                     },
                     main: {
-                        label: 'Ok',
+                        label: 'OK',
                         className: 'btn btn-primary',
                         callback: function(confirmed) {
                             if (confirmed) {
