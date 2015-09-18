@@ -293,7 +293,13 @@ class User(GuidStoredObject, AddonModelMixin):
     #    ...
     # }
 
+    # email lists to which the user has chosen a subscription setting, being sent from osf, rather than mailchimp
     osf_mailing_lists = fields.DictionaryField(default={'Open Science Framework Help': True})
+    # Format: {
+    #   'list1': True,
+    #   'list2: False,
+    #    ...
+    # }
 
     # the date this user was registered
     # TODO: consider removal - this can be derived from date_registered
@@ -376,8 +382,8 @@ class User(GuidStoredObject, AddonModelMixin):
     # user language and locale data (e.g. 'en_US')
     locale = fields.StringField(default='en_US')
 
-    # created_through_osf4m:
-    conference_user = fields.BooleanField(default=False)
+    # created_through_osf for meetings:
+    is_conference_user = fields.BooleanField(default=False)
 
     _meta = {'optimistic': True}
 

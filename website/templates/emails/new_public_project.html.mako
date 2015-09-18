@@ -6,7 +6,7 @@
         <br>
         Hello ${fullname},
         <br>
-        Congratulations on making your first public project on the Open Science Framework (OSF)! Now that your project “${project_title}" is public, you’ll be able to take advantage of more OSF features:
+        Congratulations on making a public project on the Open Science Framework (OSF)! Now that your project “${project_title}" is public, you’ll be able to take advantage of more OSF features:
         <ul>
             <li><a href="http://osf.io/${nid}/files/">The number of downloads of your files will be automatically logged for you</a></li>
             <li><a href="http://osf.io/${nid}/settings/">You can enable other OSF users to comment on your work</a></li>

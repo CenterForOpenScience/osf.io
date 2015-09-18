@@ -2494,6 +2494,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
+        :param bool skip_mail: Whether this should trigger a new_public_project email, used to prevent conferences from
+                triggering the public project email queue up.
         """
         if permissions == 'public' and not self.is_public:
             if self.is_registration:

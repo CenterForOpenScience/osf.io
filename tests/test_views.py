@@ -3211,24 +3211,24 @@ class TestConfigureMailingListViews(OsfTestCase):
     def test_user_unsubscribe_and_subscribe_help_mailing_list(self):
         user = AuthUserFactory()
         url = api_url_for('user_choose_mailing_lists')
-        payload = {settings.OSF_GENERAL_LIST: False}
+        payload = {settings.OSF_HELP_LIST: False}
         res = self.app.post_json(url, payload, auth=user.auth)
         user.reload()
 
-        assert_false(user.osf_mailing_lists[settings.OSF_GENERAL_LIST])
+        assert_false(user.osf_mailing_lists[settings.OSF_HELP_LIST])
         assert_equal(
-            user.osf_mailing_lists[settings.OSF_GENERAL_LIST],
-            payload[settings.OSF_GENERAL_LIST]
+            user.osf_mailing_lists[settings.OSF_HELP_LIST],
+            payload[settings.OSF_HELP_LIST]
         )
 
-        payload = {settings.OSF_GENERAL_LIST: True}
+        payload = {settings.OSF_HELP_LIST: True}
         res = self.app.post_json(url, payload, auth=user.auth)
         user.reload()
 
-        assert_true(user.osf_mailing_lists[settings.OSF_GENERAL_LIST])
+        assert_true(user.osf_mailing_lists[settings.OSF_HELP_LIST])
         assert_equal(
-            user.osf_mailing_lists[settings.OSF_GENERAL_LIST],
-            payload[settings.OSF_GENERAL_LIST]
+            user.osf_mailing_lists[settings.OSF_HELP_LIST],
+            payload[settings.OSF_HELP_LIST]
         )
 
     def test_help_mails_subscribe(self):
