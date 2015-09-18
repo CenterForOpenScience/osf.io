@@ -4,22 +4,19 @@
 }
 
 span.edit-profile-settings {
-    display: block;
-    position: absolute;
-    bottom: 0;
+    float:right;
+    top: 0;
     right: 0;
 }
 
 div.profile-fullname{
     display: block;
-    position: relative;
     bottom: 0;
 }
 
 span#profileFullname{
-    position: absolute;
-    bottom: 0;
-    margin-bottom: 20px;
+    display:inline;
+    margin-left: -2px;
 }
 
 .pointer {cursor: pointer;}
@@ -36,11 +33,11 @@ table.table.table-plain th, table.table.table-plain td {
 /* Profile gravatar
 -------------------------------------------------- */
 .profile-gravatar {
+    float: left;
     width:70px;
     height:70px;
+    margin-right: .3cm;
 }
-
-
 
 #social td:first-child {
     word-break: inherit;
