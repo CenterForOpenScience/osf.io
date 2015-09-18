@@ -71,7 +71,6 @@ $(document).ready(function() {
         var projectSettingsVM = new ProjectSettings.ProjectSettings( {
             currentTitle: ctx.node.title,
             currentDescription: ctx.node.description,
-            api_url: ctx.node.api_url,
             category: ctx.node.category,
             categories: categories,
             updateUrl: ctx.node.urls.update,

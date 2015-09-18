@@ -15,7 +15,6 @@ var ProjectSettings = oop.extend(
             this.super.constructor.call(this);
             var self = this;
 
-            self.titleDescriptionEditUrl = params.api_url;
             self.decodedTitle = params.currentTitle;
             self.decodedDescription = $osf.htmlDecode(params.currentDescription);
             self.title = ko.observable(params.currentTitle).extend({
@@ -32,7 +31,7 @@ var ProjectSettings = oop.extend(
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
             self.UPDATE_DESCRIPTION_ERROR_MESSAGE = 'Error updating description, please try again. If the problem persists, email ' +
                 '<a href="mailto:support@osf.io">support@osf.io</a>.';
-            self.UPDATE_ERROR_MESSAGE_RAVEN = 'Error updating Node.category';
+            self.UPDATE_CATEGORY_ERROR_MESSAGE_RAVEN = 'Error updating Node.category';
 
             self.INSTANTIATION_ERROR_MESSAGE = 'Trying to instantiate ProjectSettings view model without an update URL';
 
@@ -71,7 +70,7 @@ var ProjectSettings = oop.extend(
         },
 
         /*update handlers*/
-        updateAll: function() {
+        updateCategory: function() {
             var self = this;
             return $osf.putJSON(self.updateUrl, {
                     category: self.selectedCategory()
@@ -85,7 +84,7 @@ var ProjectSettings = oop.extend(
         },
         updateTitle: function() {
             var self = this;
-            return $osf.putJSON(self.titleDescriptionEditUrl, {
+            return $osf.putJSON(self.updateUrl, {
                     title: self.title()
                 })
                 .done(function() {
@@ -95,7 +94,7 @@ var ProjectSettings = oop.extend(
         },
         updateDescription: function() {
             var self = this;
-            return $osf.putJSON(self.titleDescriptionEditUrl, {
+            return $osf.putJSON(self.updateUrl, {
                     description: self.description()
                 })
                 .done(function() {
