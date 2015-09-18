@@ -452,7 +452,7 @@ def user_choose_mailing_lists(auth, **kwargs):
         for list_name, subscribe in json_data.items():
             # TO DO: change this to take in any potential non-mailchimp, something like try: update_subscription(), except IndexNotFound: update_mailchimp_subscription()
             if list_name == 'Open Science Framework Help':
-                help_mails(user=user, subscribe=subscribe)
+                update_osf_help_mails_subscription(user=user, subscribe=subscribe)
             else:
                 update_mailchimp_subscription(user, list_name, subscribe)
     else:
@@ -528,7 +528,7 @@ def impute_names(**kwargs):
     return auth_utils.impute_names(name)
 
 
-def help_mails(user, subscribe):
+def update_osf_help_mails_subscription(user, subscribe):
     user.osf_mailing_lists['Open Science Framework Help'] = subscribe
     user.save()
 

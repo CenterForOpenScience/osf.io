@@ -37,7 +37,7 @@ from website.project.views.contributor import (
     notify_added_contributor
 )
 from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import fmt_date_or_none, help_mails
+from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
 from website.util import api_url_for, web_url_for
 from website import mails, settings
 from website.util import rubeus
@@ -3230,18 +3230,18 @@ class TestConfigureMailingListViews(OsfTestCase):
             payload[settings.OSF_HELP_LIST]
         )
 
-    def test_help_mails_subscribe(self):
+    def test_osf_help_mails_subscribe(self):
         user = UserFactory()
         user.osf_mailing_lists['Open Science Framework Help'] = False
         user.save()
-        help_mails(user, True)
+        update_osf_help_mails_subscription(user, True)
         assert_true(user.osf_mailing_lists['Open Science Framework Help'])
 
-    def test_help_mails_unsubscribe(self):
+    def test_osf_help_mails_unsubscribe(self):
         user = UserFactory()
         user.osf_mailing_lists['Open Science Framework Help'] = True
         user.save()
-        help_mails(user, False)
+        update_osf_help_mails_subscription(user, False)
         assert_false(user.osf_mailing_lists['Open Science Framework Help'])
 
     @unittest.skipIf(settings.USE_CELERY, 'Subscription must happen synchronously for this test')
