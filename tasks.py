@@ -329,7 +329,9 @@ def migrate_search_files(index=settings.ELASTIC_INDEX):
 def clear_search_files(index=settings.ELASTIC_INDEX):
     from elasticsearch import Elasticsearch
     es = Elasticsearch()
-    es.delete_by_query(index=index, doc_type='file', body={'query': {'query_string': {'query': '*', 'analyze_wildcard': True}}})
+    for node_type in ['project', 'component', 'registration']:
+        doc_type = '{}_file'.format(node_type)
+        es.delete_by_query(index=index, doc_type=doc_type, body={'query': {'query_string': {'query': '*', 'analyze_wildcard': True}}})
 
 
 @task
