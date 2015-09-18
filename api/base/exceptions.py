@@ -20,7 +20,9 @@ def json_api_exception_handler(exc, context):
         if isinstance(exc, JSONAPIException):
             errors.extend([
                 {
-                    'source': exc.source,
+                    'source': {
+                        'parameter': exc.parameter
+                    },
                     'detail': exc.detail,
                 }
             ])
@@ -47,27 +49,26 @@ class JSONAPIException(APIException):
     """Inherits from the base DRF API exception and adds extra metadata to support JSONAPI error objects
 
     :param str detail: a human-readable explanation specific to this occurrence of the problem
-    param dict source: an object containing references to the source of the error, optionally including
-    any of the following members:
-    :parm str dict.pointer: a JSON Pointer [RFC6901] to the associated entity in the request document
-    e.g. "/data" for a primary data object, or "/data/attributes/title" for a specific attribute
-    :param str dict.parameter: a string indicating which URI query parameter caused the error
+    :param dict source: A dictionary containing references to the source of the error.
+        See http://jsonapi.org/format/#error-objects.
+        Example: ``source={'pointer': '/data/attributes/title'}``
     """
-    def __init__(self, detail=None, source=None):
+    def __init__(self, detail=None, parameter=None):
         super(JSONAPIException, self).__init__(detail=detail)
-        self.source = source
+        self.parameter = parameter
 
 # Custom Exceptions the Django Rest Framework does not support
 class Gone(APIException):
     status_code = status.HTTP_410_GONE
     default_detail = ('The requested resource is no longer available.')
 
-class InvalidQueryStringValue(JSONAPIException):
-    """Raised when client passes an invalid value to a querystring parameter."""
-    default_detail = 'Querystring contains an invalid value.'
+
+class InvalidQueryStringError(JSONAPIException):
+    """Raised when client passes an invalid value to a query string parameter."""
+    default_detail = 'Query string contains an invalid value.'
     status_code = http.BAD_REQUEST
 
 
 class InvalidFilterError(ParseError):
-    """Raised when client passes an invalid filter in the querystring."""
-    default_detail = 'Querystring contains an invalid filter.'
+    """Raised when client passes an invalid filter in the query string."""
+    default_detail = 'Query string contains an invalid filter.'

@@ -362,7 +362,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
+        assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')
 
 
 class TestNodeCreate(ApiTestCase):
@@ -952,7 +952,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
+        assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')
 
 
 class TestNodeContributorAdd(NodeCRUDTestCase):
