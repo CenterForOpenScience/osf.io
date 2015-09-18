@@ -12,6 +12,7 @@ from datetime import timedelta
 
 os_env = os.environ
 
+
 def parent_dir(path):
     '''Return the parent of a directory.'''
     return os.path.abspath(os.path.join(path, os.pardir))
@@ -72,12 +73,11 @@ SHARE_ELASTIC_INDEX = 'share'
 SHARE_ELASTIC_INDEX_TEMPLATE = 'share_v{}'
 
 # Sessions
-# TODO: Override SECRET_KEY in local.py in production
+# TODO: Override OSF_COOKIE_DOMAIN in local.py in production
+OSF_COOKIE_DOMAIN = None
 COOKIE_NAME = 'osf'
+# TODO: Override SECRET_KEY in local.py in production
 SECRET_KEY = 'CHANGEME'
-
-# TODO: Remove after migration to OSF Storage
-COPY_GIT_REPOS = False
 
 # Change if using `scripts/cron.py` to manage crontab
 CRON_USER = None
@@ -137,16 +137,16 @@ SESSION_HISTORY_IGNORE_RULES = [
 
 # TODO: Configuration should not change between deploys - this should be dynamic.
 CANONICAL_DOMAIN = 'openscienceframework.org'
-COOKIE_DOMAIN = '.openscienceframework.org' # Beaker
+COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
 
 # TODO: Combine Python and JavaScript config
 COMMENT_MAXLENGTH = 500
 
-# Gravatar options
-GRAVATAR_SIZE_PROFILE = 70
-GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
-GRAVATAR_SIZE_DISCUSSION = 20
+# Profile image options
+PROFILE_IMAGE_LARGE = 70
+PROFILE_IMAGE_MEDIUM = 40
+PROFILE_IMAGE_SMALL = 20
 
 # Conference options
 CONFERNCE_MIN_COUNT = 5
@@ -175,23 +175,6 @@ WIKI_WHITELIST = {
         'list-style',
     ]
 }
-
-##### Celery #####
-## Default RabbitMQ broker
-BROKER_URL = 'amqp://'
-
-# Default RabbitMQ backend
-CELERY_RESULT_BACKEND = 'amqp://'
-
-# Modules to import when celery launches
-CELERY_IMPORTS = (
-    'framework.tasks',
-    'framework.tasks.signals',
-    'framework.email.tasks',
-    'framework.analytics.tasks',
-    'website.mailchimp_utils',
-    'scripts.send_digest'
-)
 
 # Add-ons
 # Load addons from addons.json

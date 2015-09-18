@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import re
+import urllib
 import logging
 import urlparse
 
@@ -9,6 +10,7 @@ import furl
 from flask import request, url_for
 
 from website import settings as website_settings
+from api.base import settings as api_settings
 
 # Keep me: Makes rubeus importable from website.util
 from . import rubeus  # noqa
@@ -69,7 +71,7 @@ def api_url_for(view_name, _absolute=False, _xml=False, *args, **kwargs):
 def api_v2_url(path_str,
                params=None,
                base_route=website_settings.API_DOMAIN,
-               base_prefix='',
+               base_prefix=api_settings.API_BASE,
                **kwargs):
     """
     Convenience function for APIv2 usage: Concatenates parts of the absolute API url based on arguments provided
@@ -116,7 +118,8 @@ def is_json_request():
 
 
 def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
-    """Reverse URL lookup for WaterButler routes
+    """DEPRECATED Use waterbutler_api_url_for
+    Reverse URL lookup for WaterButler routes
     :param str route: The action to preform, upload, download, delete...
     :param str provider: The name of the requested provider
     :param str path: The path of the requested file or folder
@@ -146,5 +149,13 @@ def waterbutler_url_for(route, provider, path, node, user=None, **kwargs):
 
     url.args['view_only'] = view_only
 
+    url.args.update(kwargs)
+    return url.url
+
+def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
+    assert path.startswith('/'), 'Path must always start with /'
+    url = furl.furl(website_settings.WATERBUTLER_URL)
+    segments = ['v1', 'resources', node_id, 'providers', provider] + path.split('/')[1:]
+    url.path.segments.extend([urllib.quote(x.encode('utf-8')) for x in segments])
     url.args.update(kwargs)
     return url.url

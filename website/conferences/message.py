@@ -103,7 +103,9 @@ class ConferenceMessage(object):
 
     @cached_property
     def text(self):
-        return self.form['stripped-text']
+        # Not included if there is no message body
+        # https://documentation.mailgun.com/user_manual.html#routes
+        return self.form.get('stripped-text', '')
 
     @cached_property
     def sender(self):

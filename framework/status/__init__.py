@@ -4,7 +4,7 @@ from collections import namedtuple
 
 from framework.sessions import session
 
-Status = namedtuple('Status', ['message', 'css_class', 'dismissible', 'trust'])  # trust=True displays msg as raw HTML
+Status = namedtuple('Status', ['message', 'jumbotron', 'css_class', 'dismissible', 'trust'])  # trust=True displays msg as raw HTML
 
 #: Status_type => bootstrap css class
 TYPE_MAP = {
@@ -14,9 +14,10 @@ TYPE_MAP = {
     'info': 'info',
     'error': 'danger',
     'danger': 'danger',
+    'default': 'default',
 }
 
-def push_status_message(message, kind='warning', dismissible=True, trust=True):
+def push_status_message(message, kind='warning', dismissible=True, trust=True, jumbotron=False):
     """
     Push a status message that will be displayed as a banner on the next page loaded by the user.
 
@@ -25,6 +26,7 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True):
     :param dismissible: Whether the status message can be dismissed by the user
     :param trust: Whether the text is safe to insert directly into HTML as given. (useful if the message includes
         custom code, eg links) If false, the message will be automatically escaped as an HTML-safe string.
+    :param jumbotron: Should this be in a jumbstron element rather than an alert
     """
     # TODO: Change the default to trust=False once conversion to markupsafe rendering is complete
     statuses = session.data.get('status')
@@ -32,6 +34,7 @@ def push_status_message(message, kind='warning', dismissible=True, trust=True):
         statuses = []
     css_class = TYPE_MAP.get(kind, 'warning')
     statuses.append(Status(message=message,
+                           jumbotron=jumbotron,
                            css_class=css_class,
                            dismissible=dismissible,
                            trust=trust))

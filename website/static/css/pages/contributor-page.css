@@ -11,11 +11,6 @@
     margin-left: 7px;
 }
 
-.list-overflow{
-    max-height: 200px;
-    overflow-y: auto;
-}
-
 #privateLinkTable .tooltip{
     word-wrap: break-word;
 }

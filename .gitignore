@@ -93,3 +93,7 @@ website/static/img/badges
 
 # GUIDS
 scripts/guid_blacklist.txt
+
+# Celery dbs
+celerybeat-schedule.db
+celery_beat.py.db

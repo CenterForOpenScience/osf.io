@@ -93,7 +93,7 @@ a {
 
 .pointer {cursor: pointer;}
 
-/* Minimal Treebeard for Configure Notifications in project and user settings */
+/* Minimal Treebeard for Configure Notifications/Wiki in project and user settings */
 .osf-treebeard-minimal #tb-tbody {
     border: none;
     max-height: 500px;
@@ -310,6 +310,10 @@ a {
 /* Comments Panel */
 .comment-actions i {
     cursor: pointer;
+}
+
+.comment-info {
+  padding-bottom: 10px;
 }
 
 .comment-container {

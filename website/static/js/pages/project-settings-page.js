@@ -12,7 +12,7 @@ require('css/addonsettings.css');
 
 var ctx = window.contextVars;
 
-// Initialize treebeard grid
+// Initialize treebeard grid for notifications
 var ProjectNotifications = require('js/notificationsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 var notificationsURL = ctx.node.urls.api  + 'subscriptions/';
@@ -27,8 +27,29 @@ if ($('#grid').length) {
     }).fail(function(xhr, status, error) {
         $notificationsMsg.addClass('text-danger');
         $notificationsMsg.text('Could not retrieve notification settings.');
-        Raven.captureMessage('Could not GET notification settings', {
+        Raven.captureMessage('Could not GET notification settings.', {
             url: notificationsURL, status: status, error: error
+        });
+    });
+}
+
+//Initialize treebeard grid for wiki
+var ProjectWiki = require('js/wikiSettingsTreebeard.js');
+var wikiSettingsURL = ctx.node.urls.api  + 'wiki/settings/';
+var $wikiMsg = $('#configureWikiMessage');
+
+if ($('#wgrid').length) {
+    $.ajax({
+        url: wikiSettingsURL,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        new ProjectWiki(response);
+    }).fail(function(xhr, status, error) {
+        $wikiMsg.addClass('text-danger');
+        $wikiMsg.text('Could not retrieve wiki settings.');
+        Raven.captureMessage('Could not GET wiki settings.', {
+            url: wikiSettingsURL, status: status, error: error
         });
     });
 }

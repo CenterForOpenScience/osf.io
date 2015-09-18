@@ -8,9 +8,10 @@ import httplib as http
 
 import itsdangerous
 
+from flask import request
 from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
-from flask import request, make_response
+
 from framework.flask import redirect
 
 from website import settings
@@ -104,7 +105,7 @@ def create_session(response, data=None):
         cookie_value = itsdangerous.Signer(settings.SECRET_KEY).sign(session_id)
         set_session(session)
     if response is not None:
-        response.set_cookie(settings.COOKIE_NAME, value=cookie_value)
+        response.set_cookie(settings.COOKIE_NAME, value=cookie_value, domain=settings.OSF_COOKIE_DOMAIN)
         return response
 
 
@@ -116,11 +117,7 @@ session = LocalProxy(get_session)
 # NOTE: This gets attached in website.app.init_app to ensure correct callback
 # order
 def before_request():
-    from framework import sentry
     from framework.auth import cas
-    from framework.auth.core import User
-    from framework.auth import authenticate
-    from framework.routing import json_renderer
 
     # Central Authentication Server Ticket Validation and Authentication
     ticket = request.args.get('ticket')
@@ -129,22 +126,6 @@ def before_request():
         service_url.args.pop('ticket')
         # Attempt autn wih CAS, and return a proper redirect response
         return cas.make_response_from_ticket(ticket=ticket, service_url=service_url.url)
-
-    # Central Authentication Server OAuth Bearer Token
-    authorization = request.headers.get('Authorization')
-    if authorization and authorization.startswith('Bearer '):
-        client = cas.get_client()
-        try:
-            access_token = cas.parse_auth_header(authorization)
-            cas_resp = client.profile(access_token)
-        except cas.CasError as err:
-            sentry.log_exception()
-            # NOTE: We assume that the request is an AJAX request
-            return json_renderer(err)
-        if cas_resp.authenticated:
-            user = User.load(cas_resp.user)
-            return authenticate(user, access_token=access_token, response=None)
-        return make_response('', http.UNAUTHORIZED)
 
     if request.authorization:
         # TODO: Fix circular import

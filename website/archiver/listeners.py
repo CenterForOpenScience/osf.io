@@ -2,12 +2,10 @@ import celery
 
 from framework.tasks import handlers
 
-from website.archiver.tasks import archive
 from website.archiver import utils as archiver_utils
 from website.archiver import (
     ARCHIVER_UNCAUGHT_ERROR,
 )
-from website.archiver.decorators import fail_archive_on_error
 from website.archiver import signals as archiver_signals
 
 from website.project import signals as project_signals
@@ -21,17 +19,18 @@ def after_register(src, dst, user):
     :param dst: registration Node
     :param user: registration initiator
     """
+    # Prevent circular import with app.py
+    from website.archiver import tasks
     archiver_utils.before_archive(dst, user)
     if dst.root != dst:  # if not top-level registration
         return
-    archive_tasks = [archive.si(job_pk=t.archive_job._id) for t in dst.node_and_primary_descendants()]
+    archive_tasks = [tasks.archive(job_pk=t.archive_job._id) for t in dst.node_and_primary_descendants()]
     handlers.enqueue_task(
-        celery.chain(*archive_tasks)
+        celery.chain(archive_tasks)
     )
 
 
 @project_signals.archive_callback.connect
-@fail_archive_on_error
 def archive_callback(dst):
     """Blinker listener for updates to the archive task. When the tree of ArchiveJob
     instances is complete, proceed to send success or failure mails

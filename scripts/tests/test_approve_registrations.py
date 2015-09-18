@@ -20,7 +20,7 @@ class TestApproveRegistrations(OsfTestCase):
         self.registration.require_approval(self.user)
 
     def test_new_registration_should_not_be_approved(self):
-        assert_true(self.registration.pending_registration)
+        assert_true(self.registration.is_pending_registration)
 
         main(dry_run=False)
         assert_false(self.registration.is_registration_approved)

@@ -16,13 +16,14 @@ from tests.factories import (
     AuthUserFactory, NodeWikiFactory,
 )
 
+from website.exceptions import NodeStateError
 from website.addons.wiki import settings
 from website.addons.wiki import views
 from website.addons.wiki.exceptions import InvalidVersionError
 from website.addons.wiki.model import NodeWikiPage, render_content
 from website.addons.wiki.utils import (
     get_sharejs_uuid, generate_private_uuid, share_db, delete_share_doc,
-    migrate_uuid, format_wiki_version,
+    migrate_uuid, format_wiki_version, serialize_wiki_settings,
 )
 from website.addons.wiki.tests.config import EXAMPLE_DOCS, EXAMPLE_OPS
 from framework.auth import Auth
@@ -55,7 +56,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_url_404_with_no_write_permission(self):
+    def test_wiki_url_404_with_no_write_permission(self): # and not public
         url = self.project.web_url_for('project_wiki_view', wname='somerandomid')
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -86,7 +87,7 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
 
-    def test_wiki_url_with_edit_get_returns_404_with_no_write_permission(self):
+    def test_wiki_url_with_edit_get_returns_403_with_no_write_permission(self):
         self.project.update_node_wiki('funpage', 'Version 1', Auth(self.user))
         self.project.update_node_wiki('funpage', 'Version 2', Auth(self.user))
         self.project.save()
@@ -105,6 +106,16 @@ class TestWikiViews(OsfTestCase):
         ) + '?edit'
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+        # Check publicly editable
+        wiki = self.project.get_addon('wiki')
+        wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=True)
+        res = self.app.get(url, auth=AuthUserFactory().auth, expect_errors=False)
+        assert_equal(res.status_code, 200)
+
+        # Check publicly editable but not logged in
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 401)
 
     def test_wiki_url_for_pointer_returns_200(self):
         # TODO: explain how this tests a pointer
@@ -437,6 +448,16 @@ class TestWikiViews(OsfTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_in('data-osf-panel="Edit"', res.text)
+        # Publicly editable
+        wiki = self.project.get_addon('wiki')
+        wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=True)
+        res = self.app.get(url, auth=AuthUserFactory().auth)
+        assert_equal(res.status_code, 200)
+        assert_in('data-osf-panel="Edit"', res.text)
+        # Publicly editable but not logged in
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        assert_not_in('data-osf-panel="Edit"', res.text)
 
 
 class TestViewHelpers(OsfTestCase):
@@ -460,6 +481,7 @@ class TestViewHelpers(OsfTestCase):
         assert_equal(urls['delete'], self.project.api_url_for('project_wiki_delete', wname=self.wname))
         assert_equal(urls['rename'], self.project.api_url_for('project_wiki_rename', wname=self.wname))
         assert_equal(urls['content'], self.project.api_url_for('wiki_page_content', wname=self.wname))
+        assert_equal(urls['settings'], self.project.api_url_for('edit_wiki_settings'))
 
 
 class TestWikiDelete(OsfTestCase):
@@ -1089,6 +1111,104 @@ class TestWikiUtils(OsfTestCase):
         with assert_raises(InvalidVersionError):
             format_wiki_version('nonsense', 5, True)
 
+class TestPublicWiki(OsfTestCase):
+
+    def setUp(self):
+        super(TestPublicWiki, self).setUp()
+        self.project = ProjectFactory()
+        self.consolidate_auth = Auth(user=self.project.creator)
+        self.user = AuthUserFactory()
+
+    def test_addon_on_children(self):
+
+        parent = ProjectFactory()
+        node = NodeFactory(parent=parent, category='project')
+        sub_component = NodeFactory(parent=node)
+
+        parent.delete_addon('wiki', self.consolidate_auth)
+        node.delete_addon('wiki', self.consolidate_auth)
+        sub_component.delete_addon('wiki', self.consolidate_auth)
+
+        sub_component2 = NodeFactory(parent=node)
+
+        has_addon_on_child_node =\
+            node.has_addon_on_children('wiki')
+        assert_true(has_addon_on_child_node)
+
+    def test_check_user_has_addon_excludes_deleted_components(self):
+        parent = ProjectFactory()
+        parent.delete_addon('wiki', self.consolidate_auth)
+        node = NodeFactory(parent=parent, category='project')
+        node.delete_addon('wiki', self.consolidate_auth)
+        sub_component = NodeFactory(parent=node)
+        sub_component.is_deleted = True
+        sub_component.save()
+
+        has_addon_on_child_node =\
+            node.has_addon_on_children('wiki')
+        assert_false(has_addon_on_child_node)
+
+    def test_set_editing(self):
+        parent = ProjectFactory()
+        node = NodeFactory(parent=parent, category='project', is_public=True)
+        wiki = node.get_addon('wiki')
+        # Set as publicly editable
+        wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=True)
+        assert_true(wiki.is_publicly_editable)
+        assert_equal(node.logs[-1].action, 'made_wiki_public')
+        # Try to set public when the wiki is already public
+        with assert_raises(NodeStateError):
+            wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=False)
+        # Turn off public editing
+        wiki.set_editing(permissions=False, auth=self.consolidate_auth, log=True)
+        assert_false(wiki.is_publicly_editable)
+        assert_equal(node.logs[-1].action, 'made_wiki_private')
+
+        node = NodeFactory(parent=parent, category='project')
+        wiki = node.get_addon('wiki')
+
+        # Try to set to private wiki already private
+        with assert_raises(NodeStateError):
+            wiki.set_editing(permissions=False, auth=self.consolidate_auth, log=False)
+
+        # Try to set public when the project is private
+        with assert_raises(NodeStateError):
+            wiki.set_editing(permissions=True, auth=self.consolidate_auth, log=False)
+
+    def test_serialize_wiki_settings(self):
+        node = NodeFactory(parent=self.project, creator=self.user, is_public=True)
+        node.get_addon('wiki').set_editing(
+            permissions=True, auth=self.consolidate_auth, log=True)
+        data = serialize_wiki_settings(self.user, [node._id])
+        expected = [{
+            'node': {
+                'id': node._id,
+                'title': node.title,
+                'url': node.url,
+            },
+            'children': [
+                {
+                    'select': {
+                        'title': 'permission',
+                        'permission': 'public'
+                    },
+                }
+            ],
+            'kind': 'folder',
+            'nodeType': 'component',
+            'category': 'hypothesis',
+            'permissions': {'view': True}
+        }]
+
+        assert_equal(data, expected)
+
+    def test_serialize_wiki_settings_no_wiki(self):
+        node = NodeFactory(parent=self.project, creator=self.user)
+        node.delete_addon('wiki', self.consolidate_auth)
+        data = serialize_wiki_settings(self.user, [node._id])
+        expected = []
+
+        assert_equal(data, expected)
 
 class TestWikiMenu(OsfTestCase):
 

@@ -7,7 +7,7 @@
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row">
-            <div class="col-sm-6 col-md-7 cite-container">
+            <div class="col-sm-5 col-md-7 cite-container">
                 % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
@@ -23,7 +23,7 @@
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
-            <div class="col-sm-6 col-md-5">
+            <div class="col-sm-7 col-md-5">
                 <div class="btn-toolbar node-control pull-right"
                     % if not user_name:
                         data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"

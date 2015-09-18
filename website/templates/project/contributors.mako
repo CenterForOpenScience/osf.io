@@ -136,14 +136,13 @@
                             </div>
                         </td>
                         <td class="col-sm-4">
-                           <ul class="narrow-list list-overflow" data-bind="foreach: nodesList">
+                           <ul class="private-link-list narrow-list" data-bind="foreach: nodesList">
                                <li data-bind="style:{marginLeft: $data.scale}">
                                   <span data-bind="getIcon: $data.category"></span>
                                   <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
                                </li>
                            </ul>
-                           <button class="btn btn-default btn-mini more-link-node" data-bind="text:hasMoreText, visible: moreNode, click: displayAllNodes"></button>
-                           <button class="btn btn-default btn-mini more-link-node" data-bind="text:collapse, visible:collapseNode, click: displayDefaultNodes"></button>
+
                         </td>
 
                         <td class="col-sm-2">

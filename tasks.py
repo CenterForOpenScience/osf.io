@@ -62,7 +62,7 @@ def apiserver(port=8000, live=False):
     cmd = 'python manage.py runserver {}'.format(port)
     if live:
         cmd += ' livereload'
-    run(cmd, echo=True)
+    run(cmd, echo=True, pty=True)
 
 
 SHELL_BANNER = """
@@ -286,7 +286,8 @@ def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors
 @task(aliases=['celery'])
 def celery_worker(level="debug"):
     """Run the Celery process."""
-    cmd = 'celery worker -A framework.tasks -l {0}'.format(level)
+    # beat sets up a cron, refer to website/settings/celeryconfig
+    cmd = 'celery worker -A framework.tasks -l {0} --beat'.format(level)
     run(bin_prefix(cmd))
 
 
@@ -361,7 +362,7 @@ def pip_install(req_file):
 
 
 @task(aliases=['req'])
-def requirements(addons=False, release=False, dev=False):
+def requirements(addons=False, release=False, dev=False, metrics=False):
     """Install python dependencies.
 
     Examples:
@@ -369,6 +370,7 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --dev
         inv requirements --addons
         inv requirements --release
+        inv requirements --metrics
     """
     if release or addons:
         addon_requirements()
@@ -377,6 +379,8 @@ def requirements(addons=False, release=False, dev=False):
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:  # then dev requirements
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    elif metrics:  # then dev requirements
+        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
     else:  # then base requirements
         req_file = os.path.join(HERE, 'requirements.txt')
     run(pip_install(req_file), echo=True)
@@ -789,6 +793,15 @@ def webpack(clean=False, watch=False, dev=False):
 
 
 @task()
+def build_js_config_files():
+    from website import settings
+    from website.app import build_js_config_files as _build_js_config_files
+    print('Building JS config files...')
+    _build_js_config_files(settings)
+    print("...Done.")
+
+
+@task()
 def assets(dev=False, watch=False):
     """Install and build static assets."""
     npm = 'npm install'
@@ -796,6 +809,7 @@ def assets(dev=False, watch=False):
         npm += ' --production'
     run(npm, echo=True)
     bower_install()
+    build_js_config_files()
     # Always set clean=False to prevent possible mistakes
     # on prod
     webpack(clean=False, watch=watch, dev=dev)

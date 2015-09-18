@@ -35,35 +35,35 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <h4> Improve your search:</h4>
-                                <span class="tag-cloud" data-bind="foreach: tags">
+                                <span class="tag-cloud" data-bind="foreach: {data: tags, as: 'tag'}">
                                     <!-- ko if: count === $parent.tagMaxCount() && count > $parent.tagMaxCount()/2  -->
                                     <span class="tag tag-big tag-container"
-                                          data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
+                                          data-bind="click: $root.addTag.bind($parentContext, tag.name)">
                                         <span class="cloud-text">
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag big"
-                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'remove')"></i>
+                                           data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count < $parent.tagMaxCount() && count > $parent.tagMaxCount()/2 -->
                                     <span class="tag tag-med tag-container"
-                                          data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
+                                          data-bind="click: $root.addTag.bind($parentContext, tag.name)">
                                         <span class="cloud-text">
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag med"
-                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'remove')"></i>
+                                           data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
                                     </span>
                                     <!-- /ko -->
                                     <!-- ko if: count <= $parent.tagMaxCount()/2-->
                                     <span class="tag tag-sm tag-container"
-                                          data-bind="click: $root.clickTag.bind($parentContext, name, 'add')">
+                                          data-bind="click: $root.addTag.bind($parentContext, tag.name)">
                                         <span class="cloud-text">
                                             {{name}}
                                         </span>
                                         <i class="fa fa-times-circle remove-tag"
-                                           data-bind="click: $root.clickTag.bind($parentContext, name, 'remove')"></i>
+                                           data-bind="click: $root.removeTag.bind($parentContext, tag.name)"></i>
                                     </span>
                                     <!-- /ko -->
                                 </span>
@@ -235,8 +235,12 @@
       <div data-bind="template: {name: 'node', data: $data}"></div>
     </script>
     <script type="text/html" id="registration">
-        <h4><a data-bind="attr.href: url">{{ title }}</a>  (<!-- ko if: is_retracted --><span class="text-danger">Retracted</span> <!-- /ko -->Registration)</h4>
-
+        <!-- ko if: parent_url -->
+        <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
+        <!-- /ko -->
+        <!-- ko if: !parent_url -->
+        <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{ title }}</a>  (<span class="text-danger" data-bind="if: is_retracted">Retracted </span>Registration)</h4>
+        <!-- /ko -->
         <strong><span data-bind="text: 'Date Registered: ' + dateRegistered['local'], tooltip: {title: dateRegistered['utc']}"></span></strong>
 
         <p data-bind="visible: description"><strong>Description:</strong> {{ description | fit:500 }}</p>
@@ -270,10 +274,10 @@
         <p data-bind="visible: tags.length"><strong>Tags:</strong>
             <div data-bind="foreach: tags">
                 <span class="tag pointer tag-container"
-                      data-bind="click: $root.clickTag.bind($parentContext, $data, 'add')">
+                      data-bind="click: $root.addTag.bind($parentContext, $data)">
                     <span class="tag-text" data-bind="text: $data"></span>
                     <i class="fa fa-times-circle remove-tag"
-                       data-bind="click: $root.clickTag.bind($parentContext, $data, 'remove')"></i>
+                       data-bind="click: $root.removeTag.bind($parentContext, $data)"></i>
                 </span>
             </div>
         </p>

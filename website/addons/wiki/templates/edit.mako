@@ -81,7 +81,7 @@
                             <div class="pull-right">
                                 <!-- Version Picker -->
                                 <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
-                                    % if user['can_edit']:
+                                    % if user['can_edit_wiki_body']:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                     % endif
                                     <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
@@ -111,7 +111,7 @@
               </div>
           </div>
 
-          % if user['can_edit']:
+          % if user['can_edit_wiki_body']:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
@@ -242,16 +242,14 @@
 </div>
 
 <div class="modal fade" id="renameModal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title">Wiki content has moved</h3>
-      </div>
-      <div class="modal-body">
-        <p>Your browser should refresh shortly&hellip;</p>
-      </div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="spinner-loading-wrapper">
+                <div class="logo-spin logo-xl"></div>
+                 <p class="m-t-sm fg-load-message"> Renaming wiki...  </p>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <div class="modal fade" id="deleteModal" tabindex="-1">
@@ -347,15 +345,16 @@
 ${parent.javascript_bottom()}
 <script>
 
-    var canEdit = ${json.dumps(user['can_edit'])};
+    var canEditBody = ${user['can_edit_wiki_body'] | sjson, n};
+    var isContributor = ${user['can_edit']  | sjson, n};
 
-    var canEditPageName = canEdit && ${json.dumps(
+    var canEditPageName = isContributor && ${json.dumps(
         wiki_id and wiki_name != 'home'
     )};
 
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
-        canEdit: canEdit,
+        canEdit: canEditBody,
         canEditPageName: canEditPageName,
         usePythonRender: ${json.dumps(use_python_render)},
         versionSettings: ${json.dumps(version_settings) | n},

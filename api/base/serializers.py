@@ -1,18 +1,29 @@
 import collections
 import re
 
+from rest_framework.reverse import reverse
+from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
+
+from api.base.utils import absolute_reverse
+
+from website import settings
 from website.util.sanitize import strip_html
-from api.base.utils import absolute_reverse, waterbutler_url_for
+from website.util import waterbutler_api_url_for
 
 
 def _rapply(d, func, *args, **kwargs):
-    """Apply a function to all values in a dictionary, recursively."""
+    """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
+    as those are the only complex structures currently supported by DRF Serializer Fields."""
     if isinstance(d, collections.Mapping):
         return {
             key: _rapply(value, func, *args, **kwargs)
             for key, value in d.iteritems()
         }
+    if isinstance(d, list):
+        return [
+            _rapply(item, func, *args, **kwargs) for item in d
+        ]
     else:
         return func(d, *args, **kwargs)
 
@@ -27,6 +38,59 @@ def _url_val(val, obj, serializer, **kwargs):
         return getattr(serializer, val)(obj)
     else:
         return val
+
+
+class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
+    """
+    HyperlinkedIdentityField that returns a nested dict with url,
+    optional meta information, and link_type.
+
+    Example:
+
+        children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk',
+                                    link_type='related', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
+
+    """
+
+    def __init__(self, view_name=None, **kwargs):
+        kwargs['read_only'] = True
+        kwargs['source'] = '*'
+        self.meta = kwargs.pop('meta', None)
+        self.link_type = kwargs.pop('link_type', 'url')
+        super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
+
+    # overrides HyperlinkedIdentityField
+    def get_url(self, obj, view_name, request, format):
+        """
+        Given an object, return the URL that hyperlinks to the object.
+
+        Returns None if lookup value is None
+        """
+
+        if getattr(obj, self.lookup_field) is None:
+            return None
+
+        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+
+    # overrides HyperlinkedIdentityField
+    def to_representation(self, value):
+        """
+        Returns nested dictionary in format {'links': {'self.link_type': ... }
+
+        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
+        the link is represented as a links object with 'href' and 'meta' members.
+        """
+        url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
+
+        if self.meta:
+            meta = {}
+            for key in self.meta:
+                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+            self.meta = meta
+
+            return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
+        else:
+            return {'links': {self.link_type: url}}
 
 
 class LinksField(ser.Field):
@@ -82,7 +146,9 @@ def _tpl(val):
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
     if attr_name:
-        attribute_value = getattr(obj, attr_name, ser.empty)
+        attribute_value = obj
+        for attr_segment in attr_name.split('.'):
+            attribute_value = getattr(attribute_value, attr_segment, ser.empty)
         if attribute_value is not ser.empty:
             return attribute_value
         elif attr_name in obj:
@@ -131,14 +197,36 @@ class WaterbutlerLink(Link):
     """Link object to use in conjunction with Links field. Builds a Waterbutler URL for files.
     """
 
-    def __init__(self, args=None, kwargs=None, **kw):
-        # self.endpoint = endpoint
-        super(WaterbutlerLink, self).__init__(None, args, kwargs, None, **kw)
+    def __init__(self, must_be_file=None, must_be_folder=None, **kwargs):
+        self.kwargs = kwargs
+        self.must_be_file = must_be_file
+        self.must_be_folder = must_be_folder
 
     def resolve_url(self, obj):
         """Reverse URL lookup for WaterButler routes
         """
-        return waterbutler_url_for(obj['waterbutler_type'], obj['provider'], obj['path'], obj['node_id'], obj['cookie'], obj['args'])
+        if self.must_be_folder is True and not obj.path.endswith('/'):
+            return None
+        if self.must_be_file is True and obj.path.endswith('/'):
+            return None
+        return waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
+
+
+class NodeFileHyperLink(JSONAPIHyperlinkedIdentityField):
+    def __init__(self, kind=None, kwargs=None, **kws):
+        self.kind = kind
+        self.kwargs = []
+        for kw in (kwargs or []):
+            if isinstance(kw, basestring):
+                kw = (kw, kw)
+            assert isinstance(kw, tuple) and len(kw) == 2
+            self.kwargs.append(kw)
+        super(NodeFileHyperLink, self).__init__(**kws)
+
+    def get_url(self, obj, view_name, request, format):
+        if self.kind and obj.kind != self.kind:
+            return None
+        return reverse(view_name, kwargs={attr_name: getattr(obj, attr) for (attr_name, attr) in self.kwargs}, request=request, format=format)
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
@@ -152,7 +240,9 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
-    allows for enveloping of both single resources and collections.
+    allows for enveloping of both single resources and collections.  Looks to nest fields
+    according to JSON API spec. Relational fields must use JSONAPIHyperlinkedIdentityField.
+    Self/html links must be nested under "links".
     """
 
     # overrides Serializer
@@ -172,8 +262,35 @@ class JSONAPISerializer(ser.Serializer):
         meta = getattr(self, 'Meta', None)
         type_ = getattr(meta, 'type_', None)
         assert type_ is not None, 'Must define Meta.type_'
-        data = super(JSONAPISerializer, self).to_representation(obj)
-        data['type'] = type_
+
+        data = collections.OrderedDict([('id', ''), ('type', type_), ('attributes', collections.OrderedDict()),
+                                        ('relationships', collections.OrderedDict()), ('links', {})])
+
+        fields = [field for field in self.fields.values() if not field.write_only]
+
+        for field in fields:
+            try:
+                attribute = field.get_attribute(obj)
+            except SkipField:
+                continue
+
+            if isinstance(field, JSONAPIHyperlinkedIdentityField):
+                data['relationships'][field.field_name] = field.to_representation(attribute)
+            elif field.field_name == 'id':
+                data['id'] = field.to_representation(attribute)
+            elif field.field_name == 'links':
+                data['links'] = field.to_representation(attribute)
+            else:
+                if attribute is None:
+                    # We skip `to_representation` for `None` values so that
+                    # fields do not have to explicitly deal with that case.
+                    data['attributes'][field.field_name] = None
+                else:
+                    data['attributes'][field.field_name] = field.to_representation(attribute)
+
+        if not data['relationships']:
+            del data['relationships']
+
         if envelope:
             ret[envelope] = data
         else:
@@ -188,3 +305,11 @@ class JSONAPISerializer(ser.Serializer):
         if clean_html is True:
             self._validated_data = _rapply(self.validated_data, strip_html)
         return ret
+
+
+def DevOnly(field):
+    """Make a field only active in ``DEV_MODE``. ::
+
+        experimental_field = DevMode(CharField(required=False))
+    """
+    return field if settings.DEV_MODE else None
