@@ -946,12 +946,21 @@ class User(GuidStoredObject, AddonModelMixin):
     def deep_url(self):
         return '/profile/{}/'.format(self._primary_key)
 
-    @property
-    def gravatar_url(self):
+    def profile_image_url(self, size=None):
+        """A generalized method for getting a user's profile picture urls.
+        We may choose to use some service other than gravatar in the future,
+        and should not commit ourselves to using a specific service (mostly
+        an API concern).
+
+        As long as we use gravatar, this is just a proxy to User.gravatar_url
+        """
+        return self._gravatar_url(size)
+
+    def _gravatar_url(self, size):
         return filters.gravatar(
             self,
             use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=size
         )
 
     def get_activity_points(self, db=None):

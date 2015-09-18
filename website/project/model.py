@@ -1298,6 +1298,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'Pointer to node {0} already in list'.format(node._id)
             )
 
+        if self.is_registration:
+            raise NodeStateError('Cannot add a pointer to a registration')
+
         # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
         # Also, no pointers to the dashboard project, which could cause loops as well.
         already_pointed = node.pointed
@@ -2209,7 +2212,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 params={
                     'project': self.parent_id,
                     'node': self._primary_key,
-                    'contributor': contributor._id,
+                    'contributors': [contributor._id],
                 },
                 auth=auth,
                 save=False,
@@ -2252,6 +2255,50 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
 
         return True
+
+    def update_contributor(self, user, permission, visible, auth, save=False):
+        """ TODO: this method should be updated as a replacement for the main loop of
+        Node#manage_contributors. Right now there are redundancies, but to avoid major
+        feature creep this will not be included as this time.
+
+        Also checks to make sure unique admin is not removing own admin privilege.
+        """
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError("Only admins can modify contributor permissions")
+        permissions = expand_permissions(permission) or DEFAULT_CONTRIBUTOR_PERMISSIONS
+        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
+        if not len(admins) > 1:
+            # has only one admin
+            admin = admins[0]
+            if admin == user and ADMIN not in permissions:
+                raise NodeStateError('{} is the only admin.'.format(user.fullname))
+        if user not in self.contributors:
+            raise ValueError(
+                'User {0} not in contributors'.format(user.fullname)
+            )
+        if permission:
+            permissions = expand_permissions(permission)
+            if set(permissions) != set(self.get_permissions(user)):
+                self.set_permissions(user, permissions, save=save)
+                permissions_changed = {
+                    user._id: permissions
+                }
+                self.add_log(
+                    action=NodeLog.PERMISSIONS_UPDATED,
+                    params={
+                        'project': self.parent_id,
+                        'node': self._id,
+                        'contributors': permissions_changed,
+                    },
+                    auth=auth,
+                    save=save
+                )
+                with TokuTransaction():
+                    if ['read'] in permissions_changed.values():
+                        project_signals.write_permissions_revoked.send(self)
+        if visible is not None:
+            self.set_visible(user, visible, auth=auth, save=save)
+            self.update_visible_ids()
 
     def manage_contributors(self, user_dicts, auth, save=False):
         """Reorder and remove contributors.
@@ -2974,6 +3021,7 @@ class PrivateLink(StoredObject):
             "anonymous": self.anonymous
         }
 
+
 class Sanction(StoredObject):
     """Sanction object is a generic way to track approval states"""
 
@@ -3111,6 +3159,7 @@ class Sanction(StoredObject):
             else:
                 self._notify_non_authorizer(contrib)
 
+
 class EmailApprovableSanction(Sanction):
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
@@ -3188,6 +3237,7 @@ class EmailApprovableSanction(Sanction):
             'reject': self._rejection_url(user._id)
         }
         self.save()
+
 
 class Embargo(EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
@@ -3305,6 +3355,7 @@ class Embargo(EmailApprovableSanction):
         )
         # Remove backref to parent project if embargo was for a new registration
         if not self.for_existing_registration:
+            parent_registration.delete_registration_tree(save=True)
             parent_registration.registered_from = None
         # Delete parent registration if it was created at the time the embargo was initiated
         if not self.for_existing_registration:
@@ -3325,12 +3376,12 @@ class Embargo(EmailApprovableSanction):
             },
             auth=Auth(self.initiated_by),
         )
-        self.state == self.COMPLETED
         self.save()
 
     def approve_embargo(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
         self.approve(user, token)
+
 
 class Retraction(EmailApprovableSanction):
     """Retraction object for public registrations."""
@@ -3453,7 +3504,6 @@ class Retraction(EmailApprovableSanction):
         # so that retracted subrojects/components don't appear in search
         for node in parent_registration.get_descendants_recursive():
             node.update_search()
-        self.state == self.APPROVED
         self.save()
 
     def approve_retraction(self, user, token):
@@ -3461,6 +3511,7 @@ class Retraction(EmailApprovableSanction):
 
     def disapprove_retraction(self, user, token):
         self.reject(user, token)
+
 
 class RegistrationApproval(EmailApprovableSanction):
 
@@ -3560,7 +3611,6 @@ class RegistrationApproval(EmailApprovableSanction):
         for node in register.root.node_and_primary_descendants():
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
-        self.state = self.APPROVED
         self.save()
 
     def _on_reject(self, user, token):

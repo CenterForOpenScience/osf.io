@@ -219,10 +219,10 @@ COMPONENT_CATEGORIES = set([k for k in Node.CATEGORY_MAP.keys() if not k == 'pro
 
 def get_doctype_from_node(node):
 
-    if node.category in COMPONENT_CATEGORIES:
-        return 'component'
-    elif node.is_registration:
+    if node.is_registration:
         return 'registration'
+    elif node.category in COMPONENT_CATEGORIES:
+        return 'component'
     else:
         return node.category
 
@@ -494,7 +494,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
                 'gravatar_url': gravatar(
                     user,
                     use_ssl=True,
-                    size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR,
+                    size=settings.PROFILE_IMAGE_MEDIUM
                 ),
                 'profile_url': user.profile_url,
                 'registered': user.is_registered,
