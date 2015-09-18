@@ -461,7 +461,10 @@ def user_choose_mailing_lists(auth, **kwargs):
         )
 
     user.save()
-    return {'message': 'Successfully updated mailing lists', 'result': user.mailchimp_mailing_lists.update(user.osf_mailing_lists)}, 200
+    all_mailing_lists = {}
+    all_mailing_lists.update(user.mailchimp_mailing_lists)
+    all_mailing_lists.update(user.osf_mailing_lists)
+    return {'message': 'Successfully updated mailing lists', 'result': all_mailing_lists}, 200
 
 
 @user_merged.connect

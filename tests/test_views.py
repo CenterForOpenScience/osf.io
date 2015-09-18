@@ -3230,6 +3230,13 @@ class TestConfigureMailingListViews(OsfTestCase):
             payload[settings.OSF_HELP_LIST]
         )
 
+    def test_get_notifications(self):
+        user = AuthUserFactory()
+        mailing_lists = dict(user.osf_mailing_lists.items() + user.mailchimp_mailing_lists.items())
+        url = api_url_for('user_notifications')
+        res = self.app.get(url, auth=user.auth)
+        assert_equal(mailing_lists, res.json['mailing_lists'])
+
     def test_osf_help_mails_subscribe(self):
         user = UserFactory()
         user.osf_mailing_lists['Open Science Framework Help'] = False

@@ -6,7 +6,7 @@ from tests.base import OsfTestCase
 from tests.factories import UserFactory
 
 from scripts.send_queued_mails import main
-from website import mails
+from website import mails, settings
 
 class TestSendQueuedMails(OsfTestCase):
 
@@ -14,7 +14,7 @@ class TestSendQueuedMails(OsfTestCase):
         super(TestSendQueuedMails, self).setUp()
         self.user = UserFactory()
         self.user.date_last_login = datetime.utcnow()
-        self.user.osf_mailing_lists['Open Science Framework Help'] = True
+        self.user.osf_mailing_lists[settings.OSF_HELP_LIST] = True
         self.user.save()
 
     def queue_mail(self, mail_type, user=None):
@@ -35,7 +35,7 @@ class TestSendQueuedMails(OsfTestCase):
     @mock.patch('website.mails.mails.send_mail')
     def test_no_two_emails_to_same_person(self, mock_send):
         user = UserFactory()
-        user.osf_mailing_lists['Open Science Framework Help'] = True
+        user.osf_mailing_lists[settings.OSF_HELP_LIST] = True
         user.save()
         self.queue_mail(mails.NO_ADDON, user)
         self.queue_mail(mails.NO_ADDON, user)

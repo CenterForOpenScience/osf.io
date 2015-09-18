@@ -1116,12 +1116,6 @@ class TestSendEmails(OsfTestCase):
         url = emails.get_settings_url(self.user._id, self.user)
         assert_equal(url, web_url_for('user_notifications', _absolute=True))
 
-    def test_get_notifications(self):
-        mailing_lists = dict(self.user.osf_mailing_lists.items() + self.user.mailchimp_mailing_lists.items())
-        url = api_url_for('user_notifications')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(mailing_lists, res.json['mailing_lists'])
-
     def test_get_node_lineage(self):
         node_lineage = emails.get_node_lineage(self.node)
         assert_equal(node_lineage, [self.project._id, self.node._id])
