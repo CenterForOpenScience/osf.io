@@ -26,7 +26,7 @@ class UserSerializer(JSONAPISerializer):
     suffix = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
 
-    profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
+    profile_image_url = DevOnly(ser.SerializerMethodField(required=False, read_only=True))
 
     def get_profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')

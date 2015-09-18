@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-
 import os
+import json
 import uuid
 import httplib
 import functools
@@ -11,13 +10,18 @@ from flask import redirect
 from flask import make_response
 from modularodm.exceptions import NoResultsFound
 
+from framework import sentry
+from framework.auth import cas
 from framework.auth import Auth
-from framework.sessions import session
+from framework.auth import oauth_scopes
+from framework.routing import json_renderer
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
-from framework.auth.decorators import must_be_logged_in, must_be_signed
+from framework.auth.decorators import must_be_logged_in, must_be_signed, collect_auth
 from website import mails
 from website import settings
+from website.files.models import FileNode
+from website.files.models import TrashedFileNode
 from website.project import decorators
 from website.addons.base import exceptions
 from website.addons.base import signals as file_signals
@@ -31,6 +35,15 @@ from website.project.utils import serialize_node
 
 # import so that associated listener is instantiated and gets emails
 from website.notifications.events.files import FileEvent  # noqa
+
+FILE_GONE_ERROR_MESSAGE = u'''
+<style>
+.file-download{{display: none;}}
+.file-delete{{display: none;}}
+</style>
+<div class="alert alert-info" role="alert">
+This link to the file "{file_name}" is not longer valid.
+</div>'''
 
 
 @decorators.must_have_permission('write')
@@ -63,18 +76,6 @@ def get_addon_user_config(**kwargs):
     return addon.to_json(user)
 
 
-def check_file_guid(guid):
-
-    guid_url = '/{0}/'.format(guid._id)
-    if not request.path.startswith(guid_url):
-        url_split = request.url.split(guid.file_url)
-        try:
-            guid_url += url_split[1].lstrip('/')
-        except IndexError:
-            pass
-        return guid_url
-    return None
-
 permission_map = {
     'create_folder': 'write',
     'revisions': 'read',
@@ -91,18 +92,30 @@ permission_map = {
 }
 
 
-def check_access(node, user, action, key=None):
+def check_access(node, auth, action, cas_resp):
     """Verify that user can perform requested action on resource. Raise appropriate
     error code if action cannot proceed.
     """
     permission = permission_map.get(action, None)
     if permission is None:
         raise HTTPError(httplib.BAD_REQUEST)
-    if node.has_permission(user, permission):
+
+    if cas_resp:
+        if permission == 'read':
+            if node.is_public:
+                return True
+            required_scope = oauth_scopes.CoreScopes.NODE_FILE_READ
+        else:
+            required_scope = oauth_scopes.CoreScopes.NODE_FILE_WRITE
+        if not cas_resp.authenticated \
+           or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
+            raise HTTPError(httplib.FORBIDDEN)
+
+    if permission == 'read' and node.can_view(auth):
         return True
-    if permission == 'read':
-        if node.is_public or key in node.private_link_keys_active:
-            return True
+    if permission == 'write' and node.can_edit(auth):
+        return True
+
     # Users attempting to register projects with components might not have
     # `write` permissions for all components. This will result in a 403 for
     # all `copyto` actions as well as `copyfrom` actions if the component
@@ -113,15 +126,15 @@ def check_access(node, user, action, key=None):
     # All nodes being registered that receive the `copyto` action will have
     # `node.is_registration` == True. However, we have no way of telling if
     # `copyfrom` actions are originating from a node being registered.
+    # TODO This is raise UNAUTHORIZED for registrations that have not been archived yet
     if action == 'copyfrom' or (action == 'copyto' and node.is_registration):
         parent = node.parent_node
         while parent:
-            if parent.has_permission(user, 'write'):
+            if parent.can_edit(auth):
                 return True
             parent = parent.parent_node
 
-    code = httplib.FORBIDDEN if user else httplib.UNAUTHORIZED
-    raise HTTPError(code)
+    raise HTTPError(httplib.FORBIDDEN if auth.user else httplib.UNAUTHORIZED)
 
 
 def make_auth(user):
@@ -149,8 +162,28 @@ def restrict_addrs(*addrs):
 restrict_waterbutler = restrict_addrs(*settings.WATERBUTLER_ADDRS)
 
 
+@collect_auth
 @restrict_waterbutler
-def get_auth(**kwargs):
+def get_auth(auth, **kwargs):
+    cas_resp = None
+    if not auth.user:
+        # Central Authentication Server OAuth Bearer Token
+        authorization = request.headers.get('Authorization')
+        if authorization and authorization.startswith('Bearer '):
+            client = cas.get_client()
+            try:
+                access_token = cas.parse_auth_header(authorization)
+                cas_resp = client.profile(access_token)
+            except cas.CasError as err:
+                sentry.log_exception()
+                # NOTE: We assume that the request is an AJAX request
+                return json_renderer(err)
+            if cas_resp.authenticated:
+                auth.user = User.load(cas_resp.user)
+
+        if not auth.user:
+            auth.user = User.from_cookie(request.args.get('cookie'))
+
     try:
         action = request.args['action']
         node_id = request.args['nid']
@@ -158,21 +191,11 @@ def get_auth(**kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    cookie = request.args.get('cookie')
-    view_only = request.args.get('view_only')
-
-    if 'auth_user_id' in session.data:
-        user = User.load(session.data['auth_user_id'])
-    elif cookie:
-        user = User.from_cookie(cookie)
-    else:
-        user = None
-
     node = Node.load(node_id)
     if not node:
         raise HTTPError(httplib.NOT_FOUND)
 
-    check_access(node, user, action, key=view_only)
+    check_access(node, auth, action, cas_resp)
 
     provider_settings = node.get_addon(provider_name)
     if not provider_settings:
@@ -186,7 +209,7 @@ def get_auth(**kwargs):
         raise HTTPError(httplib.BAD_REQUEST)
 
     return {
-        'auth': make_auth(user),
+        'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
         'credentials': credentials,
         'settings': settings,
         'callback_url': node.api_url_for(
@@ -237,7 +260,7 @@ def create_waterbutler_log(payload, **kwargs):
         if src is not None and dest is not None:
             dest_path = dest['materialized']
             src_path = src['materialized']
-            if str(dest_path).endswith("/") and str(src_path).endswith("/"):
+            if dest_path.endswith('/') and src_path.endswith('/'):
                 dest_path = os.path.dirname(dest_path)
                 src_path = os.path.dirname(src_path)
             if (
@@ -353,7 +376,7 @@ def addon_view_or_download_file_legacy(**kwargs):
         node_settings = node.get_addon('osfstorage')
 
         try:
-            path = node_settings.root_node.find_child_by_name(path)._id
+            path = node_settings.get_root().find_child_by_name(path)._id
         except NoResultsFound:
             raise HTTPError(
                 404, data=dict(
@@ -373,11 +396,49 @@ def addon_view_or_download_file_legacy(**kwargs):
         code=httplib.MOVED_PERMANENTLY
     )
 
+@must_be_valid_project
+@must_be_contributor_or_public
+def addon_deleted_file(auth, node, **kwargs):
+    """Shows a nice error message to users when they try to view
+    a deleted file
+    """
+    # Allow file_node to be passed in so other views can delegate to this one
+    trashed = kwargs.get('file_node') or TrashedFileNode.load(kwargs.get('trashed_id'))
+    if not trashed:
+        raise HTTPError(httplib.NOT_FOUND, {
+            'message_short': 'Not Found',
+            'message_long': 'This file does not exist'
+        })
+
+    ret = serialize_node(node, auth, primary=True)
+    ret.update(rubeus.collect_addon_assets(node))
+    ret.update({
+        'urls': {
+            'render': None,
+            'sharejs': None,
+            'mfr': settings.MFR_SERVER_URL,
+            'gravatar': get_gravatar(auth.user, 25),
+            'files': node.web_url_for('collect_file_trees'),
+        },
+        'extra': {},
+        'size': 9966699,  # Prevent file from being editted, just in case
+        'sharejs_uuid': None,
+        'file_name': trashed.name,
+        'file_path': trashed.path,
+        'provider': trashed.provider,
+        'materialized_path': trashed.materialized_path,
+        'error': FILE_GONE_ERROR_MESSAGE.format(file_name=trashed.name),
+        'private': getattr(node.get_addon(trashed.provider), 'is_private', False),
+    })
+
+    return ret, httplib.GONE
+
 
 @must_be_valid_project
 @must_be_contributor_or_public
 def addon_view_or_download_file(auth, path, provider, **kwargs):
     extras = request.args.to_dict()
+    extras.pop('_', None)  # Clean up our url params a bit
     action = extras.get('action', 'view')
     node = kwargs.get('node') or kwargs['project']
 
@@ -404,84 +465,94 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             'message_long': 'The add-on containing this file is no longer configured.'
         })
 
-    if not path.startswith('/'):
-        path = '/' + path
+    file_node = FileNode.resolve_class(provider, FileNode.FILE).get_or_create(node, path)
 
-    guid_file, created = node_addon.find_or_create_file_guid(path)
+    # Note: Cookie is provided for authentication to waterbutler
+    # it is overriden to force authentication as the current user
+    # the auth header is also pass to support basic auth
+    version = file_node.touch(
+        request.headers.get('Authorization'),
+        **dict(
+            extras,
+            cookie=request.cookies.get(settings.COOKIE_NAME)
+        )
+    )
 
-    if guid_file.guid_url != request.path:
-        guid_url = furl.furl(guid_file.guid_url)
-        guid_url.args.update(extras)
-        return redirect(guid_url)
+    if version is None:
+        if file_node.get_guid():
+            # If this file has been successfully view before but no longer exists
+            # Show a nice error message
+            return addon_deleted_file(file_node=file_node, **kwargs)
 
-    guid_file.maybe_set_version(**extras)
+        raise HTTPError(httplib.NOT_FOUND, {
+            'message_short': 'Not Found',
+            'message_long': 'This file does not exist'
+        })
 
     if request.method == 'HEAD':
-        download_url = furl.furl(guid_file.download_url)
-        download_url.args.update(extras)
-        download_url.args['accept_url'] = 'false'
-        return make_response(('', 200, {'Location': download_url.url}))
+        return make_response(('', 200, {
+            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None))
+        }))
 
     if action == 'download':
-        download_url = furl.furl(guid_file.download_url)
-        download_url.args.update(extras)
+        return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None)))
 
-        return redirect(download_url.url)
+    if len(request.path.strip('/').split('/')) > 1:
+        guid = file_node.get_guid(create=True)
+        return redirect(furl.furl('/{}/'.format(guid._id)).set(args=extras).url)
 
-    return addon_view_file(auth, node, node_addon, guid_file, extras)
+    return addon_view_file(auth, node, file_node, version)
 
 
-def addon_view_file(auth, node, node_addon, guid_file, extras):
+def addon_view_file(auth, node, file_node, version):
     # TODO: resolve circular import issue
     from website.addons.wiki import settings as wiki_settings
 
-    ret = serialize_node(node, auth, primary=True)
-
-    # Disable OSF Storage file deletion in DISK_SAVING_MODE
-    if settings.DISK_SAVING_MODE and node_addon.config.short_name == 'osfstorage':
-        ret['user']['can_edit'] = False
-
-    try:
-        guid_file.enrich()
-    except exceptions.AddonEnrichmentError as e:
-        error = e.as_html()
+    if isinstance(version, tuple):
+        version, error = version
+        error = error.replace('\n', '').strip()
     else:
         error = None
 
-    if guid_file._id not in node.file_guid_to_share_uuids:
-        node.file_guid_to_share_uuids[guid_file._id] = uuid.uuid4()
+    ret = serialize_node(node, auth, primary=True)
+
+    if file_node._id not in node.file_guid_to_share_uuids:
+        node.file_guid_to_share_uuids[file_node._id] = uuid.uuid4()
         node.save()
 
     if ret['user']['can_edit']:
-        sharejs_uuid = str(node.file_guid_to_share_uuids[guid_file._id])
+        sharejs_uuid = str(node.file_guid_to_share_uuids[file_node._id])
     else:
         sharejs_uuid = None
 
-    size = getattr(guid_file, 'size', None)
-    if size is None:  # Size could be 0 which is a falsey value
-        size = 9966699  # if we dont know the size assume its to big to edit
+    download_url = furl.furl(request.url.encode('utf-8')).set(args=dict(request.args, **{
+        'direct': None,
+        'mode': 'render',
+        'action': 'download',
+    }))
+
+    render_url = furl.furl(settings.MFR_SERVER_URL).set(
+        path=['render'],
+        args={'url': download_url.url}
+    )
 
     ret.update({
-        'error': error.replace('\n', '') if error else None,
-        'provider': guid_file.provider,
-        'file_path': guid_file.waterbutler_path,
-        'panels_used': ['edit', 'view'],
-        'private': getattr(node_addon, 'is_private', False),
-        'sharejs_uuid': sharejs_uuid,
         'urls': {
-            'files': node.web_url_for('collect_file_trees'),
-            'render': guid_file.mfr_render_url,
-            'sharejs': wiki_settings.SHAREJS_URL,
+            'render': render_url.url,
             'mfr': settings.MFR_SERVER_URL,
+            'sharejs': wiki_settings.SHAREJS_URL,
             'gravatar': get_gravatar(auth.user, 25),
-            'external': getattr(guid_file, 'external_url', None)
+            'files': node.web_url_for('collect_file_trees'),
         },
-        # Note: must be called after get_or_start_render. This is really only for github
-        'size': size,
-        'extra': getattr(guid_file, 'extra', {}),
-        #NOTE: get_or_start_render must be called first to populate name
-        'file_name': getattr(guid_file, 'name', os.path.split(guid_file.waterbutler_path)[1]),
-        'materialized_path': getattr(guid_file, 'materialized', guid_file.waterbutler_path),
+        'error': error,
+        'file_name': file_node.name,
+        'file_path': file_node.path,
+        'sharejs_uuid': sharejs_uuid,
+        'provider': file_node.provider,
+        'materialized_path': file_node.materialized_path,
+        'extra': json.dumps(version.metadata.get('extra', {})),
+        'size': version.size if version.size is not None else 9966699,
+        'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
     })
 
     ret.update(rubeus.collect_addon_assets(node))

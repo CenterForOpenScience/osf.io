@@ -10,7 +10,8 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
-from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField
+from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField
+from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink
 
 
 class NodeTagField(ser.Field):
@@ -75,7 +76,7 @@ class NodeSerializer(JSONAPISerializer):
     contributors = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
                                                     lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
 
-    files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id',
+    files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
                                              link_type='related')
 
     node_links = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
@@ -287,8 +288,11 @@ class NodeLinksSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
-    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
-                                                                         'points to')
+
+    # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
+    # include this field in the future.
+    # title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
+    #                                                                      'points to')
 
     class Meta:
         type_ = 'node_links'
@@ -324,40 +328,23 @@ class NodeLinksSerializer(JSONAPISerializer):
         pass
 
 
-class NodeFilesSerializer(JSONAPISerializer):
+class NodeProviderSerializer(JSONAPISerializer):
 
-    id = ser.SerializerMethodField(label='ID')
-    provider = ser.CharField(read_only=True)
-    path = ser.CharField(read_only=True)
-    item_type = ser.CharField(read_only=True)
+    id = ser.SerializerMethodField(read_only=True)
+    kind = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
-    metadata = ser.DictField(read_only=True)
+    path = ser.CharField(read_only=True)
+    node = ser.CharField(source='node_id', read_only=True)
+    provider = ser.CharField(read_only=True)
+    files = NodeFileHyperLink(kind='folder', read_only=True, link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
+    links = LinksField({
+        'upload': WaterbutlerLink(),
+        'new_folder': WaterbutlerLink(kind='folder')
+    })
 
     class Meta:
         type_ = 'files'
 
-    links = LinksField({
-        'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
-        'related': {
-            'href': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
-                    query_kwargs={'path': '<path>', 'provider': '<provider>'}),
-            'meta': {'self_methods': 'valid_self_link_methods'}
-        }
-    })
-
     @staticmethod
     def get_id(obj):
-        ret = obj['provider'] + obj['path']
-        return ret
-
-    @staticmethod
-    def valid_self_link_methods(obj):
-        return obj['valid_self_link_methods']
-
-    def create(self, validated_data):
-        # TODO
-        pass
-
-    def update(self, instance, validated_data):
-        # TODO
-        pass
+        return '{}:{}'.format(obj.node._id, obj.provider)

@@ -9,10 +9,13 @@ from rest_framework import permissions as drf_permissions
 from modularodm import Q
 
 from framework.auth import cas
+from framework.auth.oauth_scopes import CoreScopes
+
 from website.models import ApiOAuth2Application
 
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
+from api.base import permissions as base_permissions
 from api.applications.permissions import OwnerOnly
 from api.applications.serializers import ApiOAuth2ApplicationSerializer, ApiOAuth2ApplicationUpdateSerializer
 
@@ -23,7 +26,12 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
+        OwnerOnly,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.APPLICATIONS_READ]
+    required_write_scopes = [CoreScopes.APPLICATIONS_WRITE]
 
     serializer_class = ApiOAuth2ApplicationSerializer
 
@@ -54,11 +62,14 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
 
     Should not return information if the application belongs to a different user
     """
-
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        OwnerOnly
+        OwnerOnly,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.APPLICATIONS_READ]
+    required_write_scopes = [CoreScopes.APPLICATIONS_WRITE]
 
     serializer_class = ApiOAuth2ApplicationUpdateSerializer
 

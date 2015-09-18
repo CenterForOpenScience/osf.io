@@ -735,3 +735,8 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(errors[0], {'detail': 'Not found.'})
+
+    def test_basic_auth_me_wrong_password(self):
+        url = '/{}users/{}/'.format(API_BASE, 'me')
+        res = self.app.get(url, auth=(self.user.username, 'nottherightone'), expect_errors=True)
+        assert_equal(res.status_code, 401)

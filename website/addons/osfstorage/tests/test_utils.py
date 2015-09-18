@@ -19,7 +19,7 @@ class TestSerializeRevision(StorageTestCase):
     def setUp(self):
         super(TestSerializeRevision, self).setUp()
         self.path = 'kind-of-magic.webm'
-        self.record = self.node_settings.root_node.append_file(self.path)
+        self.record = self.node_settings.get_root().append_file(self.path)
         self.versions = [
             factories.FileVersionFactory(creator=self.user)
             for __ in range(3)

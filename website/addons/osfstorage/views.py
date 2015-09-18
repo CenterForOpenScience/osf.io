@@ -19,7 +19,7 @@ from website.project.decorators import (
 from website.util import rubeus
 from website.project.model import has_anonymous_link
 
-from website.addons.osfstorage import model
+from website.files import models
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import decorators
 from website.addons.osfstorage import settings as osf_storage_settings
@@ -62,7 +62,7 @@ def osfstorage_update_metadata(node_addon, payload, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    version = model.OsfStorageFileVersion.load(version_id)
+    version = models.FileVersion.load(version_id)
 
     if version is None:
         raise HTTPError(httplib.NOT_FOUND)
@@ -87,24 +87,24 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
-    return source.copy_under(destination, name=name).serialized(), httplib.CREATED
+    return source.copy_under(destination, name=name).serialize(), httplib.CREATED
 
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
-    return source.move_under(destination, name=name).serialized(), httplib.OK
+    return source.move_under(destination, name=name).serialize(), httplib.OK
 
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
 def osfstorage_get_lineage(file_node, node_addon, **kwargs):
     #TODO Profile
-    list(model.OsfStorageFileNode.find(Q('kind', 'eq', 'folder') & Q('node_settings', 'eq', node_addon)))
+    list(models.OsfStorageFolder.find(Q('node', 'eq', node_addon.owner)))
 
     lineage = []
 
     while file_node:
-        lineage.append(file_node.serialized())
+        lineage.append(file_node.serialize())
         file_node = file_node.parent
 
     return {'data': lineage}
@@ -113,14 +113,19 @@ def osfstorage_get_lineage(file_node, node_addon, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
 def osfstorage_get_metadata(file_node, **kwargs):
-    return file_node.serialized(include_full=True)
+    try:
+        # TODO This should change to version as its internal it can be changed anytime
+        version = int(request.args.get('revision'))
+    except (ValueError, TypeError):  # If its not a number
+        version = -1
+    return file_node.serialize(version=version, include_full=True)
 
 
 @must_be_signed
 @decorators.autoload_filenode(must_be='folder')
 def osfstorage_get_children(file_node, **kwargs):
     return [
-        child.serialized()
+        child.serialize()
         for child in file_node.children
     ]
 
@@ -143,13 +148,13 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
         else:
             created, file_node = True, parent.append_file(name)
     except KeyExistsException:
-        created, file_node = False, parent.find_child_by_name(name, kind='folder' if is_folder else 'file')
+        created, file_node = False, parent.find_child_by_name(name, kind=int(not is_folder))
 
     if not created and is_folder:
         raise HTTPError(httplib.CONFLICT, data={
             'message': 'Cannot create folder "{name}" because a file or folder already exists at path "{path}"'.format(
                 name=file_node.name,
-                path=file_node.materialized_path(),
+                path=file_node.materialized_path,
             )
         })
 
@@ -176,7 +181,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
     return {
         'status': 'success',
         'archive': not archive_exists,  # Should waterbutler also archive this file
-        'data': file_node.serialized(),
+        'data': file_node.serialize(),
         'version': version_id,
     }, httplib.CREATED if created else httplib.OK
 
@@ -191,7 +196,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     if not auth:
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if file_node == node_addon.root_node:
+    if file_node == node_addon.get_root():
         raise HTTPError(httplib.BAD_REQUEST)
 
     file_node.delete()
@@ -202,10 +207,13 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_download(file_node, payload, node_addon, **kwargs):
-    try:
-        version_id = int(request.args.get('version') or 0) - 1
-    except ValueError:
-        raise make_error(httplib.BAD_REQUEST, 'Version must be an int or not specified')
+    if not request.args.get('version'):
+        version_id = None
+    else:
+        try:
+            version_id = int(request.args['version'])
+        except ValueError:
+            raise make_error(httplib.BAD_REQUEST, 'Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
 
