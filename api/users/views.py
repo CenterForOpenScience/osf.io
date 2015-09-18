@@ -1,5 +1,4 @@
 from rest_framework import generics
-from rest_framework import permissions as drf_permissions
 from rest_framework.exceptions import NotAuthenticated
 from django.contrib.auth.models import AnonymousUser
 
@@ -14,6 +13,7 @@ from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
+from api.base.views import OsfAPIViewMeta
 
 from .serializers import UserSerializer
 from .permissions import ReadOnlyOrCurrentUser
@@ -49,8 +49,9 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     You can filter on users by their id, fullname, given_name, middle_name, or family_name.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
 
@@ -79,6 +80,8 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
         ReadOnlyOrCurrentUser,
         base_permissions.TokenHasScope,
@@ -103,8 +106,9 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     """Nodes belonging to a user.
     Return a list of nodes that the user contributes to.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
     )
 

@@ -1,5 +1,4 @@
 from rest_framework import generics
-from rest_framework import permissions as drf_permissions
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -9,6 +8,7 @@ from website.files.models import FileVersion
 from api.base.permissions import PermissionWithGetter
 from api.base.utils import get_object_or_error
 from api.base import permissions as base_permissions
+from api.base.views import OsfAPIViewMeta
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.files.permissions import CheckedOutOrAdmin
@@ -36,8 +36,9 @@ class FileMixin(object):
 class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     """Details about a specific file.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
         CheckedOutOrAdmin,
         base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -60,8 +61,9 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 class FileVersionsList(generics.ListAPIView, FileMixin):
     """List of versions for the file requested.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -83,9 +85,10 @@ def node_from_version(request, view, obj):
 class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
     """Details about a specific file version.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     version_lookup_url_kwarg = 'version_id'
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, node_from_version)
     )

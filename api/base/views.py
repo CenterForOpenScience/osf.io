@@ -1,8 +1,15 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework import (
+    permissions as drf_permissions,
+)
 
-from .utils import absolute_reverse
+from api.base.utils import absolute_reverse
 from api.users.serializers import UserSerializer
+from api.base.permissions import (
+    UserIsConfirmed,
+    UserIsNotDeactivated,
+)
 
 @api_view(('GET',))
 def root(request, format=None):
@@ -75,3 +82,17 @@ def root(request, format=None):
             'users': absolute_reverse('users:user-list'),
         }
     })
+
+
+class OsfAPIViewMeta(type):
+    """Metaclass to ensure a base level of permissions are applied to all of our views
+    """
+    def __new__(cls, name, bases, attributes):
+        permission_classes = set((
+            drf_permissions.IsAuthenticatedOrReadOnly,
+            UserIsConfirmed,
+            UserIsNotDeactivated
+        ))
+        bases_permission_classes = set(attributes.get('permission_classes', tuple()))
+        attributes['permission_classes'] = permission_classes | bases_permission_classes
+        return super(OsfAPIViewMeta, cls).__new__(cls, name, bases, attributes)

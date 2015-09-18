@@ -6,6 +6,8 @@ from rest_framework import exceptions, permissions
 from framework.auth import oauth_scopes
 from framework.auth.cas import CasResponse
 
+from api.base.exceptions import UnconfirmedAccountError, DeactivatedAccountError
+
 # Implementation built on django-oauth-toolkit, but  with more granular control over read+write permissions
 #   https://github.com/evonove/django-oauth-toolkit/blob/d45431ea0bf64fd31e16f429db1e902dbf30e3a8/oauth2_provider/ext/rest_framework/permissions.py#L15
 class TokenHasScope(permissions.BasePermission):
@@ -76,3 +78,19 @@ def PermissionWithGetter(Base, getter):
             obj = self.get_object(request, view, obj)
             return super(Perm, self).has_object_permission(request, view, obj)
     return Perm
+
+class UserIsConfirmed(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        confirmed = request.user and request.user.is_confirmed
+        if not confirmed:
+            raise UnconfirmedAccountError
+        return True
+
+class UserIsNotDeactivated(permissions.BasePermission):
+
+    def has_permission(self, request, view):
+        deactivated = request.user and request.user.is_disabled
+        if deactivated:
+            raise DeactivatedAccountError
+        return True
