@@ -27,10 +27,13 @@ def json_api_exception_handler(exc, context):
                         error_description = [error_description]
                     errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
                 elif error_key == 'attributes':
-                    for property, description in message[error_key].iteritems():
-                        if isinstance(description, basestring):
-                            description = [description]
-                        errors.extend([{'source': {'pointer': '/data/attributes/' + property}, 'detail': reason} for reason in description])
+                    if isinstance(error_description, list):
+                        errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
+                    else:
+                        for property, description in message[error_key].iteritems():
+                            if isinstance(description, basestring):
+                                description = [description]
+                            errors.extend([{'source': {'pointer': '/data/attributes/' + property}, 'detail': reason} for reason in description])
         else:
             if isinstance(message, basestring):
                 message = [message]
