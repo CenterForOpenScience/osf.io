@@ -170,6 +170,29 @@ class NodeSerializer(JSONAPISerializer):
             node.update(validated_data, auth=auth)
         return node
 
+class NodeUpdateSerializer(NodeSerializer):
+    id = ser.CharField(source='_id', label='ID', required=True)
+
+    def validate_id(self, value):
+        if self._args[0]._id != value:
+            raise Conflict()
+        return value
+
+class NodeContributorAttributesSerializer(JSONAPISerializer):
+    fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
+    given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
+    family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    date_registered = ser.DateTimeField(read_only=True)
+
+    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
+                                     default=True)
+
+    permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
+                                 default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
+                                 help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
+
 
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
@@ -184,12 +207,13 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'permissions'
     ])
     id = ser.CharField(source='_id', label='ID')
-    fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
-    given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
-    family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    date_registered = ser.DateTimeField(read_only=True)
+    type = ser.CharField(write_only=True, required=True)
+    attributes = NodeContributorsAttributeSerializer()
+
+
+    links = LinksField({'html': 'absolute_url'})
+    nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
+                                             link_type='related')
 
     profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
 
@@ -197,18 +221,13 @@ class NodeContributorsSerializer(JSONAPISerializer):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
 
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
-                                     default=True)
-
-    permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
-                                 default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
-                                 help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
-
-    links = LinksField({'html': 'absolute_url'})
-    nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
-                                             link_type='related')
     class Meta:
         type_ = 'users'
+
+    def validate_type(self, value):
+        if self.Meta.type_ != value:
+            raise Conflict()
+        return value
 
     def absolute_url(self, obj):
         return obj.absolute_url
@@ -224,6 +243,8 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def create(self, validated_data):
+        validated_data.update(validated_data.pop('attributes', {}))
+
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
         contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
@@ -246,6 +267,24 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     id = ser.CharField(read_only=True, source='_id', label='ID')
 
     def update(self, instance, validated_data):
+        validated_id = validated_data.get('id', None)
+        if not validated_id:
+            validated_id = validated_data.get('_id', None)
+        validated_type = validated_data.get('type', None)
+
+        errors = {}
+        if not validated_id:
+            errors['id'] = ['This field is required.']
+        if not validated_type:
+            errors['type'] = ['This field is required.']
+
+        if errors:
+            raise ValidationError(errors)
+
+        validated_data.update(validated_data.pop('attributes', {}))
+        validated_data.pop('_id')
+        validated_data.pop('type')
+
         contributor = instance
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
@@ -261,6 +300,16 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         contributor.node_id = node._id
         return contributor
 
+
+class NodeContributorUpdateSerializer(NodeContributorDetailSerializer):
+    id = ser.CharField(source='_id', label='ID', required=True)
+
+    def validate_id(self, value):
+        if self._args[0]._id != value:
+            raise Conflict()
+        return value
+
+
 class NodeRegistrationSerializer(NodeSerializer):
 
     retracted = ser.BooleanField(source='is_retracted', read_only=True,
@@ -272,15 +321,6 @@ class NodeRegistrationSerializer(NodeSerializer):
 
     def update(self, *args, **kwargs):
         raise exceptions.ValidationError('Registrations cannot be modified.')
-
-
-class NodeUpdateSerializer(NodeSerializer):
-    id = ser.CharField(source='_id', label='ID', required=True)
-
-    def validate_id(self, value):
-        if self._args[0]._id != value:
-            raise Conflict()
-        return value
 
 
 class NodeLinksSerializer(JSONAPISerializer):

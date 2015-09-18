@@ -19,6 +19,7 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
     NodeContributorDetailSerializer,
+    NodeContributorUpdateSerializer
 )
 from api.nodes.permissions import (
     AdminOrPublic,
@@ -206,7 +207,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
 
-    serializer_class = NodeContributorDetailSerializer
+    serializer_class = NodeContributorUpdateSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):
