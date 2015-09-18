@@ -208,7 +208,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     ])
     id = ser.CharField(source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
-    attributes = NodeContributorsAttributeSerializer()
+    attributes = NodeContributorAttributesSerializer()
 
 
     links = LinksField({'html': 'absolute_url'})
