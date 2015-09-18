@@ -44,7 +44,7 @@ class OSFBasicAuthentication(BasicAuthentication):
         """
         user = get_user(email=userid, password=password)
 
-        if userid and user is None:
+        if userid:
             raise exceptions.AuthenticationFailed(_('Invalid username/password.'))
         elif userid is None and password is None:
             raise exceptions.NotAuthenticated()
