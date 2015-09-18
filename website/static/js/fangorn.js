@@ -341,8 +341,8 @@ function _fangornResolveToggle(item) {
         return togglePlus;
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
-        if (item.data.extra.renter !== '') {
-            if (item.data.extra.renter === window.contextVars.currentUser.id){
+        if (item.data.extra.checkout_user !== '') {
+            if (item.data.extra.checkout_user === window.contextVars.currentUser.id){
                 return rentedUser;
             }
             return rentedOther;
@@ -1578,7 +1578,7 @@ var FGItemButtons = {
                 }
                 if (item.data.permissions && item.data.permissions.edit) {
                     if (item.data.provider === 'osfstorage') {
-                        if (item.data.extra.renter === ''){
+                        if (item.data.extra.checkout_usr === ''){
                             rowButtons.push(
                                 m.component(FGButton, {
                                     onclick: function(event) { _removeEvent.call(tb, event, [item]);  },
@@ -1613,7 +1613,7 @@ var FGItemButtons = {
                                     icon: 'fa fa-sign-out',
                                     className : 'text-warning'
                                 }, 'Check-out file'));
-                        } else if (item.data.extra.renter === window.contextVars.currentUser.id) {
+                        } else if (item.data.extra.checkout_usr === window.contextVars.currentUser.id) {
                             rowButtons.push(
                                 m.component(FGButton, {
                                     onclick: function(event) {
@@ -1662,7 +1662,7 @@ var FGItemButtons = {
                     }, 'Download as zip')
                 );
             }
-            if (item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit &&  (item.data.provider !== 'osfstorage' || item.data.extra.renter === '' )) {
+            if (item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit &&  (item.data.provider !== 'osfstorage' || item.data.extra.checkout_usr === '' )) {
                 rowButtons.push(
                     m.component(FGButton, {
                         onclick: function () {
@@ -1816,14 +1816,14 @@ var FGToolbar = {
             }
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
-                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (each.data.extra.renter === '' || each.data.extra.renter === window.contextVars.currentUser.id))) {
+                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (each.data.extra.checkout_user === '' || each.data.extra.checkout_user === window.contextVars.currentUser.id))) {
                     showRent = false;
                     break;
                 }
             }
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
-                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && each.data.extra.renter === window.contextVars.currentUser.id)) {
+                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && each.data.extra.checkout_user === window.contextVars.currentUser.id)) {
                     showReturn = false;
                     break;
                 }

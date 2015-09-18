@@ -76,33 +76,35 @@ class OsfStorageNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
         return clone, None
 
-    def rent_all_files(self, user):
+    # TODO: @hmoco, import and use the checker or admin check for return False condition here (and checkin all)
+    # maybe check here should be in the view method.
+    def checkout_all_files(self, user):
         file_nodes = OsfStorageFileNode.find(
             Q('node_settings', 'eq', self)
         )
         for file_node in file_nodes:
-            if file_node.renter is not None and file_node.renter != user:
+            if file_node.checkout_user is not None and file_node.checkout_user != user:
                 return False
         for file_node in file_nodes:
             if file_node.is_file:
-                file_node.rent(renter=user)
+                file_node.checkout(checkout_user=user)
         return True
 
-    def return_all_files(self, user):
+    def checkin_all_files(self, user):
         file_nodes = OsfStorageFileNode.find(
             Q('node_settings', 'eq', self)
         )
         for file_node in file_nodes:
-            if file_node.renter is not None and file_node.renter != user:
+            if file_node.checkout_user is not None and file_node.checkout_user != user:
                 return False
         for file_node in file_nodes:
-            file_node.return_rent()
+            file_node.checkin()
         return True
 
     def rented_all(self):
         file_nodes = OsfStorageFileNode.find(
             Q('node_settings', 'eq', self) &
-            Q('renter', 'ne', None)
+            Q('checkout_user', 'ne', None)
         )
         for file in file_nodes:
             yield file._id
@@ -161,7 +163,7 @@ class OsfStorageFileNode(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
 
     is_deleted = fields.BooleanField(default=False)
-    renter = fields.ForeignField('User', default=None)
+    checkout_user = fields.ForeignField('User', default=None)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
     parent = fields.ForeignField('OsfStorageFileNode', index=True)
@@ -250,12 +252,12 @@ class OsfStorageFileNode(StoredObject):
     def node(self):
         return self.node_settings.owner
 
-    def rent(self, renter):
-        self.renter = renter
+    def checkout(self, checkout_user):
+        self.checkout_user = checkout_user
         self.save()
 
-    def return_rent(self):
-        self.renter = None
+    def checkin(self):
+        self.checkout_user = None
         self.save()
 
     def materialized_path(self):
@@ -355,10 +357,10 @@ class OsfStorageFileNode(StoredObject):
         raise errors.VersionNotFoundError
 
     def delete(self, recurse=True):
-        if self.renter is None:
+        if self.checkout_user is None:
             if self.is_file or not recurse:
                 trashed = OsfStorageTrashedFileNode()
-                trashed.renter = None
+                trashed.checkout_user = None
                 trashed._id = self._id
                 trashed.name = self.name
                 trashed.kind = self.kind
@@ -387,7 +389,7 @@ class OsfStorageFileNode(StoredObject):
     def children_delete(self):
         all_children = self.get_all_children()
         for child in all_children:
-            if child.renter is not None:
+            if child.checkout_user is not None:
                 return False
         for child in all_children:
             child.delete(recurse=False)
@@ -415,7 +417,7 @@ class OsfStorageFileNode(StoredObject):
             'version': len(self.versions),
             'downloads': self.get_download_count(),
             'size': version.size if version else None,
-            'renter': self.renter._id if self.renter else '',
+            'checkout_user': self.checkout_user._id if self.checkout_user else '',
             'contentType': version.content_type if version else None,
             'md5': self.versions[-1].metadata.get('md5') if self.versions else None,
             'sha256': self.versions[-1].metadata.get('sha256') if self.versions else None,
@@ -427,7 +429,7 @@ class OsfStorageFileNode(StoredObject):
         return utils.copy_files(self, destination_parent.node_settings, destination_parent, name=name)
 
     def move_under(self, destination_parent, name=None):
-        if self.renter is not None:
+        if self.checkout_user is not None:
             return False
         self.name = name or self.name
         self.parent = destination_parent
@@ -604,7 +606,7 @@ class OsfStorageGuidFile(GuidFile):
 class OsfStorageTrashedFileNode(StoredObject):
     """The graveyard for all deleted OsfStorageFileNodes"""
     _id = fields.StringField(primary=True)
-    renter = fields.ForeignField('User', default=None)
+    checkout_user = fields.ForeignField('User', default=None)
     name = fields.StringField(required=True, index=True)
     kind = fields.StringField(required=True, index=True)
     parent = fields.ForeignField('OsfStorageFileNode', index=True)

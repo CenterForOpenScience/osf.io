@@ -161,7 +161,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not is_folder:
         try:
-            if file_node.renter is None or file_node.renter == user:
+            if file_node.checkout_user is None or file_node.checkout_user == user:
                 version = file_node.create_version(
                     user,
                     dict(payload['settings'], **dict(
@@ -203,7 +203,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     if file_node == node_addon.get_root():
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if file_node.renter is not None:
+    if file_node.checkout_user is not None:
         raise HTTPError(httplib.METHOD_NOT_ALLOWED)
 
     success = file_node.delete()
@@ -245,17 +245,17 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_rent(file_node, auth, **kwargs):
     message = 'failure'
-    if file_node.renter is None:
+    if file_node.checkout_user is None:
         if auth:
-            file_node.rent(renter=auth.user)
+            file_node.checkout(checkout_user=auth.user)
             message = 'success'
     return {'status': message}
 
 @must_have_permission(permissions.WRITE)
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_return(file_node, auth, **kwargs):
-    if file_node.renter == auth.user or kwargs['node'].has_permission(auth.user, permissions.ADMIN):
-        file_node.return_rent()
+    if file_node.checkout_user == auth.user or kwargs['node'].has_permission(auth.user, permissions.ADMIN):
+        file_node.checkin()
         return {'status': 'success'}
     return {'status': 'failure'}
 
@@ -265,14 +265,14 @@ def osfstorage_rented(file_node, auth, **kwargs):
     permission = 'read'
     if kwargs['node'].has_permission(auth.user, permissions.ADMIN):
         permission = 'admin'
-    return {'renter': file_node.renter._id if file_node.renter else '',
+    return {'checkout_user': file_node.checkout_user._id if file_node.checkout_user else '',
             'permission': permission}
 
 @decorators.handle_odm_errors
 @must_have_permission(permissions.WRITE)
 @decorators.autoload_filenode(default_root=True)
 def osfstorage_rent_all(file_node, auth, **kwargs):
-    worked = file_node.node_settings.rent_all_files(user=auth.user)
+    worked = file_node.node_settings.checkout_all_files(user=auth.user)
     if worked:
         return {'status': 'success'}
     return {'status': 'failure'}
@@ -281,7 +281,7 @@ def osfstorage_rent_all(file_node, auth, **kwargs):
 @must_have_permission(permissions.WRITE)
 @decorators.autoload_filenode(default_root=True)
 def osfstorage_return_all(file_node, auth, **kwargs):
-    worked = file_node.node_settings.return_all_files(auth.user)
+    worked = file_node.node_settings.checkin_all_files(auth.user)
     if worked:
         return {'status': 'success'}
     return {'status': 'failure'}
