@@ -35,7 +35,7 @@ from website.project.model import (
     Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo,
 )
-from website.util.permissions import CREATOR_PERMISSIONS
+from website.util.permissions import CREATOR_PERMISSIONS, ADMIN, READ, WRITE, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
 from website.addons.wiki.exceptions import (
     NameEmptyError,
@@ -1591,6 +1591,13 @@ class TestNode(OsfTestCase):
             }
         )
 
+    def test_add_pointer_fails_for_registrations(self):
+        node = ProjectFactory()
+        registration = RegistrationFactory(creator=self.user)
+
+        with assert_raises(NodeStateError):
+            registration.add_pointer(node, auth=self.consolidate_auth)
+
     def test_get_points_exclude_folders(self):
         user = UserFactory()
         pointer_project = ProjectFactory(is_public=True)  # project that points to another project
@@ -1737,6 +1744,57 @@ class TestNode(OsfTestCase):
             self.node.set_visible(user=self.user, visible=False, auth=None)
             assert_equal(e.exception.message, 'Must have at least one visible contributor')
 
+    def test_update_contributor(self):
+        new_contrib = AuthUserFactory()
+        self.node.add_contributor(new_contrib, permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS, auth=self.consolidate_auth)
+
+        assert_equal(self.node.get_permissions(new_contrib), DEFAULT_CONTRIBUTOR_PERMISSIONS)
+        assert_true(self.node.get_visible(new_contrib))
+
+        self.node.update_contributor(
+            new_contrib,
+            READ,
+            False,
+            auth=self.consolidate_auth
+        )
+        assert_equal(self.node.get_permissions(new_contrib), [READ])
+        assert_false(self.node.get_visible(new_contrib))
+        
+    def test_update_contributor_non_admin_raises_error(self):
+        non_admin = AuthUserFactory()
+        self.node.add_contributor(
+            non_admin,
+            permissions=DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            auth=self.consolidate_auth
+        )
+        with assert_raises(PermissionsError):
+            self.node.update_contributor(
+                non_admin,
+                None,
+                False,
+                auth=Auth(non_admin)
+            )
+                
+
+    def test_update_contributor_only_admin_raises_error(self):
+        with assert_raises(NodeStateError):
+            self.node.update_contributor(
+                self.user,
+                WRITE,
+                True,
+                auth=self.consolidate_auth
+            )
+
+    def test_update_contributor_non_contrib_raises_error(self):
+        non_contrib = AuthUserFactory()
+        with assert_raises(ValueError):
+            self.node.update_contributor(
+                non_contrib,
+                ADMIN,
+                True,
+                auth=self.consolidate_auth
+            )        
+
     def test_contributor_manage_visibility(self):
 
         reg_user1 = UserFactory()
@@ -1762,7 +1820,7 @@ class TestNode(OsfTestCase):
             save=True
         )
 
-        assert_equal(len(self.node.visible_contributor_ids),1)
+        assert_equal(len(self.node.visible_contributor_ids), 1)
 
     def test_contributor_set_visibility_validation(self):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
@@ -2214,6 +2272,7 @@ class TestProject(OsfTestCase):
         assert_not_in(user2, self.project.contributors)
         assert_not_in(user2._id, self.project.permissions)
         assert_equal(self.project.logs[-1].action, 'contributor_removed')
+        assert_equal(self.project.logs[-1].params['contributors'], [user2._id])
 
     def test_manage_contributors_cannot_remove_last_admin_contributor(self):
         user2 = UserFactory()
