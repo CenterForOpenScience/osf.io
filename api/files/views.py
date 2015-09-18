@@ -34,21 +34,21 @@ class FileMixin(object):
 
 
 class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
-    """Details about files and folders
+    """Details about files and folders. *Writeable*.
 
     ##Attributes
 
     Both files and folders are accessed through this endpoint and may be distinguished by the `kind` attribute. `size`
     will be `null` for folders.
 
-        name:         name of the file or folder
-        kind:         "file" or "folder"
-        path:         path to this entity, used in "move" actions
-        size:         size of file in bytes, null for folders
-        provider:     storage provider for this file. "osfstorage" if stored on the OSF.  Other examples include
-                      "s3" for Amazon S3, "googledrive" for Google Drive, "box" for Box.com.
-        last_touched: last time the metadata for the file was retrieved. only applies to non-OSF storage
-                      providers.
+        name:          name of the file or folder
+        kind:          "file" or "folder"
+        path:          path to this entity, used in "move" actions
+        size:          size of file in bytes, null for folders
+        provider:      storage provider for this file. "osfstorage" if stored on the OSF.  Other examples include
+                       "s3" for Amazon S3, "googledrive" for Google Drive, "box" for Box.com.
+        last_touched:  last time the metadata for the file was retrieved. only applies to non-OSF storage
+                       providers.
 
     ##Relationships
 
@@ -64,7 +64,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     The `versions` endpoint provides version history for files.  Will be `null` for folders.
 
-    ##Actions
+    ##Links / Actions
 
     The `links` property of the response provides endpoints for common file operations. The currently-supported actions
     are:
@@ -113,7 +113,8 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         Body (Raw):   <file data (not form-encoded)>
 
     To update an existing file, issue a PUT request to the file's `upload` url with the raw file data in the request
-    body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.
+    body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The update
+    action will create a new version of the file.
 
     ###Rename (*files, folders*)
 
@@ -142,21 +143,22 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
                         "conflict": "replace|keep" // defaults to 'replace'
                        }
 
-    Move and copy actions both use the same request structure, a POST to the `move` url, but with different values for the `action` body parameters.
-    The `path` parameter is also required and should be the `path` attribute of the folder being written to.  The
-    `rename` and `conflict` parameters are optional.  If you wish to change the file's or folder's name at its
-    destination, set the `rename` parameter to the new name.  The `conflict` param governs how name clashes are
-    resolved.  Possible values are `replace` and `keep`.  `replace` is the default and will overwrite the file that
-    already exists in the target folder.  `keep` will attempt to keep both by adding a suffix to the new file's name
-    until to conflict exists.  The suffix will be ' (**x**)' where **x** is a increasing integer starting from 1.
+    Move and copy actions both use the same request structure, a POST to the `move` url, but with different values for
+    the `action` body parameters.  The `path` parameter is also required and should be the `path` attribute of the
+    folder being written to.  The `rename` and `conflict` parameters are optional.  If you wish to change the name of
+    the file or folder at its destination, set the `rename` parameter to the new name.  The `conflict` param governs how
+    name clashes are resolved.  Possible values are `replace` and `keep`.  `replace` is the default and will overwrite
+    the file that already exists in the target folder.  `keep` will attempt to keep both by adding a suffix to the new
+    file's name until it no longer conflicts.  The suffix will be ' (**x**)' where **x** is a increasing integer starting
+    from 1.  This behavior is intended to simulate that of the OS X Finder.
 
     ###Delete (*file, folders*)
 
-        Method:       DELETE
-        URL (file):   data.links.download
-        URL (folder): data.links.upload
+        Method: DELETE
+        URL:    data.links.delete
 
-    To delete a file, send a DELETE request to the `download` url for files, or the `upload` url for folders.
+    To delete a file send a DELETE request to the `delete` url.
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -180,11 +182,14 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
 
 class FileVersionsList(generics.ListAPIView, FileMixin):
-    """List of versions for the file requested.
+    """List of versions for the requested file. *Read-only*.
+
+    [Paginated](http://jsonapi.org/format/#fetching-pagination) list of file versions, ordered by increasing version
+    number (id).  Each resource contains a `size` and `content_type` attribute.
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
         base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'node'),
     )
@@ -203,7 +208,20 @@ def node_from_version(request, view, obj):
 
 
 class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
-    """Details about a specific file version.
+    """Details about a specific file version. *Read-only*.
+
+    ##Attributes
+
+        size:          size of file in bytes
+        content_type:  MIME content-type for the file. May be null if file is stored locally.
+
+    ##Links
+
+    GET-able representations of this file version.
+
+        self:  the canonical api endpoint for this entity
+        html:  the OSF webpage for this file version
+
     """
     version_lookup_url_kwarg = 'version_id'
     permission_classes = (
