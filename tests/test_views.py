@@ -4686,7 +4686,7 @@ class TestDraftRegistrationViews(OsfTestCase):
 
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    def test_get_draft_registrations_gets_drafts_for_node(self):
+    def test_get_draft_registrations_only_gets_drafts_for_that_node(self):
         dummy = NodeFactory()
 
         # Drafts for dummy node
