@@ -1838,10 +1838,11 @@ class TestNodeChildCreate(ApiTestCase):
         self.url = '/{}nodes/{}/children/'.format(API_BASE, self.project._id)
         self.child = {
             'type': 'nodes',
-            'title': 'child',
-            'description': 'this is a child project',
-            'category': 'project',
-        }
+            'attributes': {
+                'title': 'child',
+                'description': 'this is a child project',
+                'category': 'project',
+        }}
 
     def test_creates_child_logged_out_user(self):
         res = self.app.post_json_api(self.url, self.child, expect_errors=True)
@@ -1853,9 +1854,9 @@ class TestNodeChildCreate(ApiTestCase):
     def test_creates_child_logged_in_owner(self):
         res = self.app.post_json_api(self.url, self.child, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], self.child['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.child['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.child['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.child['attributes']['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.child['attributes']['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.child['attributes']['category'])
 
         self.project.reload()
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
@@ -1866,9 +1867,9 @@ class TestNodeChildCreate(ApiTestCase):
 
         res = self.app.post_json_api(self.url, self.child, auth=self.user_two.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], self.child['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.child['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.child['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.child['attributes']['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.child['attributes']['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.child['attributes']['category'])
 
         self.project.reload()
         child_id = res.json['data']['id']
@@ -1896,11 +1897,12 @@ class TestNodeChildCreate(ApiTestCase):
 
         res = self.app.post_json_api(self.url, {
             'type': 'nodes',
-            'title': title,
-            'description': description,
-            'category': 'project',
-            'public': True,
-        }, auth=self.user.auth)
+            'attributes': {
+                'title': title,
+                'description': description,
+                'category': 'project',
+                'public': True,
+        }}, auth=self.user.auth)
         child_id = res.json['data']['id']
         assert_equal(res.status_code, 201)
         url = '/{}nodes/{}/'.format(API_BASE, child_id)
@@ -1920,19 +1922,21 @@ class TestNodeChildCreate(ApiTestCase):
         url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
         res = self.app.post_json_api(url, {
             'type': 'nodes',
-            'title': fake.catch_phrase(),
-            'description': fake.bs(),
-            'category': 'project',
-            'public': True,
-        }, auth=self.user.auth, expect_errors=True)
+            'attributes': {
+                'title': fake.catch_phrase(),
+                'description': fake.bs(),
+                'category': 'project',
+                'public': True,
+        }}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         
     def test_creates_child_no_type(self):
         child = {
+            'attributes': {
             'title': 'child',
             'description': 'this is a child project',
             'category': 'project',
-        }
+        }}
         res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
@@ -1941,10 +1945,11 @@ class TestNodeChildCreate(ApiTestCase):
     def test_creates_child_incorrect_type(self):
         child = {
             'type': 'Wrong type.',
-            'title': 'child',
-            'description': 'this is a child project',
-            'category': 'project',
-        }
+            'attributes': {
+                'title': 'child',
+                'description': 'this is a child project',
+                'category': 'project',
+        }}
         res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
@@ -2560,10 +2565,13 @@ class TestExceptionFormatting(ApiTestCase):
         self.description = 'A Properly Cool Project'
         self.category = 'data'
 
-        self.project_no_title = {'description': self.description,
-                                 'category': self.category,
-                                 'type': 'nodes',
-                                 }
+        self.project_no_title = {
+            'attributes': {
+                'description': self.description,
+                'category': self.category,
+                'type': 'nodes',
+            }
+        }
 
         self.private_project = ProjectFactory(is_public=False, creator=self.user)
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
@@ -2575,7 +2583,7 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/title'})
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'][0], 'This field is required.')
 
     def test_node_does_not_exist_formatting(self):
         url = '/{}nodes/{}/'.format(API_BASE, '12345')
@@ -2597,7 +2605,7 @@ class TestExceptionFormatting(ApiTestCase):
         assert_equal(errors[0], {'detail': "Authentication credentials were not provided."})
 
     def test_update_project_with_no_title_or_category_formatting(self):
-        res = self.app.put_json_api(self.private_url, {'type': 'nodes', 'id': self.private_project._id, 'description': 'New description'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.put_json_api(self.private_url, {'type': 'nodes', 'id': self.private_project._id, 'attributes': {'description': 'New description'}}, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(len(errors), 2)
