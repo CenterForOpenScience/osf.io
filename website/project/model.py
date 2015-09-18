@@ -3009,6 +3009,7 @@ class PrivateLink(StoredObject):
             "anonymous": self.anonymous
         }
 
+
 class Sanction(StoredObject):
     """Sanction object is a generic way to track approval states"""
 
@@ -3146,6 +3147,7 @@ class Sanction(StoredObject):
             else:
                 self._notify_non_authorizer(contrib)
 
+
 class EmailApprovableSanction(Sanction):
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
@@ -3223,6 +3225,7 @@ class EmailApprovableSanction(Sanction):
             'reject': self._rejection_url(user._id)
         }
         self.save()
+
 
 class Embargo(EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
@@ -3340,6 +3343,7 @@ class Embargo(EmailApprovableSanction):
         )
         # Remove backref to parent project if embargo was for a new registration
         if not self.for_existing_registration:
+            parent_registration.delete_registration_tree(save=True)
             parent_registration.registered_from = None
         # Delete parent registration if it was created at the time the embargo was initiated
         if not self.for_existing_registration:
@@ -3360,12 +3364,12 @@ class Embargo(EmailApprovableSanction):
             },
             auth=Auth(self.initiated_by),
         )
-        self.state == self.COMPLETED
         self.save()
 
     def approve_embargo(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
         self.approve(user, token)
+
 
 class Retraction(EmailApprovableSanction):
     """Retraction object for public registrations."""
@@ -3488,7 +3492,6 @@ class Retraction(EmailApprovableSanction):
         # so that retracted subrojects/components don't appear in search
         for node in parent_registration.get_descendants_recursive():
             node.update_search()
-        self.state == self.APPROVED
         self.save()
 
     def approve_retraction(self, user, token):
@@ -3496,6 +3499,7 @@ class Retraction(EmailApprovableSanction):
 
     def disapprove_retraction(self, user, token):
         self.reject(user, token)
+
 
 class RegistrationApproval(EmailApprovableSanction):
 
@@ -3595,7 +3599,6 @@ class RegistrationApproval(EmailApprovableSanction):
         for node in register.root.node_and_primary_descendants():
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
-        self.state = self.APPROVED
         self.save()
 
     def _on_reject(self, user, token):
