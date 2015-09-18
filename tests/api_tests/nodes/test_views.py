@@ -483,6 +483,19 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
+    def test_creates_project_properties_not_nested(self):
+        project = {
+            'title': self.title,
+            'description': self.description,
+            'category': self.category,
+            'public': False,
+            'type': 'nodes'
+        }
+        res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+
 
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
@@ -628,6 +641,19 @@ class NodeCRUDTestCase(ApiTestCase):
 
 
 class TestNodeUpdate(NodeCRUDTestCase):
+
+    def test_update_project_properties_not_nested(self):
+        res = self.app.put_json_api(self.public_url, {
+            'id': self.public_project._id,
+            'type': 'nodes',
+            'title': self.new_title,
+            'description': self.new_description,
+            'category': self.new_category,
+            'public': True,
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
 
     def test_update_invalid_id(self):
         res = self.app.put_json_api(self.public_url, {
@@ -953,6 +979,15 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+
+    # Nothing will be updated here
+    def test_partial_update_project_properties_not_nested(self):
+        res = self.app.patch_json_api(self.public_url, {
+            'id': self.public_project._id,
+            'type': 'nodes',
+            'title': self.new_title,
+        }, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
 
 
 class TestNodeDelete(NodeCRUDTestCase):
@@ -1977,6 +2012,17 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
+    def test_creates_child_properties_not_nested(self):
+        child = {
+            'title': 'child',
+            'description': 'this is a child project',
+            'category': 'project',
+        }
+        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+
 
 class TestNodeLinksList(ApiTestCase):
 
@@ -2150,99 +2196,113 @@ class TestNodeLinkCreate(ApiTestCase):
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.pointer_project = ProjectFactory(is_public=False, creator=self.user)
         self.private_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.project._id)
-        self.private_payload = {'type': 'node_links', 'target_node_id': self.pointer_project._id}
+
+        self.private_payload = {
+            "type": "node_links",
+            "attributes": {
+                "target_node_id": self.pointer_project._id
+            }
+}
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.public_project._id)
-        self.public_payload = {'type': 'node_links', 'target_node_id': self.public_pointer_project._id}
+        self.public_payload = {'type': 'node_links', 'attributes': {'target_node_id': self.public_pointer_project._id}}
         self.fake_url = '/{}nodes/{}/node_links/'.format(API_BASE, 'fdxlq')
-        self.fake_payload = {'type': 'node_links', 'target_node_id': 'fdxlq'}
-        self.point_to_itself_payload = {'type': 'node_links', 'target_node_id': self.public_project._id}
+        self.fake_payload = {'type': 'node_links', 'attributes': {'target_node_id': 'fdxlq'}}
+        self.point_to_itself_payload = {'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}
 
         self.user_two = AuthUserFactory()
         self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
         self.user_two_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.user_two_project._id)
-        self.user_two_payload = {'type': 'node_links', 'target_node_id': self.user_two_project._id}
+        self.user_two_payload = {'type': 'node_links', 'attributes': {'target_node_id': self.user_two_project._id}}
+
+    def test_creates_project_target_not_nested(self):
+        payload = {'type': 'node_links', 'target_node_id': self.pointer_project._id}
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        print res
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
     def test_creates_public_node_pointer_logged_out(self):
-        res = self.app.post(self.public_url, self.public_payload, expect_errors=True)
+        res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
     @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
     def test_creates_public_node_pointer_logged_in(self):
-        res = self.app.post(self.public_url, self.public_payload, auth=self.user_two.auth, expect_errors=True)
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
-        res = self.app.post(self.public_url, self.public_payload, auth=self.user.auth)
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['target_node_id'], self.public_pointer_project._id)
 
     def test_creates_private_node_pointer_logged_out(self):
-        res = self.app.post(self.private_url, self.private_payload, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
     def test_creates_private_node_pointer_logged_in_contributor(self):
-        res = self.app.post(self.private_url, self.private_payload, auth=self.user.auth)
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['target_node_id'], self.pointer_project._id)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_creates_private_node_pointer_logged_in_non_contributor(self):
-        res = self.app.post(self.private_url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
     def test_create_node_pointer_non_contributing_node_to_contributing_node(self):
-        res = self.app.post(self.private_url, self.user_two_payload, auth=self.user_two.auth, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, self.user_two_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
     @assert_logs(NodeLog.POINTER_CREATED, 'project')
     def test_create_node_pointer_contributing_node_to_non_contributing_node(self):
-        res = self.app.post(self.private_url, self.user_two_payload, auth=self.user.auth)
+        res = self.app.post_json_api(self.private_url, self.user_two_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['target_node_id'], self.user_two_project._id)
 
     def test_create_pointer_non_contributing_node_to_fake_node(self):
-        res = self.app.post(self.private_url, self.fake_payload, auth=self.user_two.auth, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, self.fake_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
     def test_create_pointer_contributing_node_to_fake_node(self):
-        res = self.app.post(self.private_url, self.fake_payload, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, self.fake_payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
         assert_in('detail', res.json['errors'][0])
 
     def test_create_fake_node_pointing_to_contributing_node(self):
-        res = self.app.post(self.fake_url, self.private_payload, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.fake_url, self.private_payload, auth=self.user.auth, expect_errors=True)
+        print res
         assert_equal(res.status_code, 404)
         assert_in('detail', res.json['errors'][0])
 
-        res = self.app.post(self.fake_url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
+        res = self.app.post_json_api(self.fake_url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
         assert_in('detail', res.json['errors'][0])
 
     @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
     def test_create_node_pointer_to_itself(self):
-        res = self.app.post(self.public_url, self.point_to_itself_payload, auth=self.user.auth)
+        res = self.app.post_json_api(self.public_url, self.point_to_itself_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['target_node_id'], self.public_project._id)
 
-
     def test_create_node_pointer_to_itself_unauthorized(self):
-        res = self.app.post(self.public_url, self.point_to_itself_payload, auth=self.user_two.auth, expect_errors=True)
+        res = self.app.post_json_api(self.public_url, self.point_to_itself_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
     @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
     def test_create_node_pointer_already_connected(self):
-        res = self.app.post(self.public_url, self.public_payload, auth=self.user.auth)
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['target_node_id'], self.public_pointer_project._id)
@@ -2255,20 +2315,20 @@ class TestNodeLinkCreate(ApiTestCase):
         registration = RegistrationFactory(creator=self.user)
 
         url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
-        payload = {'target_node_id': self.public_pointer_project._id}
-        res = self.app.post(url, self.public_payload, auth=self.user.auth, expect_errors=True)
+        payload = {'type': 'node_links', 'attributes': {'target_node_id': self.public_pointer_project._id}}
+        res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_create_node_pointer_no_type(self):
-        payload = {'target_node_id': self.user_two_project._id}
-        res = self.app.post(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        payload = {'attributes': {'target_node_id': self.user_two_project._id}}
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_create_node_pointer_incorrect_type(self):
-        payload = {'type': 'Wrong type.', 'target_node_id': self.user_two_project._id}
-        res = self.app.post(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        payload = {'type': 'Wrong type.', 'attributes': {'target_node_id': self.user_two_project._id}}
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 

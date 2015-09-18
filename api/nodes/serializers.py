@@ -170,6 +170,7 @@ class NodeSerializer(JSONAPISerializer):
             node.update(validated_data, auth=auth)
         return node
 
+
 class NodeUpdateSerializer(NodeSerializer):
     id = ser.CharField(source='_id', label='ID', required=True)
 
@@ -264,6 +265,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """ Overrides node contributor serializer to make id read only and add additional methods
     """
+
     id = ser.CharField(read_only=True, source='_id', label='ID')
 
     def update(self, instance, validated_data):
@@ -323,11 +325,15 @@ class NodeRegistrationSerializer(NodeSerializer):
         raise exceptions.ValidationError('Registrations cannot be modified.')
 
 
+class NodeLinksAttributesSerializer(JSONAPISerializer):
+    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
+
+
 class NodeLinksSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
-    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
+    attributes = NodeLinksAttributesSerializer(source='node_links_attributes')
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
     # include this field in the future.
@@ -351,6 +357,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         return pointer_node.absolute_url
 
     def create(self, validated_data):
+        validated_data.update(validated_data.pop('node_links_attributes', {}))
         request = self.context['request']
         user = request.user
         auth = Auth(user)
@@ -366,7 +373,6 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         pass
-
 
 class NodeProviderSerializer(JSONAPISerializer):
 
