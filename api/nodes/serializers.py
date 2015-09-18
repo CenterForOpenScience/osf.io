@@ -298,7 +298,3 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
-
-    @staticmethod
-    def valid_self_link_methods(obj):
-        return obj.valid_self_link_methods
