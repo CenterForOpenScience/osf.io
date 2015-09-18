@@ -37,7 +37,16 @@
               <tbody>
                 ${self.content()}
               </tbody>
-            </table>            
+            </table>
+            <table width="600" border="0" cellpadding="25" cellspacing="0" align="center" style="margin: 30px auto 0 auto;background: white;box-shadow: 0 0 2px #ccc;">
+                <tbody>
+                    <tr>
+                        <td style="border-collapse: collapse;">
+                            <p class="small text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or user settings.</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
           </td>
         </tr>
         <tr>
