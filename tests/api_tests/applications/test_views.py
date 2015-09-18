@@ -227,7 +227,7 @@ class TestApplicationDetail(ApiTestCase):
 
     def test_updating_an_instance_does_not_change_the_number_of_instances(self):
         new_name = "The instance formerly known as Prince"
-        res = self.app.patch(self.user1_app_url,
+        res = self.app.patch_json_api(self.user1_app_url,
                              {'attributes': {"name": new_name},
                               'id': self.user1_app._id,
                               'type': 'applications',

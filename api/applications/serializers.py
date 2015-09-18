@@ -49,7 +49,6 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
     date_created = ser.DateTimeField(help_text='The date this application was generated (automatically filled in)',
                                      read_only=True)
 
-
     class Meta:
         type_ = 'applications'
 
