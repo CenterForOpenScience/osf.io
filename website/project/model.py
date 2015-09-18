@@ -4,6 +4,7 @@ import os
 import re
 import urllib
 import logging
+import pymongo
 import datetime
 import urlparse
 from collections import OrderedDict
@@ -528,6 +529,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     #: Whether this is a pointer or not
     primary = True
+
+    __indices__ = [{
+        'unique': False,
+        'key_or_list': [
+            ('tags', pymongo.ASCENDING),
+            ('is_public', pymongo.ASCENDING),
+            ('is_deleted', pymongo.ASCENDING),
+        ]
+    }]
 
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
