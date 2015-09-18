@@ -8,6 +8,7 @@ import urlparse
 import bson
 import pytz
 import itsdangerous
+from collections import OrderedDict
 
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
@@ -440,6 +441,19 @@ class User(GuidStoredObject, AddonModelMixin):
         user.add_unconfirmed_email(username)
         user.is_registered = False
         return user
+
+    @property
+    def attributes(self):
+        return OrderedDict([
+            ('fullname', self.fullname),
+            ('given_name', self.given_name),
+            ('middle_name', self.middle_names),
+            ('family_name', self.family_name),
+            ('suffix', self.suffix),
+            ('date_registered', self.date_registered),
+            ('bibliographic', ''),
+            ('permission', '')
+        ])
 
     @classmethod
     def create_confirmed(cls, username, password, fullname):
