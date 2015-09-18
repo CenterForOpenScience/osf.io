@@ -69,7 +69,6 @@ class NodeSerializer(JSONAPISerializer):
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
-
     children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
                                                 lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
 
