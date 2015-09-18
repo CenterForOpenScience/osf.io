@@ -51,13 +51,22 @@ class FilterMixin(object):
     # Used so that that queries by _id will work
     def convert_key(self, key):
         key = key.strip()
-        if self.serializer_class._declared_fields[key].source:
-            return self.serializer_class._declared_fields[key].source
+        ser_fields = self.serializer_class._declared_fields
+        if key in ser_fields:
+            if ser_fields[key].source:
+                return ser_fields[key].source
+        else:
+            if ser_fields['attributes'][key].source:
+                return ser_fields['attributes'][key].source
+
         return key
 
     # Used to convert string values from query params to Python booleans when necessary
     def convert_value(self, value, field):
-        field_type = type(self.serializer_class._declared_fields[field])
+        if field in self.serializer_class._declared_fields:
+            field_type = type(self.serializer_class._declared_fields[field])
+        else:
+            field_type = type(self.serializer_class._declared_fields['attributes'][field]._field)
         value = value.strip()
         if field_type == ser.BooleanField:
             if value in self.TRUTHY:
@@ -93,7 +102,10 @@ class ODMFilterMixin(FilterMixin):
             raise NotImplementedError()
 
     def get_comparison_operator(self, key):
-        field_type = type(self.serializer_class._declared_fields[key])
+        if key in self.serializer_class._declared_fields:
+            field_type = type(self.serializer_class._declared_fields[key])
+        else:
+            field_type = type(self.serializer_class._declared_fields['attributes'][key]._field)
         if field_type in self.field_comparison_operators:
             return self.field_comparison_operators[field_type]
         else:
