@@ -3215,20 +3215,12 @@ class TestConfigureMailingListViews(OsfTestCase):
         user.reload()
 
         assert_false(user.osf_mailing_lists[settings.OSF_HELP_LIST])
-        assert_equal(
-            user.osf_mailing_lists[settings.OSF_HELP_LIST],
-            payload[settings.OSF_HELP_LIST]
-        )
 
         payload = {settings.OSF_HELP_LIST: True}
         res = self.app.post_json(url, payload, auth=user.auth)
         user.reload()
 
         assert_true(user.osf_mailing_lists[settings.OSF_HELP_LIST])
-        assert_equal(
-            user.osf_mailing_lists[settings.OSF_HELP_LIST],
-            payload[settings.OSF_HELP_LIST]
-        )
 
     def test_get_notifications(self):
         user = AuthUserFactory()

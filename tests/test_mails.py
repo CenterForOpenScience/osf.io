@@ -27,8 +27,7 @@ class TestQueuedMail(OsfTestCase):
         self.user.save()
 
     def test_no_login_callback_for_active_user(self):
-        mail = mails.QueuedMail()
-        mail.create(
+        mail = mails.queue_mail(
             to_addr=self.user.username,
             send_at=datetime.utcnow(),
             user=self.user,
@@ -42,8 +41,7 @@ class TestQueuedMail(OsfTestCase):
     def test_no_login_callback_for_inactive_user(self):
         self.user.date_last_login = datetime.utcnow() - timedelta(weeks=10)
         self.user.save()
-        mail = mails.QueuedMail()
-        mail.create(
+        mail = mails.queue_mail(
             to_addr=self.user.username,
             send_at=datetime.utcnow(),
             user=self.user,
@@ -53,8 +51,7 @@ class TestQueuedMail(OsfTestCase):
         assert_true(mail.send_mail())
 
     def test_no_addon_callback(self):
-        mail = mails.QueuedMail()
-        mail.create(
+        mail = mails.queue_mail(
             to_addr=self.user.username,
             send_at=datetime.utcnow(),
             user=self.user,
@@ -64,8 +61,7 @@ class TestQueuedMail(OsfTestCase):
         assert_true(mail.send_mail())
 
     def test_new_public_project_callback_for_no_project(self):
-        mail = mails.QueuedMail()
-        mail.create(
+        mail = mails.queue_mail(
             to_addr=self.user.username,
             send_at=datetime.utcnow(),
             user=self.user,
@@ -80,8 +76,7 @@ class TestQueuedMail(OsfTestCase):
         node = factories.ProjectFactory()
         node.is_public = True
         node.save()
-        mail = mails.QueuedMail()
-        mail.create(
+        mail = mails.queue_mail(
             to_addr=self.user.username,
             send_at=datetime.utcnow(),
             user=self.user,
@@ -97,8 +92,7 @@ class TestQueuedMail(OsfTestCase):
         file_node = node.get_addon('osfstorage').root_node
         self.user.date_last_login = datetime.utcnow() - timedelta(days=13)
         self.user.save()
-        mail = mails.QueuedMail()
-        mail.create(
+        mail = mails.queue_mail(
             to_addr=self.user.username,
             send_at=datetime.utcnow(),
             user=self.user,
@@ -111,10 +105,9 @@ class TestQueuedMail(OsfTestCase):
         assert_true(mail.send_mail())
         assert_equal(mail.data['downloads'], 0)
 
-    def test_same_sent(self):
+    def test_finding_other_emails_sent_to_user(self):
         user = factories.UserFactory()
-        mail = mails.QueuedMail()
-        mail.create(
+        mail = mails.queue_mail(
             to_addr=user.username,
             send_at=datetime.utcnow(),
             user=user,

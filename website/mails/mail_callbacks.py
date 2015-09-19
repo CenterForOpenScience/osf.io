@@ -6,20 +6,17 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound, MultipleResultsFound
 
 def no_addon(email):
-    if len(email.user.get_addons()) is 0 and email.user.is_registered:
-        return True
+    return len(email.user.get_addons()) == 0 and email.user.is_registered
 
 def no_login(email):
-    if not email.user.is_registered or email.user.date_last_login > datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME:
-        return False
-    return True
+    return email.user.is_registered or not email.user.date_last_login > datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME
 
 def new_public_project(email):
     """ Will check to make sure the project that triggered this callback is still public
     before sending the email. It also checks to make sure this is the first (and only)
     new public project email to be sent
 
-    :param email: QueuedMail object, with 'fid' in its data field
+    :param email: QueuedMail object, with 'nid' in its data field
     :return: boolean based on whether the email should be sent
     """
 

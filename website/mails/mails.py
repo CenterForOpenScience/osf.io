@@ -140,10 +140,17 @@ def queue_mail(to_addr, mail, send_at, user, **context):
     :param context: IMPORTANT kwargs to be attached to template.
                     Sending mail will fail if wrong all kwargs are
                     not parameters.
-    :return:
+    :return: the QueuedMail object created
     """
-    new_mail = QueuedMail()
-    new_mail.create(to_addr, mail, send_at, user, **context)
+    new_mail = QueuedMail(
+        user=user,
+        to_addr=to_addr,
+        send_at=send_at,
+        email_type=mail['template'],
+        data=context
+    )
+    new_mail.save()
+    return new_mail
 
 class QueuedMail(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
@@ -153,14 +160,6 @@ class QueuedMail(StoredObject):
     email_type = fields.StringField(default=None)
     data = fields.DictionaryField(default=None)
     sent_at = fields.DateTimeField(index=True, default=None)
-
-    def create(self, to_addr, mail, send_at, user, **context):
-        self.user = user
-        self.to_addr = to_addr
-        self.send_at = send_at
-        self.email_type = mail['template']
-        self.data = context
-        self.save()
 
     def send_mail(self):
         """
@@ -184,7 +183,12 @@ class QueuedMail(StoredObject):
             self.__class__.remove_one(self)
             return False
 
-    def find_same_sent(self):
+    def find_same_sent_to_same_user(self):
+        """
+        Queries up for all emails of the same type as self, sent to the same user as self.
+        Does not look for queue-up emails.
+        :return: a list of those emails
+        """
         return list(self.__class__.find(
             Q('email_type', 'eq', self.email_type) &
             Q('user', 'eq', self.user) &
