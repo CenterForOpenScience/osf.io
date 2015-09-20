@@ -1185,22 +1185,23 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
         self.user_three = AuthUserFactory()
         self.data_user_two = {
-            'id': self.user_two._id,
-            'type': 'users',
+            'type': 'contributors',
             'attributes': {
+                'id': self.user_two._id,
                 'bibliographic': True
         }}
         self.data_user_three = {
-            'id': self.user_three._id,
-            'type': 'users',
+            'type': 'contributors',
             'attributes': {
+                'id': self.user_three._id,
                 'bibliographic': True
         }}
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_add_contributor_is_visible_by_default(self):
         del self.data_user_two['attributes']['bibliographic']
-        res = self.app.post_json(self.public_url, self.data_user_two, auth=self.user.auth)
+        res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth, expect_errors=True)
+        print res
 
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
@@ -1221,14 +1222,15 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_non_bibliographic_contributor_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'users',
+            'type': 'contributors',
             'attributes': {
+                'id': self.user_two._id,
                 'bibliographic': False
         }}
         res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
+        assert_equal(res.json['data']['attributes']['bibliographic'], False)
 
         self.private_project.reload()
         assert_in(self.user_two, self.private_project.contributors)
@@ -1265,9 +1267,11 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_contributor_without_bibliographic_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'users',
-            'attributes': {}
+            'type': 'contributors',
+            'attributes': {
+                'id': self.user_two._id,
+
+            }
         }
         res = self.app.post_json(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
@@ -1278,12 +1282,14 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_admin_contributor_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'users',
+            'type': 'contributors',
             'attributes':
-                {'permission': permissions.ADMIN,
-                'bibliographic': True
-        }}
+                {
+                    'id': self.user_two._id,
+                    'permission': permissions.ADMIN,
+                    'bibliographic': True
+                }
+        }
         res = self.app.post_json(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
@@ -1295,9 +1301,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_write_contributor_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'users',
+            'type': 'contributors',
             'attributes': {
+                'id': self.user_two._id,
                 'permission': permissions.WRITE,
                 'bibliographic': True
         }}
@@ -1312,9 +1318,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_read_contributor_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'users',
+            'type': 'contributors',
             'attributes': {
+                'id': self.user_two._id,
                 'permission': permissions.READ,
                 'bibliographic': True
         }}
@@ -1328,8 +1334,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def test_adds_invalid_permission_contributor_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
+            'type': 'contributors',
             'attributes': {
+                'id': self.user_two._id,
                 'permission': 'invalid',
                 'bibliographic': True
         }}
@@ -1342,9 +1349,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_none_permission_contributor_private_project_admin_uses_default_permissions(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'users',
+            'type': 'contributors',
             'attributes': {
+                'id': self.user_two._id,
                 'permission': None,
                 'bibliographic': True
         }}
@@ -1366,10 +1373,12 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def test_adds_non_existing_user_private_project_admin(self):
         data = {
-            'id': 'Fake',
-            'type': 'users',
+            'type': 'contributors',
             'attributes':
-                {'bibliographic': True}
+                {
+                    'id': 'Fake',
+                    'bibliographic': True
+                }
         }
         res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
