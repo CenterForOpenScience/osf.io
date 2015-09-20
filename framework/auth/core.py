@@ -461,19 +461,6 @@ class User(GuidStoredObject, AddonModelMixin):
             ('researcherId', self.social.get('researcherId'))
         ])
 
-    @property
-    def contributor_attributes(self):
-        return OrderedDict([
-            ('fullname', self.fullname),
-            ('given_name', self.given_name),
-            ('middle_names', self.middle_names),
-            ('family_name', self.family_name),
-            ('suffix', self.suffix),
-            ('date_registered', self.date_registered),
-            ('permissions', ''),
-            ('bibliographic', '')
-        ])
-
 
     @classmethod
     def create_confirmed(cls, username, password, fullname):
