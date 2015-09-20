@@ -179,19 +179,41 @@ class NodeUpdateSerializer(NodeSerializer):
 
 
 class NodeContributorAttributesSerializer(JSONAPISerializer):
+    id = ser.CharField(required=True, source='_id', write_only=True)
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
     family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)
 
     permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
+
+
+    def get_attribute(self, instance):
+        # node = Node.load(self.context['request'].parser_context['kwargs']['node_id'])
+        # non_model = {'bibliographic': instance._id in node.visible_contributors, 'permission': node.get_permissions(instance)[-1]}
+        attribute = {}
+        for field in self.fields:
+            if self.fields[field].write_only:
+                continue
+            try:
+                field_name = self.fields[field].source
+                lookup = getattr(instance, field_name)
+                attribute[field_name] = lookup
+            except (KeyError, AttributeError) as exc:
+                attribute[field_name] = instance[field_name]
+        return attribute
+
+    def to_representation(self, value):
+        """
+        List of object instances -> List of dicts of primitive datatypes.
+        """
+        return value
 
 
 class NodeContributorsSerializer(JSONAPISerializer):
@@ -206,9 +228,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'bibliographic',
         'permissions'
     ])
-    id = ser.CharField(source='_id', label='ID')
+    id = ser.CharField(read_only=True, source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
-    attributes = NodeContributorAttributesSerializer(source='contributor_attributes')
+    attributes = NodeContributorAttributesSerializer()
 
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
@@ -221,7 +243,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         return user.profile_image_url(size=size)
 
     class Meta:
-        type_ = 'users'
+        type_ = 'contributors'
 
     def validate_type(self, value):
         if self.Meta.type_ != value:
@@ -242,7 +264,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def create(self, validated_data):
-        validated_data.update(validated_data.pop('contributor_attributes', {}))
+        validated_data.update(validated_data.pop('attributes', {}))
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
         contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
