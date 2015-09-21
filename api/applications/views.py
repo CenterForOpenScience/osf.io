@@ -4,6 +4,7 @@ Views related to OAuth2 platform applications. Intended for OSF internal use onl
 from rest_framework.exceptions import APIException
 from rest_framework import generics
 from rest_framework import renderers
+from rest_framework import permissions as drf_permissions
 
 from modularodm import Q
 
@@ -26,6 +27,7 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
     __metaclass__ = OsfAPIViewMeta
 
     permission_classes = (
+        drf_permissions.IsAuthenticated,
         OwnerOnly,
     )
 
@@ -62,8 +64,10 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
     Should not return information if the application belongs to a different user
     """
     __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
         OwnerOnly,
+        drf_permissions.IsAuthenticated,
     )
 
     required_read_scopes = [CoreScopes.APPLICATIONS_READ]
