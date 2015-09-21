@@ -68,7 +68,8 @@ describe('addContributors', () => {
                var shouldBe = ['a1234', 'b1234', 'c1234'];
 
                it('should be a list of ids', () => {
-                   assert.equal(vm.contributors, shouldBe);
+                   vm.viewModel.getContributors();
+                   assert.equal(vm.viewModel.contributors(), shouldBe);
                });
            });
        });
