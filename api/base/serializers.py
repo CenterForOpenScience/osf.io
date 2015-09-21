@@ -280,12 +280,8 @@ class JSONAPISerializer(ser.Serializer):
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':
                 data['links'] = field.to_representation(attribute)
-            elif isinstance(field, JSONAPISerializer):
+            elif field.field_name == 'attributes':
                 data['attributes'] = field.to_representation(attribute)
-            # elif field.field_name == 'attributes':
-            #     for property_name, value in attribute.iteritems():
-            #         nested_field = field.fields[property_name]
-            #         data['attributes'][property_name] = nested_field.to_representation(value)
             else:
                 if attribute is None:
                     # We skip `to_representation` for `None` values so that
