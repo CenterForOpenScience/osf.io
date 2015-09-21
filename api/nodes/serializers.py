@@ -15,7 +15,6 @@ from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyp
 
 
 class NodeTagField(ser.Field):
-
     def to_representation(self, obj):
         if obj is not None:
             return obj._id
@@ -45,6 +44,23 @@ class NodeAttributesSerializer(JSONAPISerializer):
                                         'public and private nodes. Administrators on a parent '
                                         'node have implicit read permissions for all child nodes',
                               )
+
+    def get_attribute(self, instance):
+        attribute = {}
+        for field in self.fields:
+            if self.fields[field].write_only:
+                continue
+
+            field_name = self.fields[field].source
+            lookup = getattr(instance, field_name)
+            attribute[field] = self.fields[field].to_representation(lookup)
+        return attribute
+
+    def to_representation(self, value):
+        """
+        List of object instances -> List of dicts of primitive datatypes.
+        """
+        return value
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -194,8 +210,6 @@ class NodeContributorAttributesSerializer(JSONAPISerializer):
 
 
     def get_attribute(self, instance):
-        # node = Node.load(self.context['request'].parser_context['kwargs']['node_id'])
-        # non_model = {'bibliographic': instance._id in node.visible_contributors, 'permission': node.get_permissions(instance)[-1]}
         attribute = {}
         for field in self.fields:
             if self.fields[field].write_only:
