@@ -13,7 +13,7 @@ from tests import factories
 from api.base.settings.defaults import API_BASE
 from api.base.views import OsfAPIViewMeta
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from api.base.permissions import OsfBasePermission
+from api.base.permissions import TokenHasScope
 
 class TestApiBaseViews(ApiTestCase):
 
@@ -23,7 +23,7 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
         base_permissions = [
-            OsfBasePermission,
+            TokenHasScope,
             IsAuthenticatedOrReadOnly
         ]
         view_modules = ['nodes', 'users', 'files']

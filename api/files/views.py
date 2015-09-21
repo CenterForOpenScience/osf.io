@@ -7,7 +7,6 @@ from website.files.models import FileVersion
 
 from api.base.permissions import PermissionWithGetter
 from api.base.utils import get_object_or_error
-from api.base import permissions as base_permissions
 from api.base.views import OsfAPIViewMeta
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
@@ -40,7 +39,6 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     permission_classes = (
         CheckedOutOrAdmin,
-        base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'node'),
         PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
     )
@@ -65,7 +63,6 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
 
     permission_classes = (
         ContributorOrPublic,
-        base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'node'),
     )
 
@@ -89,7 +86,6 @@ class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
 
     version_lookup_url_kwarg = 'version_id'
     permission_classes = (
-        base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, node_from_version)
     )
 

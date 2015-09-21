@@ -9,7 +9,6 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from website.models import User, Node
 
-from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
@@ -51,10 +50,6 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     """
     __metaclass__ = OsfAPIViewMeta
 
-    permission_classes = (
-        base_permissions.TokenHasScope,
-    )
-
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE]
 
@@ -84,7 +79,6 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
     permission_classes = (
         ReadOnlyOrCurrentUser,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.USERS_READ]
@@ -107,10 +101,6 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     Return a list of nodes that the user contributes to.
     """
     __metaclass__ = OsfAPIViewMeta
-
-    permission_classes = (
-        base_permissions.TokenHasScope,
-    )
 
     required_read_scopes = [CoreScopes.USERS_READ, CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]

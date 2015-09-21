@@ -1,13 +1,12 @@
 import requests
 
 from modularodm import Q
-from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework import generics
 
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
-from api.base import permissions as base_permissions
 from api.base.views import OsfAPIViewMeta
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error
@@ -73,10 +72,6 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """
     __metaclass__ = OsfAPIViewMeta
 
-    permission_classes = (
-        base_permissions.TokenHasScope,
-    )
-
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
@@ -128,7 +123,6 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
@@ -171,7 +165,6 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     permission_classes = (
         AdminOrPublic,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
@@ -204,9 +197,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     permission_classes = (
         ContributorDetailPermissions,
-        drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
@@ -249,7 +240,6 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
     permission_classes = (
         ContributorOrPublic,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -283,7 +273,6 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
     permission_classes = (
         ContributorOrPublic,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
@@ -336,7 +325,6 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -362,7 +350,6 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
     permission_classes = (
         ContributorOrPublicForPointers,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -427,7 +414,6 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
@@ -508,7 +494,6 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
     permission_classes = (
         ContributorOrPublic,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
