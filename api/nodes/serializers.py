@@ -55,12 +55,13 @@ class NodeAttributesSerializer(JSONAPISerializer):
             lookup = getattr(instance, field_name)
             if lookup is None:
                 attribute[field] = None
-            attribute[field] = self.fields[field].to_representation(lookup)
+            else:
+                attribute[field] = self.fields[field].to_representation(lookup)
         return attribute
 
     def to_representation(self, value):
         """
-        List of object instances -> List of dicts of primitive datatypes.
+        Dictionary representation
         """
         return value
 
@@ -357,14 +358,40 @@ class NodeRegistrationSerializer(NodeSerializer):
 
 
 class NodeLinksAttributesSerializer(JSONAPISerializer):
+
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
 
+    def get_attribute(self, instance):
+        attribute = {}
+        for field in self.fields:
+            if self.fields[field].write_only:
+                continue
+
+            field_name = self.fields[field].source
+
+            if field_name == 'node._id':
+                field_name = 'node'
+                lookup = getattr(instance, field_name)._id
+            else:
+                lookup = getattr(instance, field_name)
+
+            if lookup is None:
+                attribute[field] = None
+            else:
+                attribute[field] = self.fields[field].to_representation(lookup)
+        return attribute
+
+    def to_representation(self, value):
+        """
+        Dictionary representation
+        """
+        return value
 
 class NodeLinksSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
-    attributes = NodeLinksAttributesSerializer(source='node_links_attributes')
+    attributes = NodeLinksAttributesSerializer()
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
     # include this field in the future.
@@ -388,7 +415,8 @@ class NodeLinksSerializer(JSONAPISerializer):
         return pointer_node.absolute_url
 
     def create(self, validated_data):
-        validated_data.update(validated_data.pop('node_links_attributes', {}))
+        validated_data.update(validated_data.pop('attributes', {}))
+        print validated_data
         request = self.context['request']
         user = request.user
         auth = Auth(user)

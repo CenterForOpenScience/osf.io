@@ -2184,7 +2184,7 @@ class TestNodeLinksList(ApiTestCase):
         assert_in('detail', res.json['errors'][0])
 
     def test_deleted_links_not_returned(self):
-        res = self.app.get(self.public_url)
+        res = self.app.get(self.public_url, expect_errors=True)
         res_json = res.json['data']
         original_length = len(res_json)
 

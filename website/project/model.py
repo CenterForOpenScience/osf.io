@@ -686,10 +686,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return None
 
     @property
-    def node_links_attributes(self):
-        return {'target_node_id': self._id}
-
-    @property
     def is_pending_registration(self):
         if not self.is_registration:
             return False
