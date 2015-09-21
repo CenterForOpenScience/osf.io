@@ -53,6 +53,8 @@ class NodeAttributesSerializer(JSONAPISerializer):
 
             field_name = self.fields[field].source
             lookup = getattr(instance, field_name)
+            if lookup is None:
+                attribute[field] = None
             attribute[field] = self.fields[field].to_representation(lookup)
         return attribute
 
@@ -214,12 +216,14 @@ class NodeContributorAttributesSerializer(JSONAPISerializer):
         for field in self.fields:
             if self.fields[field].write_only:
                 continue
-            try:
-                field_name = self.fields[field].source
-                lookup = getattr(instance, field_name)
+
+            field_name = self.fields[field].source
+            lookup = getattr(instance, field_name)
+            if lookup is None:
+                attribute[field] = None
+            else:
                 attribute[field_name] = lookup
-            except (KeyError, AttributeError) as exc:
-                attribute[field_name] = instance[field_name]
+
         return attribute
 
     def to_representation(self, value):

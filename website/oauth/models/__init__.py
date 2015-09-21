@@ -437,15 +437,6 @@ class ApiOAuth2Application(StoredObject):
     def absolute_api_v2_url(self):
         return absolute_reverse('applications:application-detail', kwargs={'client_id': self.client_id})
 
-    @property
-    def attributes(self):
-        return OrderedDict([
-            ('name', self.name),
-            ('description', self.description),
-            ('home_url', self.home_url),
-            ('callback_url', self.callback_url),
-        ])
-
     # used by django and DRF
     def get_absolute_url(self):
         return self.absolute_api_v2_url

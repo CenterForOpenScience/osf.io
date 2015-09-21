@@ -25,6 +25,27 @@ class ApiOAuth2ApplicationAttributesSerializer(JSONAPISerializer):
                                  validators=[URLValidator()],
                                  label="Callback URL")
 
+    def get_attribute(self, instance):
+        attribute = {}
+        for field in self.fields:
+            if self.fields[field].write_only:
+                continue
+
+            field_name = self.fields[field].source
+            lookup = getattr(instance, field_name)
+            if lookup is None:
+                attribute[field] = None
+            else:
+                attribute[field] = self.fields[field].to_representation(lookup)
+        return attribute
+
+    def to_representation(self, value):
+        """
+        Dict containing nested serializer fields
+        """
+        return value
+
+
 
 class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
     """Serialize data about a registered OAuth2 application"""
