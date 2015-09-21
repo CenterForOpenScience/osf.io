@@ -1594,7 +1594,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param bool save: Save self after updating.
         """
         original = self.description
-        self.description = description
+        self.description = sanitize.strip_html(description)
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={

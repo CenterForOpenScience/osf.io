@@ -60,7 +60,7 @@ def edit_node(auth, node, **kwargs):
                 data=dict(message_long=e.message)
             )
     elif edited_field == 'description':
-        node.set_description(strip_html(value), auth=auth)
+        node.set_description(value, auth=auth)
     node.save()
     return {'status': 'success'}
 
