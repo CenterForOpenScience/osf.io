@@ -89,6 +89,11 @@ class OsfAPIViewMeta(type):
             drf_permissions.IsAuthenticatedOrReadOnly,
             base_permissions.TokenHasScope,
         ))
-        bases_permission_classes = set(attributes.get('permission_classes', tuple()))
+        bases_permission_classes = attributes.get('permission_classes', tuple())
+        try:
+            iter(bases_permission_classes)
+        except TypeError:
+            bases_permission_classes = (bases_permission_classes, )
+        bases_permission_classes = set(bases_permission_classes)
         attributes['permission_classes'] = permission_classes | bases_permission_classes
         return super(OsfAPIViewMeta, cls).__new__(cls, name, bases, attributes)
