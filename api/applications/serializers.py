@@ -80,7 +80,7 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
         return instance
 
 
-class ApiOAuth2ApplicationUpdateSerializer(ApiOAuth2ApplicationSerializer):
+class ApiOAuth2ApplicationDetailSerializer(ApiOAuth2ApplicationSerializer):
     """
     Overrides ApiOAuth2ApplicationSerializer to make id required and validate id.
     """

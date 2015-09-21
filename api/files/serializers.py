@@ -115,7 +115,7 @@ class FileSerializer(JSONAPISerializer):
         return super(FileSerializer, self).is_valid(clean_html=False, **kwargs)
 
 
-class FileUpdateSerializer(FileSerializer):
+class FileDetailSerializer(FileSerializer):
     """
     Overrides FileSerializer to make id required and validate id.
     """

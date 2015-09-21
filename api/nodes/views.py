@@ -15,7 +15,7 @@ from api.users.views import UserMixin
 from api.nodes.serializers import (
     NodeSerializer,
     NodeLinksSerializer,
-    NodeUpdateSerializer,
+    NodeDetailSerializer,
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
@@ -131,7 +131,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
-    serializer_class = NodeUpdateSerializer
+    serializer_class = NodeDetailSerializer
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):

@@ -15,7 +15,7 @@ from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 
-from .serializers import UserSerializer, UserUpdateSerializer
+from .serializers import UserSerializer, UserDetailSerializer
 from .permissions import ReadOnlyOrCurrentUser
 
 
@@ -87,7 +87,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE]
 
-    serializer_class = UserUpdateSerializer
+    serializer_class = UserDetailSerializer
 
     # overrides RetrieveAPIView
     def get_object(self):

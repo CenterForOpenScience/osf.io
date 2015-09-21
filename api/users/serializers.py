@@ -28,7 +28,7 @@ class UserAttributesSerializer(AttributesSerializer):
     orcid = DevOnly(ser.CharField(required=False, label='ORCID', source='social.orcid', allow_blank=True, help_text='ORCID'))
     researcherId = DevOnly(ser.CharField(required=False, label='ResearcherID', source='social.researcherId', allow_blank=True, help_text='ResearcherId Account'))
 
-    # Overrides JSONAPISerializer
+    # Overrides AttributesSerializer
     def get_attribute(self, instance):
         attribute = {}
         for field in self.fields:
@@ -97,7 +97,7 @@ class UserSerializer(JSONAPISerializer):
         return instance
 
 
-class UserUpdateSerializer(UserSerializer):
+class UserDetailSerializer(UserSerializer):
     """
     Overrides UserSerializer to make id required and validate id.
     """

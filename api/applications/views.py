@@ -17,7 +17,7 @@ from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
 from api.base import permissions as base_permissions
 from api.applications.permissions import OwnerOnly
-from api.applications.serializers import ApiOAuth2ApplicationSerializer, ApiOAuth2ApplicationUpdateSerializer
+from api.applications.serializers import ApiOAuth2ApplicationSerializer, ApiOAuth2ApplicationDetailSerializer
 
 
 class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
@@ -71,7 +71,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView):
     required_read_scopes = [CoreScopes.APPLICATIONS_READ]
     required_write_scopes = [CoreScopes.APPLICATIONS_WRITE]
 
-    serializer_class = ApiOAuth2ApplicationUpdateSerializer
+    serializer_class = ApiOAuth2ApplicationDetailSerializer
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 

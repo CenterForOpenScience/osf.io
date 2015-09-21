@@ -152,7 +152,7 @@ class NodeSerializer(JSONAPISerializer):
         return node
 
 
-class NodeUpdateSerializer(NodeSerializer):
+class NodeDetailSerializer(NodeSerializer):
     """
     Overrides NodeSerializer to make id required and validate id.
     """
@@ -245,10 +245,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
-    """ Overrides node contributor serializer to add additional methods
     """
-
-    # id = ser.CharField(read_only=True, source='_id', label='ID')
+    Overrides node contributor serializer to add additional methods
+    """
     def validate_id(self, value):
         if self._args[0]._id != value:
             raise Conflict()
@@ -291,7 +290,7 @@ class NodeLinksAttributesSerializer(AttributesSerializer):
 
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
 
-    # Overrides JSONAPISerializer
+    # Overrides AttributesSerializer
     def get_attribute(self, instance):
         attribute = {}
         for field in self.fields:
