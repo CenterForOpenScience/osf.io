@@ -340,5 +340,3 @@ def DevOnly(field):
         experimental_field = DevMode(CharField(required=False))
     """
     return field if settings.DEV_MODE else None
-
-

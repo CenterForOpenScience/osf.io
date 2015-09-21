@@ -1,5 +1,4 @@
 from rest_framework import serializers as ser
-from rest_framework.exceptions import ValidationError
 from rest_framework import exceptions
 
 from framework.auth.core import Auth
