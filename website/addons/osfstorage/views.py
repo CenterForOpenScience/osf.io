@@ -207,17 +207,18 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
 @must_be_signed
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_download(file_node, payload, node_addon, **kwargs):
-    try:
-        version_id = int(request.args.get('version') or 0) - 1
-    except ValueError:
-        raise make_error(httplib.BAD_REQUEST, 'Version must be an int or not specified')
+    if not request.args.get('version'):
+        version_id = None
+    else:
+        try:
+            version_id = int(request.args['version'])
+        except ValueError:
+            raise make_error(httplib.BAD_REQUEST, 'Version must be an integer if not specified')
 
     version = file_node.get_version(version_id, required=True)
 
     if request.args.get('mode') not in ('render', ):
-        if version_id < 0:
-            version_id = len(file_node.versions) + version_id
-        utils.update_analytics(node_addon.owner, file_node._id, version_id)
+        utils.update_analytics(node_addon.owner, file_node._id, int(version.identifier))
 
     return {
         'data': {

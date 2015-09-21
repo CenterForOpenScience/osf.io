@@ -67,8 +67,9 @@ class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, User)), 'obj must be a Node'
-        node = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
-        if node.is_registration:
+        if not isinstance(obj, Node):
+            obj = Node.load(request.parser_context['kwargs'][view.node_lookup_url_kwarg])
+        assert isinstance(obj, Node), 'obj must be a Node'
+        if obj.is_registration:
             return request.method in permissions.SAFE_METHODS
         return True
