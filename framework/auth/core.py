@@ -8,7 +8,6 @@ import urlparse
 import bson
 import pytz
 import itsdangerous
-from collections import OrderedDict
 
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound

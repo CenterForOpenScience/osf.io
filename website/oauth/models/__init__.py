@@ -9,7 +9,6 @@ import urlparse
 import uuid
 
 from flask import request
-from collections import OrderedDict
 from oauthlib.oauth2.rfc6749.errors import MissingTokenError
 from requests.exceptions import HTTPError as RequestsHTTPError
 

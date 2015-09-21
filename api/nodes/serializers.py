@@ -211,7 +211,6 @@ class NodeContributorAttributesSerializer(JSONAPISerializer):
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
 
-
     def get_attribute(self, instance):
         attribute = {}
         for field in self.fields:

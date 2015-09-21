@@ -46,7 +46,6 @@ class ApiOAuth2ApplicationAttributesSerializer(JSONAPISerializer):
         return value
 
 
-
 class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
     """Serialize data about a registered OAuth2 application"""
     id = ser.CharField(help_text='The client ID for this application (automatically generated)',
