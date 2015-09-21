@@ -173,6 +173,8 @@ def normalize_scopes(scopes):
 
 
 if __name__ == '__main__':
+    # Print some data to console, to help audit what views/core scopes map to a given public/composed scope
+    # Although represented internally as a set, print as a sorted list for readability.
     from pprint import pprint as pp
-    pp({k: v.parts
+    pp({k: sorted(v.parts)
         for k, v in public_scopes.iteritems()})
