@@ -8,7 +8,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
-from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField
+from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink
 
 
@@ -68,14 +68,14 @@ class NodeSerializer(JSONAPISerializer):
     files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
                                              link_type='related')
 
-    node_links = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})
+    node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
+                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
 
     parent = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='self',
                                               lookup_url_kwarg='node_id')
 
-    registrations = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
-                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})
+    registrations = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
+                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'}))
 
     class Meta:
         type_ = 'nodes'
@@ -298,7 +298,3 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
-
-    @staticmethod
-    def valid_self_link_methods(obj):
-        return obj.valid_self_link_methods

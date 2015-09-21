@@ -252,10 +252,10 @@ COMPONENT_CATEGORIES = set([k for k in Node.CATEGORY_MAP.keys() if not k == 'pro
 
 def get_doctype_from_node(node):
 
-    if node.category in COMPONENT_CATEGORIES:
-        return 'component'
-    elif node.is_registration:
+    if node.is_registration:
         return 'registration'
+    elif node.category in COMPONENT_CATEGORIES:
+        return 'component'
     else:
         return node.category
 
