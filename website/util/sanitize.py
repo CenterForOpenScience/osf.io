@@ -11,9 +11,9 @@ def strip_html(unclean):
     :return: stripped string
     :rtype: str
     """
-    # Handle non string inputs so this function can be used with higher-order
+    # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
     # functions, such as rapply (recursively applies a function to collections)
-    if not isinstance(unclean, basestring):
+    if not isinstance(unclean, basestring) and not is_iterable(unclean) and unclean is not None:
         return unclean
     return bleach.clean(unclean, strip=True, tags=[], attributes=[], styles=[])
 
@@ -31,9 +31,12 @@ def clean_tag(data):
     return escape_html(data).replace('"', '&quot;').replace("'", '&#39')
 
 
+def is_iterable(obj):
+    return hasattr(obj, '__iter__')
+
 def is_iterable_but_not_string(obj):
     """Return True if ``obj`` is an iterable object that isn't a string."""
-    return (hasattr(obj, '__iter__') and not hasattr(obj, 'strip'))
+    return (is_iterable(obj) and not hasattr(obj, 'strip'))
 
 
 def escape_html(data):

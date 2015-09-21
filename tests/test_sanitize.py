@@ -1,3 +1,4 @@
+import datetime
 import unittest
 from nose.tools import *  # flake8: noqa
 from website.util import sanitize
@@ -37,10 +38,20 @@ class TestSanitize(unittest.TestCase):
             sanitize.strip_html(b'<foo>bar</foo>'),
             'bar'
         )
+
+    def test_strip_html_on_non_strings_returns_original_value(self):
         assert_true(sanitize.strip_html(True))
         assert_false(sanitize.strip_html(False))
-        assert_equal(sanitize.strip_html({}), {})
-        assert_equal(sanitize.strip_html([]), [])
+
+        assert_equal(sanitize.strip_html(12), 12)
+        assert_equal(sanitize.strip_html(12.3), 12.3)
+
+        dtime = datetime.datetime.now()
+        assert_equal(sanitize.strip_html(dtime), dtime)
+
+    def test_strip_html_bleaches_collection_types(self):
+        assert_equal(sanitize.strip_html({'foo': '<b>bar</b>'}), "{'foo': 'bar'}")
+        assert_equal(sanitize.strip_html(['<em>baz</em>']), "['baz']")
 
     def test_unescape_html(self):
         assert_equal(
