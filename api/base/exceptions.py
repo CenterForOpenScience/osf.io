@@ -20,9 +20,7 @@ def json_api_exception_handler(exc, context):
         if isinstance(exc, JSONAPIException):
             errors.extend([
                 {
-                    'source': {
-                        'parameter': exc.parameter
-                    },
+                    'source': exc.source,
                     'detail': exc.detail,
                 }
             ])
@@ -53,9 +51,9 @@ class JSONAPIException(APIException):
         See http://jsonapi.org/format/#error-objects.
         Example: ``source={'pointer': '/data/attributes/title'}``
     """
-    def __init__(self, detail=None, parameter=None):
+    def __init__(self, detail=None, source=None):
         super(JSONAPIException, self).__init__(detail=detail)
-        self.parameter = parameter
+        self.source = source
 
 # Custom Exceptions the Django Rest Framework does not support
 class Gone(APIException):
@@ -67,6 +65,11 @@ class InvalidQueryStringError(JSONAPIException):
     """Raised when client passes an invalid value to a query string parameter."""
     default_detail = 'Query string contains an invalid value.'
     status_code = http.BAD_REQUEST
+
+    def __init__(self, detail=None, parameter=None):
+        super(InvalidQueryStringError, self).__init__(detail=detail, source={
+            'parameter': parameter
+        })
 
 
 class InvalidFilterError(ParseError):
