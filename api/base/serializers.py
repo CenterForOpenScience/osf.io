@@ -61,7 +61,6 @@ class URLFieldWithReadDefault(ser.URLField):
         except SkipField:
             return ''
 
-
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
     as those are the only complex structures currently supported by DRF Serializer Fields."""
