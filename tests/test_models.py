@@ -1737,7 +1737,7 @@ class TestNode(OsfTestCase):
         )
         assert_equal(self.node.get_permissions(new_contrib), [READ])
         assert_false(self.node.get_visible(new_contrib))
-        
+
     def test_update_contributor_non_admin_raises_error(self):
         non_admin = AuthUserFactory()
         self.node.add_contributor(
@@ -1752,7 +1752,6 @@ class TestNode(OsfTestCase):
                 False,
                 auth=Auth(non_admin)
             )
-                
 
     def test_update_contributor_only_admin_raises_error(self):
         with assert_raises(NodeStateError):
@@ -1771,28 +1770,28 @@ class TestNode(OsfTestCase):
                 ADMIN,
                 True,
                 auth=self.consolidate_auth
-            )        
+            )
 
     def test_contributor_manage_visibility(self):
 
         reg_user1 = UserFactory()
         #This makes sure manage_contributors uses set_visible so visibility for contributors is added before visibility
         #for other contributors is removed ensuring there is always at least one visible contributor
-        self.node.add_contributor(contributor=self.user, permissions=['read', 'write','admin'], auth=self.consolidate_auth)
-        self.node.add_contributor(contributor=reg_user1, permissions=['read', 'write','admin'], auth=self.consolidate_auth)
+        self.node.add_contributor(contributor=self.user, permissions=['read', 'write', 'admin'], auth=self.consolidate_auth)
+        self.node.add_contributor(contributor=reg_user1, permissions=['read', 'write', 'admin'], auth=self.consolidate_auth)
 
         self.node.manage_contributors(
             user_dicts=[
-                    {'id': self.user._id, 'permission': 'admin', 'visible': True},
-                    {'id': reg_user1._id, 'permission': 'admin', 'visible': False},
-                ],
+                {'id': self.user._id, 'permission': 'admin', 'visible': True},
+                {'id': reg_user1._id, 'permission': 'admin', 'visible': False},
+            ],
             auth=self.consolidate_auth,
             save=True
         )
         self.node.manage_contributors(
             user_dicts=[
-                    {'id': self.user._id, 'permission': 'admin', 'visible': False},
-                    {'id': reg_user1._id, 'permission': 'admin', 'visible': True},
+                {'id': self.user._id, 'permission': 'admin', 'visible': False},
+                {'id': reg_user1._id, 'permission': 'admin', 'visible': True},
             ],
             auth=self.consolidate_auth,
             save=True
@@ -1803,7 +1802,7 @@ class TestNode(OsfTestCase):
     def test_contributor_set_visibility_validation(self):
         reg_user1, reg_user2 = UserFactory(), UserFactory()
         self.node.add_contributors(
-                        [
+            [
                 {'user': reg_user1, 'permissions': [
                     'read', 'write', 'admin'], 'visible': True},
                 {'user': reg_user2, 'permissions': [
@@ -1823,6 +1822,30 @@ class TestNode(OsfTestCase):
         assert_false(self.parent.nodes_active)
 
 
+class TestNodeUpdate(OsfTestCase):
+
+    def setUp(self):
+        super(TestNodeUpdate, self).setUp()
+        self.user = UserFactory()
+        self.node = ProjectFactory(creator=self.user, is_public=False)
+
+    def test_update_title(self):
+        # Creator (admin) can update
+        new_title = fake.catch_phrase()
+        self.node.update({'title': new_title}, auth=Auth(self.user))
+        assert_equal(self.node.title, new_title)
+
+        # Write contrib can update
+        new_title2 = fake.catch_phrase()
+        write_contrib = UserFactory()
+        self.node.add_contributor(write_contrib, auth=Auth(self.user), permissions=(READ, WRITE))
+        self.node.save()
+        self.node.update({'title': new_title2}, auth=Auth(write_contrib))
+        assert_equal(self.node.title, new_title2)
+
+    # TODO: test permissions, non-writable fields
+
+
 class TestNodeTraversals(OsfTestCase):
 
     def setUp(self):
@@ -1837,12 +1860,12 @@ class TestNodeTraversals(OsfTestCase):
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
         comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
-        comp1b = ProjectFactory(creator=self.user, parent=comp1)
+        ProjectFactory(creator=self.user, parent=comp1)
         comp2 = ProjectFactory(creator=self.user, parent=self.root)
         comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
         comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
-        comp2b = ProjectFactory(creator=self.user, parent=comp2)
+        ProjectFactory(creator=self.user, parent=comp2)
 
         descendants = self.root.next_descendants(
             Auth(self.viewer),
@@ -1890,12 +1913,12 @@ class TestNodeTraversals(OsfTestCase):
         comp1 = ProjectFactory(creator=self.user, parent=self.root)
         comp1a = ProjectFactory(creator=self.user, parent=comp1)
         comp1a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
-        comp1b = ProjectFactory(creator=self.user, parent=comp1)
+        ProjectFactory(creator=self.user, parent=comp1)
         comp2 = ProjectFactory(creator=self.user, parent=self.root)
         comp2.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
         comp2a = ProjectFactory(creator=self.user, parent=comp2)
         comp2a.add_contributor(self.viewer, auth=self.consolidate_auth, permissions='read')
-        comp2b = ProjectFactory(creator=self.user, parent=comp2)
+        ProjectFactory(creator=self.user, parent=comp2)
 
         descendants = self.root.get_descendants_recursive(
             lambda n: n.is_contributor(self.viewer)
