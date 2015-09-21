@@ -28,6 +28,33 @@ class UserAttributesSerializer(JSONAPISerializer):
     orcid = DevOnly(ser.CharField(required=False, label='ORCID', source='social.orcid', allow_blank=True, help_text='ORCID'))
     researcherId = DevOnly(ser.CharField(required=False, label='ResearcherID', source='social.researcherId', allow_blank=True, help_text='ResearcherId Account'))
 
+    def get_attribute(self, instance):
+        attribute = {}
+        for field in self.fields:
+            if self.fields[field].write_only:
+                continue
+
+            field_name = self.fields[field].source
+
+            if 'social' in field_name:
+                soc = field_name.split('.')[1]
+                social = getattr(instance, 'social')
+                lookup = social.get(soc)
+            else:
+                lookup = getattr(instance, field_name)
+
+            if lookup is None:
+                attribute[field] = None
+            else:
+                attribute[field] = self.fields[field].to_representation(lookup)
+        return attribute
+
+    def to_representation(self, value):
+        """
+        Dictionary representation
+        """
+        return value
+
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
@@ -82,7 +109,11 @@ class UserSerializer(JSONAPISerializer):
 
         assert isinstance(instance, User), 'instance must be a User'
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            if 'social' == attr:
+                for key, val in value.items():
+                    instance.social[key] = val
+            else:
+                setattr(instance, attr, value)
         instance.save()
         return instance
 

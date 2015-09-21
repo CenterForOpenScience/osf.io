@@ -442,26 +442,6 @@ class User(GuidStoredObject, AddonModelMixin):
         user.is_registered = False
         return user
 
-    @property
-    def attributes(self):
-        return OrderedDict([
-            ('fullname', self.fullname),
-            ('given_name', self.given_name),
-            ('middle_names', self.middle_names),
-            ('family_name', self.family_name),
-            ('suffix', self.suffix),
-            ('date_registered', self.date_registered),
-            ('gitHub', self.social.get('github')),
-            ('scholar', self.social.get('scholar')),
-            ('personal_website', self.social.get('personal')),
-            ('twitter', self.social.get('twitter')),
-            ('linkedIn', self.social.get('linkedIn')),
-            ('impactStory', self.social.get('impactStory')),
-            ('orcid', self.social.get('orcid')),
-            ('researcherId', self.social.get('researcherId'))
-        ])
-
-
     @classmethod
     def create_confirmed(cls, username, password, fullname):
         user = cls.create(username, password, fullname)

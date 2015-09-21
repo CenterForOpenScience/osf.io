@@ -478,7 +478,6 @@ class TestUserUpdate(ApiTestCase):
         res = self.app.put_json_api(self.user_one_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
-
     def test_patch_user_incorrect_id(self):
         res = self.app.put_json_api(self.user_one_url, self.incorrect_id, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
@@ -560,6 +559,7 @@ class TestUserUpdate(ApiTestCase):
                 'gitHub': 'even_newer_github',
                 'suffix': 'The Millionth'
         }}, auth=self.user_one.auth)
+        print res
         self.user_one.reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['fullname'], 'new_fullname')
@@ -702,7 +702,8 @@ class TestDeactivatedUser(ApiTestCase):
 
     def test_deactivated_user_returns_410_response(self):
         url = '/{}users/{}/'.format(API_BASE, self.user._id)
-        res = self.app.get(url, auth=self.user.auth , expect_errors=False)
+        res = self.app.get(url, auth=self.user.auth , expect_errors=True)
+        print res
         assert_equal(res.status_code, 200)
         self.user.is_disabled = True
         self.user.save()
