@@ -2,7 +2,7 @@
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 from rest_framework.reverse import reverse
 import furl
 
@@ -83,3 +83,24 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
     url.args.update(query)
     return url.url
+
+def enforce_type_and_id_and_pop_attributes(validated_data):
+    validated_id = validated_data.get('id', None)
+    if not validated_id:
+        validated_id = validated_data.get('_id', None)
+    validated_type = validated_data.get('type', None)
+
+    errors = {}
+    if not validated_id:
+        errors['id'] = ['This field is required.']
+    if not validated_type:
+        errors['type'] = ['This field is required.']
+
+    if errors:
+        raise ValidationError(errors)
+
+    validated_data.update(validated_data.pop('attributes', {}))
+    validated_data.pop('_id')
+    validated_data.pop('type')
+
+    return validated_data

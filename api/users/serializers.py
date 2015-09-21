@@ -3,10 +3,11 @@ from rest_framework.exceptions import ValidationError
 
 from website.models import User
 
+from api.base.exceptions import Conflict
+from api.base.utils import enforce_type_and_id_and_pop_attributes
 from api.base.serializers import (
     JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 )
-from api.base.exceptions import Conflict
 
 
 class UserAttributesSerializer(JSONAPISerializer):
@@ -28,6 +29,7 @@ class UserAttributesSerializer(JSONAPISerializer):
     orcid = DevOnly(ser.CharField(required=False, label='ORCID', source='social.orcid', allow_blank=True, help_text='ORCID'))
     researcherId = DevOnly(ser.CharField(required=False, label='ResearcherID', source='social.researcherId', allow_blank=True, help_text='ResearcherId Account'))
 
+    # Overrides JSONAPISerializer
     def get_attribute(self, instance):
         attribute = {}
         for field in self.fields:
@@ -49,6 +51,7 @@ class UserAttributesSerializer(JSONAPISerializer):
                 attribute[field] = self.fields[field].to_representation(lookup)
         return attribute
 
+    # Overrides JSONAPISerializer
     def to_representation(self, value):
         """
         Dictionary representation
@@ -89,23 +92,7 @@ class UserSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def update(self, instance, validated_data):
-        validated_id = validated_data.get('id', None)
-        if not validated_id:
-            validated_id = validated_data.get('_id', None)
-        validated_type = validated_data.get('type', None)
-
-        errors = {}
-        if not validated_id:
-            errors['id'] = ['This field is required.']
-        if not validated_type:
-            errors['type'] = ['This field is required.']
-
-        if errors:
-            raise ValidationError(errors)
-
-        validated_data.update(validated_data.pop('attributes', {}))
-        validated_data.pop('_id')
-        validated_data.pop('type')
+        validated_data = enforce_type_and_id_and_pop_attributes(validated_data)
 
         assert isinstance(instance, User), 'instance must be a User'
         for attr, value in validated_data.items():
@@ -119,6 +106,9 @@ class UserSerializer(JSONAPISerializer):
 
 
 class UserUpdateSerializer(UserSerializer):
+    """
+    Overrides UserSerializer to make id required and validate id.
+    """
     id = ser.CharField(source='_id', label='ID', required=True)
 
     def validate_id(self, value):

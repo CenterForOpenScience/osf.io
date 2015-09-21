@@ -10,6 +10,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
+from api.base.utils import enforce_type_and_id_and_pop_attributes
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink
 
@@ -45,6 +46,7 @@ class NodeAttributesSerializer(JSONAPISerializer):
                                         'node have implicit read permissions for all child nodes',
                               )
 
+    # Overrides JSONAPISerializer
     def get_attribute(self, instance):
         attribute = {}
         for field in self.fields:
@@ -59,6 +61,7 @@ class NodeAttributesSerializer(JSONAPISerializer):
                 attribute[field] = self.fields[field].to_representation(lookup)
         return attribute
 
+    # Overrides JSONAPISerializer
     def to_representation(self, value):
         """
         Dictionary representation
@@ -152,23 +155,7 @@ class NodeSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        validated_id = validated_data.get('id', None)
-        if not validated_id:
-            validated_id = validated_data.get('_id', None)
-        validated_type = validated_data.get('type', None)
-
-        errors = {}
-        if not validated_id:
-            errors['id'] = ['This field is required.']
-        if not validated_type:
-            errors['type'] = ['This field is required.']
-
-        if errors:
-            raise ValidationError(errors)
-
-        validated_data.update(validated_data.pop('attributes', {}))
-        validated_data.pop('_id')
-        validated_data.pop('type')
+        validated_data = enforce_type_and_id_and_pop_attributes(validated_data)
 
         assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
@@ -189,6 +176,9 @@ class NodeSerializer(JSONAPISerializer):
 
 
 class NodeUpdateSerializer(NodeSerializer):
+    """
+    Overrides NodeSerializer to make id required and validate id.
+    """
     id = ser.CharField(source='_id', label='ID', required=True)
 
     def validate_id(self, value):
@@ -211,6 +201,7 @@ class NodeContributorAttributesSerializer(JSONAPISerializer):
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
 
+    # Overrides JSONAPISerializer
     def get_attribute(self, instance):
         attribute = {}
         for field in self.fields:
@@ -226,6 +217,7 @@ class NodeContributorAttributesSerializer(JSONAPISerializer):
 
         return attribute
 
+    # Overrides JSONAPISerializer
     def to_representation(self, value):
         """
         List of object instances -> List of dicts of primitive datatypes.
@@ -309,23 +301,8 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         return value
 
     def update(self, instance, validated_data):
-        validated_id = validated_data.get('id', None)
-        if not validated_id:
-            validated_id = validated_data.get('_id', None)
-        validated_type = validated_data.get('type', None)
 
-        errors = {}
-        if not validated_id:
-            errors['id'] = ['This field is required.']
-        if not validated_type:
-            errors['type'] = ['This field is required.']
-
-        if errors:
-            raise ValidationError(errors)
-
-        validated_data.update(validated_data.pop('attributes', {}))
-        validated_data.pop('_id')
-        validated_data.pop('type')
+        validated_data = enforce_type_and_id_and_pop_attributes(validated_data)
 
         contributor = instance
         auth = Auth(self.context['request'].user)
@@ -360,6 +337,7 @@ class NodeLinksAttributesSerializer(JSONAPISerializer):
 
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
 
+    # Overrides JSONAPISerializer
     def get_attribute(self, instance):
         attribute = {}
         for field in self.fields:
@@ -380,6 +358,7 @@ class NodeLinksAttributesSerializer(JSONAPISerializer):
                 attribute[field] = self.fields[field].to_representation(lookup)
         return attribute
 
+    # Overrides JSONAPISerializer
     def to_representation(self, value):
         """
         Dictionary representation
@@ -415,7 +394,6 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         validated_data.update(validated_data.pop('attributes', {}))
-        print validated_data
         request = self.context['request']
         user = request.user
         auth = Auth(user)
