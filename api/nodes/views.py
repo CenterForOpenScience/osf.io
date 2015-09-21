@@ -69,6 +69,20 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Nodes by their title,
     description, and public fields.
+
+    ##Creating New Nodes
+
+    New nodes are created by issuing a POST request to this endpoint.  Valid fields are:
+
+         title:        (mandatory) the title of the new node
+         category:     (mandatory) the category of the new node
+         description:  (optional)  a description of the new node
+         tags:         (optional)  a list of strings that describe this node
+
+    All other fields will be ignored.  If the node creation is successful the API will return a 201 response with the
+    respresentation of the new node in the body.  For the new node's canonical URL, see the `data.links.self` field of
+    the response.
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
