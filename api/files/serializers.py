@@ -2,11 +2,13 @@ import furl
 from modularodm import Q
 
 from rest_framework import serializers as ser
+from rest_framework.exceptions import ValidationError
 
 from website import settings
 from framework.auth.core import User
 from website.files.models import FileNode
 from api.base.utils import absolute_reverse
+from api.base.exceptions import Conflict
 from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
 from api.base.serializers import Link, JSONAPISerializer, LinksField
 from api.base.serializers import JSONAPIHyperlinkedIdentityField
@@ -49,6 +51,31 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
             self.fail('invalid_data')
 
 
+class NodeFileAttributesSerializer(JSONAPISerializer):
+
+    checkout = CheckoutField(write_only=True)
+
+    def get_attribute(self, instance):
+        attribute = {}
+        for field in self.fields:
+            if self.fields[field].write_only:
+                continue
+
+            field_name = self.fields[field].source
+            lookup = getattr(instance, field_name)
+            if lookup is None:
+                attribute[field] = None
+            else:
+                attribute[field] = self.fields[field].to_representation(lookup)
+        return attribute
+
+    def to_representation(self, value):
+        """
+        Dictionary representation
+        """
+        return value
+
+
 class FileSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -61,14 +88,14 @@ class FileSerializer(JSONAPISerializer):
         'last_touched',
     ])
     id = ser.CharField(read_only=True, source='_id')
+    type = ser.CharField(write_only=True, required=True)
+    attributes = NodeFileAttributesSerializer()
     name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     kind = ser.CharField(read_only=True, help_text='Either folder or file')
     path = ser.CharField(read_only=True, help_text='The unique path used to reference this object')
     size = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
-
-    checkout = CheckoutField()
 
     files = NodeFileHyperLink(kind='folder', link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
     versions = NodeFileHyperLink(kind='file', link_type='related', view_name='files:file-versions', kwargs=(('file_id', '_id'), ))
@@ -85,12 +112,35 @@ class FileSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'files'
 
+    def validate_type(self, value):
+        if self.Meta.type_ != value:
+            raise Conflict()
+        return value
+
     def get_size(self, obj):
         if obj.versions:
             return obj.versions[-1].size
         return None
 
     def update(self, instance, validated_data):
+        validated_id = validated_data.get('id', None)
+        if not validated_id:
+            validated_id = validated_data.get('_id', None)
+        validated_type = validated_data.get('type', None)
+
+        errors = {}
+        if not validated_id:
+            errors['id'] = ['This field is required.']
+        if not validated_type:
+            errors['type'] = ['This field is required.']
+
+        if errors:
+            raise ValidationError(errors)
+
+        validated_data.update(validated_data.pop('attributes', {}))
+        validated_data.pop('_id')
+        validated_data.pop('type')
+
         assert isinstance(instance, FileNode), 'Instance must be a FileNode'
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -99,6 +149,15 @@ class FileSerializer(JSONAPISerializer):
 
     def is_valid(self, **kwargs):
         return super(FileSerializer, self).is_valid(clean_html=False, **kwargs)
+
+
+class FileUpdateSerializer(FileSerializer):
+    id = ser.CharField(source='_id', label='ID', required=True)
+
+    def validate_id(self, value):
+        if self._args[0]._id != value:
+            raise Conflict()
+        return value
 
 
 class FileVersionSerializer(JSONAPISerializer):
