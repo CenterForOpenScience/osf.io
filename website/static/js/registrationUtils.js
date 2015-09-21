@@ -491,14 +491,14 @@ RegistrationEditor.prototype.init = function(draft) {
                     val = schemaData[question.id][prop];
                     if (val) {
                         subQuestion.value(val.value);
-                        subQuestion.comments($.map(val.comments, function(data) {
+                        subQuestion.comments($.map(val.comments || [], function(data) {
                             return new Comment(data);
                         }));
                     }
                 });
             } else {
                 question.value(val.value);
-                question.comments($.map(val.comments, function(data) {
+                question.comments($.map(val.comments || [], function(data) {
                     return new Comment(data);
                 }));
             }
