@@ -9,7 +9,7 @@ def no_addon(email):
     return len(email.user.get_addons()) == 0 and email.user.is_registered
 
 def no_login(email):
-    return email.user.is_registered or not email.user.date_last_login > datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME
+    return email.user.is_registered and not email.user.date_last_login > datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME
 
 def new_public_project(email):
     """ Will check to make sure the project that triggered this callback is still public

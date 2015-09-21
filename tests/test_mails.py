@@ -114,6 +114,6 @@ class TestQueuedMail(OsfTestCase):
             mail=mails.NO_ADDON,
             fullname=user.fullname
         )
-        assert_equal(len(mail.find_same_sent()), 0)
+        assert_equal(len(mail.find_same_sent_to_same_user()), 0)
         mail.send_mail()
-        assert_equal(len(mail.find_same_sent()), 1)
+        assert_equal(len(mail.find_same_sent_to_same_user()), 1)
