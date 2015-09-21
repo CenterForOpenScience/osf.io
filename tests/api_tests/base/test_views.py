@@ -13,7 +13,7 @@ from tests import factories
 from api.base.settings.defaults import API_BASE
 from api.base.views import OsfAPIViewMeta
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from api.base.permissions import UserIsConfirmed, UserIsNotDeactivated
+from api.base.permissions import OsfBasePermission
 
 class TestApiBaseViews(ApiTestCase):
 
@@ -23,8 +23,8 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
         base_permissions = [
-            UserIsConfirmed,
-            UserIsNotDeactivated
+            OsfBasePermission,
+            IsAuthenticatedOrReadOnly
         ]
         view_modules = ['nodes', 'users', 'files']
 
@@ -48,5 +48,5 @@ class TestApiBaseViews(ApiTestCase):
         user = factories.AuthUserFactory()
 
         res = self.app.get('/{}nodes/'.format(API_BASE), auth=user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http.GONE)
         

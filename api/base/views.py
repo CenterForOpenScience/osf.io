@@ -6,10 +6,7 @@ from rest_framework import (
 
 from api.base.utils import absolute_reverse
 from api.users.serializers import UserSerializer
-from api.base.permissions import (
-    UserIsConfirmed,
-    UserIsNotDeactivated,
-)
+from api.base.permissions import OsfBasePermission
 
 @api_view(('GET',))
 def root(request, format=None):
@@ -90,8 +87,7 @@ class OsfAPIViewMeta(type):
     def __new__(cls, name, bases, attributes):
         permission_classes = set((
             drf_permissions.IsAuthenticatedOrReadOnly,
-            UserIsConfirmed,
-            UserIsNotDeactivated
+            OsfBasePermission
         ))
         bases_permission_classes = set(attributes.get('permission_classes', tuple()))
         attributes['permission_classes'] = permission_classes | bases_permission_classes

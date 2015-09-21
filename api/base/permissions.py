@@ -79,18 +79,16 @@ def PermissionWithGetter(Base, getter):
             return super(Perm, self).has_object_permission(request, view, obj)
     return Perm
 
-class UserIsConfirmed(permissions.BasePermission):
+
+class OsfBasePermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
-        confirmed = request.user and request.user.is_confirmed
-        if not confirmed:
-            raise UnconfirmedAccountError
-        return True
-
-class UserIsNotDeactivated(permissions.BasePermission):
-
-    def has_permission(self, request, view):
-        deactivated = request.user and request.user.is_disabled
-        if deactivated:
-            raise DeactivatedAccountError
-        return True
+        if request.user.is_anonymous():
+            return True
+        else:
+            if request.user.is_disabled:
+                raise DeactivatedAccountError
+            elif not request.user.is_confirmed:
+                raise UnconfirmedAccountError
+            else:
+                return True
