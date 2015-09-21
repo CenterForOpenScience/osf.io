@@ -104,7 +104,7 @@
                         </form>
                     </div>
                 </div>
-<div class="panel panel-default">
+                <div class="panel panel-default">
                   <div class="panel-heading clearfix"><h3 class="panel-title">Security Settings</h3></div>
                   <div class="panel-body">
                     % for addon in addons:
