@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import itertools
+import functools
 import os
 import re
 import urllib
@@ -1204,6 +1205,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if need_update:
             self.update_search()
 
+        if 'node_license' in saved_fields:
+            children = [c for c in self.get_descendants_recursive(
+                include=lambda n: n.node_license == {}
+            )]                    
+            # this returns generator, that would get unspooled anyways
+            if children:
+                Node.bulk_update_search(children)
+
         # This method checks what has changed.
         if settings.PIWIK_HOST and update_piwik:
             piwik_tasks.update_node(self._id, saved_fields)
@@ -1638,6 +1647,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website import search
         try:
             search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    @classmethod
+    def bulk_update_search(cls, nodes):
+        from website import search
+        try:
+            serialize = functools.partial(search.search.update_node, bulk=True)
+            search.search.bulk_update_nodes(serialize, nodes)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()

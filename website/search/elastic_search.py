@@ -7,6 +7,7 @@ import copy
 import math
 import logging
 import unicodedata
+import functools
 
 import six
 
@@ -261,7 +262,7 @@ def get_doctype_from_node(node):
 
 
 @requires_search
-def update_node(node, index=None):
+def update_node(node, index=None, bulk=False):
     index = index or INDEX
     from website.addons.wiki.model import NodeWikiPage
 
@@ -316,7 +317,6 @@ def update_node(node, index=None):
             'license': node.license,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
-
         if not node.is_retracted:
             for wiki in [
                 NodeWikiPage.load(x)
@@ -324,35 +324,48 @@ def update_node(node, index=None):
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
-        es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
+        if bulk:
+            return elastic_document
+        else:
+            es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
-def bulk_update_contributors(nodes, index=INDEX):
-    """Updates only the list of contributors of input projects
+def bulk_update_nodes(serialize, nodes, index=INDEX):
+    """Updates the list of input projects
 
-    :param nodes: Projects, components or registrations
-    :param index: Index of the nodes
+    :param function Node-> dict serialize:
+    :param Node[] nodes: Projects, components or registrations
+    :param str index: Index of the nodes
     :return:
     """
     actions = []
     for node in nodes:
-        actions.append({
-            '_op_type': 'update',
-            '_index': index,
-            '_id': node._id,
-            '_type': get_doctype_from_node(node),
-            'doc': {
-                'contributors': [
-                    {
-                        'fullname': user.fullname,
-                        'url': user.profile_url if user.is_active else None
-                    } for user in node.visible_contributors
-                    if user is not None
-                    and user.is_active
-                ]
-            }
-        })
-    return helpers.bulk(es, actions)
+        serialized = serialize(node)
+        if serialized:
+            actions.append({
+                '_op_type': 'update',
+                '_index': index,
+                '_id': node._id,
+                '_type': get_doctype_from_node(node),
+                'doc': serialized
+            })
+    if actions:
+        res = helpers.bulk(es, actions)
+        return res
+
+def serialize_contributors(node):
+    return {
+        'contributors': [
+            {
+                'fullname': user.fullname,
+                'url': user.profile_url if user.is_active else None
+            } for user in node.visible_contributors
+            if user is not None
+            and user.is_active
+        ]
+    }
+
+bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contributors)
 
 
 @requires_search
