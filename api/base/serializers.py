@@ -12,6 +12,30 @@ from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
 
+class AllowMissing(ser.Field):
+
+    def __init__(self, field):
+        super(AllowMissing, self).__init__()
+        self.field = field
+
+    def bind(self, field_name, parent):
+        return self.field.bind(field_name, parent)
+
+    def to_representation(self, value):
+        return self.field.to_representation(value)
+
+    def get_attribute(self, instance):
+        """
+        Overwrite the error message to return a blank value is if there is no existing value.
+        This allows the display of keys that do not exist in the DB (gitHub on a new OSF account for example.)
+        """
+        try:
+            return self.field.get_attribute(instance)
+            # return super(AllowMissing, self).__init__(instance)
+        except SkipField:
+            return ''
+
+
 class CharFieldWithReadDefault(ser.CharField):
 
     def get_attribute(self, instance):
@@ -302,6 +326,8 @@ class JSONAPISerializer(ser.Serializer):
 
             if isinstance(field, JSONAPIHyperlinkedIdentityField):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
+            if isinstance(field, AllowMissing):
+                data['attributes'][field.field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':
