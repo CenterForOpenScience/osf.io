@@ -11,6 +11,10 @@ def strip_html(unclean):
     :return: stripped string
     :rtype: str
     """
+    # Handle non string inputs so this function can be used with higher-order
+    # functions, such as rapply (recursively applies a function to collections)
+    if not isinstance(unclean, basestring):
+        return unclean
     return bleach.clean(unclean, strip=True, tags=[], attributes=[], styles=[])
 
 

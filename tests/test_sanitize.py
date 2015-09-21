@@ -33,6 +33,14 @@ class TestSanitize(unittest.TestCase):
             sanitize.strip_html('<foo>bar</foo>'),
             'bar'
         )
+        assert_equal(
+            sanitize.strip_html(b'<foo>bar</foo>'),
+            'bar'
+        )
+        assert_true(sanitize.strip_html(True))
+        assert_false(sanitize.strip_html(False))
+        assert_equal(sanitize.strip_html({}), {})
+        assert_equal(sanitize.strip_html([]), [])
 
     def test_unescape_html(self):
         assert_equal(
