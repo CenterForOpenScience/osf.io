@@ -179,7 +179,6 @@ class NodeUpdateSerializer(NodeSerializer):
 
 
 class NodeContributorAttributesSerializer(JSONAPISerializer):
-    id = ser.CharField(required=True, source='_id', write_only=True)
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
@@ -228,7 +227,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'bibliographic',
         'permissions'
     ])
-    id = ser.CharField(read_only=True, source='_id', label='ID')
+    id = ser.CharField(source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
     attributes = NodeContributorAttributesSerializer()
 
@@ -282,10 +281,14 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
-    """ Overrides node contributor serializer to make id read only and add additional methods
+    """ Overrides node contributor serializer to add additional methods
     """
 
-    id = ser.CharField(read_only=True, source='_id', label='ID')
+    # id = ser.CharField(read_only=True, source='_id', label='ID')
+    def validate_id(self, value):
+        if self._args[0]._id != value:
+            raise Conflict()
+        return value
 
     def update(self, instance, validated_data):
         validated_id = validated_data.get('id', None)
@@ -320,15 +323,6 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
         return contributor
-
-
-class NodeContributorUpdateSerializer(NodeContributorDetailSerializer):
-    id = ser.CharField(source='_id', label='ID', required=True)
-
-    def validate_id(self, value):
-        if self._args[0]._id != value:
-            raise Conflict()
-        return value
 
 
 class NodeRegistrationSerializer(NodeSerializer):

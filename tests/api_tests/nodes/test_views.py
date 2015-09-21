@@ -70,7 +70,6 @@ class TestNodeList(ApiTestCase):
 
     def test_return_public_node_list_logged_out_user(self):
         res = self.app.get(self.url, expect_errors=True)
-        print res
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         ids = [each['id'] for each in res.json['data']]
@@ -1185,23 +1184,43 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
         self.user_three = AuthUserFactory()
         self.data_user_two = {
+            'id': self.user_two._id,
             'type': 'contributors',
             'attributes': {
-                'id': self.user_two._id,
                 'bibliographic': True
         }}
         self.data_user_three = {
+            'id': self.user_three._id,
             'type': 'contributors',
             'attributes': {
-                'id': self.user_three._id,
                 'bibliographic': True
         }}
+
+    def test_add_contributor_no_type(self):
+        data = {
+            'id': self.user_two._id,
+            'attributes': {
+                'bibliographic': True
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_add_contributor_incorrect_type(self):
+        data = {
+            'type': 'Incorrect type.',
+            'attributes': {
+                'id': self.user_two._id,
+                'bibliographic': True
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_add_contributor_is_visible_by_default(self):
         del self.data_user_two['attributes']['bibliographic']
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth, expect_errors=True)
-        print res
 
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
@@ -1222,9 +1241,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_non_bibliographic_contributor_private_project_admin(self):
         data = {
+            'id': self.user_two._id,
             'type': 'contributors',
             'attributes': {
-                'id': self.user_two._id,
                 'bibliographic': False
         }}
         res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
@@ -1267,13 +1286,11 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_contributor_without_bibliographic_private_project_admin(self):
         data = {
+            'id': self.user_two._id,
             'type': 'contributors',
-            'attributes': {
-                'id': self.user_two._id,
-
-            }
+            'attributes': {}
         }
-        res = self.app.post_json(self.private_url, data, auth=self.user.auth)
+        res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
 
         self.private_project.reload()
@@ -1282,10 +1299,10 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_admin_contributor_private_project_admin(self):
         data = {
+            'id': self.user_two._id,
             'type': 'contributors',
             'attributes':
                 {
-                    'id': self.user_two._id,
                     'permission': permissions.ADMIN,
                     'bibliographic': True
                 }
@@ -1301,9 +1318,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_write_contributor_private_project_admin(self):
         data = {
+            'id': self.user_two._id,
             'type': 'contributors',
             'attributes': {
-                'id': self.user_two._id,
                 'permission': permissions.WRITE,
                 'bibliographic': True
         }}
@@ -1318,9 +1335,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_read_contributor_private_project_admin(self):
         data = {
+            'id': self.user_two._id,
             'type': 'contributors',
             'attributes': {
-                'id': self.user_two._id,
                 'permission': permissions.READ,
                 'bibliographic': True
         }}
@@ -1334,9 +1351,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def test_adds_invalid_permission_contributor_private_project_admin(self):
         data = {
+            'id': self.user_two._id,
             'type': 'contributors',
             'attributes': {
-                'id': self.user_two._id,
                 'permission': 'invalid',
                 'bibliographic': True
         }}
@@ -1349,9 +1366,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_none_permission_contributor_private_project_admin_uses_default_permissions(self):
         data = {
+            'id': self.user_two._id,
             'type': 'contributors',
             'attributes': {
-                'id': self.user_two._id,
                 'permission': None,
                 'bibliographic': True
         }}
@@ -1373,10 +1390,10 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def test_adds_non_existing_user_private_project_admin(self):
         data = {
+            'id': 'Fake',
             'type': 'contributors',
             'attributes':
                 {
-                    'id': 'Fake',
                     'bibliographic': True
                 }
         }
@@ -1431,7 +1448,6 @@ class TestContributorDetail(NodeCRUDTestCase):
 
     def test_get_private_node_contributor_detail_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
-        print res
         assert_equal(res.status_code, 403)
 
     def test_get_private_node_contributor_detail_not_logged_in(self):
@@ -1459,13 +1475,56 @@ class TestNodeContributorUpdate(ApiTestCase):
         self.url_creator = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_two._id)
 
+    def test_change_contributor_no_id(self):
+        data = {
+            'type': 'contributors',
+            'attributes': {
+                'permission': permissions.ADMIN,
+                'bibliographic': True
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_change_contributor_incorrect_id(self):
+        data = {
+            'id': '12345',
+            'type': 'contributors',
+            'attributes': {
+                'permission': permissions.ADMIN,
+                'bibliographic': True
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    def test_change_contributor_no_type(self):
+        data = {
+            'id': self.user_two._id,
+            'attributes': {
+                'permission': permissions.ADMIN,
+                'bibliographic': True
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_change_contributor_incorrect_type(self):
+        data = {
+            'id': self.user_two._id,
+            'type': 'Wrong type.',
+            'attributes': {
+                'permission': permissions.ADMIN,
+                'bibliographic': True
+        }}
+        res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+
     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project', -3)
     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project', -2)
     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
     def test_change_contributor_permissions(self):
         data = {
-            'id': self.user._id,
-            'type': 'users',
+            'id': self.user_two._id,
+            'type': 'contributors',
             'attributes': {
                 'permission': permissions.ADMIN,
                 'bibliographic': True
@@ -1479,8 +1538,8 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user_two), [permissions.READ, permissions.WRITE, permissions.ADMIN])
 
         data = {
-            'id': self.user._id,
-            'type': 'users',
+            'id': self.user_two._id,
+            'type': 'contributors',
             'attributes': {
                 'permission': permissions.WRITE,
                 'bibliographic': True
@@ -1494,8 +1553,8 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user_two), [permissions.READ, permissions.WRITE])
 
         data = {
-            'id': self.user._id,
-            'type': 'users',
+            'id': self.user_two._id,
+            'type': 'contributors',
             'attributes': {
                 'permission': permissions.READ,
                 'bibliographic': True
@@ -1512,8 +1571,8 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.MADE_CONTRIBUTOR_VISIBLE, 'project')
     def test_change_contributor_bibliographic(self):
         data = {
-            'id': self.user._id,
-            'type': 'users',
+            'id': self.user_two._id,
+            'type': 'contributors',
             'attributes': {
                 'bibliographic': False
         }}
@@ -1526,6 +1585,8 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_false(self.project.get_visible(self.user_two))
 
         data = {
+            'id': self.user_two._id,
+            'type': 'contributors',
             'attributes': {
                 'bibliographic': True
         }}
@@ -1541,8 +1602,8 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, 'project')
     def test_change_contributor_permission_and_bibliographic(self):
         data = {
-            'id': self.user._id,
-            'type': 'users',
+            'id': self.user_two._id,
+            'type': 'contributors',
             'attributes': {
                 'permission': permissions.READ,
                 'bibliographic': False
@@ -1560,8 +1621,8 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_not_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
     def test_not_change_contributor(self):
         data = {
-            'id': self.user._id,
-            'type': 'users',
+            'id': self.user_two._id,
+            'type': 'contributors',
             'attributes': {
                 'permission': None,
                 'bibliographic': True
@@ -1578,8 +1639,8 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_invalid_change_inputs_contributor(self):
         data = {
-            'id': self.user._id,
-            'type': 'users',
+            'id': self.user_two._id,
+            'type': 'contributors',
             'attributes': {
                 'permission': 'invalid',
                 'bibliographic': 'invalid'
@@ -1594,7 +1655,7 @@ class TestNodeContributorUpdate(ApiTestCase):
         self.project.add_permission(self.user_two, permissions.ADMIN, save=True)
         data = {
             'id': self.user._id,
-            'type': 'users',
+            'type': 'contributors',
             'attributes': {
                 'permission': permissions.WRITE,
                 'bibliographic': True
@@ -1610,7 +1671,7 @@ class TestNodeContributorUpdate(ApiTestCase):
     def test_change_admin_self_without_other_admin(self):
         data = {
             'id': self.user._id,
-            'type': 'users',
+            'type': 'contributors',
             'attributes': {
                 'permission': permissions.WRITE,
                 'bibliographic': True
@@ -1626,7 +1687,7 @@ class TestNodeContributorUpdate(ApiTestCase):
 
         data = {
             'id': self.user._id,
-            'type': 'users',
+            'type': 'contributors',
             'attributes': {
                 'bibliographic': False
         }}
@@ -1638,8 +1699,8 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_non_admin_auth(self):
         data = {
-            'id': self.user._id,
-            'type': 'users',
+            'id': self.user_two._id,
+            'type': 'contributors',
             'attributes': {
                 'permission': permissions.READ,
                 'bibliographic': False
@@ -1653,8 +1714,8 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_not_logged_in(self):
         data = {
-            'id': self.user._id,
-            'type': 'users',
+            'id': self.user_two._id,
+            'type': 'contributors',
             'attributes': {
                 'permission': permissions.READ,
                 'bibliographic': False
@@ -2160,7 +2221,6 @@ class TestNodeTags(ApiTestCase):
     @assert_logs(NodeLog.TAG_ADDED, 'public_project')
     def test_contributor_can_add_tag_to_public_project(self):
         res = self.app.patch_json(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
-        print res
         assert_equal(res.status_code, 200)
         # Ensure data is correct from the PATCH response
         assert_equal(len(res.json['data']['attributes']['tags']), 1)
@@ -2267,7 +2327,6 @@ class TestNodeLinkCreate(ApiTestCase):
         payload = {'type': 'node_links', 'target_node_id': self.pointer_project._id}
         res = self.app.post_json_api(self.public_url, payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        print res
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
@@ -2327,7 +2386,6 @@ class TestNodeLinkCreate(ApiTestCase):
 
     def test_create_fake_node_pointing_to_contributing_node(self):
         res = self.app.post_json_api(self.fake_url, self.private_payload, auth=self.user.auth, expect_errors=True)
-        print res
         assert_equal(res.status_code, 404)
         assert_in('detail', res.json['errors'][0])
 
