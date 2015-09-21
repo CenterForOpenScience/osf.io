@@ -48,7 +48,9 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     """List of users registered on the OSF. *Read-only*.
 
     [Paginated](http://jsonapi.org/format/#fetching-pagination) list of users ordered by the date they registered.  Each
-    resource contains the full representation of the user, meaning a refetch is not necessary.
+    resource contains the full representation of the user, meaning a re-fetch is not necessary.
+
+    The subroute [`/me/`](me/) is a special link that always points to the currently logged-in user.
 
     ##User Attributes
 
@@ -97,7 +99,43 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
 
 class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
-    """Details about a specific user.
+    """Details about a specific user. *Writeable*.
+
+    If `me` is given as the id, the record of the currently logged-in user will be returned.
+
+    ##Attributes
+
+        fullname:           full name of the user. mandatory.
+        given_name:         given name of the user for bibliographic citations. may be blank but not null
+        middle_names:       middle name of user for bibliographic citations. may be blank but not null
+        family_name:        family name of user for bibliographic citations. may be blank but not null
+        suffix:             suffix of user's name for bibliographic citations. may be blank but not null
+        date_registered:    ISO8601 timestamp of the date the user account was created
+        profile_image_url:  a url to the users profile image (gravatar)
+
+    ##Relationships
+
+    ###Nodes
+
+    A list of all nodes the user has contributed to.  If the user id in the path is the same as the logged-in user, all
+    nodes will be visible.  Otherwise, you will only be able to see the other user's publicly-visible nodes.
+
+    ##Query Params
+
+    *None*.
+
+    ##Actions
+
+    ###Update
+
+    To update your user profile, issue a PUT request to either the canonical URL of your user resource (as given
+    in `data.links.self`) or to `/users/me/`.  Only the `fullname` attribute is required.  Unlike at signup, the given,
+    middle, and family names will not be inferred from the `fullname`.  Currently, only `fullname`, `given_name`,
+    `middle_names`, `family_name`, and `suffix` are updateable.
+
+    A PATCH request issued to this endpoint will behave the same as a PUT request, but does not require `fullname` to be
+    set.
+
     """
     permission_classes = (
         ReadOnlyOrCurrentUser,
@@ -120,8 +158,29 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
 
 class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
-    """Nodes belonging to a user.
-    Return a list of nodes that the user contributes to.
+    """List of nodes that the user contributes to. *Read-only*.
+
+    [Paginated](http://jsonapi.org/format/#fetching-pagination) list of nodes that the user contributes to.  Each
+    resource contains the full representation of the node, meaning a re-fetch is not necessary. If the user id in the
+    path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to see the
+    other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently logged-in
+    user.
+
+    # Attributes
+
+    See one of the node pages for a full description of node attributes, links, and relationships.
+
+    # Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Nodes may be filtered by their `title`, `description`, `public`, `registration`, `tags`, or `category`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
