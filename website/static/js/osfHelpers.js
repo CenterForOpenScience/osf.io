@@ -659,6 +659,7 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
+    fixAffixWidth();
     $(window).resize(debounce(fixAffixWidth, 20, true));
     $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
 };
