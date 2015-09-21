@@ -18,7 +18,7 @@ class BlacklistGuid(StoredObject):
 class Guid(StoredObject):
 
     _id = fields.StringField(primary=True)
-    referent = fields.AbstractForeignField(index=True)
+    referent = fields.AbstractForeignField()
 
     @classmethod
     def generate(self, referent=None):
