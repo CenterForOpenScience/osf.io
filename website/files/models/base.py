@@ -577,8 +577,8 @@ class File(FileNode):
             super(File, self).serialize(),
             size=version.size,
             downloads=self.get_download_count(),
-            version=version.identifier if self.versions else None,
             checkout=self.checkout._id if self.checkout else '',
+            version=version.identifier if self.versions else None,
             contentType=version.content_type if self.versions else None,
             modified=version.date_modified.isoformat() if version.date_modified else None,
         )

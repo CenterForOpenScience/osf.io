@@ -31,10 +31,11 @@ var FileViewPage = {
         self.isCheckout_user = function() {
             $.ajax({
                 method: 'get',
-                url: '/api/v1/project/' +self.node.id + '/osfstorage' + self.file.path + '/checkouts/',
+                url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
                 self.request_done = true;
-                self.file.checkout_user = resp.checkout_user;
+                self.file.checkout_user = resp.data.relationships.checkout.links.related ? ((resp.data.relationships.checkout.links.related).split('users/')[1]).replace('/', ''): '';
                 self.file.permission = resp.permission;
                 if ((self.file.checkout_user !== '') && (self.file.checkout_user !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m.trust('<strong>File is checked-out.</strong> This file has been checked-out by a <a href="/' +
