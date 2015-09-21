@@ -17,8 +17,8 @@ var NODE_OFFSET = 25;
 var MAX_RECENT = 5;
 
 // TODO: Remove dependency on contextVars
-var nodeApiUrl = window.contextVars.node.urls.api;
-var nodeId = window.contextVars.node.id;
+//var nodeApiUrl = window.contextVars.node.urls.api;
+//var nodeId = window.contextVars.node.id;
 
 function Contributor(data) {
     $.extend(this, data);
@@ -36,11 +36,13 @@ function Contributor(data) {
 }
 
 var AddContributorViewModel = oop.extend(Paginator, {
-    constructor: function(title, parentId, parentTitle) {
+    constructor: function(title, nodeId, parentId, parentTitle) {
         this.super.constructor.call(this);
         var self = this;
 
         self.title = title;
+        self.nodeId = nodeId;
+        self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
         self.parentId = parentId;
         self.parentTitle = parentTitle;
 
@@ -71,7 +73,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
 
         self.getContributors();
         $.getJSON(
-            nodeApiUrl + 'get_editable_children/', {},
+            self.nodeApiUrl + 'get_editable_children/', {},
             function(result) {
                 $.each(result.children || [], function(idx, child) {
                     child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
@@ -179,7 +181,8 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         self.notification(false);
         return $.getJSON(
-            nodeApiUrl + 'get_contributors/', {},
+            //nodeApiUrl + 'get_contributors/', {},
+            self.nodeApiUrl + 'get_contributors/', {},
             function(result) {
                 var contributors = result.contributors.map(function(userData) {
                     return userData.id;
@@ -192,7 +195,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         self.notification(false);
         $.getJSON(
-            nodeApiUrl + 'get_contributors_from_parent/', {},
+            self.nodeApiUrl + 'get_contributors_from_parent/', {},
             function(result) {
                 if (!result.contributors.length) {
                     self.notification({
@@ -312,7 +315,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         $osf.block();
         return $osf.postJSON(
-            nodeApiUrl + 'contributors/', {
+            self.nodeApiUrl + 'contributors/', {
                 users: ko.utils.arrayMap(self.selection(), function(user) {
                     var permission = user.permission().value; //removes the value from the object
                     var tUser = JSON.parse(ko.toJSON(user)); //The serialized user minus functions
@@ -341,7 +344,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
     postInviteRequest: function(fullname, email) {
         var self = this;
         return $osf.postJSON(
-            nodeApiUrl + 'invite_contributor/', {
+            self.nodeApiUrl + 'invite_contributor/', {
                 'fullname': fullname,
                 'email': email
             }
@@ -370,15 +373,16 @@ var AddContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribAdder(selector, nodeTitle, nodeId, parentTitle) {
+function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
     self.nodeTitle = nodeTitle;
     self.nodeId = nodeId;
+    self.parentId = parentId;
     self.parentTitle = parentTitle;
     self.viewModel = new AddContributorViewModel(self.nodeTitle,
-        self.nodeId, self.parentTitle);
+        self.nodeId, self.parentId, self.parentTitle);
     self.init();
 }
 
