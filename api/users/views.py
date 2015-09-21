@@ -45,9 +45,29 @@ class UserMixin(object):
 
 
 class UserList(generics.ListAPIView, ODMFilterMixin):
-    """Users registered on the OSF.
+    """List of users registered on the OSF. *Read-only*.
 
-    You can filter on users by their id, fullname, given_name, middle_name, or family_name.
+    [Paginated](http://jsonapi.org/format/#fetching-pagination) list of users ordered by the date they registered.  Each
+    resource contains the full representation of the user, meaning a refetch is not necessary.
+
+    ##User Attributes
+
+        fullname:           full name of the user (given + middle + family names)
+        given_name:         given name of the user.  may not be blank
+        middle_names:       middle name of user. may be blank but not null
+        family_name:        family name of user. may be blank but not null
+        suffix:             suffix of user's name. may be blank but not null
+        date_registered:    ISO8601 timestamp of the date the user account was created
+        profile_image_url:  a url to the users profile image (gravatar)
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Users may be filtered by their `id`, `fullname`, `given_name`, `middle_names`, or `family_name`.
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
