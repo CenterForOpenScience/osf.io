@@ -187,6 +187,10 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
     [Paginated](http://jsonapi.org/format/#fetching-pagination) list of file versions, ordered by increasing version
     number (id).  Each resource contains a `size` and `content_type` attribute.
 
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
