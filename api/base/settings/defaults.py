@@ -61,7 +61,7 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'api.base.renderers.JSONAPIRenderer',
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
+        'api.base.renderers.BrowsableAPIRendererNoForms',
     ),
     'DEFAULT_PARSER_CLASSES': (
         'api.base.parsers.JSONAPIParser',
