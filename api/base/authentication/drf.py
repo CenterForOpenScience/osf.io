@@ -9,12 +9,27 @@ from framework.auth import cas
 from framework.sessions.model import Session
 from framework.auth.core import User, get_user
 from website import settings
+from api.base.exceptions import UnconfirmedAccountError, DeactivatedAccountError
 
 
 def get_session_from_cookie(cookie_val):
     """Given a cookie value, return the `Session` object or `None`."""
     session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val)
     return Session.load(session_id)
+
+
+def check_user(user):
+    """Checks that the user is neither unconfirmed nor disabled.
+
+    :param User user:
+    :raises DeactivatedAccountError:
+    :raise UnconfirmedAccountError:
+    """
+    if user.is_disabled:
+        raise DeactivatedAccountError
+    elif not user.is_confirmed:
+        raise UnconfirmedAccountError
+
 
 # http://www.django-rest-framework.org/api-guide/authentication/#custom-authentication
 class OSFSessionAuthentication(authentication.BaseAuthentication):
@@ -31,6 +46,7 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         user_id = session.data.get('auth_user_id')
         user = User.load(user_id)
         if user:
+            check_user(user)
             return user, None
         return None
 
@@ -48,6 +64,7 @@ class OSFBasicAuthentication(BasicAuthentication):
             raise exceptions.AuthenticationFailed(_('Invalid username/password.'))
         elif userid is None and password is None:
             raise exceptions.NotAuthenticated()
+        check_user(user)
         return (user, None)
 
     def authenticate_header(self, request):
@@ -81,6 +98,7 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
         if user is None:
             raise exceptions.AuthenticationFailed("Could not find the user associated with this token")
 
+        check_user(user)
         return user, cas_auth_response
 
     def authenticate_header(self, request):
