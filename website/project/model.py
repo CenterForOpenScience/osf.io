@@ -664,8 +664,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         super(Node, self).__init__(*args, **kwargs)
 
-        for tag in tags:
-            self.add_tag(tag, Auth(self.creator), save=False)
+        if tags:
+            for tag in tags:
+                self.add_tag(tag, Auth(self.creator), save=False)
 
         if kwargs.get('_is_loaded', False):
             return

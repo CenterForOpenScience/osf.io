@@ -1999,7 +1999,7 @@ class TestNodeChildCreate(ApiTestCase):
         self.user = AuthUserFactory()
         self.user_two = AuthUserFactory()
 
-        self.project = ProjectFactory(creator=self.user, is_publc=True)
+        self.project = ProjectFactory(creator=self.user, is_public=True)
 
         self.url = '/{}nodes/{}/children/'.format(API_BASE, self.project._id)
         self.child = {
