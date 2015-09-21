@@ -15,8 +15,8 @@ def root(request, format=None):
         The OSF stores, documents, and archives study designs, materials, data, manuscripts, or anything else associated
         with your research during the research process. Every project and file on the OSF has a permanent unique
         identifier, and every registration (a permanent, time-stamped version of your projects and files) can be assigned
-         a DOI/ARK. You can use the OSF to measure your impact by monitoring the traffic to projects and files you make
-         public. With the OSF you have full control of what parts of your research are public and what remains private.
+        a DOI/ARK. You can use the OSF to measure your impact by monitoring the traffic to projects and files you make
+        public. With the OSF you have full control of what parts of your research are public and what remains private.
 
         Beta notice: This API is currently a beta service.  You are encouraged to use the API and will receive support
         when doing so, however, while the API remains in beta status, it may change without notice as a result of
@@ -26,6 +26,11 @@ def root(request, format=None):
 
         ##General API Usage
         Each endpoint will have its own documentation, but there are some general principles.
+
+        ###Canonical URLs
+
+        All canonical URLs have trailing slashes.  A request to an endpoint without a trailing slash will result in a
+        301 redirect to the canonical URL.
 
         ###Filtering
         Collections can be filtered by adding a query parameter in the form:
@@ -37,6 +42,7 @@ def root(request, format=None):
         You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.
 
             /users?filter[fullname]=lise&filter[family_name]=mei
+
         ###Links
         Responses will generally have associated links which are helpers to keep you from having to construct URLs in
         your code or by hand. If you know the route to a high-level resource, you can go to that route. For example:
@@ -57,6 +63,7 @@ def root(request, format=None):
 
         Some routes may have extra rules for links, especially if those links work with external services. Collections
         may have counts with them to indicate how many items are in that collection.
+
     """
     if request.user and not request.user.is_anonymous():
         user = request.user
