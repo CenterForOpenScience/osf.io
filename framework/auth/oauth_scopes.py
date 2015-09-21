@@ -174,4 +174,5 @@ def normalize_scopes(scopes):
 
 if __name__ == '__main__':
     from pprint import pprint as pp
-    pp(public_scopes)
+    pp({k: v.parts
+        for k, v in public_scopes.iteritems()})
