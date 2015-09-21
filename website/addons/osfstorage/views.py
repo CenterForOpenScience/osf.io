@@ -245,17 +245,19 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_rent(file_node, auth, **kwargs):
     message = 'failure'
-    if file_node.checkout_user is None:
+    if file_node.checkout is None:
         if auth:
-            file_node.checkout(checkout_user=auth.user)
+            file_node.checkout = auth.user
+            file_node.save()
             message = 'success'
     return {'status': message}
 
 @must_have_permission(permissions.WRITE)
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_return(file_node, auth, **kwargs):
-    if file_node.checkout_user == auth.user or kwargs['node'].has_permission(auth.user, permissions.ADMIN):
-        file_node.checkin()
+    if file_node.checkout == auth.user or kwargs['node'].has_permission(auth.user, permissions.ADMIN):
+        file_node.checkout = None
+        file_node.save()
         return {'status': 'success'}
     return {'status': 'failure'}
 
@@ -265,13 +267,14 @@ def osfstorage_rented(file_node, auth, **kwargs):
     permission = 'read'
     if kwargs['node'].has_permission(auth.user, permissions.ADMIN):
         permission = 'admin'
-    return {'checkout_user': file_node.checkout_user._id if file_node.checkout_user else '',
+    return {'checkout_user': file_node.checkout._id if file_node.checkout else '',
             'permission': permission}
 
 @decorators.handle_odm_errors
 @must_have_permission(permissions.WRITE)
 @decorators.autoload_filenode(default_root=True)
 def osfstorage_rent_all(file_node, auth, **kwargs):
+    #TODO @hmoco, rewrite this whole thing, and the next
     worked = file_node.node_settings.checkout_all_files(user=auth.user)
     if worked:
         return {'status': 'success'}

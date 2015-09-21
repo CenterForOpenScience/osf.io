@@ -36,7 +36,7 @@ var FileViewPage = {
                 self.request_done = true;
                 self.file.checkout_user = resp.checkout_user;
                 self.file.permission = resp.permission;
-                if ((self.file.checkout_user !== '') && (self.file.checkout_user !== self.context.userId)) {
+                if ((self.file.checkout_user !== '') && (self.file.checkout_user !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m.trust('<strong>File is checked-out.</strong> This file has been checked-out by a <a href="/' +
                         self.file.checkout_user +'"> collaborator</a>. It needs to be checked back in before any changes can be made. </div>')));
                 }
@@ -45,7 +45,7 @@ var FileViewPage = {
         };
         if (self.file.provider === 'osfstorage'){
             self.canEdit = function() {
-                return ((self.file.checkout_user === '') || (self.file.checkout_user === self.context.userId)) ? m.prop(!!self.context.currentUser.canEdit) : false;
+                return ((self.file.checkout_user === '') || (self.file.checkout_user === self.context.currentUser.id)) ? m.prop(!!self.context.currentUser.canEdit) : false;
             };
             self.isCheckout_user();
         } else {
@@ -309,7 +309,7 @@ var FileViewPage = {
             ctrl.canEdit() && (ctrl.file.checkout_user === '') && ctrl.request_done && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Check-out')
             ]) : '',
-            (ctrl.canEdit() && (ctrl.file.checkout_user === ctrl.context.userId) && ctrl.request_done) ? m('.btn-group.m-l-xs.m-t-xs', [
+            (ctrl.canEdit() && (ctrl.file.checkout_user === ctrl.context.currentUser.id) && ctrl.request_done) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Check-in')
             ]) : '',
             m('.btn-group.m-t-xs', [

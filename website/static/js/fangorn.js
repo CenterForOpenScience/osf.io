@@ -341,8 +341,8 @@ function _fangornResolveToggle(item) {
         return togglePlus;
     }
     if (item.data.provider === 'osfstorage' && item.kind === 'file') {
-        if (item.data.extra.checkout_user !== '') {
-            if (item.data.extra.checkout_user === window.contextVars.currentUser.id){
+        if (item.data.extra.checkout !== '') {
+            if (item.data.extra.checkout === window.contextVars.currentUser.id){
                 return rentedUser;
             }
             return rentedOther;
@@ -1816,14 +1816,14 @@ var FGToolbar = {
             }
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
-                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (each.data.extra.checkout_user === '' || each.data.extra.checkout_user === window.contextVars.currentUser.id))) {
+                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (each.data.extra.checkout === '' || each.data.extra.checkout === window.contextVars.currentUser.id))) {
                     showRent = false;
                     break;
                 }
             }
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
-                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && each.data.extra.checkout_user === window.contextVars.currentUser.id)) {
+                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && each.data.extra.checkout === window.contextVars.currentUser.id)) {
                     showReturn = false;
                     break;
                 }

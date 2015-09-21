@@ -569,6 +569,7 @@ class File(FileNode):
                 modified=None,
                 contentType=None,
                 downloads=self.get_download_count(),
+                checkout=self.checkout._id if self.checkout else '',
             )
 
         version = self.versions[-1]
@@ -577,6 +578,7 @@ class File(FileNode):
             size=version.size,
             downloads=self.get_download_count(),
             version=version.identifier if self.versions else None,
+            checkout=self.checkout._id if self.checkout else '',
             contentType=version.content_type if self.versions else None,
             modified=version.date_modified.isoformat() if version.date_modified else None,
         )
