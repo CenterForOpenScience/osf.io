@@ -53,5 +53,5 @@ class UnconfirmedAccountError(APIException):
 
 
 class DeactivatedAccountError(APIException):
-    status_code = 410
+    status_code = 400
     default_detail = 'Making API requests with credentials associated with a deactivated account is not allowed.'
