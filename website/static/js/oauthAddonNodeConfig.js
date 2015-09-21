@@ -33,11 +33,8 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     constructor: function(addonName, url, selector, folderPicker, opts) {
         var self = this;
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
-        // whether the auth token is valid
-        self.validCredentials = ko.observable(true);
         // Emails of contributors, can only be populated by activating the share dialog
         self.emails = ko.observableArray([]);
-        self.loading = ko.observable(false);
         // Whether the contributor emails have been loaded from the server
         self.loadedEmails = ko.observable(false);
         // externalAccounts
