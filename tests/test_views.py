@@ -9,8 +9,8 @@ import datetime as dt
 import mock
 import httplib as http
 import math
-import datetime
 import time
+import datetime
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
@@ -29,7 +29,7 @@ from framework.mongo import database
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
-from website.util import permissions
+from website.util import permissions, sanitize
 from website.models import Node, Pointer, NodeLog, MetaSchema, DraftRegistration
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -48,7 +48,6 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
-
 
 from tests.base import (
     OsfTestCase,
@@ -1962,7 +1961,6 @@ class TestAddingContributorViews(OsfTestCase):
     def tearDown(self):
         super(TestAddingContributorViews, self).tearDown()
         contributor_added.disconnect(notify_added_contributor)
-
 
 class TestUserInviteViews(OsfTestCase):
 
