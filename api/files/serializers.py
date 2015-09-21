@@ -8,9 +8,9 @@ from framework.auth.core import User
 from website.files.models import FileNode
 from api.base.exceptions import Conflict
 from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
-from api.base.serializers import Link, JSONAPISerializer, LinksField
 from api.base.serializers import JSONAPIHyperlinkedIdentityField
 from api.base.utils import absolute_reverse, enforce_type_and_id_and_pop_attributes
+from api.base.serializers import Link, JSONAPISerializer, LinksField, AttributesSerializer
 
 
 class CheckoutField(JSONAPIHyperlinkedIdentityField):
@@ -50,31 +50,9 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
             self.fail('invalid_data')
 
 
-class NodeFileAttributesSerializer(JSONAPISerializer):
+class NodeFileAttributesSerializer(AttributesSerializer):
 
     checkout = CheckoutField(write_only=True)
-
-    # Overrides JSONAPISerializer
-    def get_attribute(self, instance):
-        attribute = {}
-        for field in self.fields:
-            if self.fields[field].write_only:
-                continue
-
-            field_name = self.fields[field].source
-            lookup = getattr(instance, field_name)
-            if lookup is None:
-                attribute[field] = None
-            else:
-                attribute[field] = self.fields[field].to_representation(lookup)
-        return attribute
-
-    # Overrides JSONAPISerializer
-    def to_representation(self, value):
-        """
-        Dictionary representation
-        """
-        return value
 
 
 class FileSerializer(JSONAPISerializer):

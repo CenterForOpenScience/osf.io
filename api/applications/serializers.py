@@ -5,10 +5,10 @@ from website.models import ApiOAuth2Application
 
 from api.base.utils import enforce_type_and_id_and_pop_attributes
 from api.base.exceptions import Conflict
-from api.base.serializers import JSONAPISerializer, LinksField
+from api.base.serializers import JSONAPISerializer, AttributesSerializer, LinksField
 
 
-class ApiOAuth2ApplicationAttributesSerializer(JSONAPISerializer):
+class ApiOAuth2ApplicationAttributesSerializer(AttributesSerializer):
     name = ser.CharField(help_text='A short, descriptive name for this application',
                          required=True)
 
@@ -24,28 +24,6 @@ class ApiOAuth2ApplicationAttributesSerializer(JSONAPISerializer):
                                  required=True,
                                  validators=[URLValidator()],
                                  label="Callback URL")
-
-    # Overrides JSONAPISerializer
-    def get_attribute(self, instance):
-        attribute = {}
-        for field in self.fields:
-            if self.fields[field].write_only:
-                continue
-
-            field_name = self.fields[field].source
-            lookup = getattr(instance, field_name)
-            if lookup is None:
-                attribute[field] = None
-            else:
-                attribute[field] = self.fields[field].to_representation(lookup)
-        return attribute
-
-    # Overrides JSONAPISerializer
-    def to_representation(self, value):
-        """
-        Dict containing nested serializer fields
-        """
-        return value
 
 
 class ApiOAuth2ApplicationSerializer(JSONAPISerializer):

@@ -12,7 +12,7 @@ from website.util import permissions as osf_permissions
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.utils import enforce_type_and_id_and_pop_attributes
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
-from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink
+from api.base.serializers import JSONAPISerializer, AttributesSerializer, WaterbutlerLink, NodeFileHyperLink
 
 
 class NodeTagField(ser.Field):
@@ -25,7 +25,7 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeAttributesSerializer(JSONAPISerializer):
+class NodeAttributesSerializer(AttributesSerializer):
     category_choices = Node.CATEGORY_MAP.keys()
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
 
@@ -45,28 +45,6 @@ class NodeAttributesSerializer(JSONAPISerializer):
                                         'public and private nodes. Administrators on a parent '
                                         'node have implicit read permissions for all child nodes',
                               )
-
-    # Overrides JSONAPISerializer
-    def get_attribute(self, instance):
-        attribute = {}
-        for field in self.fields:
-            if self.fields[field].write_only:
-                continue
-
-            field_name = self.fields[field].source
-            lookup = getattr(instance, field_name)
-            if lookup is None:
-                attribute[field] = None
-            else:
-                attribute[field] = self.fields[field].to_representation(lookup)
-        return attribute
-
-    # Overrides JSONAPISerializer
-    def to_representation(self, value):
-        """
-        Dictionary representation
-        """
-        return value
 
 
 class NodeSerializer(JSONAPISerializer):
@@ -187,7 +165,7 @@ class NodeUpdateSerializer(NodeSerializer):
         return value
 
 
-class NodeContributorAttributesSerializer(JSONAPISerializer):
+class NodeContributorAttributesSerializer(AttributesSerializer):
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
@@ -200,29 +178,6 @@ class NodeContributorAttributesSerializer(JSONAPISerializer):
     permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
-
-    # Overrides JSONAPISerializer
-    def get_attribute(self, instance):
-        attribute = {}
-        for field in self.fields:
-            if self.fields[field].write_only:
-                continue
-
-            field_name = self.fields[field].source
-            lookup = getattr(instance, field_name)
-            if lookup is None:
-                attribute[field] = None
-            else:
-                attribute[field_name] = lookup
-
-        return attribute
-
-    # Overrides JSONAPISerializer
-    def to_representation(self, value):
-        """
-        List of object instances -> List of dicts of primitive datatypes.
-        """
-        return value
 
 
 class NodeContributorsSerializer(JSONAPISerializer):
@@ -333,7 +288,7 @@ class NodeRegistrationSerializer(NodeSerializer):
         raise exceptions.ValidationError('Registrations cannot be modified.')
 
 
-class NodeLinksAttributesSerializer(JSONAPISerializer):
+class NodeLinksAttributesSerializer(AttributesSerializer):
 
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
 
@@ -358,12 +313,6 @@ class NodeLinksAttributesSerializer(JSONAPISerializer):
                 attribute[field] = self.fields[field].to_representation(lookup)
         return attribute
 
-    # Overrides JSONAPISerializer
-    def to_representation(self, value):
-        """
-        Dictionary representation
-        """
-        return value
 
 class NodeLinksSerializer(JSONAPISerializer):
 

@@ -1,16 +1,15 @@
 from rest_framework import serializers as ser
-from rest_framework.exceptions import ValidationError
 
 from website.models import User
 
 from api.base.exceptions import Conflict
 from api.base.utils import enforce_type_and_id_and_pop_attributes
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
+    JSONAPISerializer, AttributesSerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 )
 
 
-class UserAttributesSerializer(JSONAPISerializer):
+class UserAttributesSerializer(AttributesSerializer):
 
     fullname = ser.CharField(required=True, label='Full name', help_text='Display name used in the general user interface')
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
@@ -50,13 +49,6 @@ class UserAttributesSerializer(JSONAPISerializer):
             else:
                 attribute[field] = self.fields[field].to_representation(lookup)
         return attribute
-
-    # Overrides JSONAPISerializer
-    def to_representation(self, value):
-        """
-        Dictionary representation
-        """
-        return value
 
 
 class UserSerializer(JSONAPISerializer):

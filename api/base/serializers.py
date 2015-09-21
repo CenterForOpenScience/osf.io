@@ -309,9 +309,36 @@ class JSONAPISerializer(ser.Serializer):
         return ret
 
 
+class AttributesSerializer(JSONAPISerializer):
+
+    # Overrides JSONAPISerializer
+    def get_attribute(self, instance):
+        attribute = {}
+        for field in self.fields:
+            if self.fields[field].write_only:
+                continue
+
+            field_name = self.fields[field].source
+            lookup = getattr(instance, field_name)
+            if lookup is None:
+                attribute[field] = None
+            else:
+                attribute[field] = self.fields[field].to_representation(lookup)
+        return attribute
+
+    # Overrides JSONAPISerializer
+    def to_representation(self, value):
+        """
+        Dictionary representation
+        """
+        return value
+
+
 def DevOnly(field):
     """Make a field only active in ``DEV_MODE``. ::
 
         experimental_field = DevMode(CharField(required=False))
     """
     return field if settings.DEV_MODE else None
+
+
