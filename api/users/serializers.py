@@ -45,7 +45,7 @@ class UserAttributesSerializer(AttributesSerializer):
                 lookup = getattr(instance, field_name)
 
             if lookup is None:
-                attribute[field] = None
+                attribute[field] = ""
             else:
                 attribute[field] = self.fields[field].to_representation(lookup)
         return attribute
