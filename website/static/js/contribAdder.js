@@ -69,7 +69,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
 
-        self.get_contributors();
+        self.getContributors();
         $.getJSON(
             nodeApiUrl + 'get_editable_children/', {},
             function(result) {
@@ -175,7 +175,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
             self.totalPages(0);
         }
     },
-    get_contributors: function() {
+    getContributors: function() {
         var self = this;
         self.notification(false);
         return $.getJSON(
