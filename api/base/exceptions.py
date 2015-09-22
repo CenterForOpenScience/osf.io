@@ -1,7 +1,7 @@
+import httplib as http
 
 from rest_framework import status
 from rest_framework.exceptions import APIException, ParseError
-
 
 def json_api_exception_handler(exc, context):
     """ Custom exception handler that returns errors object as an array """
@@ -18,7 +18,14 @@ def json_api_exception_handler(exc, context):
     if response:
         message = response.data
 
-        if isinstance(message, dict):
+        if isinstance(exc, JSONAPIException):
+            errors.extend([
+                {
+                    'source': exc.source,
+                    'detail': exc.detail,
+                }
+            ])
+        elif isinstance(message, dict):
             for error_key, error_description in message.iteritems():
                 if error_key in top_level_error_keys:
                     errors.append({error_key: error_description})
@@ -44,6 +51,18 @@ def json_api_exception_handler(exc, context):
     return response
 
 
+class JSONAPIException(APIException):
+    """Inherits from the base DRF API exception and adds extra metadata to support JSONAPI error objects
+
+    :param str detail: a human-readable explanation specific to this occurrence of the problem
+    :param dict source: A dictionary containing references to the source of the error.
+        See http://jsonapi.org/format/#error-objects.
+        Example: ``source={'pointer': '/data/attributes/title'}``
+    """
+    def __init__(self, detail=None, source=None):
+        super(JSONAPIException, self).__init__(detail=detail)
+        self.source = source
+
 # Custom Exceptions the Django Rest Framework does not support
 class Gone(APIException):
     status_code = status.HTTP_410_GONE
@@ -55,6 +74,17 @@ class Conflict(APIException):
     default_detail = ('Resource identifier does not match server endpoint.')
 
 
+class InvalidQueryStringError(JSONAPIException):
+    """Raised when client passes an invalid value to a query string parameter."""
+    default_detail = 'Query string contains an invalid value.'
+    status_code = http.BAD_REQUEST
+
+    def __init__(self, detail=None, parameter=None):
+        super(InvalidQueryStringError, self).__init__(detail=detail, source={
+            'parameter': parameter
+        })
+
+
 class InvalidFilterError(ParseError):
-    """Raised when client passes an invalid filter in the querystring."""
-    default_detail = 'Querystring contains an invalid filter.'
+    """Raised when client passes an invalid filter in the query string."""
+    default_detail = 'Query string contains an invalid filter.'

@@ -363,7 +363,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
+        assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')
 
 
 class TestNodeCreate(ApiTestCase):
@@ -548,7 +548,7 @@ class TestNodeDetail(ApiTestCase):
     def test_top_level_project_has_no_parent(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['relationships']['parent']['links']['self'], None)
+        assert_equal(res.json['data']['relationships']['parent']['links']['self']['href'], None)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_child_project_has_parent(self):
@@ -556,7 +556,7 @@ class TestNodeDetail(ApiTestCase):
         public_component_url = '/{}nodes/{}/'.format(API_BASE, public_component._id)
         res = self.app.get(public_component_url)
         assert_equal(res.status_code, 200)
-        url = res.json['data']['relationships']['parent']['links']['self']
+        url = res.json['data']['relationships']['parent']['links']['self']['href']
         assert_equal(urlparse(url).path, self.public_url)
 
     def test_node_has_children_link(self):
@@ -585,7 +585,7 @@ class TestNodeDetail(ApiTestCase):
 
     def test_node_has_files_link(self):
         res = self.app.get(self.public_url)
-        url = res.json['data']['relationships']['files']['links']['related']
+        url = res.json['data']['relationships']['files']['links']['related']['href']
         expected_url = self.public_url + 'files/'
         assert_equal(urlparse(url).path, expected_url)
 
@@ -1171,7 +1171,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
+        assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')
 
 
 class TestNodeContributorAdd(NodeCRUDTestCase):
