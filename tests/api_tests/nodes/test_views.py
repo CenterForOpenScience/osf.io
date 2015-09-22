@@ -2210,8 +2210,8 @@ class TestNodeTags(ApiTestCase):
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
-        self.one_new_tag_json = {'id': self.public_project._id, 'type':'nodes', 'attributes': {'tags': ['new-tag']}}
-        self.private_payload = {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags': ['new-tag']}}
+        self.one_new_tag_json = {'id': self.public_project._id, 'type': 'nodes', 'attributes': {'tags': ['new-tag']}}
+        self.private_payload = {'id': self.private_project._id, 'type': 'nodes', 'attributes': {'tags': ['new-tag']}}
 
     def test_public_project_starts_with_no_tags(self):
         res = self.app.get(self.public_url)
