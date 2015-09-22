@@ -104,7 +104,6 @@
 <%def name="javascript_bottom()">
   ${parent.javascript_bottom()}
 
-  <% import json %>
   <script>
    window.contextVars = $.extend(true, {}, window.contextVars, {
      draft: ${draft | sjson, n}

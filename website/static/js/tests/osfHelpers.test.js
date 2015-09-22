@@ -412,7 +412,7 @@ describe('osfHelpers', () => {
     });
 
     describe('isBlank', () => {
-        it('is false for flasey and strings of zero or more whitespace characters', () => {
+        it('is false for falsey and strings of zero or more whitespace characters', () => {
             assert.isTrue($osf.isBlank(false));
             assert.isTrue($osf.isBlank(null));
             assert.isTrue($osf.isBlank(undefined));
