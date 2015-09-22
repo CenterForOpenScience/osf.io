@@ -24,7 +24,7 @@ def main():
         scripts_utils.add_file_logger(logger, __file__)
     logger.info("migrating personal to profileWebsites")
             
-    for user in get_users_with_personal_websites():
+    for user in get_users_with_social_field():
         logger.info(repr(user))
         logger.info(repr(user.social))
         if not user.social.get('profileWebsites', None):
@@ -36,7 +36,7 @@ def main():
             user.save()
 
 
-def get_users_with_personal_websites():
+def get_users_with_social_field():
     return models.User.find(
         Q('social', 'ne', {})
     )
@@ -83,7 +83,7 @@ class TestMigrateProfileWebsites(OsfTestCase):
 
     def test_get_users_with_personal_website(self):
         users = []
-        for user in get_users_with_personal_websites():
+        for user in get_users_with_social_field():
             users.append(user)
 
         assert_equal(self.user_one._id, users[0]._id)
@@ -93,10 +93,6 @@ class TestMigrateProfileWebsites(OsfTestCase):
     def test_migrate_profile_websites(self):
         main()
         self.user_one.reload()
-        assert_equal(self.user_one.fullname, 'Martin Luther King')
-        assert_equal(self.user_one.given_name, 'Martin')
-        assert_equal(self.user_one.middle_names, 'Luther')
-        assert_equal(self.user_one.family_name, 'King')
         assert_equal(self.user_one.social['scholar'], 'userOneScholar')
         assert_equal(self.user_one.social['profileWebsites'], ['http://www.useronewebsite.com'])
         assert_equal(self.user_one.social['twitter'], 'userOneTwitter')
@@ -105,7 +101,6 @@ class TestMigrateProfileWebsites(OsfTestCase):
         assert_equal(self.user_one.social['orcid'], 'userOneOrcid')
         assert_equal(self.user_one.social['researcherId'], 'userOneResearcherId')
         self.user_two.reload()
-        assert_equal(self.user_two.fullname, 'el-Hajj Malik el-Shabazz')
         assert_equal(self.user_two.social['scholar'], 'userTwoScholar')
         assert_equal(self.user_two.social['profileWebsites'], ['http://www.usertwowebsite.com'])
         assert_equal(self.user_two.social['twitter'], 'userTwoTwitter')
