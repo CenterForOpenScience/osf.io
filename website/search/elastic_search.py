@@ -350,8 +350,7 @@ def bulk_update_nodes(serialize, nodes, index=INDEX):
                 'doc': serialized
             })
     if actions:
-        res = helpers.bulk(es, actions)
-        return res
+        return helpers.bulk(es, actions)
 
 def serialize_contributors(node):
     return {
