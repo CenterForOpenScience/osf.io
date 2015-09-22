@@ -45,3 +45,13 @@ class Gone(APIException):
 class InvalidFilterError(ParseError):
     """Raised when client passes an invalid filter in the querystring."""
     default_detail = 'Querystring contains an invalid filter.'
+
+
+class UnconfirmedAccountError(APIException):
+    status_code = 400
+    default_detail = 'Please confirm your account before using the API.'
+
+
+class DeactivatedAccountError(APIException):
+    status_code = 400
+    default_detail = 'Making API requests with credentials associated with a deactivated account is not allowed.'
