@@ -1,0 +1,29 @@
+import logging
+import sys
+
+from website import models
+from website.app import init_app
+from modularodm import Q
+
+logger = logging.getLogger(__name__)
+
+
+def main():
+    init_app(routes=False)
+    dry_run = 'dry' in sys.argv
+    logger.warn('Users will have "mailchimp_mailing_lists" updated from deprecated field "mailing_lists" value')
+    if dry_run:
+        logger.warn('Dry_run mode')
+    for user in list(get_users_with_no_mailchimp_mailing_lists()):
+        logger.info('User {0} "mailchimp_mailing_lists" updated'.format(user.username))
+        if not dry_run:
+            user.mailchimp_mailing_lists = user.mailing_lists
+            user.save()
+
+def get_users_with_no_mailchimp_mailing_lists():
+    return models.User.find(
+        Q('mailing_lists', 'ne', {})
+    )
+
+if __name__ == '__main__':
+    main()
