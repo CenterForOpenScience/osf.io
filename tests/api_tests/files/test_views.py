@@ -55,15 +55,19 @@ class TestFileView(ApiTestCase):
 
     def test_get_file(self):
         res = self.app.get('/{}files/{}/'.format(API_BASE, self.file._id), auth=self.user.auth)
+        self.file.versions[-1]._clear_caches()
+        self.file.versions[-1].reload()
         assert_equal(res.status_code, 200)
         assert_equal(res.json.keys(), ['data'])
         assert_equal(res.json['data']['attributes'], {
             'path': self.file.path,
             'kind': self.file.kind,
             'name': self.file.name,
-            'size': self.file.versions[0].size,
-            'provider': self.file.provider,
             'last_touched': None,
+            'provider': self.file.provider,
+            'size': self.file.versions[-1].size,
+            # HACK: odm's dates are weird
+            'date_modified': self.file.versions[-1].date_created.isoformat()[:-3]
         })
 
     def test_checkout(self):
@@ -76,6 +80,20 @@ class TestFileView(ApiTestCase):
         self.file.reload()
         assert_equal(res.status_code, 200)
         assert_equal(self.file.checkout, self.user)
+
+        res = self.app.get(
+            '/{}files/{}/'.format(API_BASE, self.file._id),
+            auth=self.user.auth
+        )
+        assert_equal(
+            self.user._id,
+            res.json['data']['relationships']['checkout']['links']['related']['meta']['id']
+        )
+        assert_in(
+            '/{}users/{}/'.format(API_BASE, self.user._id),
+            res.json['data']['relationships']['checkout']['links']['related']['href']
+        )
+
         res = self.app.put_json(
             '/{}files/{}/'.format(API_BASE, self.file._id),
             {'checkout': None},
@@ -84,6 +102,7 @@ class TestFileView(ApiTestCase):
         self.file.reload()
         assert_equal(self.file.checkout, None)
         assert_equal(res.status_code, 200)
+
 
     def test_must_set_self(self):
         user = UserFactory()
@@ -168,3 +187,70 @@ class TestFileView(ApiTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 403)
+
+
+class TestFileVersionView(ApiTestCase):
+    def setUp(self):
+        super(TestFileVersionView, self).setUp()
+
+        self.user = AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+
+        self.osfstorage = self.node.get_addon('osfstorage')
+
+        self.root_node = self.osfstorage.get_root()
+        self.file = self.root_node.append_file('test_file')
+        self.file.create_version(self.user, {
+            'object': '06d80e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1337,
+            'contentType': 'img/png'
+        }).save()
+
+    def test_listing(self):
+        self.file.create_version(self.user, {
+            'object': '0683m38e',
+            'service': 'cloud',
+            osfstorage_settings.WATERBUTLER_RESOURCE: 'osf',
+        }, {
+            'size': 1347,
+            'contentType': 'img/png'
+        }).save()
+
+        res = self.app.get(
+            '/{}files/{}/versions/'.format(API_BASE, self.file._id),
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 2)
+        assert_equal(res.json['data'][0]['id'], '1')
+        assert_equal(res.json['data'][1]['id'], '2')
+
+    def test_by_id(self):
+        res = self.app.get(
+            '/{}files/{}/versions/1/'.format(API_BASE, self.file._id),
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['id'], '1')
+
+    def test_read_only(self):
+        assert_equal(self.app.put(
+            '/{}files/{}/versions/1/'.format(API_BASE, self.file._id),
+            expect_errors=True,
+            auth=self.user.auth,
+        ).status_code, 405)
+
+        assert_equal(self.app.post(
+            '/{}files/{}/versions/1/'.format(API_BASE, self.file._id),
+            expect_errors=True,
+            auth=self.user.auth,
+        ).status_code, 405)
+
+        assert_equal(self.app.delete(
+            '/{}files/{}/versions/1/'.format(API_BASE, self.file._id),
+            expect_errors=True,
+            auth=self.user.auth,
+        ).status_code, 405)
