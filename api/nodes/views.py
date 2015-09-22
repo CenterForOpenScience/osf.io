@@ -1,13 +1,13 @@
 import requests
 
 from modularodm import Q
-from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework import generics
 
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
-from api.base import permissions as base_permissions
+from api.base.views import OsfAPIViewMeta
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error
 from api.files.serializers import FileSerializer
@@ -70,10 +70,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Nodes by their title,
     description, and public fields.
     """
-    permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
-    )
+    __metaclass__ = OsfAPIViewMeta
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
@@ -121,10 +118,11 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     Node in the front-end UI and helps with search organization. Top-level Nodes may have a category other than
     project, and children nodes may have a category of project.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
         ContributorOrPublic,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
@@ -162,11 +160,11 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     contributors. From a permissions standpoint, both are the same, but bibliographic contributors
     are included in citations, while non-bibliographic contributors are not included in citations.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
         AdminOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
@@ -195,11 +193,11 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     View, remove from, and change bibliographic and permissions for a given contributor on a given node.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
         ContributorDetailPermissions,
-        drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
@@ -238,10 +236,10 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
     created for the current node.
      """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
         ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -270,11 +268,11 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
     probably indicates private nodes that aren't being returned. That discrepancy should disappear before everything
     is finalized.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
         ContributorOrPublic,
-        drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
@@ -322,11 +320,11 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -348,10 +346,10 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
         ContributorOrPublicForPointers,
-        drf_permissions.IsAuthenticatedOrReadOnly,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -411,11 +409,11 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     the links as we provide them before you use them, and not to reverse engineer the structure of the links as they
     are at any given time.
     """
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         ReadOnlyIfRegistration,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
@@ -491,10 +489,11 @@ class NodeProvider(object):
 
 
 class NodeProvidersList(generics.ListAPIView, NodeMixin):
+
+    __metaclass__ = OsfAPIViewMeta
+
     permission_classes = (
-        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
-        base_permissions.TokenHasScope,
     )
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
