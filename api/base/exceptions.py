@@ -75,3 +75,13 @@ class InvalidQueryStringError(JSONAPIException):
 class InvalidFilterError(ParseError):
     """Raised when client passes an invalid filter in the query string."""
     default_detail = 'Query string contains an invalid filter.'
+
+
+class UnconfirmedAccountError(APIException):
+    status_code = 400
+    default_detail = 'Please confirm your account before using the API.'
+
+
+class DeactivatedAccountError(APIException):
+    status_code = 400
+    default_detail = 'Making API requests with credentials associated with a deactivated account is not allowed.'
