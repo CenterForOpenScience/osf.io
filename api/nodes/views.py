@@ -59,29 +59,51 @@ class NodeMixin(object):
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
-    """Projects and components.
+    """Projects and components. *Writeable*.
+
+    [Paginated](http://jsonapi.org/format/#fetching-pagination) list of nodes ordered by their `date_modified`.  Each
+    resource contains the full representation of the node, meaning a re-fetch is not necessary.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
     is that a project is the top-level node, and components are children of the project. There is also a category field
     that includes the option of project. The categorization essentially determines which icon is displayed by the
-    Node in the front-end UI and helps with search organization. Top-level Nodes may have a category other than
+    Node in the front-end UI and helps with search organization. Top-level nodes may have a category other than
     project, and children nodes may have a category of project.
 
-    By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Nodes by their title,
-    description, and public fields.
+    ##Node Attributes
 
-    ##Creating New Nodes
+    **TODO: copy-and-paste from NodeDetails**
 
-    New nodes are created by issuing a POST request to this endpoint.  Valid fields are:
+    ##Query Params
 
-         title:        (mandatory) the title of the new node
-         category:     (mandatory) the category of the new node
-         description:  (optional)  a description of the new node
-         tags:         (optional)  a list of strings that describe this node
+    + `page=<Int>` -- page number of results to view, default 1
 
-    All other fields will be ignored.  If the node creation is successful the API will return a 201 response with the
-    respresentation of the new node in the body.  For the new node's canonical URL, see the `data.links.self` field of
-    the response.
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Nodes may be filtered by their `title`, `description`, `public`, `registration`, `tags`, or `category`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
+    ##Actions
+
+    ###Creating New Nodes
+
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "title":       "<mandatory>",
+                         "category":    "<mandatory>",
+                         "description": "<optional>",
+                         "tags":        ["optional", "your-call"]
+                       }
+        Success:       201 CREATED + node representation
+
+    New nodes are created by issuing a POST request to this endpoint.  The `title` and `category` fields are mandatory.
+    All other fields not listed above will be ignored.  If the node creation is successful the API will return a 201
+    response with the respresentation of the new node in the body.  For the new node's canonical URL, see the
+    `links.self` field of the response.
 
     """
     permission_classes = (
@@ -127,13 +149,87 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
 
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
-    """Projects and component details.
+    """Details about a given node (project or component). *Writeable*.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
     is that a project is the top-level node, and components are children of the project. There is also a category field
     that includes the option of project. The categorization essentially determines which icon is displayed by the
-    Node in the front-end UI and helps with search organization. Top-level Nodes may have a category other than
+    Node in the front-end UI and helps with search organization. Top-level nodes may have a category other than
     project, and children nodes may have a category of project.
+
+    ##Attributes
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        title          string             title of project or component
+        description    string             description of the node
+        category       string             node category, must be one of the allowed values
+        date_created   iso8601 timestamp  timestamp that the node was created
+        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        tags           array of strings   list of tags that describe the node
+        registration   boolean            has this project been registered?
+        collection     boolean            is this node a collection of other nodes?
+        dashboard      boolean            is this node visible on the user dashboard?
+        public         boolean            has this node been made publicly-visible?
+
+    ##Relationships
+
+    ###Children
+
+    ###Contributors
+
+    ###Files
+
+    ###Node Links
+
+    ###Parent
+
+    ###Registrations
+
+    ##Links
+
+    ###self
+
+    The canonical representation of this node.
+
+    ###HTML
+
+    This node's page on the OSF website.
+
+    ##Query Params
+
+    *None*.
+
+    ##Actions
+
+    ###Update
+
+        Method:        PUT / PATCH
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "title":       "<mandatory>",
+                         "category":    "<mandatory>",
+                         "description": "<optional>",
+                         "tags":        ["optional", "your-call"]
+                       }
+        Success:       200 OK + node representation
+
+    To update a node, issue either a PUT or a PATCH request against the `links.self` URL.  The `title` and `category`
+    fields are mandatory if you PUT and optional if you PATCH.  The `tags` parameter must be an array of strings.
+    Non-string values will be accepted and stringified, but we make no promises about the stringification output.  So
+    don't do that.
+
+    ###Delete
+
+        Method:   DELETE
+        URL:      links.self
+        Params:   <none>
+        Success:  204 No Content
+
+    To delete a node, issue a DELETE request against `links.self`.  A successful delete will return a 204 No Content
+    response. Attempting to delete a node you do not own will result in a 403 Forbidden.
+
     """
     permission_classes = (
         ContributorOrPublic,
