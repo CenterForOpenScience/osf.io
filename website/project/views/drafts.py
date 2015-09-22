@@ -116,8 +116,10 @@ def create_draft_registration(auth, node, *args, **kwargs):
     if not schema_name:
         raise HTTPError(http.BAD_REQUEST)
 
-    schema_version = sanitize.strip_html(data.get('schema_version', 1))
-    schema_data = sanitize.strip_html(data.get('schema_data', {}))
+    schema_version = data.get('schema_version', 1)
+    # TODO(hrybacki): Move to framework.utils.rapply once @sam's PR#4027 is merged.
+    from api.base.serializers import _rapply
+    schema_data = _rapply(data.get('schema_data', {}), sanitize.strip_html)
 
     meta_schema = get_schema_or_fail(
         Q('name', 'eq', schema_name) &
@@ -169,7 +171,9 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
 def update_draft_registration(auth, node, draft, *args, **kwargs):
     data = request.get_json()
 
-    schema_data = data.get('schema_data', {})
+    # TODO(hrybacki): Move to framework.utils.rapply once @sam's PR#4027 is merged.
+    from api.base.serializers import _rapply
+    schema_data = _rapply(data.get('schema_data', {}), sanitize.strip_html)
 
     schema_name = data.get('schema_name')
     schema_version = data.get('schema_version', 1)

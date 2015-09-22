@@ -51,7 +51,6 @@
 
 <%def name="javascript_bottom()">
 
-  <% import json %>
   <script type="text/javascript">
     window.contextVars = window.contextVars || {};
     window.contextVars.draft = ${draft | sjson, n};

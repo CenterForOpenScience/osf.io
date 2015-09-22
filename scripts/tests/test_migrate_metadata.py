@@ -81,49 +81,36 @@ class TestMigrateSchemas(OsfTestCase):
             Q('name', 'eq', SCHEMA_NAMES[0]) &
             Q('schema_version', 'eq', 1)
         )
-        self.open_ended = factories.RegistrationFactory(
-            registered_meta={
-                to_mongo(SCHEMA_NAMES[0]): json.dumps(OLD_META[SCHEMA_NAMES[0]])
-            },
-            registered_schema=self.open_ended_schema
-        )
-        del self.open_ended.registered_meta['Template1']
+        self.open_ended = factories.RegistrationFactory()
+        self.open_ended.registered_meta = {to_mongo(SCHEMA_NAMES[0]): json.dumps(OLD_META[SCHEMA_NAMES[0]])}
+        self.open_ended.registered_schema = self.open_ended_schema
         self.open_ended.save()
+
         self.standard_schema = MetaSchema.find_one(
             Q('name', 'eq', SCHEMA_NAMES[1]) &
             Q('schema_version', 'eq', 1)
         )
-        self.standard = factories.RegistrationFactory(
-            registered_meta={
-                to_mongo(SCHEMA_NAMES[1]): json.dumps(OLD_META[SCHEMA_NAMES[1]])
-            },
-            registered_schema=self.standard_schema
-        )
-        del self.standard.registered_meta['Template1']
+        self.standard = factories.RegistrationFactory()
+        self.standard.registered_meta = {to_mongo(SCHEMA_NAMES[1]): json.dumps(OLD_META[SCHEMA_NAMES[1]])}
+        self.standard.registered_schema = self.standard_schema
         self.standard.save()
+
         self.brandt_pre_schema = MetaSchema.find_one(
             Q('name', 'eq', SCHEMA_NAMES[2]) &
             Q('schema_version', 'eq', 1)
         )
-        self.brandt_pre = factories.RegistrationFactory(
-            registered_meta={
-                to_mongo(SCHEMA_NAMES[2]): json.dumps(OLD_META[SCHEMA_NAMES[2]])
-            },
-            registered_schema=self.brandt_pre_schema
-        )
-        del self.brandt_pre.registered_meta['Template1']
+        self.brandt_pre = factories.RegistrationFactory()
+        self.brandt_pre.registered_meta = {to_mongo(SCHEMA_NAMES[2]): json.dumps(OLD_META[SCHEMA_NAMES[2]])}
+        self.brandt_pre.registered_schema = self.brandt_pre_schema
         self.brandt_pre.save()
+
         self.brant_post_schema = MetaSchema.find_one(
             Q('name', 'eq', SCHEMA_NAMES[3]) &
             Q('schema_version', 'eq', 1)
         )
-        self.brandt_post = factories.RegistrationFactory(
-            registered_meta={
-                to_mongo(SCHEMA_NAMES[3]): json.dumps(OLD_META[SCHEMA_NAMES[3]])
-            },
-            registered_schema=self.brant_post_schema
-        )
-        del self.brandt_post.registered_meta['Template1']
+        self.brandt_post = factories.RegistrationFactory()
+        self.brandt_post.registered_meta = {to_mongo(SCHEMA_NAMES[3]): json.dumps(OLD_META[SCHEMA_NAMES[3]])}
+        self.brandt_post.registered_schema = self.brant_post_schema
         self.brandt_post.save()
 
     def test_get_old_registered_nodes(self):
