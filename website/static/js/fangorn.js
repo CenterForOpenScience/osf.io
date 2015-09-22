@@ -1578,7 +1578,7 @@ var FGItemButtons = {
                 }
                 if (item.data.permissions && item.data.permissions.edit) {
                     if (item.data.provider === 'osfstorage') {
-                        if (item.data.extra.checkout_usr === ''){
+                        if (!item.data.extra.checkout){
                             rowButtons.push(
                                 m.component(FGButton, {
                                     onclick: function(event) { _removeEvent.call(tb, event, [item]);  },
@@ -1595,10 +1595,16 @@ var FGItemButtons = {
                                         ]), m('', [
                                             m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                                             m('span.btn.btn-warning', {onclick: function() {
-                                                $osf.postJSON(
-                                                     item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/checkouts/',
-                                                    {}
-                                                ).done(function(resp) {
+                                                $.ajax({
+                                                    method: 'put',
+                                                    url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                                                    beforeSend: $osf.setXHRAuthorization,
+                                                    contentType: 'application/json',
+                                                    dataType: 'json',
+                                                    data: JSON.stringify({
+                                                        checkout: window.contextVars.currentUser.id
+                                                    })
+                                                }).done(function(resp) {
                                                     if (resp.status === 'success') {
                                                         window.location.reload();
                                                     } else {
@@ -1613,13 +1619,19 @@ var FGItemButtons = {
                                     icon: 'fa fa-sign-out',
                                     className : 'text-warning'
                                 }, 'Check-out file'));
-                        } else if (item.data.extra.checkout_usr === window.contextVars.currentUser.id) {
+                        } else if (item.data.extra.checkout === window.contextVars.currentUser.id) {
                             rowButtons.push(
                                 m.component(FGButton, {
                                     onclick: function(event) {
                                         $.ajax({
-                                            method: 'delete',
-                                            url: item.data.nodeApiUrl + 'osfstorage' + item.data.path +'/checkouts/',
+                                            method: 'put',
+                                            url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                                            beforeSend: $osf.setXHRAuthorization,
+                                            contentType: 'application/json',
+                                            dataType: 'json',
+                                            data: JSON.stringify({
+                                                checkout: null
+                                            })
                                         }).done(function(resp) {
                                             if (resp.status === 'success') {
                                                 window.location.reload();
@@ -1662,7 +1674,7 @@ var FGItemButtons = {
                     }, 'Download as zip')
                 );
             }
-            if (item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit &&  (item.data.provider !== 'osfstorage' || item.data.extra.checkout_usr === '' )) {
+            if (item.data.provider && !item.data.isAddonRoot && item.data.permissions && item.data.permissions.edit &&  (item.data.provider !== 'osfstorage' || !item.data.extra.checkout)) {
                 rowButtons.push(
                     m.component(FGButton, {
                         onclick: function () {
@@ -1816,7 +1828,7 @@ var FGToolbar = {
             }
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
-                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (each.data.extra.checkout === '' || each.data.extra.checkout === window.contextVars.currentUser.id))) {
+                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (!each.data.extra.checkout || each.data.extra.checkout === window.contextVars.currentUser.id))) {
                     showRent = false;
                     break;
                 }

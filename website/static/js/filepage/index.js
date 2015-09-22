@@ -35,8 +35,7 @@ var FileViewPage = {
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
                 self.request_done = true;
-                self.file.checkout_user = resp.data.relationships.checkout.links.related ? ((resp.data.relationships.checkout.links.related).split('users/')[1]).replace('/', ''): '';
-                self.file.permission = resp.permission;
+                self.file.checkout_user = resp.data.relationships.checkout.links.related ? ((resp.data.relationships.checkout.links.related).split('users/')[1]).replace('/', ''): null;
                 if ((self.file.checkout_user !== '') && (self.file.checkout_user !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m.trust('<strong>File is checked-out.</strong> This file has been checked-out by a <a href="/' +
                         self.file.checkout_user +'"> collaborator</a>. It needs to be checked back in before any changes can be made. </div>')));
@@ -46,7 +45,7 @@ var FileViewPage = {
         };
         if (self.file.provider === 'osfstorage'){
             self.canEdit = function() {
-                return ((self.file.checkout_user === '') || (self.file.checkout_user === self.context.currentUser.id)) ? m.prop(!!self.context.currentUser.canEdit) : false;
+                return ((!self.file.checkout_user) || (self.file.checkout_user === self.context.currentUser.id)) ? m.prop(!!self.context.currentUser.canEdit) : false;
             };
             self.isCheckout_user();
         } else {
@@ -107,10 +106,16 @@ var FileViewPage = {
                     if (!confirm) {
                         return;
                     }
-                    $osf.postJSON(
-                        '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/checkouts/',
-                        {}
-                    ).done(function(resp) {
+                    $.ajax({
+                        method: 'put',
+                        url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                        beforeSend: $osf.setXHRAuthorization,
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        data: JSON.stringify({
+                            checkout: self.context.currentUser.id
+                        })
+                    }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
                         $osf.growl('Error', 'Unable to check-out file');
@@ -126,8 +131,14 @@ var FileViewPage = {
         });
         $(document).on('fileviewpage:return', function() {
             $.ajax({
-                method: 'delete',
-                url: '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path + '/checkouts/',
+                method: 'put',
+                url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                beforeSend: $osf.setXHRAuthorization,
+                contentType: 'application/json',
+                dataType: 'json',
+                data: JSON.stringify({
+                    checkout: null
+                })
             }).done(function(resp) {
                 window.location.reload();
             }).fail(function(resp) {
@@ -149,8 +160,14 @@ var FileViewPage = {
                         return;
                     }
                     $.ajax({
-                        method: 'delete',
-                        url: '/api/v1/project/' + self.node.id + '/osfstorage' + self.file.path +'/checkouts/',
+                        method: 'put',
+                        url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                        beforeSend: $osf.setXHRAuthorization,
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        data: JSON.stringify({
+                            checkout: null
+                        })
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
@@ -301,13 +318,13 @@ var FileViewPage = {
         };
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
-            ctrl.canEdit() && (ctrl.file.checkout_user === '') && ctrl.request_done ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.canEdit() && (!ctrl.file.checkout_user) && ctrl.request_done ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.request_done && (ctrl.file.permission === 'admin') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_return')}, 'Force Check-in')
             ]) : '',
-            ctrl.canEdit() && (ctrl.file.checkout_user === '') && ctrl.request_done && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.canEdit() && (!ctrl.file.checkout_user) && ctrl.request_done && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Check-out')
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.checkout_user === ctrl.context.currentUser.id) && ctrl.request_done) ? m('.btn-group.m-l-xs.m-t-xs', [

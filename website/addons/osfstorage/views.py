@@ -161,7 +161,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not is_folder:
         try:
-            if file_node.checkout_user is None or file_node.checkout_user == user:
+            if file_node.checkout is None or file_node.checkout == user:
                 version = file_node.create_version(
                     user,
                     dict(payload['settings'], **dict(
@@ -203,7 +203,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     if file_node == node_addon.get_root():
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if file_node.checkout_user is not None:
+    if file_node.checkout is not None:
         raise HTTPError(httplib.METHOD_NOT_ALLOWED)
 
     success = file_node.delete()
