@@ -3231,17 +3231,17 @@ class TestConfigureMailingListViews(OsfTestCase):
 
     def test_osf_help_mails_subscribe(self):
         user = UserFactory()
-        user.osf_mailing_lists['Open Science Framework Help'] = False
+        user.osf_mailing_lists[settings.OSF_HELP_LIST] = False
         user.save()
         update_osf_help_mails_subscription(user, True)
-        assert_true(user.osf_mailing_lists['Open Science Framework Help'])
+        assert_true(user.osf_mailing_lists[settings.OSF_HELP_LIST])
 
     def test_osf_help_mails_unsubscribe(self):
         user = UserFactory()
-        user.osf_mailing_lists['Open Science Framework Help'] = True
+        user.osf_mailing_lists[settings.OSF_HELP_LIST] = True
         user.save()
         update_osf_help_mails_subscription(user, False)
-        assert_false(user.osf_mailing_lists['Open Science Framework Help'])
+        assert_false(user.osf_mailing_lists[settings.OSF_HELP_LIST])
 
     @unittest.skipIf(settings.USE_CELERY, 'Subscription must happen synchronously for this test')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')

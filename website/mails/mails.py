@@ -176,7 +176,7 @@ class QueuedMail(StoredObject):
             subject=mail_struct['subject']
         )
         self.data['osf_url'] = settings.DOMAIN
-        if callback and self.user.osf_mailing_lists.get('Open Science Framework Help'):
+        if callback and self.user.osf_mailing_lists.get(settings.OSF_HELP_LIST):
             send_mail(self.to_addr, mail, mimetype='html', **(self.data or {}))
             self.sent_at = datetime.utcnow()
             self.save()
