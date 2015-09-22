@@ -63,7 +63,6 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
         base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'node'),
     )

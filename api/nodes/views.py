@@ -123,6 +123,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     project, and children nodes may have a category of project.
     """
     permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
