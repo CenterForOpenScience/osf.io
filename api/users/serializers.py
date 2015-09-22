@@ -3,7 +3,7 @@ from api.base.serializers import CharFieldWithReadDefault, URLFieldWithReadDefau
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField
+    JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 )
 
 
