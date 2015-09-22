@@ -5,7 +5,11 @@ var $ = require('jquery');
 var bootbox = require('bootbox');
 require('bootstrap.growl');
 var History = require('exports?History!history');
-var licenses = require('js/licenses').list;
+
+var siteLicenses = require('js/licenses');
+var licenses = siteLicenses.list;
+var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
+var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;
 
 var $osf = require('js/osfHelpers');
 // Enable knockout punches
@@ -214,7 +218,7 @@ var ViewModel = function(params) {
                 }
             };     
             if (licenses.filter(function(l) {
-                return l.name === 'None Selected';
+                return l.name === DEFAULT_LICENSE.name;
             }).length) {
                 filters = {
                     or: [
@@ -351,7 +355,7 @@ var ViewModel = function(params) {
             var noneLicense;
             ko.utils.arrayForEach(licenseCounts, function(l) {
                 l.count(0);
-                if (l.name === 'None Selected') {
+                if (l.name === DEFAULT_LICENSE.name) {
                     noneLicense = l;
                 }
             });
