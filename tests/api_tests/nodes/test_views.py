@@ -2218,81 +2218,81 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
-    @assert_logs(NodeLog.TAG_ADDED, 'public_project')
-    def test_contributor_can_add_tag_to_public_project(self):
-        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
-        # Ensure data is correct from the PATCH response
-        assert_equal(len(res.json['data']['attributes']['tags']), 1)
-        assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
-        # Ensure data is correct in the database
-        self.public_project.reload()
-        assert_equal(len(self.public_project.tags), 1)
-        assert_equal(self.public_project.tags[0]._id, 'new-tag')
-        # Ensure data is correct when GETting the resource again
-        reload_res = self.app.get(self.public_url)
-        assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
-        assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
-
-    @assert_logs(NodeLog.TAG_ADDED, 'private_project')
-    def test_contributor_can_add_tag_to_private_project(self):
-        res = self.app.patch_json_api(self.private_url, self.private_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        # Ensure data is correct from the PATCH response
-        assert_equal(len(res.json['data']['attributes']['tags']), 1)
-        assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
-        # Ensure data is correct in the database
-        self.private_project.reload()
-        assert_equal(len(self.private_project.tags), 1)
-        assert_equal(self.private_project.tags[0]._id, 'new-tag')
-        # Ensure data is correct when GETting the resource again
-        reload_res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
-        assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
-
-    def test_non_authenticated_user_cannot_add_tag_to_public_project(self):
-        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=None)
-        assert_equal(res.status_code, 401)
-
-    def test_non_authenticated_user_cannot_add_tag_to_private_project(self):
-        res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=None)
-        assert_equal(res.status_code, 401)
-
-    def test_non_contributor_cannot_add_tag_to_public_project(self):
-        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.user_two.auth)
-        assert_equal(res.status_code, 403)
-
-    def test_non_contributor_cannot_add_tag_to_private_project(self):
-        res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=self.user_two.auth)
-        assert_equal(res.status_code, 403)
-
-    def test_read_only_contributor_cannot_add_tag_to_public_project(self):
-        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 403)
-
-    def test_read_only_contributor_cannot_add_tag_to_private_project(self):
-        res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=self.read_only_contributor.auth)
-        assert_equal(res.status_code, 403)\
-
-    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -4)
-    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -3)
-    @assert_logs(NodeLog.TAG_REMOVED, 'private_project', -2)
-    @assert_logs(NodeLog.TAG_REMOVED, 'private_project')
-    def test_tags_add_and_remove_properly(self):
-        res = self.app.patch_json_api(self.private_url, self.private_payload, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        # Ensure adding tag data is correct from the PATCH response
-        assert_equal(len(res.json['data']['attributes']['tags']), 1)
-        assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
-        # Ensure removing and adding tag data is correct from the PATCH response
-        res = self.app.patch_json_api(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags':['newer-tag']}}, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']['attributes']['tags']), 1)
-        assert_equal(res.json['data']['attributes']['tags'][0], 'newer-tag')
-        # Ensure removing tag data is correct from the PATCH response
-        res = self.app.patch_json_api(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags': []}}, auth=self.user.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']['attributes']['tags']), 0)
+    # @assert_logs(NodeLog.TAG_ADDED, 'public_project')
+    # def test_contributor_can_add_tag_to_public_project(self):
+    #     res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
+    #     assert_equal(res.status_code, 200)
+    #     # Ensure data is correct from the PATCH response
+    #     assert_equal(len(res.json['data']['attributes']['tags']), 1)
+    #     assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
+    #     # Ensure data is correct in the database
+    #     self.public_project.reload()
+    #     assert_equal(len(self.public_project.tags), 1)
+    #     assert_equal(self.public_project.tags[0]._id, 'new-tag')
+    #     # Ensure data is correct when GETting the resource again
+    #     reload_res = self.app.get(self.public_url)
+    #     assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
+    #     assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
+    #
+    # @assert_logs(NodeLog.TAG_ADDED, 'private_project')
+    # def test_contributor_can_add_tag_to_private_project(self):
+    #     res = self.app.patch_json_api(self.private_url, self.private_payload, auth=self.user.auth)
+    #     assert_equal(res.status_code, 200)
+    #     # Ensure data is correct from the PATCH response
+    #     assert_equal(len(res.json['data']['attributes']['tags']), 1)
+    #     assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
+    #     # Ensure data is correct in the database
+    #     self.private_project.reload()
+    #     assert_equal(len(self.private_project.tags), 1)
+    #     assert_equal(self.private_project.tags[0]._id, 'new-tag')
+    #     # Ensure data is correct when GETting the resource again
+    #     reload_res = self.app.get(self.private_url, auth=self.user.auth)
+    #     assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
+    #     assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
+    #
+    # def test_non_authenticated_user_cannot_add_tag_to_public_project(self):
+    #     res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=None)
+    #     assert_equal(res.status_code, 401)
+    #
+    # def test_non_authenticated_user_cannot_add_tag_to_private_project(self):
+    #     res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=None)
+    #     assert_equal(res.status_code, 401)
+    #
+    # def test_non_contributor_cannot_add_tag_to_public_project(self):
+    #     res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.user_two.auth)
+    #     assert_equal(res.status_code, 403)
+    #
+    # def test_non_contributor_cannot_add_tag_to_private_project(self):
+    #     res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=self.user_two.auth)
+    #     assert_equal(res.status_code, 403)
+    #
+    # def test_read_only_contributor_cannot_add_tag_to_public_project(self):
+    #     res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.read_only_contributor.auth)
+    #     assert_equal(res.status_code, 403)
+    #
+    # def test_read_only_contributor_cannot_add_tag_to_private_project(self):
+    #     res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=self.read_only_contributor.auth)
+    #     assert_equal(res.status_code, 403)\
+    #
+    # @assert_logs(NodeLog.TAG_ADDED, 'private_project', -4)
+    # @assert_logs(NodeLog.TAG_ADDED, 'private_project', -3)
+    # @assert_logs(NodeLog.TAG_REMOVED, 'private_project', -2)
+    # @assert_logs(NodeLog.TAG_REMOVED, 'private_project')
+    # def test_tags_add_and_remove_properly(self):
+    #     res = self.app.patch_json_api(self.private_url, self.private_payload, auth=self.user.auth)
+    #     assert_equal(res.status_code, 200)
+    #     # Ensure adding tag data is correct from the PATCH response
+    #     assert_equal(len(res.json['data']['attributes']['tags']), 1)
+    #     assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
+    #     # Ensure removing and adding tag data is correct from the PATCH response
+    #     res = self.app.patch_json_api(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags':['newer-tag']}}, auth=self.user.auth)
+    #     assert_equal(res.status_code, 200)
+    #     assert_equal(len(res.json['data']['attributes']['tags']), 1)
+    #     assert_equal(res.json['data']['attributes']['tags'][0], 'newer-tag')
+    #     # Ensure removing tag data is correct from the PATCH response
+    #     res = self.app.patch_json_api(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags': []}}, auth=self.user.auth)
+    #     assert_equal(res.status_code, 200)
+    #     assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
 
 class TestNodeLinkCreate(ApiTestCase):
