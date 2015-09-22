@@ -30,22 +30,22 @@ class UserSerializer(JSONAPISerializer):
         return user.profile_image_url(size=size)
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
-    gitHub = AllowMissing(ser.CharField(required=False, source='social.github',
-                                      allow_blank=True, help_text='GitHub Handle'))
-    scholar = AllowMissing(ser.CharField(required=False, source='social.scholar',
-                                       allow_blank=True, help_text='Google Scholar Account'))
-    personal_website = AllowMissing(ser.URLField(required=False, source='social.personal',
-                                               allow_blank=True, help_text='Personal Website'))
-    twitter = AllowMissing(ser.CharField(required=False, source='social.twitter',
-                                       allow_blank=True, help_text='Twitter Handle'))
-    linkedIn = AllowMissing(ser.CharField(required=False, source='social.linkedIn',
-                                        allow_blank=True, help_text='LinkedIn Account'))
-    impactStory = AllowMissing(ser.CharField(required=False, source='social.impactStory',
-                                           allow_blank=True, help_text='ImpactStory Account'))
-    orcid = AllowMissing(ser.CharField(required=False, source='social.orcid',
-                                     allow_blank=True, help_text='ORCID'))
-    researcherId = AllowMissing(ser.CharField(required=False, source='social.researcherId',
-                                            allow_blank=True, help_text='ResearcherId Account'))
+    gitHub = DevOnly(AllowMissing(ser.CharField(required=False, source='social.github',
+                                      allow_blank=True, help_text='GitHub Handle')))
+    scholar = DevOnly(AllowMissing(ser.CharField(required=False, source='social.scholar',
+                                       allow_blank=True, help_text='Google Scholar Account')))
+    personal_website = DevOnly(AllowMissing(ser.URLField(required=False, source='social.personal',
+                                               allow_blank=True, help_text='Personal Website')))
+    twitter = DevOnly(AllowMissing(ser.CharField(required=False, source='social.twitter',
+                                       allow_blank=True, help_text='Twitter Handle')))
+    linkedIn = DevOnly(AllowMissing(ser.CharField(required=False, source='social.linkedIn',
+                                        allow_blank=True, help_text='LinkedIn Account')))
+    impactStory = DevOnly(AllowMissing(ser.CharField(required=False, source='social.impactStory',
+                                           allow_blank=True, help_text='ImpactStory Account')))
+    orcid = DevOnly(AllowMissing(ser.CharField(required=False, source='social.orcid',
+                                     allow_blank=True, help_text='ORCID')))
+    researcherId = DevOnly(AllowMissing(ser.CharField(required=False, source='social.researcherId',
+                                            allow_blank=True, help_text='ResearcherId Account')))
 
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
