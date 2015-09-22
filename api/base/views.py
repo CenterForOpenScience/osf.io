@@ -6,63 +6,94 @@ from api.users.serializers import UserSerializer
 
 @api_view(('GET',))
 def root(request, format=None):
-    """
-        Welcome to the V2 Open Science Framework API. With this API you can programatically access users,
-        projects, components, and files from the [Open Science Framework](https://osf.io/). The Open Science
-        Framework (OSF) is a free, open-source service maintained by the [Center for Open Science](http://cos.io/).
+    """Welcome to the V2 Open Science Framework API. With this API you can programatically access users,
+    projects, components, and files from the [Open Science Framework](https://osf.io/). The Open Science
+    Framework (OSF) is a free, open-source service maintained by the [Center for Open Science](http://cos.io/).
 
+    The OSF stores, documents, and archives study designs, materials, data, manuscripts, or anything else associated
+    with your research during the research process. Every project and file on the OSF has a permanent unique
+    identifier, and every registration (a permanent, time-stamped version of your projects and files) can be assigned
+    a DOI/ARK. You can use the OSF to measure your impact by monitoring the traffic to projects and files you make
+    public. With the OSF you have full control of what parts of your research are public and what remains private.
 
-        The OSF stores, documents, and archives study designs, materials, data, manuscripts, or anything else associated
-        with your research during the research process. Every project and file on the OSF has a permanent unique
-        identifier, and every registration (a permanent, time-stamped version of your projects and files) can be assigned
-        a DOI/ARK. You can use the OSF to measure your impact by monitoring the traffic to projects and files you make
-        public. With the OSF you have full control of what parts of your research are public and what remains private.
+    Beta notice: This API is currently a beta service.  You are encouraged to use the API and will receive support
+    when doing so, however, while the API remains in beta status, it may change without notice as a result of
+    product updates. The temporary beta status of the API will remain in place while it matures. In a future
+    release, the beta status will be removed, at which point we will provide details on how long we will support
+    the API V2 and under what circumstances it might change.
 
-        Beta notice: This API is currently a beta service.  You are encouraged to use the API and will receive support
-        when doing so, however, while the API remains in beta status, it may change without notice as a result of
-        product updates. The temporary beta status of the API will remain in place while it matures. In a future
-        release, the beta status will be removed, at which point we will provide details on how long we will support
-        the API V2 and under what circumstances it might change.
+    ##General API Usage
 
-        ##General API Usage
-        Each endpoint will have its own documentation, but there are some general principles.
+    Each endpoint will have its own documentation, but there are some general principles.
 
-        ###Canonical URLs
+    ###Canonical URLs
 
-        All canonical URLs have trailing slashes.  A request to an endpoint without a trailing slash will result in a
-        301 redirect to the canonical URL.
+    All canonical URLs have trailing slashes.  A request to an endpoint without a trailing slash will result in a
+    301 redirect to the canonical URL.
 
-        ###Filtering
-        Collections can be filtered by adding a query parameter in the form:
+    ###Plurals
 
-            filter[<fieldname>]=<matching information>
-        For example, if you were trying to find [Lise Meitner](http://en.wikipedia.org/wiki/Lise_Meitner):
+    Endpoints are always pluralized.  `/users/`, not `/user/`, `/nodes/`, not `/node/`.
 
-            /users?filter[fullname]=meitn
-        You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.
+    ###Common Actions
 
-            /users?filter[fullname]=lise&filter[family_name]=mei
+    Every endpoint in the OSF API responds to `GET`, `HEAD`, and `OPTION` requests.  You must have adequate
+    permissions to interact with the endpoint.  Unauthorized use will result in 401 Aunuthorized or 403 Forbidden
+    responses.  Use `HEAD` to probe an endpoint and make sure your headers are well-formed.  `GET` will return a
+    JSON representation of the entity or collection referenced by the endpoint.  An `OPTIONS` request will return a
+    JSON object that describes the endpoint, including the name, a description, the acceptable request formats, the
+    allowed response formats, and any actions available via the endpoint.
 
-        ###Links
-        Responses will generally have associated links which are helpers to keep you from having to construct URLs in
-        your code or by hand. If you know the route to a high-level resource, you can go to that route. For example:
+    ###Filtering
 
-            /nodes/<node_id>
+    Collections can be filtered by adding a query parameter in the form:
 
-        is a good route to create rather than going to /nodes/ and navigating by id filtering. However, if you are
-        creating something that crawls the structure of a node going to the child node or gathering children,
-        contributors, and similar related resources, then take the link from the object you\'re crawling rather than
-        constructing the link yourself.
+        filter[<fieldname>]=<matching information>
+    For example, if you were trying to find [Lise Meitner](http://en.wikipedia.org/wiki/Lise_Meitner):
 
-        In general, links include:
+        /users?filter[fullname]=meitn
+    You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.
 
-        1. "Related" links, which will give detailed information on individual items or a collection of related resources;
-        2. "Self" links, which are used for general REST operations (POST, DELETE, and so on);
-        3. Pagination links such as "next", "prev", "first", and "last". Pagination links are great for navigating long
-        lists of information.
+        /users?filter[fullname]=lise&filter[family_name]=mei
 
-        Some routes may have extra rules for links, especially if those links work with external services. Collections
-        may have counts with them to indicate how many items are in that collection.
+    ###Links
+
+    Responses will generally have associated links which are helpers to keep you from having to construct URLs in
+    your code or by hand. If you know the route to a high-level resource, you can go to that route. For example:
+
+        /nodes/<node_id>
+
+    is a good route to create rather than going to /nodes/ and navigating by id filtering. However, if you are
+    creating something that crawls the structure of a node going to the child node or gathering children,
+    contributors, and similar related resources, then take the link from the object you\'re crawling rather than
+    constructing the link yourself.
+
+    In general, links include:
+
+    1. "Related" links, which will give detailed information on individual items or a collection of related resources;
+    2. "Self" links, which are used for general REST operations (POST, DELETE, and so on);
+    3. Pagination links such as "next", "prev", "first", and "last". Pagination links are great for navigating long
+    lists of information.
+
+    Some routes may have extra rules for links, especially if those links work with external services. Collections
+    may have counts with them to indicate how many items are in that collection.
+
+    ###Attribute Validation
+
+    Endpoints that allow creation or modification of entities generally limit updates to certain attributes of the
+    entity.  If you attempt to set an attribute that does not permit updates (such as a `date_created` timestamp), the
+    API will silently ignore that attribute.  This will not affect the response from the API: if the request would have
+    succeeded without the updated attribute, it will still report as successful.  Likewise, if the request would have
+    failed without the attribute update, the API will still report a failure.
+
+    Typoed or non-existant attributes will behave the same as non-updatable attributes and be silently
+    ignored. If a request is not working the way you expect, make sure to double check your spelling.
+
+    ###PUT vs. PATCH
+
+    For most endpoints that support updates via PUT requests, we also allow PATCH updates.  The only difference is that
+    PUT requests require all mandatory attributes to be set, even if their value is unchanged.  PATCH requests may omit
+    mandatory attributes, whose value will be unchaged.
 
     """
     if request.user and not request.user.is_anonymous():
