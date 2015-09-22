@@ -94,7 +94,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
         payload = {u'suffix': u'VIII'}
 
-        res = self.app.patch(url, params=payload,
+        res = self.app.patch_json_api(url, params=payload,
                              auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403)
 

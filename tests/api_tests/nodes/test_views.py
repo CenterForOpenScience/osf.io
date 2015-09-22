@@ -1231,7 +1231,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_adds_bibliographic_contributor_public_project_admin(self):
-        res = self.app.post_json(self.public_url, self.data_user_two, auth=self.user.auth)
+        res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
@@ -1246,7 +1246,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             'attributes': {
                 'bibliographic': False
         }}
-        res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
         assert_equal(res.json['data']['attributes']['bibliographic'], False)
@@ -1257,26 +1257,26 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def test_adds_contributor_public_project_non_admin(self):
         self.public_project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user), save=True)
-        res = self.app.post_json(self.public_url, self.data_user_three,
+        res = self.app.post_json_api(self.public_url, self.data_user_three,
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         self.public_project.reload()
         assert_not_in(self.user_three, self.public_project.contributors)
 
     def test_adds_contributor_public_project_non_contributor(self):
-        res = self.app.post_json(self.public_url, self.data_user_three,
+        res = self.app.post_json_api(self.public_url, self.data_user_three,
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_not_in(self.user_three, self.public_project.contributors)
 
     def test_adds_contributor_public_project_not_logged_in(self):
-        res = self.app.post_json(self.public_url, self.data_user_two, expect_errors=True)
+        res = self.app.post_json_api(self.public_url, self.data_user_two, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_not_in(self.user_two, self.public_project.contributors)
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_contributor_private_project_admin(self):
-        res = self.app.post_json(self.private_url, self.data_user_two, auth=self.user.auth)
+        res = self.app.post_json_api(self.private_url, self.data_user_two, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
@@ -1290,7 +1290,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             'type': 'contributors',
             'attributes': {}
         }
-        res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
 
         self.private_project.reload()
@@ -1307,7 +1307,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                     'bibliographic': True
                 }
         }
-        res = self.app.post_json(self.private_url, data, auth=self.user.auth)
+        res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
@@ -1324,7 +1324,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                 'permission': permissions.WRITE,
                 'bibliographic': True
         }}
-        res = self.app.post_json(self.private_url, data, auth=self.user.auth)
+        res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
@@ -1341,7 +1341,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                 'permission': permissions.READ,
                 'bibliographic': True
         }}
-        res = self.app.post_json(self.private_url, data, auth=self.user.auth)
+        res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
@@ -1357,7 +1357,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                 'permission': 'invalid',
                 'bibliographic': True
         }}
-        res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
         self.private_project.reload()
@@ -1372,7 +1372,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                 'permission': None,
                 'bibliographic': True
         }}
-        res = self.app.post_json(self.private_url, data, auth=self.user.auth)
+        res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
 
         self.private_project.reload()
@@ -1384,7 +1384,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self.private_project.add_contributor(self.user_two, auth=Auth(self.user), save=True)
         self.private_project.reload()
 
-        res = self.app.post_json(self.private_url, self.data_user_two,
+        res = self.app.post_json_api(self.private_url, self.data_user_two,
                                  auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
@@ -1397,7 +1397,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                     'bibliographic': True
                 }
         }
-        res = self.app.post_json(self.private_url, data, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
         self.private_project.reload()
@@ -1405,7 +1405,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def test_adds_contributor_private_project_non_admin(self):
         self.private_project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user))
-        res = self.app.post_json(self.private_url, self.data_user_three,
+        res = self.app.post_json_api(self.private_url, self.data_user_three,
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -1413,7 +1413,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_not_in(self.user_three, self.private_project.contributors)
 
     def test_adds_contributor_private_project_non_contributor(self):
-        res = self.app.post_json(self.private_url, self.data_user_three,
+        res = self.app.post_json_api(self.private_url, self.data_user_three,
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -1421,7 +1421,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_not_in(self.user_three, self.private_project.contributors)
 
     def test_adds_contributor_private_project_not_logged_in(self):
-        res = self.app.post_json(self.private_url, self.data_user_two, expect_errors=True)
+        res = self.app.post_json_api(self.private_url, self.data_user_two, expect_errors=True)
         assert_equal(res.status_code, 401)
 
         self.private_project.reload()
@@ -2220,7 +2220,7 @@ class TestNodeTags(ApiTestCase):
 
     @assert_logs(NodeLog.TAG_ADDED, 'public_project')
     def test_contributor_can_add_tag_to_public_project(self):
-        res = self.app.patch_json(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
+        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
         # Ensure data is correct from the PATCH response
         assert_equal(len(res.json['data']['attributes']['tags']), 1)
@@ -2236,7 +2236,7 @@ class TestNodeTags(ApiTestCase):
 
     @assert_logs(NodeLog.TAG_ADDED, 'private_project')
     def test_contributor_can_add_tag_to_private_project(self):
-        res = self.app.patch_json(self.private_url, self.private_payload, auth=self.user.auth)
+        res = self.app.patch_json_api(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         # Ensure data is correct from the PATCH response
         assert_equal(len(res.json['data']['attributes']['tags']), 1)
@@ -2251,27 +2251,27 @@ class TestNodeTags(ApiTestCase):
         assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
 
     def test_non_authenticated_user_cannot_add_tag_to_public_project(self):
-        res = self.app.patch_json(self.public_url, self.one_new_tag_json, expect_errors=True, auth=None)
+        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=None)
         assert_equal(res.status_code, 401)
 
     def test_non_authenticated_user_cannot_add_tag_to_private_project(self):
-        res = self.app.patch_json(self.private_url, self.private_payload, expect_errors=True, auth=None)
+        res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=None)
         assert_equal(res.status_code, 401)
 
     def test_non_contributor_cannot_add_tag_to_public_project(self):
-        res = self.app.patch_json(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.user_two.auth)
+        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.user_two.auth)
         assert_equal(res.status_code, 403)
 
     def test_non_contributor_cannot_add_tag_to_private_project(self):
-        res = self.app.patch_json(self.private_url, self.private_payload, expect_errors=True, auth=self.user_two.auth)
+        res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=self.user_two.auth)
         assert_equal(res.status_code, 403)
 
     def test_read_only_contributor_cannot_add_tag_to_public_project(self):
-        res = self.app.patch_json(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.read_only_contributor.auth)
+        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.read_only_contributor.auth)
         assert_equal(res.status_code, 403)
 
     def test_read_only_contributor_cannot_add_tag_to_private_project(self):
-        res = self.app.patch_json(self.private_url, self.private_payload, expect_errors=True, auth=self.read_only_contributor.auth)
+        res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=self.read_only_contributor.auth)
         assert_equal(res.status_code, 403)\
 
     @assert_logs(NodeLog.TAG_ADDED, 'private_project', -4)
@@ -2279,18 +2279,18 @@ class TestNodeTags(ApiTestCase):
     @assert_logs(NodeLog.TAG_REMOVED, 'private_project', -2)
     @assert_logs(NodeLog.TAG_REMOVED, 'private_project')
     def test_tags_add_and_remove_properly(self):
-        res = self.app.patch_json(self.private_url, self.private_payload, auth=self.user.auth)
+        res = self.app.patch_json_api(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         # Ensure adding tag data is correct from the PATCH response
         assert_equal(len(res.json['data']['attributes']['tags']), 1)
         assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
         # Ensure removing and adding tag data is correct from the PATCH response
-        res = self.app.patch_json(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags':['newer-tag']}}, auth=self.user.auth)
+        res = self.app.patch_json_api(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags':['newer-tag']}}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 1)
         assert_equal(res.json['data']['attributes']['tags'][0], 'newer-tag')
         # Ensure removing tag data is correct from the PATCH response
-        res = self.app.patch_json(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags': []}}, auth=self.user.auth)
+        res = self.app.patch_json_api(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags': []}}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
@@ -2412,7 +2412,7 @@ class TestNodeLinkCreate(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['target_node_id'], self.public_pointer_project._id)
 
-        res = self.app.post(self.public_url, self.public_payload, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_in('detail', res.json['errors'][0])
 
@@ -2738,14 +2738,14 @@ class TestReturnDeletedNode(ApiTestCase):
         assert_equal(res.status_code, 410)
 
     def test_edit_deleted_public_node(self):
-        res = self.app.put(self.public_url, params={'title': self.new_title,
+        res = self.app.put_json_api(self.public_url, params={'title': self.new_title,
                                                     'node_id': self.public_deleted._id,
                                                     'category': self.public_deleted.category},
                            auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
 
     def test_edit_deleted_private_node(self):
-        res = self.app.put(self.private_url, params={'title': self.new_title,
+        res = self.app.put_json_api(self.private_url, params={'title': self.new_title,
                                                      'node_id': self.private_deleted._id,
                                                      'category': self.private_deleted.category},
                            auth=self.user.auth, expect_errors=True)
