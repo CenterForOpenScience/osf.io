@@ -946,8 +946,10 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
             'is_public': node.is_public,
             'parent_title': node.parent_node.title if node.parent_node else None,
             'parent_is_public': node.parent_node.is_public if node.parent_node else False,
-            'show_path': show_path
+            'show_path': show_path,
+            'is_admin': node.has_permission(auth.user, 'admin') if auth.user else False,
         })
+
         if rescale_ratio:
             ua_count, ua, non_ua = _get_user_activity(node, auth, rescale_ratio)
             summary.update({

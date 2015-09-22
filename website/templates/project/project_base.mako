@@ -85,7 +85,8 @@
             category: ${ node['category_short'] | sjson, n },
             parentTitle: ${ parent_title | sjson, n },
             parentRegisterUrl: ${ parent_registration_url | sjson, n },
-            parentExists: ${'true' if parent_exists else 'false'}
+            parentExists: ${'true' if parent_exists else 'false'},
+            userIsAdmin: ${ node.get('is_admin', False) | sjson, n },
         }
     });
 
