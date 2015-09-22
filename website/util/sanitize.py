@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import collections
+
 import bleach
 import json
 
@@ -32,7 +34,7 @@ def clean_tag(data):
 
 
 def is_iterable(obj):
-    return hasattr(obj, '__iter__')
+    return isinstance(obj, collections.Iterable)
 
 def is_iterable_but_not_string(obj):
     """Return True if ``obj`` is an iterable object that isn't a string."""

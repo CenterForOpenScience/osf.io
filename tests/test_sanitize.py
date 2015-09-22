@@ -49,7 +49,7 @@ class TestSanitize(unittest.TestCase):
         dtime = datetime.datetime.now()
         assert_equal(sanitize.strip_html(dtime), dtime)
 
-    def test_strip_html_bleaches_collection_types(self):
+    def test_strip_html_sanitizes_collection_types_as_strings(self):
         assert_equal(sanitize.strip_html({'foo': '<b>bar</b>'}), "{'foo': 'bar'}")
         assert_equal(sanitize.strip_html(['<em>baz</em>']), "['baz']")
 
