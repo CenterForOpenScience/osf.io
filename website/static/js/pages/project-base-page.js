@@ -33,39 +33,40 @@ $(document).ready(function() {
         $('body').trigger('nodeLoad', data);
     });
 
-    var target = 50, smallScreenSize = 767,
-    timeout = null;
-    var checkPanelPosition = function() {
+    var self = this;
+    self.thresholdScrollPosition = 50;
+    self.smallScreenSize = 767;
+    self.nonNavTopMargin = 50;
+    self.navMaxTopMargin = 95;
+    self.checkPanelPosition = function() {
         var bodyWidth = $(document.body).width();
         var scrollTopPosition = $(window).scrollTop();
-        if (bodyWidth <= smallScreenSize) {
-            if (scrollTopPosition >= target) {
-                $('.cp-handle').css('margin-top', 50);
+        if (bodyWidth <= self.smallScreenSize) {
+            if (scrollTopPosition >= self.thresholdScrollPosition) {
+                $('.cp-handle').css('margin-top', self.nonNavTopMargin);
             }
             else {
-                $('.cp-handle').css('margin-top', 95 - scrollTopPosition);
+                $('.cp-handle').css('margin-top', self.navMaxTopMargin - scrollTopPosition);
             }
         }
     };
+    self.THROTTLE = 10;
+    self.debouncePanelPosition = $osf.debounce(function() {
+        self.checkPanelPosition();
+    }, self.THROTTLE);
 
-    checkPanelPosition(); /* Init when refreshing the page*/
+    self.checkPanelPosition(); /* Init when refreshing the page*/
     $(window).scroll(function () {
-        if (!timeout) {
-            timeout = setTimeout(function () {
-                clearTimeout(timeout);
-                timeout = null;
-                checkPanelPosition();
-            }, 10);
-        }
+        self.debouncePanelPosition();
     });
 
     $( window ).resize(function() {
         var bodyWidth = $(document.body).width();
         var scrollTopPosition = $(window).scrollTop();
-        if (bodyWidth > smallScreenSize || scrollTopPosition < target) {
-            $('.cp-handle').css('margin-top', 95);
-        } else if (bodyWidth < smallScreenSize || scrollTopPosition > target) {
-            $('.cp-handle').css('margin-top', 50);
+        if (bodyWidth > self.smallScreenSize || scrollTopPosition < self.thresholdScrollPosition) {
+            $('.cp-handle').css('margin-top', self.navMaxTopMargin);
+        } else if (bodyWidth < self.smallScreenSize || scrollTopPosition > self.thresholdScrollPosition) {
+            $('.cp-handle').css('margin-top', self.nonNavTopMargin);
         }
     });
 });
