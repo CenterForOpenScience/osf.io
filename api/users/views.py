@@ -47,20 +47,22 @@ class UserMixin(object):
 class UserList(generics.ListAPIView, ODMFilterMixin):
     """List of users registered on the OSF. *Read-only*.
 
-    [Paginated](http://jsonapi.org/format/#fetching-pagination) list of users ordered by the date they registered.  Each
-    resource contains the full representation of the user, meaning a re-fetch is not necessary.
+    Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
+    user, meaning a re-fetch is not necessary.
 
     The subroute [`/me/`](me/) is a special link that always points to the currently logged-in user.
 
     ##User Attributes
 
-        fullname:           full name of the user (given + middle + family names)
-        given_name:         given name of the user.  may not be blank
-        middle_names:       middle name of user. may be blank but not null
-        family_name:        family name of user. may be blank but not null
-        suffix:             suffix of user's name. may be blank but not null
-        date_registered:    ISO8601 timestamp of the date the user account was created
-        profile_image_url:  a url to the users profile image (gravatar)
+    **TODO: import from UserDetail**
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+
+    ##Actions
+
+    *None*.
 
     ##Query Params
 
@@ -68,7 +70,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    Users may be filtered by their `id`, `fullname`, `given_name`, `middle_names`, or `family_name`.
+    Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
 
     """
     permission_classes = (
@@ -105,13 +107,15 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
     ##Attributes
 
-        fullname:           full name of the user. mandatory.
-        given_name:         given name of the user for bibliographic citations. may be blank but not null
-        middle_names:       middle name of user for bibliographic citations. may be blank but not null
-        family_name:        family name of user for bibliographic citations. may be blank but not null
-        suffix:             suffix of user's name for bibliographic citations. may be blank but not null
-        date_registered:    ISO8601 timestamp of the date the user account was created
-        profile_image_url:  a url to the users profile image (gravatar)
+        name               type               description
+        ----------------------------------------------------------------------------------------
+        full_name          string             full name of the user
+        given_name         string             given name of the user for bibliographic citations
+        middle_names       string             middle name of user for bibliographic citations
+        family_name        string             family name of user for bibliographic citations
+        suffix             string             suffix of user's name for bibliographic citations
+        date_registered    iso8601 timestamp  timestamp when the user's account was created
+        profile_image_url  url                url to the user's profile image (gravatar)
 
     ##Relationships
 
@@ -120,21 +124,38 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     A list of all nodes the user has contributed to.  If the user id in the path is the same as the logged-in user, all
     nodes will be visible.  Otherwise, you will only be able to see the other user's publicly-visible nodes.
 
-    ##Query Params
+    ##Links
 
-    *None*.
+        self:  the canonical api endpoint of this user
+        html:  this user's page on the OSF website
 
     ##Actions
 
     ###Update
 
-    To update your user profile, issue a PUT request to either the canonical URL of your user resource (as given
-    in `data.links.self`) or to `/users/me/`.  Only the `fullname` attribute is required.  Unlike at signup, the given,
-    middle, and family names will not be inferred from the `fullname`.  Currently, only `fullname`, `given_name`,
+        Method:        PUT / PATCH
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "full_name":    "<mandatory>",
+                         "given_name":   "<optional>",
+                         "middle_names": "<optional>",
+                         "family_name":  "<optional>",
+                         "suffix":       "<optional">
+                       }
+        Success:       200 OK + node representation
+
+    To update your user profile, issue a PUT request to either the canonical URL of your user resource (as given in
+    `links.self`) or to `/users/me/`.  Only the `full_name` attribute is required.  Unlike at signup, the given, middle,
+    and family names will not be inferred from the `full_name`.  Currently, only `full_name`, `given_name`,
     `middle_names`, `family_name`, and `suffix` are updateable.
 
-    A PATCH request issued to this endpoint will behave the same as a PUT request, but does not require `fullname` to be
-    set.
+    A PATCH request issued to this endpoint will behave the same as a PUT request, but does not require `full_name` to
+    be set.
+
+    ##Query Params
+
+    *None*.
 
     """
     permission_classes = (
@@ -160,26 +181,30 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
-    [Paginated](http://jsonapi.org/format/#fetching-pagination) list of nodes that the user contributes to.  Each
-    resource contains the full representation of the node, meaning a re-fetch is not necessary. If the user id in the
-    path is the same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to see the
-    other user's publicly-visible nodes.  The special user id `me` can be used to represent the currently logged-in
-    user.
+    Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
+    meaning a re-fetch is not necessary. If the user id in the path is the same as the logged-in user, all nodes will be
+    visible.  Otherwise, you will only be able to see the other user's publicly-visible nodes.  The special user id `me`
+    can be used to represent the currently logged-in user.
 
-    # Attributes
+    ##Node Attributes
 
-    See one of the node pages for a full description of node attributes, links, and relationships.
+    **TODO: import from NodeDetail**
 
-    # Query Params
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
 
     + `page=<Int>` -- page number of results to view, default 1
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    Nodes may be filtered by their `title`, `description`, `public`, `registration`, `tags`, or `category`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    **TODO: import from NodeList**
 
     """
     permission_classes = (

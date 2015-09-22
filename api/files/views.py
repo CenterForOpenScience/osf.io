@@ -41,14 +41,17 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     Both files and folders are accessed through this endpoint and may be distinguished by the `kind` attribute. `size`
     will be `null` for folders.
 
-        name:          name of the file or folder
-        kind:          "file" or "folder"
-        path:          path to this entity, used in "move" actions
-        size:          size of file in bytes, null for folders
-        provider:      storage provider for this file. "osfstorage" if stored on the OSF.  Other examples include
-                       "s3" for Amazon S3, "googledrive" for Google Drive, "box" for Box.com.
-        last_touched:  last time the metadata for the file was retrieved. only applies to non-OSF storage
-                       providers.
+        name           type               description
+        ---------------------------------------------------------------------------------
+        name          string             name of the file or folder
+        kind          string             "file" or "folder"
+        path          url path           path to this entity, used in "move" actions
+        size          integer            size of file in bytes, null for folders
+        provider      string             storage provider for this file. "osfstorage" if stored on the OSF.  Other
+                                         examples include "s3" for Amazon S3, "googledrive" for Google Drive, "box"
+                                         for Box.com.
+        last_touched  iso8601 timestamp  last time the metadata for the file was retrieved. only applies to non-OSF
+                                         storage providers.
 
     ##Relationships
 
@@ -64,75 +67,120 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     The `versions` endpoint provides version history for files.  Will be `null` for folders.
 
-    ##Links / Actions
+    ##Links
+
+        info:        the canonical api endpoint for the latest version of the file
+        new_folder:  url to target when creating new subfolders
+        move:        url to target for move, copy, and rename actions
+        upload:      url to target for uploading new files and updating existing files
+        download:    url to request a download of the latest version of the file
+        delete:      url to target for deleting files and folders
+
+    ##Actions
 
     The `links` property of the response provides endpoints for common file operations. The currently-supported actions
     are:
 
     ###Get Info (*files, folders*)
 
-        Method: GET
-        URL:    data.links.info
+        Method:   GET
+        URL:      links.info
+        Params:   <none>
+        Success:  200 OK + file representation
 
-    The details of a particular file can be retreived by performing a GET request against the url in the `info` property.
+    The details of a particular file can be retrieved by performing a GET request against the `info` link.
 
     ###Download (*files*)
 
-        Method: GET
-        URL:    data.links.download
+        Method:   GET
+        URL:      links.download
+        Params:   <none>
+        Success:  200 OK + file body
 
-    To download a file, issue a GET request against the url in the `download` property.  The response will have the
-    Content-Disposition header set, which will will trigger a download in a browser.
+    To download a file, issue a GET request against the `download` link.  The response will have the Content-Disposition
+    header set, which will will trigger a download in a browser.
 
     ###Create Subfolder (*folders*)
 
         Method:       PUT
-        URL:          data.links.new_folder
+        URL:          links.new_folder
         Query Params: ?name=<new folder name>
         Body:         <empty>
+        Success:      201 Created + new folder representation
 
-    You can create a subfolder of an existing folder by issuing a PUT request against the `new_folder` url.  The name of
-    the new subfolder should be provided in the `name` query parameter.
+    You can create a subfolder of an existing folder by issuing a PUT request against the `new_folder` link.  The name
+    of the new subfolder should be provided in the `name` query parameter.  The response will contain the following:
+
+        name          type               description
+        ---------------------------------------------------------------------------------
+        name          string             name of the new folder
+        path          url path           path of the folder in **OSF or Waterbutler**?
+        materialized  string             the full path of the folder relative to the storage root
+        kind          string             "folder"
+        etag          string             **TODO**
+        extra         object             **TODO**
 
     ###Upload New File (*folders*)
 
         Method:       PUT
-        URL:          data.links.upload
+        URL:          links.upload
         Query Params: ?kind=file&name=<new file name>
         Body (Raw):   <file data (not form-encoded)>
-        Body:         <empty>
+        Success:      201 Created + new file representation
 
-    To upload a file to a folder, issue a PUT request to the folder's `upload` url with the raw file data in the request
-    body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.
+    To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
+    request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
+    response will describe the new file.
+
+        name          type               description
+        ---------------------------------------------------------------------------------
+        name          string             name of the new folder
+        path          url path           path of the folder in **OSF or Waterbutler**?
+        materialized  string             the full path of the folder relative to the storage root
+        kind          string             "file"
+        etag          string             **TODO**
+        modified      timestamp          **TODO**
+        contentType   string             null if provider="osfstorage", else MIME-type
+        provider      string             id of provider e.g. "osfstorage", "s3", "googledrive"
+        size          integer            size of file in bytes
+        extra         object
+          version     integer            version number of file. will be 1 on initial upload
+          downloads   integer            count of the number times the file has been downloaded
+          hashes      object
+            md5       string             md5 hash of file
+            sha256    string             SHA-256 hash of file
 
     ###Update Existing File (*file*)
 
         Method:       PUT
-        URL:          data.links.upload
+        URL:          links.upload
         Query Params: kind=file&name=<new file name>
         Body (Raw):   <file data (not form-encoded)>
+        Success:      200 OK + updated file representation
 
-    To update an existing file, issue a PUT request to the file's `upload` url with the raw file data in the request
+    To update an existing file, issue a PUT request to the file's `upload` link with the raw file data in the request
     body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The update
-    action will create a new version of the file.
+    action will create a new version of the file.  The response format is the same as the **Upload New File** action.
 
     ###Rename (*files, folders*)
 
         Method:        POST
-        URL:           data.links.move
+        URL:           links.move
         Query Params:  <none>
         Body (JSON):   {
                         "action": "rename",
                         "rename": <new file name>
                        }
+        Success:       200 OK + new entity representation
 
-    To rename a file or folder, issue a POST request to the `move` url with the `action` body parameter set to
-    `'rename'` and the `rename` body parameter set to the desired name.
+    To rename a file or folder, issue a POST request to the `move` link with the `action` body parameter set to
+    `'rename'` and the `rename` body parameter set to the desired name.  The response format is the same as the **Upload
+    New File** action, except if the renamed entity is a folder, `kind` will be `"folder"`.
 
     ###Move & Copy (*files, folders*)
 
         Method:        POST
-        URL:           data.links.move
+        URL:           links.move
         Query Params:  <none>
         Body (JSON):   {
                         // mandatory
@@ -142,6 +190,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
                         "rename":   <new name>,
                         "conflict": "replace|keep" // defaults to 'replace'
                        }
+        Succes:        200 OK + new entity representation
 
     Move and copy actions both use the same request structure, a POST to the `move` url, but with different values for
     the `action` body parameters.  The `path` parameter is also required and should be the `path` attribute of the
@@ -154,10 +203,18 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     ###Delete (*file, folders*)
 
-        Method: DELETE
-        URL:    data.links.delete
+        Method:        DELETE
+        URL:           links.delete
+        Query Params:  <none>
+        Success:       204 No Content
 
-    To delete a file send a DELETE request to the `delete` url.
+    To delete a file or folder send a DELETE request to the `delete` link.  Nothing will be returned in the response
+    body.
+
+    ##Query Params
+
+    For this endpoint, *none*.  Actions may permit or require certain query parameters.  See the individual action
+    documentation.
 
     """
     permission_classes = (
@@ -184,12 +241,27 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 class FileVersionsList(generics.ListAPIView, FileMixin):
     """List of versions for the requested file. *Read-only*.
 
-    [Paginated](http://jsonapi.org/format/#fetching-pagination) list of file versions, ordered by increasing version
-    number (id).  Each resource contains a `size` and `content_type` attribute.
+    Paginated list of file versions, ordered by increasing version number (id).
+
+    ##FileVersion Attributes
+
+    **TODO: import from FileVersionDetail**
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+
+    ##Actions
+
+    *None*.
 
     ##Query Params
 
     + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    File versions may be filtered by their `id`, `size`, or `content_type`.
 
     """
     permission_classes = (
@@ -216,15 +288,27 @@ class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
 
     ##Attributes
 
-        size:          size of file in bytes
-        content_type:  MIME content-type for the file. May be null if file is stored locally.
+        name          type     description
+        ---------------------------------------------------------------------------------
+        size          integer  size of file in bytes
+        content_type  string   MIME content-type for the file. May be null if file is stored locally.
+
+    ##Relationships
+
+    *None*.
 
     ##Links
 
-    GET-able representations of this file version.
-
-        self:  the canonical api endpoint for this entity
+        self:  the canonical api endpoint for this version of the file
         html:  the OSF webpage for this file version
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+    *None*.
 
     """
     version_lookup_url_kwarg = 'version_id'

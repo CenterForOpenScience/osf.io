@@ -61,8 +61,8 @@ class NodeMixin(object):
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Projects and components. *Writeable*.
 
-    [Paginated](http://jsonapi.org/format/#fetching-pagination) list of nodes ordered by their `date_modified`.  Each
-    resource contains the full representation of the node, meaning a re-fetch is not necessary.
+    Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
+    node, meaning a re-fetch is not necessary.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
     is that a project is the top-level node, and components are children of the project. There is also a category field
@@ -72,18 +72,11 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     ##Node Attributes
 
-    **TODO: copy-and-paste from NodeDetails**
+    **TODO: import from NodeDetails**
 
-    ##Query Params
+    ##Links
 
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
-    Nodes may be filtered by their `title`, `description`, `public`, `registration`, `tags`, or `category`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
 
     ##Actions
 
@@ -104,6 +97,17 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     All other fields not listed above will be ignored.  If the node creation is successful the API will return a 201
     response with the respresentation of the new node in the body.  For the new node's canonical URL, see the
     `links.self` field of the response.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Nodes may be filtered by their `title`, `description`, `public`, `registration`, `tags`, or `category`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     """
     permission_classes = (
@@ -176,29 +180,32 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     ###Children
 
+    **TODO**
+
     ###Contributors
+
+    **TODO**
 
     ###Files
 
+    **TODO**
+
     ###Node Links
+
+    **TODO**
 
     ###Parent
 
+    **TODO**
+
     ###Registrations
+
+    **TODO**
 
     ##Links
 
-    ###self
-
-    The canonical representation of this node.
-
-    ###HTML
-
-    This node's page on the OSF website.
-
-    ##Query Params
-
-    *None*.
+        self:  the canonical api endpoint of this node
+        html:  this node's page on the OSF website
 
     ##Actions
 
@@ -229,6 +236,10 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     To delete a node, issue a DELETE request against `links.self`.  A successful delete will return a 204 No Content
     response. Attempting to delete a node you do not own will result in a 403 Forbidden.
+
+    ##Query Params
+
+    *None*.
 
     """
     permission_classes = (
