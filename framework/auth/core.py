@@ -1279,6 +1279,7 @@ class User(GuidStoredObject, AddonModelMixin):
         user.username = None
         user.password = None
         user.verification_key = None
+        user.osf_mailing_lists = {}
         user.merged_by = self
 
         user.save()
