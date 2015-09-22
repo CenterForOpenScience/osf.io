@@ -1,7 +1,7 @@
+import httplib as http
 
 from rest_framework import status
 from rest_framework.exceptions import APIException, ParseError
-
 
 def json_api_exception_handler(exc, context):
     """ Custom exception handler that returns errors object as an array """
@@ -16,26 +16,44 @@ def json_api_exception_handler(exc, context):
 
     if response:
         message = response.data
-        if isinstance(message, dict):
-            for key, value in message.iteritems():
-                if key in top_level_error_keys:
-                    errors.append({key: value})
+
+        if isinstance(exc, JSONAPIException):
+            errors.extend([
+                {
+                    'source': exc.source,
+                    'detail': exc.detail,
+                }
+            ])
+        elif isinstance(message, dict):
+            for error_key, error_description in message.iteritems():
+                if error_key in top_level_error_keys:
+                    errors.append({error_key: error_description})
                 else:
-                    if isinstance(value, list):
-                        for reason in value:
-                            errors.append({'detail': reason, 'meta': {'field': key}})
-                    else:
-                        errors.append({'detail': value, 'meta': {'field': key}})
-        elif isinstance(message, (list, tuple)):
-            for error in message:
-                errors.append({'detail': error})
+                    if isinstance(error_description, basestring):
+                        error_description = [error_description]
+                    errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason}
+                                   for reason in error_description])
         else:
-            errors.append({'detail': message})
+            if isinstance(message, basestring):
+                message = [message]
+            errors.extend([{'detail': error} for error in message])
 
         response.data = {'errors': errors}
 
     return response
 
+
+class JSONAPIException(APIException):
+    """Inherits from the base DRF API exception and adds extra metadata to support JSONAPI error objects
+
+    :param str detail: a human-readable explanation specific to this occurrence of the problem
+    :param dict source: A dictionary containing references to the source of the error.
+        See http://jsonapi.org/format/#error-objects.
+        Example: ``source={'pointer': '/data/attributes/title'}``
+    """
+    def __init__(self, detail=None, source=None):
+        super(JSONAPIException, self).__init__(detail=detail)
+        self.source = source
 
 # Custom Exceptions the Django Rest Framework does not support
 class Gone(APIException):
@@ -43,6 +61,17 @@ class Gone(APIException):
     default_detail = ('The requested resource is no longer available.')
 
 
+class InvalidQueryStringError(JSONAPIException):
+    """Raised when client passes an invalid value to a query string parameter."""
+    default_detail = 'Query string contains an invalid value.'
+    status_code = http.BAD_REQUEST
+
+    def __init__(self, detail=None, parameter=None):
+        super(InvalidQueryStringError, self).__init__(detail=detail, source={
+            'parameter': parameter
+        })
+
+
 class InvalidFilterError(ParseError):
-    """Raised when client passes an invalid filter in the querystring."""
-    default_detail = 'Querystring contains an invalid filter.'
+    """Raised when client passes an invalid filter in the query string."""
+    default_detail = 'Query string contains an invalid filter.'
