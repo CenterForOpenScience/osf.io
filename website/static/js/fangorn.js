@@ -1501,62 +1501,6 @@ var FGItemButtons = {
                             className : 'text-danger'
                         }, 'Delete Folder'));
                 }
-                if (item.data.addonFullname === 'OSF Storage') {
-                    rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() {
-                            tb.modal.update(m('', [
-                                m('p', 'This will allow files in OSF Storage to be edited.')
-                            ]), m('', [
-                                m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                                m('span.btn.btn-warning', {onclick: function() {
-                                    $.ajax({
-                                        method: 'delete',
-                                        url: item.data.nodeApiUrl + 'osfstorage/checkouts/',
-                                    }).done(function(resp) {
-                                        if (resp.status === 'success') {
-                                            window.location.reload();
-                                        } else {
-                                            $osf.growl('Error', 'Unable to check-in OSF Storage. Make sure all files are checked-in, or checked-out by you.');
-                                        }
-                                    }).fail(function(resp) {
-                                        $osf.growl('Error', 'Unable to check-in OSF Storage. Make sure all files are checked-in, or checked-out by you.');
-                                    });
-                                }}, 'Check-in all')
-                            ]), m('h3.break-word.modal-title', 'Check-in all OSF Storage files?'));
-                        },
-                        icon: 'fa fa-sign-in',
-                        className: 'text-warning'
-                    }, 'Check-in all')
-                );
-                rowButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() {
-                            tb.modal.update(m('', [
-                                m('p', 'This will check-out all files in OSF Storage, preventing them from being edited by anyone but you. This does not prevent new files from being uploaded.')
-                            ]), m('', [
-                                m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                                m('span.btn.btn-warning', {onclick: function(){
-                                    $osf.postJSON(
-                                        item.data.nodeApiUrl + 'osfstorage/checkouts/',
-                                        {}
-                                    ).done(function(resp) {
-                                        if (resp.status === 'success') {
-                                            window.location.reload();
-                                        } else {
-                                            $osf.growl('Error', 'Unable to check-out OSF Storage. Make sure all files are checked-in, or checked-out by you.');
-                                        }
-                                    }).fail(function(resp) {
-                                        $osf.growl('Error', 'Unable to check-out OSF Storage. Make sure all files are checked-in, or checked-out by you.');
-                                    });
-                                }}, 'Check-out all')
-                            ]), m('h3.break-word.modal-title', 'Check-out all OSF Storage files?'));
-                        },
-                        icon: 'fa fa-sign-out',
-                        className: 'text-warning'
-                    }, 'Check-out all')
-                );
-                }
             }
             if (item.kind === 'file') {
                 rowButtons.push(
@@ -1597,7 +1541,7 @@ var FGItemButtons = {
                                             m('span.btn.btn-warning', {onclick: function() {
                                                 $.ajax({
                                                     method: 'put',
-                                                    url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                                                    url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
                                                     beforeSend: $osf.setXHRAuthorization,
                                                     contentType: 'application/json',
                                                     dataType: 'json',
@@ -1625,7 +1569,7 @@ var FGItemButtons = {
                                     onclick: function(event) {
                                         $.ajax({
                                             method: 'put',
-                                            url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                                            url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
                                             beforeSend: $osf.setXHRAuthorization,
                                             contentType: 'application/json',
                                             dataType: 'json',
@@ -1858,10 +1802,16 @@ var FGToolbar = {
                         onclick: function() {
                             for (var i = 0, len = items.length; i < len; i++) {
                                 var each = items[i];
-                                $osf.postJSON(
-                                     each.data.nodeApiUrl + 'osfstorage' + each.data.path +'/checkouts/',
-                                    {}
-                                ).done(function(resp) {
+                                $.ajax({
+                                    method: 'put',
+                                    url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
+                                    beforeSend: $osf.setXHRAuthorization,
+                                    contentType: 'application/json',
+                                    dataType: 'json',
+                                    data: JSON.stringify({
+                                        checkout: window.contextVars.currentUser.id
+                                    })
+                                }).done(function(resp) {
                                     if (resp.status === 'success') {
                                     } else {
                                         $osf.growl('Error', 'Unable to check-out file.');
@@ -1884,8 +1834,14 @@ var FGToolbar = {
                             for (var i = 0, len = items.length; i < len; i++) {
                                 var each = items[i];
                                 $.ajax({
-                                    method: 'delete',
-                                    url: each.data.nodeApiUrl + 'osfstorage' + each.data.path + '/checkouts/',
+                                    method: 'put',
+                                    url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
+                                    beforeSend: $osf.setXHRAuthorization,
+                                    contentType: 'application/json',
+                                    dataType: 'json',
+                                    data: JSON.stringify({
+                                        checkout: null
+                                    })
                                 }).done(function(resp) {
                                     if (resp.status === 'success') {
                                     } else {
