@@ -21,7 +21,8 @@ def new_public_project(email):
     # In line import to prevent circular importing
     from website.models import Node
 
-    node = Node(email.data['nid'])
+    node = Node.load(email.data['nid'])
+
     if not node:
         return False
     public = email.find_same_email_sent_to_same_user()
@@ -40,7 +41,7 @@ def welcome_osf4m(email):
     from website.files.models import OsfStorageFile
     if email.user.date_last_login > datetime.utcnow() - timedelta(days=12):
         return False
-    upload = OsfStorageFile(email.data['fid'])
+    upload = OsfStorageFile.load(email.data['fid'])
     if upload:
         email.data['downloads'] = upload.get_download_count()
     else:

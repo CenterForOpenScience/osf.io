@@ -302,6 +302,7 @@ class TestUserMerging(base.OsfTestCase):
             'suffix',
             'timezone',
             'username',
+            'mailing_lists',
             'verification_key',
             'contributor_added_email_records'
         ]

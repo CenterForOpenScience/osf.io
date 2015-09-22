@@ -88,8 +88,6 @@ class TestQueuedMail(OsfTestCase):
         assert_true(mail.send_mail())
 
     def test_welcome_osf4m_callback(self):
-        node = factories.ProjectFactory()
-        file_node = node.get_addon('osfstorage').root_node
         self.user.date_last_login = datetime.utcnow() - timedelta(days=13)
         self.user.save()
         mail = mails.queue_mail(
@@ -98,8 +96,8 @@ class TestQueuedMail(OsfTestCase):
             user=self.user,
             mail=mails.WELCOME_OSF4M,
             fullname=self.user.fullname,
-            conference='Kill\'em conference',
-            fid=file_node._id
+            conference='Buttjamz conference',
+            fid=''
         )
         assert_true(mail.send_mail())
         assert_equal(mail.data['downloads'], 0)
