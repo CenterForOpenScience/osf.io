@@ -105,6 +105,7 @@ MAILCHIMP_GENERAL_LIST = 'Open Science Framework General'
 
 #Triggered emails
 OSF_HELP_LIST = 'Open Science Framework Help'
+WAIT_BETWEEN_MAILS = timedelta(days=7)
 NO_ADDON_WAIT_TIME = timedelta(weeks=8)
 NO_LOGIN_WAIT_TIME = timedelta(weeks=4)
 WELCOME_OSF4M_WAIT_TIME = timedelta(weeks=2)

@@ -6,7 +6,7 @@ from modularodm import Q
 
 from framework.transactions.context import TokuTransaction
 from website.app import init_app
-from website import mails
+from website import mails, settings
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +41,7 @@ def pop_and_verify_mails_for_each_user(user_queue):
         mail = user_emails[0]
         mails_past_week = list(mails.QueuedMail.find(
             Q('user', 'eq', mail.user) &
-            Q('sent_at', 'gt', datetime.utcnow() - timedelta(days=7))
+            Q('sent_at', 'gt', datetime.utcnow() - settings.WAIT_BETWEEN_MAILS)
         ))
         if not len(mails_past_week):
             yield mail

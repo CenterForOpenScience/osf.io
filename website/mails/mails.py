@@ -158,7 +158,9 @@ class QueuedMail(StoredObject):
     to_addr = fields.StringField()
     send_at = fields.DateTimeField()
     email_type = fields.StringField()
-    data = fields.DictionaryField()
+    data = fields.DictionaryField(default={
+        'osf_url': settings.DOMAIN
+    })
     sent_at = fields.DateTimeField(index=True)
 
     def send_mail(self):

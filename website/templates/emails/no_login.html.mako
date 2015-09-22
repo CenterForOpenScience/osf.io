@@ -24,5 +24,5 @@
 </%def>
 <%def name="footer()">
     <br>
-    The <a href="http://osf.io">Open Science Framework</a> is provided as a free, open-source service from the <a href="http://cos.io/">Center for Open Science</a>.
+    The <a href="${osf_url}">Open Science Framework</a> is provided as a free, open-source service from the <a href="http://cos.io/">Center for Open Science</a>.
 </%def>
