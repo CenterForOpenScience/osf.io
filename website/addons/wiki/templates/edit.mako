@@ -84,13 +84,12 @@
                                     % if user['can_edit_wiki_body']:
                                         <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
                                     % endif
-                                    <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
+                                    <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>(Current) ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
                                     % if len(versions) > 1:
-                                        <option value="previous" ${'selected' if version_settings['view'] == 'previous' else ''}>Previous</option>
+                                        % for version in versions[1:]:
+                                            <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>(${version['version']}) ${version['user_fullname']}: ${version['date']}</option>
+                                        % endfor
                                     % endif
-                                    % for version in versions[2:]:
-                                        <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>Version ${version['version']}</option>
-                                    % endfor
                                 </select>
 
                             </div>
@@ -198,13 +197,13 @@
                             <!-- Version Picker -->
                             <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
                               <select class="form-control" data-bind="value: compareVersion" id="compareVersionSelect">
-                                  <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
+                                  <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>(Current) ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
                                   % if len(versions) > 1:
-                                      <option value="previous" ${'selected' if version_settings['compare'] == 'previous' else ''}>Previous</option>
+                                      % for version in versions[1:]:
+                                          <option value="${version['version']}" ${'selected' if version_settings['compare'] == version['version'] else ''}>(${version['version']}) ${version['user_fullname']}: ${version['date']}</option>
+                                      % endfor
                                   % endif
-                                  % for version in versions[2:]:
-                                      <option value="${version['version']}" ${'selected' if version_settings['compare'] == version['version'] else ''}>Version ${version['version']}</option>
-                                  % endfor
+
                               </select></span>
 
                           </div>
