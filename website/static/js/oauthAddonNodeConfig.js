@@ -39,10 +39,6 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.loadedEmails = ko.observable(false);
         // externalAccounts
         self.accounts = ko.observableArray();
-        // List of contributor emails as a comma-separated values
-        self.emailList = ko.pureComputed(function() {
-            return self.emails().join([', ']);
-        });
         self.selectedFolderType = ko.pureComputed(function() {
             var userHasAuth = self.userHasAuth();
             var selected = self.selected();
@@ -198,7 +194,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
 });
 
 OauthAddonFolderPickerViewModel.prototype.connectExistingAccount = function(account_id) {
-     var self = this;
+    var self = this;
 
     $osf.putJSON(
         self.urls().importAuth, {
