@@ -36,7 +36,7 @@ class NodeAttributesSerializer(AttributesSerializer):
     registration = ser.BooleanField(read_only=True, source='is_registration')
     collection = ser.BooleanField(read_only=True, source='is_folder')
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
-    tags = ser.ListField(child=NodeTagField(), required=False)
+    tags = ser.ListField(child=NodeTagField(), read_only=True, required=False)
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
