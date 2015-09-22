@@ -37,8 +37,7 @@ class TestApiBaseViews(ApiTestCase):
                         assert_in(cls, view.permission_classes, "{0} lacks the appropriate permission classes".format(name))
                         for key in ['read', 'write']:                            
                             scopes = getattr(view, 'required_{}_scopes'.format(key), None)
-                            assert_is_not_none(scopes)
-                            assert_not_equal(scopes, [])
+                            assert_true(bool(scopes))
                             for scope in scopes:
                                 assert_is_not_none(scope)                        
 

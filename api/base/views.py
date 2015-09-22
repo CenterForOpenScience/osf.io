@@ -84,16 +84,16 @@ def root(request, format=None):
 class OsfAPIViewMeta(type):
     """Metaclass to ensure a base level of permissions are applied to all of our views
     """
-    def __new__(cls, name, bases, attributes):
+    def __init__(self, *args, **kwargs):
         permission_classes = set((
             drf_permissions.IsAuthenticatedOrReadOnly,
             base_permissions.TokenHasScope,
         ))
-        bases_permission_classes = attributes.get('permission_classes', tuple())
+        bases_permission_classes = getattr(self, 'permission_classes', tuple())
         try:
             iter(bases_permission_classes)
         except TypeError:
             bases_permission_classes = (bases_permission_classes, )
         bases_permission_classes = set(bases_permission_classes)
-        attributes['permission_classes'] = permission_classes | bases_permission_classes
-        return super(OsfAPIViewMeta, cls).__new__(cls, name, bases, attributes)
+        setattr(self, 'permission_classes', permission_classes | bases_permission_classes)
+        return super(OsfAPIViewMeta, self).__init__(*args, **kwargs)
