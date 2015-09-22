@@ -158,9 +158,7 @@ class QueuedMail(StoredObject):
     to_addr = fields.StringField()
     send_at = fields.DateTimeField()
     email_type = fields.StringField()
-    data = fields.DictionaryField(default={
-        'osf_url': settings.DOMAIN
-    })
+    data = fields.DictionaryField()
     sent_at = fields.DateTimeField(index=True)
 
     def send_mail(self):
@@ -177,6 +175,7 @@ class QueuedMail(StoredObject):
             mail_struct['template'],
             subject=mail_struct['subject']
         )
+        self.data['osf_url'] = settings.DOMAIN
         if callback and self.user.osf_mailing_lists.get('Open Science Framework Help'):
             send_mail(self.to_addr, mail, mimetype='html', **(self.data or {}))
             self.sent_at = datetime.utcnow()
