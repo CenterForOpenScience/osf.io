@@ -80,6 +80,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user.
     """
     permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyOrCurrentUser,
         base_permissions.TokenHasScope,
     )

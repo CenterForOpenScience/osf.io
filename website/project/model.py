@@ -1208,7 +1208,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if 'node_license' in saved_fields:
             children = [c for c in self.get_descendants_recursive(
                 include=lambda n: n.node_license == {}
-            )]                    
+            )]
             # this returns generator, that would get unspooled anyways
             if children:
                 Node.bulk_update_search(children)
