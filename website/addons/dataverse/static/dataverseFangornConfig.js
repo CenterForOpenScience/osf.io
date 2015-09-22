@@ -34,25 +34,24 @@ var _dataverseItemButtons = {
             var url = item.data.urls.publish;
             var toPublish = both ? 'Dataverse and dataset' : 'dataset';
             var modalContent = [
-                m('h3', 'Publish this ' + toPublish + '?'),
                 m('p.m-md', both ? 'This dataset cannot be published until ' + item.data.dataverse + ' Dataverse is published. ' : ''),
                 m('p.m-md', 'By publishing this ' + toPublish + ', all content will be made available through the Harvard Dataverse using their internal privacy settings, regardless of your OSF project settings. '),
                 m('p.font-thick.m-md', both ? 'Do you want to publish this Dataverse AND this dataset?' : 'Are you sure you want to publish this dataset?')
             ];
             var modalActions = [
-                m('button.btn.btn-default.m-sm', {
+                m('button.btn.btn-default', {
                     'onclick': function () {
                         tb.modal.dismiss();
                     }
                 }, 'Cancel'),
-                m('button.btn.btn-primary.m-sm', {
+                m('button.btn.btn-primary', {
                     'onclick': function () {
                         publishDataset();
                     }
                 }, 'Publish ' + toPublish)
             ];
 
-            tb.modal.update(modalContent, modalActions);
+            tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Publish this' + toPublish + '?'));
 
             function publishDataset() {
                 tb.modal.dismiss();
@@ -66,7 +65,7 @@ var _dataverseItemButtons = {
                         m('p.m-md', 'Your content has been published.')
                     ];
                     var modalActions = [
-                        m('button.btn.btn-primary.m-sm', {
+                        m('button.btn.btn-primary', {
                             'onclick': function () {
                                 tb.modal.dismiss();
                             }
@@ -99,7 +98,7 @@ var _dataverseItemButtons = {
                         m('p.m-md', message)
                     ];
                     var modalActions = [
-                        m('button.btn.btn-primary.m-sm', {
+                        m('button.btn.btn-primary', {
                             'onclick': function () {
                                 tb.modal.dismiss();
                             }
