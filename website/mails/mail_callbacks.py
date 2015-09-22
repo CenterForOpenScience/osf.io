@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from website import settings
 
 def no_addon(email):
+    email.data['fullname'] = email.user.fullname
+    email.save()
     return len(email.user.get_addons()) == 0 and email.user.is_registered
 
 def no_login(email):
