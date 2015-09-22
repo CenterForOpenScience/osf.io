@@ -1527,7 +1527,7 @@ var FGItemButtons = {
                         ])
                     );
                 }
-            } else if (item.data.provider && item.children.length !== 0) {
+            } else if (item.data.provider) {
                 rowButtons.push(
                     m.component(FGButton, {
                         onclick: function (event) { _downloadZipEvent.call(tb, event, item); },

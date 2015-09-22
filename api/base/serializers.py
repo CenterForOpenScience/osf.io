@@ -5,12 +5,12 @@ from rest_framework.reverse import reverse
 from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
 
-from api.base.utils import absolute_reverse
-
 from website import settings
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
+from api.base import utils
+from api.base.exceptions import InvalidQueryStringError
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
@@ -82,15 +82,20 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         """
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
 
-        if self.meta:
-            meta = {}
-            for key in self.meta:
-                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
-            self.meta = meta
-
-            return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
-        else:
-            return {'links': {self.link_type: url}}
+        meta = {}
+        for key in self.meta or {}:
+            if key == 'count':
+                show_related_counts = self.context['request'].query_params.get('related_counts', False)
+                if utils.is_truthy(show_related_counts):
+                    meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+                elif utils.is_falsy(show_related_counts):
+                    continue
+                else:
+                    raise InvalidQueryStringError(
+                        detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
+                        parameter='related_counts'
+                    )
+        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
 class LinksField(ser.Field):
@@ -184,7 +189,7 @@ class Link(object):
         for item in kwarg_values:
             if kwarg_values[item] is None:
                 return None
-        return absolute_reverse(
+        return utils.absolute_reverse(
             self.endpoint,
             args=arg_values,
             kwargs=kwarg_values,
