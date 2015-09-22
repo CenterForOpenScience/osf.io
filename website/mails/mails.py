@@ -155,11 +155,11 @@ def queue_mail(to_addr, mail, send_at, user, **context):
 class QueuedMail(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
     user = fields.ForeignField('User')
-    to_addr = fields.StringField(default=None)
-    send_at = fields.DateTimeField(default=None)
-    email_type = fields.StringField(default=None)
-    data = fields.DictionaryField(default=None)
-    sent_at = fields.DateTimeField(index=True, default=None)
+    to_addr = fields.StringField()
+    send_at = fields.DateTimeField()
+    email_type = fields.StringField()
+    data = fields.DictionaryField()
+    sent_at = fields.DateTimeField(index=True)
 
     def send_mail(self):
         """
@@ -183,7 +183,7 @@ class QueuedMail(StoredObject):
             self.__class__.remove_one(self)
             return False
 
-    def find_same_sent_to_same_user(self):
+    def find_same_email_sent_to_same_user(self):
         """
         Queries up for all emails of the same type as self, sent to the same user as self.
         Does not look for queue-up emails.

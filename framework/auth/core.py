@@ -285,6 +285,10 @@ class User(GuidStoredObject, AddonModelMixin):
     #              'expiration': <datetime>}
     # }
 
+    # TODO remove this field once migration (scripts/migration/migrate_mailing_lists_to_mailchimp_fields.py)
+    # has been run. This field is deprecated and replaced with mailchimp_mailing_lists
+    mailing_lists = fields.DictionaryField()
+
     # email lists to which the user has chosen a subscription setting
     mailchimp_mailing_lists = fields.DictionaryField()
     # Format: {

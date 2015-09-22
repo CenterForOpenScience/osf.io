@@ -15,27 +15,36 @@ def main(dry_run=True):
     #find all emails to be sent, pops the top one for each user(to obey the once
     #a week requirement), checks to see if one has been sent this week, and if
     #not send the email, otherwise leave it in the queue
-    queued_emails = list(mails.QueuedMail.find(
+
+    user_queue = {}
+    for email in find_queued_mails_ready_to_be_sent():
+        user_queue.setdefault(email.user._id, []).append(email)
+
+    emails_to_be_sent = pop_and_verify_mails_for_each_user(user_queue)
+
+    for mail in emails_to_be_sent:
+        logger.warn('Email of type {0} sent to {1}'.format(mail.email_type, mail.to_addr))
+        if dry_run:
+            logger.warn('Dry run mode')
+        else:
+            with TokuTransaction():
+                mail.send_mail()
+
+def find_queued_mails_ready_to_be_sent():
+    return list(mails.QueuedMail.find(
         Q('send_at', 'lt', datetime.utcnow()) &
         Q('sent_at', 'eq', None)
     ))
 
-    user_queue = {}
-    for email in queued_emails:
-        user_queue.setdefault(email.user._id, []).append(email)
-
-    for user in user_queue.values():
-        mail = user[0]
+def pop_and_verify_mails_for_each_user(user_queue):
+    for user_emails in user_queue.values():
+        mail = user_emails[0]
         mails_past_week = list(mails.QueuedMail.find(
             Q('user', 'eq', mail.user) &
             Q('sent_at', 'gt', datetime.utcnow() - timedelta(days=7))
         ))
         if not len(mails_past_week):
-            if dry_run:
-                logger.warn('Dry run mode')
-                logger.warn('Email of type {0} sent to {1}'.format(mail.email_type, mail.to_addr))
-            with TokuTransaction():
-                mail.send_mail()
+            yield mail
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv

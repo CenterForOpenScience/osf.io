@@ -46,8 +46,9 @@
                     <tbody>
                         <tr>
                             <td style="border-collapse: collapse;">
-                                <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2015 Center For Open Science, All rights reserved. </p>
-                                ${footer()}
+                                <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2015 Center For Open Science, All rights reserved.
+                                ${self.footer()}
+                                </p>
                             </td>
                         </tr>
                     </tbody>

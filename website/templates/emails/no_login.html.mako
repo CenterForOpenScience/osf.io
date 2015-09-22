@@ -4,7 +4,7 @@
     <div style="margin: 40px;">
         <br>
         Hello ${fullname},
-        <br>
+        <br><br>
         We’ve noticed it’s been awhile since you used the Open Science Framework (OSF). We are constantly adding and improving features, so we thought it might be time to check in with you.
         Most researchers begin using the OSF by creating a project to organize their files and notes. Projects are equipped with powerful features to help you manage your research:
         <br>
@@ -16,15 +16,13 @@
         <br>
         To get started now, visit your dashboard and click on “Create a project.”
         If you have specific questions, or would like to set up a free training session for you and your colleagues, please do not hesitate to <a href="mailto:support@osf.io">get in touch with us!</a>
-        <br>
+        <br><br>
         Best,
         <br>
         COS Support Team
     </div>
 </%def>
 <%def name="footer()">
-    <div>
-        The <a href="http://osf.io">Open Science Framework</a> is provided as a free, open-source service from the
-        <a href="http://cos.io/">Center for Open Science</a>.
-    </div>
+    <br>
+    The <a href="http://osf.io">Open Science Framework</a> is provided as a free, open-source service from the <a href="http://cos.io/">Center for Open Science</a>.
 </%def>

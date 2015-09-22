@@ -36,7 +36,7 @@
                             <input type="checkbox"
                                    data-bind="checked: subscribed" value="Open Science Framework Help"/>
                             <label data-bind="text: list[1]"></label>
-                            <p class="text-muted" style="padding-left: 15px">Receive up to one help notification per week.</p>
+                            <p class="text-muted" style="padding-left: 15px">Receive helpful tips on how to make the most of the OSF, up to once per week.</p>
                         </div>
                         <div class="p-t-md p-b-md">
                         <button

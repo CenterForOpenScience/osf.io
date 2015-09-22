@@ -3,9 +3,8 @@
 <%def name="content()">
     <div style="margin: 40px;">
         <br>
-        <br>
         Hello ${fullname},
-        <br>
+        <br><br>
         Congratulations on making a public project on the Open Science Framework (OSF)! Now that your project “${project_title}" is public, you’ll be able to take advantage of more OSF features:
         <ul>
             <li><a href="http://osf.io/${nid}/files/">The number of downloads of your files will be automatically logged for you</a></li>
@@ -26,8 +25,6 @@
     </div>
 </%def>
 <%def name="footer()">
-    <div>
-        The <a href="http://osf.io">Open Science Framework</a> is provided as a free, open-source service from the
-        <a href="http://cos.io/">Center for Open Science</a>.
-    </div>
+    <br>
+    The <a href="http://osf.io">Open Science Framework</a> is provided as a free, open-source service from the <a href="http://cos.io/">Center for Open Science</a>.
 </%def>

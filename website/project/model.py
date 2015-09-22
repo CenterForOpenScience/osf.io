@@ -2536,7 +2536,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return contributor
 
     def set_privacy(self, permissions, auth=None, log=True, save=True, skip_mail=False):
-        """Set the permissions for this node.
+        """Set the permissions for this node. Also, based on skip_mail, queues an email to user about abilities of
+            public projects.
 
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth information including user, API key.
@@ -2552,15 +2553,19 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
             if auth and not skip_mail:
-                mails.queue_mail(
-                    to_addr=auth.user.username,
-                    mail=mails.NEW_PUBLIC_PROJECT,
-                    send_at=datetime.datetime.utcnow() + settings.NEW_PUBLIC_PROJECT_WAIT_TIME,
-                    user=auth.user,
-                    nid=self._id,
-                    fullname=auth.user.fullname,
-                    project_title=self.title
-                )
+                sent_mail = list(mails.QueuedMail.find(Q('user', 'eq', auth.user) &
+                                                       Q('sent_at', 'ne', None) &
+                                                       Q('email_type', 'eq', 'new_public_project')))
+                if not len(sent_mail):
+                    mails.queue_mail(
+                        to_addr=auth.user.username,
+                        mail=mails.NEW_PUBLIC_PROJECT,
+                        send_at=datetime.datetime.utcnow() + settings.NEW_PUBLIC_PROJECT_WAIT_TIME,
+                        user=auth.user,
+                        nid=self._id,
+                        fullname=auth.user.fullname,
+                        project_title=self.title
+                    )
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:

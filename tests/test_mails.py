@@ -99,7 +99,6 @@ class TestQueuedMail(OsfTestCase):
             mail=mails.WELCOME_OSF4M,
             fullname=self.user.fullname,
             conference='Kill\'em conference',
-            presentation='presentation',
             fid=file_node._id
         )
         assert_true(mail.send_mail())
@@ -114,6 +113,6 @@ class TestQueuedMail(OsfTestCase):
             mail=mails.NO_ADDON,
             fullname=user.fullname
         )
-        assert_equal(len(mail.find_same_sent_to_same_user()), 0)
+        assert_equal(len(mail.find_same_email_sent_to_same_user()), 0)
         mail.send_mail()
-        assert_equal(len(mail.find_same_sent_to_same_user()), 1)
+        assert_equal(len(mail.find_same_email_sent_to_same_user()), 1)

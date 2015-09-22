@@ -136,7 +136,6 @@ def add_poster_by_email(conference, message):
             user=user,
             conference=conference.name,
             fullname=user.fullname,
-            presentation='presentation',
             fid=root_id
         )
 

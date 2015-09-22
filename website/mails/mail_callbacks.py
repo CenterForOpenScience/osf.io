@@ -2,8 +2,6 @@
 from datetime import datetime, timedelta
 
 from website import settings
-from modularodm import Q
-from modularodm.exceptions import NoResultsFound, MultipleResultsFound
 
 def no_addon(email):
     return len(email.user.get_addons()) == 0 and email.user.is_registered
@@ -22,14 +20,12 @@ def new_public_project(email):
 
     # In line import to prevent circular importing
     from website.models import Node
-    try:
-        node = Node.find_one(Q('_id', 'eq', email.data['nid']))
-    except (NoResultsFound, MultipleResultsFound):
+
+    node = Node(email.data['nid'])
+    if not node:
         return False
-    public = email.find_same_sent()
-    if node.is_public and not len(public):
-        return True
-    return False
+    public = email.find_same_email_sent_to_same_user()
+    return node.is_public and not len(public)
 
 def welcome_osf4m(email):
     """ Callback has two functions. First is to make sure that the user has not
@@ -41,17 +37,13 @@ def welcome_osf4m(email):
     :return: boolean based on whether the email should be sent
     """
     # In line import to prevent circular importing
-    from website.addons.osfstorage.model import OsfStorageFileNode
+    from website.files.models import OsfStorageFile
     if email.user.date_last_login > datetime.utcnow() - timedelta(days=12):
         return False
-    try:
-        upload = OsfStorageFileNode.find_one(Q('_id', 'eq', email.data['fid']))
-        all_files = list(OsfStorageFileNode.find(Q('node_settings', 'eq', upload.node_settings)))
+    upload = OsfStorageFile(email.data['fid'])
+    if upload:
+        email.data['downloads'] = upload.get_download_count()
+    else:
         email.data['downloads'] = 0
-        for file_ in all_files:
-            email.data['downloads'] += file_.get_download_count() or 0
-    except (NoResultsFound, MultipleResultsFound):
-        email.data['downloads'] = 0
-        pass
     email.save()
     return True
