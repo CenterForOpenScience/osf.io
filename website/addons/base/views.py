@@ -1,5 +1,4 @@
 import os
-import json
 import uuid
 import httplib
 import functools
@@ -13,6 +12,7 @@ from modularodm.exceptions import NoResultsFound
 from framework import sentry
 from framework.auth import cas
 from framework.auth import Auth
+from framework.auth import oauth_scopes
 from framework.routing import json_renderer
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
@@ -91,13 +91,25 @@ permission_map = {
 }
 
 
-def check_access(node, auth, action):
+def check_access(node, auth, action, cas_resp):
     """Verify that user can perform requested action on resource. Raise appropriate
     error code if action cannot proceed.
     """
     permission = permission_map.get(action, None)
     if permission is None:
         raise HTTPError(httplib.BAD_REQUEST)
+
+    if cas_resp:
+        if permission == 'read':
+            if node.is_public:
+                return True
+            required_scope = oauth_scopes.CoreScopes.NODE_FILE_READ
+        else:
+            required_scope = oauth_scopes.CoreScopes.NODE_FILE_WRITE
+        if not cas_resp.authenticated \
+           or required_scope not in oauth_scopes.normalize_scopes(cas_resp.attributes['accessTokenScope']):
+            raise HTTPError(httplib.FORBIDDEN)
+
     if permission == 'read' and node.can_view(auth):
         return True
     if permission == 'write' and node.can_edit(auth):
@@ -152,7 +164,8 @@ restrict_waterbutler = restrict_addrs(*settings.WATERBUTLER_ADDRS)
 @collect_auth
 @restrict_waterbutler
 def get_auth(auth, **kwargs):
-    if not auth.user and not auth.private_key:
+    cas_resp = None
+    if not auth.user:
         # Central Authentication Server OAuth Bearer Token
         authorization = request.headers.get('Authorization')
         if authorization and authorization.startswith('Bearer '):
@@ -170,9 +183,6 @@ def get_auth(auth, **kwargs):
         if not auth.user:
             auth.user = User.from_cookie(request.args.get('cookie'))
 
-        if not auth.private_key:
-            auth.private_key = request.args.get('view_only')
-
     try:
         action = request.args['action']
         node_id = request.args['nid']
@@ -184,7 +194,7 @@ def get_auth(auth, **kwargs):
     if not node:
         raise HTTPError(httplib.NOT_FOUND)
 
-    check_access(node, auth, action)
+    check_access(node, auth, action, cas_resp)
 
     provider_settings = node.get_addon(provider_name)
     if not provider_settings:
@@ -539,7 +549,7 @@ def addon_view_file(auth, node, file_node, version):
         'sharejs_uuid': sharejs_uuid,
         'provider': file_node.provider,
         'materialized_path': file_node.materialized_path,
-        'extra': json.dumps(version.metadata.get('extra', {})),
+        'extra': version.metadata.get('extra', {}),
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
     })

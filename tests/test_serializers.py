@@ -28,7 +28,7 @@ class TestNodeSerializers(OsfTestCase):
     def test_get_summary_private_node_should_include_id_and_primary_boolean_reg_and_fork(self):
         user = UserFactory()
         # user cannot see this node
-        node = ProjectFactory(public=False)
+        node = ProjectFactory(is_public=False)
         result = _get_summary(
             node, auth=Auth(user),
             rescale_ratio=None,
@@ -53,7 +53,7 @@ class TestNodeSerializers(OsfTestCase):
     def test_get_summary_private_registration_should_include_is_registration(self):
         user = UserFactory()
         # non-contributor cannot see private registration of public project
-        node = ProjectFactory(public=True)
+        node = ProjectFactory(is_public=True)
         reg = RegistrationFactory(project=node, user=node.creator)
         res = _get_summary(reg, auth=Auth(user), rescale_ratio=None)
 
@@ -91,7 +91,7 @@ class TestNodeSerializers(OsfTestCase):
     def test_get_summary_private_fork_should_include_is_fork(self):
         user = UserFactory()
         # non-contributor cannot see private fork of public project
-        node = ProjectFactory(public=True)
+        node = ProjectFactory(is_public=True)
         consolidated_auth = Auth(user=node.creator)
         fork = node.fork_node(consolidated_auth)
 
@@ -107,7 +107,7 @@ class TestNodeSerializers(OsfTestCase):
     def test_get_summary_private_fork_private_project_should_include_is_fork(self):
         # contributor on a private project
         user = UserFactory()
-        node = ProjectFactory(public=False)
+        node = ProjectFactory(is_public=False)
         node.add_contributor(user)
 
         # contributor cannot see private fork of this project

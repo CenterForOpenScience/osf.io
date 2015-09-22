@@ -44,7 +44,7 @@ class OSFBasicAuthentication(BasicAuthentication):
         """
         user = get_user(email=userid, password=password)
 
-        if userid and user is None:
+        if userid and not user:
             raise exceptions.AuthenticationFailed(_('Invalid username/password.'))
         elif userid is None and password is None:
             raise exceptions.NotAuthenticated()
@@ -69,19 +69,19 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
 
         # Found a token; query CAS for the associated user id
         try:
-            resp = client.profile(auth_token)
+            cas_auth_response = client.profile(auth_token)
         except cas.CasHTTPError:
             raise exceptions.NotAuthenticated('User provided an invalid OAuth2 access token')
 
-        if resp.authenticated is False:
+        if cas_auth_response.authenticated is False:
             raise exceptions.NotAuthenticated('CAS server failed to authenticate this token')
 
-        user_id = resp.user
+        user_id = cas_auth_response.user
         user = User.load(user_id)
         if user is None:
             raise exceptions.AuthenticationFailed("Could not find the user associated with this token")
 
-        return user, auth_token
+        return user, cas_auth_response
 
     def authenticate_header(self, request):
         return ""

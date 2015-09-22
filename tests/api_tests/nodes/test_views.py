@@ -182,7 +182,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_in(project._id, ids)
 
     def test_filtering_tags(self):
-        tag1, tag2 = fake.word(), fake.word()
+        tag1, tag2 = 'tag1', 'tag2'
         self.project_one.add_tag(tag1, Auth(self.project_one.creator), save=False)
         self.project_one.add_tag(tag2, Auth(self.project_one.creator), save=False)
         self.project_one.save()
