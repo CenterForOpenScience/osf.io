@@ -4,7 +4,6 @@ from rest_framework import serializers as ser
 from website.models import ApiOAuth2Application
 
 from api.base.exceptions import Conflict
-from api.base.utils import enforce_type_and_id_and_pop_attributes
 from api.base.serializers import JSONAPISerializer, LinksField
 
 
@@ -61,14 +60,11 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def create(self, validated_data):
-        validated_data.update(validated_data.pop('attributes', {}))
         instance = ApiOAuth2Application(**validated_data)
         instance.save()
         return instance
 
     def update(self, instance, validated_data):
-        validated_data = enforce_type_and_id_and_pop_attributes(validated_data)
-
         assert isinstance(instance, ApiOAuth2Application), 'instance must be an ApiOAuth2Application'
         for attr, value in validated_data.iteritems():
             setattr(instance, attr, value)

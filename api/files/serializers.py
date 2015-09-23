@@ -9,7 +9,7 @@ from website.files.models import FileNode
 from api.base.exceptions import Conflict
 from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
 from api.base.serializers import JSONAPIHyperlinkedIdentityField
-from api.base.utils import absolute_reverse, enforce_type_and_id_and_pop_attributes
+from api.base.utils import absolute_reverse
 from api.base.serializers import Link, JSONAPISerializer, LinksField
 
 class CheckoutField(JSONAPIHyperlinkedIdentityField):
@@ -96,9 +96,6 @@ class FileSerializer(JSONAPISerializer):
         return None
 
     def update(self, instance, validated_data):
-
-        validated_data = enforce_type_and_id_and_pop_attributes(validated_data)
-
         assert isinstance(instance, FileNode), 'Instance must be a FileNode'
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

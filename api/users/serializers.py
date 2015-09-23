@@ -3,7 +3,6 @@ from rest_framework import serializers as ser
 from website.models import User
 
 from api.base.exceptions import Conflict
-from api.base.utils import enforce_type_and_id_and_pop_attributes
 from api.base.serializers import (
     JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 )
@@ -57,8 +56,6 @@ class UserSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def update(self, instance, validated_data):
-        validated_data = enforce_type_and_id_and_pop_attributes(validated_data)
-
         assert isinstance(instance, User), 'instance must be a User'
         for attr, value in validated_data.items():
             if 'social' == attr:

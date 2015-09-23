@@ -9,7 +9,6 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
-from api.base.utils import enforce_type_and_id_and_pop_attributes
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink
 
@@ -119,7 +118,6 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     def create(self, validated_data):
-        validated_data.update(validated_data.pop('attributes', {}))
         node = Node(**validated_data)
         node.save()
         return node
@@ -128,8 +126,6 @@ class NodeSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        validated_data = enforce_type_and_id_and_pop_attributes(validated_data)
-
         assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
         tags = validated_data.get('tags')
@@ -219,7 +215,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def create(self, validated_data):
-        validated_data.update(validated_data.pop('attributes', {}))
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
         contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
@@ -246,9 +241,6 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         return value
 
     def update(self, instance, validated_data):
-
-        validated_data = enforce_type_and_id_and_pop_attributes(validated_data)
-
         contributor = instance
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
@@ -306,7 +298,6 @@ class NodeLinksSerializer(JSONAPISerializer):
         return pointer_node.absolute_url
 
     def create(self, validated_data):
-        validated_data.update(validated_data.pop('attributes', {}))
         request = self.context['request']
         user = request.user
         auth = Auth(user)
