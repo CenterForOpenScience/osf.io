@@ -137,7 +137,7 @@ describe('addContributors', () => {
 
            describe('Visible', () => {
                describe('addAllVisible', () => {
-                   it('should be false', () => {
+                   it('should return false with no results addable', () => {
                        vm.contributors([
                            'a1234'
                        ]);
@@ -163,7 +163,7 @@ describe('addContributors', () => {
                        assert.isFalse(vm.addAllVisible());
                    });
 
-                   it('should be true', (done) => {
+                   it('should return true with one result addable', (done) => {
                        vm.selection([
                            {
                                id: 'b1234'
@@ -175,7 +175,7 @@ describe('addContributors', () => {
                });
 
                describe('removeAllVisible', () => {
-                   it('should be true', () => {
+                   it('should return true with one user in selection list', () => {
                        vm.selection([
                            {
                                id: 'b1234'
@@ -183,7 +183,7 @@ describe('addContributors', () => {
                        ]);
                        assert.isTrue(vm.removeAllVisible());
                    });
-                   it('should be false', () => {
+                   it('should return false with no users in selection', () => {
                        vm.selection([]);
                        assert.isFalse(vm.removeAllVisible());
                    });
