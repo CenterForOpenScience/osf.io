@@ -10,7 +10,6 @@ from werkzeug.contrib.fixers import ProxyFix
 import framework
 from framework.flask import app, add_handlers
 from framework.logging import logger
-from framework.mongo import set_up_storage
 from framework.addons.utils import render_addon_capabilities
 from framework.sentry import sentry
 from framework.mongo import handlers as mongo_handlers
@@ -82,7 +81,7 @@ def build_log_templates(settings):
     with open(settings.BUILT_TEMPLATES, 'w') as build_fp:
         build_fp.write('## Built templates file. DO NOT MODIFY.\n')
         with open(settings.CORE_TEMPLATES) as core_fp:
-            # Exclude comments in core templates mako file
+            # Exclude comments in core templates mako filew
             content = '\n'.join([line.rstrip() for line in
                 core_fp.readlines() if not line.strip().startswith('##')])
             build_fp.write(content)
@@ -91,6 +90,7 @@ def build_log_templates(settings):
 
 
 def do_set_backends(settings):
+    from framework.mongo import set_up_storage
     logger.debug('Setting storage backends')
     set_up_storage(
         website.models.MODELS,
