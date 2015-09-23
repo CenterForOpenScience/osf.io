@@ -258,10 +258,10 @@ var FileViewPage = {
                             button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', '600px').css('width', '450px');
                         });
                         if (!window.contextVars.node.isPublic) {
-                            $('#sharebutton').attr('disabled', 'disabled');
+                            $('#sharebutton').addClass('disabled');
                         }
                         else {
-                            $('#sharebutton').removeAttr('disabled', 'disabled');
+                            $('#sharebutton').removeClass('disabled');
                         }
                     }
                 }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"/>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share')
