@@ -854,10 +854,8 @@ def private_link_table(node, **kwargs):
 
 @collect_auth
 @must_be_valid_project
+@must_have_permission(ADMIN)
 def get_editable_children(auth, node, **kwargs):
-
-    if not node.has_permission(auth.user, 'admin'):
-        return
 
     children = _get_children(node, auth)
 
