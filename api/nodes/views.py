@@ -180,27 +180,29 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     ###Children
 
-    **TODO**
+    List of nodes that are children of this node.  New child nodes may be added through this endpoint.
 
     ###Contributors
 
-    **TODO**
+    List of users who are contributors to this node.  Contributors may have "read", "write", or "admin" permissions.  A
+    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
 
     ###Files
 
-    **TODO**
+    **TODO: import Spiel from NodeFilesList**
 
     ###Node Links
 
-    **TODO**
+    **TODO: import Spiel from NodeLinksList**
 
     ###Parent
 
-    **TODO**
+    If this node is a child node of another node, the parent's canonical endpoint will be available in the
+    `parent.links.self.href` key.
 
     ###Registrations
 
-    **TODO**
+    **TODO: import Spiel from NodeRegistrationsList**
 
     ##Links
 
@@ -277,12 +279,53 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
 
 class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
-    """Contributors (users) for a node.
+    """Contributors (users) for a node. *Writeable*.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
     have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
     contributors. From a permissions standpoint, both are the same, but bibliographic contributors
     are included in citations, while non-bibliographic contributors are not included in citations.
+
+    ##Node Contributor Attributes
+
+    **TODO: import from NodeContributorDetail**
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+
+    ##Actions
+
+    ###Adding Contributors
+
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "id":            "8xp2s",               # mandatory
+                         "bibliographic": true|false,            # optional
+                         "permissions":   "read"|"write"|"admin" # optional
+                       }
+        Success:       201 CREATED + node contributor representation
+
+    Contributors can be added to nodes are by issuing a POST request to this endpoint.  The `id` param is mandatory and
+    must be a valid user id.  `bibliographic` is a boolean and defaults to `true`.  `permissions` must be a [valid OSF
+    permission key](/v2/#osf-permission-keys) and defaults to `"write"`. All other fields not listed above will be
+    ignored.  If the request is successful the API will return a 201 response with the respresentation of the new node
+    contributor in the body.  For the new node contributor's canonical URL, see the `links.self` field of the response.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    NodeContributors may be filtered by their `full_name`, `given_name`, `moddle_name`, `family_name`, `id`,
+    `bibliographic`, or `permissions` attributes.  The `description`, and `category` are string fields and will be filtered
+    using simple substring matching.  `bibliographic` is a boolean, and can be filtered using truthy values,
+    such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in the query will cause the match to fail
+    regardless.
+
     """
     permission_classes = (
         AdminOrPublic,
@@ -313,9 +356,62 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
 
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
-    """Detail of a contributor for a node.
+    """Detail of a contributor for a node. *Writeable*.
 
     View, remove from, and change bibliographic and permissions for a given contributor on a given node.
+
+    ##Attributes
+
+        name           type     description
+        ---------------------------------------------------------------------------------
+        bibliographic  boolean  Whether the user will be included in citations for this node or not
+        permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
+
+    All other attributes are inherited from the User object.
+
+    ##Relationships
+
+    ###Nodes
+
+    This endpoint shows the list of all nodes the user contributes to.
+
+    ##Links
+
+    **TODO: this is buggy, will probably change**
+
+    ##Actions
+
+    ###Update Contributor
+
+        Method:        PUT / PATCH
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "bibiliographic": true|false, # optional
+                         "permission":     "read"|"write"|"admin" # optional
+                       }
+        Success:       200 OK + node representation
+
+    To update a contributor's bibliographic preferences or access permissions for the node, issue a PUT request to the
+    `self` link. Since this endpoint has no mandatory attributes, PUT and PATCH are functionally the same.  If the given
+    user is not already in the contributor list, a 404 Not Found error will be returned.  A node must always have at
+    least one admin, and any attempt to downgrade the permissions of a sole admin will result in a 400 Bad Request
+    error.
+
+    ###Remove Contributor
+
+        Method:        DELETE
+        URL:           links.self
+        Query Params:  <none>
+        Success:       204 No Content
+
+    To remove a contributor from a node, issue a DELETE request to the `self` link.  Attempting to remove the only admin
+    from a node will result in a 400 Bad Request response.
+
+    ##Query Params
+
+    *none*
+
     """
     permission_classes = (
         ContributorDetailPermissions,
@@ -359,6 +455,9 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
     created for the current node.
+
+    **TODO: registrations via api are still a WIP**
+
      """
     permission_classes = (
         ContributorOrPublic,
@@ -385,12 +484,38 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
 
 class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
-    """Children of the current node.
+    """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
     nodes. Currently, if there is a discrepancy between the children count and the number of children returned, it
     probably indicates private nodes that aren't being returned. That discrepancy should disappear before everything
     is finalized.
+
+    ##Node Attributes
+
+    **TODO: import from NodeDetail**
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+
+    ##Actions
+
+    ###Create Child Node
+
+    **TODO: import from NodeDetail**
+
+    To create a child node of the current node, issue a POST request to this endpoint.  The request and response format
+    are the same as for creating an unparented node via the [node list endpoint](/v2/nodes/).
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    **TODO: import from NodeDetail**
+
     """
     permission_classes = (
         ContributorOrPublic,

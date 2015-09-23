@@ -95,6 +95,11 @@ def root(request, format=None):
     PUT requests require all mandatory attributes to be set, even if their value is unchanged.  PATCH requests may omit
     mandatory attributes, whose value will be unchaged.
 
+
+    ###OSF Permission keys
+
+    Valid OSF permission keys include "read", "write", and "admin".
+
     """
     if request.user and not request.user.is_anonymous():
         user = request.user
