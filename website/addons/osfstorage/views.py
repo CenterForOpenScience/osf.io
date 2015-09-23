@@ -95,6 +95,9 @@ def osfstorage_copy_hook(source, destination, name=None, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
+    if source.is_folder:
+        handle_folder_move(source, destination)
+
     old_parent = source.node
     file_node = source.move_under(destination, name=name).serialized(), httplib.OK
     handle_move(file_node=source, source_node=old_parent, dest_node=destination.node)
@@ -258,5 +261,14 @@ def handle_copy(source_file_node, new_file_node, source_node, dest_node):
 def handle_move(file_node, source_node, dest_node):
     if not file_util.is_indexed(file_node):
         return
-
     source_node.move_search_file(file_node, source_node, dest_node)
+
+
+def handle_folder_move(source, dest):
+    source_node = source.node
+    dest_node = dest.node
+    for child_node in source.children:
+        if child_node.is_folder:
+            handle_folder_move(child_node, dest)
+        else:
+            handle_move(child_node, source_node, dest_node)
