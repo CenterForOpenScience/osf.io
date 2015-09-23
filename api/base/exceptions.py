@@ -1,7 +1,7 @@
 import httplib as http
 
 from rest_framework import status
-from rest_framework.exceptions import APIException, ParseError
+from rest_framework.exceptions import APIException
 
 def json_api_exception_handler(exc, context):
     """ Custom exception handler that returns errors object as an array """
@@ -47,11 +47,9 @@ class JSONAPIException(APIException):
     """Inherits from the base DRF API exception and adds extra metadata to support JSONAPI error objects
 
     :param str detail: a human-readable explanation specific to this occurrence of the problem
-    param dict source: an object containing references to the source of the error, optionally including
-    any of the following members:
-    :parm str dict.pointer: a JSON Pointer [RFC6901] to the associated entity in the request document
-    e.g. "/data" for a primary data object, or "/data/attributes/title" for a specific attribute
-    :param str dict.parameter: a string indicating which URI query parameter caused the error
+    :param dict source: A dictionary containing references to the source of the error.
+        See http://jsonapi.org/format/#error-objects.
+        Example: ``source={'pointer': '/data/attributes/title'}``
     """
     def __init__(self, detail=None, source=None):
         super(JSONAPIException, self).__init__(detail=detail)
@@ -131,3 +129,13 @@ class InvalidFilterFieldError(JSONAPIAttributeException):
         if value and not detail:
             detail = "Value '{}' is not a filterable field.".format(value)
         super(InvalidFilterFieldError, self).__init__(detail=detail, parameter=parameter)
+
+
+class UnconfirmedAccountError(APIException):
+    status_code = 400
+    default_detail = 'Please confirm your account before using the API.'
+
+
+class DeactivatedAccountError(APIException):
+    status_code = 400
+    default_detail = 'Making API requests with credentials associated with a deactivated account is not allowed.'
