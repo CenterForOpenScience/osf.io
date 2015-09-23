@@ -601,14 +601,14 @@ class TestDeactivatedUser(ApiTestCase):
         super(TestDeactivatedUser, self).setUp()
         self.user = AuthUserFactory()
 
-    def test_deactivated_user_returns_410_response(self):
+    def test_deactivated_user_returns_400_response(self):
         url = '/{}users/{}/'.format(API_BASE, self.user._id)
         res = self.app.get(url, auth=self.user.auth , expect_errors=False)
         assert_equal(res.status_code, 200)
         self.user.is_disabled = True
         self.user.save()
         res = self.app.get(url, auth=self.user.auth , expect_errors=True)
-        assert_equal(res.status_code, 410)
+        assert_equal(res.status_code, 400)
 
 class TestExceptionFormatting(ApiTestCase):
     def setUp(self):
@@ -639,9 +639,8 @@ class TestExceptionFormatting(ApiTestCase):
         res = self.app.put_json_api(self.url, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert('fullname' in res.json['errors'][0]['meta']['field'])
-        assert('This field is required.' in res.json['errors'][0]['detail'])
-
+        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/fullname'})
+        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
     def test_updates_user_unauthorized(self):
         res = self.app.put_json_api(self.url, expect_errors=True)
