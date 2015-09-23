@@ -24,28 +24,6 @@ class NodeTagField(ser.Field):
         return data
 
 
-class NodeAttributesSerializer(AttributesSerializer):
-    category_choices = Node.CATEGORY_MAP.keys()
-    category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
-
-    title = ser.CharField(required=True)
-    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
-    date_created = ser.DateTimeField(read_only=True)
-    date_modified = ser.DateTimeField(read_only=True)
-    registration = ser.BooleanField(read_only=True, source='is_registration')
-    collection = ser.BooleanField(read_only=True, source='is_folder')
-    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
-    tags = ser.ListField(child=NodeTagField(), read_only=True, required=False)
-    public = ser.BooleanField(source='is_public', read_only=True,
-                              help_text='Nodes that are made public will give read-only access '
-                                        'to everyone. Private nodes require explicit read '
-                                        'permission. Write and admin access are the same for '
-                                        'public and private nodes. Administrators on a parent '
-                                        'node have implicit read permissions for all child nodes',
-                              )
-
-
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
@@ -62,7 +40,25 @@ class NodeSerializer(JSONAPISerializer):
     id = ser.CharField(read_only=True, source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
 
-    attributes = NodeAttributesSerializer()
+    category_choices = Node.CATEGORY_MAP.keys()
+    category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
+
+    title = ser.CharField(required=True)
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
+    category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
+    date_created = ser.DateTimeField(read_only=True)
+    date_modified = ser.DateTimeField(read_only=True)
+    registration = ser.BooleanField(read_only=True, source='is_registration')
+    collection = ser.BooleanField(read_only=True, source='is_folder')
+    dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
+    tags = ser.ListField(child=NodeTagField(), required=False)
+    public = ser.BooleanField(source='is_public', read_only=True,
+                              help_text='Nodes that are made public will give read-only access '
+                                        'to everyone. Private nodes require explicit read '
+                                        'permission. Write and admin access are the same for '
+                                        'public and private nodes. Administrators on a parent '
+                                        'node have implicit read permissions for all child nodes',
+                              )
 
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
@@ -164,21 +160,6 @@ class NodeDetailSerializer(NodeSerializer):
         return value
 
 
-class NodeContributorAttributesSerializer(AttributesSerializer):
-    fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
-    given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    date_registered = ser.DateTimeField(read_only=True)
-    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
-                                     default=True)
-
-    permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
-                                 default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
-                                 help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
-
-
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
@@ -193,7 +174,19 @@ class NodeContributorsSerializer(JSONAPISerializer):
     ])
     id = ser.CharField(source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
-    attributes = NodeContributorAttributesSerializer()
+    fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
+    given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    date_registered = ser.DateTimeField(read_only=True)
+    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
+                                     default=True)
+
+    permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
+                                 default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
+                                 help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
+
 
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
@@ -286,37 +279,11 @@ class NodeRegistrationSerializer(NodeSerializer):
         raise exceptions.ValidationError('Registrations cannot be modified.')
 
 
-class NodeLinksAttributesSerializer(AttributesSerializer):
-
-    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
-
-    # Overrides AttributesSerializer
-    def get_attribute(self, instance):
-        attribute = {}
-        for field in self.fields:
-            if self.fields[field].write_only:
-                continue
-
-            field_name = self.fields[field].source
-
-            if field_name == 'node._id':
-                field_name = 'node'
-                lookup = getattr(instance, field_name)._id
-            else:
-                lookup = getattr(instance, field_name)
-
-            if lookup is None:
-                attribute[field] = None
-            else:
-                attribute[field] = self.fields[field].to_representation(lookup)
-        return attribute
-
-
 class NodeLinksSerializer(JSONAPISerializer):
 
     id = ser.CharField(read_only=True, source='_id', label='ID')
     type = ser.CharField(write_only=True, required=True)
-    attributes = NodeLinksAttributesSerializer()
+    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
     # include this field in the future.
