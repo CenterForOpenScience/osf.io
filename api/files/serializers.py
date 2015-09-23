@@ -62,7 +62,7 @@ class FileSerializer(JSONAPISerializer):
     ])
     id = ser.CharField(read_only=True, source='_id')
     type = ser.CharField(write_only=True, required=True)
-    checkout = CheckoutField(write_only=True)
+    checkout = CheckoutField()
     name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     kind = ser.CharField(read_only=True, help_text='Either folder or file')
     path = ser.CharField(read_only=True, help_text='The unique path used to reference this object')
