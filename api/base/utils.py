@@ -2,7 +2,7 @@
 
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from rest_framework.exceptions import NotFound, ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 import furl
 
