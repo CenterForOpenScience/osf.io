@@ -65,7 +65,7 @@
                                 <tr>
                                     <td colspan="3">
                                         <form data-bind="submit: addEmail">
-                                        <p>To merge an existing OSF account with this one or to be able to log in under multiple email addresses, add your alternate email address in the field below.</p>
+                                            <p>To merge an existing account with this one or log in with multiple email addresses, add an alternate email address below.</p>
 
                                             <div class="form-group">
                                                 ## email input verification is not supported on safari
@@ -73,7 +73,7 @@
                                             </div>
                                             <input type="submit" value="Add Email" class="btn btn-success">
                                         </form>
-                                       
+
                                         <div class="help-block">
                                             <p data-bind="html: message, attr: {class: messageClass}"></p>
                                         </div>
