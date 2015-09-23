@@ -9,8 +9,16 @@ from api.base.serializers import (
 )
 
 
-class UserAttributesSerializer(AttributesSerializer):
-
+class UserSerializer(JSONAPISerializer):
+    filterable_fields = frozenset([
+        'fullname',
+        'given_name',
+        'middle_names',
+        'family_name',
+        'id'
+    ])
+    id = ser.CharField(read_only=True, source='_id', label='ID')
+    type = ser.CharField(write_only=True, required=True)
     fullname = ser.CharField(required=True, label='Full name', help_text='Display name used in the general user interface')
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
@@ -27,41 +35,6 @@ class UserAttributesSerializer(AttributesSerializer):
     impactStory = DevOnly(ser.CharField(required=False, source='social.impactStory', allow_blank=True, help_text='ImpactStory Account'))
     orcid = DevOnly(ser.CharField(required=False, label='ORCID', source='social.orcid', allow_blank=True, help_text='ORCID'))
     researcherId = DevOnly(ser.CharField(required=False, label='ResearcherID', source='social.researcherId', allow_blank=True, help_text='ResearcherId Account'))
-
-    # Overrides AttributesSerializer
-    def get_attribute(self, instance):
-        attribute = {}
-        for field in self.fields:
-            if self.fields[field].write_only:
-                continue
-
-            field_name = self.fields[field].source
-
-            if 'social' in field_name:
-                soc = field_name.split('.')[1]
-                social = getattr(instance, 'social')
-                lookup = social.get(soc)
-            else:
-                lookup = getattr(instance, field_name)
-
-            if lookup is None:
-                attribute[field] = ""
-            else:
-                attribute[field] = self.fields[field].to_representation(lookup)
-        return attribute
-
-
-class UserSerializer(JSONAPISerializer):
-    filterable_fields = frozenset([
-        'fullname',
-        'given_name',
-        'middle_names',
-        'family_name',
-        'id'
-    ])
-    id = ser.CharField(read_only=True, source='_id', label='ID')
-    type = ser.CharField(write_only=True, required=True)
-    attributes = UserAttributesSerializer()
     profile_image_url = DevOnly(ser.SerializerMethodField(required=False, read_only=True))
 
     def get_profile_image_url(self, user):
