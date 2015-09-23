@@ -82,12 +82,9 @@ describe('addContributors', () => {
        var server;
        before(() => {
            server = utils.createServer(sinon, endpoints);
-           console.log(server);
-           console.log('Create server.');
        });
        after(() => {
            server.restore();
-           console.log('server restored');
        });
 
        describe('ViewModel', () => {
@@ -138,25 +135,62 @@ describe('addContributors', () => {
                });
            });
 
-           describe('fetchResults', () => {
-               it('should be a list of users', () => {
-                   var added = ['a1234'];
-                   vm.contributors(added);
-                   vm.query('*');
-                   vm.fetchResults()
-                       .always(() => {
-                           console.log(vm.results());
-                       });
+           describe('Visible', () => {
+               describe('addAllVisible', () => {
+                   it('should be false', () => {
+                       vm.contributors([
+                           'a1234'
+                       ]);
+                       vm.results([
+                           {
+                               id: 'a1234'
+                           },
+                           {
+                               id: 'b1234'
+                           },
+                           {
+                               id: 'c1234'
+                           }
+                       ]);
+                       vm.selection([
+                           {
+                               id: 'b1234'
+                           },
+                           {
+                               id: 'c1234'
+                           }
+                       ]);
+                       assert.isFalse(vm.addAllVisible());
+                   });
+
+                   it('should be true', (done) => {
+                       vm.selection([
+                           {
+                               id: 'b1234'
+                           }
+                       ]);
+                       assert.isTrue(vm.addAllVisible());
+                       done();
+                   });
+               });
+
+               describe('removeAllVisible', () => {
+                   it('should be true', () => {
+                       vm.selection([
+                           {
+                               id: 'b1234'
+                           }
+                       ]);
+                       assert.isTrue(vm.removeAllVisible());
+                   });
+                   it('should be false', () => {
+                       vm.selection([]);
+                       assert.isFalse(vm.removeAllVisible());
+                   });
                });
            });
        });
-
-       describe('addAllVisible', () => {
-           //addContributors.ContribAdder.addAllVisible()
-       });
-
-
-    });
+   });
 });
 
 

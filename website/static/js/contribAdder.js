@@ -145,7 +145,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
                     page: self.pageToGet
                 },
                 function(result) {
-                    console.log(result);
                     var contributors = result.users.map(function(userData) {
                         return new Contributor(userData);
                     });
@@ -190,7 +189,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 $.each(result.children || [], function(idx, child) {
                     child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
                 });
-                self.nodes(result.children)
+                self.nodes(result.children);
             }
         );
     },
