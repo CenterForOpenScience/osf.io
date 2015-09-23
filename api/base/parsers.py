@@ -31,3 +31,8 @@ class JSONAPIParser(JSONParser):
 
         else:
             raise JSONAPIException(source={'pointer': '/data'}, detail='This field is required.')
+
+
+class JSONAPIParserForRegularJSON(JSONAPIParser):
+    media_type = 'application/json'
+
