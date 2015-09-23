@@ -67,18 +67,18 @@ class OsfStorageFileNode(FileNode):
         """
         return '/' + self._id + ('' if self.is_file else '/')
 
-    def is_checkedout(self):
-        return True if self.checkout else False
+    def is_checked_out(self):
+        return self.checkout is not None
 
     def delete(self, user=None, parent=None):
-        if self.is_checkedout():
+        if self.is_checked_out():
             raise exceptions.FileNodeorChildCheckedOutError()
-        super(OsfStorageFileNode, self).delete()
+        return super(OsfStorageFileNode, self).delete()
 
     def move_under(self, destination_parent, name=None):
-        if self.is_checkedout():
+        if self.is_checked_out():
             raise exceptions.FileNodeorChildCheckedOutError()
-        super(OsfStorageFileNode, self).move_under(destination_parent, name)
+        return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
     def save(self):
         self.path = ''
@@ -145,11 +145,11 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
 
-    def is_checkedout(self):
+    def is_checked_out(self):
         if self.checkout:
             return True
         for child in self.children:
-            if child.is_checkedout():
+            if child.is_checked_out():
                 return True
         return False
 

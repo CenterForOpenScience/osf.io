@@ -206,14 +206,11 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     if file_node == node_addon.get_root():
         raise HTTPError(httplib.BAD_REQUEST)
 
-    if file_node.checkout is not None:
-        raise HTTPError(httplib.METHOD_NOT_ALLOWED)
-
     try:
         file_node.delete()
 
     except exceptions.FileNodeorChildCheckedOutError:
-        raise HTTPError(httplib.METHOD_NOT_ALLOWED)
+        raise HTTPError(httplib.FORBIDDEN)
 
     return {'status': 'success'}
 

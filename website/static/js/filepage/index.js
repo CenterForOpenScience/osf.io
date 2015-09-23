@@ -35,7 +35,7 @@ var FileViewPage = {
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
                 self.request_done = true;
-                self.file.checkout_user = resp.data.relationships.checkout.links.related ? ((resp.data.relationships.checkout.links.related).split('users/')[1]).replace('/', ''): null;
+                self.file.checkout_user = resp.data.relationships.checkout.links.related ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
                 if ((self.file.checkout_user) && (self.file.checkout_user !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m.trust('<strong>File is checked-out.</strong> This file has been checked-out by a <a href="/' +
                         self.file.checkout_user +'"> collaborator</a>. It needs to be checked back in before any changes can be made. </div>')));
