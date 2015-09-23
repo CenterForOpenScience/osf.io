@@ -35,4 +35,3 @@ class JSONAPIParser(JSONParser):
 
 class JSONAPIParserForRegularJSON(JSONAPIParser):
     media_type = 'application/json'
-
