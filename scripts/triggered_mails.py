@@ -24,6 +24,7 @@ def main(dry_run=True):
                     mail=mails.NO_LOGIN,
                     send_at=datetime.utcnow(),
                     user=user,
+                    fullname=user.fullname,
                 )
 
 def find_inactive_users_with_no_inactivity_email_sent_or_queued():
