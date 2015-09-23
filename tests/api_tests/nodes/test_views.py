@@ -469,7 +469,7 @@ class TestNodeBulkCreate(ApiTestCase):
 
     def test_bulk_create_logged_in(self):
         res = self.app.post_json_api(self.url, [self.public_project, self.private_project], auth=self.user_one.auth)
-        assert_equal(res.status_code, 203)
+        assert_equal(res.status_code, 201)
         assert_equal(len(res.json['data']), 2)
         assert_equal(res.json['data'][0]['attributes']['title'], self.public_project['title'])
         assert_equal(res.json['data'][1]['attributes']['title'], self.private_project['title'])
@@ -1402,7 +1402,6 @@ class TestNodeDelete(NodeCRUDTestCase):
         # Dashboards are a folder, so a 404 is returned
         assert_equal(res.status_code, 404)
 
-class TestNodeContributorList(ApiTestCase):
 
 class TestNodeContributorList(NodeCRUDTestCase):
 
