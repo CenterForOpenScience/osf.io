@@ -86,9 +86,9 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         for key in self.meta or {}:
             if key == 'count':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
-                if not utils.is_truthy(show_related_counts) or utils.is_falsy(show_related_counts):
+                if utils.is_falsy(show_related_counts):
                     continue
-                else:
+                if not utils.is_truthy(show_related_counts):
                     raise InvalidQueryStringError(
                         detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
                         parameter='related_counts'
