@@ -3,17 +3,15 @@ from rest_framework import serializers as ser
 
 from website.models import ApiOAuth2Application
 
-from api.base.exceptions import Conflict
-from api.base.serializers import JSONAPISerializer, LinksField
+from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField
 
 
 class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
     """Serialize data about a registered OAuth2 application"""
-    id = ser.CharField(help_text='The client ID for this application (automatically generated)',
-                       read_only=True,
-                       source='client_id',
-                       label='ID')
-    type = ser.CharField(write_only=True, required=True)
+
+    id = IDField(source='client_id', read_only=True, help_text='The client ID for this application (automatically generated)')
+
+    type = TypeField()
 
     name = ser.CharField(help_text='A short, descriptive name for this application',
                          required=True)
@@ -47,11 +45,6 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'applications'
 
-    def validate_type(self, value):
-        if self.Meta.type_ != value:
-            raise Conflict()
-        return value
-
     links = LinksField({
         'html': 'absolute_url'
     })
@@ -60,14 +53,11 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def create(self, validated_data):
-        validated_data.pop('type')
         instance = ApiOAuth2Application(**validated_data)
         instance.save()
         return instance
 
     def update(self, instance, validated_data):
-        validated_data.pop('type')
-        validated_data.pop('_id')
         assert isinstance(instance, ApiOAuth2Application), 'instance must be an ApiOAuth2Application'
         for attr, value in validated_data.iteritems():
             setattr(instance, attr, value)
@@ -77,11 +67,7 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
 
 class ApiOAuth2ApplicationDetailSerializer(ApiOAuth2ApplicationSerializer):
     """
-    Overrides ApiOAuth2ApplicationSerializer to make id required and validate id.
+    Overrides ApiOAuth2ApplicationSerializer to make id required.
     """
-    id = ser.CharField(source='_id', label='ID', required=True)
 
-    def validate_id(self, value):
-        if self._args[0]._id != value:
-            raise Conflict()
-        return value
+    id = IDField(source='_id', required=True)

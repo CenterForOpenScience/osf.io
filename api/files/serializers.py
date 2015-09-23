@@ -5,12 +5,11 @@ from rest_framework import serializers as ser
 
 from website import settings
 from framework.auth.core import User
-from api.base.exceptions import Conflict
 from website.files.models import FileNode
 from api.base.utils import absolute_reverse
 from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
 from api.base.serializers import JSONAPIHyperlinkedIdentityField
-from api.base.serializers import Link, JSONAPISerializer, LinksField
+from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 
 class CheckoutField(JSONAPIHyperlinkedIdentityField):
 
@@ -60,8 +59,8 @@ class FileSerializer(JSONAPISerializer):
         'provider',
         'last_touched',
     ])
-    id = ser.CharField(read_only=True, source='_id')
-    type = ser.CharField(write_only=True, required=True)
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
     checkout = CheckoutField()
     name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     kind = ser.CharField(read_only=True, help_text='Either folder or file')
@@ -85,19 +84,12 @@ class FileSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'files'
 
-    def validate_type(self, value):
-        if self.Meta.type_ != value:
-            raise Conflict()
-        return value
-
     def get_size(self, obj):
         if obj.versions:
             return obj.versions[-1].size
         return None
 
     def update(self, instance, validated_data):
-        validated_data.pop('_id')
-        validated_data.pop('type')
         assert isinstance(instance, FileNode), 'Instance must be a FileNode'
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -110,14 +102,9 @@ class FileSerializer(JSONAPISerializer):
 
 class FileDetailSerializer(FileSerializer):
     """
-    Overrides FileSerializer to make id required and validate id.
+    Overrides FileSerializer to make id required.
     """
-    id = ser.CharField(source='_id', label='ID', required=True)
-
-    def validate_id(self, value):
-        if self._args[0]._id != value:
-            raise Conflict()
-        return value
+    id = IDField(source='_id', required=True)
 
 
 class FileVersionSerializer(JSONAPISerializer):

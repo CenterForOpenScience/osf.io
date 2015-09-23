@@ -2,7 +2,6 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from framework.auth.core import Auth
-from api.base.exceptions import Conflict
 
 from website.models import Node, User
 from website.exceptions import NodeStateError
@@ -10,7 +9,7 @@ from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
-from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink
+from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField
 
 
 class NodeTagField(ser.Field):
@@ -36,8 +35,8 @@ class NodeSerializer(JSONAPISerializer):
         'category',
     ])
 
-    id = ser.CharField(read_only=True, source='_id', label='ID')
-    type = ser.CharField(write_only=True, required=True)
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
 
     category_choices = Node.CATEGORY_MAP.keys()
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
@@ -83,11 +82,6 @@ class NodeSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'nodes'
 
-    def validate_type(self, value):
-        if self.Meta.type_ != value:
-            raise Conflict()
-        return value
-
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
@@ -118,7 +112,6 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     def create(self, validated_data):
-        validated_data.pop('type')
         node = Node(**validated_data)
         node.save()
         return node
@@ -127,8 +120,6 @@ class NodeSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        validated_data.pop('_id')
-        validated_data.pop('type')
         assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
         tags = validated_data.get('tags')
@@ -149,15 +140,9 @@ class NodeSerializer(JSONAPISerializer):
 
 class NodeDetailSerializer(NodeSerializer):
     """
-    Overrides NodeSerializer to make id required and validate id.
+    Overrides NodeSerializer to make id required.
     """
-    id = ser.CharField(source='_id', label='ID', required=True)
-
-    def validate_id(self, value):
-        if self._args[0]._id != value:
-            raise Conflict()
-        return value
-
+    id = IDField(source='_id', required=True)
 
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
@@ -171,8 +156,10 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'bibliographic',
         'permissions'
     ])
-    id = ser.CharField(source='_id', label='ID')
-    type = ser.CharField(write_only=True, required=True)
+
+    id = IDField(source='_id', required=True)
+    type = TypeField()
+
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
@@ -199,11 +186,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'contributors'
 
-    def validate_type(self, value):
-        if self.Meta.type_ != value:
-            raise Conflict()
-        return value
-
     def absolute_url(self, obj):
         return obj.absolute_url
 
@@ -218,7 +200,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def create(self, validated_data):
-        validated_data.pop('type')
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
         contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
@@ -239,14 +220,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
-    def validate_id(self, value):
-        if self._args[0]._id != value:
-            raise Conflict()
-        return value
-
     def update(self, instance, validated_data):
-        validated_data.pop('_id')
-        validated_data.pop('type')
         contributor = instance
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
@@ -278,8 +252,8 @@ class NodeRegistrationSerializer(NodeSerializer):
 
 class NodeLinksSerializer(JSONAPISerializer):
 
-    id = ser.CharField(read_only=True, source='_id', label='ID')
-    type = ser.CharField(write_only=True, required=True)
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
@@ -290,11 +264,6 @@ class NodeLinksSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'node_links'
 
-    def validate_type(self, value):
-        if self.Meta.type_ != value:
-            raise Conflict()
-        return value
-
     links = LinksField({
         'html': 'get_absolute_url',
     })
@@ -304,7 +273,6 @@ class NodeLinksSerializer(JSONAPISerializer):
         return pointer_node.absolute_url
 
     def create(self, validated_data):
-        validated_data.pop('type')
         request = self.context['request']
         user = request.user
         auth = Auth(user)

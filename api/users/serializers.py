@@ -2,9 +2,8 @@ from rest_framework import serializers as ser
 
 from website.models import User
 
-from api.base.exceptions import Conflict
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
+    JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly, IDField, TypeField
 )
 
 
@@ -16,8 +15,8 @@ class UserSerializer(JSONAPISerializer):
         'family_name',
         'id'
     ])
-    id = ser.CharField(read_only=True, source='_id', label='ID')
-    type = ser.CharField(write_only=True, required=True)
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
     fullname = ser.CharField(required=True, label='Full name', help_text='Display name used in the general user interface')
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
@@ -47,17 +46,10 @@ class UserSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'users'
 
-    def validate_type(self, value):
-        if self.Meta.type_ != value:
-            raise Conflict()
-        return value
-
     def absolute_url(self, obj):
         return obj.absolute_url
 
     def update(self, instance, validated_data):
-        validated_data.pop('_id')
-        validated_data.pop('type')
         assert isinstance(instance, User), 'instance must be a User'
         for attr, value in validated_data.items():
             if 'social' == attr:
@@ -71,11 +63,6 @@ class UserSerializer(JSONAPISerializer):
 
 class UserDetailSerializer(UserSerializer):
     """
-    Overrides UserSerializer to make id required and validate id.
+    Overrides UserSerializer to make id required.
     """
-    id = ser.CharField(source='_id', label='ID', required=True)
-
-    def validate_id(self, value):
-        if self._args[0]._id != value:
-            raise Conflict()
-        return value
+    id = IDField(source='_id', required=True)
