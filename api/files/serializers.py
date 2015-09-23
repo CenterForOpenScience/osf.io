@@ -50,11 +50,6 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
             self.fail('invalid_data')
 
 
-class NodeFileAttributesSerializer(AttributesSerializer):
-
-    checkout = CheckoutField(write_only=True)
-
-
 class FileSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -68,7 +63,7 @@ class FileSerializer(JSONAPISerializer):
     ])
     id = ser.CharField(read_only=True, source='_id')
     type = ser.CharField(write_only=True, required=True)
-    attributes = NodeFileAttributesSerializer()
+    checkout = CheckoutField(write_only=True)
     name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     kind = ser.CharField(read_only=True, help_text='Either folder or file')
     path = ser.CharField(read_only=True, help_text='The unique path used to reference this object')
