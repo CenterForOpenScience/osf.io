@@ -175,7 +175,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     type = ser.CharField(write_only=True, required=True)
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    middle_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
