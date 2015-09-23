@@ -135,12 +135,6 @@
                 "description": "",
                 "help": "",
                 "properties": {
-                    "certify": {
-                        "id": "q8b",
-                        "type": "string",
-                        "format": "match",
-                        "match": "I certify"
-                    },
                     "statement": {
                         "id:": "q8a",
                         "type": "choose",
