@@ -1318,7 +1318,6 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def test_add_contributor_is_visible_by_default(self):
         del self.data_user_two['data']['attributes']['bibliographic']
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth, expect_errors=True)
-        print res
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
@@ -3029,9 +3028,7 @@ class TestExceptionFormatting(ApiTestCase):
         url = self.private_url + 'node_links/'
         res = self.app.post_json_api(url, {'data': {'type': 'node_links', 'attributes': {'target_node_id': ''}}},
                                      auth=self.user.auth, expect_errors=True)
-        print res
         errors = res.json['errors']
-        print res.json
         assert(isinstance(errors, list))
         assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/target_node_id'})
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
