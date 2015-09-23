@@ -118,6 +118,7 @@ class NodeSerializer(JSONAPISerializer):
         return len(obj.nodes_pointer)
 
     def create(self, validated_data):
+        validated_data.pop('type')
         node = Node(**validated_data)
         node.save()
         return node
@@ -126,6 +127,8 @@ class NodeSerializer(JSONAPISerializer):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
+        validated_data.pop('_id')
+        validated_data.pop('type')
         assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
         tags = validated_data.get('tags')
@@ -215,6 +218,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
         )
 
     def create(self, validated_data):
+        validated_data.pop('type')
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
         contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
@@ -241,6 +245,8 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         return value
 
     def update(self, instance, validated_data):
+        validated_data.pop('_id')
+        validated_data.pop('type')
         contributor = instance
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
@@ -298,6 +304,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         return pointer_node.absolute_url
 
     def create(self, validated_data):
+        validated_data.pop('type')
         request = self.context['request']
         user = request.user
         auth = Auth(user)

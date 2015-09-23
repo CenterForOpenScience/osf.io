@@ -56,6 +56,8 @@ class UserSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def update(self, instance, validated_data):
+        validated_data.pop('_id')
+        validated_data.pop('type')
         assert isinstance(instance, User), 'instance must be a User'
         for attr, value in validated_data.items():
             if 'social' == attr:

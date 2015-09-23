@@ -96,6 +96,8 @@ class FileSerializer(JSONAPISerializer):
         return None
 
     def update(self, instance, validated_data):
+        validated_data.pop('_id')
+        validated_data.pop('type')
         assert isinstance(instance, FileNode), 'Instance must be a FileNode'
         for attr, value in validated_data.items():
             setattr(instance, attr, value)

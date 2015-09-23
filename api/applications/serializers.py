@@ -60,11 +60,14 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def create(self, validated_data):
+        validated_data.pop('type')
         instance = ApiOAuth2Application(**validated_data)
         instance.save()
         return instance
 
     def update(self, instance, validated_data):
+        validated_data.pop('type')
+        validated_data.pop('_id')
         assert isinstance(instance, ApiOAuth2Application), 'instance must be an ApiOAuth2Application'
         for attr, value in validated_data.iteritems():
             setattr(instance, attr, value)
