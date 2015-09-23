@@ -113,60 +113,6 @@ api_routes = {
             json_renderer,
         ),
 
-        Rule(
-            [
-                '/project/<pid>/osfstorage/<fid>/checkouts/',
-            ],
-            'post',
-            views.osfstorage_rent,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/osfstorage/<fid>/checkouts/',
-            ],
-            'delete',
-            views.osfstorage_return,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/osfstorage/<fid>/checkouts/',
-            ],
-            'get',
-            views.osfstorage_rented,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/osfstorage/checkouts/',
-            ],
-            'post',
-            views.osfstorage_rent_all,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/osfstorage/checkouts/',
-            ],
-            'delete',
-            views.osfstorage_return_all,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/osfstorage/checkouts/',
-            ],
-            'get',
-            views.osfstorage_rented_all,
-            json_renderer,
-        ),
-
     ],
 
 }
