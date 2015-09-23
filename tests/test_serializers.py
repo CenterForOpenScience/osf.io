@@ -104,7 +104,7 @@ class TestNodeSerializers(OsfTestCase):
                                        permissions=permissions.expand_permissions(permissions.WRITE))
         read_and_write.save()
         read_only = NodeFactory(parent=admin_project)
-        read_only.add_contributor(user, auth=Auth(read_and_write.creator),
+        read_only.add_contributor(user, auth=Auth(read_only.creator),
                                   permissions=permissions.expand_permissions(permissions.READ))
         read_only.save()
 
