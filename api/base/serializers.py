@@ -93,9 +93,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                 else:
                     raise InvalidQueryStringValue(
                         detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
-                        source={
-                            'parameter': 'related_counts'
-                        }
+                        parameter='related_counts'
                     )
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 

@@ -36,6 +36,8 @@ class NodeSerializer(JSONAPISerializer):
         'registration',
         'tags',
         'category',
+        'date_created',
+        'date_modified'
     ])
 
     id = ser.CharField(read_only=True, source='_id', label='ID')

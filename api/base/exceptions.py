@@ -62,12 +62,72 @@ class Gone(APIException):
     status_code = status.HTTP_410_GONE
     default_detail = ('The requested resource is no longer available.')
 
-class InvalidQueryStringValue(JSONAPIException):
-    """Raised when client passes an invalid value to a querystring parameter."""
-    default_detail = 'Querystring contains an invalid value.'
+class JSONAPIParameterException(JSONAPIException):
+    def __init__(self, detail=None, parameter=None):
+        source = {
+            'parameter': parameter
+        }
+        super(JSONAPIParameterException, self).__init__(detail=detail, source=source)
+
+
+class InvalidQueryStringValue(JSONAPIParameterException):
+    """Raised when client passes an invalid value to a query string parameter."""
+    default_detail = 'Query string contains an invalid value.'
+    status_code = http.BAD_REQUEST
+
+class InvalidFilterOperator(JSONAPIParameterException):
+    """Raised when client passes an invalid operator to a query param filter."""
+    default_detail = 'Invalid filter operator, must use one of: >, >=, =, <=, <'
+    status_code = http.BAD_REQUEST
+
+    def __init__(self, detail=None, value=None):
+        if value and not detail:
+            detail = "'{0}' is not a supported filter operator; use one of eq, lt, lte, gt, gte".format(value)
+        super(InvalidFilterOperator, self).__init__(detail=detail, parameter='filter')
+
+class InvalidFilterValue(JSONAPIParameterException):
+    """Raised when client passes an invalid value to a query param filter."""
+    default_detail = 'Invalid filter value'
+    status_code = http.BAD_REQUEST
+
+    def __init__(self, detail=None, value=None, field_type=None):
+        if value and not detail:
+            detail = "'{0}' is not a valid value for a {1} type filter".format(
+                value,
+                field_type
+            )
+        super(InvalidFilterValue, self).__init__(detail=detail, parameter='filter')
+
+
+class InvalidFilterError(JSONAPIParameterException):
+    """Raised when client passes an malformed filter in the query string."""
+    default_detail = 'Query string contains a malformed filter.'
+    status_code = http.BAD_REQUEST
+
+    def __init__(self, detail=None):
+        super(InvalidFilterError, self).__init__(detail=detail, parameter='filter')
+
+
+class JSONAPIAttributeException(JSONAPIException):
+    def __init__(self, detail=None, parameter=None):
+        source = {
+            'pointer': '/data/attributes/{0}'.format(parameter)
+        }
+        super(JSONAPIAttributeException, self).__init__(detail=detail, source=source)
+
+
+class InvalidFilterComparisonType(JSONAPIAttributeException):
+    """Raised when client tries to filter on a field that is not a date or number type"""
+    default_detail = "Comparison operators are only supported for dates and numbers."
     status_code = http.BAD_REQUEST
 
 
-class InvalidFilterError(ParseError):
-    """Raised when client passes an invalid filter in the querystring."""
-    default_detail = 'Querystring contains an invalid filter.'
+class InvalidFilterFieldError(JSONAPIAttributeException):
+    """Raised when client tries to filter on a field that is not supported"""
+    default_detail = "Query contained one or more filters for invalid fields"
+    status_code = http.BAD_REQUEST
+
+    def __init__(self, detail=None, parameter=None, value=None):
+        if value and not detail:
+            detail = "'{}' is not a filterable field".format(value)
+        super(InvalidFilterFieldError, self).__init__(detail=detail, parameter=parameter)

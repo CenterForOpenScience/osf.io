@@ -3,6 +3,8 @@ import mock
 import base64
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
+import httplib as http
+import datetime
 
 from framework.auth.core import Auth
 
@@ -110,9 +112,13 @@ class TestNodeFiltering(ApiTestCase):
         super(TestNodeFiltering, self).setUp()
         self.user_one = AuthUserFactory()
         self.user_two = AuthUserFactory()
-        self.project_one = ProjectFactory(title="Project One", is_public=True)
-        self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True)
-        self.project_three = ProjectFactory(title="Three", is_public=True)
+        now = datetime.datetime.now()
+        self.first_date = now - datetime.timedelta(days=30)
+        self.project_one = ProjectFactory(title="Project One", is_public=True, date_created=self.first_date)
+        self.second_date = now - datetime.timedelta(days=20)
+        self.project_two = ProjectFactory(title="Project Two", description="One Three", is_public=True, date_created=self.second_date)
+        self.third_date = now - datetime.timedelta(days=10)
+        self.project_three = ProjectFactory(title="Three", is_public=True, date_created=self.third_date)
         self.private_project_user_one = ProjectFactory(title="Private Project User One",
                                                        is_public=False,
                                                        creator=self.user_one)
@@ -362,7 +368,116 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
+        assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint")
+
+    def test_filter_invalid_operator(self):
+        url = '/{0}nodes/?filter[date_created][foo]={1}'.format(
+            API_BASE,
+            datetime.datetime.isoformat(self.first_date)        
+        )
+
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            "'foo' is not a supported filter operator; use one of eq, lt, lte, gt, gte"
+        )
+
+    def test_filter_by_not_comparable_field(self):
+        url = '/{0}nodes/?filter[title][lt]=a'.format(
+            API_BASE,
+        )
+
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            "Comparison operators are only supported for dates and numbers."
+        )
+
+    def test_filter_by_registration_invalid_bool(self):
+        url = '/{0}nodes/?filter[registration]=foo'.format(
+            API_BASE,
+        )
+
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            "'foo' is not a valid value for a bool type filter"
+        )
+
+    def test_filter_by_date_created_invalid_date(self):
+        url = '/{0}nodes/?filter[date_created]=foo'.format(
+            API_BASE,
+        )
+
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(
+            res.json['errors'][0]['detail'],
+            "'foo' is not a valid value for a date type filter"
+        )
+
+    def test_filter_by_date_created_gt(self):
+        url = '/{0}nodes/?filter[date_created][gt]={1}'.format(
+            API_BASE,
+            datetime.datetime.isoformat(self.first_date)
+        )
+
+        res = self.app.get(url)
+        ids = [item['id'] for item in res.json['data']]
+        assert_not_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_in(self.project_three._id, ids)
+
+    def test_filter_by_date_created_gte(self):
+        url = '/{0}nodes/?filter[date_created][gte]={1}'.format(
+            API_BASE,
+            datetime.datetime.isoformat(self.first_date)
+        )
+
+        res = self.app.get(url)
+        ids = [item['id'] for item in res.json['data']]
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_in(self.project_three._id, ids)
+
+    def test_filter_by_date_created_lt(self):
+        url = '/{0}nodes/?filter[date_created][lt]={1}'.format(
+            API_BASE,
+            datetime.datetime.isoformat(self.third_date)
+        )
+
+        res = self.app.get(url)
+        ids = [item['id'] for item in res.json['data']]
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_not_in(self.project_three._id, ids)
+
+    def test_filter_by_date_created_lte(self):
+        url = '/{0}nodes/?filter[date_created][lte]={1}'.format(
+            API_BASE,
+            datetime.datetime.isoformat(self.third_date)
+        )
+
+        res = self.app.get(url)
+        ids = [item['id'] for item in res.json['data']]
+        assert_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_in(self.project_three._id, ids)
+
+    def test_filter_by_date_created_multiple_comparison(self):
+        url = '/{0}nodes/?filter[date_created][lt]={1}&filter[date_created][gt]={2}'.format(
+            API_BASE,
+            datetime.datetime.isoformat(self.third_date),
+            datetime.datetime.isoformat(self.first_date)
+        )    
+        res = self.app.get(url)
+        ids = [item['id'] for item in res.json['data']]
+        assert_not_in(self.project_one._id, ids)
+        assert_in(self.project_two._id, ids)
+        assert_not_in(self.project_three._id, ids)
 
 
 class TestNodeCreate(ApiTestCase):
@@ -952,7 +1067,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Querystring contains an invalid filter.')
+        assert_equal(errors[0]['detail'], "'invalid' is not a valid field for this endpoint")
 
 
 class TestNodeContributorAdd(NodeCRUDTestCase):
