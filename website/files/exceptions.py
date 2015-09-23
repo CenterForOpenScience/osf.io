@@ -8,3 +8,6 @@ class SubclassNotFound(FileException):
 
 class VersionNotFoundError(FileException):
     pass
+
+class FileNodeorChildCheckedOutError(FileException):
+    pass

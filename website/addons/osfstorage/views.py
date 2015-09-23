@@ -21,6 +21,7 @@ from website.util import permissions
 from website.project.model import has_anonymous_link
 
 from website.files import models
+from website.files import exceptions
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import decorators
 from website.addons.osfstorage import settings as osf_storage_settings
@@ -206,8 +207,10 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     if file_node.checkout is not None:
         raise HTTPError(httplib.METHOD_NOT_ALLOWED)
 
-    success = file_node.delete()
-    if not success:
+    try:
+        file_node.delete()
+
+    except exceptions.FileNodeorChildCheckedOutError:
         raise HTTPError(httplib.METHOD_NOT_ALLOWED)
 
     return {'status': 'success'}

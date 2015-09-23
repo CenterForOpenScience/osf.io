@@ -1549,11 +1549,7 @@ var FGItemButtons = {
                                                         checkout: window.contextVars.currentUser.id
                                                     })
                                                 }).done(function(resp) {
-                                                    if (resp.status === 'success') {
-                                                        window.location.reload();
-                                                    } else {
-                                                        $osf.growl('Error', 'Unable to check-out file.');
-                                                    }
+                                                    window.location.reload();
                                                 }).fail(function(resp) {
                                                     $osf.growl('Error', 'Unable to check-out file.');
                                                 });
@@ -1577,11 +1573,7 @@ var FGItemButtons = {
                                                 checkout: null
                                             })
                                         }).done(function(resp) {
-                                            if (resp.status === 'success') {
-                                                window.location.reload();
-                                            } else {
-                                                $osf.growl('Error', 'Unable to check-in file.');
-                                            }
+                                            window.location.reload();
                                         }).fail(function(resp) {
                                             $osf.growl('Error', 'Unable to check-in file.');
                                         });
@@ -1759,8 +1751,8 @@ var FGToolbar = {
         //multiple selection icons
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview') {
             var showDelete = false;
-            var showRent = true;
-            var showReturn = true;
+            var showCheckout = true;
+            var showCheckin = true;
             var each, i, len;
             // Only show delete button if user has edit permissions on at least one selected file
             for (i = 0, len = items.length; i < len; i++) {
@@ -1773,14 +1765,14 @@ var FGToolbar = {
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
                 if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (!each.data.extra.checkout || each.data.extra.checkout === window.contextVars.currentUser.id))) {
-                    showRent = false;
+                    showCheckout = false;
                     break;
                 }
             }
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
                 if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && each.data.extra.checkout === window.contextVars.currentUser.id)) {
-                    showReturn = false;
+                    showCheckin = false;
                     break;
                 }
             }
@@ -1796,7 +1788,7 @@ var FGToolbar = {
                     }, 'Delete Multiple')
                 );
             }
-            if (showRent){
+            if (showCheckout){
                 generalButtons.push(
                     m.component(FGButton, {
                         onclick: function() {
@@ -1812,10 +1804,6 @@ var FGToolbar = {
                                         checkout: window.contextVars.currentUser.id
                                     })
                                 }).done(function(resp) {
-                                    if (resp.status === 'success') {
-                                    } else {
-                                        $osf.growl('Error', 'Unable to check-out file.');
-                                    }
                                 }).fail(function(resp) { // jshint ignore:line
                                     $osf.growl('Error', 'Unable to check-out file.');
                                 }); // jshint ignore:line
@@ -1827,7 +1815,7 @@ var FGToolbar = {
                     }, 'Check-out Multiple')
                 );
             }
-            if (showReturn){
+            if (showCheckin){
                 generalButtons.push(
                     m.component(FGButton, {
                         onclick: function() {
@@ -1843,10 +1831,6 @@ var FGToolbar = {
                                         checkout: null
                                     })
                                 }).done(function(resp) {
-                                    if (resp.status === 'success') {
-                                    } else {
-                                        $osf.growl('Error', 'Unable to check-in file.');
-                                    }
                                 }).fail(function(resp) { // jshint ignore:line
                                     $osf.growl('Error', 'Unable to check-in file.');
                                 }); // jshint ignore:line

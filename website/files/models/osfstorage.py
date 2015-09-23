@@ -67,6 +67,18 @@ class OsfStorageFileNode(FileNode):
         """
         return '/' + self._id + ('' if self.is_file else '/')
 
+    def is_checkedout(self):
+        return True if self.checkout else False
+
+    def delete(self, user=None, parent=None):
+        """Move self into the TrashedFileNode collection
+        and remove it from StoredFileNode
+        :param user User or None: The user that deleted this FileNode
+        """
+        if self.is_checkedout():
+            raise exceptions.FileNodeorChildCheckedOutError()
+        super(OsfStorageFileNode, self).delete()
+
     def save(self):
         self.path = ''
         self.materialized_path = ''
@@ -131,6 +143,14 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
+
+    def is_checkedout(self):
+        if self.checkout:
+            return True
+        for child in self.children:
+            if child.is_checkedout():
+                return True
+        return False
 
     def serialize(self, include_full=False, version=None):
         # Versions just for compatability
