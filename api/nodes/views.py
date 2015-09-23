@@ -243,6 +243,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     """
     permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
