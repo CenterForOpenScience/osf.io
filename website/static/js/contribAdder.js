@@ -71,16 +71,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
 
-        self.getContributors();
-        $.getJSON(
-            self.nodeApiUrl + 'get_editable_children/', {},
-            function(result) {
-                $.each(result.children || [], function(idx, child) {
-                    child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
-                });
-                self.nodes(result.children);
-            }
-        );
         self.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
         });
@@ -155,6 +145,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
                     page: self.pageToGet
                 },
                 function(result) {
+                    console.log(result);
                     var contributors = result.users.map(function(userData) {
                         return new Contributor(userData);
                     });
@@ -188,6 +179,18 @@ var AddContributorViewModel = oop.extend(Paginator, {
                     return userData.id;
                 });
                 self.contributors(contributors);
+            }
+        );
+    },
+    getEditableChildren: function() {
+        var self = this;
+        return $.getJSON(
+            self.nodeApiUrl + 'get_editable_children/', {},
+            function(result) {
+                $.each(result.children || [], function(idx, child) {
+                    child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
+                });
+                self.nodes(result.children)
             }
         );
     },
@@ -388,6 +391,8 @@ function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle) {
 
 ContribAdder.prototype.init = function() {
     var self = this;
+    self.viewModel.getContributors();
+    self.viewModel.getEditableChildren();
     ko.applyBindings(self.viewModel, self.$element[0]);
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
