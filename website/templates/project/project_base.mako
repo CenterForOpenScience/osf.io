@@ -15,7 +15,7 @@
 <%include file="project_header.mako"/>
 
 % if status and node:
-    ## WARNING: Need new heading alert messages? They must be added at both here and base.mako
+    ## WARNING: Need display-everywhere heading messages? They must be added at both here and base.mako
     <%include file="../alert.mako"/>
 % endif
 

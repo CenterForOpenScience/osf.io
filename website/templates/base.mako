@@ -220,7 +220,7 @@
     <div class="watermarked">
         <div class="container ${self.container_class()}">
             % if status and not node:
-                ## WARNING: Need new heading alert messages? They must be added at both here and project_base.mako
+                ## WARNING: Need display-everywhere heading messages? They must be added at both here and project_base.mako
                 <%include file="alert.mako"/>
             % endif
 
