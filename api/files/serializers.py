@@ -5,11 +5,11 @@ from rest_framework import serializers as ser
 
 from website import settings
 from framework.auth.core import User
-from website.files.models import FileNode
 from api.base.exceptions import Conflict
+from website.files.models import FileNode
+from api.base.utils import absolute_reverse
 from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
 from api.base.serializers import JSONAPIHyperlinkedIdentityField
-from api.base.utils import absolute_reverse
 from api.base.serializers import Link, JSONAPISerializer, LinksField
 
 class CheckoutField(JSONAPIHyperlinkedIdentityField):
