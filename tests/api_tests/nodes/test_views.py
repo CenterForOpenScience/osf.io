@@ -380,22 +380,26 @@ class TestNodeCreate(ApiTestCase):
         self.user_two = AuthUserFactory()
 
         self.public_project = {
-            'type': 'nodes',
-            'attributes':
-                {
+            'data': {
+                'type': 'nodes',
+                'attributes':
+                    {
+                        'title': self.title,
+                        'description': self.description,
+                        'category': self.category,
+                        'public': True,
+                    }
+            }
+        }
+        self.private_project = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
                     'title': self.title,
                     'description': self.description,
                     'category': self.category,
-                    'public': True,
+                    'public': False
                 }
-        }
-        self.private_project = {
-            'type': 'nodes',
-            'attributes': {
-                'title': self.title,
-                'description': self.description,
-                'category': self.category,
-                'public': False
             }
         }
 
@@ -407,9 +411,9 @@ class TestNodeCreate(ApiTestCase):
     def test_creates_public_project_logged_in(self):
         res = self.app.post_json_api(self.url, self.public_project, expect_errors=True, auth=self.user_one.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], self.public_project['attributes']['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.public_project['attributes']['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.public_project['attributes']['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.public_project['data']['attributes']['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.public_project['data']['attributes']['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.public_project['data']['attributes']['category'])
         assert_equal(res.content_type, 'application/vnd.api+json')
         pid = res.json['data']['id']
         project = Node.load(pid)
@@ -424,9 +428,9 @@ class TestNodeCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, self.private_project, auth=self.user_one.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['title'], self.private_project['attributes']['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.private_project['attributes']['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.private_project['attributes']['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.private_project['data']['attributes']['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.private_project['data']['attributes']['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.private_project['data']['attributes']['category'])
         pid = res.json['data']['id']
         project = Node.load(pid)
         assert_equal(project.logs[-1].action, NodeLog.PROJECT_CREATED)
@@ -436,13 +440,16 @@ class TestNodeCreate(ApiTestCase):
         description = 'An <script>alert("even cooler")</script> project'
 
         res = self.app.post_json_api(self.url, {
-            'attributes': {
-                'title': title,
-                'description': description,
-                'category': self.category,
-                'public': True
-            },
-            'type': 'nodes'} , auth=self.user_one.auth)
+            'data': {
+                'attributes': {
+                    'title': title,
+                    'description': description,
+                    'category': self.category,
+                    'public': True
+                },
+                'type': 'nodes'
+            }
+        }, auth=self.user_one.auth)
         project_id = res.json['data']['id']
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
@@ -458,37 +465,45 @@ class TestNodeCreate(ApiTestCase):
 
     def test_creates_project_no_type(self):
         project = {
-            'attributes': {
-                'title': self.title,
-                'description': self.description,
-                'category': self.category,
-                'public': False
-            }}
+            'data': {
+                'attributes': {
+                    'title': self.title,
+                    'description': self.description,
+                    'category': self.category,
+                    'public': False
+                }
+            }
+        }
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_creates_project_incorrect_type(self):
         project = {
-            'attributes': {
-                'title': self.title,
-                'description': self.description,
-                'category': self.category,
-                'public': False
-            },
-        'type': 'Wrong type.'}
+            'data': {
+                'attributes': {
+                    'title': self.title,
+                    'description': self.description,
+                    'category': self.category,
+                    'public': False
+                },
+                'type': 'Wrong type.'
+            }
+        }
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
     def test_creates_project_properties_not_nested(self):
         project = {
-            'title': self.title,
-            'description': self.description,
-            'category': self.category,
-            'public': False,
-            'type': 'nodes'
+            'data': {
+                'title': self.title,
+                'description': self.description,
+                'category': self.category,
+                'public': False,
+                'type': 'nodes'
+            }
         }
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -652,82 +667,100 @@ class TestNodeUpdate(NodeCRUDTestCase):
         }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_update_invalid_id(self):
         res = self.app.put_json_api(self.public_url, {
-            'id': '12345',
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title,
-                'description': self.new_description,
-                'category': self.new_category,
-                'public': True,
-        }}, auth=self.user.auth, expect_errors=True)
+            'data': {
+                'id': '12345',
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.new_title,
+                    'description': self.new_description,
+                    'category': self.new_category,
+                    'public': True
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_update_invalid_type(self):
         res = self.app.put_json_api(self.public_url, {
-            'id': self.public_project._id,
-            'type': 'node',
-            'attributes': {
-                'title': self.new_title,
-                'description': self.new_description,
-                'category': self.new_category,
-                'public': True,
-        }}, auth=self.user.auth, expect_errors=True)
+            'data': {
+                'id': self.public_project._id,
+                'type': 'node',
+                'attributes': {
+                    'title': self.new_title,
+                    'description': self.new_description,
+                    'category': self.new_category,
+                    'public': True
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_update_no_id(self):
         res = self.app.put_json_api(self.public_url, {
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title,
-                'description': self.new_description,
-                'category': self.new_category,
-                'public': True,
-        }}, auth=self.user.auth, expect_errors=True)
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.new_title,
+                    'description': self.new_description,
+                    'category': self.new_category,
+                    'public': True
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
 
     def test_update_no_type(self):
         res = self.app.put_json_api(self.public_url, {
-            'id': self.public_project._id,
-            'attributes': {
-                'title': self.new_title,
-                'description': self.new_description,
-                'category': self.new_category,
-                'public': True,
-        }}, auth=self.user.auth, expect_errors=True)
+            'data': {
+                'id': self.public_project._id,
+                'attributes': {
+                    'title': self.new_title,
+                    'description': self.new_description,
+                    'category': self.new_category,
+                    'public': True
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_update_public_project_logged_out(self):
         res = self.app.put_json_api(self.public_url, {
-            'id': self.public_project._id,
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title,
-                'description': self.new_description,
-                'category': self.new_category,
-                'public': True,
-        }}, expect_errors=True)
+            'data': {
+                'id': self.public_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.new_title,
+                    'description': self.new_description,
+                    'category': self.new_category,
+                    'public': True
+                }
+            }
+        }, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
     @assert_logs(NodeLog.UPDATED_FIELDS, 'public_project')
     def test_update_public_project_logged_in(self):
         res = self.app.put_json_api(self.public_url, {
-            'id': self.public_project._id,
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title,
-                'description': self.new_description,
-                'category': self.new_category,
-                'public': True,
-        }}, auth=self.user.auth)
+            'data': {
+                'id': self.public_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.new_title,
+                    'description': self.new_description,
+                    'category': self.new_category,
+                    'public': True
+                }
+            }
+        }, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], self.new_title)
@@ -736,14 +769,17 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
     def test_update_public_project_logged_in_but_unauthorized(self):
         res = self.app.put_json_api(self.public_url, {
-            'id': self.private_project._id,
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title,
-                'description': self.new_description,
-                'category': self.new_category,
-                'public': True,
-        }}, auth=self.user_two.auth, expect_errors=True)
+            'data': {
+                'id': self.private_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.new_title,
+                    'description': self.new_description,
+                    'category': self.new_category,
+                    'public': True
+                }
+            }
+        }, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
@@ -753,14 +789,17 @@ class TestNodeUpdate(NodeCRUDTestCase):
         original_description = registration.description
         url = '/{}nodes/{}/'.format(API_BASE, registration._id)
         res = self.app.put_json_api(url, {
-            'id': registration._id,
-            'type': 'nodes',
-            'attributes': {
-                'title': fake.catch_phrase(),
-                'description': fake.bs(),
-                'category': 'hypothesis',
-             'public': True,
-        }}, auth=self.user.auth, expect_errors=True)
+            'data': {
+                'id': registration._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': fake.catch_phrase(),
+                    'description': fake.bs(),
+                    'category': 'hypothesis',
+                 'public': True
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
         registration.reload()
         assert_equal(res.status_code, 403)
         assert_equal(registration.title, original_title)
@@ -768,28 +807,34 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
     def test_update_private_project_logged_out(self):
         res = self.app.put_json_api(self.private_url, {
-            'id': self.private_project._id,
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title,
-                'description': self.new_description,
-                'category': self.new_category,
-                'public': False,
-        }}, expect_errors=True)
+            'data': {
+                'id': self.private_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.new_title,
+                    'description': self.new_description,
+                    'category': self.new_category,
+                    'public': False
+                }
+            }
+        }, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
     @assert_logs(NodeLog.UPDATED_FIELDS, 'private_project')
     def test_update_private_project_logged_in_contributor(self):
         res = self.app.put_json_api(self.private_url, {
-            'id': self.private_project._id,
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title,
-                'description': self.new_description,
-                'category': self.new_category,
-                'public': False,
-        }}, auth=self.user.auth)
+            'data': {
+                'id': self.private_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.new_title,
+                    'description': self.new_description,
+                    'category': self.new_category,
+                    'public': False
+                }
+            }
+        }, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], self.new_title)
@@ -798,14 +843,17 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
     def test_update_private_project_logged_in_non_contributor(self):
         res = self.app.put_json_api(self.private_url, {
-            'id': self.private_project._id,
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title,
-                'description': self.new_description,
-                'category': self.new_category,
-                'public': False,
-        }}, auth=self.user_two.auth, expect_errors=True)
+            'data': {
+                'id': self.private_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.new_title,
+                    'description': self.new_description,
+                    'category': self.new_category,
+                    'public': False
+                }
+            }
+        }, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
@@ -815,13 +863,15 @@ class TestNodeUpdate(NodeCRUDTestCase):
         new_title = '<strong>Super</strong> Cool Project'
         new_description = 'An <script>alert("even cooler")</script> project'
         res = self.app.put_json_api(self.public_url, {
-            'id': self.public_project._id,
-            'type': 'nodes',
-            'attributes': {
-                'title': new_title,
-                'description': new_description,
-                'category': self.new_category,
-                'public': True,
+            'data': {
+                'id': self.public_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': new_title,
+                    'description': new_description,
+                    'category': self.new_category,
+                    'public': True,
+                }
             }
         }, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -833,11 +883,14 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_partial_update_project_updates_project_correctly_and_sanitizes_html(self):
         new_title = 'An <script>alert("even cooler")</script> project'
         res = self.app.patch_json_api(self.public_url, {
+            'data': {
             'id': self.public_project._id,
             'type': 'nodes',
-            'attributes': {
-                'title': new_title,
-        }}, auth=self.user.auth)
+                'attributes': {
+                    'title': new_title
+                }
+            }
+        }, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
@@ -851,10 +904,12 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_write_to_public_field_non_contrib_forbidden(self):
         # Test non-contrib writing to public field
         res = self.app.patch_json_api(self.public_url, {
-            'attributes': {
-                'public': False},
-            'id': self.public_project._id,
-            'type': 'nodes',
+            'data': {
+                'attributes': {
+                    'public': False},
+                'id': self.public_project._id,
+                'type': 'nodes'
+            }
         }, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
@@ -863,33 +918,42 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_write_to_public_field_does_not_update(self):
         # Test creator writing to public field (supposed to be read-only)
         res = self.app.patch_json_api(self.public_url, {
-            'id': self.public_project._id,
-            'type': 'nodes',
-            'attributes': {
-                'public': False,
-        }}, auth=self.user.auth, expect_errors=True)
+            'data': {
+                'id': self.public_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'public': False,
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
         assert_true(res.json['data']['attributes']['public'])
         # django returns a 200 on PATCH to read only field, even though it does not update the field.
         assert_equal(res.status_code, 200)
 
     def test_partial_update_public_project_logged_out(self):
         res = self.app.patch_json_api(self.public_url, {
-            'id': self.public_project._id,
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title
-        }}, expect_errors=True)
+            'data': {
+                'id': self.public_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.new_title
+                }
+            }
+        }, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
     @assert_logs(NodeLog.UPDATED_FIELDS, 'public_project')
     def test_partial_update_public_project_logged_in(self):
         res = self.app.patch_json_api(self.public_url, {
-            'id': self.public_project._id,
-            'type': 'nodes',
-            'attributes': {
-            'title': self.new_title,
-        }}, auth=self.user.auth)
+            'data': {
+                'id': self.public_project._id,
+                'type': 'nodes',
+                'attributes': {
+                'title': self.new_title,
+                }
+            }
+        }, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data']['attributes']['title'], self.new_title)
@@ -899,31 +963,38 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_partial_update_public_project_logged_in_but_unauthorized(self):
         # Public resource, logged in, unauthorized
         res = self.app.patch_json_api(self.public_url, {
-            'attributes': {
-                'title': self.new_title},
-            'id': self.public_project._id,
-            'type': 'nodes',
+            'data': {
+                'attributes': {
+                    'title': self.new_title},
+                'id': self.public_project._id,
+                'type': 'nodes',
+            }
         }, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
     def test_partial_update_private_project_logged_out(self):
         res = self.app.patch_json_api(self.private_url, {
-            'id': self.private_project._id,
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title
-        }}, expect_errors=True)
+            'data': {
+                'id': self.private_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.new_title
+                }
+            }
+        }, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
     @assert_logs(NodeLog.UPDATED_FIELDS, 'private_project')
     def test_partial_update_private_project_logged_in_contributor(self):
         res = self.app.patch_json_api(self.private_url, {
-            'attributes': {
-                'title': self.new_title},
-            'id': self.private_project._id,
-            'type': 'nodes',
+            'data': {
+                'attributes': {
+                    'title': self.new_title},
+                'id': self.private_project._id,
+                'type': 'nodes',
+            }
         }, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
@@ -933,60 +1004,76 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
     def test_partial_update_private_project_logged_in_non_contributor(self):
         res = self.app.patch_json_api(self.private_url, {
-            'attributes': {
-                'title': self.new_title},
-            'id': self.private_project._id,
-            'type': 'nodes',
+            'data': {
+                'attributes': {
+                    'title': self.new_title},
+                'id': self.private_project._id,
+                'type': 'nodes',
+            }
         }, auth=self.user_two.auth,expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
     def test_partial_update_invalid_id(self):
         res = self.app.patch_json_api(self.public_url, {
-            'id': '12345',
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title,
-        }}, auth=self.user.auth, expect_errors=True)
+                'data': {
+                    'id': '12345',
+                    'type': 'nodes',
+                    'attributes': {
+                        'title': self.new_title,
+                    }
+                }
+        }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_partial_update_invalid_type(self):
         res = self.app.patch_json_api(self.public_url, {
-            'id': self.public_project._id,
-            'type': 'node',
-            'attributes': {
-                'title': self.new_title,
-        }}, auth=self.user.auth, expect_errors=True)
+            'data': {
+                'id': self.public_project._id,
+                'type': 'node',
+                'attributes': {
+                    'title': self.new_title,
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_partial_update_no_id(self):
         res = self.app.patch_json_api(self.public_url, {
-            'type': 'nodes',
-            'attributes': {
-                'title': self.new_title,
-        }}, auth=self.user.auth, expect_errors=True)
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': self.new_title,
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
 
     def test_partial_update_no_type(self):
         res = self.app.patch_json_api(self.public_url, {
-            'id': self.public_project._id,
-            'attributes': {
-                'title': self.new_title,
-        }}, auth=self.user.auth, expect_errors=True)
+            'data': {
+                'id': self.public_project._id,
+                'attributes': {
+                    'title': self.new_title,
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     # Nothing will be updated here
     def test_partial_update_project_properties_not_nested(self):
         res = self.app.patch_json_api(self.public_url, {
-            'id': self.public_project._id,
-            'type': 'nodes',
-            'title': self.new_title,
+            'data': {
+                'id': self.public_project._id,
+                'type': 'nodes',
+                'title': self.new_title,
+            }
         }, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 400)
 
 
 class TestNodeDelete(NodeCRUDTestCase):
@@ -1184,23 +1271,31 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
         self.user_three = AuthUserFactory()
         self.data_user_two = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                }
+            }
+        }
         self.data_user_three = {
-            'id': self.user_three._id,
-            'type': 'contributors',
-            'attributes': {
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_three._id,
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                }
+            }
+        }
 
     def test_add_contributor_no_type(self):
         data = {
-            'id': self.user_two._id,
-            'attributes': {
-                'bibliographic': True
+            'data': {
+                'id': self.user_two._id,
+                'attributes': {
+                    'bibliographic': True
+                }
             }
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
@@ -1208,10 +1303,12 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def test_add_contributor_incorrect_type(self):
         data = {
-            'type': 'Incorrect type.',
-            'attributes': {
-                'id': self.user_two._id,
-                'bibliographic': True
+            'data': {
+                'type': 'Incorrect type.',
+                'attributes': {
+                    'id': self.user_two._id,
+                    'bibliographic': True
+                }
             }
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
@@ -1219,9 +1316,9 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     @assert_logs(NodeLog.CONTRIB_ADDED, 'public_project')
     def test_add_contributor_is_visible_by_default(self):
-        del self.data_user_two['attributes']['bibliographic']
+        del self.data_user_two['data']['attributes']['bibliographic']
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth, expect_errors=True)
-
+        print res
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 
@@ -1241,11 +1338,14 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_non_bibliographic_contributor_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'bibliographic': False
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': False
+                }
+            }
+        }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
@@ -1286,9 +1386,11 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_contributor_without_bibliographic_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {}
+            }
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
@@ -1299,13 +1401,14 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_admin_contributor_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes':
-                {
-                    'permission': permissions.ADMIN,
-                    'bibliographic': True
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                        'permission': permissions.ADMIN,
+                        'bibliographic': True
                 }
+            }
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
@@ -1318,12 +1421,15 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_write_contributor_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.WRITE,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.WRITE,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
@@ -1335,12 +1441,15 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_read_contributor_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.READ,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.READ,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
@@ -1351,12 +1460,15 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def test_adds_invalid_permission_contributor_private_project_admin(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': 'invalid',
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': 'invalid',
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
@@ -1366,12 +1478,15 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_none_permission_contributor_private_project_admin_uses_default_permissions(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': None,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': None,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth)
         assert_equal(res.status_code, 201)
 
@@ -1390,12 +1505,13 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def test_adds_non_existing_user_private_project_admin(self):
         data = {
-            'id': 'Fake',
-            'type': 'contributors',
-            'attributes':
-                {
-                    'bibliographic': True
+            'data': {
+                'id': 'Fake',
+                'type': 'contributors',
+                'attributes': {
+                        'bibliographic': True
                 }
+            }
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
@@ -1477,43 +1593,55 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_no_id(self):
         data = {
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.ADMIN,
-                'bibliographic': True
-        }}
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.ADMIN,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_change_contributor_incorrect_id(self):
         data = {
-            'id': '12345',
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.ADMIN,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': '12345',
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.ADMIN,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
     def test_change_contributor_no_type(self):
         data = {
-            'id': self.user_two._id,
-            'attributes': {
-                'permission': permissions.ADMIN,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'attributes': {
+                    'permission': permissions.ADMIN,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_change_contributor_incorrect_type(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'Wrong type.',
-            'attributes': {
-                'permission': permissions.ADMIN,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'Wrong type.',
+                'attributes': {
+                    'permission': permissions.ADMIN,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
@@ -1523,12 +1651,15 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
     def test_change_contributor_permissions(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.ADMIN,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.ADMIN,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
@@ -1538,12 +1669,15 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user_two), [permissions.READ, permissions.WRITE, permissions.ADMIN])
 
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.WRITE,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.WRITE,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
@@ -1553,12 +1687,15 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_equal(self.project.get_permissions(self.user_two), [permissions.READ, permissions.WRITE])
 
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.READ,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.READ,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
@@ -1571,11 +1708,14 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.MADE_CONTRIBUTOR_VISIBLE, 'project')
     def test_change_contributor_bibliographic(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'bibliographic': False
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': False
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
@@ -1585,11 +1725,14 @@ class TestNodeContributorUpdate(ApiTestCase):
         assert_false(self.project.get_visible(self.user_two))
 
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
@@ -1602,12 +1745,15 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_logs(NodeLog.MADE_CONTRIBUTOR_INVISIBLE, 'project')
     def test_change_contributor_permission_and_bibliographic(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.READ,
-                'bibliographic': False
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.READ,
+                    'bibliographic': False
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
@@ -1621,12 +1767,15 @@ class TestNodeContributorUpdate(ApiTestCase):
     @assert_not_logs(NodeLog.PERMISSIONS_UPDATED, 'project')
     def test_not_change_contributor(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': None,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': None,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
@@ -1639,12 +1788,15 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_invalid_change_inputs_contributor(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': 'invalid',
-                'bibliographic': 'invalid'
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': 'invalid',
+                    'bibliographic': 'invalid'
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(self.project.get_permissions(self.user_two), [permissions.READ, permissions.WRITE])
@@ -1654,12 +1806,15 @@ class TestNodeContributorUpdate(ApiTestCase):
     def test_change_admin_self_with_other_admin(self):
         self.project.add_permission(self.user_two, permissions.ADMIN, save=True)
         data = {
-            'id': self.user._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.WRITE,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.WRITE,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_creator, data, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         attributes = res.json['data']['attributes']
@@ -1670,12 +1825,15 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_admin_self_without_other_admin(self):
         data = {
-            'id': self.user._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.WRITE,
-                'bibliographic': True
-        }}
+            'data': {
+                'id': self.user._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.WRITE,
+                    'bibliographic': True
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_creator, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
@@ -1684,13 +1842,15 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_remove_all_bibliographic_statuses_contributors(self):
         self.project.set_visible(self.user_two, False, save=True)
-
         data = {
-            'id': self.user._id,
-            'type': 'contributors',
-            'attributes': {
-                'bibliographic': False
-        }}
+            'data': {
+                'id': self.user._id,
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': False
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_creator, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
@@ -1699,12 +1859,15 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_non_admin_auth(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.READ,
-                'bibliographic': False
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.READ,
+                    'bibliographic': False
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -1714,12 +1877,15 @@ class TestNodeContributorUpdate(ApiTestCase):
 
     def test_change_contributor_not_logged_in(self):
         data = {
-            'id': self.user_two._id,
-            'type': 'contributors',
-            'attributes': {
-                'permission': permissions.READ,
-                'bibliographic': False
-        }}
+            'data': {
+                'id': self.user_two._id,
+                'type': 'contributors',
+                'attributes': {
+                    'permission': permissions.READ,
+                    'bibliographic': False
+                }
+            }
+        }
         res = self.app.put_json_api(self.url_contributor, data, expect_errors=True)
         assert_equal(res.status_code, 401)
 
@@ -2003,12 +2169,15 @@ class TestNodeChildCreate(ApiTestCase):
 
         self.url = '/{}nodes/{}/children/'.format(API_BASE, self.project._id)
         self.child = {
-            'type': 'nodes',
-            'attributes': {
-                'title': 'child',
-                'description': 'this is a child project',
-                'category': 'project',
-        }}
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': 'child',
+                    'description': 'this is a child project',
+                    'category': 'project'
+                }
+            }
+        }
 
     def test_creates_child_logged_out_user(self):
         res = self.app.post_json_api(self.url, self.child, expect_errors=True)
@@ -2020,9 +2189,9 @@ class TestNodeChildCreate(ApiTestCase):
     def test_creates_child_logged_in_owner(self):
         res = self.app.post_json_api(self.url, self.child, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], self.child['attributes']['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.child['attributes']['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.child['attributes']['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.child['data']['attributes']['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.child['data']['attributes']['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.child['data']['attributes']['category'])
 
         self.project.reload()
         assert_equal(res.json['data']['id'], self.project.nodes[0]._id)
@@ -2033,9 +2202,9 @@ class TestNodeChildCreate(ApiTestCase):
 
         res = self.app.post_json_api(self.url, self.child, auth=self.user_two.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['title'], self.child['attributes']['title'])
-        assert_equal(res.json['data']['attributes']['description'], self.child['attributes']['description'])
-        assert_equal(res.json['data']['attributes']['category'], self.child['attributes']['category'])
+        assert_equal(res.json['data']['attributes']['title'], self.child['data']['attributes']['title'])
+        assert_equal(res.json['data']['attributes']['description'], self.child['data']['attributes']['description'])
+        assert_equal(res.json['data']['attributes']['category'], self.child['data']['attributes']['category'])
 
         self.project.reload()
         child_id = res.json['data']['id']
@@ -2062,13 +2231,16 @@ class TestNodeChildCreate(ApiTestCase):
         description = 'An <script>alert("even cooler")</script> child'
 
         res = self.app.post_json_api(self.url, {
-            'type': 'nodes',
-            'attributes': {
-                'title': title,
-                'description': description,
-                'category': 'project',
-                'public': True,
-        }}, auth=self.user.auth)
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': title,
+                    'description': description,
+                    'category': 'project',
+                    'public': True
+                }
+            }
+        }, auth=self.user.auth)
         child_id = res.json['data']['id']
         assert_equal(res.status_code, 201)
         url = '/{}nodes/{}/'.format(API_BASE, child_id)
@@ -2087,44 +2259,55 @@ class TestNodeChildCreate(ApiTestCase):
         registration = RegistrationFactory(project=self.project, creator=self.user)
         url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
         res = self.app.post_json_api(url, {
-            'type': 'nodes',
-            'attributes': {
-                'title': fake.catch_phrase(),
-                'description': fake.bs(),
-                'category': 'project',
-                'public': True,
-        }}, auth=self.user.auth, expect_errors=True)
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': fake.catch_phrase(),
+                    'description': fake.bs(),
+                    'category': 'project',
+                    'public': True,
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         
     def test_creates_child_no_type(self):
         child = {
-            'attributes': {
-            'title': 'child',
-            'description': 'this is a child project',
-            'category': 'project',
-        }}
+            'data': {
+                'attributes': {
+                'title': 'child',
+                'description': 'this is a child project',
+                'category': 'project',
+                }
+            }
+        }
         res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_creates_child_incorrect_type(self):
         child = {
-            'type': 'Wrong type.',
-            'attributes': {
-                'title': 'child',
-                'description': 'this is a child project',
-                'category': 'project',
-        }}
+            'data': {
+                'type': 'Wrong type.',
+                'attributes': {
+                    'title': 'child',
+                    'description': 'this is a child project',
+                    'category': 'project',
+                }
+            }
+        }
         res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
     def test_creates_child_properties_not_nested(self):
         child = {
-            'title': 'child',
-            'description': 'this is a child project',
-            'category': 'project',
+            'data': {
+                'title': 'child',
+                'description': 'this is a child project',
+                'category': 'project',
+            }
         }
         res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -2210,89 +2393,105 @@ class TestNodeTags(ApiTestCase):
         self.public_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         self.private_url = '/{}nodes/{}/'.format(API_BASE, self.private_project._id)
 
-        self.one_new_tag_json = {'id': self.public_project._id, 'type': 'nodes', 'attributes': {'tags': ['new-tag']}}
-        self.private_payload = {'id': self.private_project._id, 'type': 'nodes', 'attributes': {'tags': ['new-tag']}}
+        self.one_new_tag_json = {
+            'data': {
+                'id': self.public_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'tags': ['new-tag']
+                }
+            }
+        }
+        self.private_payload = {
+            'data': {
+                'id': self.private_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'tags': ['new-tag']
+                }
+            }
+        }
 
     def test_public_project_starts_with_no_tags(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
-    # @assert_logs(NodeLog.TAG_ADDED, 'public_project')
-    # def test_contributor_can_add_tag_to_public_project(self):
-    #     res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
-    #     assert_equal(res.status_code, 200)
-    #     # Ensure data is correct from the PATCH response
-    #     assert_equal(len(res.json['data']['attributes']['tags']), 1)
-    #     assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
-    #     # Ensure data is correct in the database
-    #     self.public_project.reload()
-    #     assert_equal(len(self.public_project.tags), 1)
-    #     assert_equal(self.public_project.tags[0]._id, 'new-tag')
-    #     # Ensure data is correct when GETting the resource again
-    #     reload_res = self.app.get(self.public_url)
-    #     assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
-    #     assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
-    #
-    # @assert_logs(NodeLog.TAG_ADDED, 'private_project')
-    # def test_contributor_can_add_tag_to_private_project(self):
-    #     res = self.app.patch_json_api(self.private_url, self.private_payload, auth=self.user.auth)
-    #     assert_equal(res.status_code, 200)
-    #     # Ensure data is correct from the PATCH response
-    #     assert_equal(len(res.json['data']['attributes']['tags']), 1)
-    #     assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
-    #     # Ensure data is correct in the database
-    #     self.private_project.reload()
-    #     assert_equal(len(self.private_project.tags), 1)
-    #     assert_equal(self.private_project.tags[0]._id, 'new-tag')
-    #     # Ensure data is correct when GETting the resource again
-    #     reload_res = self.app.get(self.private_url, auth=self.user.auth)
-    #     assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
-    #     assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
-    #
-    # def test_non_authenticated_user_cannot_add_tag_to_public_project(self):
-    #     res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=None)
-    #     assert_equal(res.status_code, 401)
-    #
-    # def test_non_authenticated_user_cannot_add_tag_to_private_project(self):
-    #     res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=None)
-    #     assert_equal(res.status_code, 401)
-    #
-    # def test_non_contributor_cannot_add_tag_to_public_project(self):
-    #     res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.user_two.auth)
-    #     assert_equal(res.status_code, 403)
-    #
-    # def test_non_contributor_cannot_add_tag_to_private_project(self):
-    #     res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=self.user_two.auth)
-    #     assert_equal(res.status_code, 403)
-    #
-    # def test_read_only_contributor_cannot_add_tag_to_public_project(self):
-    #     res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.read_only_contributor.auth)
-    #     assert_equal(res.status_code, 403)
-    #
-    # def test_read_only_contributor_cannot_add_tag_to_private_project(self):
-    #     res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=self.read_only_contributor.auth)
-    #     assert_equal(res.status_code, 403)\
-    #
-    # @assert_logs(NodeLog.TAG_ADDED, 'private_project', -4)
-    # @assert_logs(NodeLog.TAG_ADDED, 'private_project', -3)
-    # @assert_logs(NodeLog.TAG_REMOVED, 'private_project', -2)
-    # @assert_logs(NodeLog.TAG_REMOVED, 'private_project')
-    # def test_tags_add_and_remove_properly(self):
-    #     res = self.app.patch_json_api(self.private_url, self.private_payload, auth=self.user.auth)
-    #     assert_equal(res.status_code, 200)
-    #     # Ensure adding tag data is correct from the PATCH response
-    #     assert_equal(len(res.json['data']['attributes']['tags']), 1)
-    #     assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
-    #     # Ensure removing and adding tag data is correct from the PATCH response
-    #     res = self.app.patch_json_api(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags':['newer-tag']}}, auth=self.user.auth)
-    #     assert_equal(res.status_code, 200)
-    #     assert_equal(len(res.json['data']['attributes']['tags']), 1)
-    #     assert_equal(res.json['data']['attributes']['tags'][0], 'newer-tag')
-    #     # Ensure removing tag data is correct from the PATCH response
-    #     res = self.app.patch_json_api(self.private_url, {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags': []}}, auth=self.user.auth)
-    #     assert_equal(res.status_code, 200)
-    #     assert_equal(len(res.json['data']['attributes']['tags']), 0)
+    @assert_logs(NodeLog.TAG_ADDED, 'public_project')
+    def test_contributor_can_add_tag_to_public_project(self):
+        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        # Ensure data is correct from the PATCH response
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
+        assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
+        # Ensure data is correct in the database
+        self.public_project.reload()
+        assert_equal(len(self.public_project.tags), 1)
+        assert_equal(self.public_project.tags[0]._id, 'new-tag')
+        # Ensure data is correct when GETting the resource again
+        reload_res = self.app.get(self.public_url)
+        assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
+        assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
+
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project')
+    def test_contributor_can_add_tag_to_private_project(self):
+        res = self.app.patch_json_api(self.private_url, self.private_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # Ensure data is correct from the PATCH response
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
+        assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
+        # Ensure data is correct in the database
+        self.private_project.reload()
+        assert_equal(len(self.private_project.tags), 1)
+        assert_equal(self.private_project.tags[0]._id, 'new-tag')
+        # Ensure data is correct when GETting the resource again
+        reload_res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(len(reload_res.json['data']['attributes']['tags']), 1)
+        assert_equal(reload_res.json['data']['attributes']['tags'][0], 'new-tag')
+
+    def test_non_authenticated_user_cannot_add_tag_to_public_project(self):
+        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=None)
+        assert_equal(res.status_code, 401)
+
+    def test_non_authenticated_user_cannot_add_tag_to_private_project(self):
+        res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=None)
+        assert_equal(res.status_code, 401)
+
+    def test_non_contributor_cannot_add_tag_to_public_project(self):
+        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.user_two.auth)
+        assert_equal(res.status_code, 403)
+
+    def test_non_contributor_cannot_add_tag_to_private_project(self):
+        res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=self.user_two.auth)
+        assert_equal(res.status_code, 403)
+
+    def test_read_only_contributor_cannot_add_tag_to_public_project(self):
+        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, expect_errors=True, auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 403)
+
+    def test_read_only_contributor_cannot_add_tag_to_private_project(self):
+        res = self.app.patch_json_api(self.private_url, self.private_payload, expect_errors=True, auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 403)\
+
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -4)
+    @assert_logs(NodeLog.TAG_ADDED, 'private_project', -3)
+    @assert_logs(NodeLog.TAG_REMOVED, 'private_project', -2)
+    @assert_logs(NodeLog.TAG_REMOVED, 'private_project')
+    def test_tags_add_and_remove_properly(self):
+        res = self.app.patch_json_api(self.private_url, self.private_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        # Ensure adding tag data is correct from the PATCH response
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
+        assert_equal(res.json['data']['attributes']['tags'][0], 'new-tag')
+        # Ensure removing and adding tag data is correct from the PATCH response
+        res = self.app.patch_json_api(self.private_url, {'data': {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags':['newer-tag']}}}, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['attributes']['tags']), 1)
+        assert_equal(res.json['data']['attributes']['tags'][0], 'newer-tag')
+        # Ensure removing tag data is correct from the PATCH response
+        res = self.app.patch_json_api(self.private_url, {'data': {'id': self.private_project._id, 'type':'nodes', 'attributes': {'tags': []}}}, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
 
 class TestNodeLinkCreate(ApiTestCase):
@@ -2305,26 +2504,29 @@ class TestNodeLinkCreate(ApiTestCase):
         self.private_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.project._id)
 
         self.private_payload = {
-            "type": "node_links",
-            "attributes": {
-                "target_node_id": self.pointer_project._id
+            'data': {
+                "type": "node_links",
+                "attributes": {
+                    "target_node_id": self.pointer_project._id
+                }
             }
-}
+        }
+
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.public_project._id)
-        self.public_payload = {'type': 'node_links', 'attributes': {'target_node_id': self.public_pointer_project._id}}
+        self.public_payload = {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.public_pointer_project._id}}}
         self.fake_url = '/{}nodes/{}/node_links/'.format(API_BASE, 'fdxlq')
-        self.fake_payload = {'type': 'node_links', 'attributes': {'target_node_id': 'fdxlq'}}
-        self.point_to_itself_payload = {'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}
+        self.fake_payload = {'data': {'type': 'node_links', 'attributes': {'target_node_id': 'fdxlq'}}}
+        self.point_to_itself_payload = {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}}
 
         self.user_two = AuthUserFactory()
         self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
         self.user_two_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.user_two_project._id)
-        self.user_two_payload = {'type': 'node_links', 'attributes': {'target_node_id': self.user_two_project._id}}
+        self.user_two_payload = {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.user_two_project._id}}}
 
     def test_creates_project_target_not_nested(self):
-        payload = {'type': 'node_links', 'target_node_id': self.pointer_project._id}
+        payload = {'data': {'type': 'node_links', 'target_node_id': self.pointer_project._id}}
         res = self.app.post_json_api(self.public_url, payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
@@ -2420,19 +2622,19 @@ class TestNodeLinkCreate(ApiTestCase):
         registration = RegistrationFactory(creator=self.user)
 
         url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
-        payload = {'type': 'node_links', 'attributes': {'target_node_id': self.public_pointer_project._id}}
+        payload = {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.public_pointer_project._id}}}
         res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_create_node_pointer_no_type(self):
-        payload = {'attributes': {'target_node_id': self.user_two_project._id}}
+        payload = {'data': {'attributes': {'target_node_id': self.user_two_project._id}}}
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_create_node_pointer_incorrect_type(self):
-        payload = {'type': 'Wrong type.', 'attributes': {'target_node_id': self.user_two_project._id}}
+        payload = {'data': {'type': 'Wrong type.', 'attributes': {'target_node_id': self.user_two_project._id}}}
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
@@ -2772,10 +2974,12 @@ class TestExceptionFormatting(ApiTestCase):
         self.category = 'data'
 
         self.project_no_title = {
-            'attributes': {
-                'description': self.description,
-                'category': self.category,
-                'type': 'nodes',
+            'data': {
+                'attributes': {
+                    'description': self.description,
+                    'category': self.category,
+                    'type': 'nodes',
+                }
             }
         }
 
@@ -2811,7 +3015,7 @@ class TestExceptionFormatting(ApiTestCase):
         assert_equal(errors[0], {'detail': "Authentication credentials were not provided."})
 
     def test_update_project_with_no_title_or_category_formatting(self):
-        res = self.app.put_json_api(self.private_url, {'type': 'nodes', 'id': self.private_project._id, 'attributes': {'description': 'New description'}}, auth=self.user.auth, expect_errors=True)
+        res = self.app.put_json_api(self.private_url, {'data': {'type': 'nodes', 'id': self.private_project._id, 'attributes': {'description': 'New description'}}}, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(len(errors), 2)
@@ -2823,17 +3027,20 @@ class TestExceptionFormatting(ApiTestCase):
 
     def test_create_node_link_no_target_formatting(self):
         url = self.private_url + 'node_links/'
-        res = self.app.post_json_api(url, {'type': 'node_links', 'attributes': {}}, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(url, {'data': {'type': 'node_links', 'attributes': {'target_node_id': ''}}},
+                                     auth=self.user.auth, expect_errors=True)
+        print res
         errors = res.json['errors']
+        print res.json
         assert(isinstance(errors, list))
         assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/target_node_id'})
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
 
     def test_node_link_already_exists(self):
         url = self.private_url + 'node_links/'
-        res = self.app.post_json_api(url, {'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}, auth=self.user.auth)
+        res = self.app.post_json_api(url, {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}}, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        res = self.app.post_json_api(url, {'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(url, {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}}, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert(self.public_project._id in res.json['errors'][0]['detail'])
