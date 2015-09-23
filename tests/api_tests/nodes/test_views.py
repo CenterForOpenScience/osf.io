@@ -380,7 +380,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "'foo' is not a supported filter operator; use one of eq, lt, lte, gt, gte"
+            "Value 'foo' is not a supported filter operator; use one of eq, lt, lte, gt, gte."
         )
 
     def test_filter_by_not_comparable_field(self):
@@ -404,7 +404,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "'foo' is not a valid value for a bool type filter"
+            "Value 'foo' is not valid for a filter on type bool."
         )
 
     def test_filter_by_date_created_invalid_date(self):
@@ -416,7 +416,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "'foo' is not a valid value for a date type filter"
+            "Value 'foo' is not valid for a filter on type date."
         )
 
     def test_filter_by_date_created_gt(self):

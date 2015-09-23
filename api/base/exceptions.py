@@ -77,12 +77,12 @@ class InvalidQueryStringValue(JSONAPIParameterException):
 
 class InvalidFilterOperator(JSONAPIParameterException):
     """Raised when client passes an invalid operator to a query param filter."""
-    default_detail = 'Invalid filter operator, must use one of: >, >=, =, <=, <'
+    default_detail = 'Invalid filter operator, must use one of: >, >=, =, <=, <.'
     status_code = http.BAD_REQUEST
 
     def __init__(self, detail=None, value=None):
         if value and not detail:
-            detail = "'{0}' is not a supported filter operator; use one of eq, lt, lte, gt, gte".format(value)
+            detail = "Value '{0}' is not a supported filter operator; use one of eq, lt, lte, gt, gte.".format(value)
         super(InvalidFilterOperator, self).__init__(detail=detail, parameter='filter')
 
 class InvalidFilterValue(JSONAPIParameterException):
@@ -92,7 +92,7 @@ class InvalidFilterValue(JSONAPIParameterException):
 
     def __init__(self, detail=None, value=None, field_type=None):
         if value and not detail:
-            detail = "'{0}' is not a valid value for a {1} type filter".format(
+            detail = "Value '{0}' is not valid for a filter on type {1}.".format(
                 value,
                 field_type
             )
@@ -124,10 +124,10 @@ class InvalidFilterComparisonType(JSONAPIAttributeException):
 
 class InvalidFilterFieldError(JSONAPIAttributeException):
     """Raised when client tries to filter on a field that is not supported"""
-    default_detail = "Query contained one or more filters for invalid fields"
+    default_detail = "Query contained one or more filters for invalid fields."
     status_code = http.BAD_REQUEST
 
     def __init__(self, detail=None, parameter=None, value=None):
         if value and not detail:
-            detail = "'{}' is not a filterable field".format(value)
+            detail = "Value '{}' is not a filterable field.".format(value)
         super(InvalidFilterFieldError, self).__init__(detail=detail, parameter=parameter)
