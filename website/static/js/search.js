@@ -94,15 +94,13 @@ var ViewModel = function(params) {
     self.searchCSS = ko.observable('active');
     self.onSearchPage = true;
 
-    self.licenses = ko.observableArray(
-        $.map(licenses, function(license) {
-            var l = new License(license.name, 0);
-            l.active.subscribe(function() {
-                self.search();
-            });
-            return l;
-        })
-    );
+    self.licenses = $.map(licenses, function(license) {
+        var l = new License(license.name, 0);
+        l.active.subscribe(function() {
+            self.search();
+        });
+        return l;
+    });
     self.licenseNames = ko.computed(function() {
         var sortedLicenses = self.licenses() || [];
         sortedLicenses.sort(function(a, b) {
