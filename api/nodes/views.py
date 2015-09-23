@@ -15,10 +15,11 @@ from api.users.views import UserMixin
 from api.nodes.serializers import (
     NodeSerializer,
     NodeLinksSerializer,
+    NodeDetailSerializer,
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
-    NodeContributorDetailSerializer,
+    NodeContributorDetailSerializer
 )
 from api.nodes.permissions import (
     AdminOrPublic,
@@ -254,7 +255,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
-    serializer_class = NodeSerializer
+    serializer_class = NodeDetailSerializer
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -448,6 +449,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError("Must have at least one registered admin contributor")
+
 
 # TODO: Support creating registrations
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):

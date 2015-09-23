@@ -658,7 +658,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     }
 
     def __init__(self, *args, **kwargs):
+
+        tags = kwargs.pop('tags', [])
+
         super(Node, self).__init__(*args, **kwargs)
+
+        # Ensure when Node is created with tags through API, tags are added to Tag
+        if tags:
+            for tag in tags:
+                self.add_tag(tag, Auth(self.creator), save=False, log=False)
 
         if kwargs.get('_is_loaded', False):
             return
@@ -1883,23 +1891,24 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-    def add_tag(self, tag, auth, save=True):
+    def add_tag(self, tag, auth, save=True, log=True):
         if tag not in self.tags:
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(_id=tag)
             new_tag.save()
             self.tags.append(new_tag)
-            self.add_log(
-                action=NodeLog.TAG_ADDED,
-                params={
-                    'parent_node': self.parent_id,
-                    'node': self._primary_key,
-                    'tag': tag,
-                },
-                auth=auth,
-                save=False,
-            )
+            if log:
+                self.add_log(
+                    action=NodeLog.TAG_ADDED,
+                    params={
+                        'parent_node': self.parent_id,
+                        'node': self._primary_key,
+                        'tag': tag,
+                    },
+                    auth=auth,
+                    save=False,
+                )
             if save:
                 self.save()
 
