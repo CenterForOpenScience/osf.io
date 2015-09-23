@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from website.models import User
 
 from api.base.serializers import (
-    JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
+    JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly, IDField, TypeField
 )
 
 
@@ -15,19 +15,14 @@ class UserSerializer(JSONAPISerializer):
         'family_name',
         'id'
     ])
-    id = ser.CharField(read_only=True, source='_id', label='ID')
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
     fullname = ser.CharField(required=True, label='Full name', help_text='Display name used in the general user interface')
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     suffix = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-
-    profile_image_url = DevOnly(ser.SerializerMethodField(required=False, read_only=True))
-
-    def get_profile_image_url(self, user):
-        size = self.context['request'].query_params.get('profile_image_size')
-        return user.profile_image_url(size=size)
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
     gitHub = DevOnly(ser.CharField(required=False, label='GitHub', source='social.github', allow_blank=True, help_text='GitHub Handle'))
@@ -38,6 +33,11 @@ class UserSerializer(JSONAPISerializer):
     impactStory = DevOnly(ser.CharField(required=False, source='social.impactStory', allow_blank=True, help_text='ImpactStory Account'))
     orcid = DevOnly(ser.CharField(required=False, label='ORCID', source='social.orcid', allow_blank=True, help_text='ORCID'))
     researcherId = DevOnly(ser.CharField(required=False, label='ResearcherID', source='social.researcherId', allow_blank=True, help_text='ResearcherId Account'))
+    profile_image_url = DevOnly(ser.SerializerMethodField(required=False, read_only=True))
+
+    def get_profile_image_url(self, user):
+        size = self.context['request'].query_params.get('profile_image_size')
+        return user.profile_image_url(size=size)
 
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
@@ -52,6 +52,17 @@ class UserSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         assert isinstance(instance, User), 'instance must be a User'
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            if 'social' == attr:
+                for key, val in value.items():
+                    instance.social[key] = val
+            else:
+                setattr(instance, attr, value)
         instance.save()
         return instance
+
+
+class UserDetailSerializer(UserSerializer):
+    """
+    Overrides UserSerializer to make id required.
+    """
+    id = IDField(source='_id', required=True)
