@@ -25,7 +25,7 @@ var FileViewPage = {
         self.file = self.context.file;
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
-        self.file.checkout_user = '';
+        self.file.checkout_user = null;
         self.request_done = false;
         self.file.permission = 'read';
         self.isCheckout_user = function() {
@@ -316,9 +316,9 @@ var FileViewPage = {
                 }, ctrl.editor.title);
             }
         };
-
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
-            ctrl.canEdit() && (!ctrl.file.checkout_user) && ctrl.request_done ? m('.btn-group.m-l-xs.m-t-xs', [
+            // Special case whether or not to show the delete button for published Dataverse files
+            (ctrl.canEdit() && (!ctrl.file.checkout_user) && ctrl.request_done && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.request_done && (ctrl.file.permission === 'admin') ? m('.btn-group.m-l-xs.m-t-xs', [

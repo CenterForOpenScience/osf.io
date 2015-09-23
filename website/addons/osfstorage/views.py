@@ -232,9 +232,7 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
     version = file_node.get_version(version_id, required=True)
 
     if request.args.get('mode') not in ('render', ):
-        if version_id < 0:
-            version_id = len(file_node.versions) + version_id
-        utils.update_analytics(node_addon.owner, file_node._id, version_id)
+        utils.update_analytics(node_addon.owner, file_node._id, int(version.identifier))
 
     return {
         'data': {

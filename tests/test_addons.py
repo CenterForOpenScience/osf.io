@@ -426,7 +426,7 @@ class TestCheckOAuth(OsfTestCase):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=True, parent=self.node)
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.users.all+read'}})
+                                   attributes={'accessTokenScope': {'osf.users.all_read'}})
 
         assert_false(component.has_permission(self.user, 'write'))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
@@ -436,7 +436,7 @@ class TestCheckOAuth(OsfTestCase):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.users.all+read'}})
+                                   attributes={'accessTokenScope': {'osf.users.all_read'}})
 
         assert_false(component.has_permission(self.user, 'write'))
         with assert_raises(HTTPError) as exc_info:
@@ -449,7 +449,7 @@ class TestCheckOAuth(OsfTestCase):
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
                                    attributes={'accessTokenScope': {
                                        'decommissioned.scope+write',
-                                       'osf.nodes.data+read',
+                                       'osf.nodes.data_read',
                                    }})
 
         assert_false(component.has_permission(self.user, 'write'))
@@ -460,7 +460,7 @@ class TestCheckOAuth(OsfTestCase):
         component_admin = AuthUserFactory()
         component = ProjectFactory(creator=component_admin, is_public=False, parent=self.node)
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.nodes.data+write'}})
+                                   attributes={'accessTokenScope': {'osf.nodes.data_write'}})
 
         assert_false(component.has_permission(self.user, 'write'))
         res = views.check_access(component, Auth(user=self.user), 'download', cas_resp)
@@ -469,7 +469,7 @@ class TestCheckOAuth(OsfTestCase):
     def test_has_permission_read_scope_write_action_forbidden(self):
         component = ProjectFactory(creator=self.user, is_public=False, parent=self.node)
         cas_resp = cas.CasResponse(authenticated=True, status=None, user=self.user._id,
-                                   attributes={'accessTokenScope': {'osf.nodes.data+read'}})
+                                   attributes={'accessTokenScope': {'osf.nodes.data_read'}})
 
         assert_true(component.has_permission(self.user, 'write'))
         with assert_raises(HTTPError) as exc_info:
