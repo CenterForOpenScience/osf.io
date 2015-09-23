@@ -1,9 +1,9 @@
+from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .utils import absolute_reverse
 from api.users.serializers import UserSerializer
-from django.http import HttpResponse
+from .utils import absolute_reverse
 
 @api_view(('GET',))
 def root(request, format=None):
