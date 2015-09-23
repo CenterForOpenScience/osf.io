@@ -10,24 +10,24 @@ def string_required(value):
     return True
 
 
-def choice_in(choices, match_case=True):
+def choice_in(choices, ignore_case=False):
     """
-    Validate that the option provided is from a restricted set of choices
+    Validate that the option provided is one of a restricted set of choices
 
     Returns a callable that can be used as a validator in ModularODM
     :param choices: An iterable of choices allowed for use
-    :param bool match_case: If false, perform case-insensitive comparison (for strings)
+    :param bool ignore_case: If True, perform case-insensitive comparison (for strings) and otherwise match as-is
     :return:
     """
 
-    if match_case:
-        choice_set = set(e.upper() if isinstance(e, basestring) else e
-                         for e in choices)
+    if ignore_case is True:
+        choice_set = frozenset(e.upper() if isinstance(e, basestring) else e
+                               for e in choices)
     else:
-        choice_set = set(choices)
+        choice_set = frozenset(choices)
 
     def validator(value):
-        if match_case is True and isinstance(value, basestring):
+        if ignore_case is True and isinstance(value, basestring):
             value = value.upper()
 
         if value in choice_set:
