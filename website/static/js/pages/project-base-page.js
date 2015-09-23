@@ -48,27 +48,14 @@ $(document).ready(function() {
             else {
                 $('.cp-handle').css('margin-top', NAV_MAX_TOP_MARGIN - scrollTopPosition);
             }
+        } else {
+            $('.cp-handle').css('margin-top', NAV_MAX_TOP_MARGIN);
         }
     };
-    var THROTTLE = 10;
+    var ADJUST_PANEL_DEBOUNCE = 10;
+    var RESIZE_DEBOUNCE  = 50;
 
     self.adjustPanelPosition(); /* Init when refreshing the page*/
-    $(window).scroll(
-        $osf.debounce(
-            function() {
-                self.adjustPanelPosition();
-    }, THROTTLE));
-
-    THROTTLE = 50;
-    $( window ).resize(
-        $osf.debounce(
-            function() {
-                var bodyWidth = $(document.body).width();
-                var scrollTopPosition = $(window).scrollTop();
-                if (bodyWidth > SMALL_SCREEN_SIZE || scrollTopPosition < THRESHOLD_SCROLL_POSITION) {
-                    $('.cp-handle').css('margin-top', NAV_MAX_TOP_MARGIN);
-                } else if (bodyWidth < SMALL_SCREEN_SIZE || scrollTopPosition > THRESHOLD_SCROLL_POSITION) {
-                    $('.cp-handle').css('margin-top', NON_NAV_TOP_MARGIN);
-                }
-    }, THROTTLE));
+    $(window).scroll($osf.debounce(self.adjustPanelPosition, ADJUST_PANEL_DEBOUNCE));
+    $(window).resize($osf.debounce(self.adjustPanelPosition, RESIZE_DEBOUNCE));
 });
