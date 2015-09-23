@@ -1,67 +1,52 @@
 # -*- coding: utf-8 -*-
-import mock
 from nose.tools import *  # flake8: noqa
-
-import functools
-from contextlib import nested
-from types import MethodType
-
-from rest_framework import generics
-from rest_framework.test import (
-    APIRequestFactory,
-    force_authenticate
-)
+import httplib as http
 
 from tests.base import ApiTestCase
 from tests import factories
 
 from api.base.settings.defaults import API_BASE
-from api.nodes import views as node_views
+from api.nodes.serializers import NodeSerializer
 
-def spy_on(method):
-
-    calls = []
-    @functools.wraps(method)
-    def wrapper(*args, **kwargs):
-        calls.append((args, kwargs))
-        return method(*args, **kwargs)
-
-    return calls, wrapper
-
-        
-class TestJSONAPISerializer(ApiTestCase):
+class TestApiBaseSerializers(ApiTestCase):
 
     def setUp(self):
-        super(TestJSONAPISerializer, self).setUp()
-        
-        self.user = factories.AuthUserFactory()
-        self.node = factories.ProjectFactory(creator=self.user)
-        self.url = '/{0}nodes/{1}/'.format(API_BASE, self.node._id)
+        super(TestApiBaseSerializers, self).setUp()
+
+        self.node = factories.ProjectFactory(is_public=True)
+
         for i in range(5):
-            factories.ProjectFactory(parent=self.node, creator=self.user)
-        for i in range(5):
-            factories.ProjectFactory(parent=self.node)
+            factories.ProjectFactory(is_public=True, parent=self.node)
 
-    def test_included_fields_are_added_to_response(self):
-        includes = ['children', 'parent']
-        res = self.app.get(
-            self.url,
-            auth=self.user.auth,
-            params={
-                'include': includes
-            }
-        )
-        for include in includes:
-            assert_in(include, res.json['data']['includes'])
+        self.url = '/{}nodes/{}/'.format(API_BASE, self.node._id)
 
+    def test_counts_not_included_in_link_fields_by_default(self):
 
-    def test_sideload_attempts_with_errors_are_None(self):
-        res = self.app.get(
-            self.url,
-            auth=self.user.auth,
-            params={
-                'include': ['parent']
-            }
-        )
-        assert_is_none(res.json['data']['includes']['parent'])
-	        
+        res = self.app.get(self.url)
+        relationships = res.json['data']['relationships']
+        for relation in relationships.values():
+            link = relation['links'].values()[0]
+            assert_not_in('count', link['meta'])
+
+    def test_counts_included_in_link_fields_with_related_counts_query_param(self):
+
+        res = self.app.get(self.url, params={'related_counts': True})
+        relationships = res.json['data']['relationships']
+        for key, relation in relationships.iteritems():
+            field = NodeSerializer._declared_fields[key]
+            if (field.meta or {}).get('count'):            
+                link = relation['links'].values()[0]
+                assert_in('count', link['meta'])
+
+    def test_related_counts_excluded_query_param_false(self):
+
+        res = self.app.get(self.url, params={'related_counts': False})
+        relationships = res.json['data']['relationships']
+        for relation in relationships.values():
+            link = relation['links'].values()[0]
+            assert_not_in('count', link['meta'])
+
+    def test_invalid_param_raises_bad_request(self):
+
+        res = self.app.get(self.url, params={'related_counts': 'fish'}, expect_errors=True)
+        assert_equal(res.status_code, http.BAD_REQUEST)

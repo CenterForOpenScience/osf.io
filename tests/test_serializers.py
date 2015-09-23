@@ -14,7 +14,7 @@ from tests.base import OsfTestCase
 
 from framework.auth import Auth
 from framework import utils as framework_utils
-from website.project.views.node import _get_summary, _view_project, _serialize_node_search
+from website.project.views.node import _get_summary, _view_project, _serialize_node_search, _get_children
 from website.views import _render_node
 from website.profile import utils
 from website.views import serialize_log
@@ -28,7 +28,7 @@ class TestNodeSerializers(OsfTestCase):
     def test_get_summary_private_node_should_include_id_and_primary_boolean_reg_and_fork(self):
         user = UserFactory()
         # user cannot see this node
-        node = ProjectFactory(public=False)
+        node = ProjectFactory(is_public=False)
         result = _get_summary(
             node, auth=Auth(user),
             rescale_ratio=None,
@@ -53,7 +53,7 @@ class TestNodeSerializers(OsfTestCase):
     def test_get_summary_private_registration_should_include_is_registration(self):
         user = UserFactory()
         # non-contributor cannot see private registration of public project
-        node = ProjectFactory(public=True)
+        node = ProjectFactory(is_public=True)
         reg = RegistrationFactory(project=node, user=node.creator)
         res = _get_summary(reg, auth=Auth(user), rescale_ratio=None)
 
@@ -86,12 +86,37 @@ class TestNodeSerializers(OsfTestCase):
         res_writer = _render_node(node, Auth(writer))
         assert_equal(res_writer['permissions'], 'write')
 
+    # https://openscience.atlassian.net/browse/OSF-4618
+    def test_get_children_only_returns_child_nodes_with_admin_permissions(self):
+        user = UserFactory()
+        admin_project = ProjectFactory()
+        admin_project.add_contributor(user, auth=Auth(admin_project.creator),
+                                      permissions=permissions.expand_permissions(permissions.ADMIN))
+        admin_project.save()
+
+        admin_component = NodeFactory(parent=admin_project)
+        admin_component.add_contributor(user, auth=Auth(admin_component.creator),
+                                        permissions=permissions.expand_permissions(permissions.ADMIN))
+        admin_component.save()
+
+        read_and_write = NodeFactory(parent=admin_project)
+        read_and_write.add_contributor(user, auth=Auth(read_and_write.creator),
+                                       permissions=permissions.expand_permissions(permissions.WRITE))
+        read_and_write.save()
+        read_only = NodeFactory(parent=admin_project)
+        read_only.add_contributor(user, auth=Auth(read_only.creator),
+                                  permissions=permissions.expand_permissions(permissions.READ))
+        read_only.save()
+
+        non_contributor = NodeFactory(parent=admin_project)
+        components = _get_children(admin_project, Auth(user))
+        assert_equal(len(components), 1)
 
 
     def test_get_summary_private_fork_should_include_is_fork(self):
         user = UserFactory()
         # non-contributor cannot see private fork of public project
-        node = ProjectFactory(public=True)
+        node = ProjectFactory(is_public=True)
         consolidated_auth = Auth(user=node.creator)
         fork = node.fork_node(consolidated_auth)
 
@@ -107,7 +132,7 @@ class TestNodeSerializers(OsfTestCase):
     def test_get_summary_private_fork_private_project_should_include_is_fork(self):
         # contributor on a private project
         user = UserFactory()
-        node = ProjectFactory(public=False)
+        node = ProjectFactory(is_public=False)
         node.add_contributor(user)
 
         # contributor cannot see private fork of this project

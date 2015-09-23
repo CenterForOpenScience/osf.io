@@ -126,7 +126,7 @@ var FileViewPage = {
 
 
         // Hack to delay creation of the editor
-        // until we know this is the current file revsion
+        // until we know this is the current file revision
         self.enableEditing = function() {
             // Sometimes we can get here twice, check just in case
             if (self.editor || !self.canEdit()) {
@@ -170,7 +170,7 @@ var FileViewPage = {
         var fileViewPanelsLayout;
 
         if (panelsShown === 2) {
-            // view | edit 
+            // view | edit
             mfrIframeParentLayout = 'col-sm-6';
             fileViewPanelsLayout = 'col-sm-6';
         } else {
@@ -209,9 +209,9 @@ var FileViewPage = {
                 }, ctrl.editor.title);
             }
         };
-
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
-            ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
+            // Special case whether or not to show the delete button for published Dataverse files
+            (ctrl.canEdit() && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             m('.btn-group.m-t-xs', [
@@ -278,8 +278,9 @@ module.exports = function(context) {
         $('#mfrIframe').html(context.file.error);
     } else {
         var url = context.file.urls.render;
-        if (context.accessToken) {
-            url += '&token=' + context.accessToken;
+        if (navigator.appVersion.indexOf('MSIE 9.') !== -1) {
+            url += url.indexOf('?') > -1 ? '&' : '?';
+            url += 'cookie=' + (document.cookie.match(window.contextVars.cookieName + '=(.+?);|$')[1] || '');
         }
 
         if (window.mfr !== undefined) {

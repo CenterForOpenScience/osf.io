@@ -304,7 +304,7 @@ def deserialize_contributors(node, user_dicts, auth, validate=False):
             fullname = sanitize.strip_html(fullname)
             if not fullname:
                 raise ValidationValueError('Full name field cannot be empty')
-            if email is not None:
+            if email:
                 validate_email(email)  # Will raise a ValidationError if email invalid
 
         if contrib_dict['id']:
@@ -549,8 +549,9 @@ def notify_added_contributor(node, contributor, throttle=None):
     # Exclude forks and templates because the user forking/templating the project gets added
     # via 'add_contributor' but does not need to get notified.
     # Only email users for projects, or for components where they are not contributors on the parent node.
-    if (contributor.is_registered and not node.template_node and not node.is_fork
-            and not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
+    if (contributor.is_registered and not node.template_node and not node.is_fork and
+            (not node.parent_node or
+                (node.parent_node and not node.parent_node.is_contributor(contributor)))):
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
             timestamp = contributor_record.get('last_sent', None)

@@ -268,6 +268,17 @@ invisible on
   {{/ifnot}}
 </script>
 
+<script type="text/html" id="addon_file_renamed">
+    renamed <span class="overflow">{{ params.source.materialized }}</span>
+  {{#if params.source.materialized.endsWith('/')}}
+  to <span class="overflow log-folder">{{ params.destination.materialized }}</span> in {{ params.destination.addon }} in
+  {{/if}}
+  {{#ifnot params.source.materialized.endsWith('/')}}
+  to <a href="{{ params.destination.url }}" class="overflow">{{ params.destination.materialized }}</a> in {{ params.destination.addon }} in
+  {{/ifnot}}
+    <a class="log-node-title-link overflow" data-bind="attr: {href: $parent.nodeUrl}, text: $parent.nodeTitle"></a>
+</script>
+
 <script type="text/html" id="external_ids_added">
 created external identifiers
 <a data-bind="attr.href: 'http://ezid.cdlib.org/id/doi:' + params.identifiers.doi, text: 'doi:' + params.identifiers.doi"></a> and

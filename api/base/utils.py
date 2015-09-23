@@ -12,6 +12,18 @@ from website import settings as website_settings
 from framework.auth import Auth
 from api.base.exceptions import Gone
 
+# These values are copied from rest_framework.fields.BooleanField
+# BooleanField cannot be imported here without raising an
+# ImproperlyConfigured error
+TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
+FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
+
+def is_truthy(value):
+    return value in TRUTHY
+
+def is_falsy(value):
+    return value in FALSY
+
 def get_user_auth(request):
     """Given a Django request object, return an ``Auth`` object with the
     authenticated user attached to it.
