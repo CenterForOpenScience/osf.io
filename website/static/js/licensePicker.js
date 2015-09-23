@@ -12,6 +12,11 @@ var licenses = siteLicenses.list;
 var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
 var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;
 
+var LICENSE_PROPERTIES = {
+    'year': 'Year',
+    'copyrightHolders': 'Copyright Holders'
+};
+
 var template = require('raw!templates/license-picker.html');
 
 /**
@@ -99,10 +104,10 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         self.properties = ko.computed(function() {
             var props = self.selectedLicense().properties;
             if (props) {
-                return $.map(props, function(prop, key) {
+                return $.map(props, function(prop) {
                     return {
-                        name: prop.label,
-                        value: self[key]
+                        name: LICENSE_PROPERTIES[prop],
+                        value: self[prop]
                     };
                 });
             }
