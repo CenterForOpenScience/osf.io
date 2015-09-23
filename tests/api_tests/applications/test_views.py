@@ -35,16 +35,19 @@ class TestApplicationList(ApiTestCase):
         self.user2_list_url = _get_application_list_url()
 
         self.sample_data = {
-            'type': 'applications',
-            'owner': 'Value discarded',
-            'client_id': 'Value discarded',
-            'client_secret': 'Value discarded',
-            'attributes': {
-                'name': 'A shiny new application',
-                'description': "It's really quite shiny",
-                'home_url': 'http://osf.io',
-                'callback_url': 'https://cos.io'
-        }}
+            'data': {
+                'type': 'applications',
+                'attributes': {
+                    'name': 'A shiny new application',
+                    'description': "It's really quite shiny",
+                    'home_url': 'http://osf.io',
+                    'callback_url': 'https://cos.io',
+                    'owner': 'Value discarded',
+                    'client_id': 'Value discarded',
+                    'client_secret': 'Value discarded',
+                }
+            }
+        }
 
     def test_user1_should_see_only_their_applications(self):
         res = self.app.get(self.user1_list_url, auth=self.user1.auth)
@@ -77,13 +80,13 @@ class TestApplicationList(ApiTestCase):
         assert_equal(res.json['data']['attributes']['owner'], self.user1._id)
         # Some fields aren't writable; make sure user can't set these
         assert_not_equal(res.json['data']['attributes']['client_id'],
-                         self.sample_data['client_id'])
+                         self.sample_data['data']['attributes']['client_id'])
         assert_not_equal(res.json['data']['attributes']['client_secret'],
-                         self.sample_data['client_secret'])
+                         self.sample_data['data']['attributes']['client_secret'])
 
     def test_creating_application_fails_if_callbackurl_fails_validation(self):
         data = copy.copy(self.sample_data)
-        data['attributes']['callback_url'] = "itunes:///invalid_url_of_doom"
+        data['data']['attributes']['callback_url'] = "itunes:///invalid_url_of_doom"
         res = self.app.post_json_api(self.user1_list_url, data,
                             auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -93,8 +96,8 @@ class TestApplicationList(ApiTestCase):
         cleaned_text = sanitize.strip_html(bad_text)
 
         payload = copy.copy(self.sample_data)
-        payload['attributes']['name'] = bad_text
-        payload['attributes']['description'] = bad_text
+        payload['data']['attributes']['name'] = bad_text
+        payload['data']['attributes']['description'] = bad_text
 
         res = self.app.post_json_api(self.user1_list_url, payload, auth=self.user1.auth)
         assert_equal(res.status_code, 201)
@@ -129,47 +132,62 @@ class TestApplicationDetail(ApiTestCase):
         self.user1_app_url = _get_application_detail_route(self.user1_app)
 
         self.missing_id = {
-            'type': 'applications',
-            'attributes': {
-                'name': 'A shiny new application',
-                'home_url': 'http://osf.io',
-                'callback_url': 'https://cos.io'
-        }}
+            'data': {
+                'type': 'applications',
+                'attributes': {
+                    'name': 'A shiny new application',
+                    'home_url': 'http://osf.io',
+                    'callback_url': 'https://cos.io'
+                }
+            }
+        }
 
         self.missing_type = {
-            'id': self.user1_app._id,
-            'attributes': {
-                'name': 'A shiny new application',
-                'home_url': 'http://osf.io',
-                'callback_url': 'https://cos.io'
-        }}
+            'data': {
+                'id': self.user1_app._id,
+                'attributes': {
+                    'name': 'A shiny new application',
+                    'home_url': 'http://osf.io',
+                    'callback_url': 'https://cos.io'
+                }
+            }
+        }
 
         self.incorrect_id = {
-            'id': '12345',
-            'type': 'applications',
-            'attributes': {
-                'name': 'A shiny new application',
-                'home_url': 'http://osf.io',
-                'callback_url': 'https://cos.io'
-        }}
+            'data': {
+                'id': '12345',
+                'type': 'applications',
+                'attributes': {
+                    'name': 'A shiny new application',
+                    'home_url': 'http://osf.io',
+                    'callback_url': 'https://cos.io'
+                }
+            }
+        }
 
         self.incorrect_type = {
-            'id': self.user1_app._id,
-            'type': 'Wrong type.',
-            'attributes': {
-                'name': 'A shiny new application',
-                'home_url': 'http://osf.io',
-                'callback_url': 'https://cos.io'
-        }}
+            'data': {
+                'id': self.user1_app._id,
+                'type': 'Wrong type.',
+                'attributes': {
+                    'name': 'A shiny new application',
+                    'home_url': 'http://osf.io',
+                    'callback_url': 'https://cos.io'
+                }
+            }
+        }
 
         self.correct =  {
-            'id': self.user1_app._id,
-            'type': 'applications',
-            'attributes': {
-                'name': 'A shiny new application',
-                'home_url': 'http://osf.io',
-                'callback_url': 'https://cos.io'
-        }}
+            'data': {
+                'id': self.user1_app._id,
+                'type': 'applications',
+                'attributes': {
+                    'name': 'A shiny new application',
+                    'home_url': 'http://osf.io',
+                    'callback_url': 'https://cos.io'
+                }
+            }
+        }
 
     def test_owner_can_view(self):
         res = self.app.get(self.user1_app_url, auth=self.user1.auth)
@@ -207,11 +225,11 @@ class TestApplicationDetail(ApiTestCase):
         user1_app = self.user1_app
         new_name = "The instance formerly known as Prince"
         res = self.app.patch_json_api(self.user1_app_url,
-                             {'attributes':
+                             {'data': {'attributes':
                                   {'name': new_name},
                               'id': self.user1_app._id,
                               'type': 'applications'
-                             }, auth=self.user1.auth, expect_errors=True)
+                             }}, auth=self.user1.auth, expect_errors=True)
         user1_app.reload()
         assert_equal(res.status_code, 200)
 
@@ -228,10 +246,10 @@ class TestApplicationDetail(ApiTestCase):
     def test_updating_an_instance_does_not_change_the_number_of_instances(self):
         new_name = "The instance formerly known as Prince"
         res = self.app.patch_json_api(self.user1_app_url,
-                             {'attributes': {"name": new_name},
-                              'id': self.user1_app._id,
-                              'type': 'applications',
-                              }, auth=self.user1.auth)
+                                      {'data': {
+                                          'attributes': {"name": new_name},
+                                          'id': self.user1_app._id,
+                                          'type': 'applications'}}, auth=self.user1.auth)
         assert_equal(res.status_code, 200)
 
         list_url = _get_application_list_url()
@@ -249,6 +267,7 @@ class TestApplicationDetail(ApiTestCase):
 
     def test_update_application(self):
         res = self.app.put_json_api(self.user1_app_url, self.correct, auth=self.user1.auth, expect_errors=True)
+        print res
         assert_equal(res.status_code, 200)
 
     def test_update_application_incorrect_type(self):
@@ -289,9 +308,9 @@ class TestApplicationDetail(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_partial_update_application_no_attributes(self):
-        payload = {'id': self.user1_app._id, 'type': 'applications', 'name': 'The instance formerly known as Prince'}
+        payload = {'data': {'id': self.user1_app._id, 'type': 'applications', 'name': 'The instance formerly known as Prince'}}
         res = self.app.patch_json_api(self.user1_app_url, payload, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 200)
+        assert_equal(res.status_code, 400)
 
     def tearDown(self):
         super(TestApplicationDetail, self).tearDown()
