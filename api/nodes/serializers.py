@@ -1,5 +1,4 @@
 from rest_framework import serializers as ser
-from rest_framework_bulk.serializers import BulkSerializerMixin
 from rest_framework import exceptions
 
 from framework.auth.core import Auth
@@ -11,7 +10,7 @@ from website.util import permissions as osf_permissions
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, JSONAPIListSerializer
-    
+
 
 class NodeTagField(ser.Field):
 
@@ -52,7 +51,7 @@ class JSONAPINodeListSerializer(JSONAPIListSerializer):
         type_ = 'nodes'
 
 
-class NodeSerializer(JSONAPISerializer, BulkSerializerMixin):
+class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
@@ -172,8 +171,8 @@ class NodeSerializer(JSONAPISerializer, BulkSerializerMixin):
 
 class NodeBulkUpdateSerializer(NodeSerializer):
     id = ser.CharField(source='_id', label='ID', required=True)
-    
-    
+
+
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """

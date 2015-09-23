@@ -4,7 +4,7 @@ from modularodm import Q
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework_bulk.generics import ListBulkCreateUpdateDestroyAPIView, BulkDestroyAPIView
+from rest_framework_bulk.generics import ListBulkCreateUpdateDestroyAPIView
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 
 from framework.auth.core import Auth
@@ -63,7 +63,7 @@ class NodeMixin(object):
         return node
 
 
-class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin, BulkDestroyAPIView):
+class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
     """Projects and components.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
@@ -123,8 +123,6 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin, BulkDestroyAP
             serializer_class = NodeBulkUpdateSerializer
         return serializer_class
 
-    serializer_class = NodeSerializer
-
     # overrides ListBulkCreateUpdateDestroyView
     def create(self, request, *args, **kwargs):
         response = ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
@@ -150,6 +148,8 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin, BulkDestroyAP
     def bulk_destroy(self, request, *args, **kwargs):
         user = self.request.user
         node_list = []
+        if not request.data:
+            raise ValidationError('Array must contain resource identifier objects.')
         for item in request.data:
             node = get_object_or_error(Node, item[u'id'], display_name='node')
             node_list.append(node)
