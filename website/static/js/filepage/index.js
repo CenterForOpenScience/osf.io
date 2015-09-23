@@ -236,7 +236,7 @@ var FileViewPage = {
                                 m('textarea.form-control[readonly][type="text"][value="' +
                                     '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
                                     '<link href="' + url + 'static/css/mfr.css" media="all" rel="stylesheet">' +
-                                    '<div id="mfrIframe" class="mfr mfr-file">\</div>' +
+                                    '<div id="mfrIframe" class="mfr mfr-file"></div>' +
                                     '<script src="' + url + 'static/js/mfr.js">' +
                                     '</script> <script>' +
                                         'var mfrRender = new mfr.Render("mfrIframe", "' + link + '");' +
