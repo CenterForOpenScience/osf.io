@@ -190,20 +190,13 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     ###Files
 
-    **TODO: import Spiel from NodeFilesList**
-
-    ###Node Links
-
-    **TODO: import Spiel from NodeLinksList**
+    List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
+    for accessing the actual files stored with this node.
 
     ###Parent
 
     If this node is a child node of another node, the parent's canonical endpoint will be available in the
     `parent.links.self.href` key.
-
-    ###Registrations
-
-    **TODO: import Spiel from NodeRegistrationsList**
 
     ##Links
 
@@ -411,7 +404,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     ##Query Params
 
-    *none*
+    *None*.
 
     """
     permission_classes = (
@@ -566,10 +559,31 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
 class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
-    """Node Links to other nodes.
+    """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
+
+    **TODO: this is placeholder documentation pending finish**
+
+    ##Node Link Attributes
+
+    **TODO: import from NodeLinksDetail**
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+
+    ##Actions
+
+    ###Create
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -592,10 +606,28 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
 
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
-    """Node Link details.
+    """Node Link details. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
+
+    **TODO: this is placeholder documentation pending finish**
+
+    ##Attributes
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        $name          $type              $descr
+
+    ##Relationships
+
+    ##Links
+
+    ##Actions
+
+    ##Query Params
+
+    *None*.
     """
     permission_classes = (
         ContributorOrPublicForPointers,
@@ -634,31 +666,31 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
 
 class NodeFilesList(generics.ListAPIView, NodeMixin):
-    """Files attached to a node.
+    """Files attached to a node for a given provider. *Read-only*.
 
-    This gives a list of all of the files that are on your project. Because this works with external services, some
-    ours and some not, there is some extra data that you need for how to interact with those services.
+    This gives a list of all of the files and folders that are attached to your project for the given storage provider.
+    If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenver
+    this endpoint is accessed.  To see the cached metadata, GET the endpoint for the file directly (available through
+    its `links.info` attribute).
 
-    At the top level file list of your project you have a list of providers that are connected to this project. If you
-    want to add more, you will need to do that in the Open Science Framework front end for now. For everything in the
-    data.links dictionary, you'll have two types of fields: `self` and `related`. These are the same as everywhere else:
-    self links are what you use to manipulate the object itself with GET, POST, DELETE, and PUT requests, while
-    related links give you further data about that resource.
+    ##File Attributes
 
-    So if you GET a self link for a file, it will return the file itself for downloading. If you GET a related link for
-    a file, you'll get the metadata about the file. GETting a related link for a folder will get you the listing of
-    what's in that folder. GETting a folder's self link won't work, because there's nothing to get.
+    **TODO: import from FileDetail**
 
-    Which brings us to the other useful thing about the links here: there's a field called `self-methods`. This field
-    will tell you what the valid methods are for the self links given the kind of thing they are (file vs folder) and
-    given your permissions on the object.
+    ##Links
 
-    NOTE: Most of the API will be stable as far as how the links work because the things they are accessing are fairly
-    stable and predictable, so if you felt the need, you could construct them in the normal REST way and they should
-    be fine.
-    The 'self' links from the NodeFilesList may have to change from time to time, so you are highly encouraged to use
-    the links as we provide them before you use them, and not to reverse engineer the structure of the links as they
-    are at any given time.
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -740,6 +772,44 @@ class NodeProvider(object):
 
 
 class NodeProvidersList(generics.ListAPIView, NodeMixin):
+    """List of storage providers enabled for this node. *Read-only*.
+
+    Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
+    integratations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
+    storage, but may use as many of the supported providers as desired.  This endpoint lists all of the providers that
+    have been enabled to work with this node.  If you want to add more, you will need to do that in the Open Science
+    Framework front end for now.
+
+    In the OSF filesystem model, providers are treated as folders, but with special properties that distinguish them
+    from regular folders.  Every provider folder is considered a root folder, and may not be deleted through the regular
+    file API.
+
+    To see the contents of the provider, issue a GET request to the `relationships.files.links.related.href` attribute
+    of the provider resource.
+
+    ##Provider Attributes
+
+        name      type    description
+        ---------------------------------------------------------------------------------
+        name      string  name of the provider
+        kind      string  type of this file/folder.  always "folder"
+        path      path    relative path of this folder within the provider filesys. always "/"
+        node      string  node this provider belongs to
+        provider  string  provider id, same as "name"
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,

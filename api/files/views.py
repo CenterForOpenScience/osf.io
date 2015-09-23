@@ -37,6 +37,21 @@ class FileMixin(object):
 class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     """Details about files and folders. *Writeable*.
 
+    So if you GET a self link for a file, it will return the file itself for downloading. If you GET a related link for
+    a file, you'll get the metadata about the file. GETting a related link for a folder will get you the listing of
+    what's in that folder. GETting a folder's self link won't work, because there's nothing to get.
+
+    Which brings us to the other useful thing about the links here: there's a field called `self-methods`. This field
+    will tell you what the valid methods are for the self links given the kind of thing they are (file vs folder) and
+    given your permissions on the object.
+
+    NOTE: Most of the API will be stable as far as how the links work because the things they are accessing are fairly
+    stable and predictable, so if you felt the need, you could construct them in the normal REST way and they should
+    be fine.
+    The 'self' links from the NodeFilesList may have to change from time to time, so you are highly encouraged to use
+    the links as we provide them before you use them, and not to reverse engineer the structure of the links as they
+    are at any given time.
+
     ##Attributes
 
     Both files and folders are accessed through this endpoint and may be distinguished by the `kind` attribute. `size`

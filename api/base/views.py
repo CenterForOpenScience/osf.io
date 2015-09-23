@@ -100,6 +100,20 @@ def root(request, format=None):
 
     Valid OSF permission keys include "read", "write", and "admin".
 
+    ###Storage Providers
+
+    Valid storage providers are:
+
+        box          Box.com
+        cloudfiles   Rackspace Cloud Files
+        dataverse    Dataverse
+        dropbox      Dropbox
+        figshare     figshare
+        github       GitHub
+        googledrive  Google Drive
+        osfstorage   OSF Storage
+        s3           Amazon S3
+
     """
     if request.user and not request.user.is_anonymous():
         user = request.user
