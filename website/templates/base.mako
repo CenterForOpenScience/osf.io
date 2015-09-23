@@ -219,9 +219,11 @@
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
+
             % if status:
                 <%include file="alert.mako"/>
             % endif
+
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->
