@@ -33,14 +33,11 @@ def json_api_exception_handler(exc, context):
                     if isinstance(error_description, basestring):
                         error_description = [error_description]
                     errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
-                elif error_key == 'attributes':
-                    if isinstance(error_description, list):
-                        errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
-                    else:
-                        for property, description in message[error_key].iteritems():
-                            if isinstance(description, basestring):
-                                description = [description]
-                            errors.extend([{'source': {'pointer': '/data/attributes/' + property}, 'detail': reason} for reason in description])
+                else:
+                    if isinstance(error_description, basestring):
+                        error_description = [error_description]
+                    errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason} for reason in error_description])
+
         else:
             if isinstance(message, basestring):
                 message = [message]
@@ -59,6 +56,7 @@ class JSONAPIException(APIException):
         See http://jsonapi.org/format/#error-objects.
         Example: ``source={'pointer': '/data/attributes/title'}``
     """
+    status_code = status.HTTP_400_BAD_REQUEST
     def __init__(self, detail=None, source=None):
         super(JSONAPIException, self).__init__(detail=detail)
         self.source = source
