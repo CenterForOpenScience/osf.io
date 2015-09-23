@@ -58,7 +58,21 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
+    self.type = ko.computed(function(){
+        if (isAdmin) {
+            return "admin";
+        }
+        return "contrib";
+    });
     self.visible = ko.observable(contributor.visible);
+    self.visibleText = ko.computed(function() {
+        if (self.visible()){
+            return ", cited"
+        }
+        else {
+            return ", not cited"
+        }
+    });
     self.permission = ko.observable(contributor.permission);
     self.curPermission = ko.observable(self.getPermission(self.permission()));
     self.deleteStaged = ko.observable(contributor.deleteStaged || false);
@@ -157,6 +171,19 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             return false;
         }
     };
+
+    self.classes = ko.computed(function() {
+            if (parentList.length >= 3) {
+                return "col-lg-12 col-md-4 col-sm-6 col-xs-12"
+            }
+            else if (parentList.length == 2) {
+                return "col-lg-12 col-sm-6 col-xs-12"
+            }
+            else if (parentList.length == 1 ) {
+                return "col-xs-12"
+            }
+        }
+    )
 
 };
 

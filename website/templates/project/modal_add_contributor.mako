@@ -135,8 +135,8 @@
                                 <thead data-bind="visible: selection().length">
                                     <th width="10%"></th>
                                     <th width="15%"></th>
-                                    <th width="45%">Name</th>
-                                    <th width="30%">
+                                    <th>Name</th>
+                                    <th>
                                         Permissions
                                         <i class="fa fa-question-circle permission-info"
                                                 data-toggle="popover"

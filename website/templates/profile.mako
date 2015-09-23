@@ -193,6 +193,10 @@
           schoolsUrls: schoolsUrls
       });
   })();
+
+  function toggleIcon(el) {
+      jQuery(el).children(":first").toggleClass("glyphicon-chevron-down glyphicon-chevron-up");
+  }
 </script>
 
 </%def>
