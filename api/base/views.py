@@ -9,51 +9,51 @@ from api.users.serializers import UserSerializer
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
-    def _get_include_partial(self, field_name):
-        """Create a partial function to fetch the values of an included field. A basic
+    def _get_embed_partial(self, field_name):
+        """Create a partial function to fetch the values of an embedded field. A basic
         example is to include a Node's children in a single response.
 
         :param str field_name: Name of field of the view's serializer_class to load
         results for
         :return function object -> dict:
         """
-        include_field = self.serializer_class._declared_fields[field_name]
+        embed_field = self.serializer_class._declared_fields[field_name]
         def partial(item):
-            include_value = getattr(item, include_field.lookup_field, None)
+            embed_value = getattr(item, embed_field.lookup_field, None)
             view, view_args, view_kwargs = resolve(
                 reverse(
-                    include_field.view_name,
-                    kwargs={include_field.lookup_url_kwarg: include_value}
+                    embed_field.view_name,
+                    kwargs={embed_field.lookup_url_kwarg: embed_value}
                 )
             )
             view_kwargs.update({
                 'request': self.request,
-                'no_includes': True
+                'no_embeds': True
             })
             response = view(*view_args, **view_kwargs)
-            if is_http_error_status(response.status_code):
+            if is_http_error_status(response.status_code):  # TODO Remove? Raise?
                 return None
-            return response.data
+            return response.data.get('data')
         return partial
 
     def get_serializer_context(self):
         """Inject request into the serializer context. Additionally, inject partial functions
-        (request, object -> included items) if the query string contains includes, and this
-        is the topmost call to this method (the include partials call view functions which has
-        the potential to create infinite recursion hence the inclusion of the no_includes
+        (request, object -> embedd items) if the query string contains embeds, and this
+        is the topmost call to this method (the embed partials call view functions which has
+        the potential to create infinite recursion hence the inclusion of the no_embeds
         view kwarg to prevent this).
         """
         context = super(JSONAPIBaseView, self).get_serializer_context()
-        if self.kwargs.get('no_includes', False):
+        if self.kwargs.get('no_embeds', False):
             return context
-        includes = self.request.query_params.getlist('include')
-        includes_partials = {}
-        for include in includes:
-            include_field = self.serializer_class._declared_fields.get(include)
-            if include_field and getattr(include_field, 'includable', False):
-                includes_partials[include] = self._get_include_partial(include)
+        embeds = self.request.query_params.getlist('embed')
+        embeds_partials = {}
+        for embed in embeds:
+            embed_field = self.serializer_class._declared_fields.get(embed)
+            if embed_field and getattr(embed_field, 'embeddable', False):
+                embeds_partials[embed] = self._get_embed_partial(embed)
         context.update({
-            'include': includes_partials
+            'embed': embeds_partials
         })
         return context
 

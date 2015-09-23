@@ -76,7 +76,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                                     link_type='related', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
 
     """
-    includable = True
+    embeddable = True
 
     def __init__(self, view_name=None, **kwargs):
         kwargs['read_only'] = True
@@ -299,11 +299,11 @@ class JSONAPISerializer(ser.Serializer):
             ('type', type_),
             ('attributes', collections.OrderedDict()),
             ('relationships', collections.OrderedDict()),
-            ('includes', {}),
+            ('embeds', {}),
             ('links', {}),
         ])
 
-        includes = self.context.get('include', [])
+        embeds = self.context.get('embed', [])
         fields = [field for field in self.fields.values() if not field.write_only]
 
         for field in fields:
@@ -313,10 +313,10 @@ class JSONAPISerializer(ser.Serializer):
                 continue
 
             if isinstance(field, JSONAPIHyperlinkedIdentityField):
-                # If include=field_name is appended to the query string, directly include the
+                # If embed=field_name is appended to the query string, directly embed the
                 # results rather than adding a relationship link
-                if field.field_name in includes:
-                    data['included'][field.field_name] = self.context['include'][field.field_name](obj)
+                if field.field_name in embeds:
+                    data['embeds'][field.field_name] = self.context['embed'][field.field_name](obj)
                 else:
                     data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':

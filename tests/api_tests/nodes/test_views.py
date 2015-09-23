@@ -1,4 +1,4 @@
-4# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import mock
 import base64
 from urlparse import urlparse
@@ -3082,4 +3082,3 @@ class TestIncludedFields(ApiTestCase):
         for child in contrib_response.json['data']['includes']['children']['data']:
             assert Node.load(child['id']).can_view(self.contrib_auth)        
 
-    def test_include_parent

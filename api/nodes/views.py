@@ -9,6 +9,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
+from api.base.views import JSONAPIBaseView
 from api.base.utils import get_object_or_error
 from api.files.serializers import FileSerializer
 from api.users.views import UserMixin
