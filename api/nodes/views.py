@@ -11,6 +11,7 @@ from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error
 from api.files.serializers import FileSerializer
+from api.comments.serializers import CommentSerializer
 from api.users.views import UserMixin
 from api.nodes.serializers import (
     NodeSerializer,
@@ -514,3 +515,13 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
             if addon.config.has_hgrid_files
             and addon.complete
         ]
+
+
+class NodeCommentsList(generics.ListAPIView, NodeMixin):
+    # permission_classes
+    # required scopes
+
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        return [comment for comment in getattr(self.get_node(), 'commented', [])]
