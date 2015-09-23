@@ -8,7 +8,14 @@ from api.base.utils import enforce_type_and_id_and_pop_attributes
 from api.base.serializers import JSONAPISerializer, AttributesSerializer, LinksField
 
 
-class ApiOAuth2ApplicationAttributesSerializer(AttributesSerializer):
+class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
+    """Serialize data about a registered OAuth2 application"""
+    id = ser.CharField(help_text='The client ID for this application (automatically generated)',
+                       read_only=True,
+                       source='client_id',
+                       label='ID')
+    type = ser.CharField(write_only=True, required=True)
+
     name = ser.CharField(help_text='A short, descriptive name for this application',
                          required=True)
 
@@ -25,16 +32,6 @@ class ApiOAuth2ApplicationAttributesSerializer(AttributesSerializer):
                                  validators=[URLValidator()],
                                  label="Callback URL")
 
-
-class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
-    """Serialize data about a registered OAuth2 application"""
-    id = ser.CharField(help_text='The client ID for this application (automatically generated)',
-                       read_only=True,
-                       source='client_id',
-                       label='ID')
-    type = ser.CharField(write_only=True, required=True)
-
-    attributes = ApiOAuth2ApplicationAttributesSerializer()
 
     client_id = ser.CharField(help_text='The client ID for this application (automatically generated)',
                               read_only=True)
