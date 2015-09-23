@@ -45,12 +45,24 @@ class IDField(ser.CharField):
         kwargs['label'] = 'ID'
         super(IDField, self).__init__(**kwargs)
 
+    def to_internal_value(self, data):
+        update_methods = ['PUT', 'PATCH']
+        if self.context['request'].method in update_methods:
+            if self.root.instance._id != data:
+                raise Conflict()
+        return super(IDField, self).to_internal_value(data)
+
 
 class TypeField(ser.CharField):
     def __init__(self, **kwargs):
         kwargs['write_only'] = True
         kwargs['required'] = True
         super(TypeField, self).__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        if self.root.Meta.type_ != data:
+            raise Conflict()
+        return super(TypeField, self).to_internal_value(data)
 
 
 class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
@@ -268,18 +280,6 @@ class JSONAPISerializer(ser.Serializer):
     def many_init(cls, *args, **kwargs):
         kwargs['child'] = cls()
         return JSONAPIListSerializer(*args, **kwargs)
-
-    def validate_type(self, value):
-        if self.Meta.type_ != value:
-            raise Conflict()
-        return value
-
-    def validate_id(self, value):
-        update_methods = ['PUT', 'PATCH']
-        if self.context['request']._method in update_methods:
-            if self.instance._id != value:
-                raise Conflict
-        return value
 
     # overrides Serializer
     def to_representation(self, obj, envelope='data'):
