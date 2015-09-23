@@ -1,5 +1,6 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
 from .utils import absolute_reverse
 from api.users.serializers import UserSerializer
 from django.http import HttpResponse
