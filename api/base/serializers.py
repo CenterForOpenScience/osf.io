@@ -343,7 +343,7 @@ class JSONAPISerializer(ser.Serializer):
         self._validated_data.pop('type', None)
 
         update_methods = ['PUT', 'PATCH']
-        if self.context['request']._method in update_methods:
+        if self.context['request'].method in update_methods:
             self._validated_data.pop('_id', None)
 
         return ret
