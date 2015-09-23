@@ -34,19 +34,19 @@ $(document).ready(function() {
     });
 
     var self = this;
-    var thresholdScrollPosition = 50;
-    var smallScreenSize = 767;
-    var nonNavTopMargin = 50;
-    var navMaxTopMargin = 95;
+    var THRESHOLD_SCROLL_POSITION  = 50;
+    var SMALL_SCREEN_SIZE = 767;
+    var NON_NAV_TOP_MARGIN = 50;
+    var NAV_MAX_TOP_MARGIN = 95;
     self.adjustPanelPosition = function() {
         var bodyWidth = $(document.body).width();
         var scrollTopPosition = $(window).scrollTop();
-        if (bodyWidth <= smallScreenSize) {
-            if (scrollTopPosition >= thresholdScrollPosition) {
-                $('.cp-handle').css('margin-top', nonNavTopMargin);
+        if (bodyWidth <= SMALL_SCREEN_SIZE) {
+            if (scrollTopPosition >= THRESHOLD_SCROLL_POSITION) {
+                $('.cp-handle').css('margin-top', NON_NAV_TOP_MARGIN);
             }
             else {
-                $('.cp-handle').css('margin-top', navMaxTopMargin - scrollTopPosition);
+                $('.cp-handle').css('margin-top', NAV_MAX_TOP_MARGIN - scrollTopPosition);
             }
         }
     };
@@ -65,10 +65,10 @@ $(document).ready(function() {
             function() {
                 var bodyWidth = $(document.body).width();
                 var scrollTopPosition = $(window).scrollTop();
-                if (bodyWidth > smallScreenSize || scrollTopPosition < thresholdScrollPosition) {
-                    $('.cp-handle').css('margin-top', navMaxTopMargin);
-                } else if (bodyWidth < smallScreenSize || scrollTopPosition > thresholdScrollPosition) {
-                    $('.cp-handle').css('margin-top', nonNavTopMargin);
+                if (bodyWidth > SMALL_SCREEN_SIZE || scrollTopPosition < THRESHOLD_SCROLL_POSITION) {
+                    $('.cp-handle').css('margin-top', NAV_MAX_TOP_MARGIN);
+                } else if (bodyWidth < SMALL_SCREEN_SIZE || scrollTopPosition > THRESHOLD_SCROLL_POSITION) {
+                    $('.cp-handle').css('margin-top', NON_NAV_TOP_MARGIN);
                 }
     }, THROTTLE));
 });
