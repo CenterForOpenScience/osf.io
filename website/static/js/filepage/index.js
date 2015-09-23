@@ -77,7 +77,7 @@ var FileViewPage = {
         });
 
         $(document).on('fileviewpage:rename', function() {
-            console.log(self.file.urls.content);
+            //console.log(self.file.urls.content);
         });
 
         self.shareJSObservables = {
@@ -169,7 +169,7 @@ var FileViewPage = {
             $fileName.editable({
                 type: 'text',
                 send: 'always',
-                url: '',
+                url: waterbutler.moveUrl(),
                 ajaxOptions: {
                     type: 'put',
                     contentType: 'application/json',
@@ -177,9 +177,11 @@ var FileViewPage = {
                 },
                 validate: function(value) {
                     if($.trim(value) === ''){
-                        return 'The  file name cannot be empty.';
+                        $osf.growl('Error', 'The  file name cannot be empty.', {timeout: 5000});
+                        return;
                     } else if(value.length > 100){
-                        return 'The file name cannot be more than 100 characters.';
+                        $osf.growl('Error', 'The file name cannot be more than 100 characters.', {timeout: 5000});
+                        return;
                     }
                 },
                 params: function(params) {
@@ -196,11 +198,12 @@ var FileViewPage = {
                     } else {
                         // Log unexpected error with Raven
                         Raven.captureMessage('Error in renaming file', {
-                            url: self.context.urls.rename,
+                            url: waterbutler.moveUrl(),
                             responseText: response.responseText,
                             statusText: response.statusText
                         });
-                        return 'An unexpected error occurred. Please try again.';
+                        $osf.growl('Error', 'Error in renaming file.');
+                        return;
                     }
                 }
             });
