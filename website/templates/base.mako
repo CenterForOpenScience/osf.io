@@ -216,12 +216,15 @@
     <%include file="footer.mako"/>
 </%def>
 
+<%def name="alert()">
+    <%include file="alert.mako"/>
+</%def>
+
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
-            % if status and not node:
-                ## WARNING: Need display-everywhere heading messages? They must be added at both here and project_base.mako
-                <%include file="alert.mako"/>
+            % if status:
+                ${self.alert()}
             % endif
 
             ${self.content()}

@@ -10,12 +10,14 @@
 
 </%def>
 
+## To change the postion of alert on project pages, override alert()
+<%def name="alert()"> </%def>
+
 <%def name="content()">
 
 <%include file="project_header.mako"/>
 
-% if status and node:
-    ## WARNING: Need display-everywhere heading messages? They must be added at both here and base.mako
+% if status:
     <%include file="../alert.mako"/>
 % endif
 
