@@ -8,9 +8,8 @@ from framework.auth.core import User
 from website.files.models import FileNode
 from api.base.utils import absolute_reverse
 from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
-from api.base.serializers import Link, JSONAPISerializer, LinksField
 from api.base.serializers import JSONAPIHyperlinkedIdentityField
-
+from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 
 class CheckoutField(JSONAPIHyperlinkedIdentityField):
 
@@ -60,7 +59,9 @@ class FileSerializer(JSONAPISerializer):
         'provider',
         'last_touched',
     ])
-    id = ser.CharField(read_only=True, source='_id')
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    checkout = CheckoutField()
     name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     kind = ser.CharField(read_only=True, help_text='Either folder or file')
     path = ser.CharField(read_only=True, help_text='The unique path used to reference this object')
@@ -68,8 +69,6 @@ class FileSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
     date_modified = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
-
-    checkout = CheckoutField()
 
     files = NodeFileHyperLink(kind='folder', link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
     versions = NodeFileHyperLink(kind='file', link_type='related', view_name='files:file-versions', kwargs=(('file_id', '_id'), ))
@@ -116,6 +115,13 @@ class FileSerializer(JSONAPISerializer):
 
     def is_valid(self, **kwargs):
         return super(FileSerializer, self).is_valid(clean_html=False, **kwargs)
+
+
+class FileDetailSerializer(FileSerializer):
+    """
+    Overrides FileSerializer to make id required.
+    """
+    id = IDField(source='_id', required=True)
 
 
 class FileVersionSerializer(JSONAPISerializer):
