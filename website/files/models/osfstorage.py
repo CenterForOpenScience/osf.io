@@ -71,13 +71,14 @@ class OsfStorageFileNode(FileNode):
         return True if self.checkout else False
 
     def delete(self, user=None, parent=None):
-        """Move self into the TrashedFileNode collection
-        and remove it from StoredFileNode
-        :param user User or None: The user that deleted this FileNode
-        """
         if self.is_checkedout():
             raise exceptions.FileNodeorChildCheckedOutError()
         super(OsfStorageFileNode, self).delete()
+
+    def move_under(self, destination_parent, name=None):
+        if self.is_checkedout():
+            raise exceptions.FileNodeorChildCheckedOutError()
+        super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
     def save(self):
         self.path = ''

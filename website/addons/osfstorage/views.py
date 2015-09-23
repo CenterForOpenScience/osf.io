@@ -94,8 +94,10 @@ def osfstorage_copy_hook(source, destination, name=None, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
-    return source.move_under(destination, name=name).serialize(), httplib.OK
-
+    try:
+        return source.move_under(destination, name=name).serialize(), httplib.OK
+    except exceptions.FileNodeorChildCheckedOutError:
+        raise HTTPError(httplib.METHOD_NOT_ALLOWED)
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
