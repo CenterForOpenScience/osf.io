@@ -1,8 +1,8 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.http import Http404
 from .utils import absolute_reverse
 from api.users.serializers import UserSerializer
+from django.http import HttpResponse
 
 @api_view(('GET',))
 def root(request, format=None):
@@ -76,6 +76,5 @@ def root(request, format=None):
         }
     })
 
-@api_view(('GET',))
-def error_404(request, format=None):
-    raise Http404()
+def error_404(request, format=None, *pargs, **kwargs):
+    return HttpResponse('{"errors":[{"detail":"Not found."}]}', status=404, content_type='application/json')
