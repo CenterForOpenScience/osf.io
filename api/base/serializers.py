@@ -277,8 +277,10 @@ class JSONAPISerializer(ser.Serializer):
             try:
                 attribute = field.get_attribute(obj)
             except SkipField:
-                continue
-
+                if field.source.split('.')[0] == 'social':
+                    attribute = ''
+                else:
+                    continue
             if isinstance(field, JSONAPIHyperlinkedIdentityField):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':

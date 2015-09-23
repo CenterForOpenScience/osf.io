@@ -1,5 +1,4 @@
 from rest_framework import serializers as ser
-
 from website.models import User
 
 from api.base.serializers import (
@@ -52,6 +51,13 @@ class UserSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         assert isinstance(instance, User), 'instance must be a User'
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            # If the field is the social dictionary, then update the original social values with the new ones, and save.
+            # If its any other field, just update with the value.
+            if attr == 'social':
+                social_fields = instance.social
+                social_fields.update(value)
+                setattr(instance, attr, social_fields)
+            else:
+                setattr(instance, attr, value)
         instance.save()
         return instance

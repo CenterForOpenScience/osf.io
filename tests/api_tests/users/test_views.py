@@ -82,14 +82,28 @@ class TestUsers(ApiTestCase):
             query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
             assert_equal(int(query_dict.get('size')[0]), size)
 
+
 class TestUserDetail(ApiTestCase):
 
     def setUp(self):
         super(TestUserDetail, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_one.social['twitter'] = 'howtopizza'
+        self.user_one = AuthUserFactory.build(
+            fullname='Martin Luther King Jr.',
+            given_name='Martin',
+            family_name='King',
+            suffix='Jr.',
+            social=dict(
+                github='userOneGithub',
+                scholar='userOneScholar',
+                personal='http://www.useronepersonalwebsite.com',
+                twitter='userOneTwitter',
+                linkedIn='userOneLinkedIn',
+                impactStory='userOneImpactStory',
+                orcid='userOneOrcid',
+                researcherId='userOneResearcherId'
+            )
+        )
         self.user_one.save()
-
         self.user_two = AuthUserFactory()
 
     def tearDown(self):
@@ -101,12 +115,20 @@ class TestUserDetail(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
+    def test_get_new_users(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_two._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        user_json = res.json['data']['attributes']
+        assert_equal(user_json['fullname'], self.user_two.fullname)
+        assert_equal(user_json['twitter'], '')
+
     def test_get_correct_pk_user(self):
         url = "/{}users/{}/".format(API_BASE, self.user_one._id)
         res = self.app.get(url)
         user_json = res.json['data']
         assert_equal(user_json['attributes']['fullname'], self.user_one.fullname)
-        assert_equal(user_json['attributes']['twitter'], 'howtopizza')
+        assert_equal(user_json['attributes']['twitter'], self.user_one.social['twitter'])
 
     def test_get_incorrect_pk_user_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
@@ -419,6 +441,7 @@ class TestUserUpdate(ApiTestCase):
 
         self.user_two = AuthUserFactory()
         self.user_two.save()
+        self.user_two_url = "/v2/users/{}/".format(self.user_two._id)
 
         self.new_user_one_data = {
             'id': self.user_one._id,
