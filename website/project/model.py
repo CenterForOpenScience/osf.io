@@ -658,12 +658,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     }
 
     def __init__(self, *args, **kwargs):
-        tags = kwargs.get('tags')
-        if tags:
-            del kwargs['tags']
+
+        tags = kwargs.pop('tags', [])
 
         super(Node, self).__init__(*args, **kwargs)
 
+        # Ensure when Node is created with tags through API, tags are added to Tag
         if tags:
             for tag in tags:
                 self.add_tag(tag, Auth(self.creator), save=False, log=False)
