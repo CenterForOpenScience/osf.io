@@ -285,8 +285,6 @@ class JSONAPISerializer(ser.Serializer):
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':
                 data['links'] = field.to_representation(attribute)
-            elif field.field_name == 'attributes':
-                data['attributes'] = field.to_representation(attribute)
             else:
                 if attribute is None:
                     # We skip `to_representation` for `None` values so that
@@ -312,31 +310,6 @@ class JSONAPISerializer(ser.Serializer):
         if clean_html is True:
             self._validated_data = _rapply(self.validated_data, strip_html)
         return ret
-
-
-class AttributesSerializer(JSONAPISerializer):
-
-    # Overrides JSONAPISerializer
-    def get_attribute(self, instance):
-        attribute = {}
-        for field in self.fields:
-            if self.fields[field].write_only:
-                continue
-
-            field_name = self.fields[field].source
-            lookup = getattr(instance, field_name)
-            if lookup is None:
-                attribute[field] = None
-            else:
-                attribute[field] = self.fields[field].to_representation(lookup)
-        return attribute
-
-    # Overrides JSONAPISerializer
-    def to_representation(self, value):
-        """
-        Dictionary representation
-        """
-        return value
 
 
 def DevOnly(field):
