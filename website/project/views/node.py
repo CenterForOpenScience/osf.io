@@ -827,7 +827,7 @@ def _get_children(node, auth, indent=0):
     children = []
 
     for child in node.nodes_primary:
-        if not child.is_deleted and child.can_edit(auth):
+        if not child.is_deleted and child.has_permission(auth.user, 'admin'):
             children.append({
                 'id': child._primary_key,
                 'title': child.title,
@@ -856,7 +856,7 @@ def private_link_table(node, **kwargs):
 @must_be_valid_project
 def get_editable_children(auth, node, **kwargs):
 
-    if not node.can_edit(auth):
+    if not node.has_permission(auth.user, 'admin'):
         return
 
     children = _get_children(node, auth)
