@@ -5,7 +5,7 @@ from website.models import User
 from api.base.exceptions import Conflict
 from api.base.utils import enforce_type_and_id_and_pop_attributes
 from api.base.serializers import (
-    JSONAPISerializer, AttributesSerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
+    JSONAPISerializer, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 )
 
 

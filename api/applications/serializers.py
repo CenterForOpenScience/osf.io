@@ -5,7 +5,7 @@ from website.models import ApiOAuth2Application
 
 from api.base.exceptions import Conflict
 from api.base.utils import enforce_type_and_id_and_pop_attributes
-from api.base.serializers import JSONAPISerializer, AttributesSerializer, LinksField
+from api.base.serializers import JSONAPISerializer, LinksField
 
 
 class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
@@ -31,7 +31,6 @@ class ApiOAuth2ApplicationSerializer(JSONAPISerializer):
                                  required=True,
                                  validators=[URLValidator()],
                                  label="Callback URL")
-
 
     client_id = ser.CharField(help_text='The client ID for this application (automatically generated)',
                               read_only=True)

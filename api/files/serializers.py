@@ -10,8 +10,7 @@ from api.base.exceptions import Conflict
 from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
 from api.base.serializers import JSONAPIHyperlinkedIdentityField
 from api.base.utils import absolute_reverse, enforce_type_and_id_and_pop_attributes
-from api.base.serializers import Link, JSONAPISerializer, LinksField, AttributesSerializer
-
+from api.base.serializers import Link, JSONAPISerializer, LinksField
 
 class CheckoutField(JSONAPIHyperlinkedIdentityField):
 

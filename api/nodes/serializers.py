@@ -11,7 +11,7 @@ from website.util import permissions as osf_permissions
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.utils import enforce_type_and_id_and_pop_attributes
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
-from api.base.serializers import JSONAPISerializer, AttributesSerializer, WaterbutlerLink, NodeFileHyperLink
+from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink
 
 
 class NodeTagField(ser.Field):
@@ -186,7 +186,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
     permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
-
 
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
