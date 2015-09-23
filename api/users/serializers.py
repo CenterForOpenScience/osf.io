@@ -60,7 +60,11 @@ class UserSerializer(JSONAPISerializer):
         validated_data.pop('type')
         assert isinstance(instance, User), 'instance must be a User'
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            if 'social' == attr:
+                for key, val in value.items():
+                    instance.social[key] = val
+            else:
+                setattr(instance, attr, value)
         instance.save()
         return instance
 
