@@ -24,7 +24,6 @@ from api.nodes.serializers import (
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
-    ReadOnlyIfRegistration,
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
