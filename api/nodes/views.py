@@ -149,7 +149,7 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
     def bulk_destroy(self, request, *args, **kwargs):
         user = self.request.user
         node_list = []
-        if not request.data:
+        if not request.data or 'csrfmiddlewaretoken' in request.data:
             raise ValidationError('Array must contain resource identifier objects.')
         for item in request.data:
             node = get_object_or_error(Node, item[u'id'], display_name='node')

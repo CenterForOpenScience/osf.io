@@ -23,7 +23,7 @@ class JSONAPIParser(JSONParser):
         if not isinstance(result, dict):
             raise ParseError()
         data = result.get('data', {})
-        
+
         def data_flattener(resource_object, stream):
             if "attributes" not in resource_object and stream.method != 'DELETE':
                     raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
@@ -36,8 +36,7 @@ class JSONAPIParser(JSONParser):
                 parsed.update(attributes)
 
             return parsed
-        
-        
+
         if data:
             if isinstance(data, list):
                 data_collection = []
