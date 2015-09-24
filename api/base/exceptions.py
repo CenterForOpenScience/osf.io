@@ -73,6 +73,11 @@ def json_api_exception_handler(exc, context):
     return response
 
 
+class ServiceUnavailableError(APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = 'Service is unavailable at this time.'
+
+
 class JSONAPIException(APIException):
     """Inherits from the base DRF API exception and adds extra metadata to support JSONAPI error objects
 
@@ -121,3 +126,8 @@ class UnconfirmedAccountError(APIException):
 class DeactivatedAccountError(APIException):
     status_code = 400
     default_detail = 'Making API requests with credentials associated with a deactivated account is not allowed.'
+
+
+class InvalidModelValueError(JSONAPIException):
+    status_code = 400
+    default_detail = 'Invalid value in POST/PUT/PATCH request.'

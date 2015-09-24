@@ -1,6 +1,8 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
+from modularodm.exceptions import ValidationValueError
+
 from framework.auth.core import Auth
 
 from website.models import Node, User
@@ -9,7 +11,8 @@ from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
-from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, JSONAPIListSerializer, IDField, TypeField
+from api.base.serializers import JSONAPISerializer, WaterbutlerLink, JSONAPIListSerializer, NodeFileHyperLink, IDField, TypeField
+from api.base.exceptions import InvalidModelValueError
 
 
 class NodeTagField(ser.Field):
@@ -144,7 +147,10 @@ class NodeSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         node = Node(**validated_data)
-        node.save()
+        try:
+            node.save()
+        except ValidationValueError as e:
+            raise InvalidModelValueError(detail=e.message)
         return node
 
     def update(self, node, validated_data):
@@ -165,7 +171,10 @@ class NodeSerializer(JSONAPISerializer):
         for deleted_tag in (old_tags - current_tags):
             node.remove_tag(deleted_tag, auth=auth)
         if validated_data:
-            node.update(validated_data, auth=auth)
+            try:
+                node.update(validated_data, auth=auth)
+            except ValidationValueError as e:
+                raise InvalidModelValueError(detail=e.message)
         return node
 
 
@@ -208,7 +217,10 @@ class NodeContributorsSerializer(JSONAPISerializer):
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
 
-    links = LinksField({'html': 'absolute_url'})
+    links = LinksField({
+        'html': 'absolute_url',
+        'self': 'get_absolute_url'
+    })
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')
 
