@@ -278,7 +278,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     For this endpoint, *none*.  Actions may permit or require certain query parameters.  See the individual action
     documentation.
 
-    #This Request
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -306,9 +306,15 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
 
     Paginated list of file versions, ordered by increasing version number (id).
 
+    <!--- Copied Spiel from FileVersionDetail -->
+
+    **TODO: import Spiel from FileVersionDetail**
+
     ##FileVersion Attributes
 
-    **TODO: import from FileVersionDetail**
+    <!--- Copied Attributes from FileVersionDetail -->
+
+    **TODO: import Attributes from FileVersionDetail**
 
     ##Links
 
@@ -326,6 +332,7 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
 
     File versions may be filtered by their `id`, `size`, or `content_type`.
 
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -349,9 +356,16 @@ def node_from_version(request, view, obj):
 class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
     """Details about a specific file version. *Read-only*.
 
+    A specific version of an uploaded file.  Note that the version is tied to the id/path, so two versions of the same
+    file could have completely different contents and formats.  That's on you, though.  Don't do that.
+
+    Unlike the OSF File entity which can represent files and folders, FileVersions only ever represent files. When a
+    file is first uploaded through the API it is assigned version 1.  Each time it is updated through the API, the
+    version number is incremented.
+
     ##Attributes
 
-    `type` is "file_versions"
+    For an OSF FileVersion entity the API `type` is "file_versions".
 
         name          type     description
         ---------------------------------------------------------------------------------
@@ -375,6 +389,7 @@ class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
 
     *None*.
 
+    #This Request/Response
     """
     version_lookup_url_kwarg = 'version_id'
     permission_classes = (
