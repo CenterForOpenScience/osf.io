@@ -16,17 +16,18 @@ from api.users.views import UserMixin
 from api.nodes.serializers import (
     NodeSerializer,
     NodeLinksSerializer,
+    NodeDetailSerializer,
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
-    NodeContributorDetailSerializer,
+    NodeContributorDetailSerializer
 )
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
-    ReadOnlyIfRegistration,
     ContributorOrPublicForPointers,
-    ContributorDetailPermissions
+    ContributorDetailPermissions,
+    ReadOnlyIfRegistration,
 )
 
 from website.exceptions import NodeStateError
@@ -132,7 +133,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
-    serializer_class = NodeSerializer
+    serializer_class = NodeDetailSerializer
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -232,6 +233,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError("Must have at least one registered admin contributor")
+
 
 # TODO: Support creating registrations
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
@@ -354,6 +356,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         ContributorOrPublicForPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -445,9 +448,11 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             if self.kwargs['path'] == '/':
                 return list(self.get_node().get_addon('osfstorage').get_root().children)
 
-            fobj = OsfStorageFileNode.find_one(
+            fobj = get_object_or_error(
+                OsfStorageFileNode,
                 Q('node', 'eq', self.get_node()._id) &
-                Q('path', 'eq', self.kwargs['path'])
+                Q('_id', 'eq', self.kwargs['path'].strip('/')) &
+                Q('is_file', 'eq', not self.kwargs['path'].endswith('/'))
             )
 
             if fobj.is_file:
