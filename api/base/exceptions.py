@@ -51,6 +51,11 @@ def json_api_exception_handler(exc, context):
     return response
 
 
+class ServiceUnavailableError(APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = 'Service is unavailable at this time.'
+
+
 class JSONAPIException(APIException):
     """Inherits from the base DRF API exception and adds extra metadata to support JSONAPI error objects
 
