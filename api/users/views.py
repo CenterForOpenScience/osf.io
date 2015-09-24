@@ -47,7 +47,7 @@ class UserMixin(object):
 class UserList(generics.ListAPIView, ODMFilterMixin):
     """Users registered on the OSF.
 
-    You can filter on users by their id, fullname, given_name, middle_name, or family_name.
+    You can filter on users by their id, full_name, given_name, middle_name, or family_name.
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
