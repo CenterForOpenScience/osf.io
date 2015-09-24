@@ -13,12 +13,6 @@ var $osf = require('./osfHelpers');
 var Paginator = require('./paginator');
 
 var NODE_OFFSET = 25;
-// Max number of recent/common contributors to show
-var MAX_RECENT = 5;
-
-// TODO: Remove dependency on contextVars
-//var nodeApiUrl = window.contextVars.node.urls.api;
-//var nodeId = window.contextVars.node.id;
 
 function Contributor(data) {
     $.extend(this, data);
@@ -93,10 +87,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         });
 
         self.removeAllVisible = ko.pureComputed(function() {
-            if(self.selection().length > 0) {
-               return true;
-            }
-            return false;
+            return self.selection().length > 0;
         });
 
         self.inviteName = ko.observable();
