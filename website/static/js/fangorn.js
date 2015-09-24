@@ -1586,10 +1586,11 @@ var FGItemButtons = {
                     } else {
                         rowButtons.push(
                         m.component(FGButton, {
-                            onclick: function(event) { _removeEvent.call(tb, event, [item]); },
+                            onclick: function (event) { _removeEvent.call(tb, event, [item]); },
                             icon: 'fa fa-trash',
-                            className : 'text-danger'
+                            className: 'text-danger'
                         }, 'Delete'));
+
                     }
                 }
                 if(storageAddons[item.data.provider].externalView) {

@@ -118,6 +118,7 @@ class OsfStorageFileNode(StoredObject):
     """A node in the file tree of a given project
     Contains  references to a fileversion and stores information about
     deletion status and position in the tree
+
                root
               / | \
         child1  |  child3
@@ -481,8 +482,10 @@ class OsfStorageFileVersion(StoredObject):
 @unique_on(['node', 'path'])
 class OsfStorageGuidFile(GuidFile):
     """A reference back to a OsfStorageFileNode
+
     path is the "waterbutler path" as well as the path
     used to look up a filenode
+
     GuidFile.path == FileNode.path == '/' + FileNode._id
     """
 

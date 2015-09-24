@@ -117,7 +117,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'size': None,
             u'modified': None,
             u'contentType': None,
-            u'checkout_user': '',
+            u'checkout': '',
             u'md5': None,
             u'sha256': None,
         })
@@ -143,7 +143,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             'size': 1234,
             'modified': None,
             'contentType': 'text/plain',
-            'checkout_user': '',
+            'checkout': '',
             'md5': None,
             'sha256': None,
         })
@@ -163,7 +163,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             'size': 1234,
             'modified': date.isoformat(),
             'contentType': 'text/plain',
-            'checkout_user': '',
+            'checkout': '',
             'md5': None,
             'sha256': None,
         })
@@ -343,14 +343,6 @@ class TestOsfstorageFileNode(StorageTestCase):
         assert_equal(to_move, moved)
         assert_equal(to_move.name, 'Tuna')
         assert_equal(moved.parent, move_to)
-
-    def test_rent_and_return(self):
-        folder = self.node_settings.root_node
-        folder.checkout(self.user)
-        assert_equal(self.user, folder.checkout_user)
-
-        self.node_settings.root_node.checkin()
-        assert_equal(None, folder.checkout_user)
 
     @unittest.skip
     def test_move_folder(self):
