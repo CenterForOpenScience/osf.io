@@ -147,8 +147,8 @@
                           listener: addComment.bind($data, $root.save.bind($root))
                         }" />
       <span class="input-group-btn">
-        <button class="btn btn primary"
-                data-bind="click: addComment.bind($data, $root.save.bind($root),
+        <button class="btn btn-primary"
+                data-bind="click: addComment.bind($data, $root.save.bind($root)),
                            enable: allowAddNext">Add</button>
       </span>
     </div>
