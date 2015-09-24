@@ -9,11 +9,10 @@ from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
-from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, JSONAPIListSerializer
+from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, JSONAPIListSerializer, IDField, TypeField
 
 
 class NodeTagField(ser.Field):
-
     def to_representation(self, obj):
         if obj is not None:
             return obj._id
@@ -55,8 +54,6 @@ class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
-    category_choices = Node.CATEGORY_MAP.keys()
-    category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
     filterable_fields = frozenset([
         'title',
         'description',
@@ -66,19 +63,21 @@ class NodeSerializer(JSONAPISerializer):
         'category',
     ])
 
-    id = ser.CharField(read_only=True, source='_id', label='ID')
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+
+    category_choices = Node.CATEGORY_MAP.keys()
+    category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
+
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
-    tags = ser.ListField(child=NodeTagField(), required=False)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     collection = ser.BooleanField(read_only=True, source='is_folder')
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
-
-    links = LinksField({'html': 'get_absolute_url'})
-    # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
+    tags = ser.ListField(child=NodeTagField(), required=False)
     public = ser.BooleanField(source='is_public', read_only=True,
                               help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
@@ -86,6 +85,9 @@ class NodeSerializer(JSONAPISerializer):
                                         'public and private nodes. Administrators on a parent '
                                         'node have implicit read permissions for all child nodes',
                               )
+
+    links = LinksField({'html': 'get_absolute_url'})
+    # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
     children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
                                                 lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
@@ -173,6 +175,12 @@ class NodeBulkUpdateSerializer(NodeSerializer):
     id = ser.CharField(source='_id', label='ID', required=True)
 
 
+class NodeDetailSerializer(NodeSerializer):
+    """
+    Overrides NodeSerializer to make id required.
+    """
+    id = IDField(source='_id', required=True)
+
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
@@ -185,20 +193,16 @@ class NodeContributorsSerializer(JSONAPISerializer):
         'bibliographic',
         'permissions'
     ])
-    id = ser.CharField(source='_id', label='ID')
+
+    id = IDField(source='_id', required=True)
+    type = TypeField()
+
     fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
     family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
-
-    profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
-
-    def get_profile_image_url(self, user):
-        size = self.context['request'].query_params.get('profile_image_size')
-        return user.profile_image_url(size=size)
-
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)
 
@@ -209,8 +213,15 @@ class NodeContributorsSerializer(JSONAPISerializer):
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')
+
+    profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
+
+    def get_profile_image_url(self, user):
+        size = self.context['request'].query_params.get('profile_image_size')
+        return user.profile_image_url(size=size)
+
     class Meta:
-        type_ = 'users'
+        type_ = 'contributors'
 
     def absolute_url(self, obj):
         return obj.absolute_url
@@ -243,10 +254,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
-    """ Overrides node contributor serializer to make id read only and add additional methods
     """
-    id = ser.CharField(read_only=True, source='_id', label='ID')
-
+    Overrides node contributor serializer to add additional methods
+    """
     def update(self, instance, validated_data):
         contributor = instance
         auth = Auth(self.context['request'].user)
@@ -263,6 +273,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         contributor.node_id = node._id
         return contributor
 
+
 class NodeRegistrationSerializer(NodeSerializer):
 
     retracted = ser.BooleanField(source='is_retracted', read_only=True,
@@ -278,7 +289,8 @@ class NodeRegistrationSerializer(NodeSerializer):
 
 class NodeLinksSerializer(JSONAPISerializer):
 
-    id = ser.CharField(read_only=True, source='_id', label='ID')
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally

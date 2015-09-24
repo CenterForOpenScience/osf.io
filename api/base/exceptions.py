@@ -10,25 +10,28 @@ def json_api_exception_handler(exc, context):
     from rest_framework.views import exception_handler
     response = exception_handler(exc, context)
 
-    # Error objects may have the following members. Title and id removed to avoid clash with node "title" and "id" errors.
+    # Error objects may have the following members. Title and id removed to avoid clash with "title" and "id" field errors.
     top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
-    resource_object_members = ['id', 'type']
+    resource_object_identifiers = ['type', 'id']
     errors = []
 
     def dict_error_formatting(errors, error):
         for error_key, error_description in error.iteritems():
             if error_key in top_level_error_keys:
                 errors.append({error_key: error_description})
+            elif error_key in resource_object_identifiers:
+                if isinstance(error_description, basestring):
+                    error_description = [error_description]
+                errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
+            elif error_key == 'attributes':
+                if isinstance(error_description, list):
+                    errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
+            elif error_key == 'non_field_errors':
+                        errors.append({'detail': error_description})
             else:
                 if isinstance(error_description, basestring):
                     error_description = [error_description]
-                for reason in error_description:
-                    if error_key in resource_object_members:
-                        errors.append({'source': {'pointer': '/data/' + error_key}, 'detail': reason})
-                    elif error_key == 'non_field_errors':
-                        errors.append({'detail': reason})
-                    else:
-                        errors.append({'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason})
+                errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason} for reason in error_description])
 
     if response:
         message = response.data
@@ -69,6 +72,7 @@ class JSONAPIException(APIException):
         See http://jsonapi.org/format/#error-objects.
         Example: ``source={'pointer': '/data/attributes/title'}``
     """
+    status_code = status.HTTP_400_BAD_REQUEST
     def __init__(self, detail=None, source=None):
         super(JSONAPIException, self).__init__(detail=detail)
         self.source = source
@@ -77,6 +81,11 @@ class JSONAPIException(APIException):
 class Gone(APIException):
     status_code = status.HTTP_410_GONE
     default_detail = ('The requested resource is no longer available.')
+
+
+class Conflict(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = ('Resource identifier does not match server endpoint.')
 
 
 class InvalidQueryStringError(JSONAPIException):

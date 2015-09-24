@@ -11,7 +11,7 @@ from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
 from api.base import utils
-from api.base.exceptions import InvalidQueryStringError
+from api.base.exceptions import InvalidQueryStringError, Conflict
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
@@ -39,6 +39,31 @@ def _url_val(val, obj, serializer, **kwargs):
         return getattr(serializer, val)(obj)
     else:
         return val
+
+
+class IDField(ser.CharField):
+    def __init__(self, **kwargs):
+        kwargs['label'] = 'ID'
+        super(IDField, self).__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        update_methods = ['PUT', 'PATCH']
+        if self.context['request'].method in update_methods:
+            if self.root.instance._id != data:
+                raise Conflict()
+        return super(IDField, self).to_internal_value(data)
+
+
+class TypeField(ser.CharField):
+    def __init__(self, **kwargs):
+        kwargs['write_only'] = True
+        kwargs['required'] = True
+        super(TypeField, self).__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        if self.root.Meta.type_ != data:
+            raise Conflict()
+        return super(TypeField, self).to_internal_value(data)
 
 
 class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
@@ -319,11 +344,23 @@ class JSONAPISerializer(ser.Serializer):
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
-        """After validation, scrub HTML from validated_data prior to saving (for create and update views)"""
+        """
+        After validation, scrub HTML from validated_data prior to saving (for create and update views)
+
+        Exclude 'type' and '_id' from validated_data.
+
+        """
         ret = super(JSONAPISerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
             self._validated_data = _rapply(self.validated_data, strip_html)
+
+        self._validated_data.pop('type', None)
+
+        update_methods = ['PUT', 'PATCH']
+        if self.context['request'].method in update_methods:
+            self._validated_data.pop('_id', None)
+
         return ret
 
 
