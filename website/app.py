@@ -81,7 +81,7 @@ def build_log_templates(settings):
     with open(settings.BUILT_TEMPLATES, 'w') as build_fp:
         build_fp.write('## Built templates file. DO NOT MODIFY.\n')
         with open(settings.CORE_TEMPLATES) as core_fp:
-            # Exclude comments in core templates mako filew
+            # Exclude comments in core templates mako file
             content = '\n'.join([line.rstrip() for line in
                 core_fp.readlines() if not line.strip().startswith('##')])
             build_fp.write(content)
