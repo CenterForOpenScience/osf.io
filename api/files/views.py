@@ -318,7 +318,7 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
 
     ##Links
 
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
     ##Actions
 

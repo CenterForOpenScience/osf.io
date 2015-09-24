@@ -50,15 +50,17 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
     user, meaning a re-fetch is not necessary.
 
-    The subroute [`/me/`](me/) is a special link that always points to the currently logged-in user.
+    The subroute [`/me/`](me/) is a special endpoint that always points to the currently logged-in user.
 
     ##User Attributes
 
-    **TODO: import from UserDetail**
+    <!--- Copied Attributes From UserDetail -->
+
+    **TODO: import Attributes from UserDetail**
 
     ##Links
 
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
     ##Actions
 
@@ -72,6 +74,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
 
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -103,21 +106,22 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user. *Writeable*.
 
-    If `me` is given as the id, the record of the currently logged-in user will be returned.
+    The User Detail endpoint retrieves information about for the user whose id is the final part of the path.  If `me`
+    is given as the id, the record of the currently logged-in user will be returned.  The returned information includes
+    their bibliographic information and the date they registered.
 
     ##Attributes
 
-    `type` is "users"
+    OSF User entities have the "users" `type`.
 
         name               type               description
         ----------------------------------------------------------------------------------------
-        full_name          string             full name of the user
-        given_name         string             given name of the user for bibliographic citations
-        middle_names       string             middle name of user for bibliographic citations
-        family_name        string             family name of user for bibliographic citations
+        full_name          string             full name of the user; used for display
+        given_name         string             given name of the user; for bibliographic citations
+        middle_names       string             middle name of user; for bibliographic citations
+        family_name        string             family name of user; for bibliographic citations
         suffix             string             suffix of user's name for bibliographic citations
         date_registered    iso8601 timestamp  timestamp when the user's account was created
-        profile_image_url  url                url to the user's profile image (gravatar)
 
     ##Relationships
 
@@ -140,14 +144,14 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
-                           "type": "users",     # required
-                           "id":   "<user_id>", # required
+                           "type": "users",   # required
+                           "id":   {user_id}, # required
                            "attributes": {
-                             "full_name":    "<mandatory>",
-                             "given_name":   "<optional>",
-                             "middle_names": "<optional>",
-                             "family_name":  "<optional>",
-                             "suffix":       "<optional">
+                             "full_name":    {full_name},    # mandatory
+                             "given_name":   {given_name},   # optional
+                             "middle_names": {middle_names}, # optional
+                             "family_name":  {family_name},  # optional
+                             "suffix":       {suffix}        # optional
                            }
                          }
                        }
@@ -165,6 +169,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
     *None*.
 
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -197,11 +202,13 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
     ##Node Attributes
 
-    **TODO: import from NodeDetail**
+    <!--- Copied Attributes from NodeDetail -->
+
+    **TODO: import Attributes from NodeDetail**
 
     ##Links
 
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
     ##Actions
 
@@ -213,8 +220,11 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    **TODO: import from NodeList**
+    <!--- Copied Query Params from NodeList -->
 
+    **TODO: import Query Params from NodeList**
+
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
