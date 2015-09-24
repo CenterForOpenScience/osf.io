@@ -104,3 +104,8 @@ class UnconfirmedAccountError(APIException):
 class DeactivatedAccountError(APIException):
     status_code = 400
     default_detail = 'Making API requests with credentials associated with a deactivated account is not allowed.'
+
+
+class InvalidModelValueError(JSONAPIException):
+    status_code = 400
+    default_detail = 'Invalid value in POST/PUT/PATCH request.'
