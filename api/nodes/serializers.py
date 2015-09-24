@@ -173,7 +173,10 @@ class NodeContributorsSerializer(JSONAPISerializer):
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
 
-    links = LinksField({'html': 'absolute_url'})
+    links = LinksField({
+        'html': 'absolute_url',
+        'self': 'get_absolute_url'
+    })
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')
 
