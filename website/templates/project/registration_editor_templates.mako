@@ -154,4 +154,17 @@
     </div>
 </script>
 
+<script type="text/html" id="importContributors">
+
+    <div data-bind="foreach: {data: contributors, as: 'contrib'}">
+        <div class="checkbox">
+            <label>
+                <input type="checkbox" data-bind="value: contrib">
+                <!-- ko text: contrib --> <!-- /ko -->
+            </label>
+        </div>
+    </div>
+    <p>If you would like to add contributors to your OSF project, you can do that on your <a href="${web_url_for('node_contributors', pid=node['root_id'])}">Contributors Page</a> </p>
+</script>
+
 <%include file="registration_editor_extensions.mako" />

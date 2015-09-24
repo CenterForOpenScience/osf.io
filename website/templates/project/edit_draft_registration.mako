@@ -84,11 +84,14 @@
                 </button>
                 <span data-bind="tooltip: {
                                    title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
-                                 }">                      
+                                 }">
                   <a data-bind="css: {'disabled': !canRegister()},
                                 click: $root.check" type="button" class="pull-right btn btn-success">Register
                   </a>
                 </span>
+                <button data-bind="click: authorDialog,
+                                   visible: currentQuestion().title === 'Authorship' && contributors().length > 1"  type="button" class="btn btn-primary">Import Contributors
+                </button>
               </div>
             </div>
           </div>
