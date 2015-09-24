@@ -125,16 +125,16 @@ class WaterButlerMixin(object):
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
-    """Projects and components. *Writeable*.
+    """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
     node, meaning a re-fetch is not necessary.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
-    is that a project is the top-level node, and components are children of the project. There is also a category field
-    that includes the option of project. The categorization essentially determines which icon is displayed by the
-    Node in the front-end UI and helps with search organization. Top-level nodes may have a category other than
-    project, and children nodes may have a category of project.
+    is that a project is the top-level node, and components are children of the project. There is also a [category
+    field](/v2/#osf-node-categories) that includes the option of project. The categorization essentially determines
+    which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
+    a category other than project, and children nodes may have a category of project.
 
     ##Node Attributes
 
@@ -157,19 +157,20 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
                          "data": {
                            "type": "nodes", # required
                            "attributes": {
-                             "title":       "<mandatory>",
-                             "category":    "<mandatory>",
-                             "description": "<optional>",
-                             "tags":        ["optional", "your-call"]
+                             "title":       {title},         # mandatory
+                             "category":    {category},      # mandatory
+                             "description": {description},   # optional
+                             "tags":        [{tag1}, {tag2}] # optional
                            }
                          }
                        }
         Success:       201 CREATED + node representation
 
-    New nodes are created by issuing a POST request to this endpoint.  The `title` and `category` fields are mandatory.
-    All other fields not listed above will be ignored.  If the node creation is successful the API will return a 201
-    response with the respresentation of the new node in the body.  For the new node's canonical URL, see the
-    `links.self` field of the response.
+    New nodes are created by issuing a POST request to this endpoint.  The `title` and `category` fields are
+    mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  All other fields
+    not listed above will be ignored.  If the node creation is successful the API will return a 201 response with the
+    respresentation of the new node in the body.  For the new node's canonical URL, see the `links.self` field of the
+    response.
 
     ##Query Params
 
@@ -177,7 +178,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    Nodes may be filtered by their `title`, `description`, `public`, `registration`, `tags`, or `category`.  `title`,
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
     `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
     `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
     that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
@@ -234,6 +235,12 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     that includes the option of project. The categorization essentially determines which icon is displayed by the
     Node in the front-end UI and helps with search organization. Top-level nodes may have a category other than
     project, and children nodes may have a category of project.
+
+    ###Permissions
+
+    Nodes that are made public will give read-only access to everyone. Private nodes require explicit read
+    permission. Write and admin access are the same for public and private nodes. Administrators on a parent node have
+    implicit read permissions for all child nodes.
 
     ##Attributes
 
@@ -319,6 +326,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     *None*.
 
     #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
