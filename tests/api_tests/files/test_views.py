@@ -6,6 +6,7 @@ from nose.tools import *  # flake8: noqa
 
 from website.models import Node
 from website.views import find_dashboard
+from website.files.exceptions import FileNodeorChildCheckedOutError
 from framework.auth.core import Auth
 from website.addons.github import model
 from website.util.sanitize import strip_html
@@ -217,10 +218,46 @@ class TestFileView(ApiTestCase):
             auth=self.user.auth,
         )
         assert_equal(res.status_code, 200)
-
+        self.file.reload()
+        error = None
+        try:
+            self.file.delete()
+        except FileNodeorChildCheckedOutError as e:
+            error = e
+        assert_true(isinstance(error, FileNodeorChildCheckedOutError))
 
     def test_delete_folder_with_checked_out_file(self):
-        pass
+        self.app.put_json_api(
+            '/{}files/{}/'.format(API_BASE, self.file._id),
+            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': None}}},
+            auth=self.user.auth,
+        )
+        self.file.reload()
+        folder = self.root_node.append_folder('folder')
+        self.file.move_under(folder)
+        self.app.put_json_api(
+            '/{}files/{}/'.format(API_BASE, self.file._id),
+            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
+            auth=self.user.auth,
+        )
+        self.file.reload()
+        error = None
+        try:
+            folder.delete()
+        except FileNodeorChildCheckedOutError as e:
+            error = e
+        assert_true(isinstance(error, FileNodeorChildCheckedOutError))
 
     def test_move_checked_out_file(self):
-        pass
+        self.app.put_json_api(
+            '/{}files/{}/'.format(API_BASE, self.file._id),
+            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
+            auth=self.user.auth,
+        )
+        self.file.reload()
+        folder = self.root_node.append_folder('folder')
+        try:
+            self.file.move_under(folder)
+        except FileNodeorChildCheckedOutError as e:
+            error = e
+        assert_true(isinstance(error, FileNodeorChildCheckedOutError))
