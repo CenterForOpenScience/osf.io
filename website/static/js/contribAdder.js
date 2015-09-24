@@ -162,7 +162,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         self.notification(false);
         return $.getJSON(
-            //nodeApiUrl + 'get_contributors/', {},
             self.nodeApiUrl + 'get_contributors/', {},
             function(result) {
                 var contributors = result.contributors.map(function(userData) {
