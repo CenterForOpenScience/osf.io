@@ -9,7 +9,7 @@ from api.base.serializers import (
 
 class UserSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
-        'fullname',
+        'full_name',
         'given_name',
         'middle_names',
         'family_name',
@@ -17,7 +17,7 @@ class UserSerializer(JSONAPISerializer):
     ])
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    fullname = ser.CharField(required=True, label='Full name', help_text='Display name used in the general user interface')
+    full_name = ser.CharField(source='fullname', required=True, label='Full name', help_text='Display name used in the general user interface')
     given_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     middle_names = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')
     family_name = ser.CharField(required=False, allow_blank=True, help_text='For bibliographic citations')

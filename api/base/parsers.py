@@ -1,8 +1,12 @@
 from rest_framework.parsers import JSONParser
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ParseError
 
 from api.base.renderers import JSONAPIRenderer
 from api.base.exceptions import JSONAPIException
+
+
+NO_ATTRIBUTES_ERROR = 'Request must include /data/attributes.'
+NO_DATA_ERROR = 'Request must include /data.'
 
 class JSONAPIParser(JSONParser):
     """
@@ -17,12 +21,12 @@ class JSONAPIParser(JSONParser):
         """
         result = super(JSONAPIParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
         if not isinstance(result, dict):
-            raise ValidationError("Invalid data. Expected a dictionary but got {}".format(type(result)))
+            raise ParseError()
         data = result.get('data', {})
-
+        
         def data_flattener(resource_object, stream):
             if "attributes" not in resource_object and stream.method != 'DELETE':
-                    raise JSONAPIException(source={'pointer': '/data/attributes'}, detail='This field is required.')
+                    raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
             id = resource_object.get('id')
             object_type = resource_object.get('type')
             attributes = resource_object.get('attributes')
@@ -32,7 +36,8 @@ class JSONAPIParser(JSONParser):
                 parsed.update(attributes)
 
             return parsed
-
+        
+        
         if data:
             if isinstance(data, list):
                 data_collection = []
@@ -45,7 +50,7 @@ class JSONAPIParser(JSONParser):
                 return data_flattener(data, stream)
 
         else:
-            raise JSONAPIException(source={'pointer': '/data'}, detail='This field is required.')
+            raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
 
 
 class JSONAPIParserForRegularJSON(JSONAPIParser):

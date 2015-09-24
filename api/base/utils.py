@@ -57,12 +57,6 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
                 raise Gone
             else:
                 raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
-        if hasattr(obj, 'is_active'):
-            if not getattr(obj, 'is_active', False):
-                if display_name is None:
-                    raise Gone
-                else:
-                    raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
         return obj
 
     except NoResultsFound:

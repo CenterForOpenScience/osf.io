@@ -195,7 +195,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     id = IDField(source='_id', required=True)
     type = TypeField()
 
-    fullname = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
+    full_name = ser.CharField(source='fullname', read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
     family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
