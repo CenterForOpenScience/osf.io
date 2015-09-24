@@ -107,6 +107,8 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
     ##Attributes
 
+    `type` is "users"
+
         name               type               description
         ----------------------------------------------------------------------------------------
         full_name          string             full name of the user
@@ -137,11 +139,17 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
         URL:           links.self
         Query Params:  <none>
         Body (JSON):   {
-                         "full_name":    "<mandatory>",
-                         "given_name":   "<optional>",
-                         "middle_names": "<optional>",
-                         "family_name":  "<optional>",
-                         "suffix":       "<optional">
+                         "data": {
+                           "type": "users",     # required
+                           "id":   "<user_id>", # required
+                           "attributes": {
+                             "full_name":    "<mandatory>",
+                             "given_name":   "<optional>",
+                             "middle_names": "<optional>",
+                             "family_name":  "<optional>",
+                             "suffix":       "<optional">
+                           }
+                         }
                        }
         Success:       200 OK + node representation
 

@@ -54,6 +54,8 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     ##Attributes
 
+    `type` is "files"
+
     Both files and folders are accessed through this endpoint and may be distinguished by the `kind` attribute. `size`
     will be `null` for folders.
 
@@ -175,7 +177,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         Success:      200 OK + updated file representation
 
     To update an existing file, issue a PUT request to the file's `upload` link with the raw file data in the request
-    body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The update
+    body, and the `kind` and `name` query parameters set to `"file"` and the desired name of the file.  The update
     action will create a new version of the file.  The response format is the same as the **Upload New File** action.
 
     ###Rename (*files, folders*)
@@ -190,7 +192,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         Success:       200 OK + new entity representation
 
     To rename a file or folder, issue a POST request to the `move` link with the `action` body parameter set to
-    `'rename'` and the `rename` body parameter set to the desired name.  The response format is the same as the **Upload
+    `"rename"` and the `rename` body parameter set to the desired name.  The response format is the same as the **Upload
     New File** action, except if the renamed entity is a folder, `kind` will be `"folder"`.
 
     ###Move & Copy (*files, folders*)
@@ -303,6 +305,8 @@ class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
     """Details about a specific file version. *Read-only*.
 
     ##Attributes
+
+    `type` is "file_version"
 
         name          type     description
         ---------------------------------------------------------------------------------

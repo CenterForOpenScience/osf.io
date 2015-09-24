@@ -78,6 +78,16 @@ def root(request, format=None):
     Some routes may have extra rules for links, especially if those links work with external services. Collections
     may have counts with them to indicate how many items are in that collection.
 
+    ###Formatting POST/PUT/PATCH requests
+
+    The OSF API follows the JSON-API spec for [create and update requests](http://jsonapi.org/format/#crud).  This means
+    all request bodies must be wrapped with some metadata.  Each request body must be an object with a `data` key
+    containing at least a `type` member.  The value of the `type` member must agree with the `type` of the entitys
+    represented by the endpoint.  If not, a 409 Conflict will be returned.  The request should also contain an
+    `attributes` member with an object containing the key-value pairs to be created/updated.  PUT/PATCH requests must
+    also have an `id` key that matches the id part of the endpoint.  If the `id` key does not match the id path part, a
+    409 Conflict error will be returned.
+
     ###Attribute Validation
 
     Endpoints that allow creation or modification of entities generally limit updates to certain attributes of the

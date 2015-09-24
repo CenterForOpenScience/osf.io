@@ -87,10 +87,15 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         URL:           links.self
         Query Params:  <none>
         Body (JSON):   {
-                         "title":       "<mandatory>",
-                         "category":    "<mandatory>",
-                         "description": "<optional>",
-                         "tags":        ["optional", "your-call"]
+                         "data": {
+                           "type": "nodes", # required
+                           "attributes": {
+                             "title":       "<mandatory>",
+                             "category":    "<mandatory>",
+                             "description": "<optional>",
+                             "tags":        ["optional", "your-call"]
+                           }
+                         }
                        }
         Success:       201 CREATED + node representation
 
@@ -164,6 +169,8 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     ##Attributes
 
+    `type` is "nodes"
+
         name           type               description
         ---------------------------------------------------------------------------------
         title          string             title of project or component
@@ -211,10 +218,16 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         URL:           links.self
         Query Params:  <none>
         Body (JSON):   {
-                         "title":       "<mandatory>",
-                         "category":    "<mandatory>",
-                         "description": "<optional>",
-                         "tags":        ["optional", "your-call"]
+                         "data": {
+                           "type": "nodes",     # required
+                           "id":   "<node_id>", # required
+                           "attributes": {
+                             "title":       "<mandatory>",
+                             "category":    "<mandatory>",
+                             "description": "<optional>",
+                             "tags":        ["optional", "your-call"]
+                           }
+                         }
                        }
         Success:       200 OK + node representation
 
@@ -296,14 +309,19 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         URL:           links.self
         Query Params:  <none>
         Body (JSON):   {
-                         "id":            "8xp2s",               # mandatory
-                         "bibliographic": true|false,            # optional
-                         "permissions":   "read"|"write"|"admin" # optional
+                         "data": {
+                           "type": "contributors", # required
+                           "attributes": {
+                             "id":            "8xp2s",               # mandatory
+                             "bibliographic": true|false,            # optional
+                             "permission":    "read"|"write"|"admin" # optional
+                           }
+                         }
                        }
         Success:       201 CREATED + node contributor representation
 
-    Contributors can be added to nodes are by issuing a POST request to this endpoint.  The `id` param is mandatory and
-    must be a valid user id.  `bibliographic` is a boolean and defaults to `true`.  `permissions` must be a [valid OSF
+    Contributors can be added to nodes are by issuing a POST request to this endpoint.  The `id` attribute is mandatory and
+    must be a valid user id.  `bibliographic` is a boolean and defaults to `true`.  `permission` must be a [valid OSF
     permission key](/v2/#osf-permission-keys) and defaults to `"write"`. All other fields not listed above will be
     ignored.  If the request is successful the API will return a 201 response with the respresentation of the new node
     contributor in the body.  For the new node contributor's canonical URL, see the `links.self` field of the response.
@@ -356,6 +374,8 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     ##Attributes
 
+    `type` is "contributors"
+
         name           type     description
         ---------------------------------------------------------------------------------
         bibliographic  boolean  Whether the user will be included in citations for this node or not
@@ -381,8 +401,14 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         URL:           links.self
         Query Params:  <none>
         Body (JSON):   {
-                         "bibiliographic": true|false, # optional
-                         "permission":     "read"|"write"|"admin" # optional
+                         "data": {
+                           "type": "contributors",          # required
+                           "id":   "<contributor_user_id>", # required
+                           "attributes": {
+                             "bibiliographic": true|false,            # optional
+                             "permission":     "read"|"write"|"admin" # optional
+                           }
+                         }
                        }
         Success:       200 OK + node representation
 
@@ -788,6 +814,8 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
     of the provider resource.
 
     ##Provider Attributes
+
+    `type` is "files"
 
         name      type    description
         ---------------------------------------------------------------------------------
