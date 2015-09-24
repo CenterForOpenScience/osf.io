@@ -402,6 +402,14 @@ class TestNodeCreate(ApiTestCase):
                 }
             }
         }
+    def test_node_create_invalid_data(self):
+        res = self.app.post_json_api(self.url, "Incorrect data", auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+
+        res = self.app.post_json_api(self.url, ["Incorrect data"], auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
     def test_creates_public_project_logged_out(self):
         res = self.app.post_json_api(self.url, self.public_project, expect_errors=True)
@@ -507,7 +515,7 @@ class TestNodeCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
 
 
@@ -656,6 +664,16 @@ class NodeCRUDTestCase(ApiTestCase):
 
 class TestNodeUpdate(NodeCRUDTestCase):
 
+    def test_node_update_invalid_data(self):
+        res = self.app.put_json_api(self.public_url, "Incorrect data", auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+
+        res = self.app.put_json_api(self.public_url, ["Incorrect data"], auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+
+
     def test_update_project_properties_not_nested(self):
         res = self.app.put_json_api(self.public_url, {
             'id': self.public_project._id,
@@ -666,7 +684,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             'public': True,
         }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_update_invalid_id(self):
@@ -1289,6 +1307,15 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
 
+    def test_contributor_update_invalid_data(self):
+        res = self.app.post_json_api(self.public_url, "Incorrect data", auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+
+        res = self.app.post_json_api(self.public_url, ["Incorrect data"], auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+
     def test_add_contributor_no_type(self):
         data = {
             'data': {
@@ -1589,6 +1616,15 @@ class TestNodeContributorUpdate(ApiTestCase):
 
         self.url_creator = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_two._id)
+
+    def test_node_update_invalid_data(self):
+        res = self.app.put_json_api(self.url_creator, "Incorrect data", auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+
+        res = self.app.put_json_api(self.url_creator, ["Incorrect data"], auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
     def test_change_contributor_no_id(self):
         data = {
@@ -2269,7 +2305,7 @@ class TestNodeChildCreate(ApiTestCase):
             }
         }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-        
+
     def test_creates_child_no_type(self):
         child = {
             'data': {
@@ -2310,7 +2346,7 @@ class TestNodeChildCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
 
 
@@ -2529,7 +2565,7 @@ class TestNodeLinkCreate(ApiTestCase):
         res = self.app.post_json_api(self.public_url, payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
 
     def test_creates_public_node_pointer_logged_out(self):
         res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
@@ -2663,6 +2699,24 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'osfstorage')
+
+    def test_returns_file_data(self):
+        fobj = self.project.get_addon('osfstorage').get_root().append_file('NewFile')
+        fobj.save()
+        res = self.app.get('{}osfstorage/{}'.format(self.private_url, fobj._id), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['attributes']['kind'], 'file')
+        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
+        assert_equal(res.content_type, 'application/vnd.api+json')
+
+    def test_returns_folder_data(self):
+        fobj = self.project.get_addon('osfstorage').get_root().append_folder('NewFolder')
+        fobj.save()
+        res = self.app.get('{}osfstorage/{}/'.format(self.private_url, fobj._id), auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 0)
+        assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_returns_private_files_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -2810,7 +2864,7 @@ class TestNodeLinkDetail(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res_json['attributes']['target_node_id'], self.pointer_project._id)
 
-    def returns_private_node_pointer_detail_logged_in_non_contributor(self):
+    def test_returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
@@ -2834,6 +2888,25 @@ class TestDeleteNodeLink(ApiTestCase):
                                                               auth=Auth(self.user),
                                                               save=True)
         self.public_url = '/{}nodes/{}/node_links/{}'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+
+    def test_cannot_delete_if_registration(self):
+        registration = RegistrationFactory(project=self.public_project)
+
+        url = '/{}nodes/{}/node_links/'.format(
+            API_BASE,
+            registration._id,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        pointer_id = res.json['data'][0]['id']
+
+        url = '/{}nodes/{}/node_links/{}'.format(
+            API_BASE,
+            registration._id,
+            pointer_id,
+        )
+        res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_deletes_public_node_pointer_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)
