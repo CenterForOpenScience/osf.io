@@ -518,6 +518,22 @@ class TestNodeCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
 
+    def test_create_project_invalid_title(self):
+        project = {
+            'data': {
+                'type': 'nodes',
+                'attributes': {
+                    'title': 'A' * 201,
+                    'description': self.description,
+                    'category': self.category,
+                    'public': False,
+                }
+            }
+        }
+        res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
+
 
 class TestNodeDetail(ApiTestCase):
     def setUp(self):
@@ -1092,6 +1108,21 @@ class TestNodeUpdate(NodeCRUDTestCase):
             }
         }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+
+    def test_update_project_invalid_title(self):
+        project = {
+            'data': {
+                'type': 'nodes',
+                'id': self.public_project._id,
+                'attributes': {
+                    'title': 'A' * 201,
+                    'category': 'project',
+                }
+            }
+        }
+        res = self.app.put_json_api(self.public_url, project, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
 
 
 class TestNodeDelete(NodeCRUDTestCase):
