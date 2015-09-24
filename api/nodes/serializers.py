@@ -1,9 +1,11 @@
+from datetime import datetime
+from modularodm import Q
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from framework.auth.core import Auth
 
-from website.models import Node, User
+from website.models import Node, User, Comment
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
@@ -71,7 +73,7 @@ class NodeSerializer(JSONAPISerializer):
                                              link_type='related')
 
     comments = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-comments', lookup_field='pk', lookup_url_kwarg='node_id',
-                                               link_type='related')
+                                               link_type='related', meta={'unread_comments_count': 'get_unread_comments_count'})
 
     node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
                                                   lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
@@ -113,6 +115,16 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
+
+    def get_unread_comments_count(self, obj):
+        auth = self.get_user_auth(self.context['request'])
+        user = auth.user
+        default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
+        view_timestamp = user.comments_viewed_timestamp.get(obj._id, default_timestamp)
+        return Comment.find(Q('node', 'eq', obj) &
+                            Q('user', 'ne', user) &
+                            Q('date_created', 'gt', view_timestamp) &
+                            Q('date_modified', 'gt', view_timestamp)).count()
 
     def create(self, validated_data):
         node = Node(**validated_data)

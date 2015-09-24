@@ -109,7 +109,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
 
         meta = {}
         for key in self.meta or {}:
-            if key == 'count':
+            if key == 'count' or key == 'unread_comments_count':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
                 if utils.is_truthy(show_related_counts):
                     meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
