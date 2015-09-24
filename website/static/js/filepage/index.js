@@ -95,7 +95,7 @@ var FileViewPage = {
                 }
             });
         });
-        $(document).on('fileviewpage:rent', function() {
+        $(document).on('fileviewpage:checkout', function() {
             bootbox.confirm({
                 title: 'Confirm file check-out?',
                 message: 'This would mean ' +
@@ -128,7 +128,7 @@ var FileViewPage = {
                 }
             });
         });
-        $(document).on('fileviewpage:return', function() {
+        $(document).on('fileviewpage:checkin', function() {
             $.ajax({
                 method: 'put',
                 url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
@@ -144,7 +144,7 @@ var FileViewPage = {
                 $osf.growl('Error', 'Unable to check-in file');
             });
         });
-        $(document).on('fileviewpage:force_return', function() {
+        $(document).on('fileviewpage:force_checkin', function() {
             bootbox.confirm({
                 title: 'Force check-in file?',
                 message: 'This will check-in the file for all users, allowing it to be edited. Are you sure?',
@@ -321,13 +321,13 @@ var FileViewPage = {
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.request_done && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_return')}, 'Force Check-in')
+                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force Check-in')
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkout_user) && ctrl.request_done && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:rent')}, 'Check-out')
+                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check-out')
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.checkout_user === ctrl.context.currentUser.id) && ctrl.request_done) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:return')}, 'Check-in')
+                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check-in')
             ]) : '',
             m('.btn-group.m-t-xs', [
                 m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')

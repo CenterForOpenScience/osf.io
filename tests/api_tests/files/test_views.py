@@ -207,3 +207,20 @@ class TestFileView(ApiTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 403)
+
+    def test_delete_checked_out_file(self):
+        self.file.provider = 'osfstorage'
+        self.file.save()
+        res = self.app.put_json_api(
+            '/{}files/{}/'.format(API_BASE, self.file._id),
+            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
+            auth=self.user.auth,
+        )
+        assert_equal(res.status_code, 200)
+
+
+    def test_delete_folder_with_checked_out_file(self):
+        pass
+
+    def test_move_checked_out_file(self):
+        pass
