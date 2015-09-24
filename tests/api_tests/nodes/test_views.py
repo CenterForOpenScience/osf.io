@@ -1310,11 +1310,11 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def test_contributor_update_invalid_data(self):
         res = self.app.post_json_api(self.public_url, "Incorrect data", auth=self.user_three.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'unicode'>")
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
         res = self.app.post_json_api(self.public_url, ["Incorrect data"], auth=self.user_three.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'list'>")
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
     def test_add_contributor_no_type(self):
         data = {
@@ -1620,11 +1620,11 @@ class TestNodeContributorUpdate(ApiTestCase):
     def test_node_update_invalid_data(self):
         res = self.app.put_json_api(self.url_creator, "Incorrect data", auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'unicode'>")
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
         res = self.app.put_json_api(self.url_creator, ["Incorrect data"], auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'list'>")
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
     def test_change_contributor_no_id(self):
         data = {
