@@ -112,7 +112,11 @@ var FileViewPage = {
                         contentType: 'application/json',
                         dataType: 'json',
                         data: JSON.stringify({
-                            checkout: self.context.currentUser.id
+                            id: self.file.path.replace('/', ''),
+                            type: 'files',
+                            attributes: {
+                                checkout: self.context.currentUser.id
+                            }
                         })
                     }).done(function(resp) {
                         window.location.reload();
@@ -136,7 +140,11 @@ var FileViewPage = {
                 contentType: 'application/json',
                 dataType: 'json',
                 data: JSON.stringify({
-                    checkout: null
+                    id: self.file.path.replace('/', ''),
+                    type: 'files',
+                    attributes: {
+                        checkout: null
+                    }
                 })
             }).done(function(resp) {
                 window.location.reload();
@@ -165,7 +173,11 @@ var FileViewPage = {
                         contentType: 'application/json',
                         dataType: 'json',
                         data: JSON.stringify({
-                            checkout: null
+                            id: self.file.path.replace('/', ''),
+                            type: 'files',
+                            attributes: {
+                                checkout: null
+                            }
                         })
                     }).done(function(resp) {
                         window.location.reload();

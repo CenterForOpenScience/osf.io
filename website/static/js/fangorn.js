@@ -1546,7 +1546,13 @@ var FGItemButtons = {
                                                     contentType: 'application/json',
                                                     dataType: 'json',
                                                     data: JSON.stringify({
-                                                        checkout: window.contextVars.currentUser.id
+                                                        data: {
+                                                            id: item.data.path.replace('/', ''),
+                                                            type: 'files',
+                                                            attributes: {
+                                                                checkout: window.contextVars.currentUser.id
+                                                            }
+                                                        }
                                                     })
                                                 }).done(function(resp) {
                                                     window.location.reload();
@@ -1570,7 +1576,13 @@ var FGItemButtons = {
                                             contentType: 'application/json',
                                             dataType: 'json',
                                             data: JSON.stringify({
-                                                checkout: null
+                                                data: {
+                                                    id: item.data.path.replace('/', ''),
+                                                    type: 'files',
+                                                    attributes: {
+                                                        checkout: null,
+                                                    }
+                                                }
                                             })
                                         }).done(function(resp) {
                                             window.location.reload();
@@ -1798,12 +1810,16 @@ var FGToolbar = {
                                 var each = items[i];
                                 $.ajax({
                                     method: 'put',
-                                    url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
+                                    url: window.contextVars.apiV2Prefix + 'files' + each.data.path + '/',
                                     beforeSend: $osf.setXHRAuthorization,
                                     contentType: 'application/json',
                                     dataType: 'json',
                                     data: JSON.stringify({
-                                        checkout: window.contextVars.currentUser.id
+                                        id: each.data.path.replace('/', ''),
+                                        type: 'files',
+                                        attributes: {
+                                            checkout: window.contextVars.currentUser.id
+                                        }
                                     })
                                 }).done(function(resp) {
                                 }).fail(function(resp) { // jshint ignore:line
@@ -1825,12 +1841,16 @@ var FGToolbar = {
                                 var each = items[i];
                                 $.ajax({
                                     method: 'put',
-                                    url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
+                                    url: window.contextVars.apiV2Prefix + 'files' + each.data.path + '/',
                                     beforeSend: $osf.setXHRAuthorization,
                                     contentType: 'application/json',
                                     dataType: 'json',
                                     data: JSON.stringify({
-                                        checkout: null
+                                        id: each.data.path.replace('/', ''),
+                                        type: 'files',
+                                        attributes: {
+                                            checkout: null
+                                        }
                                     })
                                 }).done(function(resp) {
                                 }).fail(function(resp) { // jshint ignore:line
