@@ -76,10 +76,6 @@ var FileViewPage = {
             return false;
         });
 
-        $(document).on('fileviewpage:rename', function() {
-            //console.log(self.file.urls.content);
-        });
-
         self.shareJSObservables = {
             activeUsers: m.prop([]),
             status: m.prop('connecting'),
@@ -162,33 +158,34 @@ var FileViewPage = {
 
         self.mfrIframeParent = $('#mfrIframeParent');
 
-        if(self.canEdit) {
-            $(document).trigger('fileviewpage:rename');
+        $(document).on('fileviewpage:rename', function() {
+            if(!self.canEdit) {
+                return;
+            }
+
             var $fileName = $('#fileName');
             $.fn.editable.defaults.mode = 'inline';
             $fileName.editable({
-                type: 'text',
-                send: 'always',
+                type: 'POST',
+                beforeSend: $osf.setXHRAuthorization,
                 url: waterbutler.moveUrl(),
-                ajaxOptions: {
-                    type: 'put',
-                    contentType: 'application/json',
-                    dataType: 'json'
+                headers: {
+                    'Content-Type': 'Application/json'
                 },
+                data: JSON.stringify({
+                    'rename': rename,
+                    'conflict': conflict,
+                    'source': waterbutler.toJsonBlob(from),
+                    'destination': waterbutler.toJsonBlob(to),
+                }),
                 validate: function(value) {
                     if($.trim(value) === ''){
                         $osf.growl('Error', 'The  file name cannot be empty.', {timeout: 5000});
-                        return;
                     } else if(value.length > 100){
                         $osf.growl('Error', 'The file name cannot be more than 100 characters.', {timeout: 5000});
-                        return;
                     }
                 },
-                params: function(params) {
-                    return JSON.stringify(params);
-                },
                 success: function(response, value) {
-                    console.log(self.file);
                     window.location.href = self.context.urls.base + encodeURIComponent(value) + '/';
                 },
                 error: function(response) {
@@ -203,11 +200,56 @@ var FileViewPage = {
                             statusText: response.statusText
                         });
                         $osf.growl('Error', 'Error in renaming file.');
-                        return;
                     }
                 }
             });
-        }
+        });
+
+
+
+        //if(self.canEdit) {
+        //    $(document).trigger('fileviewpage:rename');
+        //    var $fileName = $('#fileName');
+        //    $.fn.editable.defaults.mode = 'inline';
+        //    $fileName.editable({
+        //        type: 'text',
+        //        send: 'always',
+        //        url: waterbutler.moveUrl(),
+        //        ajaxOptions: {
+        //            type: 'put',
+        //            contentType: 'application/json',
+        //            dataType: 'json'
+        //        },
+        //        validate: function(value) {
+        //            if($.trim(value) === ''){
+        //                $osf.growl('Error', 'The  file name cannot be empty.', {timeout: 5000});
+        //            } else if(value.length > 100){
+        //                $osf.growl('Error', 'The file name cannot be more than 100 characters.', {timeout: 5000});
+        //            }
+        //        },
+        //        params: function(params) {
+        //            return JSON.stringify(params);
+        //        },
+        //        success: function(response, value) {
+        //            console.log(self.file);
+        //            window.location.href = self.context.urls.base + encodeURIComponent(value) + '/';
+        //        },
+        //        error: function(response) {
+        //            var msg = response.responseJSON.message_long;
+        //            if (msg) {
+        //                return msg;
+        //            } else {
+        //                // Log unexpected error with Raven
+        //                Raven.captureMessage('Error in renaming file', {
+        //                    url: waterbutler.moveUrl(),
+        //                    responseText: response.responseText,
+        //                    statusText: response.statusText
+        //                });
+        //                $osf.growl('Error', 'Error in renaming file.');
+        //            }
+        //        }
+        //    });
+        //}
     },
     view: function(ctrl) {
         //This code was abstracted into a panel toggler at one point
@@ -245,6 +287,8 @@ var FileViewPage = {
                 ], '.')
             ]);
         }
+
+        m.render(document.getElementById('fileNameDiv'), m('h2.break-word.editable.editable-click'))
 
         var editButton = function() {
             if (ctrl.editor) {
