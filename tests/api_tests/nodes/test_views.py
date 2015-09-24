@@ -2269,7 +2269,7 @@ class TestNodeChildCreate(ApiTestCase):
             }
         }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-        
+
     def test_creates_child_no_type(self):
         child = {
             'data': {
@@ -2810,7 +2810,7 @@ class TestNodeLinkDetail(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res_json['attributes']['target_node_id'], self.pointer_project._id)
 
-    def returns_private_node_pointer_detail_logged_in_non_contributor(self):
+    def test_returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
@@ -2834,6 +2834,25 @@ class TestDeleteNodeLink(ApiTestCase):
                                                               auth=Auth(self.user),
                                                               save=True)
         self.public_url = '/{}nodes/{}/node_links/{}'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+
+    def test_cannot_delete_if_registration(self):
+        registration = RegistrationFactory(project=self.public_project)
+
+        url = '/{}nodes/{}/node_links/'.format(
+            API_BASE,
+            registration._id,
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        pointer_id = res.json['data'][0]['id']
+
+        url = '/{}nodes/{}/node_links/{}'.format(
+            API_BASE,
+            registration._id,
+            pointer_id,
+        )
+        res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_deletes_public_node_pointer_logged_out(self):
         res = self.app.delete(self.public_url, expect_errors=True)
