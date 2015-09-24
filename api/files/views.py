@@ -73,9 +73,12 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     ##Relationships
 
-    ###Checkout
+    ###Checkout (*files, folders*)
 
-    **TODO**
+    **Checkouts are still a work-in-progress. This property may be set but is currently a no-op.**
+
+    A link to the user who has checked out the file.  While a file is checked-out, only the checkou holder may modify
+    it.  If a file is not checked out, this url will be null.
 
     ###Files (*folders*)
 
@@ -229,6 +232,30 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     To delete a file or folder send a DELETE request to the `delete` link.  Nothing will be returned in the response
     body.
 
+    ###Checkout (*unimplemented*)
+
+        Method:        PUT/PATCH
+        URL:           links.info
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "files",    # required
+                           "id":   {file_id},  # required
+                           "attributes": {
+                             "checkout": {current_user_id}|null  # mandatory
+                           }
+                         }
+                       }
+        Success:       200 OK + node representation
+
+    **The checkout action is still a work-in-progress. While the checkout attribute may be set, it is currently a no-op.*
+     PUT/PATCH requests to this endpoint will succeed, but nothing will be done.**
+
+    To checkout a file, issue a PUT request to the `info` link with your user id as the value of the `checkout`
+    attribute.  To release a checkout, issue a PUT but with `checkout` set to null.  When a file is checked out by a
+    user, only that user may modify it.  Attempting to issue a checkout request with another user's id will result in
+    400 Bad Request response.
+
     ##Query Params
 
     For this endpoint, *none*.  Actions may permit or require certain query parameters.  See the individual action
@@ -306,7 +333,7 @@ class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
 
     ##Attributes
 
-    `type` is "file_version"
+    `type` is "file_versions"
 
         name          type     description
         ---------------------------------------------------------------------------------
