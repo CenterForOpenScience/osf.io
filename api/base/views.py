@@ -22,9 +22,12 @@ def root(request, format=None):
     release, the beta status will be removed, at which point we will provide details on how long we will support
     the API V2 and under what circumstances it might change.
 
-    ##General API Usage
+    #General API Usage
 
-    Each endpoint will have its own documentation, but there are some general principles.
+    The OSF API generally conforms to the [JSON-API v1.0 spec](http://jsonapi.org/format/1.0/).  Where exceptions
+    exists, they will be noted.  Each endpoint will have its own documentation, but there are some general principles.
+
+    ##Requests
 
     ###Canonical URLs
 
@@ -56,37 +59,80 @@ def root(request, format=None):
 
         /users?filter[fullname]=lise&filter[family_name]=mei
 
-    ###Links
+    ###Pagination
 
-    Responses will generally have associated links which are helpers to keep you from having to construct URLs in
-    your code or by hand. If you know the route to a high-level resource, you can go to that route. For example:
+    All collection endpoints respond to the `page` query parameter behavior as described in the [JSON-API pagination
+    spec](http://jsonapi.org/format/1.0/#crud).
 
-        /nodes/<node_id>
+    ###Formatting POST/PUT/PATCH request bodies
 
-    is a good route to create rather than going to /nodes/ and navigating by id filtering. However, if you are
-    creating something that crawls the structure of a node going to the child node or gathering children,
-    contributors, and similar related resources, then take the link from the object you\'re crawling rather than
-    constructing the link yourself.
-
-    In general, links include:
-
-    1. "Related" links, which will give detailed information on individual items or a collection of related resources;
-    2. "Self" links, which are used for general REST operations (POST, DELETE, and so on);
-    3. Pagination links such as "next", "prev", "first", and "last". Pagination links are great for navigating long
-    lists of information.
-
-    Some routes may have extra rules for links, especially if those links work with external services. Collections
-    may have counts with them to indicate how many items are in that collection.
-
-    ###Formatting POST/PUT/PATCH requests
-
-    The OSF API follows the JSON-API spec for [create and update requests](http://jsonapi.org/format/#crud).  This means
+    The OSF API follows the JSON-API spec for (create and update requests)[http://jsonapi.org/format/#crud].  This means
     all request bodies must be wrapped with some metadata.  Each request body must be an object with a `data` key
     containing at least a `type` member.  The value of the `type` member must agree with the `type` of the entitys
     represented by the endpoint.  If not, a 409 Conflict will be returned.  The request should also contain an
     `attributes` member with an object containing the key-value pairs to be created/updated.  PUT/PATCH requests must
     also have an `id` key that matches the id part of the endpoint.  If the `id` key does not match the id path part, a
     409 Conflict error will be returned.
+
+    ##Responses
+
+    ###Entities
+
+    An entity is a single resource that has been retreived from the API, usually from an endpoint with the entity's id
+    as the final path part.  A successful response from an entity request will be a JSON object with a top level `data`
+    key pointing to a sub-object with the following members:
+
+    + `id`
+
+    The identifier for the entity.  This MUST be included with [PUT and PATCH
+    requests](#formatting-post-put-patch-request-bodies).
+
+    + `type`
+
+    The type identifier of this entity.  This MUST be included with [all create/update
+    requests](#formatting-post-put-patch-request-bodies).
+
+    + `attributes`
+
+    The properties of the entity.  Names, descriptions, etc.
+
+    + `relationships`
+
+    Relationships are urls to other entities or collections that have a relationship to the entity. For example, the
+    node entity provides a `contributors` relationship that points to the endpoint to retreive all contributors to that
+    node.  It is reccommended to use these links rather than to id-filter of general collection endpoints.  They'll be
+    faster, easier, and less error-prone.
+
+    + `links`
+
+    Links are urls to alternative representations of the entity or actions that may be performed on the entity.  Most
+    entities will provide a `self` link that is the canonical endpoint for the entity where update and delete requests
+    should be sent.  In-depth documentation of actions is available by navigating to the `self` link in the Browsable
+    API.  Most entities will also provide an `html` link that directs to the entity's page on the [OSF](http://osf.io/).
+
+    ###Collections
+
+    Collection endpoints return a list of entities and an additional data structure with pagination links, such as
+    "next", "prev", "first", and "last". The OSF API limits all collection responses to a maximum of 10 entities.  The
+    response object has two keys:
+
+    + `data`
+
+    `data` is an array of entities that match the query.  Each entity in the array is the same representation that is
+    returned from that entity's `self` link, meaning that refetching the entity is unnecessary.
+
+    + `links`
+
+    `links` contains pagination information, including links to the previous, next, first, and last pages of results.
+    The meta key contains the total number of entities available, as well as the current number of results displayed per
+    page.  If there are only enough results to fill one page, the `first`, `last`, `prev`, and `next` values will be
+    null.
+
+    ###PUT vs. PATCH
+
+    For most endpoints that support updates via PUT requests, we also allow PATCH updates.  The only difference is that
+    PUT requests require all mandatory attributes to be set, even if their value is unchanged.  PATCH requests may omit
+    mandatory attributes, whose value will be unchaged.
 
     ###Attribute Validation
 
@@ -99,21 +145,47 @@ def root(request, format=None):
     Typoed or non-existant attributes will behave the same as non-updatable attributes and be silently
     ignored. If a request is not working the way you expect, make sure to double check your spelling.
 
-    ###PUT vs. PATCH
+    ###Errors
 
-    For most endpoints that support updates via PUT requests, we also allow PATCH updates.  The only difference is that
-    PUT requests require all mandatory attributes to be set, even if their value is unchanged.  PATCH requests may omit
-    mandatory attributes, whose value will be unchaged.
+    When a request fails for whatever reason, the OSF API will return an appropriate HTTP error code and include a
+    descriptive error in the body of the response.  The response body will be an object with a key, `errors`, pointing
+    to an array of error objects.  Generally, these error object will consist of a `detail` key with a detailed error
+    message, but may include additional information in accordance with the [JSON-API error
+    spec](http://jsonapi.org/format/1.0/#error-objects).
 
+    ##OSF Enum Fields
 
-    ###OSF Permission keys
+    Some entities in the OSF API have fields that only take a restricted set of values.  Those fields are listed here
+    for reference.  Fuller descriptions are available on the relevent entity pages.
 
-    Valid OSF permission keys include "read", "write", and "admin".
+    ###OSF Node Categories
+
+        value                 description
+        ------------------------------------------
+        project               Project
+        hypothesis            Hypothesis
+        methods and measures  Methods and Measures
+        procedure             Procedure
+        instrumentation       Instrumentation
+        data                  Data
+        analysis              Analysis
+        communication         Communication
+        other                 Other
+
+    ###OSF Node Permission keys
+
+        value        description
+        ------------------------------------------
+        read         Read-only access
+        write        Write access (make changes, cannot delete)
+        admin        Admin access (full write, create, delete, contributor add)
 
     ###Storage Providers
 
     Valid storage providers are:
 
+        value        description
+        ------------------------------------------
         box          Box.com
         cloudfiles   Rackspace Cloud Files
         dataverse    Dataverse
