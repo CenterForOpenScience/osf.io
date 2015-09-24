@@ -1,4 +1,5 @@
 from rest_framework import serializers as ser
+from api.base.serializers import AllowMissing
 from website.models import User
 
 from api.base.serializers import (
@@ -29,18 +30,26 @@ class UserSerializer(JSONAPISerializer):
         return user.profile_image_url(size=size)
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
-    gitHub = DevOnly(ser.CharField(required=False, label='GitHub', source='social.github', allow_blank=True, help_text='GitHub Handle'))
-    scholar = DevOnly(ser.CharField(required=False, source='social.scholar', allow_blank=True, help_text='Google Scholar Account'))
-    personal_website = DevOnly(ser.URLField(required=False, source='social.personal', allow_blank=True, help_text='Personal Website'))
-    twitter = DevOnly(ser.CharField(required=False, source='social.twitter', allow_blank=True, help_text='Twitter Handle'))
-    linkedIn = DevOnly(ser.CharField(required=False, source='social.linkedIn', allow_blank=True, help_text='LinkedIn Account'))
-    impactStory = DevOnly(ser.CharField(required=False, source='social.impactStory', allow_blank=True, help_text='ImpactStory Account'))
-    orcid = DevOnly(ser.CharField(required=False, label='ORCID', source='social.orcid', allow_blank=True, help_text='ORCID'))
-    researcherId = DevOnly(ser.CharField(required=False, label='ResearcherID', source='social.researcherId', allow_blank=True, help_text='ResearcherId Account'))
+    gitHub = DevOnly(AllowMissing(ser.CharField(required=False, source='social.github',
+                                                allow_blank=True, help_text='GitHub Handle'), required=False, source='social.github'))
+    scholar = DevOnly(AllowMissing(ser.CharField(required=False, source='social.scholar',
+                                                 allow_blank=True, help_text='Google Scholar Account'), required=False, source='social.scholar'))
+    personal_website = DevOnly(AllowMissing(ser.URLField(required=False, source='social.personal',
+                                                         allow_blank=True, help_text='Personal Website'), required=False, source='social.personal'))
+    twitter = DevOnly(AllowMissing(ser.CharField(required=False, source='social.twitter',
+                                                 allow_blank=True, help_text='Twitter Handle'), required=False, source='social.twitter'))
+    linkedIn = DevOnly(AllowMissing(ser.CharField(required=False, source='social.linkedIn',
+                                                  allow_blank=True, help_text='LinkedIn Account'), required=False, source='social.linkedIn'))
+    impactStory = DevOnly(AllowMissing(ser.CharField(required=False, source='social.impactStory',
+                                                     allow_blank=True, help_text='ImpactStory Account'), required=False, source='social.impactStory'))
+    orcid = DevOnly(AllowMissing(ser.CharField(required=False, source='social.orcid',
+                                               allow_blank=True, help_text='ORCID'), required=False, source='social.orcid'))
+    researcherId = DevOnly(AllowMissing(ser.CharField(required=False, source='social.researcherId',
+                                                      allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId'))
 
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
-                                             link_type='related')
+                                            link_type='related')
 
     class Meta:
         type_ = 'users'
@@ -51,13 +60,7 @@ class UserSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         assert isinstance(instance, User), 'instance must be a User'
         for attr, value in validated_data.items():
-            # If the field is the social dictionary, then update the original social values with the new ones, and save.
-            # If its any other field, just update with the value.
-            if attr == 'social':
-                social_fields = instance.social
-                social_fields.update(value)
-                setattr(instance, attr, social_fields)
-            else:
-                setattr(instance, attr, value)
+            setattr(instance, attr, value)
+
         instance.save()
         return instance
