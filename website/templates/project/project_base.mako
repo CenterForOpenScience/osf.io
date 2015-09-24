@@ -73,7 +73,8 @@
             id: ${ user_id | sjson, n },
             urls: {api: userApiUrl},
             isContributor: ${ user.get('is_contributor', False) | sjson, n },
-            fullname: ${ user['fullname'] | sjson, n }
+            fullname: ${ user['fullname'] | sjson, n },
+            isAdmin: ${ user.get('is_admin', False) | sjson, n },
         },
         node: {
             ## TODO: Abstract me
@@ -93,7 +94,6 @@
             parentTitle: ${ parent_title | sjson, n },
             parentRegisterUrl: ${ parent_registration_url | sjson, n },
             parentExists: ${'true' if parent_exists else 'false'},
-            userIsAdmin: ${ node.get('is_admin', False) | sjson, n },
         }
     });
 

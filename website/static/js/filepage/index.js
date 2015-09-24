@@ -27,7 +27,6 @@ var FileViewPage = {
         self.editorMeta = self.context.editor;
         self.file.checkout_user = null;
         self.request_done = false;
-        self.file.permission = 'read';
         self.isCheckout_user = function() {
             $.ajax({
                 method: 'get',
@@ -321,7 +320,7 @@ var FileViewPage = {
             (ctrl.canEdit() && (!ctrl.file.checkout_user) && ctrl.request_done && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
-            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.request_done && (ctrl.file.permission === 'admin') ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.request_done && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_return')}, 'Force Check-in')
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkout_user) && ctrl.request_done && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [

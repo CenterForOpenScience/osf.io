@@ -785,6 +785,7 @@ def _view_project(node, auth, primary=False):
         },
         'user': {
             'is_contributor': node.is_contributor(user),
+            'is_admin': node.has_permission(user, 'admin'),
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
@@ -947,7 +948,6 @@ def _get_summary(node, auth, rescale_ratio, primary=True, link_id=None, show_pat
             'parent_title': node.parent_node.title if node.parent_node else None,
             'parent_is_public': node.parent_node.is_public if node.parent_node else False,
             'show_path': show_path,
-            'is_admin': node.has_permission(auth.user, 'admin') if auth.user else False,
         })
 
         if rescale_ratio:
