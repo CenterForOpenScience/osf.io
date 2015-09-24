@@ -64,7 +64,7 @@
                                                                tooltip: {title: 'Add contributor'}"
                                                 ><i class="fa fa-fw fa-plus"></i></a>
                                             <a
-                                                class="btn btn-default contrib-button .disabled btn-mini"
+                                                class="btn btn-default contrib-button btn-mini"
                                                 data-bind="visible: contributor.added,
                                                            tooltip: {title: 'Already added'}"
                                                 ><i class="fa fa-fw fa-check"></i></a>
