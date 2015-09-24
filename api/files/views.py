@@ -75,9 +75,9 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     ###Checkout (*files, folders*)
 
-    **Checkouts are still a work-in-progress. This property may be set but is currently a no-op.**
+    ** *Checkouts are still a work-in-progress. This property may be set but is currently a no-op.* **
 
-    A link to the user who has checked out the file.  While a file is checked-out, only the checkou holder may modify
+    A link to the user who has checked out the file.  While a file is checked out, only the checkout holder may modify
     it.  If a file is not checked out, this url will be null.
 
     ###Files (*folders*)
@@ -232,7 +232,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     To delete a file or folder send a DELETE request to the `delete` link.  Nothing will be returned in the response
     body.
 
-    ###Checkout (*unimplemented*)
+    ###Checkout (*files, folders*)
 
         Method:        PUT/PATCH
         URL:           links.info
@@ -248,8 +248,8 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
                        }
         Success:       200 OK + node representation
 
-    **The checkout action is still a work-in-progress. While the checkout attribute may be set, it is currently a no-op.*
-     PUT/PATCH requests to this endpoint will succeed, but nothing will be done.**
+    ** *The checkout action is still a work-in-progress. While the checkout attribute may be set, it is currently a
+    no-op.* **
 
     To checkout a file, issue a PUT request to the `info` link with your user id as the value of the `checkout`
     attribute.  To release a checkout, issue a PUT but with `checkout` set to null.  When a file is checked out by a
