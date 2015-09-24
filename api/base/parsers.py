@@ -1,4 +1,5 @@
 from rest_framework.parsers import JSONParser
+from rest_framework.exceptions import ValidationError
 
 from api.base.renderers import JSONAPIRenderer
 from api.base.exceptions import JSONAPIException
@@ -15,16 +16,18 @@ class JSONAPIParser(JSONParser):
         Parses the incoming bytestream as JSON and returns the resulting data
         """
         result = super(JSONAPIParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
+        if not isinstance(result, dict):
+            raise ValidationError("Invalid data. Expected a dictionary but got {}".format(type(result)))
         data = result.get('data', {})
 
         def data_flattener(resource_object, stream):
             if "attributes" not in resource_object and stream.method != 'DELETE':
                     raise JSONAPIException(source={'pointer': '/data/attributes'}, detail='This field is required.')
             id = resource_object.get('id')
-            type = resource_object.get('type')
+            object_type = resource_object.get('type')
             attributes = resource_object.get('attributes')
 
-            parsed = {'id': id, 'type': type}
+            parsed = {'id': id, 'type': object_type}
             if attributes:
                 parsed.update(attributes)
 
