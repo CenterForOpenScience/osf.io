@@ -18,6 +18,16 @@
                           <i class="fa fa-plus"></i> Add
                         </a>
                     <!-- /ko -->
+                    <span>
+                        <i class="fa fa-search"></i>
+                    </span>
+                    <input type="text" class="searchable"/>
+                    <div class="btn-group" role="group" class="filtergroup">
+                        <button id="admin-filter-btn" type="button" class="btn btn-default filter-btn">Admins</button>
+                        <button id="write-filter-btn" type="button" class="btn btn-default filter-btn">Read + Write</button>
+                        <button id="read-filter-btn" type="button" class="btn btn-default filter-btn">Read</button>
+                    </div>
+
                 </h3>
                 % if 'admin' in user['permissions'] and not node['is_registration']:
                     <p>Drag and drop contributors to change listing order.</p>
@@ -83,17 +93,17 @@
     <div data-bind="attr: {class: classes}">
         <div class="panel panel-default">
             <div class="panel-heading" data-bind="attr: {id: 'linkHeading' + $index(), href: '#linkCard' + $index()}" role="button" data-toggle="collapse" aria-expanded="false" aria-controls="card" onclick="toggleIcon(this)">
-                <button title="Copy to clipboard" class="btn btn-default btn-sm "
-                            data-bind="attr: {data-clipboard-text: linkUrl}" >
+                <button onclick="cancelProp(event)" style="vertical-align: top;" title="Copy to clipboard" class="btn btn-default btn-sm" data-bind="attr: {data-clipboard-text: linkUrl}" >
                     <i class="fa fa-copy"></i>
                 </button>
-                <span class="link-name m-b-xs" data-bind="text: name, tooltip: {title: 'Link name'}"></span>
+                <span class="header-content">
+                    <span class="link-name m-b-xs" data-bind="text: name, tooltip: {title: 'Link name'}"></span>
+                    <a onclick="cancelProp(event)" style="display: block; font-style: italic; font-size: 75%;" data-bind="attr: {href: linkUrl}, text: linkUrl"></a>
+                </span>
                 <div class="pull-right">
-                    <button class="btn btn-link">
-                        <i class="fa fa-angle-down toggle-icon"></i>
-                    </button>
+                    <i class="fa fa-angle-down toggle-icon"></i>
                 </div>
-                <a style="display: block; font-style: italic; font-size: 75%;"data-bind="attr: {href: linkUrl}, text: linkUrl"></a>
+
             </div>
             <div data-bind="attr: {id: 'linkCard' + $index()}" class="panel-collapse collapse" data-bind="attr: {aria-labelledby: 'linkHeading' + $index()}">
                 <div class="panel-body">
@@ -126,28 +136,26 @@
     <div data-bind="attr: {class: classes}"
          data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
         <div class="panel panel-default">
-                <div class="panel-heading" data-bind="attr: {id: type() + 'Heading' + $index(), href: '#' + type() + 'Card' + $index()}" role="button" data-toggle="collapse" aria-expanded="false" aria-controls="card" onclick="toggleIcon(this)">
-                    <img data-bind="attr: {src: contributor.gravatar_url}" />
-                    <div style="display: inline-block">
-                        <span data-bind="ifnot: profileUrl">
-                            <span data-bind="text: contributor.shortname"></span>
-                        </span>
-                        <span data-bind="if: profileUrl">
-                            <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
-                        </span>
-                        <span style="display: block" data-bind="text: curPermission().text + visibleText()"></span>
-                    </div>
-                    <div class="pull-right">
-                        <button class="btn btn-link">
-                            <i class="fa fa-angle-down toggle-icon"></i>
-                        </button>
-                    </div>
+            <div class="panel-heading" data-bind="attr: {id: type() + 'Heading' + $index(), href: '#' + type() + 'Card' + $index()}" role="button" data-toggle="collapse" aria-expanded="false" aria-controls="card" onclick="toggleIcon(this)">
+                <img style='vertical-align: top' data-bind="attr: {src: contributor.gravatar_url}" />
+                <span class="header-content">
+                    <span data-bind="ifnot: profileUrl">
+                        <span data-bind="text: contributor.shortname"></span>
+                    </span>
+                    <span data-bind="if: profileUrl">
+                        <a onclick="cancelProp(event)" class="no-sort search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
+                    </span>
+                    <span style="display: block" data-bind="text: curPermission().text + visibleText()"></span>
+                </span>
+                <div class="pull-right">
+                    <i class="fa fa-angle-down toggle-icon"></i>
                 </div>
-            </a>
+            </div>
             <div data-bind="attr: {id: type() + 'Card' + $index()}" class="panel-collapse collapse" data-bind="attr: {aria-labelledby: type() + 'Heading' + $index()}">
                 <div class="panel-body">
                     <!-- ko if: contributor.canEdit() -->
                         <h5 style="display: block">Permissions</h5>
+                        <span style="display: none" data-bind="text: curPermission().text" class="permission-search"></span>
                         <span style="display: block" data-bind="visible: notDeleteStaged">
                             <select class="form-control input-sm" data-bind="
                                 options: permissionList,
@@ -232,5 +240,119 @@
         }
     </script>
     <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>
+
+    <script type="text/javascript">
+
+        function cancelProp(e) {
+            e.cancelBubble = true;
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+        }
+        (function($){
+            $.fn.filtergroup = function (options) {
+                var settings = $.extend({
+                    items: '.items',
+                    fade: 'true',
+                    buttons: [],
+                    buttonClass: '.filter-btn',
+                    inputs: []
+                }, options);
+
+                var active = [];
+
+                var fade = function(list){
+
+
+                    if(action == 'on' ){
+                        if(settings.fade){
+                            element.fadeIn();
+                        } else {
+                            element.show();
+                        }
+                    }
+                    if(action == 'off'){
+                        if(settings.fade){
+                            element.fadeOut();
+                        } else {
+                            element.hide();
+                        }
+                    }
+
+                };
+
+                jQuery(settings.buttonClass).on('click', function () {
+                    $(this).toggleClass('active');
+                    if ($(this).hasClass('active')) {
+                        active.push(this.id);
+                    } else {
+                        active.splice(active.indexOf(this.id), 1);
+                    }
+
+                    console.log("filter: name = " + $(settings.inputs[0].input).val() + " buttons: " + active);
+                });
+
+
+##                 var el, content;
+##                             $(settings.items).each(function () {
+##                                 el = this.querySelector(settings.selector);
+##                                 content = jQuery(el).text();
+##                                 if (content === settings.match) {
+##                                     fade($(this), 'on');
+##                                 } else {
+##                                     fade($(this), 'off');
+##                                 }
+##                             });
+
+
+
+
+            }
+        }(jQuery));
+
+        (function($) {
+            $.fn.searchable = function (options) {
+                return this.keyup(function () {
+                    var text, el, content, exists;
+                    text = $(this).val().toLowerCase();
+                    if (text.length >= 0) {
+                        $(settings.items).each(function () {
+                            el = this.querySelector(settings.selector);
+                            content = jQuery(el).text().toLowerCase();
+                            exists = content.indexOf(text);
+                            if (exists != -1) {
+                                fade($(this), 'on');
+                            } else {
+                                fade($(this), 'off');
+                            }
+                        });
+
+                    }
+                });
+            }
+        }(jQuery));
+
+        $('.filtergroup').filtergroup({
+            buttons: [
+                {
+                    selector: '.permission-filter',
+                    match: "Administrator"
+                }, {
+                    selector: '.permission-filter',
+                    match: "Read + Write"
+                }, {
+                    selector: '.permission-filter',
+                    match: "Read"
+                }
+            ],
+            inputs: [
+                {
+                    selector: '.search',
+                    input: '.searchable'
+                }
+            ]
+        })
+</script>
+
 
 </%def>

@@ -134,11 +134,11 @@
             <div data-bind="foreach: contents">
                 <div class="col-sm-12 col-xs-6">
                     <div class="panel panel-default">
-                        <div class="panel-heading" data-bind="attr: {id: 'schoolHeading' + $index()}">
-                            {{ institution }}
-                            <a data-bind="attr: {href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false" style="float: right" onclick="toggleIcon(this)">
-                                <i class="glyphicon glyphicon-chevron-down"></i>
-                            </a>
+                        <div class="panel-heading" data-bind="attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false" onclick="toggleIcon(this)">
+                            <span>{{ institution }}</span>
+                            <div class="pull-right">
+                                <i class="fa fa-angle-down toggle-icon"></i>
+                            </div>
                         </div>
                         <div data-bind="attr: {id: 'schoolCard' + $index()}" class="panel-collapse collapse" data-bind="attr: {aria-labelledby: 'schoolHeading' + $index()}">
                             <div class="panel-body">

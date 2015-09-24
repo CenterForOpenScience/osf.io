@@ -195,7 +195,7 @@
   })();
 
   function toggleIcon(el) {
-      jQuery(el).children(":first").toggleClass("glyphicon-chevron-down glyphicon-chevron-up");
+      jQuery(el.querySelector("i.toggle-icon")).toggleClass("fa-angle-down fa-angle-up");
   }
 </script>
 

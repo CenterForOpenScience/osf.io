@@ -37,7 +37,7 @@ var sortMap = {
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
-var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin) {
+var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin, parentList) {
 
     var self = this;
     $.extend(self, contributor);
@@ -58,6 +58,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
+    self.parentList = parentList;
     self.type = ko.computed(function(){
         if (isAdmin) {
             return "admin";
@@ -174,13 +175,13 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.classes = ko.computed(function() {
             if (parentList.length >= 3) {
-                return "col-lg-12 col-md-4 col-sm-6 col-xs-12"
+                return "col-lg-12 col-md-4 col-sm-6 col-xs-12 items"
             }
             else if (parentList.length == 2) {
-                return "col-lg-12 col-sm-6 col-xs-12"
+                return "col-lg-12 col-sm-6 col-xs-12 items"
             }
             else if (parentList.length == 1 ) {
-                return "col-xs-12"
+                return "col-xs-12 items"
             }
         }
     )
@@ -309,10 +310,10 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.init = function() {
         self.messages([]);
         self.contributors(self.original().map(function(item) {
-            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration);
+            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration, false, contributors);
         }));
         self.adminContributors = adminContributors.map(function(contributor) {
-          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true);
+          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true, adminContributors);
         });
     };
 

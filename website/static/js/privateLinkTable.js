@@ -155,8 +155,8 @@ function ViewModel(url, nodeIsPublic) {
 
     self.afterRenderLink = function(elm, data) {
         var $tr = $(elm);
-        var target = $tr.find('.copy-button');
-        clipboard(target[0]);
+        var target = $tr.find('button>i.fa.fa-copy')[0].parentElement;
+        clipboard(target);
         $tr.find('.remove-private-link').tooltip();
         setupEditable(elm, data);
         $('.private-link-list').osfToggleHeight({height: 50});
