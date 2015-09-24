@@ -553,3 +553,12 @@ class TestDeleteHook(HookTestCase):
         resp = self.delete(self.root_node, expect_errors=True)
 
         assert_equal(resp.status_code, 400)
+
+    def test_attempt_delete_rented_file(self):
+        user = factories.AuthUserFactory()
+        file_checked = self.root_node.append_file('Newfile')
+        file_checked.checkout = user
+        file_checked.save()
+
+        res = self.delete(file_checked, expect_errors=True)
+        assert_equal(res.status_code, 403)

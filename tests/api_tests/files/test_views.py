@@ -220,11 +220,8 @@ class TestFileView(ApiTestCase):
         assert_equal(res.status_code, 200)
         self.file.reload()
         error = None
-        try:
+        with assert_raises(FileNodeorChildCheckedOutError):
             self.file.delete()
-        except FileNodeorChildCheckedOutError as e:
-            error = e
-        assert_true(isinstance(error, FileNodeorChildCheckedOutError))
 
     def test_delete_folder_with_checked_out_file(self):
         self.app.put_json_api(
@@ -242,11 +239,8 @@ class TestFileView(ApiTestCase):
         )
         self.file.reload()
         error = None
-        try:
+        with assert_raises(FileNodeorChildCheckedOutError):
             folder.delete()
-        except FileNodeorChildCheckedOutError as e:
-            error = e
-        assert_true(isinstance(error, FileNodeorChildCheckedOutError))
 
     def test_move_checked_out_file(self):
         self.app.put_json_api(
@@ -256,8 +250,5 @@ class TestFileView(ApiTestCase):
         )
         self.file.reload()
         folder = self.root_node.append_folder('folder')
-        try:
+        with assert_raises(FileNodeorChildCheckedOutError):
             self.file.move_under(folder)
-        except FileNodeorChildCheckedOutError as e:
-            error = e
-        assert_true(isinstance(error, FileNodeorChildCheckedOutError))
