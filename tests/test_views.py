@@ -29,7 +29,7 @@ from framework.mongo import database
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
-from website.util import permissions, sanitize
+from website.util import permissions
 from website.models import Node, Pointer, NodeLog, MetaSchema, DraftRegistration
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
