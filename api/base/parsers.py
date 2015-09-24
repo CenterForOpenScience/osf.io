@@ -3,6 +3,10 @@ from rest_framework.parsers import JSONParser
 from api.base.renderers import JSONAPIRenderer
 from api.base.exceptions import JSONAPIException
 
+
+NO_ATTRIBUTES_ERROR = 'Request must include /data/attributes.'
+NO_DATA_ERROR = 'Request must include /data.'
+
 class JSONAPIParser(JSONParser):
     """
     Parses JSON-serialized data. Overrides media_type.
@@ -19,7 +23,7 @@ class JSONAPIParser(JSONParser):
 
         if data:
             if 'attributes' not in data:
-                raise JSONAPIException(source={'pointer': '/data/attributes'}, detail='This field is required.')
+                raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
             id = data.get('id')
             type = data.get('type')
             attributes = data.get('attributes')
@@ -30,7 +34,7 @@ class JSONAPIParser(JSONParser):
             return parsed
 
         else:
-            raise JSONAPIException(source={'pointer': '/data'}, detail='This field is required.')
+            raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
 
 
 class JSONAPIParserForRegularJSON(JSONAPIParser):

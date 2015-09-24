@@ -507,7 +507,7 @@ class TestNodeCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
 
 
@@ -666,7 +666,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
             'public': True,
         }, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_update_invalid_id(self):
@@ -2310,7 +2310,7 @@ class TestNodeChildCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
 
 
@@ -2529,7 +2529,7 @@ class TestNodeLinkCreate(ApiTestCase):
         res = self.app.post_json_api(self.public_url, payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
 
     def test_creates_public_node_pointer_logged_out(self):
         res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
