@@ -402,6 +402,14 @@ class TestNodeCreate(ApiTestCase):
                 }
             }
         }
+    def test_node_create_invalid_data(self):
+        res = self.app.post_json_api(self.url, "Incorrect data", auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'unicode'>")
+
+        res = self.app.post_json_api(self.url, ["Incorrect data"], auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'list'>")
 
     def test_creates_public_project_logged_out(self):
         res = self.app.post_json_api(self.url, self.public_project, expect_errors=True)
@@ -655,6 +663,16 @@ class NodeCRUDTestCase(ApiTestCase):
 
 
 class TestNodeUpdate(NodeCRUDTestCase):
+
+    def test_node_update_invalid_data(self):
+        res = self.app.put_json_api(self.public_url, "Incorrect data", auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'unicode'>")
+
+        res = self.app.put_json_api(self.public_url, ["Incorrect data"], auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'list'>")
+
 
     def test_update_project_properties_not_nested(self):
         res = self.app.put_json_api(self.public_url, {
@@ -1289,6 +1307,15 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
 
+    def test_contributor_update_invalid_data(self):
+        res = self.app.post_json_api(self.public_url, "Incorrect data", auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'unicode'>")
+
+        res = self.app.post_json_api(self.public_url, ["Incorrect data"], auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'list'>")
+
     def test_add_contributor_no_type(self):
         data = {
             'data': {
@@ -1589,6 +1616,15 @@ class TestNodeContributorUpdate(ApiTestCase):
 
         self.url_creator = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user._id)
         self.url_contributor = '/{}nodes/{}/contributors/{}/'.format(API_BASE, self.project._id, self.user_two._id)
+
+    def test_node_update_invalid_data(self):
+        res = self.app.put_json_api(self.url_creator, "Incorrect data", auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'unicode'>")
+
+        res = self.app.put_json_api(self.url_creator, ["Incorrect data"], auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'list'>")
 
     def test_change_contributor_no_id(self):
         data = {
