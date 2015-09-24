@@ -2849,6 +2849,16 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
+    @mock.patch('api.nodes.views.requests.get')
+    def test_handles_notfound_waterbutler_request(self, mock_waterbutler_request):
+        url = '/{}nodes/{}/files/gilkjadsflhub/'.format(API_BASE, self.project._id)
+        mock_res = mock.MagicMock()
+        mock_res.status_code = 404
+        mock_waterbutler_request.return_value = mock_res
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_in('detail', res.json['errors'][0])
+
 
     @mock.patch('api.nodes.views.requests.get')
     def test_handles_bad_waterbutler_request(self, mock_waterbutler_request):

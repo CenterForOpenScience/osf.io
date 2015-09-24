@@ -110,6 +110,9 @@ class WaterButlerMixin(object):
         if waterbutler_request.status_code == 401:
             raise PermissionDenied
 
+        if waterbutler_request.status_code == 404:
+            raise NotFound
+
         try:
             return waterbutler_request.json()['data']
         except KeyError:
@@ -493,7 +496,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
 
         if isinstance(files_list, dict) or getattr(files_list, 'is_file', False):
             # We should not have gotten a file here
-            raise NotFound()
+            raise NotFound
 
         return list(files_list.children)
 
@@ -518,7 +521,7 @@ class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
 
         if isinstance(fobj, list) or not getattr(fobj, 'is_file', True):
             # We should not have gotten a folder here
-            raise NotFound()
+            raise NotFound
 
         return fobj
 
