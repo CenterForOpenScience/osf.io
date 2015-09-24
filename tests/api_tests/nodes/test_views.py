@@ -2669,10 +2669,10 @@ class TestNodeFilesList(ApiTestCase):
         fobj.save()
         res = self.app.get('{}osfstorage/{}'.format(self.private_url, fobj._id), auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(len(res.json['data']), 1)
-        assert_equal(res.json['data'][0]['attributes']['kind'], 'file')
-        assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
+        assert_true(isinstance(res.json['data'], dict))
         assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data']['attributes']['kind'], 'file')
+        assert_equal(res.json['data']['attributes']['name'], 'NewFile')
 
     def test_returns_folder_data(self):
         fobj = self.project.get_addon('osfstorage').get_root().append_folder('NewFolder')
@@ -2754,6 +2754,90 @@ class TestNodeFilesList(ApiTestCase):
             cookies={'foo':'bar'},
             headers={'Authorization': auth_header}
         )
+
+    @mock.patch('api.nodes.views.requests.get')
+    def test_returns_node_file(self, mock_waterbutler_request):
+        mock_res = mock.MagicMock()
+        mock_res.status_code = 200
+        mock_res.json.return_value = {
+            u'data': {
+                u'contentType': None,
+                u'extra': {u'downloads': 0, u'version': 1},
+                u'kind': u'file',
+                u'modified': None,
+                u'name': u'NewFile',
+                u'path': u'/NewFile',
+                u'provider': u'github',
+                u'size': None,
+                u'materialized': '/',
+            }
+        }
+        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
+        mock_waterbutler_request.return_value = mock_res
+
+        url = '/{}nodes/{}/files/github/file'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth, headers={
+            'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
+        })
+        assert_equal(res.json['data']['attributes']['name'], 'NewFile')
+        assert_equal(res.json['data']['attributes']['provider'], 'github')
+        mock_waterbutler_request.assert_called_once_with(
+            'http://localhost:7777/v1/resources/{}/providers/github/file?meta=True'.format(self.project._id),
+            cookies={'foo':'bar'},
+            headers={'Authorization': auth_header}
+        )
+
+    @mock.patch('api.nodes.views.requests.get')
+    def test_notfound_node_file_returns_folder(self, mock_waterbutler_request):
+        mock_res = mock.MagicMock()
+        mock_res.status_code = 200
+        mock_res.json.return_value = {
+            u'data': [{
+                u'contentType': None,
+                u'extra': {u'downloads': 0, u'version': 1},
+                u'kind': u'file',
+                u'modified': None,
+                u'name': u'NewFile',
+                u'path': u'/NewFile',
+                u'provider': u'github',
+                u'size': None,
+                u'materialized': '/',
+            }]
+        }
+        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
+        mock_waterbutler_request.return_value = mock_res
+
+        url = '/{}nodes/{}/files/github/file'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
+            'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
+        })
+        assert_equal(res.status_code, 404)
+
+    @mock.patch('api.nodes.views.requests.get')
+    def test_notfound_node_folder_returns_file(self, mock_waterbutler_request):
+        mock_res = mock.MagicMock()
+        mock_res.status_code = 200
+        mock_res.json.return_value = {
+            u'data': {
+                u'contentType': None,
+                u'extra': {u'downloads': 0, u'version': 1},
+                u'kind': u'file',
+                u'modified': None,
+                u'name': u'NewFile',
+                u'path': u'/NewFile',
+                u'provider': u'github',
+                u'size': None,
+                u'materialized': '/',
+            }
+        }
+        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
+        mock_waterbutler_request.return_value = mock_res
+
+        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
+            'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
+        })
+        assert_equal(res.status_code, 404)
 
     @mock.patch('api.nodes.views.requests.get')
     def test_handles_unauthenticated_waterbutler_request(self, mock_waterbutler_request):
