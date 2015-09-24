@@ -27,7 +27,7 @@ def json_api_exception_handler(exc, context):
                 if isinstance(error_description, list):
                     errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
             elif error_key == 'non_field_errors':
-                        errors.append({'detail': error_description})
+                    errors.extend([{'detail': description for description in error_description}])
             else:
                 if isinstance(error_description, basestring):
                     error_description = [error_description]
@@ -59,7 +59,16 @@ def json_api_exception_handler(exc, context):
         # For bulk operations: If validation error, return request data with response.
         request_data = context['request'].data
         if response.status_code == 400 and isinstance(request_data, list):
-            response.data['meta'] = request_data
+            response_data = []
+            for data in request_data:
+                formatted = {'type': data.pop('type')}
+                id = data.pop('id')
+                if id is not None:
+                    formatted['id'] = id
+                formatted['attributes'] = data
+                response_data.append(formatted)
+
+            response.data['meta'] = response_data
 
     return response
 
