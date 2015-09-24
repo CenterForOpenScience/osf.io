@@ -31,7 +31,8 @@ from api.nodes.permissions import (
     ContributorOrPublic,
     ReadOnlyIfRegistration,
     ContributorOrPublicForPointers,
-    ContributorDetailPermissions
+    ContributorDetailPermissions,
+    ReadOnlyIfRegistration,
 )
 
 from website.exceptions import NodeStateError
@@ -423,6 +424,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         ContributorOrPublicForPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
