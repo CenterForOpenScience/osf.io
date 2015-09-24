@@ -1,5 +1,5 @@
 from rest_framework.parsers import JSONParser
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ParseError
 
 from api.base.renderers import JSONAPIRenderer
 from api.base.exceptions import JSONAPIException
@@ -17,7 +17,7 @@ class JSONAPIParser(JSONParser):
         """
         result = super(JSONAPIParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
         if not isinstance(result, dict):
-            raise ValidationError("Invalid data. Expected a dictionary but got {}".format(type(result)))
+            raise ParseError()
         data = result.get('data', {})
 
         if data:

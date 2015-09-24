@@ -405,11 +405,11 @@ class TestNodeCreate(ApiTestCase):
     def test_node_create_invalid_data(self):
         res = self.app.post_json_api(self.url, "Incorrect data", auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'unicode'>")
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
         res = self.app.post_json_api(self.url, ["Incorrect data"], auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'list'>")
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
     def test_creates_public_project_logged_out(self):
         res = self.app.post_json_api(self.url, self.public_project, expect_errors=True)
@@ -667,11 +667,11 @@ class TestNodeUpdate(NodeCRUDTestCase):
     def test_node_update_invalid_data(self):
         res = self.app.put_json_api(self.public_url, "Incorrect data", auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'unicode'>")
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
         res = self.app.put_json_api(self.public_url, ["Incorrect data"], auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], "Invalid data. Expected a dictionary but got <type 'list'>")
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
 
     def test_update_project_properties_not_nested(self):
