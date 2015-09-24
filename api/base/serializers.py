@@ -98,6 +98,39 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
+class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
+    """
+    HyperlinkedRelated field that returns a nested dict with url,
+    optional meta information, and link_type.
+
+    Example:
+
+        branched_from = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk',
+                                                    lookup_url_kwarg='node_id', read_only=True, link_type='related')
+
+    """
+    def __init__(self, view_name=None, **kwargs):
+        self.meta = kwargs.pop('meta', None)
+        self.link_type = kwargs.pop('link_type', 'url')
+        super(JSONAPIHyperlinkedRelatedField, self).__init__(view_name, **kwargs)
+
+    def to_representation(self, value):
+        """
+        Returns nested dictionary in format {'links': {'self.link_type': ... }
+
+        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
+        the link is represented as a links object with 'href' and 'meta' members.
+        """
+        url = super(JSONAPIHyperlinkedRelatedField, self).to_representation(value)
+
+        meta = {}
+        for key in self.meta or {}:
+            meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+        self.meta = meta
+
+        return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
+
+
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
     If the object to be serialized implements `get_absolute_url`, then the return value
