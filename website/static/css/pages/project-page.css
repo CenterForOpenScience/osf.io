@@ -69,6 +69,17 @@
     .project-nav {
         overflow: hidden;
     }
+
+    /* Allow project nav to move the content on small screen */
+    #projectBanner .osf-project-navbar {
+        position: relative;
+        top: 0;
+        margin-top: -55px;
+    }
+    #projectBanner {
+        margin-right: -15px;
+        margin-left: -15px;
+    }
 }
 
 @media (min-width: 768px) {

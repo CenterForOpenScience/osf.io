@@ -10,8 +10,9 @@ def json_api_exception_handler(exc, context):
     from rest_framework.views import exception_handler
     response = exception_handler(exc, context)
 
-    # Error objects may have the following members. Title removed to avoid clash with node "title" errors.
-    top_level_error_keys = ['id', 'links', 'status', 'code', 'detail', 'source', 'meta']
+    # Error objects may have the following members. Title and id removed to avoid clash with "title" and "id" field errors.
+    top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
+    resource_object_identifiers = ['type', 'id']
     errors = []
 
     if response:
@@ -28,11 +29,18 @@ def json_api_exception_handler(exc, context):
             for error_key, error_description in message.iteritems():
                 if error_key in top_level_error_keys:
                     errors.append({error_key: error_description})
+                elif error_key in resource_object_identifiers:
+                    if isinstance(error_description, basestring):
+                        error_description = [error_description]
+                    errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
+                elif error_key == 'attributes':
+                    if isinstance(error_description, list):
+                        errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
                 else:
                     if isinstance(error_description, basestring):
                         error_description = [error_description]
-                    errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason}
-                                   for reason in error_description])
+                    errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason} for reason in error_description])
+
         else:
             if isinstance(message, basestring):
                 message = [message]
@@ -51,6 +59,7 @@ class JSONAPIException(APIException):
         See http://jsonapi.org/format/#error-objects.
         Example: ``source={'pointer': '/data/attributes/title'}``
     """
+    status_code = status.HTTP_400_BAD_REQUEST
     def __init__(self, detail=None, source=None):
         super(JSONAPIException, self).__init__(detail=detail)
         self.source = source
@@ -59,6 +68,11 @@ class JSONAPIException(APIException):
 class Gone(APIException):
     status_code = status.HTTP_410_GONE
     default_detail = ('The requested resource is no longer available.')
+
+
+class Conflict(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = ('Resource identifier does not match server endpoint.')
 
 
 class InvalidQueryStringError(JSONAPIException):
@@ -75,3 +89,13 @@ class InvalidQueryStringError(JSONAPIException):
 class InvalidFilterError(ParseError):
     """Raised when client passes an invalid filter in the query string."""
     default_detail = 'Query string contains an invalid filter.'
+
+
+class UnconfirmedAccountError(APIException):
+    status_code = 400
+    default_detail = 'Please confirm your account before using the API.'
+
+
+class DeactivatedAccountError(APIException):
+    status_code = 400
+    default_detail = 'Making API requests with credentials associated with a deactivated account is not allowed.'
