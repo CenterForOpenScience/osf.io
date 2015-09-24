@@ -2,7 +2,7 @@
 import urlparse
 from nose.tools import *  # flake8: noqa
 
-from website.models import Node
+from website.models import Node, User
 from website.util.sanitize import strip_html
 
 from tests.base import ApiTestCase
@@ -46,7 +46,7 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_two._id, ids)
 
     def test_find_multiple_in_users(self):
-        url = "/{}users/?filter[fullname]=fred".format(API_BASE)
+        url = "/{}users/?filter[full_name]=fred".format(API_BASE)
 
         res = self.app.get(url)
         user_json = res.json['data']
@@ -55,7 +55,7 @@ class TestUsers(ApiTestCase):
         assert_in(self.user_two._id, ids)
 
     def test_find_single_user_in_users(self):
-        url = "/{}users/?filter[fullname]=my".format(API_BASE)
+        url = "/{}users/?filter[full_name]=my".format(API_BASE)
         self.user_one.fullname = 'My Mom'
         self.user_one.save()
         res = self.app.get(url)
@@ -65,7 +65,7 @@ class TestUsers(ApiTestCase):
         assert_not_in(self.user_two._id, ids)
 
     def test_find_no_user_in_users(self):
-        url = "/{}users/?filter[fullname]=NotMyMom".format(API_BASE)
+        url = "/{}users/?filter[full_name]=NotMyMom".format(API_BASE)
         res = self.app.get(url)
         user_json = res.json['data']
         ids = [each['id'] for each in user_json]
@@ -106,21 +106,21 @@ class TestUserDetail(ApiTestCase):
         url = "/{}users/{}/".format(API_BASE, self.user_one._id)
         res = self.app.get(url)
         user_json = res.json['data']
-        assert_equal(user_json['attributes']['fullname'], self.user_one.fullname)
+        assert_equal(user_json['attributes']['full_name'], self.user_one.fullname)
         assert_equal(user_json['attributes']['twitter'], 'howtopizza')
 
     def test_get_incorrect_pk_user_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
         res = self.app.get(url)
         user_json = res.json['data']
-        assert_not_equal(user_json['attributes']['fullname'], self.user_one.fullname)
+        assert_not_equal(user_json['attributes']['full_name'], self.user_one.fullname)
 
     def test_get_incorrect_pk_user_not_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
         res = self.app.get(url, auth=self.user_one.auth)
         user_json = res.json['data']
-        assert_not_equal(user_json['attributes']['fullname'], self.user_one.fullname)
-        assert_equal(user_json['attributes']['fullname'], self.user_two.fullname)
+        assert_not_equal(user_json['attributes']['full_name'], self.user_one.fullname)
+        assert_equal(user_json['attributes']['full_name'], self.user_two.fullname)
         
     def test_user_detail_takes_profile_image_size_param(self):
         size = 42
@@ -131,6 +131,13 @@ class TestUserDetail(ApiTestCase):
         query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
         assert_equal(int(query_dict.get('size')[0]), size)
 
+    def test_can_view_unconfirmed_user(self):
+        unconfirmed = User.create_unconfirmed('foo@bar.com', 'password', 'Foo Bar')
+        unconfirmed.save()
+
+        url = "/{}users/{}/".format(API_BASE, unconfirmed._id)
+        res = self.app.get(url)
+        assert_equal(res.json['data']['attributes']['full_name'], 'Foo Bar')
 
 class TestUserNodes(ApiTestCase):
 
@@ -400,7 +407,7 @@ class TestUserUpdate(ApiTestCase):
         super(TestUserUpdate, self).setUp()
 
         self.user_one = AuthUserFactory.build(
-            fullname='Martin Luther King Jr.',
+            full_name='Martin Luther King Jr.',
             given_name='Martin',
             family_name='King',
             suffix='Jr.',
@@ -427,7 +434,7 @@ class TestUserUpdate(ApiTestCase):
                 'type': 'users',
                 'id': self.user_one._id,
                 'attributes': {
-                    'fullname': 'el-Hajj Malik el-Shabazz',
+                    'full_name': 'el-Hajj Malik el-Shabazz',
                     'given_name': 'Malcolm',
                     'middle_names': 'Malik el-Shabazz',
                     'family_name': 'X',
@@ -448,7 +455,7 @@ class TestUserUpdate(ApiTestCase):
             'data': {
                 'type': 'users',
                 'attributes': {
-                    'fullname': 'el-Hajj Malik el-Shabazz',
+                    'full_name': 'el-Hajj Malik el-Shabazz',
                     'family_name': 'Z',
                 }
             }
@@ -458,7 +465,7 @@ class TestUserUpdate(ApiTestCase):
             'data': {
                 'id': self.user_one._id,
                 'attributes': {
-                    'fullname': 'el-Hajj Malik el-Shabazz',
+                    'full_name': 'el-Hajj Malik el-Shabazz',
                     'family_name': 'Z',
                 }
             }
@@ -469,7 +476,7 @@ class TestUserUpdate(ApiTestCase):
                 'id': '12345',
                 'type': 'users',
                 'attributes': {
-                    'fullname': 'el-Hajj Malik el-Shabazz',
+                    'full_name': 'el-Hajj Malik el-Shabazz',
                     'family_name': 'Z',
                 }
             }
@@ -480,7 +487,7 @@ class TestUserUpdate(ApiTestCase):
                 'id': self.user_one._id,
                 'type': 'Wrong type.',
                 'attributes': {
-                    'fullname': 'el-Hajj Malik el-Shabazz',
+                    'full_name': 'el-Hajj Malik el-Shabazz',
                     'family_name': 'Z',
                 }
             }
@@ -524,12 +531,12 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_patch_fields_not_nested(self):
-        res = self.app.put_json_api(self.user_one_url, {'data': {'id': self.user_one._id, 'type': 'users', 'fullname': 'New name'}}, auth=self.user_one.auth, expect_errors=True)
+        res = self.app.put_json_api(self.user_one_url, {'data': {'id': self.user_one._id, 'type': 'users', 'full_name': 'New name'}}, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
     def test_partial_patch_fields_not_nested(self):
-        res = self.app.patch_json_api(self.user_one_url, {'data': {'id': self.user_one._id, 'type': 'users', 'fullname': 'New name'}}, auth=self.user_one.auth, expect_errors=True)
+        res = self.app.patch_json_api(self.user_one_url, {'data': {'id': self.user_one._id, 'type': 'users', 'full_name': 'New name'}}, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_patch_user_logged_out(self):
@@ -538,7 +545,7 @@ class TestUserUpdate(ApiTestCase):
                 'id': self.user_one._id,
                 'type': 'users',
                 'attributes': {
-                    'fullname': self.new_user_one_data['data']['attributes']['fullname'],
+                    'full_name': self.new_user_one_data['data']['attributes']['full_name'],
                 }
             }
         }, expect_errors=True)
@@ -580,7 +587,7 @@ class TestUserUpdate(ApiTestCase):
                 'id': self.user_one._id,
                 'type': 'users',
                 'attributes': {
-                    'fullname': 'new_fullname',
+                    'full_name': 'new_full_name',
                     'gitHub': 'even_newer_github',
                     'suffix': 'The Millionth'
                 }
@@ -588,7 +595,7 @@ class TestUserUpdate(ApiTestCase):
         }, auth=self.user_one.auth)
         self.user_one.reload()
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['fullname'], 'new_fullname')
+        assert_equal(res.json['data']['attributes']['full_name'], 'new_full_name')
         assert_equal(res.json['data']['attributes']['suffix'], 'The Millionth')
         assert_equal(res.json['data']['attributes']['gitHub'], 'even_newer_github')
         assert_equal(res.json['data']['attributes']['given_name'], self.user_one.given_name)
@@ -600,7 +607,7 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['impactStory'], self.user_one.social['impactStory'])
         assert_equal(res.json['data']['attributes']['orcid'], self.user_one.social['orcid'])
         assert_equal(res.json['data']['attributes']['researcherId'], self.user_one.social['researcherId'])
-        assert_equal(self.user_one.fullname, 'new_fullname')
+        assert_equal(self.user_one.fullname, 'new_full_name')
         assert_equal(self.user_one.suffix, 'The Millionth')
         assert_equal(self.user_one.social['github'], 'even_newer_github')
 
@@ -611,14 +618,14 @@ class TestUserUpdate(ApiTestCase):
                 'id': self.user_one._id,
                 'type': 'users',
                 'attributes': {
-                    'fullname': 'new_fullname',
+                    'full_name': 'new_full_name',
                     'suffix': 'The Millionth',
                 }
             }
         }, auth=self.user_one.auth)
         self.user_one.reload()
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['fullname'], 'new_fullname')
+        assert_equal(res.json['data']['attributes']['full_name'], 'new_full_name')
         assert_equal(res.json['data']['attributes']['suffix'], 'The Millionth')
         assert_equal(res.json['data']['attributes']['gitHub'], self.user_one.social['github'])
         assert_equal(res.json['data']['attributes']['given_name'], self.user_one.given_name)
@@ -630,7 +637,7 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['impactStory'], self.user_one.social['impactStory'])
         assert_equal(res.json['data']['attributes']['orcid'], self.user_one.social['orcid'])
         assert_equal(res.json['data']['attributes']['researcherId'], self.user_one.social['researcherId'])
-        assert_equal(self.user_one.fullname, 'new_fullname')
+        assert_equal(self.user_one.fullname, 'new_full_name')
         assert_equal(self.user_one.suffix, 'The Millionth')
         assert_equal(self.user_one.social['github'], self.user_one.social['github'])
 
@@ -641,7 +648,7 @@ class TestUserUpdate(ApiTestCase):
                 'id': self.user_one._id,
                 'type': 'users',
                 'attributes': {
-                    'fullname': 'new_fullname',
+                    'full_name': 'new_full_name',
                     'gitHub': 'even_newer_github',
                     'suffix': 'The Millionth'
                 }
@@ -649,13 +656,13 @@ class TestUserUpdate(ApiTestCase):
         }, auth=self.user_one.auth)
         self.user_one.reload()
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['fullname'], 'new_fullname')
+        assert_equal(res.json['data']['attributes']['full_name'], 'new_full_name')
         assert_equal(res.json['data']['attributes']['suffix'], 'The Millionth')
         assert_equal(res.json['data']['attributes']['gitHub'], 'even_newer_github')
         assert_equal(res.json['data']['attributes']['given_name'], self.user_one.given_name)
         assert_equal(res.json['data']['attributes']['middle_names'], self.user_one.middle_names)
         assert_equal(res.json['data']['attributes']['family_name'], self.user_one.family_name)
-        assert_equal(self.user_one.fullname, 'new_fullname')
+        assert_equal(self.user_one.fullname, 'new_full_name')
         assert_equal(self.user_one.suffix, 'The Millionth')
         assert_equal(self.user_one.social['github'], 'even_newer_github')
 
@@ -663,7 +670,7 @@ class TestUserUpdate(ApiTestCase):
         # Logged in user updates their user information via put
         res = self.app.put_json_api(self.user_one_url, self.new_user_one_data, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['fullname'], self.new_user_one_data['data']['attributes']['fullname'])
+        assert_equal(res.json['data']['attributes']['full_name'], self.new_user_one_data['data']['attributes']['full_name'])
         assert_equal(res.json['data']['attributes']['given_name'], self.new_user_one_data['data']['attributes']['given_name'])
         assert_equal(res.json['data']['attributes']['middle_names'], self.new_user_one_data['data']['attributes']['middle_names'])
         assert_equal(res.json['data']['attributes']['family_name'], self.new_user_one_data['data']['attributes']['family_name'])
@@ -676,7 +683,7 @@ class TestUserUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['orcid'], self.new_user_one_data['data']['attributes']['orcid'])
         assert_equal(res.json['data']['attributes']['researcherId'], self.new_user_one_data['data']['attributes']['researcherId'])
         self.user_one.reload()
-        assert_equal(self.user_one.fullname, self.new_user_one_data['data']['attributes']['fullname'])
+        assert_equal(self.user_one.fullname, self.new_user_one_data['data']['attributes']['full_name'])
         assert_equal(self.user_one.given_name, self.new_user_one_data['data']['attributes']['given_name'])
         assert_equal(self.user_one.middle_names, self.new_user_one_data['data']['attributes']['middle_names'])
         assert_equal(self.user_one.family_name, self.new_user_one_data['data']['attributes']['family_name'])
@@ -705,30 +712,30 @@ class TestUserUpdate(ApiTestCase):
                 'id': self.user_one._id,
                 'type': 'users',
                 'attributes': {
-                    'fullname': self.new_user_one_data['data']['attributes']['fullname'],
+                    'full_name': self.new_user_one_data['data']['attributes']['full_name'],
                 }
             }
         }, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         self.user_one.reload()
-        assert_not_equal(self.user_one.fullname, self.new_user_one_data['data']['attributes']['fullname'])
+        assert_not_equal(self.user_one.fullname, self.new_user_one_data['data']['attributes']['full_name'])
 
     def test_update_user_sanitizes_html_properly(self):
         """Post request should update resource, and any HTML in fields should be stripped"""
-        bad_fullname = 'Malcolm <strong>X</strong>'
+        bad_full_name = 'Malcolm <strong>X</strong>'
         bad_family_name = 'X <script>alert("is")</script> a cool name'
         res = self.app.patch_json_api(self.user_one_url, {
             'data': {
                 'id': self.user_one._id,
                 'type': 'users',
                 'attributes': {
-                    'fullname': bad_fullname,
+                    'full_name': bad_full_name,
                     'family_name': bad_family_name,
                 }
             }
         }, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['fullname'], strip_html(bad_fullname))
+        assert_equal(res.json['data']['attributes']['full_name'], strip_html(bad_full_name))
         assert_equal(res.json['data']['attributes']['family_name'], strip_html(bad_family_name))
 
 
@@ -754,7 +761,7 @@ class TestExceptionFormatting(ApiTestCase):
         super(TestExceptionFormatting, self).setUp()
 
         self.user = AuthUserFactory.build(
-            fullname='Martin Luther King Jr.',
+            full_name='Martin Luther King Jr.',
             given_name='Martin',
             family_name='King',
             suffix='Jr.',
@@ -771,13 +778,21 @@ class TestExceptionFormatting(ApiTestCase):
         )
         self.url = '/{}users/{}/'.format(API_BASE, self.user._id)
 
+        self.base_request_payload = {
+            'data': {
+                'type': 'users',
+                'id': self.user._id,
+                'attributes': {}
+            }
+        }
+
         self.user_two = AuthUserFactory()
 
-    def test_updates_user_with_no_fullname(self):
-        res = self.app.put_json_api(self.url, auth=self.user.auth, expect_errors=True)
+    def test_updates_user_with_no_full_name(self):
+        res = self.app.put_json_api(self.url, self.base_request_payload, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/fullname'})
+        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/full_name'})
         assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
 
     def test_updates_user_unauthorized(self):
