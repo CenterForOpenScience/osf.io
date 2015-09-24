@@ -65,7 +65,7 @@ REST_FRAMEWORK = {
     ),
     'DEFAULT_PARSER_CLASSES': (
         'api.base.parsers.JSONAPIParser',
-        'rest_framework.parsers.JSONParser',
+        'api.base.parsers.JSONAPIParserForRegularJSON',
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser'
     ),
