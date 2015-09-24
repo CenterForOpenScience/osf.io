@@ -74,11 +74,13 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     ##Node Attributes
 
-    **TODO: import from NodeDetails**
+    <!--- Copied Attributes from NodeDetails -->
+
+    **TODO: import Attributes from NodeDetails**
 
     ##Links
 
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
     ##Actions
 
@@ -116,6 +118,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
     that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -251,6 +254,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     *None*.
 
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -296,11 +300,13 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     ##Node Contributor Attributes
 
-    **TODO: import from NodeContributorDetail**
+    <!--- Copied Attributes from NodeContributorDetail -->
+
+    **TODO: import Attributes from NodeContributorDetail**
 
     ##Links
 
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
     ##Actions
 
@@ -323,7 +329,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     Contributors can be added to nodes are by issuing a POST request to this endpoint.  The `id` attribute is mandatory and
     must be a valid user id.  `bibliographic` is a boolean and defaults to `true`.  `permission` must be a [valid OSF
-    permission key](/v2/#osf-permission-keys) and defaults to `"write"`. All other fields not listed above will be
+    permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`. All other fields not listed above will be
     ignored.  If the request is successful the API will return a 201 response with the respresentation of the new node
     contributor in the body.  For the new node contributor's canonical URL, see the `links.self` field of the response.
 
@@ -339,6 +345,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in the query will cause the match to fail
     regardless.
 
+    #This Request/Response
     """
     permission_classes = (
         AdminOrPublic,
@@ -433,6 +440,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     *None*.
 
+    #This Request/Response
     """
     permission_classes = (
         ContributorDetailPermissions,
@@ -515,17 +523,21 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 
     ##Node Attributes
 
-    **TODO: import from NodeDetail**
+    <!--- Copied Attributes from NodeDetail -->
+
+    **TODO: import Attributes from NodeDetail**
 
     ##Links
 
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
     ##Actions
 
     ###Create Child Node
 
-    **TODO: import from NodeDetail**
+    <!--- Copied Creating New Node from NodeList -->
+
+    **TODO: import Creating New Nodes from NodeList**
 
     To create a child node of the current node, issue a POST request to this endpoint.  The request and response format
     are the same as for creating an unparented node via the [node list endpoint](/v2/nodes/).
@@ -536,8 +548,11 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    **TODO: import from NodeDetail**
+    <!--- Copied Query Params from NodeList -->
 
+    **TODO: import Query Params from NodeList**
+
+    #This Request/Response
     """
     permission_classes = (
         ContributorOrPublic,
@@ -599,7 +614,7 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
 
     ##Links
 
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
     ##Actions
 
@@ -611,6 +626,7 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -655,6 +671,8 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     ##Query Params
 
     *None*.
+
+    #This Request/Response
     """
     permission_classes = (
         ContributorOrPublicForPointers,
@@ -703,11 +721,13 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
     ##File Attributes
 
-    **TODO: import from FileDetail**
+    <!--- Copied Attributes from FileDetail -->
+
+    **TODO: import Attributes from FileDetail**
 
     ##Links
 
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
     ##Actions
 
@@ -719,6 +739,9 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
+    **TODO: write this!**
+
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -829,7 +852,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
     ##Links
 
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/#fetching-pagination).
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
     ##Actions
 
@@ -839,6 +862,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
     + `page=<Int>` -- page number of results to view, default 1
 
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
