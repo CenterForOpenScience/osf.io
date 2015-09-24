@@ -2,6 +2,7 @@ var $ = require('jquery');
 var ko = require('knockout');
 require('knockout.validation');
 var bootbox = require('bootbox');
+var Raven = require('raven-js');
 
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
@@ -30,8 +31,6 @@ var template = require('raw!templates/license-picker.html');
  * @property {ko.observable<license>} savedLicense:
  * @property {ko.observable<license>} selectedLicense:
  * @property {license[]} licenses:
- * @property {ko.observable<string>} notification:
- * @property {ko.observable<boolean>} error:
  *
  * @type license
  * @property {string} name: human readable name
@@ -163,10 +162,16 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         self.savedLicense(selectedLicense);
         self.changeMessage('License updated successfully.', 'text-success', 2500);
     },
-    onSaveFail: function() {
+    onSaveFail: function(xhr, status, error) {
         var self = this;
 
         self.changeMessage('There was a problem updating your license. Please try again.', 'text-danger', 2500);
+
+        Raven.captureMessage('Error fetching user profile', {
+            url: self.saveUrl,
+            status: status,
+            error: error
+        });
     },
     /**
      * Save the currently selected license, updating the UI on success/fail
