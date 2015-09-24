@@ -12,6 +12,33 @@ from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
 
+class AllowMissing(ser.Field):
+
+    def __init__(self, field, **kwargs):
+        super(AllowMissing, self).__init__(**kwargs)
+        self.field = field
+
+    def to_representation(self, value):
+        return self.field.to_representation(value)
+
+    def bind(self, field_name, parent):
+        super(AllowMissing, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def get_attribute(self, instance):
+        """
+        Overwrite the error message to return a blank value is if there is no existing value.
+        This allows the display of keys that do not exist in the DB (gitHub on a new OSF account for example.)
+        """
+        try:
+            return self.field.get_attribute(instance)
+        except SkipField:
+            return ''
+
+    def to_internal_value(self, data):
+        return self.field.to_internal_value(data)
+
+
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
     as those are the only complex structures currently supported by DRF Serializer Fields."""
@@ -272,12 +299,11 @@ class JSONAPISerializer(ser.Serializer):
             try:
                 attribute = field.get_attribute(obj)
             except SkipField:
-                if field.source.split('.')[0] == 'social':
-                    attribute = ''
-                else:
-                    continue
+                continue
             if isinstance(field, JSONAPIHyperlinkedIdentityField):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
+            # if isinstance(field, AllowMissing):
+            #     data['attributes'][field.field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':
