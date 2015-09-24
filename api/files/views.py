@@ -37,33 +37,73 @@ class FileMixin(object):
 class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     """Details about files and folders. *Writeable*.
 
-    So if you GET a self link for a file, it will return the file itself for downloading. If you GET a related link for
-    a file, you'll get the metadata about the file. GETting a related link for a folder will get you the listing of
-    what's in that folder. GETting a folder's self link won't work, because there's nothing to get.
+    Welcome to the Files API.  Brace yourself, things are about to get *weird*.
 
-    Which brings us to the other useful thing about the links here: there's a field called `self-methods`. This field
-    will tell you what the valid methods are for the self links given the kind of thing they are (file vs folder) and
-    given your permissions on the object.
+    The Files API is the one place in the OSF API where we break hard from the JSON-API spec.  This is because most of
+    the behind-the-scenes moving, uploading, deleting, etc. of files and folders is actually be handled for us by a
+    nifty piece of software called [WaterButler](https://github.com/CenterForOpenScience/waterbutler).  WaterButler lets
+    us interact with files stored on different cloud storage platforms through a consistent API.  However, it uses
+    different conventions for requests, responses, and URL-building, so pay close attention to the documentation for
+    [actions](#actions).  The exceptions are the "Get Info" and "Checkout" actions, which are OSF-centric.
 
-    NOTE: Most of the API will be stable as far as how the links work because the things they are accessing are fairly
-    stable and predictable, so if you felt the need, you could construct them in the normal REST way and they should
-    be fine.
-    The 'self' links from the NodeFilesList may have to change from time to time, so you are highly encouraged to use
-    the links as we provide them before you use them, and not to reverse engineer the structure of the links as they
-    are at any given time.
+    If your file or folder is stored on a non-OSF provider, the file metadata will be retrieved if not already present
+    in the system.  Otherwise, the cached metadata will be presented.  To force metadata retrieval, you'll need to issue
+    a GET request to the Node Files List endpoint.  **TODO: do we provide a link to this?  If not, tell how to construct
+    the url.**
+
+    Both files and folders are available through the Files API and are distinguished by the `kind` attribute ("file" for
+    files, "folder" for folders).  Not all actions and relationships are relevent to both files and folders, so the
+    applicable types are listed by each heading.
+
+    ###Waterbutler Entities
+
+    When an action is performed against a WaterButler endpoint, it will generally respond with a file entity, a folder
+    entity, or no content.
+
+    ####File Entity
+
+        name          type       description
+        -------------------------------------------------------------------------
+        name          string     name of the new folder
+        path          string     OSF path/id of the file
+        materialized  string     the full path of the folder relative to the storage root
+        kind          string     "file"
+        etag          string     etag - http caching identifier
+        modified      timestamp  last modified timestamp - format depends on provider
+        contentType   string     null if provider="osfstorage", else MIME-type
+        provider      string     id of provider e.g. "osfstorage", "s3", "googledrive"
+        size          integer    size of file in bytes
+        extra         object
+          version     integer    version number of file. will be 1 on initial upload
+          downloads   integer    count of the number times the file has been downloaded
+          hashes      object
+            md5       string     md5 hash of file
+            sha256    string     SHA-256 hash of file
+
+    ####Folder Entity
+
+        name          type    description
+        ----------------------------------------------------------------------
+        name          string  name of the new folder
+        path          string  OSF path/id of the folder
+        materialized  string  the full path of the folder relative to the storage root
+        kind          string  "folder"
+        etag          string  etag - http caching identifier
+        extra         object  null
+
 
     ##Attributes
 
-    `type` is "files"
+    For an OSF File entity, the `type` is "files" regardless of whether the entity is actually a file or folder.  They
+    can be distinguished by the `kind` attribute.  Files and folders use the same representation, but some attributes may
+    be null for one kind but not the other. `size` will be null for folders.  A list of storage provider keys can be
+    found [here](/v2/#storage-providers).
 
-    Both files and folders are accessed through this endpoint and may be distinguished by the `kind` attribute. `size`
-    will be `null` for folders.
-
-        name           type               description
+        name          type               description
         ---------------------------------------------------------------------------------
         name          string             name of the file or folder
         kind          string             "file" or "folder"
-        path          url path           path to this entity, used in "move" actions
+        path          url path           unique path for this entity, used in "move" actions
         size          integer            size of file in bytes, null for folders
         provider      string             storage provider for this file. "osfstorage" if stored on the OSF.  Other
                                          examples include "s3" for Amazon S3, "googledrive" for Google Drive, "box"
@@ -82,19 +122,19 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     ###Files (*folders*)
 
-    The `files` endpoint lists all of the subfiles and folders of the current folder. Will be `null` for files.
+    The `files` endpoint lists all of the subfiles and folders of the current folder. Will be null for files.
 
     ###Versions (*files*)
 
-    The `versions` endpoint provides version history for files.  Will be `null` for folders.
+    The `versions` endpoint provides version history for files.  Will be null for folders.
 
     ##Links
 
         info:        the canonical api endpoint for the latest version of the file
-        new_folder:  url to target when creating new subfolders
+        new_folder:  url to target when creating new subfolders (null for files)
         move:        url to target for move, copy, and rename actions
         upload:      url to target for uploading new files and updating existing files
-        download:    url to request a download of the latest version of the file
+        download:    url to request a download of the latest version of the file (null for folders)
         delete:      url to target for deleting files and folders
 
     ##Actions
@@ -109,7 +149,8 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         Params:   <none>
         Success:  200 OK + file representation
 
-    The details of a particular file can be retrieved by performing a GET request against the `info` link.
+    The details of a particular file can be retrieved by performing a GET request against the `info` link. The response
+    will be a standard OSF response format with the [OSF File attributes](#attributes).
 
     ###Download (*files*)
 
@@ -125,63 +166,38 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
         Method:       PUT
         URL:          links.new_folder
-        Query Params: ?name=<new folder name>
+        Query Params: ?name={new_folder_name}
         Body:         <empty>
         Success:      201 Created + new folder representation
 
     You can create a subfolder of an existing folder by issuing a PUT request against the `new_folder` link.  The name
-    of the new subfolder should be provided in the `name` query parameter.  The response will contain the following:
-
-        name          type               description
-        ---------------------------------------------------------------------------------
-        name          string             name of the new folder
-        path          url path           path of the folder in **OSF or Waterbutler**?
-        materialized  string             the full path of the folder relative to the storage root
-        kind          string             "folder"
-        etag          string             **TODO**
-        extra         object             **TODO**
+    of the new subfolder should be provided in the `name` query parameter.  The response will contain a [WaterButler
+    folder entity](#folder-entity).
 
     ###Upload New File (*folders*)
 
         Method:       PUT
         URL:          links.upload
-        Query Params: ?kind=file&name=<new file name>
+        Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
         Success:      201 Created + new file representation
 
     To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
     request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
-    response will describe the new file.
-
-        name          type               description
-        ---------------------------------------------------------------------------------
-        name          string             name of the new folder
-        path          url path           path of the folder in **OSF or Waterbutler**?
-        materialized  string             the full path of the folder relative to the storage root
-        kind          string             "file"
-        etag          string             **TODO**
-        modified      timestamp          **TODO**
-        contentType   string             null if provider="osfstorage", else MIME-type
-        provider      string             id of provider e.g. "osfstorage", "s3", "googledrive"
-        size          integer            size of file in bytes
-        extra         object
-          version     integer            version number of file. will be 1 on initial upload
-          downloads   integer            count of the number times the file has been downloaded
-          hashes      object
-            md5       string             md5 hash of file
-            sha256    string             SHA-256 hash of file
+    response will contain a [WaterButler file entity](#file-entity) that describes the new file.
 
     ###Update Existing File (*file*)
 
         Method:       PUT
         URL:          links.upload
-        Query Params: kind=file&name=<new file name>
+        Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
         Success:      200 OK + updated file representation
 
     To update an existing file, issue a PUT request to the file's `upload` link with the raw file data in the request
     body, and the `kind` and `name` query parameters set to `"file"` and the desired name of the file.  The update
-    action will create a new version of the file.  The response format is the same as the **Upload New File** action.
+    action will create a new version of the file.  The response will contain a [WaterButler file entity](#file-entity)
+    that describes the updated file.
 
     ###Rename (*files, folders*)
 
@@ -190,13 +206,13 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         Query Params:  <none>
         Body (JSON):   {
                         "action": "rename",
-                        "rename": <new file name>
+                        "rename": {new_file_name}
                        }
         Success:       200 OK + new entity representation
 
     To rename a file or folder, issue a POST request to the `move` link with the `action` body parameter set to
-    `"rename"` and the `rename` body parameter set to the desired name.  The response format is the same as the **Upload
-    New File** action, except if the renamed entity is a folder, `kind` will be `"folder"`.
+    `"rename"` and the `rename` body parameter set to the desired name.  The response will contain either a folder
+    entity or file entity with the new name.
 
     ###Move & Copy (*files, folders*)
 
@@ -205,22 +221,23 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         Query Params:  <none>
         Body (JSON):   {
                         // mandatory
-                        "action":   "move|copy",
-                        "path":     <path attribute of target folder>,
+                        "action":   "move"|"copy",
+                        "path":     {path_attribute_of_target_folder},
                         // optional
-                        "rename":   <new name>,
-                        "conflict": "replace|keep" // defaults to 'replace'
+                        "rename":   {new_name},
+                        "conflict": "replace"|"keep" // defaults to 'replace'
                        }
         Succes:        200 OK + new entity representation
 
     Move and copy actions both use the same request structure, a POST to the `move` url, but with different values for
-    the `action` body parameters.  The `path` parameter is also required and should be the `path` attribute of the
+    the `action` body parameters.  The `path` parameter is also required and should be the OSF `path` attribute of the
     folder being written to.  The `rename` and `conflict` parameters are optional.  If you wish to change the name of
     the file or folder at its destination, set the `rename` parameter to the new name.  The `conflict` param governs how
     name clashes are resolved.  Possible values are `replace` and `keep`.  `replace` is the default and will overwrite
     the file that already exists in the target folder.  `keep` will attempt to keep both by adding a suffix to the new
-    file's name until it no longer conflicts.  The suffix will be ' (**x**)' where **x** is a increasing integer starting
-    from 1.  This behavior is intended to simulate that of the OS X Finder.
+    file's name until it no longer conflicts.  The suffix will be ' (**x**)' where **x** is a increasing integer
+    starting from 1.  This behavior is intended to mimic that of the OS X Finder.  The response will contain either a
+    folder entity or file entity with the new name.
 
     ###Delete (*file, folders*)
 
@@ -261,6 +278,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     For this endpoint, *none*.  Actions may permit or require certain query parameters.  See the individual action
     documentation.
 
+    #This Request
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
