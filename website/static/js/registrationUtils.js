@@ -779,7 +779,69 @@ RegistrationEditor.prototype.save = function() {
 
     return true;
 };
+RegistrationEditor.prototype.getContributors = function() {
+    return ['Eric'];
+};
+/**
+ * Sets the value for the currentQuestion as all of the contributors
+ * on a project. Currently, the only way for this to be invoked is
+ * when the currentQuestion is the authorship question
+ **/
+RegistrationEditor.prototype.populateAuthors = function() {
+    var self = this;
+    var uri = window.contextVars.node.urls.api + 'get_contributors';
+    var request = $osf.ajaxJSON('get', uri);
 
+    request.done(function(data) {
+        var authorString = '';
+        if (data.contributors.length === 1 ) {
+            authorString = data.contributors[0].fullname;
+        } else {
+            $.each(data.contributors, function(i, contrib) {
+                authorString += contrib.fullname + ', ';
+            });
+        }
+        self.currentQuestion().setValue(authorString);
+        self.save();
+    });
+};
+RegistrationEditor.prototype.authorDialog = function() {
+    var self = this;
+
+    bootbox.dialog({
+        title: 'Choose which contributors to import:',
+        message: function() {
+            ko.renderTemplate('importContributors', {}, {}, this, 'replaceNode');
+        },
+        buttons: {
+            importAll: {
+                label: 'Import all',
+                className: 'btn-primary pull-right',
+                callback: function() {
+                    self.populateAuthors();
+                }
+            },
+            select: {
+                label: 'OK',
+                className: 'btn-success pull-left',
+                callback: function() {
+                    var boxes = document.querySelectorAll('input[type="checkbox"]');
+                    var authorString = '';
+                    $.each(boxes, function(i, box) {
+                        if( this.checked ) {
+                            authorString += this.value + ' ';
+                        }
+                    });
+                    if ( authorString ) {
+                        self.currentQuestion().setValue( authorString );
+                        self.save();
+                    }
+                }
+            }
+
+        }
+    });
+};
 /**
  * @class RegistrationManager
  * Model for listing DraftRegistrations
