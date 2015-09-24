@@ -153,6 +153,10 @@ var Question = function(data, id) {
             required: false
         });
     }
+    // A computed to allow rate-limiting save calls
+    self.delayedValue = ko.computed(function() {
+        return self.value();
+    }).extend({ rateLimit: { method: "notifyWhenChangesStop", timeout: 1000 } });
 
     self.extra = {};
 
@@ -428,6 +432,10 @@ var RegistrationEditor = function(urls, editorId) {
     self.draft = ko.observable();
 
     self.currentQuestion = ko.observable();
+    // When the currentQuestion changes, save when it's rate-limited value changes
+    self.currentQuestion.subscribe(function(question) {
+         question.delayedValue.subscribe(self.save.bind(self));
+    });
     self.showValidation = ko.observable(false);
 
     self.currentPages = ko.computed(function() {

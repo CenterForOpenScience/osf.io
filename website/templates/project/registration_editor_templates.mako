@@ -5,16 +5,18 @@
 
 <script type="text/html" id="text">
   <input data-bind="valueUpdate: 'keyup',
-                    event: {'keyup': save},
                     value: value"
          type="text" class="form-control" />
 </script>
 <script type="text/html" id="match">
   <input data-bind="valueUpdate: 'keyup',
-                    event: {'keyup': save},
                     value: value,
                     attr.placeholder: match" type="text" class="form-control" />
 </script>
+## TODO(hrybacki): valueUpdate doesn't work with textarea(s), as a result throttling is not
+## possible and we must call `save` on via the event binding. We still have throttling in
+## place for the other fields but this will need to be resolved with what will likely be a
+## convoluted solution.on.
 <script type="text/html" id="textarea">
   <textarea data-bind="valueUpdate: 'keyup',
                        event: {'keyup': save},
@@ -24,7 +26,6 @@
 <!-- Number Types -->
 <script type="text/html" id="number">
   <input data-bind="valueUpdate: 'keyup',
-                    event: {'keyup': save},
                     value: value" type="text" class="form-control">
 </script>
 <!-- Enum Types -->
