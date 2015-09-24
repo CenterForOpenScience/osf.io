@@ -2840,6 +2840,29 @@ class TestNodeFilesList(ApiTestCase):
         assert_equal(res.status_code, 404)
 
     @mock.patch('api.nodes.views.requests.get')
+    def test_waterbutler_server_error_returns_503(self, mock_waterbutler_request):
+        mock_res = mock.MagicMock()
+        mock_res.status_code = 500
+        mock_waterbutler_request.return_value = mock_res
+        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
+            'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
+        })
+        assert_equal(res.status_code, 503)
+
+    @mock.patch('api.nodes.views.requests.get')
+    def test_waterbutler_invalid_data_returns_503(self, mock_waterbutler_request):
+        mock_res = mock.MagicMock()
+        mock_res.status_code = 400
+        mock_res.json.return_value = {}  # no data
+        mock_waterbutler_request.return_value = mock_res
+        url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
+            'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
+        })
+        assert_equal(res.status_code, 503)
+
+    @mock.patch('api.nodes.views.requests.get')
     def test_handles_unauthenticated_waterbutler_request(self, mock_waterbutler_request):
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         mock_res = mock.MagicMock()
@@ -2868,7 +2891,7 @@ class TestNodeFilesList(ApiTestCase):
         mock_res.json.return_value = {}
         mock_waterbutler_request.return_value = mock_res
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
+        assert_equal(res.status_code, 503)
         assert_in('detail', res.json['errors'][0])
 
     def test_files_list_contains_relationships_object(self):

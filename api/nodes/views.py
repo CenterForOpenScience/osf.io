@@ -3,6 +3,7 @@ import requests
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.status import is_server_error
 
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
@@ -28,6 +29,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
 )
+from api.base.exceptions import ServiceUnavailableError
 
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
@@ -113,10 +115,13 @@ class WaterButlerMixin(object):
         if waterbutler_request.status_code == 404:
             raise NotFound
 
+        if is_server_error(waterbutler_request.status_code):
+            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
+
         try:
             return waterbutler_request.json()['data']
         except KeyError:
-            raise ValidationError(detail='detail: Could not retrieve files information.')
+            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
