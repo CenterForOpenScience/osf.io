@@ -101,7 +101,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
         name          type               description
         ---------------------------------------------------------------------------------
-        name          string             name of the file or folder
+        name          string             name of the file or folder; use for display
         kind          string             "file" or "folder"
         path          url path           unique path for this entity, used in "move" actions
         size          integer            size of file in bytes, null for folders
