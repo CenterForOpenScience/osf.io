@@ -194,6 +194,8 @@ Question.prototype.init = function() {
 };
 /**
  * Creates a new comment from the current value of Question.nextComment and clears nextComment
+ *
+ * @param {function}: save: save function for the current registrationDraft
  **/
 Question.prototype.addComment = function(save) {
     var self = this;
@@ -204,6 +206,7 @@ Question.prototype.addComment = function(save) {
     comment.seenBy.push(currentUser.id);
     self.comments.push(comment);
     self.nextComment('');
+    save();
 };
 /**
  * Shows/hides the Question example

@@ -141,14 +141,13 @@
       <input class="form-control registration-editor-comment" type="text"
              data-bind="value: nextComment,
                         valueUpdate: 'keyup',
-                        event: {'keyup': $root.save},
                         onKeyPress: {
                           keyCode: 13,
-                          listener: addComment.bind($data, $root.save)
+                          listener: addComment.bind($data, $root.save.bind($root))
                         }" />
       <span class="input-group-btn">
         <button class="btn btn primary"
-                data-bind="click: addComment.bind($data, $root.save),
+                data-bind="click: addComment.bind($data, $root.save.bind($root),
                            enable: allowAddNext">Add</button>
       </span>
     </div>
