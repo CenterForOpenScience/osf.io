@@ -112,7 +112,6 @@ api_routes = {
             views.osfstorage_copy_hook,
             json_renderer,
         ),
-
     ],
 
 }
