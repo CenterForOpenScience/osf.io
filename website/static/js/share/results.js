@@ -151,15 +151,15 @@ var Contributor = {
             m('a', {
                 href: '#',
                 onclick: function() {
-                    var glen = contributor.givenName ? contributor.givenName.length : 0;
-                    var flen = contributor.familyName ? contributor.familyName.length : 0;
-                    if (glen <= 0 && flen <= 0) {
+                    var givenNameLength = contributor.givenName ? contributor.givenName.length : 0;
+                    var familyNameLength = contributor.familyName ? contributor.familyName.length : 0;
+                    if (givenNameLength <= 0 && familyNameLength <= 0) {
                         utils.updateFilter(vm, 'match:contributors.name:' + contributor.name, true);
                     } else {
-                        if (glen > 0) {
+                        if (givenNameLength > 0) {
                             utils.updateFilter(vm, 'match:contributors.givenName:' + contributor.givenName, true);
                         }
-                        if (flen > 0) {
+                        if (familyNameLength > 0) {
                             utils.updateFilter(vm, 'match:contributors.familyName:' + contributor.familyName, true);
                         }
                     }
