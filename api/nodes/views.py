@@ -447,9 +447,11 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
             if self.kwargs['path'] == '/':
                 return list(self.get_node().get_addon('osfstorage').get_root().children)
 
-            fobj = OsfStorageFileNode.find_one(
+            fobj = get_object_or_error(
+                OsfStorageFileNode,
                 Q('node', 'eq', self.get_node()._id) &
-                Q('path', 'eq', self.kwargs['path'])
+                Q('_id', 'eq', self.kwargs['path'].strip('/')) &
+                Q('is_file', 'eq', not self.kwargs['path'].endswith('/'))
             )
 
             if fobj.is_file:
