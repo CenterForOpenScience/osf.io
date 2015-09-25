@@ -1,8 +1,9 @@
 import os
 import uuid
 import httplib
-import functools
+import datetime
 
+import jwt
 import furl
 from flask import request
 from flask import redirect
@@ -147,23 +148,7 @@ def make_auth(user):
     return {}
 
 
-def restrict_addrs(*addrs):
-    def wrapper(func):
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            remote = request.remote_addr
-            if remote not in addrs:
-                raise HTTPError(httplib.FORBIDDEN)
-            return func(*args, **kwargs)
-        return wrapped
-    return wrapper
-
-
-restrict_waterbutler = restrict_addrs(*settings.WATERBUTLER_ADDRS)
-
-
 @collect_auth
-@restrict_waterbutler
 def get_auth(auth, **kwargs):
     cas_resp = None
     if not auth.user:
@@ -185,9 +170,14 @@ def get_auth(auth, **kwargs):
             auth.user = User.from_cookie(request.args.get('cookie'))
 
     try:
-        action = request.args['action']
-        node_id = request.args['nid']
-        provider_name = request.args['provider']
+        data = jwt.decode(request.args.get('payload', ''), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)
+    except jwt.InvalidTokenError:
+        raise HTTPError(httplib.FORBIDDEN)
+
+    try:
+        action = data['action']
+        node_id = data['nid']
+        provider_name = data['provider']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
@@ -203,20 +193,21 @@ def get_auth(auth, **kwargs):
 
     try:
         credentials = provider_settings.serialize_waterbutler_credentials()
-        settings = provider_settings.serialize_waterbutler_settings()
+        waterbutler_settings = provider_settings.serialize_waterbutler_settings()
     except exceptions.AddonError:
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
-    return {
+    return jwt.encode({
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
         'credentials': credentials,
-        'settings': settings,
+        'settings': waterbutler_settings,
         'callback_url': node.api_url_for(
             ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
             _absolute=True,
         ),
-    }
+    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)
 
 
 LOG_ACTION_MAP = {
@@ -231,7 +222,6 @@ LOG_ACTION_MAP = {
 
 
 @must_be_signed
-@restrict_waterbutler
 @must_be_valid_project
 def create_waterbutler_log(payload, **kwargs):
     try:
