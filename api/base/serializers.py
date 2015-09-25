@@ -106,6 +106,8 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         the link is represented as a links object with 'href' and 'meta' members.
         """
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
+        if not url:
+            return {}
 
         meta = {}
         for key in self.meta or {}:
@@ -120,6 +122,9 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                         detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
                         parameter='related_counts'
                     )
+        # JSON-API requires that the self link is just a URL
+        if self.link_type in ('self', 'href'):
+            return {'links': {self.link_type: url}}
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 

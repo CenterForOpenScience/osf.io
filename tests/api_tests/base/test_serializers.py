@@ -25,6 +25,8 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url)
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
+            if relation == {}:
+                continue
             link = relation['links'].values()[0]
             assert_not_in('count', link['meta'])
 
@@ -33,6 +35,8 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': True})
         relationships = res.json['data']['relationships']
         for key, relation in relationships.iteritems():
+            if relation == {}:
+                continue
             field = NodeSerializer._declared_fields[key]
             if (field.meta or {}).get('count'):            
                 link = relation['links'].values()[0]
@@ -43,6 +47,8 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': False})
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
+            if relation == {}:
+                continue
             link = relation['links'].values()[0]
             assert_not_in('count', link['meta'])
 
@@ -50,3 +56,13 @@ class TestApiBaseSerializers(ApiTestCase):
 
         res = self.app.get(self.url, params={'related_counts': 'fish'}, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
+
+    def test_self_link_is_unwrapped_url(self):
+        res = self.app.get(self.url)
+
+        assert_true(isinstance(res.json['data']['links']['self'], basestring))
+
+    def test_null_link_formatting(self):
+        res = self.app.get(self.url)
+
+        assert_equal(res.json['data']['relationships']['parent'], {})
