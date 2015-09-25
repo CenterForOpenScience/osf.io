@@ -66,8 +66,8 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
             if obj.is_disabled:
                 raise Gone(detail='The requested user is no longer available.')
         else:
-            if hasattr(obj, 'is_active'):
-                if not getattr(obj, 'is_active', False):
+            if hasattr(obj, 'is_active') or hasattr(obj, 'is_deleted'):
+                if not getattr(obj, 'is_active', False) or getattr(obj, 'is_deleted', False):
                     if display_name is None:
                         raise Gone
                     else:
