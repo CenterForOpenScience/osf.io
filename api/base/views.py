@@ -77,5 +77,5 @@ def root(request, format=None):
         }
     })
 
-def error_404(request, format=None, *pargs, **kwargs):
+def error_404(request, format=None, *args, **kwargs):
     return HttpResponse('{"errors":[{"detail":"Not found."}]}', status=404, content_type='application/json')
