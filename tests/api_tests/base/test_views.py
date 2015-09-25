@@ -15,7 +15,7 @@ from tests import factories
 from api.base.settings.defaults import API_BASE
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
-from website.settings.defaults import DEBUG_MODE
+from website.settings import DEBUG_MODE
 
 from framework.auth.oauth_scopes import CoreScopes
 
