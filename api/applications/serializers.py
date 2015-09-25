@@ -70,4 +70,4 @@ class ApiOAuth2ApplicationDetailSerializer(ApiOAuth2ApplicationSerializer):
     Overrides ApiOAuth2ApplicationSerializer to make id required.
     """
 
-    id = IDField(source='_id', required=True)
+    id = IDField(source='client_id', required=True, help_text='The client ID for this application (automatically generated)')
