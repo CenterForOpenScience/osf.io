@@ -5,12 +5,12 @@ from rest_framework.reverse import reverse
 from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
 
-from api.base.utils import absolute_reverse
-
 from website import settings
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
+from api.base import utils
+from api.base.exceptions import InvalidQueryStringError, Conflict
 
 def _rapply(d, func, *args, **kwargs):
     """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
@@ -38,6 +38,31 @@ def _url_val(val, obj, serializer, **kwargs):
         return getattr(serializer, val)(obj)
     else:
         return val
+
+
+class IDField(ser.CharField):
+    def __init__(self, **kwargs):
+        kwargs['label'] = 'ID'
+        super(IDField, self).__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        update_methods = ['PUT', 'PATCH']
+        if self.context['request'].method in update_methods:
+            if self.root.instance._id != data:
+                raise Conflict()
+        return super(IDField, self).to_internal_value(data)
+
+
+class TypeField(ser.CharField):
+    def __init__(self, **kwargs):
+        kwargs['write_only'] = True
+        kwargs['required'] = True
+        super(TypeField, self).__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        if self.root.Meta.type_ != data:
+            raise Conflict()
+        return super(TypeField, self).to_internal_value(data)
 
 
 class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
@@ -82,15 +107,20 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         """
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
 
-        if self.meta:
-            meta = {}
-            for key in self.meta:
-                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
-            self.meta = meta
-
-            return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
-        else:
-            return {'links': {self.link_type: url}}
+        meta = {}
+        for key in self.meta or {}:
+            if key == 'count':
+                show_related_counts = self.context['request'].query_params.get('related_counts', False)
+                if utils.is_truthy(show_related_counts):
+                    meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+                elif utils.is_falsy(show_related_counts):
+                    continue
+                else:
+                    raise InvalidQueryStringError(
+                        detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
+                        parameter='related_counts'
+                    )
+        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
 class LinksField(ser.Field):
@@ -128,7 +158,7 @@ class LinksField(ser.Field):
 
     def to_representation(self, obj):
         ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
-        if hasattr(obj, 'get_absolute_url'):
+        if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = obj.get_absolute_url()
         return ret
 
@@ -184,7 +214,7 @@ class Link(object):
         for item in kwarg_values:
             if kwarg_values[item] is None:
                 return None
-        return absolute_reverse(
+        return utils.absolute_reverse(
             self.endpoint,
             args=arg_values,
             kwargs=kwarg_values,
@@ -299,11 +329,23 @@ class JSONAPISerializer(ser.Serializer):
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
-        """After validation, scrub HTML from validated_data prior to saving (for create and update views)"""
+        """
+        After validation, scrub HTML from validated_data prior to saving (for create and update views)
+
+        Exclude 'type' and '_id' from validated_data.
+
+        """
         ret = super(JSONAPISerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
             self._validated_data = _rapply(self.validated_data, strip_html)
+
+        self._validated_data.pop('type', None)
+
+        update_methods = ['PUT', 'PATCH']
+        if self.context['request'].method in update_methods:
+            self._validated_data.pop('_id', None)
+
         return ret
 
 

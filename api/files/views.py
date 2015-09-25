@@ -13,6 +13,7 @@ from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
 from api.files.permissions import CheckedOutOrAdmin
 from api.files.serializers import FileSerializer
+from api.files.serializers import FileDetailSerializer
 from api.files.serializers import FileVersionSerializer
 
 
@@ -47,7 +48,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    serializer_class = FileSerializer
+    serializer_class = FileDetailSerializer
 
     def get_node(self):
         return self.get_file().node
@@ -62,7 +63,6 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
         base_permissions.TokenHasScope,
         PermissionWithGetter(ContributorOrPublic, 'node'),
     )
