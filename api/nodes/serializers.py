@@ -33,6 +33,7 @@ class JSONAPINodeListSerializer(JSONAPIListSerializer):
     the request to be in the serializer context.
     """
 
+    # Overrides JSONAPIListSerialize which doesn't support multiple update by default.
     def update(self, instance, validated_data):
         data_mapping = {item.get('_id', None): item for item in validated_data}
         request = self.context['request']

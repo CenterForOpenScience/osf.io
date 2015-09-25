@@ -24,7 +24,7 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
-    NodeContributorDetailSerializer,
+    NodeContributorDetailSerializer
 )
 from api.nodes.permissions import (
     AdminOrPublic,
@@ -174,6 +174,10 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
 
     # overrides ListBulkCreateUpdateDestroyAPIView
     def get_serializer(self, *args, **kwargs):
+        """
+         Adds many=True to serializer if bulk operation.
+        """
+
         if "data" in kwargs:
             data = kwargs["data"]
 
@@ -184,6 +188,9 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
 
     # overrides ListBulkCreateUpdateDestroyAPIView
     def get_serializer_class(self):
+        """
+        Use NodeDetailSerializer which requires 'id'
+        """
         serializer_class = NodeSerializer
         if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
             serializer_class = NodeDetailSerializer
@@ -191,6 +198,9 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
 
     # overrides ListBulkCreateUpdateDestroyView
     def create(self, request, *args, **kwargs):
+        """
+        Correctly formats both bulk and single POST response
+        """
         response = ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
         if 'data' in response.data:
             return response
@@ -208,10 +218,17 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
 
     # overrides ListBulkCreateUpdateDestroyAPIView
     def bulk_update(self, request, *args, **kwargs):
+        """
+        Correctly formats bulk PUT/PATCH response
+        """
         response = ListBulkCreateUpdateDestroyAPIView.bulk_update(self, request, *args, **kwargs)
         return Response({'data': response.data}, status=status.HTTP_200_OK)
 
+    # Overrides ListBulkCreateUpdateDestroyAPIView
     def bulk_destroy(self, request, *args, **kwargs):
+        """
+        Handles bulk destroy of nodes. Handles permissions and enforces bulk limit.
+        """
         user = self.request.user
         node_list = []
         if not request.data or 'csrfmiddlewaretoken' in request.data:
@@ -236,6 +253,7 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    # Overrides ListBulkCreateUpdateDestroyAPIView
     def perform_destroy(self, instance):
         user = self.request.user
         auth = Auth(user)
