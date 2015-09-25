@@ -48,8 +48,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     If your file or folder is stored on a non-OSF provider, the file metadata will be retrieved if not already present
     in the system.  Otherwise, the cached metadata will be presented.  To force metadata retrieval, you'll need to issue
-    a GET request to the Node Files List endpoint.  **TODO: do we provide a link to this?  If not, tell how to construct
-    the url.**
+    a GET request to the Node Files List endpoint.
 
     Both files and folders are available through the Files API and are distinguished by the `kind` attribute ("file" for
     files, "folder" for folders).  Not all actions and relationships are relevent to both files and folders, so the
@@ -308,13 +307,23 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
 
     <!--- Copied Spiel from FileVersionDetail -->
 
-    **TODO: import Spiel from FileVersionDetail**
+    A specific version of an uploaded file.  Note that the version is tied to the id/path, so two versions of the same
+    file could have completely different contents and formats.  That's on you, though.  Don't do that.
+
+    Unlike the OSF File entity which can represent files and folders, FileVersions only ever represent files. When a
+    file is first uploaded through the API it is assigned version 1.  Each time it is updated through the API, the
+    version number is incremented.
 
     ##FileVersion Attributes
 
     <!--- Copied Attributes from FileVersionDetail -->
 
-    **TODO: import Attributes from FileVersionDetail**
+    For an OSF FileVersion entity the API `type` is "file_versions".
+
+        name          type     description
+        ---------------------------------------------------------------------------------
+        size          integer  size of file in bytes
+        content_type  string   MIME content-type for the file. May be null if file is stored locally.
 
     ##Links
 

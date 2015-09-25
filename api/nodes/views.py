@@ -140,7 +140,20 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     <!--- Copied Attributes from NodeDetails -->
 
-    **TODO: import Attributes from NodeDetails**
+    OSF Node entities have the "nodes" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        title          string             title of project or component
+        description    string             description of the node
+        category       string             node category, must be one of the allowed values
+        date_created   iso8601 timestamp  timestamp that the node was created
+        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        tags           array of strings   list of tags that describe the node
+        registration   boolean            has this project been registered?
+        collection     boolean            is this node a collection of other nodes?
+        dashboard      boolean            is this node visible on the user dashboard?
+        public         boolean            has this node been made publicly-visible?
 
     ##Links
 
@@ -374,7 +387,14 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     <!--- Copied Attributes from NodeContributorDetail -->
 
-    **TODO: import Attributes from NodeContributorDetail**
+    `type` is "contributors"
+
+        name           type     description
+        ---------------------------------------------------------------------------------
+        bibliographic  boolean  Whether the user will be included in citations for this node or not
+        permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
+
+    All other attributes are inherited from the User object.
 
     ##Links
 
@@ -604,7 +624,20 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 
     <!--- Copied Attributes from NodeDetail -->
 
-    **TODO: import Attributes from NodeDetail**
+    OSF Node entities have the "nodes" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        title          string             title of project or component
+        description    string             description of the node
+        category       string             node category, must be one of the allowed values
+        date_created   iso8601 timestamp  timestamp that the node was created
+        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        tags           array of strings   list of tags that describe the node
+        registration   boolean            has this project been registered?
+        collection     boolean            is this node a collection of other nodes?
+        dashboard      boolean            is this node visible on the user dashboard?
+        public         boolean            has this node been made publicly-visible?
 
     ##Links
 
@@ -616,10 +649,27 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 
     <!--- Copied Creating New Node from NodeList -->
 
-    **TODO: import Creating New Nodes from NodeList**
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "nodes", # required
+                           "attributes": {
+                             "title":       {title},         # mandatory
+                             "category":    {category},      # mandatory
+                             "description": {description},   # optional
+                             "tags":        [{tag1}, {tag2}] # optional
+                           }
+                         }
+                       }
+        Success:       201 CREATED + node representation
 
-    To create a child node of the current node, issue a POST request to this endpoint.  The request and response format
-    are the same as for creating an unparented node via the [node list endpoint](/v2/nodes/).
+    To create a child node of the current node, issue a POST request to this endpoint.  The `title` and `category`
+    fields are mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  All
+    other fields not listed above will be ignored.  If the node creation is successful the API will return a 201
+    response with the respresentation of the new node in the body.  For the new node's canonical URL, see the
+    `links.self` field of the response.
 
     ##Query Params
 
@@ -629,7 +679,10 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 
     <!--- Copied Query Params from NodeList -->
 
-    **TODO: import Query Params from NodeList**
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 
@@ -803,7 +856,22 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
 
     <!--- Copied Attributes from FileDetail -->
 
-    **TODO: import Attributes from FileDetail**
+    For an OSF File entity, the `type` is "files" regardless of whether the entity is actually a file or folder.  They
+    can be distinguished by the `kind` attribute.  Files and folders use the same representation, but some attributes may
+    be null for one kind but not the other. `size` will be null for folders.  A list of storage provider keys can be
+    found [here](/v2/#storage-providers).
+
+        name          type               description
+        ---------------------------------------------------------------------------------
+        name          string             name of the file or folder; use for display
+        kind          string             "file" or "folder"
+        path          url path           unique path for this entity, used in "move" actions
+        size          integer            size of file in bytes, null for folders
+        provider      string             storage provider for this file. "osfstorage" if stored on the OSF.  Other
+                                         examples include "s3" for Amazon S3, "googledrive" for Google Drive, "box"
+                                         for Box.com.
+        last_touched  iso8601 timestamp  last time the metadata for the file was retrieved. only applies to non-OSF
+                                         storage providers.
 
     ##Links
 

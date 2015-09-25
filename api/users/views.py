@@ -56,7 +56,16 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     <!--- Copied Attributes From UserDetail -->
 
-    **TODO: import Attributes from UserDetail**
+    OSF User entities have the "users" `type`.
+
+        name               type               description
+        ----------------------------------------------------------------------------------------
+        full_name          string             full name of the user; used for display
+        given_name         string             given name of the user; for bibliographic citations
+        middle_names       string             middle name of user; for bibliographic citations
+        family_name        string             family name of user; for bibliographic citations
+        suffix             string             suffix of user's name for bibliographic citations
+        date_registered    iso8601 timestamp  timestamp when the user's account was created
 
     ##Links
 
@@ -204,7 +213,20 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
     <!--- Copied Attributes from NodeDetail -->
 
-    **TODO: import Attributes from NodeDetail**
+    OSF Node entities have the "nodes" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        title          string             title of project or component
+        description    string             description of the node
+        category       string             node category, must be one of the allowed values
+        date_created   iso8601 timestamp  timestamp that the node was created
+        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        tags           array of strings   list of tags that describe the node
+        registration   boolean            has this project been registered?
+        collection     boolean            is this node a collection of other nodes?
+        dashboard      boolean            is this node visible on the user dashboard?
+        public         boolean            has this node been made publicly-visible?
 
     ##Links
 
@@ -222,7 +244,10 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
 
     <!--- Copied Query Params from NodeList -->
 
-    **TODO: import Query Params from NodeList**
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
     """
