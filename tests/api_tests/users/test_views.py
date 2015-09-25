@@ -738,7 +738,7 @@ class TestDeactivatedUser(ApiTestCase):
         super(TestDeactivatedUser, self).setUp()
         self.user = AuthUserFactory()
 
-    def test_deactivated_user_returns_400_response(self):
+    def test_requesting_as_deactivated_user_returns_400_response(self):
         url = '/{}users/{}/'.format(API_BASE, self.user._id)
         res = self.app.get(url, auth=self.user.auth , expect_errors=True)
         assert_equal(res.status_code, 200)
@@ -746,6 +746,15 @@ class TestDeactivatedUser(ApiTestCase):
         self.user.save()
         res = self.app.get(url, auth=self.user.auth , expect_errors=True)
         assert_equal(res.status_code, 400)
+
+    def test_requesting_deactivated_user_returns_410_response(self):
+        url = '/{}users/{}/'.format(API_BASE, self.user._id)
+        res = self.app.get(url, auth=self.user.auth , expect_errors=True)
+        assert_equal(res.status_code, 200)
+        self.user.is_disabled = True
+        self.user.save()
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 410)
 
 
 class TestExceptionFormatting(ApiTestCase):
