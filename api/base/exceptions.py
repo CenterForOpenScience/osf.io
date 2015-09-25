@@ -57,18 +57,20 @@ def json_api_exception_handler(exc, context):
         response.data = {'errors': errors}
 
         # For bulk operations: If validation error, return request data with response.
-        request_data = context['request'].data
-        if response.status_code == 400 and isinstance(request_data, list):
-            response_data = []
-            for data in request_data:
-                formatted = {'type': data.pop('type')}
-                id = data.pop('id')
-                if id is not None:
-                    formatted['id'] = id
-                formatted['attributes'] = data
-                response_data.append(formatted)
 
-            response.data['meta'] = response_data
+        if response.status_code == 400:
+            request_data = context['request'].data
+            if isinstance(request_data, list):
+                response_data = []
+                for data in request_data:
+                    formatted = {'type': data.pop('type')}
+                    id = data.pop('id')
+                    if id is not None:
+                        formatted['id'] = id
+                    formatted['attributes'] = data
+                    response_data.append(formatted)
+
+                response.data['meta'] = response_data
 
     return response
 
