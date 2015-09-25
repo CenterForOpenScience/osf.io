@@ -306,6 +306,12 @@ class JSONAPISerializer(ser.Serializer):
         embeds = self.context.get('embed', [])
         fields = [field for field in self.fields.values() if not field.write_only]
 
+        for item in set(embeds.keys()) - set(fields):
+            raise InvalidQueryStringError(
+                detail="Field '{0}' is not embeddable.".format(item),
+                parameter='embed'
+            )
+
         for field in fields:
             try:
                 attribute = field.get_attribute(obj)

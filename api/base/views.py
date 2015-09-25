@@ -4,11 +4,12 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
 
+from api.base.utils import absolute_reverse
 from api.users.serializers import UserSerializer
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
-    def _get_embed_partial(self, field_name):
+    def _get_embed_partial(self, field_name, field):
         """Create a partial function to fetch the values of an embedded field. A basic
         example is to include a Node's children in a single response.
 
@@ -16,13 +17,12 @@ class JSONAPIBaseView(generics.GenericAPIView):
         results for
         :return function object -> dict:
         """
-        embed_field = self.serializer_class._declared_fields[field_name]
         def partial(item):
-            embed_value = getattr(item, embed_field.lookup_field, None)
+            embed_value = getattr(item, field.lookup_field, None)
             view, view_args, view_kwargs = resolve(
                 reverse(
-                    embed_field.view_name,
-                    kwargs={embed_field.lookup_url_kwarg: embed_value}
+                    field.view_name,
+                    kwargs={field.lookup_url_kwarg: embed_value}
                 )
             )
             view_kwargs.update({
@@ -47,8 +47,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         embeds_partials = {}
         for embed in embeds:
             embed_field = self.serializer_class._declared_fields.get(embed)
-            if embed_field and getattr(embed_field, 'embeddable', False):
-                embeds_partials[embed] = self._get_embed_partial(embed)
+            embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
         context.update({
             'embed': embeds_partials
         })
