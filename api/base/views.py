@@ -6,14 +6,14 @@ from api.users.serializers import UserSerializer
 
 @api_view(('GET',))
 def root(request, format=None):
-    """Welcome to the V2 Open Science Framework API. With this API you can programatically access users,
-    projects, components, and files from the [Open Science Framework](https://osf.io/). The Open Science
-    Framework (OSF) is a free, open-source service maintained by the [Center for Open Science](http://cos.io/).
+    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, and files
+    from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
+    maintained by the [Center for Open Science](http://cos.io/).
 
-    The OSF stores, documents, and archives study designs, materials, data, manuscripts, or anything else associated
-    with your research during the research process. Every project and file on the OSF has a permanent unique
-    identifier, and every registration (a permanent, time-stamped version of your projects and files) can be assigned
-    a DOI/ARK. You can use the OSF to measure your impact by monitoring the traffic to projects and files you make
+    The OSF serves as a repository and archive for study designs, materials, data, manuscripts, or anything else
+    associated with your research during the research process. Every project and file on the OSF has a permanent unique
+    identifier, and every registration (a permanent, time-stamped version of your projects and files) can be assigned a
+    DOI/ARK. You can use the OSF to measure your impact by monitoring the traffic to projects and files you make
     public. With the OSF you have full control of what parts of your research are public and what remains private.
 
     Beta notice: This API is currently a beta service.  You are encouraged to use the API and will receive support
@@ -40,35 +40,42 @@ def root(request, format=None):
 
     ###Common Actions
 
-    Every endpoint in the OSF API responds to `GET`, `HEAD`, and `OPTION` requests.  You must have adequate
-    permissions to interact with the endpoint.  Unauthorized use will result in 401 Aunuthorized or 403 Forbidden
-    responses.  Use `HEAD` to probe an endpoint and make sure your headers are well-formed.  `GET` will return a
-    JSON representation of the entity or collection referenced by the endpoint.  An `OPTIONS` request will return a
-    JSON object that describes the endpoint, including the name, a description, the acceptable request formats, the
-    allowed response formats, and any actions available via the endpoint.
+    Every endpoint in the OSF API responds to `GET`, `HEAD`, and `OPTION` requests.  You must have adequate permissions
+    to interact with the endpoint.  Unauthorized use will result in 401 Unauthorized or 403 Forbidden responses.  Use
+    `HEAD` to probe an endpoint and make sure your headers are well-formed.  `GET` will return a representation of the
+    entity or entity collection referenced by the endpoint.  An `OPTIONS` request will return a JSON object that describes the
+    endpoint, including the name, a description, the acceptable request formats, the allowed response formats, and any
+    actions available via the endpoint.
 
     ###Filtering
 
-    Collections can be filtered by adding a query parameter in the form:
+    Entity collections can be filtered by adding a query parameter in the form:
 
         filter[<fieldname>]=<matching information>
-    For example, if you were trying to find [Lise Meitner](http://en.wikipedia.org/wiki/Lise_Meitner):
 
-        /users/?filter[fullname]=meitn
+    String queries are filtered using substring matching. For example, if you were trying to find [Lise
+    Meitner](http://en.wikipedia.org/wiki/Lise_Meitner):
+
+        /users/?filter[full_name]=meitn
+
     You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.
 
-        /users/?filter[fullname]=lise&filter[family_name]=mei
+        /users/?filter[full_name]=lise&filter[family_name]=mei
+
+    Boolean fields should be queried with `true` or `false`.
+
+        /nodes/?filter[registered]=true
 
     ###Pagination
 
-    All collection endpoints respond to the `page` query parameter behavior as described in the [JSON-API pagination
+    All entity collection endpoints respond to the `page` query parameter behavior as described in the [JSON-API pagination
     spec](http://jsonapi.org/format/1.0/#crud).
 
     ###Formatting POST/PUT/PATCH request bodies
 
     The OSF API follows the JSON-API spec for (create and update requests)[http://jsonapi.org/format/#crud].  This means
     all request bodies must be wrapped with some metadata.  Each request body must be an object with a `data` key
-    containing at least a `type` member.  The value of the `type` member must agree with the `type` of the entitys
+    containing at least a `type` member.  The value of the `type` member must agree with the `type` of the entities
     represented by the endpoint.  If not, a 409 Conflict will be returned.  The request should also contain an
     `attributes` member with an object containing the key-value pairs to be created/updated.  PUT/PATCH requests must
     also have an `id` key that matches the id part of the endpoint.  If the `id` key does not match the id path part, a
@@ -98,10 +105,21 @@ def root(request, format=None):
 
     + `relationships`
 
-    Relationships are urls to other entities or collections that have a relationship to the entity. For example, the
-    node entity provides a `contributors` relationship that points to the endpoint to retreive all contributors to that
-    node.  It is reccommended to use these links rather than to id-filter of general collection endpoints.  They'll be
-    faster, easier, and less error-prone.
+    Relationships are urls to other entities or entity collections that have a relationship to the entity. For example,
+    the node entity provides a `contributors` relationship that points to the endpoint to retreive all contributors to
+    that node.  It is recommended to use these links rather than to id-filter general entity collection endpoints.
+    They'll be faster, easier, and less error-prone.  Generally a relationship will have the following structure:
+
+        {relationship_name}: {
+            "links": {
+                "related": {
+                    "href": {url_to_related_entity_or_entity_collection},
+                    "meta": {}
+                }
+            }
+        }
+
+    If there are no related entities, `href` will be null.
 
     + `links`
 
@@ -110,11 +128,11 @@ def root(request, format=None):
     should be sent.  In-depth documentation of actions is available by navigating to the `self` link in the Browsable
     API.  Most entities will also provide an `html` link that directs to the entity's page on the [OSF](http://osf.io/).
 
-    ###Collections
+    ###Entity Collections
 
-    Collection endpoints return a list of entities and an additional data structure with pagination links, such as
-    "next", "prev", "first", and "last". The OSF API limits all collection responses to a maximum of 10 entities.  The
-    response object has two keys:
+    Entity ollection endpoints return a list of entities and an additional data structure with pagination links, such as
+    "next", "prev", "first", and "last". The OSF API limits all entity collection responses to a maximum of 10 entities.
+    The response object has two keys:
 
     + `data`
 
@@ -130,9 +148,9 @@ def root(request, format=None):
 
     ###PUT vs. PATCH
 
-    For most endpoints that support updates via PUT requests, we also allow PATCH updates.  The only difference is that
-    PUT requests require all mandatory attributes to be set, even if their value is unchanged.  PATCH requests may omit
-    mandatory attributes, whose value will be unchaged.
+    For most endpoints that support updates via PUT requests, we also allow PATCH updates. The only difference is that
+    PUT requests require all mandatory attributes to be set, even if their value is unchanged. PATCH requests may omit
+    mandatory attributes, whose value will be unchanged.
 
     ###Attribute Validation
 

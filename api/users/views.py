@@ -48,7 +48,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     """List of users registered on the OSF. *Read-only*.
 
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
-    user, meaning a re-fetch is not necessary.
+    user, meaning additional requests to an individual user's detail view are not necessary.
 
     The subroute [`/me/`](me/) is a special endpoint that always points to the currently logged-in user.
 
@@ -84,6 +84,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
     Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
 
     #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -205,9 +206,9 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
     Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
-    meaning a re-fetch is not necessary. If the user id in the path is the same as the logged-in user, all nodes will be
-    visible.  Otherwise, you will only be able to see the other user's publicly-visible nodes.  The special user id `me`
-    can be used to represent the currently logged-in user.
+    meaning additional requests to an individual node's detail view are not necessary. If the user id in the path is the
+    same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to see the other user's
+    publicly-visible nodes.  The special user id `me` can be used to represent the currently logged-in user.
 
     ##Node Attributes
 
@@ -250,6 +251,7 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
     that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

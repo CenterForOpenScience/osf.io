@@ -128,17 +128,19 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
-    node, meaning a re-fetch is not necessary.
+    node, meaning additional requests to an individual node's detail view are not necessary.
+
+    <!--- Copied Spiel from NodeDetail -->
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
     is that a project is the top-level node, and components are children of the project. There is also a [category
-    field](/v2/#osf-node-categories) that includes the option of project. The categorization essentially determines
+    field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
     a category other than project, and children nodes may have a category of project.
 
     ##Node Attributes
 
-    <!--- Copied Attributes from NodeDetails -->
+    <!--- Copied Attributes from NodeDetail -->
 
     OSF Node entities have the "nodes" `type`.
 
@@ -170,8 +172,8 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
                          "data": {
                            "type": "nodes", # required
                            "attributes": {
-                             "title":       {title},         # mandatory
-                             "category":    {category},      # mandatory
+                             "title":       {title},         # required
+                             "category":    {category},      # required
                              "description": {description},   # optional
                              "tags":        [{tag1}, {tag2}] # optional
                            }
@@ -245,7 +247,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
     is that a project is the top-level node, and components are children of the project. There is also a [category
-    field](/v2/#osf-node-categories) that includes the option of project. The categorization essentially determines
+    field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
     a category other than project, and children nodes may have a category of project.
 
@@ -291,7 +293,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     ###Parent
 
     If this node is a child node of another node, the parent's canonical endpoint will be available in the
-    `parent.links.self.href` key.
+    `parent.links.self.href` key.  Otherwise, it will be null.
 
     ##Links
 
@@ -411,7 +413,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
                          "data": {
                            "type": "contributors", # required
                            "attributes": {
-                             "id":            {user_id},             # mandatory
+                             "id":            {user_id},             # required
                              "bibliographic": true|false,            # optional
                              "permission":    "read"|"write"|"admin" # optional
                            }
@@ -656,8 +658,8 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
                          "data": {
                            "type": "nodes", # required
                            "attributes": {
-                             "title":       {title},         # mandatory
-                             "category":    {category},      # mandatory
+                             "title":       {title},         # required
+                             "category":    {category},      # required
                              "description": {description},   # optional
                              "tags":        [{tag1}, {tag2}] # optional
                            }
@@ -666,10 +668,9 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
         Success:       201 CREATED + node representation
 
     To create a child node of the current node, issue a POST request to this endpoint.  The `title` and `category`
-    fields are mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  All
-    other fields not listed above will be ignored.  If the node creation is successful the API will return a 201
-    response with the respresentation of the new node in the body.  For the new node's canonical URL, see the
-    `links.self` field of the response.
+    fields are mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  If the
+    node creation is successful the API will return a 201 response with the respresentation of the new node in the body.
+    For the new node's canonical URL, see the `links.self` field of the response.
 
     ##Query Params
 
