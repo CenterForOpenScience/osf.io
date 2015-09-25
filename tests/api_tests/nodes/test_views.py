@@ -1134,6 +1134,7 @@ class TestNodeDelete(NodeCRUDTestCase):
 
     def test_requesting_deleted_returns_410(self):
         self.public_project.is_deleted = True
+        self.public_project.save()
         res = self.app.get(self.public_url, expect_errors=True)
         assert_equal(res.status_code, 410)
         assert 'detail' in res.json['errors'][0]
