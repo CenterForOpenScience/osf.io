@@ -135,7 +135,10 @@
                 <div class="col-sm-12 col-xs-6">
                     <div class="panel panel-default">
                         <div class="panel-heading" data-bind="attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false" onclick="toggleIcon(this)">
-                            <span>{{ institution }}</span>
+                            <div class="header-content">
+                                <h5>{{ institution }}</h5>
+                                <span style="display: block; font-style: italic; font-size: 75%">{{ startMonth }} {{startYear }} - {{ endView }}</span>
+                            </div>
                             <div class="pull-right">
                                 <i class="fa fa-angle-down toggle-icon"></i>
                             </div>

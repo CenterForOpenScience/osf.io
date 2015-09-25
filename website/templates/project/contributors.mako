@@ -21,11 +21,15 @@
                     <span>
                         <i class="fa fa-search"></i>
                     </span>
-                    <input type="text" class="searchable"/>
+                    <input type="text" search=".nameSearch" class="searchable"/>
+                    <span>
+                        <i class="fa fa-search"></i>
+                    </span>
+                    <input type="text" search=".permission-search" class="searchable"/>
                     <div class="btn-group" role="group" class="filtergroup">
-                        <button id="admin-filter-btn" type="button" class="btn btn-default filter-btn">Admins</button>
-                        <button id="write-filter-btn" type="button" class="btn btn-default filter-btn">Read + Write</button>
-                        <button id="read-filter-btn" type="button" class="btn btn-default filter-btn">Read</button>
+                        <button type="button" class="btn btn-default filter-btn" filter=".permission-filter" match="Administrator">Admins</button>
+                        <button type="button" class="btn btn-default filter-btn" filter=".permission-filter" match="Read + Write">Read + Write</button>
+                        <buttonq type="button" class="btn btn-default filter-btn" filter=".permission-filter" match="Read">Read</buttonq>
                     </div>
 
                 </h3>
@@ -140,10 +144,10 @@
                 <img style='vertical-align: top' data-bind="attr: {src: contributor.gravatar_url}" />
                 <span class="header-content">
                     <span data-bind="ifnot: profileUrl">
-                        <span data-bind="text: contributor.shortname"></span>
+                        <span class="nameSearch" data-bind="text: contributor.shortname"></span>
                     </span>
                     <span data-bind="if: profileUrl">
-                        <a onclick="cancelProp(event)" class="no-sort search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
+                        <a onclick="cancelProp(event)" class="no-sort nameSearch" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
                     </span>
                     <span style="display: block" data-bind="text: curPermission().text + visibleText()"></span>
                 </span>
@@ -153,9 +157,9 @@
             </div>
             <div data-bind="attr: {id: type() + 'Card' + $index()}" class="panel-collapse collapse" data-bind="attr: {aria-labelledby: type() + 'Heading' + $index()}">
                 <div class="panel-body">
+                    <span style="display: none" data-bind="text: curPermission().text" class="permission-filter permission-search"></span>
                     <!-- ko if: contributor.canEdit() -->
                         <h5 style="display: block">Permissions</h5>
-                        <span style="display: none" data-bind="text: curPermission().text" class="permission-search"></span>
                         <span style="display: block" data-bind="visible: notDeleteStaged">
                             <select class="form-control input-sm" data-bind="
                                 options: permissionList,
@@ -253,32 +257,77 @@
             $.fn.filtergroup = function (options) {
                 var settings = $.extend({
                     items: '.items',
-                    fade: 'true',
-                    buttons: [],
                     buttonClass: '.filter-btn',
-                    inputs: []
+                    inputClass: '.searchable'
                 }, options);
 
                 var active = [];
 
-                var fade = function(list){
+                var fade = function(nextDisplayed, displayed) {
 
-
-                    if(action == 'on' ){
-                        if(settings.fade){
-                            element.fadeIn();
+                    for (var i = 0; i < nextDisplayed.length; i++) {
+                        var index = displayed.index(nextDisplayed[i]);
+                        if (index > -1) { //already showing
+                            nextDisplayed.splice(i, 1);
+                            displayed.splice(index, 1);
+                            i--;
                         } else {
-                            element.show();
+                            $(nextDisplayed[i]).fadeIn();
                         }
                     }
-                    if(action == 'off'){
-                        if(settings.fade){
-                            element.fadeOut();
-                        } else {
-                            element.hide();
+                    for (var i = 0; i < displayed.length; i++) {
+                        $(displayed[i]).fadeOut();
+                    }
+                };
+
+                var toggle = function() {
+                    var inputs, activeItems;
+                    inputs = $(settings.inputClass);
+                    activeItems = $();
+                    var displayed = $(settings.items).filter(function() {
+                        var element = $(this);
+                        if(element.css('display') == 'none') {
+                            return false;
+                        }
+                        return true;
+                    });
+
+                    if (active.length == 0) {
+                        activeItems = $(settings.items);
+                    }
+                    for (var i = 0; i < active.length; i++) {
+                        var text, el, content, toggle, selector;
+                        toggle = "#" + active[i];
+                        selector = $(toggle).attr('filter');
+                        text = $(toggle).attr('match');
+                        if (text.length >= 0) {
+                            $(settings.items).each(function() {
+                                el = this.querySelector(selector);
+                                content = jQuery(el).text();
+                                if (content === text) {
+                                    activeItems.push(this);
+                                }
+                            });
                         }
                     }
 
+                    for (var i=0; i < inputs.length; i++) {
+                        var text, el, content, exists, input, selector;
+                        input = inputs[i];
+                        selector = $(input).attr('search');
+                        text = $(input).val().toLowerCase();
+                        if (text.length >= 0) {
+                            $(activeItems).each(function() {
+                                el = this.querySelector(selector);
+                                content = jQuery(el).text().toLowerCase();
+                                exists = content.indexOf(text);
+                                if (exists == -1) {
+                                    activeItems.splice(activeItems.index(this), 1);
+                                }
+                            });
+                        }
+                    }
+                    fade(activeItems, displayed);
                 };
 
                 jQuery(settings.buttonClass).on('click', function () {
@@ -288,70 +337,17 @@
                     } else {
                         active.splice(active.indexOf(this.id), 1);
                     }
-
-                    console.log("filter: name = " + $(settings.inputs[0].input).val() + " buttons: " + active);
+                    toggle();
                 });
 
-
-##                 var el, content;
-##                             $(settings.items).each(function () {
-##                                 el = this.querySelector(settings.selector);
-##                                 content = jQuery(el).text();
-##                                 if (content === settings.match) {
-##                                     fade($(this), 'on');
-##                                 } else {
-##                                     fade($(this), 'off');
-##                                 }
-##                             });
-
-
-
+                return jQuery(settings.inputClass).keyup(function() {
+                    toggle();
+                });
 
             }
         }(jQuery));
 
-        (function($) {
-            $.fn.searchable = function (options) {
-                return this.keyup(function () {
-                    var text, el, content, exists;
-                    text = $(this).val().toLowerCase();
-                    if (text.length >= 0) {
-                        $(settings.items).each(function () {
-                            el = this.querySelector(settings.selector);
-                            content = jQuery(el).text().toLowerCase();
-                            exists = content.indexOf(text);
-                            if (exists != -1) {
-                                fade($(this), 'on');
-                            } else {
-                                fade($(this), 'off');
-                            }
-                        });
-
-                    }
-                });
-            }
-        }(jQuery));
-
-        $('.filtergroup').filtergroup({
-            buttons: [
-                {
-                    selector: '.permission-filter',
-                    match: "Administrator"
-                }, {
-                    selector: '.permission-filter',
-                    match: "Read + Write"
-                }, {
-                    selector: '.permission-filter',
-                    match: "Read"
-                }
-            ],
-            inputs: [
-                {
-                    selector: '.search',
-                    input: '.searchable'
-                }
-            ]
-        })
+        $('.filtergroup').filtergroup();
 </script>
 
 
