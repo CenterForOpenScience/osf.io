@@ -1826,7 +1826,7 @@ var FGToolbar = {
                                 }).fail(function(resp) { // jshint ignore:line
                                     $osf.growl('Error', 'Unable to check-out file.');
                                 }); // jshint ignore:line
-                            })
+                            });
                             window.location.reload();
                         },
                         icon: 'fa fa-sign-out',
