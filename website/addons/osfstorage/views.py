@@ -89,7 +89,10 @@ def osfstorage_get_revisions(file_node, node_addon, payload, **kwargs):
 @decorators.waterbutler_opt_hook
 def osfstorage_copy_hook(source, destination, name=None, **kwargs):
     new_file_node, created = source.copy_under(destination, name=name), httplib.CREATED
-    handle_copy(source_file_node=source, new_file_node=new_file_node, source_node=source.node, dest_node=destination.node)
+    if source.is_folder:
+        handle_folder_copy(destination, new_file_node)
+    else:
+        handle_copy(source_file_node=source, new_file_node=new_file_node, source_node=source.node, dest_node=destination.node)
     return new_file_node.serialized(), created
 
 
@@ -256,6 +259,22 @@ def handle_copy(source_file_node, new_file_node, source_node, dest_node):
         handle_update(new_file_node, dest_node)
 
     source_node.copy_search_file(file_node=source_file_node, new_file_node=new_file_node, dest_node=dest_node)
+
+
+def handle_folder_copy(clone, dest):
+    """ Update search index to reflect the copying of a folder to a new destination.
+
+    :param clone: folder filenode.
+    :param dest: destination folder.
+    """
+    dest_node = dest.node
+
+    for child_node in clone.children:
+        logger.info('cloned: {}'.format(repr(child_node)))
+        if child_node.is_folder:
+            handle_folder_copy(child_node, dest)
+        else:
+            handle_update(child_node, dest_node)
 
 
 def handle_move(file_node, source_node, dest_node):
