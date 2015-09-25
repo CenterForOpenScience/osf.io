@@ -115,6 +115,21 @@ class TestUserDetail(ApiTestCase):
         user_json = res.json['data']
         assert_not_equal(user_json['attributes']['full_name'], self.user_one.fullname)
 
+    def test_get_new_users(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_two._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        user_json = res.json['data']['attributes']
+        assert_equal(user_json['full_name'], self.user_two.fullname)
+        assert_equal(user_json['gitHub'], '')
+        assert_equal(user_json['scholar'], '')
+        assert_equal(user_json['personal_website'], '')
+        assert_equal(user_json['twitter'], '')
+        assert_equal(user_json['linkedIn'], '')
+        assert_equal(user_json['impactStory'], '')
+        assert_equal(user_json['orcid'], '')
+        assert_equal(user_json['researcherId'], '')
+
     def test_get_incorrect_pk_user_not_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
         res = self.app.get(url, auth=self.user_one.auth)
