@@ -2561,7 +2561,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
         """
-        if not self.has_permission(auth.user, ADMIN):
+        if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
             if self.is_registration:
