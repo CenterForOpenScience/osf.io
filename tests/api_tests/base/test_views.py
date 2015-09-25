@@ -37,6 +37,9 @@ class TestApiBaseViews(ApiTestCase):
         view_modules = [name for _, name, _ in pkgutil.iter_modules(['api'])]
         for module in view_modules:
             for name, view in inspect.getmembers(sys.modules['api.{}.views'.format(module)], inspect.isclass):
+                if getattr(view, 'permissions_exempt', False):
+                    # JSONAPIBaseView is expempt from this
+                    continue
                 if hasattr(view, 'permission_classes'):
                     for cls in base_permissions:
                         if isinstance(cls, tuple):

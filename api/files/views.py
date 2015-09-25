@@ -8,6 +8,7 @@ from website.files.models import FileVersion
 
 from api.base.permissions import PermissionWithGetter
 from api.base.utils import get_object_or_error
+from api.base.views import JSONAPIBaseView
 from api.base import permissions as base_permissions
 from api.nodes.permissions import ContributorOrPublic
 from api.nodes.permissions import ReadOnlyIfRegistration
@@ -34,7 +35,7 @@ class FileMixin(object):
         return obj.wrapped()
 
 
-class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
+class FileDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, FileMixin):
     """Details about a specific file.
     """
     permission_classes = (
@@ -58,7 +59,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         return self.get_file()
 
 
-class FileVersionsList(generics.ListAPIView, FileMixin):
+class FileVersionsList(JSONAPIBaseView, generics.ListAPIView, FileMixin):
     """List of versions for the file requested.
     """
     permission_classes = (
@@ -80,7 +81,7 @@ def node_from_version(request, view, obj):
     return view.get_file(check_permissions=False).node
 
 
-class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
+class FileVersionDetail(JSONAPIBaseView, generics.RetrieveAPIView, FileMixin):
     """Details about a specific file version.
     """
     version_lookup_url_kwarg = 'version_id'

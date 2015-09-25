@@ -216,7 +216,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
         node.save()
 
 
-class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -252,7 +252,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         return self.get_queryset_from_request()
 
 
-class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
+class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node.
 
     View, remove from, and change bibliographic and permissions for a given contributor on a given node.
@@ -295,7 +295,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
 
 # TODO: Support creating registrations
-class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
+class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
@@ -325,7 +325,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
+class NodeChildrenList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -379,7 +379,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
-class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
+class NodeLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     """Node Links to other nodes.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -405,7 +405,7 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
         ]
 
 
-class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
+class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixin):
     """Node Link details.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -448,7 +448,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
+class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, NodeMixin):
     """Files attached to a node.
 
     This gives a list of all of the files that are on your project. Because this works with external services, some
@@ -501,7 +501,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
         return list(files_list.children)
 
 
-class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
+class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
@@ -538,7 +538,7 @@ class NodeProvider(object):
         self.pk = node._id
 
 
-class NodeProvidersList(generics.ListAPIView, NodeMixin):
+class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,

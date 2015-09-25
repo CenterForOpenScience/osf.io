@@ -9,6 +9,8 @@ from api.users.serializers import UserSerializer
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
+    permissions_exempt = True
+
     def _get_embed_partial(self, field_name, field):
         """Create a partial function to fetch the values of an embedded field. A basic
         example is to include a Node's children in a single response.
