@@ -433,7 +433,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    NodeContributors may be filtered by their `full_name`, `given_name`, `moddle_name`, `family_name`, `id`,
+    NodeContributors may be filtered by their `full_name`, `given_name`, `middle_names`, `family_name`, `id`,
     `bibliographic`, or `permissions` attributes.  The `description`, and `category` are string fields and will be filtered
     using simple substring matching.  `bibliographic` is a boolean, and can be filtered using truthy values,
     such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in the query will cause the match to fail
