@@ -4,7 +4,6 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import generics
 
-from api.base.utils import absolute_reverse, is_http_error_status
 from api.users.serializers import UserSerializer
 
 class JSONAPIBaseView(generics.GenericAPIView):
@@ -31,9 +30,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
                 'no_embeds': True
             })
             response = view(*view_args, **view_kwargs)
-            if is_http_error_status(response.status_code):  # TODO Remove? Raise?
-                return None
-            return response.data.get('data')
+            return response.data
         return partial
 
     def get_serializer_context(self):
