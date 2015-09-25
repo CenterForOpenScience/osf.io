@@ -20,7 +20,8 @@ def update_file_task(file_node_id, file_url, index=None):
 
     file_node = model.OsfStorageFileNode.load(file_node_id)
     content = requests.get(file_url).content
-    return search.update_file_given_content(file_node, content, index)
+    return search.update_file(file_node, content, index)
+    # return search.update_file_given_content(file_node, content, index)
 
 
 @app.task
