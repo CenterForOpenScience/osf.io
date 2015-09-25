@@ -42,6 +42,9 @@ def _url_val(val, obj, serializer, **kwargs):
 
 
 class IDField(ser.CharField):
+    """
+    ID field that validates that 'id' in the request body is the same as the instance 'id' for single requests
+    """
     def __init__(self, **kwargs):
         kwargs['label'] = 'ID'
         super(IDField, self).__init__(**kwargs)
@@ -56,11 +59,17 @@ class IDField(ser.CharField):
 
 
 class TypeField(ser.CharField):
+    """
+    Type field that validates that 'type' in the request body is the same as the Meta type.
+
+    Also ensures that type is write-only and required.
+    """
     def __init__(self, **kwargs):
         kwargs['write_only'] = True
         kwargs['required'] = True
         super(TypeField, self).__init__(**kwargs)
 
+    # Overrides CharField
     def to_internal_value(self, data):
         if self.root.Meta.type_ != data:
             raise Conflict()
