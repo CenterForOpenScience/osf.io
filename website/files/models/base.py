@@ -20,7 +20,7 @@ from framework.analytics import get_basic_counters
 from website import util
 from website.files import utils
 from website.files import exceptions
-
+from website.search import search
 
 __all__ = (
     'File',
@@ -335,6 +335,7 @@ class FileNode(object):
         Implemented top level so that child class may override it
         and just call super.save rather than self.stored_object.save
         """
+        search.update_file(self)
         self.stored_object.save()
 
     def serialize(self, **kwargs):

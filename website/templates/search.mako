@@ -132,6 +132,12 @@
         <br>
         <!-- /ko -->
     </script>
+    <script type="text/html" id="file">
+        <h4><a href="{{ deep_url }}">{{ name }}</a> (File)</h4>
+        <!-- ko if: tags.length > 0 -->
+        <div data-bind="template: 'tag-cloud'"></div>
+        <!-- /ko -->
+    </script>
     <script type="text/html" id="user">
 
         <div class="row">
