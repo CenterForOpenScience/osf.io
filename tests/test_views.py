@@ -97,7 +97,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
     def test_edit_private_link_empty(self):
         node = ProjectFactory(creator=self.user)
         link = PrivateLinkFactory()
-        link.nodes.append(node.project)
+        link.nodes.append(node)
         link.save()
         url = node.api_url_for("project_private_link_edit")
         res = self.app.post_json(url, {'pk': link._id, 'value': ''}, auth=self.user.auth, expect_errors=True)
@@ -107,7 +107,7 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
     def test_edit_private_link_invalid(self):
         node = ProjectFactory(creator=self.user)
         link = PrivateLinkFactory()
-        link.nodes.append(node.project)
+        link.nodes.append(node)
         link.save()
         url = node.api_url_for("project_private_link_edit")
         res = self.app.post_json(url, {'pk': link._id, 'value': '<a></a>'}, auth=self.user.auth, expect_errors=True)
@@ -211,7 +211,7 @@ class TestProjectViews(OsfTestCase):
         assert_in('Title cannot be blank', res.body)
 
     def test_edit_title_invalid(self):
-        node = ProjectFactory(creator=self.user)
+        node = ProjectFactory(creator=self.user1)
         url = node.api_url_for("edit_node")
         res = self.app.post_json(url, {'name': 'title', 'value': '<a></a>'}, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
