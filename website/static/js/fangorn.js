@@ -1587,8 +1587,6 @@ var FGToolbar = {
                 onclick: ctrl.dismissToolbar,
                 icon : 'fa fa-times'
             }, '');
-        var firstSelected = ctrl.tb.multiselected()[0];
-        var publishedDataverseSelected = (firstSelected.data.provider === 'dataverse' && firstSelected.parent().data.version === 'latest-published');
         templates[toolbarModes.SEARCH] =  [
             m('.col-xs-10', [
                 ctrl.tb.options.filterTemplate.call(ctrl.tb)
@@ -1677,7 +1675,8 @@ var FGToolbar = {
             );
         }
         //multiple selection icons
-        if(items.length > 1 && firstSelected.data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !publishedDataverseSelected ) {
+        if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
+            // Special cased to not show 'delete multiple' for github or published dataverses
             var showDelete = false;
             // Only show delete button if user has edit permissions on at least one selected file
             for (var i = 0, len = items.length; i < len; i++) {
