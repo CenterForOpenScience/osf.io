@@ -12,25 +12,27 @@ def json_api_exception_handler(exc, context):
 
     # Error objects may have the following members. Title and id removed to avoid clash with "title" and "id" field errors.
     top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
+
+    # Resource objects must contain at least 'id' and 'type'
     resource_object_identifiers = ['type', 'id']
+
     errors = []
 
     def dict_error_formatting(errors, error):
+        """
+        Formats all dictionary error messages for both single and bulk requests
+        """
         for error_key, error_description in error.iteritems():
+            if isinstance(error_description, basestring):
+                error_description = [error_description]
+
             if error_key in top_level_error_keys:
-                errors.append({error_key: error_description})
+                errors.append({error_key: error_description[0]})
             elif error_key in resource_object_identifiers:
-                if isinstance(error_description, basestring):
-                    error_description = [error_description]
                 errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
-            elif error_key == 'attributes':
-                if isinstance(error_description, list):
-                    errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
             elif error_key == 'non_field_errors':
                     errors.extend([{'detail': description for description in error_description}])
             else:
-                if isinstance(error_description, basestring):
-                    error_description = [error_description]
                 errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason} for reason in error_description])
 
     if response:
@@ -56,21 +58,20 @@ def json_api_exception_handler(exc, context):
 
         response.data = {'errors': errors}
 
-        # For bulk operations: If validation error, return request data with response.
-
+        # For bulk operations: If 400 error, return request data with response.
         if response.status_code == 400 and "non_field_errors" not in message:
             request_data = context['request'].data
             if isinstance(request_data, list):
-                response_data = []
+                formatted_request_data = []
                 for data in request_data:
                     formatted = {'type': data.pop('type')}
                     id = data.pop('id')
                     if id is not None:
                         formatted['id'] = id
                     formatted['attributes'] = data
-                    response_data.append(formatted)
+                    formatted_request_data.append(formatted)
 
-                response.data['meta'] = response_data
+                response.data['meta'] = {'request_data': formatted_request_data}
 
     return response
 

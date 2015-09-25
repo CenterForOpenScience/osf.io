@@ -606,7 +606,7 @@ class TestNodeBulkCreate(ApiTestCase):
                            [{'pointer': '/data/attributes/title'}, {'pointer': '/data/attributes/title'}])
         assert_items_equal([errors[0]['detail'], errors[1]['detail']],
                            ["This field may not be blank.", "This field may not be blank."])
-        assert_equal(res.json['meta'], [self.empty_project]*2)
+        assert_equal(res.json['meta']['request_data'], [self.empty_project]*2)
 
     def test_bulk_create_limits(self):
         node_create_list = {'data': [self.public_project] * 11}
@@ -850,7 +850,7 @@ class TestNodeBulkUpdate(ApiTestCase):
                            [{'pointer': '/data/attributes/title'}] * 2)
         assert_items_equal([errors[0]['detail'], errors[1]['detail']],
                            ['This field may not be blank.'] * 2)
-        assert_equal(res.json['meta'], self.empty_payload['data'])
+        assert_equal(res.json['meta']['request_data'], self.empty_payload['data'])
 
     def test_bulk_update_id_not_supplied(self):
         res = self.app.put_json_api(self.url, {'data': [{'type': 'nodes', 'attributes': {'title': self.new_title, 'category': self.new_category}}]}, auth=self.user.auth, expect_errors=True)
