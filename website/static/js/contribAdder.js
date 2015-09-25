@@ -25,8 +25,6 @@ function Contributor(data) {
     } else {
         this.displayProjectsInCommon = '';
     }
-    this.added = false;
-
 }
 
 var AddContributorViewModel = oop.extend(Paginator, {
@@ -137,15 +135,9 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 },
                 function(result) {
                     var contributors = result.users.map(function(userData) {
+                        userData.added = (self.contributors().indexOf(userData.id) !== -1);
                         return new Contributor(userData);
                     });
-                    for(var i = 0; i < contributors.length; i++) {
-                        if (self.contributors().indexOf(contributors[i].id) !== -1) {
-                            contributors[i].added = true;
-                        } else {
-                            contributors[i].added = false;
-                        }
-                    }
                     self.results(contributors);
                     self.currentPage(result.page);
                     self.numberOfPages(result.pages);

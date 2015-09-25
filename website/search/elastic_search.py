@@ -467,7 +467,7 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
 
-        if current_user == user:
+        if current_user._id == user._id:
             n_projects_in_common = -1
         elif current_user:
             n_projects_in_common = current_user.n_projects_in_common(user)
