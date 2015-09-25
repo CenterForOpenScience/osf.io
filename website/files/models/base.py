@@ -120,6 +120,9 @@ class StoredFileNode(StoredObject):
     # Should only be used for OsfStorage
     checkout = fields.AbstractForeignField('User')
 
+    #Tags for a file
+    tags = fields.ForeignField('Tag', list=True)
+
     # For Django compatibility
     @property
     def pk(self):

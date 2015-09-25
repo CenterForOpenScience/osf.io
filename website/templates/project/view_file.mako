@@ -41,6 +41,17 @@
               </div>
           </div>
       </div>
+
+       <div class="panel panel-default">
+        <div class="panel-heading clearfix">
+            <h3 class="panel-title">Tags</h3>
+            <div class="pull-right">
+            </div>
+        </div>
+        <div class="panel-body">
+            <input id="fileTags" value="${','.join(file_tags)}" />
+        </div>
+        </div>
   </div>
 
 <!-- The osf-logo spinner here is from mfr code base -->
@@ -164,6 +175,7 @@
             provider: ${ provider | sjson, n },
             safeName: ${ file_name | h, sjson},
             materializedPath: ${ materialized_path | sjson, n },
+            file_tags: ${file_tags | sjson, n},
           urls: {
         %if error is None:
               render: ${ urls['render'] | sjson, n },
