@@ -12,7 +12,7 @@ from website.models import Node
 from website.files import models
 from website.addons.osfstorage import errors
 from website.project.decorators import (
-    must_not_be_registration, must_have_addon,
+    must_not_be_registration, must_have_addon
 )
 
 

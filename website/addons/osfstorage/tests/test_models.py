@@ -154,18 +154,18 @@ class TestOsfstorageFileNode(StorageTestCase):
         })
 
         assert_equals(file.serialize(), {
-            u'id': file._id,
-            u'path': file.path,
-            u'name': 'MOAR PYLONS',
-            u'kind': 'file',
-            u'version': 1,
-            u'downloads': 0,
-            u'size': 1234,
-            u'modified': date.isoformat(),
-            u'contentType': 'text/plain',
-            u'checkout': None,
-            u'md5': None,
-            u'sha256': None,
+            'id': file._id,
+            'path': file.path,
+            'name': 'MOAR PYLONS',
+            'kind': 'file',
+            'version': 1,
+            'downloads': 0,
+            'size': 1234,
+            'modified': date.isoformat(),
+            'contentType': 'text/plain',
+            'checkout': None,
+            'md5': None,
+            'sha256': None,
         })
 
     def test_get_child_by_name(self):
