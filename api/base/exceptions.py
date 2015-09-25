@@ -58,7 +58,7 @@ def json_api_exception_handler(exc, context):
 
         # For bulk operations: If validation error, return request data with response.
 
-        if response.status_code == 400:
+        if response.status_code == 400 and "non_field_errors" not in message:
             request_data = context['request'].data
             if isinstance(request_data, list):
                 response_data = []
