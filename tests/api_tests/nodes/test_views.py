@@ -1132,6 +1132,13 @@ class TestNodeDelete(NodeCRUDTestCase):
         assert_equal(res.status_code, 401)
         assert 'detail' in res.json['errors'][0]
 
+    def test_requesting_deleted_returns_410(self):
+        self.public_project.is_deleted = True
+        self.public_project.save()
+        res = self.app.get(self.public_url, expect_errors=True)
+        assert_equal(res.status_code, 410)
+        assert 'detail' in res.json['errors'][0]
+
     def test_deletes_public_node_fails_if_unauthorized(self):
         res = self.app.delete_json_api(self.public_url, auth=self.user_two.auth, expect_errors=True)
         self.public_project.reload()
