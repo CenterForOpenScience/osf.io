@@ -12,6 +12,7 @@ from website.util import waterbutler_api_url_for
 from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict
 
+
 class AllowMissing(ser.Field):
 
     def __init__(self, field, **kwargs):
