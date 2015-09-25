@@ -25,7 +25,6 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
     NodeContributorDetailSerializer,
-    NodeBulkUpdateSerializer
 )
 from api.nodes.permissions import (
     AdminOrPublic,
@@ -187,7 +186,7 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
     def get_serializer_class(self):
         serializer_class = NodeSerializer
         if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
-            serializer_class = NodeBulkUpdateSerializer
+            serializer_class = NodeDetailSerializer
         return serializer_class
 
     # overrides ListBulkCreateUpdateDestroyView

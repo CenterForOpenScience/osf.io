@@ -641,7 +641,6 @@ class TestNodeBulkCreate(ApiTestCase):
     def test_ugly_payload(self):
         payload = 'sdf;jlasfd'
         res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
-        print res
         assert_equal(res.status_code, 400)
 
 class TestNodeBulkUpdate(ApiTestCase):

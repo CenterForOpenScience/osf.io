@@ -27,7 +27,7 @@ class NodeTagField(ser.Field):
 
 class JSONAPINodeListSerializer(JSONAPIListSerializer):
     """
-    Bulk updates instances with the validated data.
+    Bulk updates instance with the validated data.
 
     Request either completely succeeds or fails. Requires
     the request to be in the serializer context.
@@ -176,10 +176,6 @@ class NodeSerializer(JSONAPISerializer):
             except ValidationValueError as e:
                 raise InvalidModelValueError(detail=e.message)
         return node
-
-
-class NodeBulkUpdateSerializer(NodeSerializer):
-    id = ser.CharField(source='_id', label='ID', required=True)
 
 
 class NodeDetailSerializer(NodeSerializer):

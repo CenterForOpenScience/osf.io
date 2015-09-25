@@ -48,7 +48,8 @@ class IDField(ser.CharField):
 
     def to_internal_value(self, data):
         update_methods = ['PUT', 'PATCH']
-        if self.context['request'].method in update_methods:
+        request = self.context['request']
+        if request.method in update_methods and not isinstance(request.data, list):
             if self.root.instance._id != data:
                 raise Conflict()
         return super(IDField, self).to_internal_value(data)
@@ -282,6 +283,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
             )
 
         return super(JSONAPIListSerializer, self).run_validation(data)
+
 
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
