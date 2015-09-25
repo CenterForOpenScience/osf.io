@@ -960,9 +960,9 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
     Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
     integratations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
-    storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers that
-    have been enabled to work with this node.  If you want to add more, you will need to do that in the Open Science
-    Framework front end for now.
+    storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers are
+    configured for this node.  If you want to add more, you will need to do that in the Open Science Framework front end
+    for now.
 
     In the OSF filesystem model, providers are treated as folders, but with special properties that distinguish them
     from regular folders.  Every provider folder is considered a root folder, and may not be deleted through the regular
@@ -996,6 +996,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
     + `page=<Int>` -- page number of results to view, default 1
 
     #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

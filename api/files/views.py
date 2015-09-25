@@ -46,9 +46,10 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     different conventions for requests, responses, and URL-building, so pay close attention to the documentation for
     [actions](#actions).  The exceptions are the "Get Info" and "Checkout" actions, which are OSF-centric.
 
-    If your file or folder is stored on a non-OSF provider, the file metadata will be retrieved if not already present
-    in the system.  Otherwise, the cached metadata will be presented.  To force metadata retrieval, you'll need to issue
-    a GET request to the Node Files List endpoint.
+    Only files and folders which have previously been retrieved through the Node Files List endpoint (accessible through
+    the `files` relationship of their parent nodes) can be accessed through this endpoint.  Viewing a folder through the
+    Node Files List vivifies their children's metadata in the OSF and allows the children to be assigned ids.  This
+    metadata is cached and can be refreshed by GETting the file via the Node Files List endpoint.
 
     Both files and folders are available through the Files API and are distinguished by the `kind` attribute ("file" for
     files, "folder" for folders).  Not all actions and relationships are relevent to both files and folders, so the
@@ -63,16 +64,20 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
         name          type       description
         -------------------------------------------------------------------------
-        name          string     name of the new folder
-        path          string     OSF path/id of the file
-        materialized  string     the full path of the folder relative to the storage root
+        name          string     name of the file
+        path          string     unique identifier for this file entity for this
+                                 project and storage provider. may not end with '/'
+        materialized  string     the full path of the file relative to the storage
+                                 root.  may not end with '/'
         kind          string     "file"
-        etag          string     etag - http caching identifier
+        etag          string     etag - http caching identifier w/o wrapping quotes
         modified      timestamp  last modified timestamp - format depends on provider
-        contentType   string     null if provider="osfstorage", else MIME-type
-        provider      string     id of provider e.g. "osfstorage", "s3", "googledrive"
+        contentType   string     MIME-type when available
+        provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
+                                 equivalent to addon_short_name on the OSF
         size          integer    size of file in bytes
-        extra         object
+        extra         object     may contain additional data beyond what's describe here,
+                                 depending on the provider
           version     integer    version number of file. will be 1 on initial upload
           downloads   integer    count of the number times the file has been downloaded
           hashes      object
@@ -83,12 +88,14 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
         name          type    description
         ----------------------------------------------------------------------
-        name          string  name of the new folder
-        path          string  OSF path/id of the folder
-        materialized  string  the full path of the folder relative to the storage root
+        name          string  name of the folder
+        path          string  unique identifier for this folder entity for this
+                              project and storage provider. must end with '/'
+        materialized  string  the full path of the folder relative to the storage
+                              root.  must end with '/'
         kind          string  "folder"
-        etag          string  etag - http caching identifier
-        extra         object  null
+        etag          string  etag - http caching identifier w/o wrapping quotes
+        extra         object  varies depending on provider
 
 
     ##Attributes
@@ -100,9 +107,9 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
         name          type               description
         ---------------------------------------------------------------------------------
-        name          string             name of the file or folder; use for display
+        name          string             name of the file or folder; used for display
         kind          string             "file" or "folder"
-        path          url path           unique path for this entity, used in "move" actions
+        path          string             same as for corresponding WaterButler entity
         size          integer            size of file in bytes, null for folders
         provider      string             storage provider for this file. "osfstorage" if stored on the OSF.  Other
                                          examples include "s3" for Amazon S3, "googledrive" for Google Drive, "box"
@@ -165,13 +172,14 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
         Method:       PUT
         URL:          links.new_folder
-        Query Params: ?name={new_folder_name}
+        Query Params: ?kind=folder&name={new_folder_name}
         Body:         <empty>
         Success:      201 Created + new folder representation
 
-    You can create a subfolder of an existing folder by issuing a PUT request against the `new_folder` link.  The name
-    of the new subfolder should be provided in the `name` query parameter.  The response will contain a [WaterButler
-    folder entity](#folder-entity).
+    You can create a subfolder of an existing folder by issuing a PUT request against the `new_folder` link.  The
+    `?kind=folder` portion of the query parameter is already included in the `new_folder` link.  The name of the new
+    subfolder should be provided in the `name` query parameter.  The response will contain a [WaterButler folder
+    entity](#folder-entity).
 
     ###Upload New File (*folders*)
 
@@ -189,14 +197,13 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
         Method:       PUT
         URL:          links.upload
-        Query Params: ?kind=file&name={new_file_name}
+        Query Params: ?kind=file
         Body (Raw):   <file data (not form-encoded)>
         Success:      200 OK + updated file representation
 
     To update an existing file, issue a PUT request to the file's `upload` link with the raw file data in the request
-    body, and the `kind` and `name` query parameters set to `"file"` and the desired name of the file.  The update
-    action will create a new version of the file.  The response will contain a [WaterButler file entity](#file-entity)
-    that describes the updated file.
+    body and the `kind` query parameter set to `"file"`.  The update action will create a new version of the file.
+    The response will contain a [WaterButler file entity](#file-entity) that describes the updated file.
 
     ###Rename (*files, folders*)
 
@@ -224,7 +231,9 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
                         "path":     {path_attribute_of_target_folder},
                         // optional
                         "rename":   {new_name},
-                        "conflict": "replace"|"keep" // defaults to 'replace'
+                        "conflict": "replace"|"keep", // defaults to 'replace'
+                        "resource": {node_id},        // defaults to current {node_id}
+                        "provider": {provider}        // defaults to current {provider}
                        }
         Succes:        200 OK + new entity representation
 
@@ -237,6 +246,13 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     file's name until it no longer conflicts.  The suffix will be ' (**x**)' where **x** is a increasing integer
     starting from 1.  This behavior is intended to mimic that of the OS X Finder.  The response will contain either a
     folder entity or file entity with the new name.
+
+    Files and folders can also be moved between nodes and providers.  The `resource` parameter is the id of the node
+    under which the file/folder should be moved.  It *must* agree with the `path` parameter, that is the `path` must
+    identify a valid folder under the node identified by `resource`.  Likewise, the `provider` parameter may be used to
+    move the file/folder to another storage provider, but both the `resource` and `path` parameters must belong to a
+    node and folder already extant on that provider.  Both `resource` and `provider` default to the current node and
+    providers.
 
     ###Delete (*file, folders*)
 
@@ -278,6 +294,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     documentation.
 
     #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -303,7 +320,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 class FileVersionsList(generics.ListAPIView, FileMixin):
     """List of versions for the requested file. *Read-only*.
 
-    Paginated list of file versions, ordered by increasing version number (id).
+    Paginated list of file versions, ordered by the date each version was created/modified.
 
     <!--- Copied Spiel from FileVersionDetail -->
 
@@ -311,8 +328,9 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
     file could have completely different contents and formats.  That's on you, though.  Don't do that.
 
     Unlike the OSF File entity which can represent files and folders, FileVersions only ever represent files. When a
-    file is first uploaded through the API it is assigned version 1.  Each time it is updated through the API, the
-    version number is incremented.
+    file is first uploaded to the "osfstorage" provider through the API it is assigned version 1.  Each time it is
+    updated through the API, the version number is incremented.  Files stored on other providers will follow that
+    provider's versioning semantics.
 
     ##FileVersion Attributes
 
@@ -323,7 +341,7 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
         name          type     description
         ---------------------------------------------------------------------------------
         size          integer  size of file in bytes
-        content_type  string   MIME content-type for the file. May be null if file is stored locally.
+        content_type  string   MIME content-type for the file. May be null if unavailable.
 
     ##Links
 
@@ -342,6 +360,7 @@ class FileVersionsList(generics.ListAPIView, FileMixin):
     File versions may be filtered by their `id`, `size`, or `content_type`.
 
     #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -379,7 +398,7 @@ class FileVersionDetail(generics.RetrieveAPIView, FileMixin):
         name          type     description
         ---------------------------------------------------------------------------------
         size          integer  size of file in bytes
-        content_type  string   MIME content-type for the file. May be null if file is stored locally.
+        content_type  string   MIME content-type for the file. May be null if unavailable.
 
     ##Relationships
 
