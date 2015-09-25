@@ -112,10 +112,12 @@ var FileViewPage = {
                         contentType: 'application/json',
                         dataType: 'json',
                         data: JSON.stringify({
-                            id: self.file.path.replace('/', ''),
-                            type: 'files',
-                            attributes: {
-                                checkout: self.context.currentUser.id
+                            data: {
+                                id: self.file.path.replace('/', ''),
+                                type: 'files',
+                                attributes: {
+                                    checkout: self.context.currentUser.id
+                                }
                             }
                         })
                     }).done(function(resp) {
@@ -140,10 +142,12 @@ var FileViewPage = {
                 contentType: 'application/json',
                 dataType: 'json',
                 data: JSON.stringify({
-                    id: self.file.path.replace('/', ''),
-                    type: 'files',
-                    attributes: {
-                        checkout: null
+                    data: {
+                        id: self.file.path.replace('/', ''),
+                        type: 'files',
+                        attributes: {
+                            checkout: null
+                        }
                     }
                 })
             }).done(function(resp) {
@@ -173,10 +177,12 @@ var FileViewPage = {
                         contentType: 'application/json',
                         dataType: 'json',
                         data: JSON.stringify({
-                            id: self.file.path.replace('/', ''),
-                            type: 'files',
-                            attributes: {
-                                checkout: null
+                            data: {
+                                id: self.file.path.replace('/', ''),
+                                type: 'files',
+                                attributes: {
+                                    checkout: null
+                                }
                             }
                         })
                     }).done(function(resp) {

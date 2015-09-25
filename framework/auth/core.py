@@ -1122,6 +1122,10 @@ class User(GuidStoredObject, AddonModelMixin):
         )
         return self.get_recent_log_ids(since=midnight)
 
+    def files_checked_out(self):
+        from website.files.models.osfstorage import FileNode
+        return list(FileNode.find(Q('checkout', 'eq', self)))
+
     @property
     def can_be_merged(self):
         """The ability of the `merge_user` method to fully merge the user"""
@@ -1254,6 +1258,11 @@ class User(GuidStoredObject, AddonModelMixin):
         for node in user.node__created:
             node.creator = self
             node.save()
+
+        # - file that the user has checked_out
+        for file_node in user.files_checked_out():
+            file_node.checkout = self
+            file_node.save()
 
         # finalize the merge
 

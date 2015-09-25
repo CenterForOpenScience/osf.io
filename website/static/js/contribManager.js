@@ -73,6 +73,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     });
 
     self.remove = function() {
+        this.id
         self.deleteStaged(true);
     };
     self.unremove = function(data, event) {

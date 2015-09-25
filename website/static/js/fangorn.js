@@ -1806,8 +1806,7 @@ var FGToolbar = {
                 generalButtons.push(
                     m.component(FGButton, {
                         onclick: function() {
-                            for (var i = 0, len = items.length; i < len; i++) {
-                                var each = items[i];
+                            items.forEach(function(each) {
                                 $.ajax({
                                     method: 'put',
                                     url: window.contextVars.apiV2Prefix + 'files' + each.data.path + '/',
@@ -1815,17 +1814,19 @@ var FGToolbar = {
                                     contentType: 'application/json',
                                     dataType: 'json',
                                     data: JSON.stringify({
-                                        id: each.data.path.replace('/', ''),
-                                        type: 'files',
-                                        attributes: {
-                                            checkout: window.contextVars.currentUser.id
+                                        data: {
+                                            id: each.data.path.replace('/', ''),
+                                            type: 'files',
+                                            attributes: {
+                                                checkout: window.contextVars.currentUser.id
+                                            }
                                         }
                                     })
                                 }).done(function(resp) {
                                 }).fail(function(resp) { // jshint ignore:line
                                     $osf.growl('Error', 'Unable to check-out file.');
                                 }); // jshint ignore:line
-                            }
+                            })
                             window.location.reload();
                         },
                         icon: 'fa fa-sign-out',
@@ -1846,10 +1847,12 @@ var FGToolbar = {
                                     contentType: 'application/json',
                                     dataType: 'json',
                                     data: JSON.stringify({
-                                        id: each.data.path.replace('/', ''),
-                                        type: 'files',
-                                        attributes: {
-                                            checkout: null
+                                        data: {
+                                            id: each.data.path.replace('/', ''),
+                                            type: 'files',
+                                            attributes: {
+                                                checkout: null
+                                            }
                                         }
                                     })
                                 }).done(function(resp) {
