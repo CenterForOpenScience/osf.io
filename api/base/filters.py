@@ -179,6 +179,7 @@ class ListFilterMixin(FilterMixin):
     def get_filtered_queryset(self, field_name, value, default_queryset):
         """filters default queryset based on the serializer field type"""
         field = self.serializer_class._declared_fields[field_name]
+        field_name = field.source or field_name
 
         if isinstance(field, ser.SerializerMethodField):
             return_val = [item for item in default_queryset if self.get_serializer_method(field_name)(item) == self.convert_value(value, field_name)]
