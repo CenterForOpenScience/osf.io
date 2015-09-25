@@ -1071,16 +1071,18 @@ def project_private_link_edit(auth, **kwargs):
     try:
         validate_title(name)
     except ValidationValueError as e:
+        message = 'Invalid link name.' if e.message == 'Invalid title.' else e.message
         raise HTTPError(
             http.BAD_REQUEST,
-            data=dict(message_long=e.message)
+            data=dict(message_long=message)
         )
 
     private_link_id = request.json.get('pk', '')
     private_link = PrivateLink.load(private_link_id)
+
     if private_link:
         new_name = strip_html(name)
-        private_link.name = strip_html(new_name)
+        private_link.name = new_name
         private_link.save()
         return new_name
     else:

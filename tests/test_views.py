@@ -94,6 +94,26 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.link.save()
         self.project_url = self.project.web_url_for('view_project')
 
+    def test_edit_private_link_empty(self):
+        node = ProjectFactory(creator=self.user)
+        link = PrivateLinkFactory()
+        link.nodes.append(node.project)
+        link.save()
+        url = node.api_url_for("project_private_link_edit")
+        res = self.app.post_json(url, {'pk': link._id, 'value': ''}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Title cannot be blank', res.body)
+
+    def test_edit_private_link_invalid(self):
+        node = ProjectFactory(creator=self.user)
+        link = PrivateLinkFactory()
+        link.nodes.append(node.project)
+        link.save()
+        url = node.api_url_for("project_private_link_edit")
+        res = self.app.post_json(url, {'pk': link._id, 'value': '<a></a>'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Invalid link name.', res.body)
+
     def test_not_anonymous_for_public_project(self):
         anonymous_link = PrivateLinkFactory(anonymous=True)
         anonymous_link.nodes.append(self.project)
