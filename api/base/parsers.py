@@ -15,9 +15,10 @@ class JSONAPIParser(JSONParser):
     media_type = 'application/vnd.api+json'
     renderer_class = JSONAPIRenderer
 
+    # Overrides JSONParser
     def parse(self, stream, media_type=None, parser_context=None):
         """
-        Parses the incoming bytestream as JSON and returns the resulting data
+        Parses the incoming bytestream as JSON and returns the resulting data.
         """
         result = super(JSONAPIParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
         if not isinstance(result, dict):
@@ -25,6 +26,9 @@ class JSONAPIParser(JSONParser):
         data = result.get('data', {})
 
         def data_flattener(resource_object, stream):
+            """
+            Flattens data objects, making attributes fields the same level as id and type.
+            """
             if "attributes" not in resource_object and stream.method != 'DELETE':
                     raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
             id = resource_object.get('id')
@@ -40,8 +44,8 @@ class JSONAPIParser(JSONParser):
         if data:
             if isinstance(data, list):
                 data_collection = []
-                for object in data:
-                    parsed_data = data_flattener(object, stream)
+                for data_object in data:
+                    parsed_data = data_flattener(data_object, stream)
                     data_collection.append(parsed_data)
                 return data_collection
 
@@ -53,4 +57,7 @@ class JSONAPIParser(JSONParser):
 
 
 class JSONAPIParserForRegularJSON(JSONAPIParser):
+    """
+    Allows same processing as JSONAPIParser to occur for requests with application/json media type.
+    """
     media_type = 'application/json'
