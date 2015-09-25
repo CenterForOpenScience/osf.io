@@ -80,7 +80,7 @@ class TestUsers(ApiTestCase):
         for user in user_json:
             profile_image_url = user['attributes']['profile_image_url']
             query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
-            assert_equal(int(query_dict.get('size')[0]), size)
+            assert_equal(int(query_dict.get('s')[0]), size)
 
 
 class TestUserDetail(ApiTestCase):
@@ -129,7 +129,7 @@ class TestUserDetail(ApiTestCase):
         user_json = res.json['data']
         profile_image_url = user_json['attributes']['profile_image_url']
         query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
-        assert_equal(int(query_dict.get('size')[0]), size)
+        assert_equal(int(query_dict.get('s')[0]), size)
 
 
 class TestUserNodes(ApiTestCase):
