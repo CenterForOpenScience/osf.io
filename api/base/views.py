@@ -54,10 +54,10 @@ def root(request, format=None):
         filter[<fieldname>]=<matching information>
     For example, if you were trying to find [Lise Meitner](http://en.wikipedia.org/wiki/Lise_Meitner):
 
-        /users?filter[fullname]=meitn
+        /users/?filter[fullname]=meitn
     You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.
 
-        /users?filter[fullname]=lise&filter[family_name]=mei
+        /users/?filter[fullname]=lise&filter[family_name]=mei
 
     ###Pagination
 

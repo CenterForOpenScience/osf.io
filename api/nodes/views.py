@@ -231,10 +231,10 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     """Details about a given node (project or component). *Writeable*.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
-    is that a project is the top-level node, and components are children of the project. There is also a category field
-    that includes the option of project. The categorization essentially determines which icon is displayed by the
-    Node in the front-end UI and helps with search organization. Top-level nodes may have a category other than
-    project, and children nodes may have a category of project.
+    is that a project is the top-level node, and components are children of the project. There is also a [category
+    field](/v2/#osf-node-categories) that includes the option of project. The categorization essentially determines
+    which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
+    a category other than project, and children nodes may have a category of project.
 
     ###Permissions
 
@@ -244,7 +244,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     ##Attributes
 
-    `type` is "nodes"
+    OSF Node entities have the "nodes" `type`.
 
         name           type               description
         ---------------------------------------------------------------------------------
@@ -294,13 +294,13 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
-                           "type": "nodes",     # required
-                           "id":   "<node_id>", # required
+                           "type": "nodes",   # required
+                           "id":   {node_id}, # required
                            "attributes": {
-                             "title":       "<mandatory>",
-                             "category":    "<mandatory>",
-                             "description": "<optional>",
-                             "tags":        ["optional", "your-call"]
+                             "title":       {title},         # mandatory
+                             "category":    {category},      # mandatory
+                             "description": {description},   # optional
+                             "tags":        [{tag1}, {tag2}] # optional
                            }
                          }
                        }
@@ -391,7 +391,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
                          "data": {
                            "type": "contributors", # required
                            "attributes": {
-                             "id":            "8xp2s",               # mandatory
+                             "id":            {user_id},             # mandatory
                              "bibliographic": true|false,            # optional
                              "permission":    "read"|"write"|"admin" # optional
                            }
@@ -450,7 +450,13 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node. *Writeable*.
 
-    View, remove from, and change bibliographic and permissions for a given contributor on a given node.
+    Contributors are users who can make changes to the node or, in the case of private nodes,
+    have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
+    contributors. From a permissions standpoint, both are the same, but bibliographic contributors
+    are included in citations, while non-bibliographic contributors are not included in citations.
+
+    Contributors can be viewed, removed, and have their permissions and bibliographic status changed via this
+    endpoint.
 
     ##Attributes
 
@@ -471,7 +477,8 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     ##Links
 
-    **TODO: this is buggy, will probably change**
+        self:  the canonical api endpoint of this node
+        html:  this node's page on the OSF website
 
     ##Actions
 
@@ -482,8 +489,8 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
-                           "type": "contributors",          # required
-                           "id":   "<contributor_user_id>", # required
+                           "type": "contributors",        # required
+                           "id":   {contributor_user_id}, # required
                            "attributes": {
                              "bibiliographic": true|false,            # optional
                              "permission":     "read"|"write"|"admin" # optional
@@ -513,6 +520,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
     *None*.
 
     #This Request/Response
+
     """
     permission_classes = (
         ContributorDetailPermissions,
@@ -589,9 +597,8 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
-    nodes. Currently, if there is a discrepancy between the children count and the number of children returned, it
-    probably indicates private nodes that aren't being returned. That discrepancy should disappear before everything
-    is finalized.
+    nodes. Creating a node via this endpoint will behave the same as the [node list endpoint](/v2/nodes/), but the new
+    node will have the selected node set as its parent.
 
     ##Node Attributes
 
@@ -625,6 +632,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
     **TODO: import Query Params from NodeList**
 
     #This Request/Response
+
     """
     permission_classes = (
         ContributorOrPublic,
@@ -811,7 +819,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    **TODO: write this!**
+    Node files may be filtered by `id`, `name`, `node`, `kind`, `path`, `provider`, `size`, and `last_touched`.
 
     #This Request/Response
     """
@@ -883,7 +891,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
     Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
     integratations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
-    storage, but may use as many of the supported providers as desired.  This endpoint lists all of the providers that
+    storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers that
     have been enabled to work with this node.  If you want to add more, you will need to do that in the Open Science
     Framework front end for now.
 
