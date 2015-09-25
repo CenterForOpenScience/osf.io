@@ -17,8 +17,8 @@ def gravatar(user, use_ssl=False, d=None, r=None, size=None):
 
     # Order of query params matters, due to a quirk with gravatar
     params = [
-        ('s', size),
         ('d', 'identicon'),
+        ('s', size),
     ]
     if r:
         params.append(('r', r))
