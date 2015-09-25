@@ -1,5 +1,5 @@
-import collections
 import re
+import collections
 
 from rest_framework.reverse import reverse
 from rest_framework.fields import SkipField
@@ -40,21 +40,7 @@ class AllowMissing(ser.Field):
         return self.field.to_internal_value(data)
 
 
-def _rapply(d, func, *args, **kwargs):
-    """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
-    as those are the only complex structures currently supported by DRF Serializer Fields."""
-    if isinstance(d, collections.Mapping):
-        return {
-            key: _rapply(value, func, *args, **kwargs)
-            for key, value in d.iteritems()
-        }
-    if isinstance(d, list):
-        return [
-            _rapply(item, func, *args, **kwargs) for item in d
-        ]
-    else:
-        return func(d, *args, **kwargs)
-
+from website.util import rapply as _rapply
 
 def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
