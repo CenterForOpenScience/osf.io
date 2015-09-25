@@ -1044,9 +1044,15 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     has_public_node = any(node.is_public for node in nodes)
 
-    new_link = new_private_link(
-        name=name, user=auth.user, nodes=nodes, anonymous=anonymous
-    )
+    try:
+        new_link = new_private_link(
+            name=name, user=auth.user, nodes=nodes, anonymous=anonymous
+        )
+    except ValidationValueError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=e.message)
+        )
 
     if anonymous and has_public_node:
         status.push_status_message(

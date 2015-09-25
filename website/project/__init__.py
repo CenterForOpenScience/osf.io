@@ -4,6 +4,7 @@ import uuid
 from .model import Node, PrivateLink
 from framework.mongo.utils import from_mongo
 from modularodm import Q
+from modularodm.exceptions import ValidationValueError
 from website.exceptions import NodeStateError
 from website.util.sanitize import strip_html
 
@@ -123,6 +124,8 @@ def new_private_link(name, user, nodes, anonymous):
     key = str(uuid.uuid4()).replace("-", "")
     if name:
         name = strip_html(name)
+        if name is None or not name.strip():
+            raise ValidationValueError('Invalid link name.')
     else:
         name = "Shared project link"
 
