@@ -14,7 +14,7 @@ from framework.auth.decorators import must_be_signed
 
 from website.models import User
 from website.project.decorators import (
-    must_not_be_registration, must_have_addon
+    must_not_be_registration, must_have_addon,
 )
 from website.util import rubeus
 from website.project.model import has_anonymous_link

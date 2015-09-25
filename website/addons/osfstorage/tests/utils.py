@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 from tests.base import OsfTestCase
-from tests.factories import ProjectFactory, AuthUserFactory
+from tests.factories import ProjectFactory
 
 import collections
 
