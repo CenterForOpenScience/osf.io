@@ -4,7 +4,7 @@
 
         <form role="form" data-bind="submit: submit">
 
-            <label>Your Websites</label>
+            <label>Your websites</label>
             <div data-bind="sortable: {
                         data: profileWebsites,
                         options: {
@@ -15,9 +15,9 @@
 
                 <div>
                     <div class="sort-handle">
-                        <i title="Click to Remove" class="btn text-danger pull-right  fa fa-times fa" data-bind="click: $parent.removeWebsite"></i>
+                        <i title="Click to remove" class="btn text-danger pull-right  fa fa-times fa" data-bind="click: $parent.removeWebsite"></i>
                         <div class="input-group" >
-                            <span class="input-group-addon"><i title="Drag to Reorder"  class="fa fa-bars"></i></span>
+                            <span class="input-group-addon"><i title="Drag to reorder"  class="fa fa-bars"></i></span>
                             <input class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/>
                         </div>
                     </div>
@@ -28,7 +28,7 @@
 
             <div class="p-t-sm p-b-sm">
                 <a class="btn btn-default" data-bind="click: addWebsiteInput">
-                    Add Website
+                    Add website
                 </a>
             </div>
 
