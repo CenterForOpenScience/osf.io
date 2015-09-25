@@ -522,7 +522,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         ]
 
 
-class NodeCommentsList(generics.ListAPIView, NodeMixin):
+class NodeCommentsList(generics.ListCreateAPIView, NodeMixin):
     # permission_classes
     # required scopes
 
