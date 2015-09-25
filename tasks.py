@@ -62,7 +62,7 @@ def apiserver(port=8000, live=False):
     cmd = 'python manage.py runserver {}'.format(port)
     if live:
         cmd += ' livereload'
-    run(cmd, echo=True)
+    run(cmd, echo=True, pty=True)
 
 
 SHELL_BANNER = """

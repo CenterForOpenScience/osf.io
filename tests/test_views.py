@@ -1851,7 +1851,7 @@ class TestAddingContributorViews(OsfTestCase):
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
             node=project)
-        assert_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()))
+        assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
     @mock.patch('website.mails.send_mail')
     def test_contributor_added_email_not_sent_to_unreg_user(self, send_mail):
@@ -4002,12 +4002,12 @@ class TestReorderComponents(OsfTestCase):
         self.creator = AuthUserFactory()
         self.contrib = AuthUserFactory()
         # Project is public
-        self.project = ProjectFactory.build(creator=self.creator, public=True)
+        self.project = ProjectFactory.build(creator=self.creator, is_public=True)
         self.project.add_contributor(self.contrib, auth=Auth(self.creator))
 
         # subcomponent that only creator can see
-        self.public_component = NodeFactory(creator=self.creator, public=True)
-        self.private_component = NodeFactory(creator=self.creator, public=False)
+        self.public_component = NodeFactory(creator=self.creator, is_public=True)
+        self.private_component = NodeFactory(creator=self.creator, is_public=False)
         self.project.nodes.append(self.public_component)
         self.project.nodes.append(self.private_component)
 
@@ -4038,7 +4038,7 @@ class TestDashboardViews(OsfTestCase):
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
     def test_components_with_are_accessible_from_dashboard(self):
-        project = ProjectFactory(creator=self.creator, public=False)
+        project = ProjectFactory(creator=self.creator, is_public=False)
         component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
@@ -4110,7 +4110,7 @@ class TestDashboardViews(OsfTestCase):
         assert_equal(res.status_code, 400)
 
     def test_registered_components_with_are_accessible_from_dashboard(self):
-        project = ProjectFactory(creator=self.creator, public=False)
+        project = ProjectFactory(creator=self.creator, is_public=False)
         component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
@@ -4125,7 +4125,7 @@ class TestDashboardViews(OsfTestCase):
         assert_equal(len(res.json['data']), 1)
 
     def test_archiving_nodes_appear_in_all_my_registrations(self):
-        project = ProjectFactory(creator=self.creator, public=False)
+        project = ProjectFactory(creator=self.creator, is_public=False)
         reg = RegistrationFactory(project=project, user=self.creator)
 
         # Get the All My Registrations smart folder from the dashboard

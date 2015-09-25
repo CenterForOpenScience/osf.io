@@ -111,9 +111,9 @@
                         <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
                             <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
                             <dd class="log-content">
-                                <!-- ko if: log.anonymous -->
-                                    <em>A user</em>
-                                <!-- /ko -->
+                                <span data-bind="if:log.anonymous">
+                                    <span data-bind="html: $parent.anonymousUserName"></span>
+                                </span>
 
                                 <!-- ko ifnot: log.anonymous -->
                                     <a data-bind="text: log.userFullName, attr: {href: log.userURL}"></a>
