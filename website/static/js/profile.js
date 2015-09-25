@@ -498,7 +498,7 @@ var SocialViewModel = function(urls, modes) {
     });
 
     self.canRemove = ko.computed(function () {
-        return self.profileWebsites() && self.profileWebsites().length > 1;
+        return self.hasProfileWebsites();
     });
 
     self.orcid = extendLink(
@@ -587,15 +587,15 @@ var SocialViewModel = function(urls, modes) {
                 callback: function(confirmed) {
                     if (confirmed) {
                         self.profileWebsites.splice(idx, 1);
-                        if (self.profileWebsites().length === 0) {
-                            self.addWebsiteInput();
-                        }
                         self.submit();
                         self.changeMessage(
                             'Website Removed',
                             'text-danger',
                             5000
                         );
+                        if (self.profileWebsites().length === 0) {
+                            self.addWebsiteInput();
+                        }
                     }
                 },
                 buttons:{
@@ -606,10 +606,6 @@ var SocialViewModel = function(urls, modes) {
                 }
             });
     };
-
-    if (self.profileWebsites().length === 0) {
-        self.addWebsiteInput();
-    }
 
     self.fetch();
 };
