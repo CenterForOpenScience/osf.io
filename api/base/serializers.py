@@ -159,7 +159,7 @@ class LinksField(ser.Field):
 
     def to_representation(self, obj):
         ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
-        if hasattr(obj, 'get_absolute_url'):
+        if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = obj.get_absolute_url()
         return ret
 
