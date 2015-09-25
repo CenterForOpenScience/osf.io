@@ -44,7 +44,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     nifty piece of software called [WaterButler](https://github.com/CenterForOpenScience/waterbutler).  WaterButler lets
     us interact with files stored on different cloud storage platforms through a consistent API.  However, it uses
     different conventions for requests, responses, and URL-building, so pay close attention to the documentation for
-    [actions](#actions).  The exceptions are the "Get Info" and "Checkout" actions, which are OSF-centric.
+    [actions](#actions).  The exception is the "Get Info" action, which is OSF-centric.
 
     Only files and folders which have previously been retrieved through the Node Files List endpoint (accessible through
     the `files` relationship of their parent nodes) can be accessed through this endpoint.  Viewing a folder through the
@@ -118,13 +118,6 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
                                          storage providers.
 
     ##Relationships
-
-    ###Checkout (*files, folders*)
-
-    ** *Checkouts are still a work-in-progress. This property may be set but is currently a no-op.* **
-
-    A link to the user who has checked out the file.  While a file is checked out, only the checkout holder may modify
-    it.  If a file is not checked out, this url will be null.
 
     ###Files (*folders*)
 
@@ -263,30 +256,6 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     To delete a file or folder send a DELETE request to the `delete` link.  Nothing will be returned in the response
     body.
-
-    ###Checkout (*files, folders*)
-
-        Method:        PUT/PATCH
-        URL:           links.info
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "files",    # required
-                           "id":   {file_id},  # required
-                           "attributes": {
-                             "checkout": {current_user_id}|null  # mandatory
-                           }
-                         }
-                       }
-        Success:       200 OK + node representation
-
-    ** *The checkout action is still a work-in-progress. While the checkout attribute may be set, it is currently a
-    no-op.* **
-
-    To checkout a file, issue a PUT request to the `info` link with your user id as the value of the `checkout`
-    attribute.  To release a checkout, issue a PUT but with `checkout` set to null.  When a file is checked out by a
-    user, only that user may modify it.  Attempting to issue a checkout request with another user's id will result in
-    400 Bad Request response.
 
     ##Query Params
 
