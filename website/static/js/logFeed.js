@@ -43,7 +43,7 @@ var Log = function(params) {
       */
     self.hasTemplate = ko.computed(function() {
         if (!self.user) {
-            $('script#' + self.action + '_no_user').length > 0;
+            return $('script#' + self.action + '_no_user').length > 0;
         } else {
             return $('script#' + self.action).length > 0;
         }
@@ -56,6 +56,9 @@ var Log = function(params) {
     self.mapUpdates = function(key, item) {
         if (key === 'category') {
             return key + ' to ' + nodeCategories[item['new']];
+        }
+        else if (key === 'node_license') {
+            return 'license ';
         }
         else {
             return key + ' to ' + item;

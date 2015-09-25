@@ -808,6 +808,12 @@ var confirmDangerousAction = function (options) {
     bootbox.dialog(bootboxOptions);
 };
 
+/** A future-proof getter for the current user
+**/
+var currentUser = function(){
+    return window.contextVars.currentUser;
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -837,5 +843,6 @@ module.exports = window.$.osf = {
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
     isIE: isIE,
-    isSafari:isSafari
+    isSafari:isSafari,
+    currentUser: currentUser
 };
