@@ -41,7 +41,7 @@ FILE_GONE_ERROR_MESSAGE = u'''
 .file-delete{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This link to the file "{file_name}" is not longer valid.
+This link to the file "{file_name}" is no longer valid.
 </div>'''
 
 
