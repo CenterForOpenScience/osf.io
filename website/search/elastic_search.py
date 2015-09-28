@@ -442,7 +442,6 @@ def create_index(index=None):
                 'license': {
                     'properties': {
                         'name': NOT_ANALYZED_PROPERTY,
-                        'text': NOT_ANALYZED_PROPERTY
                     }
                 }
             }
