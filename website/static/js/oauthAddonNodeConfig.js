@@ -10,9 +10,6 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
 
-
-var ZeroClipboard = require('zeroclipboard');
-ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
@@ -44,7 +41,6 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
-        // Overrides
         var defaults = {
             onPickFolder: function(evt, item) {
                 evt.preventDefault();
