@@ -239,6 +239,11 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
 
 
 def handle_update(file_node, node):
+    """ Update search index to reflect updated file_node.
+
+    :param file_node: added file_node
+    :param node: node to be parent of file
+    """
     if not node.is_public:
         return
 
@@ -249,6 +254,13 @@ def handle_update(file_node, node):
 
 
 def handle_copy(source_file_node, new_file_node, source_node, dest_node):
+    """ Update search index to reflect copying of file_node into a node.
+
+    :param source_file_node: original filenode.
+    :param new_file_node: generated copy of filenode.
+    :param source_node: original parent of filenode.
+    :param dest_node: new parent of filenode.
+    """
     if not file_util.is_indexed(new_file_node):
         return
 
@@ -278,12 +290,23 @@ def handle_folder_copy(clone, dest):
 
 
 def handle_move(file_node, source_node, dest_node):
+    """ Update search to reflect the moving of a file to a new node.
+
+    :param file_node: filenode
+    :param source_node: original parent of filenode.
+    :param dest_node: new parent of filenode.
+    """
     if not file_util.is_indexed(file_node):
         return
     source_node.move_search_file(file_node, source_node, dest_node)
 
 
 def handle_folder_move(source, dest):
+    """ Update search index to reflect the moving of a folder to a new destination.
+
+    :param source: original folder filenode.
+    :param dest: filenode under which files are added.
+    """
     source_node = source.node
     dest_node = dest.node
     for child_node in source.children:

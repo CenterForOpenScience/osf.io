@@ -18,7 +18,7 @@ def build_file_body(file_node, parent=None, content=None):
 
 
 @file_util.require_file_indexing
-def retrive(id, parent_id, doc_type, index=None):
+def retrieve(id, parent_id, doc_type, index=None):
     index = index or INDEX
     doc = es.get(
         index=index,
@@ -27,7 +27,7 @@ def retrive(id, parent_id, doc_type, index=None):
         parent=parent_id,
         ignore=[404],
     )
-    if not doc:
+    if not doc['found']:
         return False
     return doc['_source']
 
@@ -45,11 +45,12 @@ def index_doc(id, parent_id, doc_type, body, index=None):
 
 
 @file_util.require_file_indexing
-def delete_doc(id, doc_type, index=None):
+def delete_doc(id, parent_id, doc_type, index=None):
     index = index or INDEX
     es.delete(
         index=index,
         doc_type=doc_type,
+        parent=parent_id,
         id=id,
         refresh=True,
         ignore=[404],
@@ -58,11 +59,19 @@ def delete_doc(id, doc_type, index=None):
 
 @file_util.require_file_indexing
 def update_to(file_node, node, content=None, index=None):
+    """ Insert a filenode into search index as child of node.
+
+    :param file_node: filenode to be inserted.
+    :param node: node to be made parent of filenode.
+    :param content: text content of filenode.
+    """
+
     index = index or INDEX
 
     if node.is_public:
         doc_type = '{}_file'.format(get_doctype_from_node(node))
         file_body = build_file_body(file_node, parent=node, content=content)
+        print(file_body)
         index_doc(
             id=file_node._id,
             parent_id=node._id,
@@ -74,6 +83,12 @@ def update_to(file_node, node, content=None, index=None):
 
 @file_util.require_file_indexing
 def delete_from(file_node, node_id, index=None):
+    """ Delete a filenode from the search index.
+
+    :param file_node: filenode to be deleted.
+    :param node_id: guid of filenode's parent.
+    """
+
     index = index or INDEX
     node = Node.load(node_id)
     doc_type = '{}_file'.format(get_doctype_from_node(node))
@@ -97,7 +112,7 @@ def copy_file(old_file_node, new_file_node_id, old_parent_id, new_parent_id, con
 
     # Try to reuse already indexed document.
     if old_parent.is_public and not content:
-        file_body = retrive(old_file_node._id, old_parent_id, old_doc_type, index=index)
+        file_body = retrieve(old_file_node._id, old_parent_id, old_doc_type, index=index)
         file_body['parent'] = new_parent_id
         file_body['path'] = new_file_node_id
 
@@ -117,6 +132,15 @@ def copy_file(old_file_node, new_file_node_id, old_parent_id, new_parent_id, con
 
 @file_util.require_file_indexing
 def move_file(file_node, new_file_node_id, old_parent_id, new_parent_id, content=None, index=None):
+    """ Alter search index to reflect the moving of a file to a new location.
+
+    :param file_node: filenode that was moved.
+    :param new_file_node_id: the new guid of the filenode.
+    :param old_parent_id: the guid of the filenode's pre-move parent.
+    :param new_parent_id: the guid of the filenode's post-move parent.
+    :param content: the text content of the file associated with the filenode.
+    """
+
     index = index or INDEX
     old_parent = Node.load(old_parent_id)
     new_parent = Node.load(new_parent_id)
@@ -126,7 +150,7 @@ def move_file(file_node, new_file_node_id, old_parent_id, new_parent_id, content
 
     # Try to reuse already indexed document.
     if old_parent.is_public:
-        file_body = retrive(file_node._id, old_parent_id, old_doc_type, index=index)
+        file_body = retrieve(file_node._id, old_parent_id, old_doc_type, index=index)
         file_body['parent'] = new_parent_id
         file_body['path'] = new_file_node_id
 
