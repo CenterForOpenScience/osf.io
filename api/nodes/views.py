@@ -307,7 +307,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(ListBulkCreateUpdateDestroyAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -341,6 +341,78 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+        # overrides ListBulkCreateUpdateDestroyAPIView
+    def get_serializer(self, *args, **kwargs):
+        """
+         Adds many=True to serializer if bulk operation.
+        """
+
+        if "data" in kwargs:
+            data = kwargs["data"]
+
+            if isinstance(data, list):
+                kwargs.update({'many': True})
+
+        return super(NodeContributorsList, self).get_serializer(*args, **kwargs)
+
+
+    # overrides ListBulkCreateUpdateDestroyView
+    def create(self, request, *args, **kwargs):
+        """
+        Correctly formats both bulk and single POST response
+        """
+        response = ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
+        if 'data' in response.data:
+            return response
+        return Response({'data': response.data}, status=status.HTTP_201_CREATED)
+
+    # overrides ListBulkCreateUpdateDestroyAPIView
+    def bulk_update(self, request, *args, **kwargs):
+        """
+        Correctly formats bulk PUT/PATCH response
+        """
+        response = ListBulkCreateUpdateDestroyAPIView.bulk_update(self, request, *args, **kwargs)
+        return Response({'data': response.data}, status=status.HTTP_200_OK)
+
+    # Overrides ListBulkCreateUpdateDestroyAPIView
+    def bulk_destroy(self, request, *args, **kwargs):
+        """
+        Handles bulk destroy of nodes. Handles permissions and enforces bulk limit.
+        """
+        user = self.request.user
+        contrib_list = []
+        if not request.data or 'csrfmiddlewaretoken' in request.data:
+            raise ValidationError('Array must contain resource identifier objects.')
+        for item in request.data:
+            user = get_object_or_error(Node, item[u'id'], display_name='node')
+            contrib_list.append(user)
+
+        if not contrib_list:
+            raise NotFound()
+
+        num_items = len(contrib_list)
+        bulk_limit = JSONAPIListSerializer.DEFAULT_BULK_LIMIT
+
+        if num_items > bulk_limit:
+            raise ValidationError(
+                detail={'non_field_errors': ['Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items)]}
+            )
+
+        self.perform_bulk_destroy(contrib_list)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # Overrides ListBulkCreateUpdateDestroyAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        try:
+            instance.remove_contributors(auth=auth)
+        except NodeStateError as err:
+            raise ValidationError(err.message)
+        instance.save()
+
 
 
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):

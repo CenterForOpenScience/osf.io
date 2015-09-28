@@ -185,6 +185,67 @@ class NodeDetailSerializer(NodeSerializer):
     """
     id = IDField(source='_id', required=True)
 
+
+class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
+    """
+    Bulk updates instance with the validated data.
+
+    Request either completely succeeds or fails. Requires
+    the request to be in the serializer context.
+    """
+
+    # Overrides JSONAPIListSerialize which doesn't support multiple update by default.
+
+    # def create(self, validated_data):
+    #     auth = Auth(self.context['request'].user)
+    #     node = self.context['view'].get_node()
+    #
+    #     contributor_mapping = {item.get('_id', None): item for item in validated_data}
+    #
+    #     ret = []
+    #
+    #     for user_id, data in contributor_mapping.items():
+    #         contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
+    #
+    #     # Node object checks for contributor existence but can still change permissions anyway
+    #     if contributor in node.contributors:
+    #         raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
+    #
+    #     bibliographic = validated_data['bibliographic']
+    #     permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+    #     node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+    #     contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
+    #     contributor.bibliographic = node.get_visible(contributor)
+    #     contributor.node_id = node._id
+    #     return contributor
+
+    def update(self, instance, validated_data):
+        data_mapping = {item.get('_id', None): item for item in validated_data}
+        auth = Auth(self.context['request'].user)
+        node = self.context['view'].get_node()
+
+        ret = []
+        for user_id, data in data_mapping.items():
+            contributor = get_object_or_error(User, user_id, 'contributor')
+            visible = data.get('bibliographic')
+            permission = data.get('permission')
+            try:
+                node.update_contributor(contributor, permission, visible, auth, save=True)
+            except NodeStateError as e:
+                raise exceptions.ValidationError(e)
+            contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
+            contributor.bibliographic = node.get_visible(contributor)
+            contributor.node_id = node._id
+            ret.append(contributor)
+        return ret
+
+    class Meta:
+        type_ = 'nodes'
+
+    class Meta:
+        type_ = 'contributors'
+
+
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
@@ -222,6 +283,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
                                              link_type='related')
 
     profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
+
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        kwargs['child'] = cls()
+        return JSONAPINodeContributorListSerializer(*args, **kwargs)
 
     def get_profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
