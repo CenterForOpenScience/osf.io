@@ -19,10 +19,10 @@
             <div class="form-inline">
                 <div class="form-group">
                     <label> Choose a license: </label>
-                    <select class="form-control" data-bind="options: licenses,
-                     optionsText: 'name',
-                     optionsValue: 'id',
-                     value: selectedLicenseId">
+                    <select class="form-control" data-bind="groupOptions: licenseGroups, 
+                                                            value: selectedLicenseId,
+                                                            optionsText: 'name',
+                                                            optionsValue: 'id'">
                     </select>
                     <button class="btn btn-success" data-bind="click: save,
                                                                css: {
