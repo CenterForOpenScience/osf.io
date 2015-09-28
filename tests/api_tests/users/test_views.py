@@ -515,11 +515,11 @@ class TestUserUpdate(ApiTestCase):
     def tearDown(self):
         super(TestUserUpdate, self).tearDown()
 
-    def test_patch_user_blank_but_not_empty_full_name(self):
+    def test_update_user_blank_but_not_empty_full_name(self):
         res = self.app.put_json_api(self.user_one_url, self.blank_but_not_empty_full_name, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    def test_partial_patch_user_blank_but_not_empty_full_name(self):
+    def test_partial_update_user_blank_but_not_empty_full_name(self):
         res = self.app.patch_json_api(self.user_one_url, self.blank_but_not_empty_full_name, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
