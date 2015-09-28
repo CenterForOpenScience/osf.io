@@ -73,10 +73,10 @@
               <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
                 <div class="panel-heading wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
                     <div class="row">
-                        <div class="col-sm-6">
+                        <div class="col-sm-4">
                             <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
                         </div>
-                        <div class="col-sm-6">
+                        <div class="col-sm-8">
 
                             <div class="pull-right">
                                 <!-- Version Picker -->
