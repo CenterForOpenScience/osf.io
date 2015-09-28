@@ -254,17 +254,22 @@ class TestFileView(ApiTestCase):
             self.file.move_under(folder)
 
     def test_checked_out_merge(self):
+        user = AuthUserFactory()
+        node = ProjectFactory(creator=user)
+        osfstorage = node.get_addon('osfstorage')
+        root_node = osfstorage.get_root()
+        file = root_node.append_file('test_file')
         user_merge_target = AuthUserFactory()
         self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
-            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
-            auth=self.user.auth
+            '/{}files/{}/'.format(API_BASE, file._id),
+            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
+            auth=user.auth
         )
-        self.file.reload()
-        assert_equal(self.user, self.file.checkout)
-        user_merge_target.merge_user(self.user)
-        self.file.reload()
-        assert_equal(user_merge_target, self.file.checkout)
+        file.reload()
+        assert_equal(user, file.checkout)
+        user_merge_target.merge_user(user)
+        file.reload()
+        assert_equal(user_merge_target, file.checkout)
 
     def test_remove_contributor_with_checked_file(self):
         self.app.put_json_api(
