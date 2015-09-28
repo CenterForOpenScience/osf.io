@@ -727,10 +727,17 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
     @assert_logs(NodeLog.MADE_PUBLIC, 'private_project')
     def test_can_make_project_public_if_admin_contributor(self):
+        admin_user = AuthUserFactory()
+        self.private_project.add_contributor(
+            admin_user,
+            permissions=(permissions.READ, permissions.WRITE, permissions.ADMIN),
+            auth=Auth(self.private_project.creator)
+        )
+        self.private_project.save()
         res = self.app.patch_json_api(
             self.private_url,
             make_node_payload(self.private_project, {'public': True}),
-            auth=self.user.auth  # self.user is creator/admin
+            auth=admin_user.auth  # self.user is creator/admin
         )
         assert_equal(res.status_code, 200)
         self.private_project.reload()
