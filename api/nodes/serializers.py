@@ -196,28 +196,33 @@ class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
 
     # Overrides JSONAPIListSerialize which doesn't support multiple update by default.
 
-    # def create(self, validated_data):
-    #     auth = Auth(self.context['request'].user)
-    #     node = self.context['view'].get_node()
-    #
-    #     contributor_mapping = {item.get('_id', None): item for item in validated_data}
-    #
-    #     ret = []
-    #
-    #     for user_id, data in contributor_mapping.items():
-    #         contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
-    #
-    #     # Node object checks for contributor existence but can still change permissions anyway
-    #     if contributor in node.contributors:
-    #         raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
-    #
-    #     bibliographic = validated_data['bibliographic']
-    #     permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
-    #     node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
-    #     contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
-    #     contributor.bibliographic = node.get_visible(contributor)
-    #     contributor.node_id = node._id
-    #     return contributor
+    def create(self, validated_data):
+        auth = Auth(self.context['request'].user)
+        node = self.context['view'].get_node()
+
+        contributor_mapping = {item.get('_id', None): item for item in validated_data}
+
+        ret = []
+
+        for user_id, data in contributor_mapping.items():
+            contributor = get_object_or_error(User, data['_id'], display_name='user')
+             # Node object checks for contributor existence but can still change permissions anyway
+            if contributor in node.contributors:
+                raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
+            contributor_mapping[user_id] = [contributor, data]
+
+        for user_id, data in contributor_mapping.items():
+            contributor = contributor_mapping[user_id][0]
+            data = contributor_mapping[user_id][1]
+            bibliographic = data['bibliographic']
+            permissions = osf_permissions.expand_permissions(data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+            node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+            contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
+            contributor.bibliographic = node.get_visible(contributor)
+            contributor.node_id = node._id
+            ret.append(contributor)
+
+        return ret
 
     def update(self, instance, validated_data):
         data_mapping = {item.get('_id', None): item for item in validated_data}
