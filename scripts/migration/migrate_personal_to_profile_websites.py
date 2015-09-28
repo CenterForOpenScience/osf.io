@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""Script to migrate nodes with invalid categories."""
+"""Script to migrate single value personal to profile_websites list."""
 
 import logging
 
@@ -23,7 +23,7 @@ def main():
             
     for user in get_users_with_social_field():
         logger.info(repr(user))
-        logger.info(repr(user.social))
+        logger.info("Migrating User: %s" % repr(user._id))
         if not user.social.get('profileWebsites', None):
             user.social['profileWebsites'] = []
             if user.social.get('personal'):
