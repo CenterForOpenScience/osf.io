@@ -1,4 +1,8 @@
 from rest_framework import serializers as ser
+
+from modularodm.exceptions import ValidationValueError
+
+from api.base.exceptions import InvalidModelValueError
 from api.base.serializers import AllowMissing
 from website.models import User
 
@@ -66,6 +70,10 @@ class UserSerializer(JSONAPISerializer):
                     instance.social[key] = val
             else:
                 setattr(instance, attr, value)
+        try:
+            instance.save()
+        except ValidationValueError as e:
+            raise InvalidModelValueError(detail=e.message)
         instance.save()
         return instance
 
