@@ -60,7 +60,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
 
                 window.oauthComplete = function(res) {
                     // Update view model based on response
-                    self.updateAccounts(function() {
+                    self.updateAccounts().done(function() {
                         try{
                             $osf.putJSON(
                                 self.urls().importAuth, {
@@ -110,7 +110,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     importAuth: function(){
         var self = this;
 
-        self.updateAccounts(function() {
+        self.updateAccounts().done(function () {
             if (self.accounts().length > 1) {
                 bootbox.prompt({
                     title: 'Choose ' + self.addonName + ' Access Token to Import',
@@ -153,7 +153,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         ).done(self.onImportSuccess.bind(self)
         ).fail(self.onImportError.bind(self));
     },
-    updateAccounts: function(callback) {
+    updateAccounts: function() {
         var self = this;
         var request = $.get(self.urls().accounts);
         request.done(function(data) {
@@ -163,7 +163,6 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     id: account.id
                 };
             }));
-            callback();
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
