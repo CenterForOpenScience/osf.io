@@ -501,8 +501,27 @@ class TestUserUpdate(ApiTestCase):
             }
         }
 
+        self.blank_but_not_empty_full_name = {
+            'data': {
+                'id': self.user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': ' '
+                }
+
+            }
+        }
+
     def tearDown(self):
         super(TestUserUpdate, self).tearDown()
+
+    def test_patch_user_blank_but_not_empty_full_name(self):
+        res = self.app.put_json_api(self.user_one_url, self.blank_but_not_empty_full_name, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_partial_patch_user_blank_but_not_empty_full_name(self):
+        res = self.app.put_json_api(self.user_one_url, self.blank_but_not_empty_full_name, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_patch_user_incorrect_type(self):
         res = self.app.put_json_api(self.user_one_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)
