@@ -74,7 +74,6 @@ class UserSerializer(JSONAPISerializer):
             instance.save()
         except ValidationValueError as e:
             raise InvalidModelValueError(detail=e.message)
-        instance.save()
         return instance
 
 
