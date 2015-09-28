@@ -44,13 +44,13 @@ var FileViewPage = {
         };
         if (self.file.provider === 'osfstorage'){
             self.canEdit = function() {
-                return ((!self.file.checkout_user) || (self.file.checkout_user === self.context.currentUser.id)) ? m.prop(!!self.context.currentUser.canEdit) : false;
+                return ((!self.file.checkout_user) || (self.file.checkout_user === self.context.currentUser.id)) ? (self.context.currentUser.canEdit ? true : false) : false;
             };
             self.isCheckout_user();
         } else {
             self.request_done = true;
             self.canEdit = function() {
-                return m.prop(!!self.context.currentUser.canEdit);
+                return self.context.currentUser.canEdit;
             };
         }
         
@@ -335,7 +335,7 @@ var FileViewPage = {
         };
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             // Special case whether or not to show the delete button for published Dataverse files
-            (ctrl.canEdit() && (!ctrl.file.checkout_user) && ctrl.request_done && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
+            (ctrl.canEdit() && (!(ctrl.file.provider === 'osfstorage') || !ctrl.file.checkout_user) && ctrl.request_done && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.request_done && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
