@@ -102,7 +102,7 @@ var ViewModel = function(params) {
         return l;
     });
     self.licenseNames = ko.computed(function() {
-        var sortedLicenses = self.licenses() || [];
+        var sortedLicenses = self.licenses || [];
         sortedLicenses.sort(function(a, b) {
             if (a.count() > b.count()) {
                 return -1;
@@ -125,7 +125,7 @@ var ViewModel = function(params) {
         });
     });
     self.selectedLicenses = ko.pureComputed(function() {
-        return self.licenses().filter(function(license) {
+        return self.licenses.filter(function(license) {
             return license.active();
         });
     });
@@ -134,7 +134,7 @@ var ViewModel = function(params) {
     });
     self.category.subscribe(function(value) {
         if (['project', 'registration', 'component'].indexOf(value) < 0) {
-            $.each(self.licenses(), function(i, license) {
+            $.each(self.licenses, function(i, license) {
                 license.active(false);
             });
         }
@@ -349,7 +349,7 @@ var ViewModel = function(params) {
             self.categories.removeAll();
             self.shareCategory('');
 
-            var licenseCounts = self.licenses();
+            var licenseCounts = self.licenses;
             var noneLicense;
             ko.utils.arrayForEach(licenseCounts, function(l) {
                 l.count(0);
@@ -368,7 +368,7 @@ var ViewModel = function(params) {
                 });
             }            
             noneLicense.count(noneLicense.count() + nullLicenseCount);
-            self.licenses(licenseCounts);
+            self.licenses = licenseCounts;
 
             data.results.forEach(function(result){
                 if(result.category === 'user'){
