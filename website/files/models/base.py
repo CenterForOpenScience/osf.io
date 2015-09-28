@@ -335,8 +335,7 @@ class FileNode(object):
         Implemented top level so that child class may override it
         and just call super.save rather than self.stored_object.save
         """
-        if self.node.is_public:
-            search.update_file(self)
+        search.update_file(self)
         self.stored_object.save()
 
     def serialize(self, **kwargs):

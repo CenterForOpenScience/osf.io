@@ -373,6 +373,16 @@ def update_file(file_, index=None):
 
     index = index or INDEX
 
+    if not file_.node.is_public:
+        es.delete(
+            index=index,
+            doc_type='file',
+            id=file_._id,
+            refresh=True,
+            ignore=[404]
+        )
+        return
+
     file_doc = {
         'id': file_._id,
         'deep_url': file_.deep_url,
