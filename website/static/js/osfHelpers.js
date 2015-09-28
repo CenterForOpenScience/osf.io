@@ -659,8 +659,13 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
+    // Set nav-box width based on screem
+    fixAffixWidth();
+    // Show the nav box
+    $('.osf-affix').each(function (){
+        $(this).show();
+    });
     $(window).resize(debounce(fixAffixWidth, 20, true));
-    $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
 };
 
 // Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable
@@ -808,6 +813,12 @@ var confirmDangerousAction = function (options) {
     bootbox.dialog(bootboxOptions);
 };
 
+/** A future-proof getter for the current user
+**/
+var currentUser = function(){
+    return window.contextVars.currentUser;
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -837,5 +848,6 @@ module.exports = window.$.osf = {
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
     isIE: isIE,
-    isSafari:isSafari
+    isSafari:isSafari,
+    currentUser: currentUser
 };
