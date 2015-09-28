@@ -25,9 +25,14 @@ def search(query, index=None, doc_type=None):
     return search_engine.search(query, index=index, doc_type=doc_type)
 
 @requires_search
-def update_node(node, index=None):
+def update_node(node, index=None, bulk=False):
     index = index or settings.ELASTIC_INDEX
-    search_engine.update_node(node, index=index)
+    return search_engine.update_node(node, index=index, bulk=bulk)
+
+@requires_search
+def bulk_update_nodes(serialize, nodes, index=None):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.bulk_update_nodes(serialize, nodes, index=index)
 
 @requires_search
 def delete_node(node, index=None):

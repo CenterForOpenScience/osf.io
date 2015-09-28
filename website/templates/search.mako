@@ -71,6 +71,23 @@
                         </div>
                         <br />
                         <!-- /ko -->
+                        <div class="row" class="hidden-xs" data-bind="if: showLicenses" class="row">
+                            <div class="col-md-12">
+                                <h4> Filter by License:</h4>
+                                <span data-bind="if: licenses">
+                                <ul class="nav nav-pills nav-stacked"
+                                    data-bind="foreach: {data: licenses, as: 'license'}">
+                                  <li data-bind="css: {'active': license.active(), 'disabled': !license.count()}">
+                                    <a data-bind="click: license.toggleActive">
+                                      {{license.name}}
+                                      <span data-bind="text: license.count" class="badge pull-right"></span>
+                                    </a>
+                                  </li>                                 
+                                </ul>
+                                </span>
+                            </div>
+                        </div>
+                        <br />
                     </div>
                     <!-- /ko -->
                     <div class="col-md-9">
