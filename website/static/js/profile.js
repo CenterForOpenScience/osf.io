@@ -589,7 +589,7 @@ var SocialViewModel = function(urls, modes) {
                         self.profileWebsites.splice(idx, 1);
                         self.submit();
                         self.changeMessage(
-                            'Website Removed',
+                            'Website removed',
                             'text-danger',
                             5000
                         );
