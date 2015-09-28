@@ -1087,8 +1087,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.is_contributor(auth.user)
 
     def update(self, fields, auth=None, save=True):
+        """Update the node with the given fields.
+
+        :param dict fields: Dictionary of field_name:value pairs.
+        :param Auth auth: Auth object for the user making the update.
+        :param bool save: Whether to save after updating the object.
+        """
         if self.is_registration:
             raise NodeUpdateError(reason="Registered content cannot be updated")
+        if not fields:  # Bail out early if there are no fields to update
+            return False
         values = {}
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:

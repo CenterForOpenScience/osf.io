@@ -141,14 +141,15 @@ class NodeSerializer(JSONAPISerializer):
             node.add_tag(new_tag, auth=auth)
         for deleted_tag in (old_tags - current_tags):
             node.remove_tag(deleted_tag, auth=auth)
-        if validated_data:
-            if 'is_public' in validated_data:
-                privacy_key = 'public' if validated_data.pop('is_public') else 'private'
-                try:
-                    node.set_privacy(privacy_key, auth=auth, log=True, save=True)
-                except PermissionsError:
-                    raise exceptions.PermissionDenied
 
+        if 'is_public' in validated_data:
+            privacy_key = 'public' if validated_data.pop('is_public') else 'private'
+            try:
+                node.set_privacy(privacy_key, auth=auth, log=True, save=True)
+            except PermissionsError:
+                raise exceptions.PermissionDenied
+
+        if validated_data:
             try:
                 node.update(validated_data, auth=auth)
             except ValidationValueError as e:

@@ -697,7 +697,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
-    @assert_not_logs(NodeLog.UPDATED_FIELDS, 'private_project')
+    @assert_not_logs(NodeLog.MADE_PUBLIC, 'private_project')
     def test_cannot_make_project_public_if_non_contributor(self):
         non_contrib = AuthUserFactory()
         res = self.app.patch_json(
@@ -725,7 +725,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         self.private_project.reload()
         assert_false(self.private_project.is_public)
 
-    @assert_logs(NodeLog.UPDATED_FIELDS, 'private_project')
+    @assert_logs(NodeLog.MADE_PUBLIC, 'private_project')
     def test_can_make_project_public_if_admin_contributor(self):
         res = self.app.patch_json_api(
             self.private_url,
