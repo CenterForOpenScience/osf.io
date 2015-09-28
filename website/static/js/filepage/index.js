@@ -20,10 +20,11 @@ var EDITORS = {'text': FileEditor};
 
 var SharePopover =  {
     view: function(ctrl, params) {
+        var copy_button_height = '34px';
+        var popover_width = '450px';
+        var link = params.link.substring(0, params.link.indexOf('download') + 8) + '%26mode=render';
+        var url = link.substring(0, link.indexOf('render'));
         return m('button.btn.btn-sm.btn-primary.file-share', {onclick: function () {
-                var link = params.link;
-                link = link.substring(0, link.indexOf('download') + 8) + '%26mode=render';
-                var url = link.substring(0, link.indexOf('render'));
                 m.render(document.getElementById('popOver'), [
                     m('ul.nav.nav-tabs.nav-justified', [
                         m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
@@ -31,7 +32,7 @@ var SharePopover =  {
                     ]), m('br'),
                     m('.tab-content', [
                         m('.tab-pane.fade.in.active#share', m('.input-group', [
-                            m('span.input-group-btn', m('button#copyBtn.btn.btn-default.btn-md[type="button"][style="height: 34px"][data-clipboard-text="' + link + '"]', m('.fa.fa-copy'))),
+                            m('span.input-group-btn', m('button#copyBtn.btn.btn-default.btn-md[type="button"][style="height:' + copy_button_height + '"][data-clipboard-text="' + link + '"]', m('.fa.fa-copy'))),
                             m('input.form-control[readonly][type="text"][value="'+ link +'"]')
                         ])),
                         m('.tab-pane.fade#embed', [
@@ -58,7 +59,7 @@ var SharePopover =  {
                     var button = $(element).popover();
                     button.on('show.bs.popover', function(e){
                         //max-width used to override, and width used to create space for the mithril object to be injected
-                        button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', '451px').css('width', '450px');
+                        button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', popover_width).css('width', popover_width);
                     });
                 }
             }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"/>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share');
