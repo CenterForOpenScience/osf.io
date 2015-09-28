@@ -79,7 +79,7 @@ def file_remove_tag(**kwargs):
     file_node = FileNode.load(kwargs.get('fid'))
     if not file_node:
         return {'status': 'failure'}, http.BAD_REQUEST
-    tag =kwargs.get('tag')
+    tag = kwargs.get('tag')
     if tag in file_node.tags:
         file_node.tags.remove(tag)
         file_node.save()
