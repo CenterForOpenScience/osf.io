@@ -709,7 +709,11 @@ class TestNodeUpdate(NodeCRUDTestCase):
 
     def test_cannot_make_project_public_if_non_admin_contributor(self):
         non_admin = AuthUserFactory()
-        self.private_project.add_contributor(non_admin, auth=Auth(self.private_project.creator))
+        self.private_project.add_contributor(
+            non_admin,
+            permissions=(permissions.READ, permissions.WRITE),
+            auth=Auth(self.private_project.creator)
+        )
         self.private_project.save()
         res = self.app.patch_json(
             self.private_url,
@@ -726,7 +730,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.patch_json_api(
             self.private_url,
             make_node_payload(self.private_project, {'public': True}),
-            auth=self.user.auth
+            auth=self.user.auth  # self.user is creator/admin
         )
         assert_equal(res.status_code, 200)
         self.private_project.reload()
