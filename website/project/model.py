@@ -2216,6 +2216,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if not admins:
             return False
 
+        for file_checked in contributor.files_checked_out():
+            if file_checked.node == self:
+                file_checked.checkout = None
+                file_checked.save()
+
         # Clear permissions for removed user
         self.permissions.pop(contributor._id, None)
 

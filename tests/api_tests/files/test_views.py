@@ -265,3 +265,14 @@ class TestFileView(ApiTestCase):
         user_merge_target.merge_user(self.user)
         self.file.reload()
         assert_equal(user_merge_target, self.file.checkout)
+
+    def test_remove_contributor_with_checked_file(self):
+        self.app.put_json_api(
+            '/{}files/{}/'.format(API_BASE, self.file._id),
+            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
+            auth=self.user.auth
+        )
+        self.file.reload()
+        assert_equal(self.user, self.file.checkout)
+        self.file.node.remove_contributor(self.user, self.user.auth)
+        assert_equal(self.file.checkout, None)
