@@ -195,6 +195,49 @@ var FileViewPage = {
                 ], '.')
             ]);
         }
+        var sharePopover =  {view: function() { return m('button.btn.btn-sm.btn-primary.file-share', {onclick: function () {
+            var link = $('iframe').attr('src');
+            var height = $('iframe').attr('height');
+            link = link.substring(0, link.indexOf('download') + 8) + '%26mode=render';
+            var url = link.substring(0, link.indexOf('render'));
+            m.render(document.getElementById('popOver'), [
+                m('ul.nav.nav-tabs.nav-justified', [
+                    m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
+                    m('li', m('a[href="#embed"][data-toggle="tab"]', 'Embed'))
+                ]), m('br'),
+                m('.tab-content', [
+                    m('.tab-pane.fade.in.active#share', m('.input-group', [
+                        m('span.input-group-btn', m('button#copyBtn.btn.btn-default.btn-md[type="button"][style="height: 34px"][data-clipboard-text="' + link + '"]', m('.fa.fa-copy'))),
+                        m('input.form-control[readonly][type="text"][value="'+ link +'"]')
+                    ])),
+                    m('.tab-pane.fade#embed', [
+                        m('p', 'Dynamically Render iFrame with JavaScript'),
+                        m('textarea.form-control[readonly][type="text"][value="' +
+                            '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
+                            '<link href="' + url + 'static/css/mfr.css" media="all" rel="stylesheet">' +
+                            '<div id="mfrIframe" class="mfr mfr-file"></div>' +
+                            '<script src="' + url + 'static/js/mfr.js">' +
+                            '</script> <script>' +
+                                'var mfrRender = new mfr.Render("mfrIframe", "' + link + '");' +
+                            '</script>' + '"]'
+                        ), m('br'),
+                        m('p', 'Direct iFrame with Fixed Height and Width'),
+                        m('textarea.form-control[readonly]#directIFrame[value="' +
+                            '<iframe src="' + link + '" width="100%" scrolling="yes" height="' + height + '" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen>"]'
+                        )
+                    ])
+                ])
+            ]);
+            makeClient($('#copyBtn'));
+        }, config: function(element, isInitialized) {
+            if(!isInitialized){
+                var button = $(element).popover();
+                button.on('show.bs.popover', function(e){
+                    //max-width used to override, and width used to create space for the mithril object to be injected
+                    button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', '600px').css('width', '450px');
+                });
+            }
+        }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"/>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share')}};
 
         var editButton = function() {
             if (ctrl.editor) {
@@ -215,57 +258,9 @@ var FileViewPage = {
             (ctrl.canEdit() && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
-            m('.btn-group.m-t-xs', [
-                m('#sharebutton.btn.btn-sm.btn-primary.file-share', {onclick: function () {
-                    var link = $('iframe').attr('src');
-                    var height = $('iframe').attr('height');
-                    link = link.substring(0, link.indexOf('download') + 8) + '%26mode=render';
-                    var url = link.substring(0, link.indexOf('render'));
-                    m.render(document.getElementById('popOver'), [
-                        m('ul.nav.nav-tabs.nav-justified', [
-                            m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
-                            m('li', m('a[href="#embed"][data-toggle="tab"]', 'Embed'))
-                        ]), m('br'),
-                        m('.tab-content', [
-                            m('.tab-pane.fade.in.active#share', m('.input-group', [
-                                m('span.input-group-btn', m('button#copyBtn.btn.btn-default.btn-md[type="button"][style="height: 34px"][data-clipboard-text="' + link + '"]', m('.fa.fa-copy'))),
-                                m('input.form-control[readonly][type="text"][value="'+ link +'"]')
-                            ])),
-                            m('.tab-pane.fade#embed', [
-                                m('p', 'Dynamically Render iFrame with JavaScript'),
-                                m('textarea.form-control[readonly][type="text"][value="' +
-                                    '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
-                                    '<link href="' + url + 'static/css/mfr.css" media="all" rel="stylesheet">' +
-                                    '<div id="mfrIframe" class="mfr mfr-file"></div>' +
-                                    '<script src="' + url + 'static/js/mfr.js">' +
-                                    '</script> <script>' +
-                                        'var mfrRender = new mfr.Render("mfrIframe", "' + link + '");' +
-                                    '</script>' + '"]'
-                                ), m('br'),
-                                m('p', 'Direct iFrame with Fixed Height and Width'),
-                                m('textarea.form-control[readonly]#directIFrame[value="' +
-                                    '<iframe src="' + link + '" width="100%" scrolling="yes" height="' + height + '" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen>"]'
-                                )
-                            ])
-                        ])
-                    ]);
-                    makeClient($('#copyBtn'));
-                }, config: function(element, isInitialized) {
-                    if(!isInitialized){
-                        var button = $(element).popover();
-                        button.on('show.bs.popover', function(e){
-                            //max-width used to override, and width used to create space for the mithril object to be injected
-                            button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', '600px').css('width', '450px');
-                        });
-                        if (!window.contextVars.node.isPublic) {
-                            $('#sharebutton').addClass('disabled');
-                        }
-                        else {
-                            $('#sharebutton').removeClass('disabled');
-                        }
-                    }
-                }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"/>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share')
-            ]),
+            window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
+                m.component(sharePopover)
+            ]) : '',
             m('.btn-group.m-t-xs', [
                 m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
             ]),
