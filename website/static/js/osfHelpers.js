@@ -548,8 +548,13 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
+    // Set nav-box width based on screem
+    fixAffixWidth();
+    // Show the nav box
+    $('.osf-affix').each(function (){
+        $(this).show();
+    });
     $(window).resize(debounce(fixAffixWidth, 20, true));
-    $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
 };
 
 // Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable
@@ -697,63 +702,11 @@ var confirmDangerousAction = function (options) {
     bootbox.dialog(bootboxOptions);
 };
 
-/**
- * Maps an object to an array of {key: KEY, value: VALUE} pairs
- *
- * @param {Object} obj
- * @returns {Array} array of key, value pairs
+/** A future-proof getter for the current user
 **/
-var iterObject = function(obj) {
-    var ret = [];
-    $.each(obj, function(prop, value) {
-        ret.push({
-            key: prop,
-            value: value
-        });
-    });
-    return ret;
+var currentUser = function(){
+    return window.contextVars.currentUser;
 };
-/** 
- * Asserts that a value is falsey or an empty string
- *
- * @param {String} item
- * @returns {Boolean} true if item is flasey or an empty string else false
-**/
-function isBlank(item) {
-    return !item || /^\s*$/.test(item || '');
-}
-/**
- * Use a search function to get the index of an object in an array
- *
- * @param {Array} array
- * @param {Function} searchFn: function that returns true when an item matching the search conditions is found
- * @returns {Integer} index of matched item or -1 if no matching item is found
- **/
-function indexOf(array, searchFn) {
-    var len = array.length;
-    for(var i = 0; i < len; i++) {
-        if(searchFn(array[i])) {
-            return i;
-        }
-    }
-    return -1;
-}
-/**
- * Create a function that negates the passed value
- *
- * @param {Any} any: either a function or some other value; for function values the return value of the function is negated
- * @returns {Function}: a function that returns the negated value of any (or the return value of any when called with the same arguments)
- **/
-function not(any) {
-    return function() {
-        try {
-            return !any.apply(this, arguments);
-        }
-        catch(err) {
-            return !any;
-        }
-    };
-}
 
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
@@ -786,9 +739,6 @@ module.exports = window.$.osf = {
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
     isIE: isIE,
-    isSafari: isSafari,
-    indexOf: indexOf,
-    iterObject: iterObject,
-    isBlank: isBlank,
-    not: not
+    isSafari:isSafari,
+    currentUser: currentUser
 };

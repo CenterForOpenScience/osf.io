@@ -42,6 +42,9 @@ from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
 from website.project import new_folder
 from website.util.sanitize import strip_html
+from website.util import rapply
+
+r_strip_html = lambda collection: rapply(collection, strip_html)
 
 logger = logging.getLogger(__name__)
 
@@ -569,12 +572,13 @@ def togglewatch_post(auth, node, **kwargs):
 def update_node(auth, node, **kwargs):
     # in node.update() method there is a key list node.WRITABLE_WHITELIST only allow user to modify
     # category, title, and discription which can be edited by write permission contributor
+    data = r_strip_html(request.get_json())
     try:
         return {
             'updated_fields': {
                 key: getattr(node, key)
                 for key in
-                node.update(request.get_json(), auth=auth)
+                node.update(data, auth=auth)
             }
         }
     except NodeUpdateError as e:
@@ -718,6 +722,7 @@ def _view_project(node, auth, primary=False):
             'category_short': node.category,
             'node_type': node.project_or_component,
             'description': node.description or '',
+            'license': node.license,
             'url': node.url,
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,
@@ -779,6 +784,7 @@ def _view_project(node, auth, primary=False):
         },
         'user': {
             'is_contributor': node.is_contributor(user),
+            'is_admin': node.has_permission(user, ADMIN),
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),

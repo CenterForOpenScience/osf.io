@@ -1,0 +1,52 @@
+<span data-bind="ifnot: hideLicensePicker">
+<span id="license">License:</span>
+<span class="text-muted editable" data-bind="text: savedLicenseName,
+                                    style: {
+                                      cursor: allowEdit()? 'pointer' : 'auto'
+                                    },
+                                    click: togglePreview.bind($data, true)"></span>
+<span data-bind="ifnot: allowEdit">
+  <span style="cursor: pointer" class="fa fa-info-circle" data-bind="click: togglePreview.bind($data, false)"></span>
+</span>
+<p data-bind="if: message">
+  <span data-bind="text: message, css: messageClass"></span>
+</p>
+<span data-bind="if: previewing">
+  <div class="panel panel-default">
+    <div class="panel-body">
+      <div class="col-md" data-bind="if: allowEdit">
+        <span class="btn fa fa-times-circle pull-right" data-bind="click: togglePreview"></span>
+            <div class="form-inline">
+                <div class="form-group">
+                    <label> Choose a license: </label>
+                    <select class="form-control" data-bind="options: licenses,
+                     optionsText: 'name',
+                     optionsValue: 'id',
+                     value: selectedLicenseId">
+                    </select>
+                    <button class="btn btn-success" data-bind="click: save,
+                                                               css: {
+                                                                 'disabled': disableSave
+                                                               }">Save</button>                    
+                </div>
+                <hr />
+            </div>
+            <div class="form panel-default" data-bind="if: properties">
+              <div data-bind="foreach: properties">
+                <div class="form-group">
+                  <label>
+                    <span data-bind="text: name + ':'"></span>
+                    <span class="text-danger" data-bind="validationMessage: value"></span>
+                  </label>
+                  <input class="form-control" data-bind="value: value, valueUpdate: 'keyup'" />
+                </div>
+              </div>
+            </div>
+        </div>
+        <div class="col-md" data-bind="if: previewing">
+            <pre data-bind="text: selectedLicenseText" ></pre>
+        </div>
+    </div>
+  </div>
+</span>
+</span>
