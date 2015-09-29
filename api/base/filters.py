@@ -2,6 +2,7 @@ import re
 import functools
 import operator
 from dateutil import parser as date_parser
+import datetime
 
 from modularodm import Q
 from rest_framework.filters import OrderingFilter
@@ -42,6 +43,9 @@ class FilterMixin(object):
         ser.ListField: 'contains',
     }
 
+    TIME_FIELDS = (ser.DateTimeField, ser.DateField)
+    DATETIME_PATTERN = re.compile(r'^\d{4}\-\d{2}\-\d{2}(?P<time>T\d{2}:\d{2}(:\d{2}(:\d{1,6})?)?)$')
+
     def __init__(self, *args, **kwargs):
         super(FilterMixin, self).__init__(*args, **kwargs)
         if not self.serializer_class:
@@ -57,7 +61,6 @@ class FilterMixin(object):
         :raises InvalidFilterComparisonType: If the query contains comparisons against non-date or non-numeric fields
         :raises InvalidFilterMatchType: If the query contains comparisons against non-string or non-list fields
         :raises InvalidFilterOperator: If the filter operator is not a member of self.COMPARISON_OPERATORS
-        :raises InvalidFilterError: If the filter string is otherwise malformed
         :return dict: of the format {
             <resolved_field_name>: {
                 'op': <comparison_operator>,
@@ -67,33 +70,49 @@ class FilterMixin(object):
         """
         fields = {}
         for key, value in query_params.iteritems():
-            if self.QUERY_PATTERN.match(key):
-                match = self.QUERY_PATTERN.match(key)
-                if match:
-                    field_name = match.groupdict().get('field').strip()
-                    if field_name not in self.serializer_class._declared_fields:
-                        raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint".format(field_name))
-                    if field_name not in getattr(self.serializer_class, 'filterable_fields', {}):
-                        raise InvalidFilterFieldError(attribute=field_name)
-                    field = self.serializer_class._declared_fields[field_name]
-                    op = match.groupdict().get('op') or self._get_default_operator(field)
-                    if op not in set(self.MATCH_OPERATORS + self.COMPARABLE_FIELDS + (self.DEFAULT_OPERATOR, )):
-                        raise InvalidFilterOperator(value=op)
-                    if op in self.COMPARISON_OPERATORS:
-                        if type(field) not in self.COMPARABLE_FIELDS:
-                            raise InvalidFilterComparisonType(attribute=field_name)
-                    if op in self.MATCH_OPERATORS:
-                        if type(field) not in self.MATCHABLE_FIELDS:
-                            raise InvalidFilterMatchType(attribute=field_name)
-                    field_name = self.convert_key(field_name, field)
-                    if field_name not in fields:
-                        fields[field_name] = []
+            match = self.QUERY_PATTERN.match(key)
+            if match:
+                field_name = match.groupdict().get('field').strip()
+                if field_name not in self.serializer_class._declared_fields:
+                    raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint".format(field_name))
+                if field_name not in getattr(self.serializer_class, 'filterable_fields', {}):
+                    raise InvalidFilterFieldError(attribute=field_name)
+                field = self.serializer_class._declared_fields[field_name]
+                op = match.groupdict().get('op') or self._get_default_operator(field)
+                if op not in set(self.MATCH_OPERATORS + self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )):
+                    raise InvalidFilterOperator(value=op)
+                if op in self.COMPARISON_OPERATORS:
+                    if type(field) not in self.COMPARABLE_FIELDS:
+                        raise InvalidFilterComparisonType(attribute=field_name)
+                if op in self.MATCH_OPERATORS:
+                    if type(field) not in self.MATCHABLE_FIELDS:
+                        raise InvalidFilterMatchType(attribute=field_name)
+                field_name = self.convert_key(field_name, field)
+                if field_name not in fields:
+                    fields[field_name] = []
+                if type(field) in self.TIME_FIELDS:
+                    time_match = self.DATETIME_PATTERN.match(value)
+                    if op != 'eq' or time_match:  # comparison or explicit time
+                        fields[field_name].append({
+                            'op': op,
+                            'value': self.convert_value(value, field)
+                        })
+                    else:  # match whole day; TODO: let times be as generic as possible (i.e. whole month, whole year)
+                        start = self.convert_value(value, field)
+                        stop = start + datetime.timedelta(days=1)
+                        fields[field_name].append({
+                            'op': 'gte',
+                            'value': start
+                        })
+                        fields[field_name].append({
+                            'op': 'lt',
+                            'value': stop
+                        })
+                else:
                     fields[field_name].append({
                         'op': op,
                         'value': self.convert_value(value, field)
                     })
-                else:
-                    raise InvalidFilterError
         return fields
 
     def convert_key(self, field_name, field):
@@ -109,7 +128,6 @@ class FilterMixin(object):
         :param rest_framework.fields.Field field: Field instance
         """
         field_type = type(field)
-        value = value.strip()
         if field_type == ser.BooleanField:
             if utils.is_truthy(value):
                 return True
@@ -131,7 +149,7 @@ class FilterMixin(object):
         elif field_type in (ser.DecimalField, ser.IntegerField):
             return float(value)
         else:
-            return value
+            return value.strip()
 
 
 class ODMFilterMixin(FilterMixin):
