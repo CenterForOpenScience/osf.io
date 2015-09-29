@@ -26,7 +26,7 @@ var clipboardConfig = function(element, isInitialized) {
 
 var CopyButton = {
     view: function(ctrl, params) {
-        return m('span.input-group-btn', m('button#copyBtn.btn.btn-default.btn-md[type="button"]' +
+        return m('span.input-group-btn', m('button.btn.btn-default.btn-md[type="button"]' +
             '[data-clipboard-text="' + params.link + '"]',
             {config: clipboardConfig, style: {height: params.height}},
             m('.fa.fa-copy')));
@@ -68,7 +68,6 @@ var SharePopover =  {
                         ])
                     ])
                 ]);
-                makeClient($('#copyBtn'));
             }, config: function(element, isInitialized) {
                 if(!isInitialized){
                     var button = $(element).popover();
