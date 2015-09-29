@@ -12,6 +12,7 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer
+from api.comments.views import CommentMixin
 from api.users.views import UserMixin
 from api.nodes.serializers import (
     NodeSerializer,
@@ -530,3 +531,13 @@ class NodeCommentsList(generics.ListCreateAPIView, NodeMixin):
 
     def get_queryset(self):
         return Comment.find(Q('node', 'eq', self.get_node()) & Q('is_deleted', 'ne', True))
+
+
+class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
+    # permission_classes
+    # required scopes
+
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        return Comment.find(Q('target', 'eq', self.get_comment()) & Q('is_deleted', 'ne', True))
