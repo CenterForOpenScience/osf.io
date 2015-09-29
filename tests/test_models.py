@@ -79,14 +79,17 @@ class TestUserValidation(OsfTestCase):
     def test_validate_social_profile_websites_empty(self):
         self.user.social = {'profileWebsites': []}
         self.user.save()
+        assert_equal(self.user.social['profileWebsites'], [])
 
     def test_validate_social_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/']}
         self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://cos.io/'])
 
     def test_validate_multiple_profile_websites_valid(self):
         self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
         self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'])
 
     def test_validate_social_profile_websites_invalid(self):
         self.user.social = {'profileWebsites': ['help computer']}
