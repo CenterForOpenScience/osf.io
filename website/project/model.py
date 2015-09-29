@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import itertools
+import functools
 import os
 import re
 import urllib
@@ -508,9 +509,16 @@ def validate_title(value):
     if value is None or not value.strip():
         raise ValidationValueError('Title cannot be blank.')
 
+    value = sanitize.strip_html(value)
+
+    if value is None or not value.strip():
+        raise ValidationValueError('Invalid title.')
+
     if len(value) > 200:
         raise ValidationValueError('Title cannot exceed 200 characters.')
+
     return True
+
 
 def validate_user(value):
     if value != {}:
@@ -519,11 +527,13 @@ def validate_user(value):
             raise ValidationValueError('User does not exist.')
     return True
 
+
 class NodeUpdateError(Exception):
     def __init__(self, reason, key, *args, **kwargs):
         super(NodeUpdateError, self).__init__(*args, **kwargs)
         self.key = key
         self.reason = reason
+
 
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
@@ -554,6 +564,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'is_deleted',
         'wiki_pages_current',
         'is_retracted',
+        'node_license',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -576,6 +587,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'title',
         'description',
         'category',
+        'node_license',
     ]
 
     _id = fields.StringField(primary=True)
@@ -618,6 +630,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     title = fields.StringField(validate=validate_title)
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
+
+    # Representation of a nodes's license
+    # {
+    #  'id':  <id>,
+    #  'name': <name>,
+    #  'text': <license text>,
+    #  'year' (optional): <year>,
+    #  'copyrightHolders' (optional): <copyright_holders>
+    # }
+    node_license = fields.DictionaryField(default=dict)
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -687,6 +709,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pk(self):
         return self._id
+
+    @property
+    def license(self):
+        node_license = self.node_license
+        if not node_license and self.parent_node:
+            return self.parent_node.license
+        return node_license
 
     @property
     def category_display(self):
@@ -1087,8 +1116,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.is_contributor(auth.user)
 
     def update(self, fields, auth=None, save=True):
+        """Update the node with the given fields.
+
+        :param dict fields: Dictionary of field_name:value pairs.
+        :param Auth auth: Auth object for the user making the update.
+        :param bool save: Whether to save after updating the object.
+        """
         if self.is_registration:
             raise NodeUpdateError(reason="Registered content cannot be updated")
+        if not fields:  # Bail out early if there are no fields to update
+            return False
         values = {}
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
@@ -1192,6 +1229,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             need_update = False
         if need_update:
             self.update_search()
+
+        if 'node_license' in saved_fields:
+            children = [c for c in self.get_descendants_recursive(
+                include=lambda n: n.node_license == {}
+            )]
+            # this returns generator, that would get unspooled anyways
+            if children:
+                Node.bulk_update_search(children)
 
         # This method checks what has changed.
         if settings.PIWIK_HOST and update_piwik:
@@ -1583,7 +1628,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         validate_title(title)
 
         original_title = self.title
-        self.title = title
+        self.title = sanitize.strip_html(title)
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
@@ -1607,7 +1652,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param bool save: Save self after updating.
         """
         original = self.description
-        self.description = description
+        self.description = sanitize.strip_html(description)
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
@@ -1627,6 +1672,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website import search
         try:
             search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    @classmethod
+    def bulk_update_search(cls, nodes):
+        from website import search
+        try:
+            serialize = functools.partial(search.search.update_node, bulk=True)
+            search.search.bulk_update_nodes(serialize, nodes)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1762,6 +1817,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
+        forked.node_license = original.license
 
         # Forks default to private status
         forked.is_public = False
@@ -1848,6 +1904,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.node_license = original.license
 
         registered.save()
 
@@ -2561,6 +2618,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
         """
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
             if self.is_registration:
                 if self.is_pending_embargo:
@@ -2919,9 +2978,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def require_approval(self, user):
         if not self.is_registration:
-            raise NodeStateError('Only registrations may be embargoed')
+            raise NodeStateError('Only registrations can require registration approval')
         if not self.has_permission(user, 'admin'):
-            raise PermissionsError('Only admins may embargo a registration')
+            raise PermissionsError('Only admins can initiate a registration approval')
 
         approval = self._initiate_approval(user)
 
@@ -3021,7 +3080,7 @@ class PrivateLink(StoredObject):
             "id": self._id,
             "date_created": iso8601format(self.date_created),
             "key": self.key,
-            "name": self.name,
+            "name": sanitize.unescape_entities(self.name),
             "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
                       for x in self.nodes if not x.is_deleted],
