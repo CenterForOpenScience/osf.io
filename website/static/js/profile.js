@@ -483,8 +483,9 @@ var SocialViewModel = function(urls, modes) {
     TrackedMixin.call(self);
 
     self.addons = ko.observableArray();
-    
-    self.profileWebsites = ko.observableArray();
+
+    // Start with blank profileWebsite for new users without a profile.
+    self.profileWebsites = ko.observableArray(['']);
 
     self.hasProfileWebsites = ko.pureComputed(function() {
         //Check to see if any valid profileWebsites exist
