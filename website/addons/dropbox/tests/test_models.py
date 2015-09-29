@@ -319,6 +319,8 @@ class TestDropboxNodeSettingsModel(OsfTestCase):
     def test_create_log(self):
         action = 'file_added'
         path = 'pizza.nii'
+        self.node_settings.folder = '/SomeOddPath'
+        self.node_settings.save()
         nlog = len(self.project.logs)
         self.node_settings.create_waterbutler_log(
             auth=Auth(user=self.user),
