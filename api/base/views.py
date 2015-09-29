@@ -31,8 +31,9 @@ def root(request, format=None):
 
     ###Canonical URLs
 
-    All canonical URLs have trailing slashes.  A request to an endpoint without a trailing slash will result in a
-    301 redirect to the canonical URL.
+    All canonical URLs have trailing slashes.  A request to an endpoint without a trailing slash will result in a 301
+    redirect to the canonical URL.  There are some exceptions when working with the Files API, so if a URL in a response
+    does not have a slash, do not append one.
 
     ###Plurals
 
@@ -68,8 +69,9 @@ def root(request, format=None):
 
     ###Pagination
 
-    All entity collection endpoints respond to the `page` query parameter behavior as described in the [JSON-API pagination
-    spec](http://jsonapi.org/format/1.0/#crud).
+    All entity collection endpoints respond to the `page` query parameter behavior as described in the [JSON-API
+    pagination spec](http://jsonapi.org/format/1.0/#crud).  However, pagination links are provided in the response, and
+    you are encouraged to use that rather than adding query parameters by hand.
 
     ###Formatting POST/PUT/PATCH request bodies
 
@@ -80,6 +82,45 @@ def root(request, format=None):
     `attributes` member with an object containing the key-value pairs to be created/updated.  PUT/PATCH requests must
     also have an `id` key that matches the id part of the endpoint.  If the `id` key does not match the id path part, a
     409 Conflict error will be returned.
+
+    ####Example 1: Creating a Node via POST
+
+        POST /v2/nodes/
+        {
+          "data": {
+            "type": "nodes",
+            "attributes": {
+              "title" : "A Phylogenetic Tree of Famous Internet Cats",
+              "category" : "project",
+              "description" : "How closely related are Grumpy Cat and C.H. Cheezburger? Is memefulness inheritable?"
+            }
+          }
+        }
+
+    ####Example 2: Updating a User via PUT
+
+        PUT /v2/users/me/
+        {
+          "data": {
+            "id": "3rqxc",
+            "type": "users",
+            "attributes": {
+              "full_name" : "George Lazenby",
+              "given_name" : "George",
+              "middle_names" : "(The Best Bond)",
+              "family_name" : "Lazenby"
+            }
+          }
+        }
+
+    **NB:** If you PUT/PATCH to the `/users/me/` endpoint, you must still provide your full user id in the `id` field of
+    the request.  We do not support using the `me` alias in request bodies at this time.
+
+    ###PUT vs. PATCH
+
+    For most endpoints that support updates via PUT requests, we also allow PATCH updates. The only difference is that
+    PUT requests require all mandatory attributes to be set, even if their value is unchanged. PATCH requests may omit
+    mandatory attributes, whose value will be unchanged.
 
     ##Responses
 
@@ -130,7 +171,7 @@ def root(request, format=None):
 
     ###Entity Collections
 
-    Entity ollection endpoints return a list of entities and an additional data structure with pagination links, such as
+    Entity collection endpoints return a list of entities and an additional data structure with pagination links, such as
     "next", "prev", "first", and "last". The OSF API limits all entity collection responses to a maximum of 10 entities.
     The response object has two keys:
 
@@ -145,12 +186,6 @@ def root(request, format=None):
     The meta key contains the total number of entities available, as well as the current number of results displayed per
     page.  If there are only enough results to fill one page, the `first`, `last`, `prev`, and `next` values will be
     null.
-
-    ###PUT vs. PATCH
-
-    For most endpoints that support updates via PUT requests, we also allow PATCH updates. The only difference is that
-    PUT requests require all mandatory attributes to be set, even if their value is unchanged. PATCH requests may omit
-    mandatory attributes, whose value will be unchanged.
 
     ###Attribute Validation
 

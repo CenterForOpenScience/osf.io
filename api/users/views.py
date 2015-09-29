@@ -175,11 +175,15 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     A PATCH request issued to this endpoint will behave the same as a PUT request, but does not require `full_name` to
     be set.
 
+    **NB:** If you PUT/PATCH to the `/users/me/` endpoint, you must still provide your full user id in the `id` field of
+    the request.  We do not support using the `me` alias in request bodies at this time.
+
     ##Query Params
 
     *None*.
 
     #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,

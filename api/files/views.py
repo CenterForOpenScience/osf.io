@@ -100,10 +100,10 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     ##Attributes
 
-    For an OSF File entity, the `type` is "files" regardless of whether the entity is actually a file or folder.  They
-    can be distinguished by the `kind` attribute.  Files and folders use the same representation, but some attributes may
-    be null for one kind but not the other. `size` will be null for folders.  A list of storage provider keys can be
-    found [here](/v2/#storage-providers).
+    For an OSF File entity, the `type` is "files" regardless of whether the entity is actually a file or folder, because
+    it belongs to the `files` collection of the API.  They can be distinguished by the `kind` attribute.  Files and
+    folders use the same representation, but some attributes may be null for one kind but not the other. `size` will be
+    null for folders.  A list of storage provider keys can be found [here](/v2/#storage-providers).
 
         name          type               description
         ---------------------------------------------------------------------------------
@@ -129,7 +129,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
 
     ##Links
 
-        info:        the canonical api endpoint for the latest version of the file
+        info:        the canonical api endpoint for the folder's contents or file's most recent version
         new_folder:  url to target when creating new subfolders (null for files)
         move:        url to target for move, copy, and rename actions
         upload:      url to target for uploading new files and updating existing files
@@ -148,8 +148,8 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         Params:   <none>
         Success:  200 OK + file representation
 
-    The details of a particular file can be retrieved by performing a GET request against the `info` link. The response
-    will be a standard OSF response format with the [OSF File attributes](#attributes).
+    The contents of a folder or details of a particular file can be retrieved by performing a GET request against the
+    `info` link. The response will be a standard OSF response format with the [OSF File attributes](#attributes).
 
     ###Download (*files*)
 
