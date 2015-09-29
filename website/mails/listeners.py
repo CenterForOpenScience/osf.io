@@ -3,7 +3,7 @@ All triggered emails live here.
 """
 from datetime import datetime
 
-from modularodm import fields, Q
+from modularodm import Q
 
 from website import mails, settings
 from framework.auth import signals as auth_signals

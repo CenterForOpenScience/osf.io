@@ -3,7 +3,6 @@
 import json
 import httplib
 import logging
-from datetime import datetime
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -14,7 +13,6 @@ from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 
 from website import settings
-from website import mails
 from website.models import Node
 from website.util import web_url_for
 from website.mails import send_mail

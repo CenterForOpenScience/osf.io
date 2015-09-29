@@ -1,13 +1,10 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime
-
 from framework.sessions import session, create_session, Session
 from modularodm import Q
 from framework import bcrypt
 from framework.auth import signals
 from framework.auth.exceptions import DuplicateEmailError
-from website import mails, settings
 
 from .core import User, Auth
 from .core import get_user
