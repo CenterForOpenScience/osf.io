@@ -60,3 +60,10 @@ class CommentSerializer(JSONAPISerializer):
         elif isinstance(target, Comment):
             return 'comment'
 
+
+class CommentDetailSerializer(CommentSerializer):
+    """
+    Overrides CommentSerializer to make id required.
+    """
+    id = IDField(source='_id', required=True)
+    deleted = ser.BooleanField(source='is_deleted', required=True)

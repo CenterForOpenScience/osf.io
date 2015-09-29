@@ -1,7 +1,6 @@
 from rest_framework import generics
-from api.comments.serializers import CommentSerializer
+from api.comments.serializers import CommentSerializer, CommentDetailSerializer
 from website.project.model import Comment
-from modularodm import Q
 from api.base.utils import get_object_or_error
 
 
@@ -28,7 +27,8 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
     # permission classes
     # required scopes
 
-    serializer_class = CommentSerializer
+    serializer_class = CommentDetailSerializer
 
+    # overrides RetrieveAPIView
     def get_object(self):
         return self.get_comment()
