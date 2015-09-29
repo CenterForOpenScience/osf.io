@@ -1380,6 +1380,7 @@ def make_node_payload(node, attributes):
         }
     }
 
+
 class TestNodeUpdate(NodeCRUDTestCase):
 
     def test_node_update_invalid_data(self):
@@ -2086,6 +2087,15 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
             'type': 'Wrong type.',
             'attributes': {}
         }
+
+    def test_node_contributor_bulk_create_contributor_exists(self):
+        self.public_project.add_contributor(self.user_two, permissions=[permissions.READ], visible=True, save=True)
+        res = self.app.post_json_api(self.public_url, {'data': [self.payload_two, self.payload_one]}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert "is already a contributor" in res.json['errors'][0]['detail']
+
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
 
     def test_node_contributor_bulk_create_logged_out_public_project(self):
         res = self.app.post_json_api(self.public_url, {'data': [self.payload_one, self.payload_two]}, expect_errors=True)

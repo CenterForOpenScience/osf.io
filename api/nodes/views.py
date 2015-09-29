@@ -569,6 +569,15 @@ class NodeContributorsList(ListBulkCreateUpdateDestroyAPIView, ListFilterMixin, 
 
         return super(NodeContributorsList, self).get_serializer(*args, **kwargs)
 
+    def get_serializer_class(self):
+        """
+        Use NodeDetailSerializer which requires 'id'
+        """
+        serializer_class = NodeContributorsSerializer
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+            serializer_class = NodeContributorDetailSerializer
+        return serializer_class
+
     # overrides ListBulkCreateUpdateDestroyView
     def create(self, request, *args, **kwargs):
         """
