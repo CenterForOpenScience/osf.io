@@ -768,7 +768,14 @@ class TestNodeBulkUpdate(ApiTestCase):
             {'id': self.public_project_two._id, 'type': 'nodes', 'attributes': {'title': "", 'description': "", "category": ""}}
         ]}
 
-    def test_update_public_projects_one_not_found(self):
+    def test_bulk_update_with_tags(self):
+        new_payload = {'data': [{'id': self.public_project._id, 'type': 'nodes', 'attributes': {'title': 'New title', 'category': 'project', 'tags': ['new tag']}}]}
+
+        res = self.app.put_json_api(self.url, new_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['attributes']['tags'], ['new tag'])
+
+    def test_bulk_update_public_projects_one_not_found(self):
         empty_payload = {'data': [
             {
                 'id': 12345,
@@ -788,7 +795,7 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
 
-    def test_update_public_projects_logged_out(self):
+    def test_bulk_update_public_projects_logged_out(self):
         res = self.app.put_json_api(self.url, self.public_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], "Authentication credentials were not provided.")
@@ -802,7 +809,7 @@ class TestNodeBulkUpdate(ApiTestCase):
         res = self.app.get(url_two)
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
-    def test_update_public_projects_logged_in(self):
+    def test_bulk_update_public_projects_logged_in(self):
         res = self.app.put_json_api(self.url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal({self.public_project._id, self.public_project_two._id},
@@ -810,7 +817,7 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
         assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
 
-    def test_update_private_projects_logged_out(self):
+    def test_bulk_update_private_projects_logged_out(self):
         res = self.app.put_json_api(self.url, self.private_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
         assert_equal(res.json['errors'][0]['detail'], 'Authentication credentials were not provided.')
@@ -825,7 +832,7 @@ class TestNodeBulkUpdate(ApiTestCase):
         res = self.app.get(url_two, auth=self.user.auth)
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
-    def test_update_private_projects_logged_in_contrib(self):
+    def test_bulk_update_private_projects_logged_in_contrib(self):
         res = self.app.put_json_api(self.url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal({self.private_project._id, self.private_project_two._id},
@@ -833,7 +840,7 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['title'], self.new_title)
         assert_equal(res.json['data'][1]['attributes']['title'], self.new_title)
 
-    def test_update_private_projects_logged_in_non_contrib(self):
+    def test_bulk_update_private_projects_logged_in_non_contrib(self):
         res = self.app.put_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
@@ -847,7 +854,7 @@ class TestNodeBulkUpdate(ApiTestCase):
         res = self.app.get(url_two, auth=self.user.auth)
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
-    def test_update_private_projects_logged_in_read_only_contrib(self):
+    def test_bulk_update_private_projects_logged_in_read_only_contrib(self):
         self.private_project.add_contributor(self.user_two, permissions=['read'])
         self.private_project_two.add_contributor(self.user_two, permissions=['read'])
         res = self.app.put_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
