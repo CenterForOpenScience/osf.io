@@ -163,6 +163,20 @@ class TestClient(DataverseAddonTestCase):
 
         assert_equal(s, self.mock_dataset)
 
+    @mock.patch('dataverse.dataverse.requests')
+    def test_get_dataset_calls_patched_timeout_method(self, mock_requests):
+        # Verify optional timeout parameter is passed to requests by dataverse client.
+        # https://github.com/IQSS/dataverse-client-python/pull/27
+        dataverse = Dataverse(mock.Mock(), mock.Mock())
+        dataverse.connection.auth = 'me'
+        dataverse.collection.get.return_value = '123'
+        mock_requests.get.side_effect = Exception('Done Testing')
+
+        with assert_raises(Exception) as e:
+            get_dataset(dataverse, 'My hdl')
+        assert_is(mock_requests.get.assert_called_once_with('123', auth='me', timeout=15), None)
+        assert_equal(e.exception.message, 'Done Testing')
+
     def test_get_deaccessioned_dataset(self):
         self.mock_dataset.get_state.return_value = 'DEACCESSIONED'
         self.mock_dataverse.get_dataset_by_doi.return_value = self.mock_dataset
