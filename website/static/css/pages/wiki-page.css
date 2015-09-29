@@ -14,6 +14,7 @@
 
 .panel-collapsed {
     background: #F5F5F5;
+    height: auto;
 }
 .wiki-sidenav h4, .wiki-sidenav li>ul>.btn,  .osf-sidenav.wiki-sidenav ul>li .row{
     padding: 8px 15px;
