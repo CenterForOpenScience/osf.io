@@ -297,8 +297,10 @@ class User(GuidStoredObject, AddonModelMixin):
     #    ...
     # }
 
+    osf_mailing_default = {settings.OSF_HELP_LIST: True}
+
     # email lists to which the user has chosen a subscription setting, being sent from osf, rather than mailchimp
-    osf_mailing_lists = fields.DictionaryField(default={settings.OSF_HELP_LIST: True})
+    osf_mailing_lists = fields.DictionaryField(default=osf_mailing_default)
     # Format: {
     #   'list1': True,
     #   'list2: False,

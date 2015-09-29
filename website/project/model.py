@@ -2553,10 +2553,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
             if auth and not skip_mail:
-                sent_mail = list(mails.QueuedMail.find(Q('user', 'eq', auth.user) &
-                                                       Q('sent_at', 'ne', None) &
-                                                       Q('email_type', 'eq', 'new_public_project')))
-                if not len(sent_mail):
+                sent_mail = mails.QueuedMail.find(Q('user', 'eq', auth.user) &
+                                                  Q('sent_at', 'ne', None) &
+                                                  Q('email_type', 'eq', 'new_public_project'))
+                if not sent_mail.count():
                     mails.queue_mail(
                         to_addr=auth.user.username,
                         mail=mails.NEW_PUBLIC_PROJECT,

@@ -31,19 +31,19 @@ def main(dry_run=True):
                 mail.send_mail()
 
 def find_queued_mails_ready_to_be_sent():
-    return list(mails.QueuedMail.find(
+    return mails.QueuedMail.find(
         Q('send_at', 'lt', datetime.utcnow()) &
         Q('sent_at', 'eq', None)
-    ))
+    )
 
 def pop_and_verify_mails_for_each_user(user_queue):
     for user_emails in user_queue.values():
         mail = user_emails[0]
-        mails_past_week = list(mails.QueuedMail.find(
+        mails_past_week = mails.QueuedMail.find(
             Q('user', 'eq', mail.user) &
             Q('sent_at', 'gt', datetime.utcnow() - settings.WAIT_BETWEEN_MAILS)
-        ))
-        if not len(mails_past_week):
+        )
+        if not mails_past_week.count():
             yield mail
 
 if __name__ == '__main__':
