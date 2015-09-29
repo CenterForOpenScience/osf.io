@@ -18,34 +18,43 @@
                           <i class="fa fa-plus"></i> Add
                         </a>
                     <!-- /ko -->
-                    <span>
+                    <div class="filters">
+                        <span>
                         <i class="fa fa-search"></i>
-                    </span>
-                    <input type="text" search=".nameSearch" class="searchable"/>
-                    <span>
-                        <i class="fa fa-search"></i>
-                    </span>
-                    <input type="text" search=".permission-search" class="searchable"/>
-                    <div class="btn-group" role="group" class="filtergroup">
-                        <button type="button" class="btn btn-default filter-btn" filter=".permission-filter" match="Administrator">Admins</button>
-                        <button type="button" class="btn btn-default filter-btn" filter=".permission-filter" match="Read + Write">Read + Write</button>
-                        <buttonq type="button" class="btn btn-default filter-btn" filter=".permission-filter" match="Read">Read</buttonq>
+                        </span>
+                        <input type="text" placeholder="Name" search=".nameSearch" class="searchable"/>
+                        <span>
+                            <i class="fa fa-search"></i>
+                        </span>
+                        <input type="text" placeholder="Permissions" search=".permission-search" class="searchable"/>
+                        <div class="btn-group filtergroup" role="group" filter=".permission-filter" >
+                            <button type="button" class="btn btn-default filter-btn" match="Administrator">Admins</button>
+                            <button type="button" class="btn btn-default filter-btn" match="Read + Write">Read + Write</button>
+                            <button type="button" class="btn btn-default filter-btn" match="Read">Read</button>
+                        </div>
+                        <div class="btn-group filtergroup" role="group" filter=".cited-filter">
+                            <button type="button" class="btn btn-default filter-btn"  match=", cited">Cited</button>
+                            <button type="button" class="btn btn-default filter-btn" match=", not cited">Not Cited</button>
+                        </div>
                     </div>
 
                 </h3>
                 % if 'admin' in user['permissions'] and not node['is_registration']:
                     <p>Drag and drop contributors to change listing order.</p>
                 % endif
-                <div id='contributors' class="row collapse-container" data-bind="template: {
-                            name: 'contribCard',
-                            foreach: contributors,
+                <div id='contributors' class="row collapse-container" data-bind="sortable: {
+                            template: 'contribCard',
+                            data: contributors,
                             as: 'contributor',
-                            isEnabled: canEdit,
+                            isEnabled: sortable,
                             options: {
                               containment: '#manageContributors'
                             }
                         }">
-                    </div>
+                </div>
+                <div id="noContributors" style="display: none">
+                    <h3>No items found</h3>
+                </div>
                 <div data-bind="if: adminContributors.length">
                     <h4>
                         Admins on Parent Projects
@@ -158,10 +167,11 @@
             <div data-bind="attr: {id: type() + 'Card' + $index()}" class="panel-collapse collapse" data-bind="attr: {aria-labelledby: type() + 'Heading' + $index()}">
                 <div class="panel-body">
                     <span style="display: none" data-bind="text: curPermission().text" class="permission-filter permission-search"></span>
+                    <span style="display: none" data-bind="text: visibleText()" class="cited-filter"></span>
                     <!-- ko if: contributor.canEdit() -->
                         <h5 style="display: block">Permissions</h5>
                         <span style="display: block" data-bind="visible: notDeleteStaged">
-                            <select class="form-control input-sm" data-bind="
+                            <select class="form-control input-sm permission-filter" data-bind="
                                 options: permissionList,
                                 value: curPermission,
                                 optionsText: 'text',
@@ -179,7 +189,7 @@
                     <h5 style="display: block" >Bibliographic Contributor</h5>
                     <span style="display: block">
                         <input
-                                type="checkbox" class="no-sort biblio"
+                                type="checkbox" class="no-sort biblio cited-filter"
                                 data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
                             />
                     </span>
@@ -235,120 +245,8 @@
       window.contextVars.isRegistration = ${ node['is_registration'] | sjson, n };
       window.contextVars.contributors = ${ contributors | sjson, n };
       window.contextVars.adminContributors = ${ adminContributors | sjson, n };
-
     </script>
 
-    <script type="text/javascript">
-        function toggleIcon(el) {
-            jQuery(el.querySelector("i.toggle-icon")).toggleClass("fa-angle-down fa-angle-up");
-        }
-    </script>
     <script src=${"/static/public/js/sharing-page.js" | webpack_asset}></script>
-
-    <script type="text/javascript">
-
-        function cancelProp(e) {
-            e.cancelBubble = true;
-            if (e.stopPropagation) {
-                e.stopPropagation();
-            }
-        }
-        (function($){
-            $.fn.filtergroup = function (options) {
-                var settings = $.extend({
-                    items: '.items',
-                    buttonClass: '.filter-btn',
-                    inputClass: '.searchable'
-                }, options);
-
-                var active = [];
-
-                var fade = function(nextDisplayed, displayed) {
-
-                    for (var i = 0; i < nextDisplayed.length; i++) {
-                        var index = displayed.index(nextDisplayed[i]);
-                        if (index > -1) { //already showing
-                            nextDisplayed.splice(i, 1);
-                            displayed.splice(index, 1);
-                            i--;
-                        } else {
-                            $(nextDisplayed[i]).fadeIn();
-                        }
-                    }
-                    for (var i = 0; i < displayed.length; i++) {
-                        $(displayed[i]).fadeOut();
-                    }
-                };
-
-                var toggle = function() {
-                    var inputs, activeItems;
-                    inputs = $(settings.inputClass);
-                    activeItems = $();
-                    var displayed = $(settings.items).filter(function() {
-                        var element = $(this);
-                        if(element.css('display') == 'none') {
-                            return false;
-                        }
-                        return true;
-                    });
-
-                    if (active.length == 0) {
-                        activeItems = $(settings.items);
-                    }
-                    for (var i = 0; i < active.length; i++) {
-                        var text, el, content, toggle, selector;
-                        toggle = "#" + active[i];
-                        selector = $(toggle).attr('filter');
-                        text = $(toggle).attr('match');
-                        if (text.length >= 0) {
-                            $(settings.items).each(function() {
-                                el = this.querySelector(selector);
-                                content = jQuery(el).text();
-                                if (content === text) {
-                                    activeItems.push(this);
-                                }
-                            });
-                        }
-                    }
-
-                    for (var i=0; i < inputs.length; i++) {
-                        var text, el, content, exists, input, selector;
-                        input = inputs[i];
-                        selector = $(input).attr('search');
-                        text = $(input).val().toLowerCase();
-                        if (text.length >= 0) {
-                            $(activeItems).each(function() {
-                                el = this.querySelector(selector);
-                                content = jQuery(el).text().toLowerCase();
-                                exists = content.indexOf(text);
-                                if (exists == -1) {
-                                    activeItems.splice(activeItems.index(this), 1);
-                                }
-                            });
-                        }
-                    }
-                    fade(activeItems, displayed);
-                };
-
-                jQuery(settings.buttonClass).on('click', function () {
-                    $(this).toggleClass('active');
-                    if ($(this).hasClass('active')) {
-                        active.push(this.id);
-                    } else {
-                        active.splice(active.indexOf(this.id), 1);
-                    }
-                    toggle();
-                });
-
-                return jQuery(settings.inputClass).keyup(function() {
-                    toggle();
-                });
-
-            }
-        }(jQuery));
-
-        $('.filtergroup').filtergroup();
-</script>
-
 
 </%def>

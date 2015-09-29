@@ -5,6 +5,9 @@ var ContribManager = require('js/contribManager');
 var ContribAdder = require('js/contribAdder');
 var PrivateLinkManager = require('js/privateLinkManager');
 var PrivateLinkTable = require('js/privateLinkTable');
+var ko = require('knockout');
+require('js/filters');
+require('js/cards');
 
 var ctx = window.contextVars;
 
@@ -38,4 +41,17 @@ $(function() {
     $('.admin-info').popover({
         trigger: 'hover'
     });
+});
+
+$('.filters').filters({
+    container: '#contribList',
+    callback: function(filtered, empty) {
+        if (empty) {
+            $("#noContributors").show();
+        }
+        else {
+            $("#noContributors").hide();
+            ko.contextFor($('#contributors').get(0)).$data.sortable(!filtered);
+        }
+    }
 });

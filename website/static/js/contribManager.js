@@ -226,6 +226,8 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         return (self.userIsAdmin()) && !isRegistration;
     });
 
+    self.sortable = ko.observable(true);
+
     self.messages = ko.observableArray([]);
 
     // Hack: Ignore beforeunload when submitting
