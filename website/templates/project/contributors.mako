@@ -177,7 +177,7 @@
         </tr>
     </thead>
     <!-- ko if: $data == 'contrib' -->
-    <tbody data-bind="sortable: {
+    <tbody id="contributors" data-bind="sortable: {
             template: 'contribRow',
             isEnabled: $root.isEnabled,
             data: $root.contributors,
@@ -197,15 +197,17 @@
 </script>
 
 <script id="contribRow" type="text/html">
-    <tr data-bind="click: unremove, css: {'contributor-delete-staged': $parent.deleteStaged}">
+    <tr class="items" data-bind="click: unremove, css: {'contributor-delete-staged': $parent.deleteStaged}">
         <td>
             <img data-bind="attr: {src: contributor.gravatar_url}" />
                 <span data-bind="ifnot: profileUrl">
-                    <span data-bind="text: contributor.shortname"></span>
+                    <span class="nameSearch" data-bind="text: contributor.shortname"></span>
                 </span>
                 <span data-bind="if: profileUrl">
-                    <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
+                    <a class="no-sort nameSearch" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
                 </span>
+                <span style="display: none" data-bind="text: curPermission().text" class="permission-filter permission-search"></span>
+                <span style="display: none" data-bind="text: visibleText()" class="cited-filter"></span>
         </td>
         <td class="permissions">
             <!-- ko if: contributor.canEdit() -->
@@ -214,7 +216,7 @@
                         options: permissionList,
                         value: curPermission,
                         optionsText: 'text',
-                        event: {change: function() {flagChange($parents[1])}},
+##                         event: {change: function() {flagChange($parents[1])}},
                         style: { font-weight: change() ? 'normal' : 'bold' }"
                     >
                     </select>
