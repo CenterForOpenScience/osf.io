@@ -1372,15 +1372,17 @@ class TestNode(OsfTestCase):
 
     def test_set_privacy_checks_admin_permissions(self):
         non_contrib = UserFactory()
-        project = ProjectFactory(creator=self.user, is_public=True)
+        project = ProjectFactory(creator=self.user, is_public=False)
+        # Non-contrib can't make project public
         with assert_raises(PermissionsError):
             project.set_privacy('public', Auth(non_contrib))
 
         project.set_privacy('public', Auth(project.creator))
         project.save()
 
+        # Non-contrib can't make project private
         with assert_raises(PermissionsError):
-            project.set_privacy('public', Auth(non_contrib))
+            project.set_privacy('private', Auth(non_contrib))
 
     def test_validate_categories(self):
         with assert_raises(ValidationError):
