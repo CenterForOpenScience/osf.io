@@ -26,7 +26,10 @@ ko.bindingHandlers.ace = {
     update: function (element, valueAccessor) {
         var content = editor.getValue();        // Content of ace editor
         var value = ko.unwrap(valueAccessor()); // Value from view model
-
+        editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: true
+        });
         // Updates the editor based on changes to the view model
         if (value !== undefined && content !== value) {
             var cursorPosition = editor.getCursorPosition();
