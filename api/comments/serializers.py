@@ -1,6 +1,7 @@
 from datetime import datetime
 from rest_framework import serializers as ser
 from framework.guid.model import Guid
+from framework.auth.core import Auth
 from website.project.model import Node, Comment
 from api.base.serializers import (JSONAPISerializer,
                                   JSONAPIHyperlinkedRelatedField,
@@ -17,7 +18,7 @@ class CommentSerializer(JSONAPISerializer):
     user = JSONAPIHyperlinkedRelatedField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id', link_type='related', read_only=True)
     node = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk', lookup_url_kwarg='node_id', link_type='related', read_only=True)
     target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
-    replies = JSONAPIHyperlinkedIdentityField(view_name='comments:comment-replies', lookup_field='pk', link_type='related', lookup_url_kwarg='comment_id')
+    replies = JSONAPIHyperlinkedIdentityField(view_name='comments:comment-replies', lookup_field='pk', link_type='self', lookup_url_kwarg='comment_id')
 
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
@@ -50,6 +51,18 @@ class CommentSerializer(JSONAPISerializer):
         comment = Comment(**validated_data)
         comment.save()
 
+        return comment
+
+    def update(self, comment, validated_data):
+        assert isinstance(comment, Comment), 'comment must be a Comment'
+        auth = Auth(self.context['request'].user)
+        if validated_data:
+            comment.edit(validated_data['content'], auth=auth, save=True)
+            is_deleted = validated_data.get('is_deleted', None)
+            if is_deleted:
+                comment.delete(auth, save=True)
+            elif is_deleted == False:
+                comment.undelete(auth, save=True)
         return comment
 
     def get_target_type(self, obj):
