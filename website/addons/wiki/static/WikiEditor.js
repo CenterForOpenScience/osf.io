@@ -28,7 +28,7 @@ ko.bindingHandlers.ace = {
         var value = ko.unwrap(valueAccessor()); // Value from view model
         editor.setOptions({
             enableBasicAutocompletion: true,
-            enableLiveAutocompletion: true
+            enableLiveAutocompletion: false
         });
         // Updates the editor based on changes to the view model
         if (value !== undefined && content !== value) {
