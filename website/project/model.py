@@ -2553,19 +2553,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
             if auth and not skip_mail:
-                sent_mail = mails.QueuedMail.find(Q('user', 'eq', auth.user) &
-                                                  Q('sent_at', 'ne', None) &
-                                                  Q('email_type', 'eq', 'new_public_project'))
-                if not sent_mail.count():
-                    mails.queue_mail(
-                        to_addr=auth.user.username,
-                        mail=mails.NEW_PUBLIC_PROJECT,
-                        send_at=datetime.datetime.utcnow() + settings.NEW_PUBLIC_PROJECT_WAIT_TIME,
-                        user=auth.user,
-                        nid=self._id,
-                        fullname=auth.user.fullname,
-                        project_title=self.title
-                    )
+                project_signals.set_privacy_public.send(user=auth.user, node=self)
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:

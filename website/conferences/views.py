@@ -20,7 +20,7 @@ from website.util import web_url_for
 from website.mails import send_mail
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 
-from website.conferences import utils
+from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
 from website.conferences.model import Conference
 
@@ -128,16 +128,7 @@ def add_poster_by_email(conference, message):
         is_spam=message.is_spam,
     )
     if node_created and user_created:
-        root_id = (node.get_addon('osfstorage')).root_node._id
-        mails.queue_mail(
-            to_addr=user.username,
-            mail=mails.WELCOME_OSF4M,
-            send_at=datetime.utcnow() + settings.WELCOME_OSF4M_WAIT_TIME,
-            user=user,
-            conference=conference.name,
-            fullname=user.fullname,
-            fid=root_id
-        )
+        signals.new_osf4m_user.send(user=user, conference=conference, node=node)
 
 
 def _render_conference_node(node, idx, conf):

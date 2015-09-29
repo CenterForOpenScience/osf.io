@@ -28,15 +28,13 @@ def main(dry_run=True):
                 )
 
 def find_inactive_users_with_no_inactivity_email_sent_or_queued():
-    #one query for 6 weeks and osf4m users, and one for 4 weeks for regular users
-    inactive_users = list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME) &
-                                    Q('is_conference_user', 'eq', False)))
-    inactive_users.extend(list(User.find(Q('date_last_login', 'lt', datetime.utcnow() - settings.NO_LOGIN_OSF4M_WAIT_TIME) &
-                                    Q('is_conference_user', 'eq', True))))
+    inactive_users = list(User.find(
+        (Q('date_last_login', 'lt', datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME) & Q('is_conference_user', 'eq', False)) |
+        (Q('date_last_login', 'lt', datetime.utcnow() - settings.NO_LOGIN_OSF4M_WAIT_TIME) & Q('is_conference_user', 'eq', True))
+    ))
     inactive_emails = list(mails.QueuedMail.find(Q('email_type', 'eq', 'no_login')))
-    users_sent = []
-    for email in inactive_emails:
-        users_sent.append(email.user)
+
+    users_sent = [email.user for email in inactive_emails]
     return set(inactive_users) - set(users_sent)
 
 if __name__ == '__main__':

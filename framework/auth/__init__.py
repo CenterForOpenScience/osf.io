@@ -5,6 +5,7 @@ from datetime import datetime
 from framework.sessions import session, create_session, Session
 from modularodm import Q
 from framework import bcrypt
+from framework.auth import signals
 from framework.auth.exceptions import DuplicateEmailError
 from website import mails, settings
 
@@ -63,13 +64,8 @@ def register_unconfirmed(username, password, fullname):
             password=password,
             fullname=fullname)
         user.save()
-        mails.queue_mail(
-            to_addr=user.username,
-            mail=mails.NO_ADDON,
-            send_at=datetime.utcnow() + settings.NO_ADDON_WAIT_TIME,
-            user=user,
-            fullname=user.fullname
-        )
+        signals.unconfirmed_user_created.send(user)
+
     elif not user.is_registered:  # User is in db but not registered
         user.add_unconfirmed_email(username)
         user.set_password(password)

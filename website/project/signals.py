@@ -8,3 +8,5 @@ write_permissions_revoked = signals.signal('write-permissions-revoked')
 after_create_registration = signals.signal('post-create-registration')
 
 archive_callback = signals.signal('archive-callback')
+
+set_privacy_public = signals.signal('set-privacy-public')
