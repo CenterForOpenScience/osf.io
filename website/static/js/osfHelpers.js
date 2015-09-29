@@ -708,6 +708,23 @@ var currentUser = function(){
     return window.contextVars.currentUser;
 };
 
+/**
+ * Use a search function to get the index of an object in an array
+ *
+ * @param {Array} array
+ * @param {Function} searchFn: function that returns true when an item matching the search conditions is found
+ * @returns {Integer} index of matched item or -1 if no matching item is found
+ **/
+function indexOf(array, searchFn) {
+    var len = array.length;
+    for(var i = 0; i < len; i++) {
+        if(searchFn(array[i])) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
@@ -740,5 +757,6 @@ module.exports = window.$.osf = {
     confirmDangerousAction: confirmDangerousAction,
     isIE: isIE,
     isSafari:isSafari,
+    indexOf: indexOf,
     currentUser: currentUser
 };
