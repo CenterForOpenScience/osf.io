@@ -18,6 +18,18 @@ var Panel = utils.Panel;
 
 var EDITORS = {'text': FileEditor};
 
+var MakeClient = function(element) {
+    makeClient(element);
+};
+
+var CopyButton = {
+    view: function(ctrl, params) {
+        return m('span.input-group-btn', m('button#copyBtn.btn.btn-default.btn-md[type="button"][style="height:' + params.copyButtonHeight + '"][data-clipboard-text="' + params.link + '"]',
+            {config: MakeClient},
+            m('.fa.fa-copy')));
+    }
+};
+
 var SharePopover =  {
     view: function(ctrl, params) {
         var copyButtonHeight = '34px';
@@ -32,7 +44,7 @@ var SharePopover =  {
                     ]), m('br'),
                     m('.tab-content', [
                         m('.tab-pane.fade.in.active#share', m('.input-group', [
-                            m('span.input-group-btn', m('button#copyBtn.btn.btn-default.btn-md[type="button"][style="height:' + copyButtonHeight + '"][data-clipboard-text="' + link + '"]', m('.fa.fa-copy'))),
+                            m.component(CopyButton, {link: link, copyButtonHeight: copyButtonHeight}),
                             m('input.form-control[readonly][type="text"][value="'+ link +'"]')
                         ])),
                         m('.tab-pane.fade#embed', [
