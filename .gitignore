@@ -97,3 +97,6 @@ scripts/guid_blacklist.txt
 # Celery dbs
 celerybeat-schedule.db
 celery_beat.py.db
+
+# Diff (used during merge resolution)
+*.orig

@@ -35,6 +35,7 @@ from website.project.model import (
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.archiver import ARCHIVER_SUCCESS
+from website.project import utils as project_utils
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake

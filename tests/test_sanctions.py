@@ -54,9 +54,9 @@ class TestSanction(SanctionsTestCase):
         self.sanction.add_authorizer(self.user, save=True)
 
     def test_pending_approval(self):
-        assert_true(self.sanction.pending_approval)
+        assert_true(self.sanction.is_pending_approval)
         self.sanction.state = Sanction.APPROVED
-        assert_false(self.sanction.pending_approval)
+        assert_false(self.sanction.is_pending_approval)
 
     def test_validate_authorizer(self):
         assert_false(self.sanction._validate_authorizer(self.invalid_user))

@@ -9,8 +9,8 @@ import datetime as dt
 import mock
 import httplib as http
 import math
-import datetime
 import time
+import datetime
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
@@ -48,7 +48,6 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
-
 
 from tests.base import (
     OsfTestCase,
@@ -551,7 +550,7 @@ class TestProjectViews(OsfTestCase):
     @mock.patch('website.archiver.tasks.archive')
     def test_registered_projects_contributions(self, mock_archive):
         # register a project
-        self.project.register_node(None, Auth(user=self.project.creator), None)
+        self.project.register_node(None, Auth(user=self.project.creator), '', None)
         # get the first registered project of a project
         url = self.project.api_url_for('get_registrations')
         res = self.app.get(url, auth=self.auth)

@@ -98,7 +98,8 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
         raise HTTPError(http.GONE, data=dict(
             message_long="This {name} record has been deleted".format(name=display_name)
         ))
-    return instance
+    else:
+        return instance
 
 
 def autoload(Model, extract_key, inject_key, func):

@@ -612,11 +612,12 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             registration.web_url_for('view_project', token=rejection_token),
             auth=self.user.auth,
-        )        
+        )
         registration.embargo.reload()
         assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_false(registration.is_pending_embargo)
         assert_equal(res.status_code, 302)
+        assert_true(project._id in res.location)
 
     @mock.patch('flask.redirect')
     def test_GET_disapprove_for_existing_registration_with_valid_token_redirects_to_registration(self, mock_redirect):
@@ -637,6 +638,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_false(self.registration.is_pending_embargo)
         assert_true(mock_redirect.called_with(self.registration.web_url_for('view_project')))
+
 
 class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def setUp(self):

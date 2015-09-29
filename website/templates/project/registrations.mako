@@ -44,7 +44,7 @@
         <br />
         <br />
         To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a>
-        %endif         
+        %endif
       </div>
     </div>
   </div>
@@ -64,12 +64,12 @@
             % else:
               Only project administrators can create, edit, or submit new draft registrations.
             % endif
-          </div>    
+          </div>
           <br />
           <div class="scripted" data-bind="foreach: drafts">
             <li class="project list-group-item list-group-item-node">
               <h4 data-bind="text: schema().title" ></h4>
-              <h4 class="list-group-item-heading">          
+              <h4 class="list-group-item-heading">
                 <div class="progress progress-bar-md">
                   <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100"
                        data-bind="attr.aria-completion: completion,
@@ -81,19 +81,17 @@
                 <p>initiated by: <span data-bind="text: initiator.fullname"></span>
                 <p>started: <span data-bind="text: initiated"></span></p>
                 <p>last updated: <span data-bind="text: updated"></span></p>
-                <!-- TOOO: uncomment to show approval states
                 <span data-bind="if: requiresApproval">
-                  <div data-bind="if: isApproved">
-                    <div class="draft-status-badge bg-success"> Approved</div>                       
-                  </div>                
-                  <div data-bind="ifnot: isApproved">
-                    <div class="draft-status-badge bg-warning"> Pending Approval </div>
-                  </div>
-                  <div data-bind="if: isPendingReview">
-                    <div class="draft-status-badge bg-warning"> Pending Review</div>
-                  </div>
+                    <div data-bind="if: isApproved">
+                        <div class="draft-status-badge bg-success"> Approved</div>
+                    </div>
+                    <div data-bind="ifnot: isApproved">
+                        <div class="draft-status-badge bg-warning"> Pending Approval </div>
+                    </div>
+                    <div data-bind="if: isPendingReview">
+                        <div class="draft-status-badge bg-warning"> Pending Review</div>
+                    </div>
                 </span>
-                -->
                 </small>
                 <div class="row">
                   <div class="col-md-10">
@@ -103,17 +101,14 @@
                             data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
                   </div>
                   <div class="col-md-1">
-                    <!-- TODO: uncomment for exposing registration approval logic 
-                    <a class="btn btn-success" data-bind="attr.href: urls.register,
-                                                          tooltip: {
-                                                            placement: top, 
-                                                            title: isApproved ? 'Finialize this draft' : 'This draft must be approved before it can be registered'
-                                                          },
-                                                          css: {'disabled': !isApproved}">Register</a>
-                    -->
-                    <a class="btn btn-success" data-bind="attr.href: urls.register_page">Register</a>
+                     <a class="btn btn-success" data-bind="attr.href: urls.register_page,
+                                                           tooltip: {
+                                                             placement: 'top',
+                                                             title: isApproved ? 'Finialize this draft' : 'This draft must be approved before it can be registered'
+                                                           },
+                                                           css: {'disabled': !isApproved}">Register</a>
                   </div>
-                </div>                
+                </div>
               </h4>
             </li>
           </div>
@@ -136,7 +131,7 @@
                 </select>
                 <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name" />
                 <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version" />
-              </div>          
+              </div>
             </div>
             <div class="col-md-3">
               <button type="submit" class="btn btn-success"> Start </button>
@@ -146,10 +141,23 @@
         <hr />
         <div class="row" data-bind="if: selectedSchema">
           <div class="col-md-12" data-bind="with: selectedSchema">
-            <span data-bind="if: schema.config">
+            <span data-bind="if: requiresApproval">
+              <div class="row">
+                <div class="col-md-12 schema-fulfillment">
+                  <span class="well" data-bind="tooltip: {
+                                                  placement: 'top',
+                                                  title: 'Site administrations will need to approve this draft before it can be registered'
+                                                }">
+                    <span>Requires Approval</span>&nbsp;&nbsp;
+                    <i class="fa fa-exclamation-triangle" target="_blank"></i>
+                  </span>              
+                </div>
+              </div>
+            </span>
+            <span data-bind="if: fulfills.length">
               <h4> Fulfills: </h4>
               <div class="row">
-                <div class="col-md-12 schema-fulfillment" data-bind="foreach: schema.config.fulfills">
+                <div class="col-md-12 schema-fulfillment" data-bind="foreach: fulfills">
                   <span class="well">
                     <span data-bind="text: name"></span>&nbsp;&nbsp;
                     <a class="fa fa-info-circle" target="_blank" data-bind="attr.href: info"></a>
@@ -157,7 +165,7 @@
                 </div>
               </div>
             </span>
-            <h4> Description: </h4> 
+            <h4> Description: </h4>
             <blockquote>
               <p data-bind="text: schema.description"></p>
             </blockquote>
@@ -167,14 +175,14 @@
         <div class="row" data-bind="template: {data: previewSchema, name: 'registrationPreview'}">
         </div>
       </div>
-    </div> 
-  </div> 
+    </div>
+  </div>
 </div>
 
 <%def name="javascript_bottom()">
-	${parent.javascript_bottom()}
+    ${parent.javascript_bottom()}
 
-	<script src=${"/static/public/js/project-registrations-page.js" | webpack_asset}> </script>
+    <script src=${"/static/public/js/project-registrations-page.js" | webpack_asset}> </script>
 </%def>
 
 <%include file="project/registration_preview.mako" />
