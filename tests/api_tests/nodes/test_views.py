@@ -792,6 +792,14 @@ class NodeCRUDTestCase(ApiTestCase):
 
         self.fake_url = '/{}nodes/{}/'.format(API_BASE, '12345')
 
+def make_node_payload(node, attributes):
+    return {
+        'data': {
+            'id': node._id,
+            'type': 'nodes',
+            'attributes': attributes,
+        }
+    }
 
 class TestNodeUpdate(NodeCRUDTestCase):
 
@@ -804,6 +812,51 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
+    @assert_not_logs(NodeLog.MADE_PUBLIC, 'private_project')
+    def test_cannot_make_project_public_if_non_contributor(self):
+        non_contrib = AuthUserFactory()
+        res = self.app.patch_json(
+            self.private_url,
+            make_node_payload(self.private_project, {'public': True}),
+            auth=non_contrib.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 403)
+
+    def test_cannot_make_project_public_if_non_admin_contributor(self):
+        non_admin = AuthUserFactory()
+        self.private_project.add_contributor(
+            non_admin,
+            permissions=(permissions.READ, permissions.WRITE),
+            auth=Auth(self.private_project.creator)
+        )
+        self.private_project.save()
+        res = self.app.patch_json(
+            self.private_url,
+            make_node_payload(self.private_project, {'public': True}),
+            auth=non_admin.auth, expect_errors=True
+        )
+        assert_equal(res.status_code, 403)
+
+        self.private_project.reload()
+        assert_false(self.private_project.is_public)
+
+    @assert_logs(NodeLog.MADE_PUBLIC, 'private_project')
+    def test_can_make_project_public_if_admin_contributor(self):
+        admin_user = AuthUserFactory()
+        self.private_project.add_contributor(
+            admin_user,
+            permissions=(permissions.READ, permissions.WRITE, permissions.ADMIN),
+            auth=Auth(self.private_project.creator)
+        )
+        self.private_project.save()
+        res = self.app.patch_json_api(
+            self.private_url,
+            make_node_payload(self.private_project, {'public': True}),
+            auth=admin_user.auth  # self.user is creator/admin
+        )
+        assert_equal(res.status_code, 200)
+        self.private_project.reload()
+        assert_true(self.private_project.is_public)
 
     def test_update_project_properties_not_nested(self):
         res = self.app.put_json_api(self.public_url, {
@@ -945,7 +998,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
                     'title': fake.catch_phrase(),
                     'description': fake.bs(),
                     'category': 'hypothesis',
-                 'public': True
+                    'public': True
                 }
             }
         }, auth=self.user.auth, expect_errors=True)
@@ -1062,22 +1115,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         }, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
-
-    @assert_not_logs(NodeLog.UPDATED_FIELDS, 'public_project')
-    def test_write_to_public_field_does_not_update(self):
-        # Test creator writing to public field (supposed to be read-only)
-        res = self.app.patch_json_api(self.public_url, {
-            'data': {
-                'id': self.public_project._id,
-                'type': 'nodes',
-                'attributes': {
-                    'public': False,
-                }
-            }
-        }, auth=self.user.auth, expect_errors=True)
-        assert_true(res.json['data']['attributes']['public'])
-        # django returns a 200 on PATCH to read only field, even though it does not update the field.
-        assert_equal(res.status_code, 200)
 
     def test_partial_update_public_project_logged_out(self):
         res = self.app.patch_json_api(self.public_url, {
