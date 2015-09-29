@@ -188,14 +188,13 @@ class NodeDetailSerializer(NodeSerializer):
 
 class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
     """
-    Bulk updates instance with the validated data.
+    Bulk updates node contributors with the validated data.
 
     Request either completely succeeds or fails. Requires
     the request to be in the serializer context.
     """
 
-    # Overrides JSONAPIListSerialize which doesn't support multiple update by default.
-
+    # Overrides JSONAPIListSerializer
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
@@ -206,7 +205,7 @@ class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
 
         for user_id, data in contributor_mapping.items():
             contributor = get_object_or_error(User, data['_id'], display_name='user')
-             # Node object checks for contributor existence but can still change permissions anyway
+            # Node object checks for contributor existence but can still change permissions anyway
             if contributor in node.contributors:
                 raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
             contributor_mapping[user_id] = [contributor, data]
@@ -224,11 +223,11 @@ class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
 
         return ret
 
+    # Overrides JSONAPIListSerializer which doesn't support multiple update by default.
     def update(self, instance, validated_data):
         data_mapping = {item.get('_id', None): item for item in validated_data}
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
-
 
         ret = []
         for user_id, data in data_mapping.items():
@@ -248,9 +247,6 @@ class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
             contributor.node_id = node._id
             ret.append(contributor)
         return ret
-
-    class Meta:
-        type_ = 'nodes'
 
     class Meta:
         type_ = 'contributors'

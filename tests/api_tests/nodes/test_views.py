@@ -2300,7 +2300,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_items_equal([data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']],
                            ['admin', 'read', 'read'] )
 
-    def test_bulk_update_contributors_public_projects_logged_out(self):
+    def test_bulk_partial_update_contributors_public_projects_logged_out(self):
         res = self.app.patch_json_api(self.public_url, {'data': [self.payload_one, self.payload_two]}, expect_errors=True)
         assert_equal(res.status_code, 401)
 
@@ -2309,14 +2309,14 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_items_equal([data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']],
                            ['admin', 'read', 'read'])
 
-    def test_bulk_update_contributors_public_projects_logged_in(self):
+    def test_bulk_partial_update_contributors_public_projects_logged_in(self):
         res = self.app.patch_json_api(self.public_url, {'data': [self.payload_one, self.payload_two]}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_items_equal([data[0]['attributes']['permission'], data[1]['attributes']['permission']],
                            ['admin', 'write'])
 
-    def test_bulk_update_contributors_private_projects_logged_out(self):
+    def test_bulk_partial_update_contributors_private_projects_logged_out(self):
         res = self.app.patch_json_api(self.private_url, {'data': [self.payload_one, self.payload_two]}, expect_errors=True)
         assert_equal(res.status_code, 401)
 
@@ -2325,14 +2325,14 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_items_equal([data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']],
                            ['admin', 'read', 'read'])
 
-    def test_bulk_update_contributors_private_projects_logged_in_contrib(self):
+    def test_bulk_partial_update_contributors_private_projects_logged_in_contrib(self):
         res = self.app.patch_json_api(self.private_url, {'data': [self.payload_one, self.payload_two]}, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         data = res.json['data']
         assert_items_equal([data[0]['attributes']['permission'], data[1]['attributes']['permission']],
                            ['admin', 'write'])
 
-    def test_bulk_update_contributors_private_projects_logged_in_non_contrib(self):
+    def test_bulk_partial_update_contributors_private_projects_logged_in_non_contrib(self):
         res = self.app.patch_json_api(self.private_url, {'data': [self.payload_one, self.payload_two]}, auth=self.user_four.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -2341,7 +2341,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_items_equal([data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']],
                            ['admin', 'read', 'read'])
 
-    def test_bulk_update_contributors_private_projects_logged_in_read_only_contrib(self):
+    def test_bulk_partial_update_contributors_private_projects_logged_in_read_only_contrib(self):
         res = self.app.patch_json_api(self.private_url, {'data': [self.payload_one, self.payload_two]}, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -2350,39 +2350,39 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_items_equal([data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']],
                            ['admin', 'read', 'read'])
 
-    def test_bulk_update_contributors_projects_send_dictionary_not_list(self):
+    def test_bulk_partial_update_contributors_projects_send_dictionary_not_list(self):
         res = self.app.patch_json_api(self.public_url, {'data': self.payload_one},
                                     auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
 
-    def test_bulk_update_contributors_id_not_supplied(self):
+    def test_bulk_partial_update_contributors_id_not_supplied(self):
         res = self.app.patch_json_api(self.public_url, {'data': [{'type': 'contributors', 'attributes': {}}]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
         assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
 
-    def test_bulk_update_contributors_type_not_supplied(self):
+    def test_bulk_partial_update_contributors_type_not_supplied(self):
         res = self.app.patch_json_api(self.public_url, {'data': [{'id': self.user_two._id, 'attributes': {}}]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
         assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
 
-    def test_bulk_update_contributors_wrong_type_and_id(self):
+    def test_bulk_partial_update_contributors_wrong_type_and_id(self):
         res = self.app.patch_json_api(self.public_url, {'data': [self.invalid_type]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
         res = self.app.patch_json_api(self.public_url, {'data': [self.invalid_id]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_bulk_update_contributors_limits(self):
+    def test_bulk_partial_update_contributors_limits(self):
         contrib_update_list = {'data': [self.payload_one] * 11}
         res = self.app.patch_json_api(self.public_url, contrib_update_list, auth=self.user.auth, expect_errors=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
 
-    def test_bulk_update_invalid_permissions_or_bibliographic(self):
+    def test_bulk_partial_update_invalid_permissions_or_bibliographic(self):
         res = self.app.patch_json_api(self.public_url, {'data': [self.payload_two, {'id': self.user_two._id, 'type': 'contributors', 'attributes': {'permission': 'super-user'}}]},
                                     auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -2592,7 +2592,6 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def test_add_contributor_is_visible_by_default(self):
         del self.data_user_two['data']['attributes']['bibliographic']
         res = self.app.post_json_api(self.public_url, self.data_user_two, auth=self.user.auth, expect_errors=True)
-        print res
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['id'], self.user_two._id)
 

@@ -357,7 +357,6 @@ class NodeContributorsList(ListBulkCreateUpdateDestroyAPIView, ListFilterMixin, 
 
         return super(NodeContributorsList, self).get_serializer(*args, **kwargs)
 
-
     # overrides ListBulkCreateUpdateDestroyView
     def create(self, request, *args, **kwargs):
         """
