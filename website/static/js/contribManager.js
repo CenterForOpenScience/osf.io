@@ -6,6 +6,7 @@ var bootbox = require('bootbox');
 require('jquery-ui');
 require('knockout-sortable');
 
+var rt = require('js/responsiveTable');
 var $osf = require('./osfHelpers');
 
 var contribsEqual = function(a, b) {
@@ -434,6 +435,9 @@ function ContribManager(selector, contributors, adminContributors, user, isRegis
     self.contributors = contributors;
     self.adminContributors = adminContributors;
     self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration);
+    self.viewModel.responsiveTable = function(elements) {
+        rt(elements[0].parentElement.parentElement);
+    };
     self.init();
 }
 

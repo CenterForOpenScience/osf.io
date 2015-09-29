@@ -42,40 +42,44 @@
                 % if 'admin' in user['permissions'] and not node['is_registration']:
                     <p>Drag and drop contributors to change listing order.</p>
                 % endif
-                <div id='contributors' class="row collapse-container" data-bind="sortable: {
-                            template: 'contribCard',
-                            data: contributors,
-                            as: 'contributor',
-                            isEnabled: sortable,
+                <table  id="manageContributorsTable"
+                    class="table responsive-table responsive-table-xxs"
+                    data-bind="template: {
+                        name: 'contribTable',
+                        afterRender: responsiveTable,
+                        options: {
+                            containment: '#manageContributors'
+                        },
+                        data: 'contrib'
+                    }">
+            </table>
+            <span id="adminContributorsAnchor" class="project-page anchor"></span>
+            <div id="adminContributors" data-bind="if: adminContributors.length">
+                <h4>
+                    Admins on Parent Projects
+                    <i class="fa fa-question-circle admin-info"
+                          data-content="These users are not contributors on
+                          this component but can view and register it because they
+                            are administrators on a parent project."
+                          data-toggle="popover"
+                          data-title="Admins on Parent Projects"
+                          data-container="body"
+                          data-placement="right"
+                          data-html="true"
+                    ></i>
+                </h4>
+                <table  id="adminContributorsTable"
+                        class="table responsive-table responsive-table-xxs"
+                        data-bind="template: {
+                            name: 'contribTable',
+                            afterRender: responsiveTable,
                             options: {
-                              containment: '#manageContributors'
-                            }
+                                containment: '#manageContributors'
+                            },
+                            data: 'admin'
                         }">
-                </div>
-                <div id="noContributors" style="display: none">
-                    <h3>No items found</h3>
-                </div>
-                <div data-bind="if: adminContributors.length">
-                    <h4>
-                        Admins on Parent Projects
-                        <i class="fa fa-question-circle admin-info"
-                              data-content="These users are not contributors on
-                              this component but can view and register it because they
-                                are administrators on a parent project."
-                              data-toggle="popover"
-                              data-title="Admins on Parent Projects"
-                              data-container="body"
-                              data-placement="right"
-                              data-html="true"
-                        ></i>
-                    </h4>
-                    <div id='adminContributors' class="row" aria-multiselectable="true" data-bind="template: {
-                            name: 'contribCard',
-                            foreach: adminContributors,
-                            as: 'contributor'
-                        }">
-                    </div>
-                </div>
+                </table>
+            </div>
                 ${buttonGroup()}
             </div>
         </div>
@@ -145,83 +149,111 @@
     </div>
 </script>
 
-<script id="contribCard" type="text/html">
-    <div data-bind="attr: {class: classes}"
-         data-bind="click: unremove, css: {'contributor-delete-staged': deleteStaged}">
-        <div class="panel panel-default">
-            <div class="panel-heading" data-bind="attr: {id: type() + 'Heading' + $index(), href: '#' + type() + 'Card' + $index()}" role="button" data-toggle="collapse" aria-expanded="false" aria-controls="card" onclick="toggleIcon(this)">
-                <img style='vertical-align: top' data-bind="attr: {src: contributor.gravatar_url}" />
-                <span class="header-content">
-                    <span data-bind="ifnot: profileUrl">
-                        <span class="nameSearch" data-bind="text: contributor.shortname"></span>
-                    </span>
-                    <span data-bind="if: profileUrl">
-                        <a onclick="cancelProp(event)" class="no-sort nameSearch" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
-                    </span>
-                    <span style="display: block" data-bind="text: curPermission().text + visibleText()"></span>
-                </span>
-                <div class="pull-right">
-                    <i class="fa fa-angle-down toggle-icon"></i>
-                </div>
-            </div>
-            <div data-bind="attr: {id: type() + 'Card' + $index()}" class="panel-collapse collapse" data-bind="attr: {aria-labelledby: type() + 'Heading' + $index()}">
-                <div class="panel-body">
-                    <span style="display: none" data-bind="text: curPermission().text" class="permission-filter permission-search"></span>
-                    <span style="display: none" data-bind="text: visibleText()" class="cited-filter"></span>
-                    <!-- ko if: contributor.canEdit() -->
-                        <h5 style="display: block">Permissions</h5>
-                        <span style="display: block" data-bind="visible: notDeleteStaged">
-                            <select class="form-control input-sm permission-filter" data-bind="
-                                options: permissionList,
-                                value: curPermission,
-                                optionsText: 'text',
-                                style: { font-weight: change() ? 'normal' : 'bold' }, attr: {name : curPermission}"
-                            >
-                            </select>
-                        </span>
-                        <span style="display: block" data-bind="visible: deleteStaged">
-                            <span data-bind="text: formatPermission"></span>
-                        </span>
-                    <!-- /ko -->
-                    <!-- ko ifnot: contributor.canEdit() -->
-                        <span style="display: block" data-bind="text: formatPermission"></span>
-                    <!-- /ko -->
-                    <h5 style="display: block" >Bibliographic Contributor</h5>
-                    <span style="display: block">
-                        <input
-                                type="checkbox" class="no-sort biblio cited-filter"
-                                data-bind="checked: visible, enable: $parent.canEdit() && !contributor.isAdmin"
-                            />
-                    </span>
-                    <!-- ko if: contributor.canEdit() -->
-                        <!-- ko ifnot: deleteStaged -->
-                            <!-- Note: Prevent clickBubble so that removing a
-                                contributor does not immediately un-remove her. -->
-                            <span style="display: block">
-                                <a data-bind="click: remove, clickBubble: false, tooltip: {title: 'Remove contributor'}">
-                                    <button type="button" class="btn btn-danger">Remove</button>
-                                </a>
-                            </span>
-                        <!-- /ko -->
-                        <!-- ko if: deleteStaged -->
-                            Save to Remove
-                        <!-- /ko -->
-                    <!-- /ko -->
+<script id="contribTable" type="text/html">
+    <thead>
+        <tr>
+            <th  style="min-width: 140px">Name</th>
+            <th  style="min-width: 127px">
+                Permissions
+                <i class="fa fa-question-circle permission-info"
+                    data-toggle="popover"
+                    data-title="Permission Information"
+                    data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i>
+            </th>
+            <th>
+                Bibliographic Contributor
+                <i class="fa fa-question-circle visibility-info"
+                    data-toggle="popover"
+                    data-title="Bibliographic Contributor Information"
+                    data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i>
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <!-- ko if: $data == 'contrib' -->
+    <tbody data-bind="sortable: {
+            template: 'contribRow',
+            isEnabled: $root.isEnabled,
+            data: $root.contributors,
+            as: 'contributor',
+            afterMove: $root.afterMove
+        }">
+    </tbody>
+    <!-- /ko -->
+    <!--ko if: $data == 'admin' -->
+        <tbody data-bind="template: {
+            name: 'contribRow',
+            foreach: $root.adminContributors,
+            as: 'contributor',
+        }">
+    </tbody>
+    <!-- /ko -->
+</script>
 
-                    <!-- ko ifnot: contributor.canEdit() -->
-                        <!-- ko if: canRemove -->
-                            <span style="display: block">
-                                <a data-bind="click: function() { $data.removeSelf($parent)}, tooltip: {title: 'Remove contributor'}">
-                                    <button type="button" class="btn btn-danger">Remove</button>
-                                </a>
-                            </span>
-                        <!-- /ko -->
-                    <!-- /ko -->
-##                     <span style="display: block" data-bind="text: isAdmin"></span>
-                </div>
+<script id="contribRow" type="text/html">
+    <tr data-bind="click: unremove, css: {'contributor-delete-staged': $parent.deleteStaged}">
+        <td>
+            <img data-bind="attr: {src: contributor.gravatar_url}" />
+                <span data-bind="ifnot: profileUrl">
+                    <span data-bind="text: contributor.shortname"></span>
+                </span>
+                <span data-bind="if: profileUrl">
+                    <a class="no-sort" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
+                </span>
+        </td>
+        <td class="permissions">
+            <!-- ko if: contributor.canEdit() -->
+                <span data-bind="visible: notDeleteStaged">
+                    <select class="form-control input-sm" data-bind="
+                        options: permissionList,
+                        value: curPermission,
+                        optionsText: 'text',
+                        event: {change: function() {flagChange($parents[1])}},
+                        style: { font-weight: change() ? 'normal' : 'bold' }"
+                    >
+                    </select>
+                </span>
+                <span data-bind="visible: deleteStaged">
+                    <span data-bind="text: formatPermission"></span>
+                </span>
+            <!-- /ko -->
+            <!-- ko ifnot: contributor.canEdit() -->
+                <span data-bind="text: formatPermission"></span>
+            <!-- /ko -->
+        </td>
+        <td>
+            <input
+                type="checkbox" class="no-sort biblio"
+                data-bind="checked: visible, enable: $data.canEdit() && !contributor.isAdmin"
+            />
+        </td>
+        <td class="to-top responsive-table-hide">
+            <div class="to-top-element">
+            <!-- ko if: contributor.canEdit() -->
+                <!-- ko ifnot: deleteStaged -->
+                    <!-- Note: Prevent clickBubble so that removing a
+                    contributor does not immediately un-remove her. -->
+                        <button type="button" class="btn btn-danger" data-bind="click: remove, clickBubble: false">Remove</button>
+                <!-- /ko -->
+                <!-- ko if: deleteStaged -->
+                    Save to Remove
+                <!-- /ko -->
+            <!-- /ko -->
+
+            <!-- ko ifnot: contributor.canEdit() -->
+                <!-- ko if: canRemove -->
+                    <button type="button" class="btn btn-danger" data-bind="click: function() { $data.removeSelf($parents[1])}">Remove2</button>
+                <!-- /ko -->
+            <!-- /ko -->
             </div>
-        </div>
-    </div>
+        </td>
+    </tr>
 </script>
 
 
