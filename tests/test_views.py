@@ -46,7 +46,6 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
-from website.archiver import utils as archiver_utils
 
 
 from tests.base import (
@@ -64,18 +63,24 @@ from tests.factories import (
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
+
 class Addon(MockAddonNodeSettings):
     @property
     def complete(self):
         return True
+
     def archive_errors(self):
         return 'Error'
+
+
 class Addon2(MockAddonNodeSettings):
     @property
     def complete(self):
         return True
+
     def archive_errors(self):
         return 'Error'
+
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
@@ -87,6 +92,26 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.link.nodes.append(self.project)
         self.link.save()
         self.project_url = self.project.web_url_for('view_project')
+
+    def test_edit_private_link_empty(self):
+        node = ProjectFactory(creator=self.user)
+        link = PrivateLinkFactory()
+        link.nodes.append(node)
+        link.save()
+        url = node.api_url_for("project_private_link_edit")
+        res = self.app.put_json(url, {'pk': link._id, 'value': ''}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Title cannot be blank', res.body)
+
+    def test_edit_private_link_invalid(self):
+        node = ProjectFactory(creator=self.user)
+        link = PrivateLinkFactory()
+        link.nodes.append(node)
+        link.save()
+        url = node.api_url_for("project_private_link_edit")
+        res = self.app.put_json(url, {'pk': link._id, 'value': '<a></a>'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Invalid link name.', res.body)
 
     def test_not_anonymous_for_public_project(self):
         anonymous_link = PrivateLinkFactory(anonymous=True)
@@ -176,6 +201,20 @@ class TestProjectViews(OsfTestCase):
         )
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
+
+    def test_edit_title_empty(self):
+        node = ProjectFactory(creator=self.user1)
+        url = node.api_url_for("edit_node")
+        res = self.app.post_json(url, {'name': 'title', 'value': ''}, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Title cannot be blank', res.body)
+
+    def test_edit_title_invalid(self):
+        node = ProjectFactory(creator=self.user1)
+        url = node.api_url_for("edit_node")
+        res = self.app.post_json(url, {'name': 'title', 'value': '<a></a>'}, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Invalid title.', res.body)
 
     def test_cannot_remove_only_visible_contributor_before_remove_contributor(self):
         self.project.visible_contributor_ids.remove(self.user1._id)
@@ -1905,7 +1944,7 @@ class TestAddingContributorViews(OsfTestCase):
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
             node=project)
-        assert_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()))
+        assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
     @mock.patch('website.mails.send_mail')
     def test_contributor_added_email_not_sent_to_unreg_user(self, send_mail):
@@ -4056,12 +4095,12 @@ class TestReorderComponents(OsfTestCase):
         self.creator = AuthUserFactory()
         self.contrib = AuthUserFactory()
         # Project is public
-        self.project = ProjectFactory.build(creator=self.creator, public=True)
+        self.project = ProjectFactory.build(creator=self.creator, is_public=True)
         self.project.add_contributor(self.contrib, auth=Auth(self.creator))
 
         # subcomponent that only creator can see
-        self.public_component = NodeFactory(creator=self.creator, public=True)
-        self.private_component = NodeFactory(creator=self.creator, public=False)
+        self.public_component = NodeFactory(creator=self.creator, is_public=True)
+        self.private_component = NodeFactory(creator=self.creator, is_public=False)
         self.project.nodes.append(self.public_component)
         self.project.nodes.append(self.private_component)
 
@@ -4092,7 +4131,7 @@ class TestDashboardViews(OsfTestCase):
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
     def test_components_with_are_accessible_from_dashboard(self):
-        project = ProjectFactory(creator=self.creator, public=False)
+        project = ProjectFactory(creator=self.creator, is_public=False)
         component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
@@ -4164,7 +4203,7 @@ class TestDashboardViews(OsfTestCase):
         assert_equal(res.status_code, 400)
 
     def test_registered_components_with_are_accessible_from_dashboard(self):
-        project = ProjectFactory(creator=self.creator, public=False)
+        project = ProjectFactory(creator=self.creator, is_public=False)
         component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
@@ -4179,7 +4218,7 @@ class TestDashboardViews(OsfTestCase):
         assert_equal(len(res.json['data']), 1)
 
     def test_archiving_nodes_appear_in_all_my_registrations(self):
-        project = ProjectFactory(creator=self.creator, public=False)
+        project = ProjectFactory(creator=self.creator, is_public=False)
         reg = RegistrationFactory(project=project, user=self.creator)
 
         # Get the All My Registrations smart folder from the dashboard

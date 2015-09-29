@@ -4,8 +4,11 @@ from rest_framework.exceptions import NotFound
 
 from website.models import Node, NodeLog
 
+from framework.auth.oauth_scopes import CoreScopes
+
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_user_auth
+from api.base import permissions as base_permissions
 from api.logs.serializers import NodeLogSerializer
 from api.nodes.serializers import NodeSerializer
 from api.nodes.utils import get_visible_nodes_for_user
@@ -14,7 +17,12 @@ class LogList(generics.ListAPIView, ODMFilterMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope
     )
+
+    required_read_scopes = [CoreScopes.NODE_LOG_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
     serializer_class = NodeLogSerializer
     ordering = ('-date', )  # default ordering
 
@@ -34,7 +42,12 @@ class LogNodeList(generics.ListAPIView, ODMFilterMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_LOG_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
     serializer_class = NodeSerializer
     order = ('-date', )
 

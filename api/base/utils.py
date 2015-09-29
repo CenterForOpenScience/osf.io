@@ -9,8 +9,20 @@ import collections
 
 from website import util as website_util  # noqa
 from website import settings as website_settings
-from framework.auth import Auth
+from framework.auth import Auth, User
 from api.base.exceptions import Gone
+
+# These values are copied from rest_framework.fields.BooleanField
+# BooleanField cannot be imported here without raising an
+# ImproperlyConfigured error
+TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
+FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
+
+def is_truthy(value):
+    return value in TRUTHY
+
+def is_falsy(value):
+    return value in FALSY
 
 def get_user_auth(request):
     """Given a Django request object, return an ``Auth`` object with the
@@ -47,8 +59,15 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
                 raise Gone
             else:
                 raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
-        if hasattr(obj, 'is_active'):
-            if not getattr(obj, 'is_active', False):
+        # For objects that have been disabled (is_active is False), return a 410.
+        # The User model is an exception because we still want to allow
+        # users who are unconfirmed or unregistered, but not users who have been
+        # disabled.
+        if model_cls is User:
+            if obj.is_disabled:
+                raise Gone(detail='The requested user is no longer available.')
+        else:
+            if not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
                 if display_name is None:
                     raise Gone
                 else:

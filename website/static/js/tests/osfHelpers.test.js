@@ -91,6 +91,32 @@ describe('osfHelpers', () => {
         });
     });
 
+    describe('handleEditableError', () => {
+
+        var ravenStub;
+        beforeEach(() => {
+            ravenStub = new sinon.stub(Raven, 'captureMessage');
+        });
+
+        afterEach(() => {
+            ravenStub.restore();
+        });
+        var response = {
+            responseJSON: {
+                message_short: 'Oh no!',
+                message_long: 'Something went wrong'
+            }
+        };
+        it('uses the response text if available', () => {
+            assert.equal('Error: ' + response.responseJSON.message_long, $osf.handleEditableError(response));
+        });
+
+        it('logs error with Raven', () => {
+            $osf.handleEditableError(response);
+            assert.called(ravenStub);
+        });
+    });
+
     describe('block', () => {
         var stub;
         beforeEach(() => {

@@ -1,28 +1,46 @@
-import collections
 import re
 import os
+import collections
 
+from rest_framework.reverse import reverse
 from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
 
+from website import settings
 from website.util.sanitize import strip_html
-from api.base.utils import absolute_reverse, waterbutler_url_for, deep_get
+from website.util import waterbutler_api_url_for
+
+from api.base import utils
+from api.base.exceptions import InvalidQueryStringError, Conflict
+
+from website.util import rapply as _rapply
 
 
-def _rapply(d, func, *args, **kwargs):
-    """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
-    as those are the only complex structures currently supported by DRF Serializer Fields."""
-    if isinstance(d, collections.Mapping):
-        return {
-            key: _rapply(value, func, *args, **kwargs)
-            for key, value in d.iteritems()
-        }
-    if isinstance(d, list):
-        return [
-            _rapply(item, func, *args, **kwargs) for item in d
-        ]
-    else:
-        return func(d, *args, **kwargs)
+class AllowMissing(ser.Field):
+
+    def __init__(self, field, **kwargs):
+        super(AllowMissing, self).__init__(**kwargs)
+        self.field = field
+
+    def to_representation(self, value):
+        return self.field.to_representation(value)
+
+    def bind(self, field_name, parent):
+        super(AllowMissing, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def get_attribute(self, instance):
+        """
+        Overwrite the error message to return a blank value is if there is no existing value.
+        This allows the display of keys that do not exist in the DB (gitHub on a new OSF account for example.)
+        """
+        try:
+            return self.field.get_attribute(instance)
+        except SkipField:
+            return ''
+
+    def to_internal_value(self, data):
+        return self.field.to_internal_value(data)
 
 
 def _url_val(val, obj, serializer, **kwargs):
@@ -35,6 +53,31 @@ def _url_val(val, obj, serializer, **kwargs):
         return getattr(serializer, val)(obj)
     else:
         return val
+
+
+class IDField(ser.CharField):
+    def __init__(self, **kwargs):
+        kwargs['label'] = 'ID'
+        super(IDField, self).__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        update_methods = ['PUT', 'PATCH']
+        if self.context['request'].method in update_methods:
+            if self.root.instance._id != data:
+                raise Conflict()
+        return super(IDField, self).to_internal_value(data)
+
+
+class TypeField(ser.CharField):
+    def __init__(self, **kwargs):
+        kwargs['write_only'] = True
+        kwargs['required'] = True
+        super(TypeField, self).__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        if self.root.Meta.type_ != data:
+            raise Conflict()
+        return super(TypeField, self).to_internal_value(data)
 
 
 class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
@@ -63,12 +106,12 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
 
         Returns None if lookup value is None
         """
-        if deep_get(obj, self.lookup_field) is None:
+        if utils.deep_get(obj, self.lookup_field) is None:
             return None
 
         head, tail = os.path.split(self.lookup_field.replace('.', '/'))
         if head and tail:
-            obj = deep_get(obj, head.replace('/', '.'))
+            obj = utils.deep_get(obj, head.replace('/', '.'))
             self.lookup_field = tail
 
         return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
@@ -83,15 +126,20 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         """
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
 
-        if self.meta:
-            meta = {}
-            for key in self.meta:
-                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
-            self.meta = meta
-
-            return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
-        else:
-            return {'links': {self.link_type: url}}
+        meta = {}
+        for key in self.meta or {}:
+            if key == 'count':
+                show_related_counts = self.context['request'].query_params.get('related_counts', False)
+                if utils.is_truthy(show_related_counts):
+                    meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+                elif utils.is_falsy(show_related_counts):
+                    continue
+                else:
+                    raise InvalidQueryStringError(
+                        detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
+                        parameter='related_counts'
+                    )
+        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
 class LinksField(ser.Field):
@@ -129,7 +177,7 @@ class LinksField(ser.Field):
 
     def to_representation(self, obj):
         ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
-        if hasattr(obj, 'get_absolute_url'):
+        if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = obj.get_absolute_url()
         return ret
 
@@ -146,7 +194,9 @@ def _tpl(val):
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
     if attr_name:
-        attribute_value = deep_get(obj, attr_name)
+        attribute_value = obj
+        for attr_segment in attr_name.split('.'):
+            attribute_value = getattr(attribute_value, attr_segment, ser.empty)
         if attribute_value is not ser.empty:
             return attribute_value
         elif attr_name in obj:
@@ -183,7 +233,7 @@ class Link(object):
         for item in kwarg_values:
             if kwarg_values[item] is None:
                 return None
-        return absolute_reverse(
+        return utils.absolute_reverse(
             self.endpoint,
             args=arg_values,
             kwargs=kwarg_values,
@@ -196,14 +246,36 @@ class WaterbutlerLink(Link):
     """Link object to use in conjunction with Links field. Builds a Waterbutler URL for files.
     """
 
-    def __init__(self, args=None, kwargs=None, **kw):
-        # self.endpoint = endpoint
-        super(WaterbutlerLink, self).__init__(None, args, kwargs, None, **kw)
+    def __init__(self, must_be_file=None, must_be_folder=None, **kwargs):
+        self.kwargs = kwargs
+        self.must_be_file = must_be_file
+        self.must_be_folder = must_be_folder
 
     def resolve_url(self, obj):
         """Reverse URL lookup for WaterButler routes
         """
-        return waterbutler_url_for(obj['waterbutler_type'], obj['provider'], obj['path'], obj['node_id'], obj['cookie'], obj['args'])
+        if self.must_be_folder is True and not obj.path.endswith('/'):
+            return None
+        if self.must_be_file is True and obj.path.endswith('/'):
+            return None
+        return waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
+
+
+class NodeFileHyperLink(JSONAPIHyperlinkedIdentityField):
+    def __init__(self, kind=None, kwargs=None, **kws):
+        self.kind = kind
+        self.kwargs = []
+        for kw in (kwargs or []):
+            if isinstance(kw, basestring):
+                kw = (kw, kw)
+            assert isinstance(kw, tuple) and len(kw) == 2
+            self.kwargs.append(kw)
+        super(NodeFileHyperLink, self).__init__(**kws)
+
+    def get_url(self, obj, view_name, request, format):
+        if self.kind and obj.kind != self.kind:
+            return None
+        return reverse(view_name, kwargs={attr_name: getattr(obj, attr) for (attr_name, attr) in self.kwargs}, request=request, format=format)
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
@@ -276,9 +348,29 @@ class JSONAPISerializer(ser.Serializer):
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
-        """After validation, scrub HTML from validated_data prior to saving (for create and update views)"""
+        """
+        After validation, scrub HTML from validated_data prior to saving (for create and update views)
+
+        Exclude 'type' and '_id' from validated_data.
+
+        """
         ret = super(JSONAPISerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
             self._validated_data = _rapply(self.validated_data, strip_html)
+
+        self._validated_data.pop('type', None)
+
+        update_methods = ['PUT', 'PATCH']
+        if self.context['request'].method in update_methods:
+            self._validated_data.pop('_id', None)
+
         return ret
+
+
+def DevOnly(field):
+    """Make a field only active in ``DEV_MODE``. ::
+
+        experimental_field = DevMode(CharField(required=False))
+    """
+    return field if settings.DEV_MODE else None

@@ -3,16 +3,40 @@ import requests
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.status import is_server_error
 
 from framework.auth.core import Auth
-from website.exceptions import NodeStateError
-from website.models import Node, Pointer, NodeLog
-from api.users.serializers import ContributorSerializer
+from framework.auth.oauth_scopes import CoreScopes
+
+from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_error, waterbutler_url_for
-from api.nodes.serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
+from api.base.utils import get_object_or_error
+from api.files.serializers import FileSerializer
+from api.users.views import UserMixin
+from api.nodes.serializers import (
+    NodeSerializer,
+    NodeLinksSerializer,
+    NodeDetailSerializer,
+    NodeProviderSerializer,
+    NodeContributorsSerializer,
+    NodeRegistrationSerializer,
+    NodeContributorDetailSerializer
+)
+from api.nodes.permissions import (
+    AdminOrPublic,
+    ContributorOrPublic,
+    ContributorOrPublicForPointers,
+    ContributorDetailPermissions,
+    ReadOnlyIfRegistration,
+)
+from api.base.exceptions import ServiceUnavailableError
 from api.logs.serializers import NodeLogSerializer
-from api.nodes.permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+
+from website.exceptions import NodeStateError
+from website.files.models import FileNode
+from website.files.models import OsfStorageFileNode
+from website.models import Node, Pointer, NodeLog
+from website.util import waterbutler_api_url_for
 
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
@@ -22,7 +46,7 @@ class NodeMixin(object):
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self):
+    def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
@@ -33,8 +57,71 @@ class NodeMixin(object):
         if node.is_folder:
             raise NotFound
         # May raise a permission denied
-        self.check_object_permissions(self.request, node)
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
         return node
+
+class WaterButlerMixin(object):
+
+    path_lookup_url_kwarg = 'path'
+    provider_lookup_url_kwarg = 'provider'
+
+    def get_file_item(self, item):
+        file_node = FileNode.resolve_class(
+            item['provider'],
+            FileNode.FOLDER if item['kind'] == 'folder'
+            else FileNode.FILE
+        ).get_or_create(self.get_node(check_object_permissions=False), item['path'])
+
+        file_node.update(None, item, user=self.request.user)
+
+        self.check_object_permissions(self.request, file_node)
+
+        return file_node
+
+    def fetch_from_waterbutler(self):
+        node = self.get_node(check_object_permissions=False)
+        path = self.kwargs[self.path_lookup_url_kwarg]
+        provider = self.kwargs[self.provider_lookup_url_kwarg]
+
+        if provider == 'osfstorage':
+            # Kinda like /me for a user
+            # The one odd case where path is not really path
+            if path == '/':
+                obj = node.get_addon('osfstorage').get_root()
+            else:
+                obj = get_object_or_error(
+                    OsfStorageFileNode,
+                    Q('node', 'eq', node._id) &
+                    Q('_id', 'eq', path.strip('/')) &
+                    Q('is_file', 'eq', not path.endswith('/'))
+                )
+
+            self.check_object_permissions(self.request, obj)
+
+            return obj
+
+        url = waterbutler_api_url_for(node._id, provider, path, meta=True)
+
+        waterbutler_request = requests.get(
+            url,
+            cookies=self.request.COOKIES,
+            headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
+        )
+
+        if waterbutler_request.status_code == 401:
+            raise PermissionDenied
+
+        if waterbutler_request.status_code == 404:
+            raise NotFound
+
+        if is_server_error(waterbutler_request.status_code):
+            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
+
+        try:
+            return waterbutler_request.json()['data']
+        except KeyError:
+            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
@@ -51,8 +138,14 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
     serializer_class = NodeSerializer
+
     ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin
@@ -95,11 +188,16 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     project, and children nodes may have a category of project.
     """
     permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
 
-    serializer_class = NodeSerializer
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+    serializer_class = NodeDetailSerializer
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -108,6 +206,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
+        # TODO: The method it overrides already returns request (plus more stuff). Why does this method exist?
         return {'request': self.request}
 
     # overrides RetrieveUpdateDestroyAPIView
@@ -122,7 +221,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -130,13 +229,17 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
     contributors. From a permissions standpoint, both are the same, but bibliographic contributors
     are included in citations, while non-bibliographic contributors are not included in citations.
     """
-
     permission_classes = (
+        AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
 
-    serializer_class = ContributorSerializer
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+
+    serializer_class = NodeContributorsSerializer
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -144,6 +247,8 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         contributors = []
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in visible_contributors
+            contributor.permission = node.get_permissions(contributor)[-1]
+            contributor.node_id = node._id
             contributors.append(contributor)
         return contributors
 
@@ -152,19 +257,68 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         return self.get_queryset_from_request()
 
 
+class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
+    """Detail of a contributor for a node.
+
+    View, remove from, and change bibliographic and permissions for a given contributor on a given node.
+    """
+    permission_classes = (
+        ContributorDetailPermissions,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+
+    serializer_class = NodeContributorDetailSerializer
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        user = self.get_user()
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        if user not in node.contributors:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+        user.permission = node.get_permissions(user)[-1]
+        user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
+        return user
+
+    # overrides DestroyAPIView
+    def perform_destroy(self, instance):
+        node = self.get_node()
+        current_user = self.request.user
+        auth = Auth(current_user)
+        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+            raise ValidationError("Must have at least one visible contributor")
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError("Must have at least one registered admin contributor")
+
+
+# TODO: Support creating registrations
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
-     created for the current node."""
+    created for the current node.
+     """
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
     )
 
-    serializer_class = NodeSerializer
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
+
+    serializer_class = NodeRegistrationSerializer
 
     # overrides ListAPIView
+    # TODO: Filter out retractions by default
     def get_queryset(self):
         nodes = self.get_node().node__registrations
         user = self.request.user
@@ -176,7 +330,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
+class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -187,19 +341,38 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
+    required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
 
     serializer_class = NodeSerializer
 
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        return (
+            Q('is_deleted', 'ne', True) &
+            Q('is_folder', 'ne', True)
+        )
+
     # overrides ListAPIView
     def get_queryset(self):
-        nodes = self.get_node().nodes
+        node = self.get_node()
+        req_query = self.get_query_from_request()
+
+        query = (
+            Q('_id', 'in', [e._id for e in node.nodes if e.primary]) &
+            req_query
+        )
+        nodes = Node.find(query)
         user = self.request.user
         if user.is_anonymous():
             auth = Auth(None)
         else:
             auth = Auth(user)
-        children = [node for node in nodes if node.can_view(auth) and node.primary and not node.is_deleted]
+        children = [each for each in nodes if each.can_view(auth)]
         return children
 
     # overrides ListCreateAPIView
@@ -208,6 +381,9 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
         serializer.save(creator=user, parent=self.get_node())
 
 
+# TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
+# currently query on a Pointer's node's attributes.
+# e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
 class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
     """Node Links to other nodes.
 
@@ -217,13 +393,21 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeLinksSerializer
 
     def get_queryset(self):
-        pointers = self.get_node().nodes_pointer
-        return pointers
+        return [
+            pointer for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted
+        ]
 
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
@@ -235,7 +419,12 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     permission_classes = (
         ContributorOrPublicForPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
     )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeLinksSerializer
 
@@ -264,7 +453,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeFilesList(generics.ListAPIView, NodeMixin):
+class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
     """Files attached to a node.
 
     This gives a list of all of the files that are on your project. Because this works with external services, some
@@ -291,99 +480,93 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     the links as we provide them before you use them, and not to reverse engineer the structure of the links as they
     are at any given time.
     """
-    serializer_class = NodeFilesSerializer
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        base_permissions.TokenHasScope,
+    )
 
+    serializer_class = FileSerializer
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    def get_queryset(self):
+        # Don't bother going to waterbutler for osfstorage
+        files_list = self.fetch_from_waterbutler()
+
+        if isinstance(files_list, list):
+            return [self.get_file_item(file) for file in files_list]
+
+        if isinstance(files_list, dict) or getattr(files_list, 'is_file', False):
+            # We should not have gotten a file here
+            raise NotFound
+
+        return list(files_list.children)
+
+
+class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = FileSerializer
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    def get_object(self):
+        fobj = self.fetch_from_waterbutler()
+        if isinstance(fobj, dict):
+            return self.get_file_item(fobj)
+
+        if isinstance(fobj, list) or not getattr(fobj, 'is_file', True):
+            # We should not have gotten a folder here
+            raise NotFound
+
+        return fobj
+
+
+class NodeProvider(object):
+
+    def __init__(self, provider, node):
+        self.path = '/'
+        self.node = node
+        self.kind = 'folder'
+        self.name = provider
+        self.provider = provider
+        self.node_id = node._id
+        self.pk = node._id
+
+
+class NodeProvidersList(generics.ListAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        base_permissions.TokenHasScope,
     )
 
-    def get_valid_self_link_methods(self, root_folder=False):
-        valid_methods = {'file': ['GET'], 'folder': [], }
-        user = self.request.user
-        if user is None or user.is_anonymous():
-            return valid_methods
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-        permissions = self.get_node().get_permissions(user)
-        if 'write' in permissions:
-            valid_methods['file'].append('POST')
-            valid_methods['file'].append('DELETE')
-            valid_methods['folder'].append('POST')
-            if not root_folder:
-                valid_methods['folder'].append('DELETE')
+    serializer_class = NodeProviderSerializer
 
-        return valid_methods
-
-    def get_file_item(self, item, cookie, obj_args):
-        file_item = {
-            'valid_self_link_methods': self.get_valid_self_link_methods()[item['kind']],
-            'provider': item['provider'],
-            'path': item['path'],
-            'name': item['name'],
-            'node_id': self.get_node()._primary_key,
-            'cookie': cookie,
-            'args': obj_args,
-            'waterbutler_type': 'file',
-            'item_type': item['kind'],
-        }
-        if file_item['item_type'] == 'folder':
-            file_item['metadata'] = {}
-        else:
-            file_item['metadata'] = {
-                'content_type': item['contentType'],
-                'modified': item['modified'],
-                'size': item['size'],
-                'extra': item['extra'],
-            }
-        return file_item
+    def get_provider_item(self, provider):
+        return NodeProvider(provider, self.get_node())
 
     def get_queryset(self):
-        query_params = self.request.query_params
+        return [
+            self.get_provider_item(addon.config.short_name)
+            for addon
+            in self.get_node().get_addons()
+            if addon.config.has_hgrid_files
+            and addon.complete
+        ]
 
-        addons = self.get_node().get_addons()
-        user = self.request.user
-        cookie = None if self.request.user.is_anonymous() else user.get_or_create_cookie()
-        node_id = self.get_node()._id
-        obj_args = self.request.parser_context['args']
-
-        provider = query_params.get('provider')
-        path = query_params.get('path', '/')
-        files = []
-
-        if provider is None:
-            valid_self_link_methods = self.get_valid_self_link_methods(True)
-            for addon in addons:
-                if addon.config.has_hgrid_files:
-                    files.append({
-                        'valid_self_link_methods': valid_self_link_methods['folder'],
-                        'provider': addon.config.short_name,
-                        'name': addon.config.short_name,
-                        'path': path,
-                        'node_id': node_id,
-                        'cookie': cookie,
-                        'args': obj_args,
-                        'waterbutler_type': 'file',
-                        'item_type': 'folder',
-                        'metadata': {},
-                    })
-        else:
-            url = waterbutler_url_for('data', provider, path, self.kwargs['node_id'], cookie, obj_args)
-            waterbutler_request = requests.get(url)
-            if waterbutler_request.status_code == 401:
-                raise PermissionDenied
-            try:
-                waterbutler_data = waterbutler_request.json()['data']
-            except KeyError:
-                raise ValidationError('Could not retrieve files information.')
-
-            if isinstance(waterbutler_data, list):
-                for item in waterbutler_data:
-                    file = self.get_file_item(item, cookie, obj_args)
-                    files.append(file)
-            else:
-                files.append(self.get_file_item(waterbutler_data, cookie, obj_args))
-
-        return files
 
 class NodeLogList(generics.ListAPIView, NodeMixin):
     """ Recent Log Activity
@@ -395,11 +578,15 @@ class NodeLogList(generics.ListAPIView, NodeMixin):
     """
     serializer_class = NodeLogSerializer
 
+    required_read_scopes = [CoreScopes.NODE_LOG_READ]
+    required_write_scopes = [CoreScopes.NULL]
+
     log_lookup_url_kwarg = 'node_id'
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        base_permissions.TokenHasScope,
     )
 
     def get_queryset(self):
