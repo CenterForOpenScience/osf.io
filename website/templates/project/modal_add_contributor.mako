@@ -33,11 +33,6 @@
                                         <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
                                     <!-- /ko -->
                                 </div>
-                                <div>
-                                    Show my
-                                    <a data-bind="click:recentlyAdded">recent collaborators</a>,
-                                    <a data-bind="click:mostInCommon">most frequent collaborators</a>
-                                </div>
                             </div>
                         </div>
                     </form>
@@ -50,13 +45,13 @@
                         <div class="col-md-6">
                             <div>
                                 <span class="modal-subheader">Results</span>
-                                <a data-bind="click:addAll">Add all</a>
+                                <a data-bind="visible: addAllVisible, click:addAll">Add all</a>
                             </div>
                             <!-- ko if: notification -->
                             <div data-bind="html: notification().message, css: 'alert alert-' + notification().level"></div>
                             <!-- /ko -->
 
-                            <table class=" table-condensed">
+                            <table class="table-condensed">
                                 <thead data-bind="visible: foundResults">
                                 </thead>
                                 <tbody data-bind="foreach:{data:results, as: 'contributor', afterRender:addTips}">
@@ -64,8 +59,15 @@
                                         <td class="p-r-sm osf-icon-td" >
                                             <a
                                                     class="btn btn-success contrib-button btn-mini"
-                                                    data-bind="click:$root.add, tooltip: {title: 'Add contributor'}"
-                                                ><i class="fa fa-plus"></i></a>
+                                                    data-bind="visible: !contributor.added,
+                                                               click:$root.add,
+                                                               tooltip: {title: 'Add contributor'}"
+                                                ><i class="fa fa-fw fa-plus"></i></a>
+                                            <a
+                                                class="btn btn-default contrib-button btn-mini"
+                                                data-bind="visible: contributor.added,
+                                                           tooltip: {title: 'Already added'}"
+                                                ><i class="fa fa-fw fa-check"></i></a>
                                         </td>
                                         <td>
                                             <!-- height and width are explicitly specified for faster rendering -->
@@ -127,11 +129,11 @@
                         <div class="col-md-6">
                             <div>
                                 <span class="modal-subheader">Adding</span>
-                                <a data-bind="click:removeAll">Remove all</a>
+                                <a data-bind="visible: removeAllVisible, click:removeAll">Remove all</a>
                             </div>
 
                             <!-- TODO: Duplication here: Put this in a KO template -->
-                            <table class="table-fixed">
+                            <table class="table-condensed">
                                 <thead data-bind="visible: selection().length">
                                     <th width="10%"></th>
                                     <th width="15%"></th>
@@ -146,7 +148,7 @@
                                             ></i>
                                     </th>
                                 </thead>
-                                <tbody data-bind="sortable: {data: selection, as: 'contributor', afterRender: makeAfterRender(), options: {containment: 'parent'}}">
+                                <tbody data-bind="foreach:{data:selection, as: 'contributor', afterRender:makeAfterRender()}">
                                     <tr>
                                         <td class="p-r-sm" class="osf-icon-td">
                                             <a

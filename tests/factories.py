@@ -264,10 +264,11 @@ class SanctionFactory(ModularOdmFactory):
 
     @classmethod
     def _create(cls, target_class, approve=False, *args, **kwargs):
-        user = UserFactory()
+        user = kwargs.get('user') or UserFactory()
         sanction = ModularOdmFactory._create(target_class, initiated_by=user, *args, **kwargs)
         reg_kwargs = {
-            'owner': user,
+            'creator': user,
+            'user': user,
             sanction.SHORT_NAME: sanction
         }
         RegistrationFactory(**reg_kwargs)
