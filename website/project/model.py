@@ -161,6 +161,11 @@ class Comment(GuidStoredObject):
     # }
     reports = fields.DictionaryField(validate=validate_comment_reports)
 
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
+
     @classmethod
     def create(cls, auth, **kwargs):
         comment = cls(**kwargs)
@@ -687,6 +692,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pk(self):
         return self._id
+
 
     @property
     def category_display(self):
