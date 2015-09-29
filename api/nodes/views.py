@@ -33,7 +33,7 @@ from api.nodes.permissions import (
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.files.models import OsfStorageFileNode
-from website.models import Node, Pointer
+from website.models import Node, Pointer, Comment
 from website.util import waterbutler_api_url_for
 
 
@@ -529,4 +529,4 @@ class NodeCommentsList(generics.ListCreateAPIView, NodeMixin):
     serializer_class = CommentSerializer
 
     def get_queryset(self):
-        return [comment for comment in getattr(self.get_node(), 'commented', [])]
+        return Comment.find(Q('node', 'eq', self.get_node()) & Q('is_deleted', 'ne', True))
