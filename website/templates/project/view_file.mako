@@ -7,7 +7,7 @@
 <div class="row">
   <div class="col-sm-5">
     ## <div id="fileNameDiv"></div>
-     <h2 class="break-word editable editable-click">
+     <h2>
        <span id="fileName">${file_name | h}</span>
        % if file_revision:
          <small>&nbsp;${file_revision | h}</small>
