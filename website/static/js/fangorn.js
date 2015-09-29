@@ -1366,7 +1366,6 @@ function scrollToFile(fileID) {
 function _renameEvent () {
     var tb = this;
     var item = tb.multiselected()[0];
-    console.log(item);
     var val = $.trim($('#renameInput').val());
     var folder = item.parent();
     //TODO Error message?

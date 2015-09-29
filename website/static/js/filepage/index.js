@@ -160,174 +160,66 @@ var FileViewPage = {
 
         self.mfrIframeParent = $('#mfrIframeParent');
 
-        //$(document).on('fileviewpage:rename', function() {
-        //    $(document).trigger('fileviewpage:rename');
-        //    console.log('Here');
-        //    if(!self.canEdit) {
-        //        return;
-        //    }
-        //
-        //    var $fileName = $('#fileName');
-        //    $.fn.editable.defaults.mode = 'inline';
-        //    $fileName.editable({
-        //        type: 'POST',
-        //        beforeSend: $osf.setXHRAuthorization,
-        //        url: waterbutler.moveUrl(),
-        //        headers: {
-        //            'Content-Type': 'Application/json'
-        //        },
-        //        data: JSON.stringify({
-        //            'rename': rename,
-        //            'conflict': conflict,
-        //            'source': waterbutler.toJsonBlob(from),
-        //            'destination': waterbutler.toJsonBlob(to),
-        //        }),
-        //        validate: function(value) {
-        //            if($.trim(value) === ''){
-        //                $osf.growl('Error', 'The  file name cannot be empty.', {timeout: 5000});
-        //            } else if(value.length > 100){
-        //                $osf.growl('Error', 'The file name cannot be more than 100 characters.', {timeout: 5000});
-        //            }
-        //        },
-        //        success: function(response, value) {
-        //            window.location.href = self.context.urls.base + encodeURIComponent(value) + '/';
-        //        },
-        //        error: function(response) {
-        //            var msg = response.responseJSON.message_long;
-        //            if (msg) {
-        //                return msg;
-        //            } else {
-        //                // Log unexpected error with Raven
-        //                Raven.captureMessage('Error in renaming file', {
-        //                    url: waterbutler.moveUrl(),
-        //                    responseText: response.responseText,
-        //                    statusText: response.statusText
-        //                });
-        //                $osf.growl('Error', 'Error in renaming file.');
-        //            }
-        //        }
-        //    });
-        //});
+        $.fn.editable.defaults.mode = 'inline';
 
-        // Checks for good formatting and duplication
-        self.validateRename = function(name, callback) {
-            if($.trim(name) === ''){
-                $osf.growl('Error', 'The  file name cannot be empty.', {timeout: 5000});
-                return '';
-            } else if(name.length > 100){
-                $osf.growl('Error', 'The file name cannot be more than 100 characters.', {timeout: 5000});
-                return '';
-            }
-            //var parent = self.file.parent;
-            //for(var i = 0; i < parent.children.length; i++) {
-            //    var child = parent.children[i];
-            //    if (child.data.name === name && child.id !== self.file.id) {
-            //        self.modal.update(m('', [
-            //            m('p', 'An item named "' + name + '" already exists in this location.')
-            //        ]), m('', [
-            //            m('span.btn.btn-info', {onclick: callback.bind(self, 'keep')}, 'Keep both'),
-            //            m('span.btn.btn-default', {onclick: function() {self.modal.dismiss();}}, 'Cancel'),
-            //            m('span.btn.btn-primary', {onclick: callback.bind(self, 'replace')}, 'Replace'),
-            //        ]), m('h3.break-word.modal-title', 'Replace "' + name + '"?'));
-            //        return '';
-            //    }
-            //}
-            //callback('replace');
-        };
-
-        self.renameFile = function(to, from, rename, conflict) {
-            self.modal.dismiss();
-            if (to.id === from.parentID && (!rename || rename == from.data.name)) {
-                return;
-            }
-            from.data.status = 'rename';
-            from.move(to.id);
-
-            $.ajax({
-                type: 'POST',
-                beforeSend: $osf.setXHRAuthorization,
+        if(self.canEdit) {
+            var $fileName = $('#fileName');
+            var conflict = 'replace';
+            var to = {
+                data: {
+                    nodeId: self.node.id,
+                    path: null,
+                    provider: self.file.provider,
+                }
+            };
+            var from = JSON.parse(JSON.stringify(to));
+            from.data.path = self.file.path;
+            $fileName.editable({
+                type: 'text',
+                send: 'always',
                 url: waterbutler.moveUrl(),
-                headers: {
-                    'Content-Type': 'Application/json'
+                ajaxOptions:{
+                    beforeSend: $osf.setXHRAuthorization,
+                    headers: {
+                        'Content-Type': 'Application/json'
+                    },
                 },
-                data: JSON.stringify({
-                    'rename': rename,
-                    'conflict': conflict,
-                    'source': waterbutler.toJsonBlob(from),
-                    'destination': waterbutler.toJsonBlob(to),
-                })
-            }).done(function(response, _, xhr) {
-                $osf.growl('Success', 'Renamed to ' + rename + '.', 'success');
-            }).fail(function(xhr, textStatus) {
-                if (xhr.status !== 500 && xhr.responseJSON && xhr.responseJSON.message) {
-                    message = xhr.responseJSON.message;
-                } else if (xhr.status === 503) {
-                    message = textStatus;
-                } else {
-                    message = 'Please refresh the page or ' +
-                        'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                        'problem persists.';
+                params: function(params) {
+                    params = JSON.stringify({
+                        'rename': params.value,
+                        'conflict': conflict,
+                        'source': waterbutler.toJsonBlob(from),
+                        'destination': waterbutler.toJsonBlob(to),
+                    });
+                    return params;
+                },
+                validate: function(value) {
+                    if($.trim(value) === ''){
+                        return 'Name cannot be empty';
+                    } else if(value.length > 100){
+                        return 'Name < 100 characters';
+                    }
+                },
+                success: function(response, value) {
+                    $osf.growl('Success', 'File name changed successfully.', 'success');
+                },
+                error: function(response) {
+                    var msg = response.responseJSON.message_long;
+                    if (msg) {
+                        return msg;
+                    } else {
+                        // Log unexpected error with Raven
+                        Raven.captureMessage('Error in renaming file', {
+                            url: waterbutler.moveUrl(),
+                            responseText: response.responseText,
+                            statusText: response.statusText
+                        });
+                        $osf.growl('Error', 'Error in renaming file.');
+                        return '';
+                    }
                 }
             });
-        };
-
-        $.fn.editable.defaults.mode = 'inline';
-        if(self.canEdit()) {
-            $('#fileName').editable({
-                type: 'text',
-            });
         }
-
-        $('#fileName').on('save', function(e, params) {
-            var newValue = params.newValue;
-            console.log(waterbutler.moveUrl);
-            $('#fileName').editable('submit', {
-                url: waterbutler.moveUrl(),
-                validate: function (){
-                    return self.validateRename(newValue);
-                },
-            })
-        });
-        //if(self.canEdit) {
-        //    var $fileName = $('#fileName');
-        //    var conflict = 'replace';
-        //    var value = 'nothing';
-        //    $fileName.editable({
-        //        type: 'text',
-        //        send: 'always',
-        //        url: waterbutler.moveUrl(),
-        //        ajaxOptions: {
-        //            headers: {
-        //                'Content-Type': 'Application/json'
-        //            },
-        //            data: JSON.stringify({
-        //                'rename': value,
-        //                'conflict': conflict,
-        //                'source': waterbutler.toJsonBlob(from),
-        //                'destination': waterbutler.toJsonBlob(to),
-        //            }),
-        //        },
-        //        validate: self.validateRename(value),
-        //        success: function(response, value) {
-        //            window.location.href = self.context.urls.base + encodeURIComponent(value) + '/';
-        //        },
-        //        error: function(response) {
-        //            var msg = response.responseJSON.message_long;
-        //            if (msg) {
-        //                return msg;
-        //            } else {
-        //                // Log unexpected error with Raven
-        //                Raven.captureMessage('Error in renaming file', {
-        //                    url: waterbutler.moveUrl(),
-        //                    responseText: response.responseText,
-        //                    statusText: response.statusText
-        //                });
-        //                $osf.growl('Error', 'Error in renaming file.');
-        //                return '';
-        //            }
-        //        }
-        //    });
-        //}
     },
     view: function(ctrl) {
         //This code was abstracted into a panel toggler at one point
@@ -365,10 +257,6 @@ var FileViewPage = {
                 ], '.')
             ]);
         }
-
-        // Renders the name of the file.
-        //m.render(document.getElementById('fileNameDiv'), m((ctrl.fileNameEdit()) ? '' : 'h2.break-word',
-        //    {onclick: ctrl.editTitle, contenteditable: ctrl.fileNameEdit()}, ctrl.fileName()));
 
         var editButton = function() {
             if (ctrl.editor) {
