@@ -108,7 +108,6 @@ def forgot_password_get(auth, *args, **kwargs):
 # Log in
 ###############################################################################
 
-# TODO: Rewrite async
 @collect_auth
 def auth_login(auth, **kwargs):
     """If GET request, show login page. If POST, attempt to log user in if
@@ -130,7 +129,6 @@ def auth_login(auth, **kwargs):
     if status_message == 'expired':
         status.push_status_message('The private link you used is expired.')
 
-    code = http.OK
     if next_url:
         status.push_status_message(language.MUST_LOGIN)
         # Don't raise error if user is being logged out
@@ -140,7 +138,17 @@ def auth_login(auth, **kwargs):
     # allows for next to be followed or a redirect to the dashboard.
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
     login_url = cas.get_login_url(redirect_url, auto=True)
-    return {'login_url': login_url}, code
+
+    data = {
+        'login_url': login_url,
+        'campaign': None,
+    }
+
+    campaign = request.args.get('c')
+    if campaign and campaign in framework.auth.VALID_CAMPAIGNS:
+        data['campaign'] = campaign
+
+    return data, http.OK
 
 
 def auth_logout(redirect_url=None):
@@ -174,6 +182,10 @@ def confirm_email_get(token, auth=None, **kwargs):
 
     if auth and auth.user and auth.user in (user, user.merged_by):
         if not is_merge:
+            # determine if the user registered through a campaign
+            if 'prereg' in user.system_tags:
+                return redirect('/prereg/')  #redirect(web_url_for('dashboard'))
+
             status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
             # Go to dashboard
             return redirect(web_url_for('dashboard'))
@@ -230,9 +242,23 @@ def send_confirm_email(user, email):
     except NoResultsFound:
         merge_target = None
 
+    campaign = None
+    for tag in user.system_tags:
+        if tag in framework.auth.VALID_CAMPAIGNS:
+            campaign = tag
+            break
+
+    # Choose the appropriate email template to use
+    if merge_target:
+        mail_template = mails.CONFIRM_MERGE
+    elif campaign == 'prereg':
+        mail_template = mails.CONFIRM_EMAIL_PREREG
+    else:
+        mail_template = mails.CONFIRM_EMAIL
+
     mails.send_mail(
         email,
-        mails.CONFIRM_MERGE if merge_target else mails.CONFIRM_EMAIL,
+        mail_template,
         'plain',
         user=user,
         confirmation_url=confirmation_url,
@@ -263,10 +289,15 @@ def register_user(**kwargs):
         full_name = request.json['fullName']
         full_name = strip_html(full_name)
 
+        campaign = json_data.get('campaign')
+        if campaign and campaign not in framework.auth.VALID_CAMPAIGNS:
+            campaign = None
+
         user = framework.auth.register_unconfirmed(
             request.json['email1'],
             request.json['password'],
             full_name,
+            campaign=campaign,
         )
         framework.auth.signals.user_registered.send(user)
     except (ValidationValueError, DuplicateEmailError):

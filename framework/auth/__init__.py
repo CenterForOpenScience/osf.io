@@ -58,12 +58,15 @@ def logout():
     return True
 
 
-def register_unconfirmed(username, password, fullname):
+def register_unconfirmed(username, password, fullname, campaign=None):
     user = get_user(email=username)
     if not user:
-        user = User.create_unconfirmed(username=username,
+        user = User.create_unconfirmed(
+            username=username,
             password=password,
-            fullname=fullname)
+            fullname=fullname,
+            campaign=campaign,
+        )
         user.save()
         signals.unconfirmed_user_created.send(user)
 
@@ -76,3 +79,7 @@ def register_unconfirmed(username, password, fullname):
     else:
         raise DuplicateEmailError('User {0!r} already exists'.format(username))
     return user
+
+VALID_CAMPAIGNS = (
+    'prereg',
+)
