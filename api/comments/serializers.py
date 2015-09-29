@@ -1,7 +1,8 @@
 from datetime import datetime
 from rest_framework import serializers as ser
+from framework.guid.model import Guid
 from website.project.model import Node, Comment
-from api.base.serializers import JSONAPISerializer, JSONAPIHyperlinkedRelatedField, JSONAPIHyperlinkedIdentityField, IDField, TypeField
+from api.base.serializers import JSONAPISerializer, JSONAPIHyperlinkedRelatedField, JSONAPIHyperlinkedGuidRelatedField, IDField, TypeField
 
 
 class CommentSerializer(JSONAPISerializer):
@@ -11,14 +12,16 @@ class CommentSerializer(JSONAPISerializer):
     content = ser.CharField()
     user = JSONAPIHyperlinkedRelatedField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id', link_type='related', read_only=True)
     node = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk', lookup_url_kwarg='node_id', link_type='related', read_only=True)
-    # target = JSONAPIHyperlinkedRelatedField()
+    target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
 
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
 
+
     # add reports as a hyperlinked field instead of a dictionary
+
 
     class Meta:
         type_ = 'comments'
@@ -44,5 +47,13 @@ class CommentSerializer(JSONAPISerializer):
         else:
             return Comment.load(target_id)
 
-    def get_target_id(self, data):
-        return data.target._id
+    def get_target_id(self, obj):
+        return obj.target._id
+
+    def get_target_type(self, obj):
+        target_id = obj._id
+        target = Guid.load(target_id).referent
+        if isinstance(target, Node):
+            return 'node'
+        elif isinstance(target, Comment):
+            return 'comment'

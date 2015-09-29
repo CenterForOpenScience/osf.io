@@ -5,9 +5,11 @@ from rest_framework.reverse import reverse
 from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
 
+from framework.guid.model import Guid
 from website import settings
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
+from website.project.model import Node, Comment
 
 from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict
@@ -154,6 +156,57 @@ class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
         self.meta = meta
 
         return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
+
+
+class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
+    def __init__(self, view_name=None, **kwargs):
+        self.meta = kwargs.pop('meta', {})
+        self.link_type = kwargs.pop('link_type', 'url')
+        super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(view_name, **kwargs)
+
+    def get_view_name(self, guid):
+        GUID_VIEWS = {
+            'node': {
+                'view_name': 'nodes:node-detail',
+                'lookup_field': 'pk',
+                'lookup_url_kwarg': 'node_id'
+            },
+            'comment': {
+                'view_name': 'comments:comment-detail',
+                'lookup_field': 'pk',
+                'lookup_url_kwarg': 'comment_id'
+            },
+        }
+
+        # get target type from guid
+        guid_object = Guid.load(guid).referent
+
+        if isinstance(guid_object, Node):
+            self.link_type = 'related'
+            guid_views = GUID_VIEWS['node']
+
+        elif isinstance(guid_object, Comment):
+            self.link_type = 'self'
+            guid_views = GUID_VIEWS['comment']
+
+        self.view_name = guid_views['view_name']
+        self.lookup_url_kwarg = guid_views['lookup_url_kwarg']
+
+    def to_representation(self, value):
+        """
+        Returns nested dictionary in format {'links': {'self.link_type': ... }
+
+        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
+        the link is represented as a links object with 'href' and 'meta' members.
+        """
+        self.get_view_name(value._id)
+        url = Link(self.view_name, kwargs={self.lookup_url_kwarg: '<_id>'}).resolve_url(value)
+
+        meta = {}
+        for key in self.meta or {}:
+            meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+
+        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
 class LinksField(ser.Field):
