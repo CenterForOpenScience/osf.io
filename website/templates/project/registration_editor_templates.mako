@@ -156,18 +156,4 @@
     </div>
 </script>
 
-<script type="text/html" id="importContributors">
-
-    <div data-bind="foreach: {data: self.getContributors, as: 'contrib'}">
-        <input type="checkbox" data-bind="value: contrib">
-        <div class="checkbox">
-            <label>
-                <input type="checkbox" data-bind="value: contrib">
-                Eric Barbour
-            </label>
-        </div>
-    </div>
-
-</script>
-
 <%include file="registration_editor_extensions.mako" />
