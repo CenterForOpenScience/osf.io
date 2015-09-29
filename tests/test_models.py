@@ -2725,20 +2725,20 @@ class TestProject(OsfTestCase):
 
     @mock.patch('website.project.model.mails.queue_mail')
     def test_set_privacy_sends_mail_default(self, mock_queue):
-        self.project.set_privacy('private', self.consolidate_auth)
-        self.project.set_privacy('public', self.consolidate_auth)
+        self.project.set_privacy('private', auth=self.consolidate_auth)
+        self.project.set_privacy('public', auth=self.consolidate_auth)
         assert_true(mock_queue.called_once())
 
     @mock.patch('website.project.model.mails.queue_mail')
     def test_set_privacy_sends_mail(self, mock_queue):
-        self.project.set_privacy('private', self.consolidate_auth)
-        self.project.set_privacy('public', self.consolidate_auth, skip_mail=False)
+        self.project.set_privacy('private', auth=self.consolidate_auth)
+        self.project.set_privacy('public', auth=self.consolidate_auth, skip_mail=False)
         assert_true(mock_queue.called_once())
 
     @mock.patch('website.project.model.mails.queue_mail')
     def test_set_privacy_skips_mail(self, mock_queue):
-        self.project.set_privacy('private', self.consolidate_auth)
-        self.project.set_privacy('public', self.consolidate_auth, skip_mail=True)
+        self.project.set_privacy('private', auth=self.consolidate_auth)
+        self.project.set_privacy('public', auth=self.consolidate_auth, skip_mail=True)
         assert_false(mock_queue.called)
 
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self):
