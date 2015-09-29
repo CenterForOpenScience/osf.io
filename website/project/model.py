@@ -1649,7 +1649,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         validate_title(title)
 
         original_title = self.title
-        self.title = sanitize.strip_html(title)
+        new_title = sanitize.strip_html(title)
+        # Title hasn't changed after sanitzation, bail out
+        if original_title == new_title:
+            return False
+        self.title = new_title
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
@@ -1673,7 +1677,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param bool save: Save self after updating.
         """
         original = self.description
-        self.description = sanitize.strip_html(description)
+        new_description = sanitize.strip_html(description)
+        if original == new_description:
+            return False
+        self.description = new_description
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={

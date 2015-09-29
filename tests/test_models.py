@@ -1894,6 +1894,28 @@ class TestNodeUpdate(OsfTestCase):
         last_log = self.node.logs[-1]
         assert_equal(last_log.action, NodeLog.MADE_PRIVATE)
 
+    def test_updating_title_twice_with_same_title(self):
+        original_n_logs = len(self.node.logs)
+        new_title = fake.bs()
+        self.node.update({'title': new_title}, auth=Auth(self.user), save=True)
+        assert_equal(len(self.node.logs), original_n_logs + 1)  # sanity check
+
+        # Call update with same title
+        self.node.update({'title': new_title}, auth=Auth(self.user), save=True)
+        # A new log is not created
+        assert_equal(len(self.node.logs), original_n_logs + 1)
+
+    def test_updating_description_twice_with_same_content(self):
+        original_n_logs = len(self.node.logs)
+        new_desc = fake.bs()
+        self.node.update({'description': new_desc}, auth=Auth(self.user), save=True)
+        assert_equal(len(self.node.logs), original_n_logs + 1)  # sanity check
+
+        # Call update with same description
+        self.node.update({'description': new_desc}, auth=Auth(self.user), save=True)
+        # A new log is not created
+        assert_equal(len(self.node.logs), original_n_logs + 1)
+
     # TODO: test permissions, non-writable fields
 
 
