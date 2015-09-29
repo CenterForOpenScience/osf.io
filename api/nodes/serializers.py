@@ -229,11 +229,16 @@ class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
 
+
         ret = []
         for user_id, data in data_mapping.items():
             contributor = get_object_or_error(User, user_id, 'contributor')
-            visible = data.get('bibliographic')
-            permission = data.get('permission')
+            data_mapping[user_id] = [contributor, data]
+
+        for user_id, data in data_mapping.items():
+            contributor = data[0]
+            visible = data[1].get('bibliographic')
+            permission = data[1].get('permission')
             try:
                 node.update_contributor(contributor, permission, visible, auth, save=True)
             except NodeStateError as e:

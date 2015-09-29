@@ -39,6 +39,7 @@ from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.files.models import OsfStorageFileNode
 from website.models import Node, Pointer
+from framework.auth.core import User
 from website.util import waterbutler_api_url_for
 
 
@@ -385,7 +386,7 @@ class NodeContributorsList(ListBulkCreateUpdateDestroyAPIView, ListFilterMixin, 
         if not request.data or 'csrfmiddlewaretoken' in request.data:
             raise ValidationError('Array must contain resource identifier objects.')
         for item in request.data:
-            user = get_object_or_error(Node, item[u'id'], display_name='node')
+            user = get_object_or_error(User, item[u'id'], display_name='node')
             contrib_list.append(user)
 
         if not contrib_list:
@@ -407,13 +408,12 @@ class NodeContributorsList(ListBulkCreateUpdateDestroyAPIView, ListFilterMixin, 
     def perform_destroy(self, instance):
         user = self.request.user
         auth = Auth(user)
-        try:
-            instance.remove_contributors(auth=auth)
-        except NodeStateError as err:
-            raise ValidationError(err.message)
-        instance.save()
-
-
+        node = self.get_node()
+        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+            raise ValidationError("Must have at least one visible contributor")
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError("Must have at least one registered admin contributor")
 
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node.
