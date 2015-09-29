@@ -204,9 +204,10 @@ var FileViewPage = {
                     $osf.growl('Success', 'File name changed successfully.', 'success');
                 },
                 error: function(response) {
-                    var msg = response.responseJSON.message_long;
+                    var msg = response.responseJSON.message;
                     if (msg) {
-                        return msg;
+                        $osf.growl('Error', msg);
+                        return 'Already exists';
                     } else {
                         // Log unexpected error with Raven
                         Raven.captureMessage('Error in renaming file', {
@@ -215,7 +216,7 @@ var FileViewPage = {
                             statusText: response.statusText
                         });
                         $osf.growl('Error', 'Error in renaming file.');
-                        return '';
+                        return 'Unknown error';
                     }
                 }
             });
