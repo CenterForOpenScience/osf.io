@@ -1105,41 +1105,7 @@ class TestUserProfile(OsfTestCase):
             assert_equal(self.user.social[key], value)
         assert_true(self.user.social['researcherId'] is None)
 
-    def test_unserialize_multiple_websites_social(self):
-        url = api_url_for('unserialize_social')
-        payload = {
-            'profileWebsites': ['http://frozen.pizza.com/reviews', 'http://www.whodat.com', 'http://www.rapdictionary.com'],
-            'twitter': 'howtopizza',
-            'github': 'frozenpizzacode',
-        }
-        self.app.put_json(
-            url,
-            payload,
-            auth=self.user.auth,
-        )
-        self.user.reload()
-        for key, value in payload.iteritems():
-            assert_equal(self.user.social[key], value)
-        assert_true(self.user.social['researcherId'] is None)
-
     def test_unserialize_social_validation_failure(self):
-        url = api_url_for('unserialize_social')
-        # profileWebsites URL is invalid
-        payload = {
-            'profileWebsites': ['http://invalidurl'],
-            'twitter': 'howtopizza',
-            'github': 'frozenpizzacode',
-        }
-        res = self.app.put_json(
-            url,
-            payload,
-            auth=self.user.auth,
-            expect_errors=True
-        )
-        assert_equal(res.status_code, 400)
-        assert_equal(res.json['message_long'], 'Invalid personal URL.')
-
-    def test_unserialize_social_multiple_websites_validation_failure(self):
         url = api_url_for('unserialize_social')
         # profileWebsites URL is invalid
         payload = {
@@ -1158,6 +1124,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_serialize_social_editable(self):
         self.user.social['twitter'] = 'howtopizza'
+        self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
         self.user.save()
         url = api_url_for('serialize_social')
         res = self.app.get(
@@ -1165,12 +1132,14 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com'])
         assert_true(res.json.get('github') is None)
         assert_true(res.json['editable'])
 
     def test_serialize_social_not_editable(self):
         user2 = AuthUserFactory()
         self.user.social['twitter'] = 'howtopizza'
+        self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
         self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
         res = self.app.get(
@@ -1178,6 +1147,7 @@ class TestUserProfile(OsfTestCase):
             auth=user2.auth,
         )
         assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com'])
         assert_true(res.json.get('github') is None)
         assert_false(res.json['editable'])
 
