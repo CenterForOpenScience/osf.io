@@ -120,6 +120,12 @@ class InvalidFilterComparisonType(JSONAPIAttributeException):
     status_code = http.BAD_REQUEST
 
 
+class InvalidFilterMatchType(JSONAPIAttributeException):
+    """Raised when client tries to do a match filter on a field that is not a string or a list"""
+    default_detail = "Match operators are only supported for strings and lists."
+    status_code = http.BAD_REQUEST
+
+
 class InvalidFilterFieldError(JSONAPIAttributeException):
     """Raised when client tries to filter on a field that is not supported"""
     default_detail = "Query contained one or more filters for invalid fields."

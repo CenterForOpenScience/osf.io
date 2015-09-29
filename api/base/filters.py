@@ -11,6 +11,7 @@ from api.base.exceptions import (
     InvalidFilterError,
     InvalidFilterOperator,
     InvalidFilterComparisonType,
+    InvalidFilterMatchType,
     InvalidFilterValue
 )
 from api.base import utils
@@ -32,11 +33,13 @@ class FilterMixin(object):
     QUERY_PATTERN = re.compile(r'^filter\[(?P<field>\w+)\](\[(?P<op>\w+)\])?$')
     COMPARISON_OPERATORS = ('gt', 'gte', 'lt', 'lte', 'eq')
     COMPARABLE_FIELDS = (ser.DateField, ser.DateTimeField, ser.DecimalField, ser.IntegerField)
-    OPERATOR_OVERRIDES = {
+    MATCH_OPERATORS = ('contains', 'icontains')
+    MATCHABLE_FIELDS = (ser.CharField, ser.ListField)
+    DEFAULT_OPERATOR = 'eq'
+    DEFAULT_OPERATOR_OVERRIDES = {
         ser.CharField: 'icontains',
         ser.ListField: 'contains',
     }
-    DEFAULT_OPERATOR = 'eq'
 
     def __init__(self, *args, **kwargs):
         super(FilterMixin, self).__init__(*args, **kwargs)
@@ -44,7 +47,7 @@ class FilterMixin(object):
             raise NotImplementedError()
 
     def _get_default_operator(self, field):
-        return self.OPERATOR_OVERRIDES.get(type(field), self.DEFAULT_OPERATOR)
+        return self.DEFAULT_OPERATOR_OVERRIDES.get(type(field), self.DEFAULT_OPERATOR)
 
     def parse_query_params(self, query_params):
         """Maps query params to a dict useable for filtering
@@ -72,12 +75,14 @@ class FilterMixin(object):
                         raise InvalidFilterError
                     field = self.serializer_class._declared_fields[field_name]
                     op = match.groupdict().get('op') or self._get_default_operator(field)
-                    is_comparison_operator = not (op in [self.DEFAULT_OPERATOR] + self.OPERATOR_OVERRIDES.values())
-                    if is_comparison_operator:
+                    if op not in set(self.MATCH_OPERATORS + self.COMPARABLE_FIELDS + (self.DEFAULT_OPERATOR, )):
+                        raise InvalidFilterOperator(value=op)
+                    if op in self.COMPARISON_OPERATORS:
                         if type(field) not in self.COMPARABLE_FIELDS:
                             raise InvalidFilterComparisonType(parameter=field_name)
-                        if op not in self.COMPARISON_OPERATORS:
-                            raise InvalidFilterOperator(value=op)
+                    if op in self.MATCH_OPERATORS:
+                        if type(field) not in self.MATCHABLE_FIELDS:
+                            raise InvalidFilterMatchType(parameter=field_name)
                     field_name = self.convert_key(field_name, field)
                     if field_name not in fields:
                         fields[field_name] = []
