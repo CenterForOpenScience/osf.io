@@ -132,14 +132,78 @@ class WaterButlerMixin(object):
 class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
     """Projects and components.
 
-    On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
-    is that a project is the top-level node, and components are children of the project. There is also a category field
-    that includes the option of project. The categorization essentially determines which icon is displayed by the
-    Node in the front-end UI and helps with search organization. Top-level Nodes may have a category other than
-    project, and children nodes may have a category of project.
+    Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
+    node, meaning additional requests to an individual node's detail view are not necessary.
 
-    By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Nodes by their title,
-    description, and public fields.
+    <!--- Copied Spiel from NodeDetail -->
+
+    On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
+    is that a project is the top-level node, and components are children of the project. There is also a [category
+    field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
+    which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
+    a category other than project, and children nodes may have a category of project.
+
+    ##Node Attributes
+
+    <!--- Copied Attributes from NodeDetail -->
+
+    OSF Node entities have the "nodes" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        title          string             title of project or component
+        description    string             description of the node
+        category       string             node category, must be one of the allowed values
+        date_created   iso8601 timestamp  timestamp that the node was created
+        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        tags           array of strings   list of tags that describe the node
+        registration   boolean            has this project been registered?
+        collection     boolean            is this node a collection of other nodes?
+        dashboard      boolean            is this node visible on the user dashboard?
+        public         boolean            has this node been made publicly-visible?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Creating New Nodes
+
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "nodes", # required
+                           "attributes": {
+                             "title":       {title},         # required
+                             "category":    {category},      # required
+                             "description": {description},   # optional
+                             "tags":        [{tag1}, {tag2}] # optional
+                           }
+                         }
+                       }
+        Success:       201 CREATED + node representation
+
+    New nodes are created by issuing a POST request to this endpoint.  The `title` and `category` fields are
+    mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  All other fields
+    not listed above will be ignored.  If the node creation is successful the API will return a 201 response with the
+    respresentation of the new node in the body.  For the new node's canonical URL, see the `links.self` field of the
+    response.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -265,13 +329,105 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
 
 
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
-    """Projects and component details.
+    """Details about a given node (project or component). *Writeable*.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
-    is that a project is the top-level node, and components are children of the project. There is also a category field
-    that includes the option of project. The categorization essentially determines which icon is displayed by the
-    Node in the front-end UI and helps with search organization. Top-level Nodes may have a category other than
-    project, and children nodes may have a category of project.
+    is that a project is the top-level node, and components are children of the project. There is also a [category
+    field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
+    which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
+    a category other than project, and children nodes may have a category of project.
+
+    ###Permissions
+
+    Nodes that are made public will give read-only access to everyone. Private nodes require explicit read
+    permission. Write and admin access are the same for public and private nodes. Administrators on a parent node have
+    implicit read permissions for all child nodes.
+
+    ##Attributes
+
+    OSF Node entities have the "nodes" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        title          string             title of project or component
+        description    string             description of the node
+        category       string             node category, must be one of the allowed values
+        date_created   iso8601 timestamp  timestamp that the node was created
+        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        tags           array of strings   list of tags that describe the node
+        registration   boolean            has this project been registered?
+        collection     boolean            is this node a collection of other nodes?
+        dashboard      boolean            is this node visible on the user dashboard?
+        public         boolean            has this node been made publicly-visible?
+
+    ##Relationships
+
+    ###Children
+
+    List of nodes that are children of this node.  New child nodes may be added through this endpoint.
+
+    ###Contributors
+
+    List of users who are contributors to this node.  Contributors may have "read", "write", or "admin" permissions.  A
+    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
+
+    ###Files
+
+    List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
+    for accessing the actual files stored with this node.
+
+    ###Parent
+
+    If this node is a child node of another node, the parent's canonical endpoint will be available in the
+    `parent.links.self.href` key.  Otherwise, it will be null.
+
+    ##Links
+
+        self:  the canonical api endpoint of this node
+        html:  this node's page on the OSF website
+
+    ##Actions
+
+    ###Update
+
+        Method:        PUT / PATCH
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "nodes",   # required
+                           "id":   {node_id}, # required
+                           "attributes": {
+                             "title":       {title},         # mandatory
+                             "category":    {category},      # mandatory
+                             "description": {description},   # optional
+                             "tags":        [{tag1}, {tag2}] # optional
+                           }
+                         }
+                       }
+        Success:       200 OK + node representation
+
+    To update a node, issue either a PUT or a PATCH request against the `links.self` URL.  The `title` and `category`
+    fields are mandatory if you PUT and optional if you PATCH.  The `tags` parameter must be an array of strings.
+    Non-string values will be accepted and stringified, but we make no promises about the stringification output.  So
+    don't do that.
+
+    ###Delete
+
+        Method:   DELETE
+        URL:      links.self
+        Params:   <none>
+        Success:  204 No Content
+
+    To delete a node, issue a DELETE request against `links.self`.  A successful delete will return a 204 No Content
+    response. Attempting to delete a node you do not own will result in a 403 Forbidden.
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -308,12 +464,68 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
 
 class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
-    """Contributors (users) for a node.
+    """Contributors (users) for a node. *Writeable*.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
     have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
     contributors. From a permissions standpoint, both are the same, but bibliographic contributors
     are included in citations, while non-bibliographic contributors are not included in citations.
+
+    ##Node Contributor Attributes
+
+    <!--- Copied Attributes from NodeContributorDetail -->
+
+    `type` is "contributors"
+
+        name           type     description
+        ---------------------------------------------------------------------------------
+        bibliographic  boolean  Whether the user will be included in citations for this node or not
+        permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
+
+    All other attributes are inherited from the User object.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Adding Contributors
+
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "contributors", # required
+                           "attributes": {
+                             "id":            {user_id},             # required
+                             "bibliographic": true|false,            # optional
+                             "permission":    "read"|"write"|"admin" # optional
+                           }
+                         }
+                       }
+        Success:       201 CREATED + node contributor representation
+
+    Contributors can be added to nodes are by issuing a POST request to this endpoint.  The `id` attribute is mandatory and
+    must be a valid user id.  `bibliographic` is a boolean and defaults to `true`.  `permission` must be a [valid OSF
+    permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`. All other fields not listed above will be
+    ignored.  If the request is successful the API will return a 201 response with the respresentation of the new node
+    contributor in the body.  For the new node contributor's canonical URL, see the `links.self` field of the response.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    NodeContributors may be filtered by their `full_name`, `given_name`, `middle_names`, `family_name`, `id`,
+    `bibliographic`, or `permissions` attributes.  The `description`, and `category` are string fields and will be filtered
+    using simple substring matching.  `bibliographic` is a boolean, and can be filtered using truthy values,
+    such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in the query will cause the match to fail
+    regardless.
+
+    #This Request/Response
     """
     permission_classes = (
         AdminOrPublic,
@@ -344,9 +556,79 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
 
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
-    """Detail of a contributor for a node.
+    """Detail of a contributor for a node. *Writeable*.
 
-    View, remove from, and change bibliographic and permissions for a given contributor on a given node.
+    Contributors are users who can make changes to the node or, in the case of private nodes,
+    have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
+    contributors. From a permissions standpoint, both are the same, but bibliographic contributors
+    are included in citations, while non-bibliographic contributors are not included in citations.
+
+    Contributors can be viewed, removed, and have their permissions and bibliographic status changed via this
+    endpoint.
+
+    ##Attributes
+
+    `type` is "contributors"
+
+        name           type     description
+        ---------------------------------------------------------------------------------
+        bibliographic  boolean  Whether the user will be included in citations for this node or not
+        permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
+
+    All other attributes are inherited from the User object.
+
+    ##Relationships
+
+    ###Nodes
+
+    This endpoint shows the list of all nodes the user contributes to.
+
+    ##Links
+
+        self:  the canonical api endpoint of this node
+        html:  this node's page on the OSF website
+
+    ##Actions
+
+    ###Update Contributor
+
+        Method:        PUT / PATCH
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "contributors",        # required
+                           "id":   {contributor_user_id}, # required
+                           "attributes": {
+                             "bibiliographic": true|false,            # optional
+                             "permission":     "read"|"write"|"admin" # optional
+                           }
+                         }
+                       }
+        Success:       200 OK + node representation
+
+    To update a contributor's bibliographic preferences or access permissions for the node, issue a PUT request to the
+    `self` link. Since this endpoint has no mandatory attributes, PUT and PATCH are functionally the same.  If the given
+    user is not already in the contributor list, a 404 Not Found error will be returned.  A node must always have at
+    least one admin, and any attempt to downgrade the permissions of a sole admin will result in a 400 Bad Request
+    error.
+
+    ###Remove Contributor
+
+        Method:        DELETE
+        URL:           links.self
+        Query Params:  <none>
+        Success:       204 No Content
+
+    To remove a contributor from a node, issue a DELETE request to the `self` link.  Attempting to remove the only admin
+    from a node will result in a 400 Bad Request response.
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+
     """
     permission_classes = (
         ContributorDetailPermissions,
@@ -391,6 +673,9 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
     created for the current node.
+
+    **TODO: registrations via api are still a WIP**
+
      """
     permission_classes = (
         ContributorOrPublic,
@@ -417,12 +702,77 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
 
 class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
-    """Children of the current node.
+    """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
-    nodes. Currently, if there is a discrepancy between the children count and the number of children returned, it
-    probably indicates private nodes that aren't being returned. That discrepancy should disappear before everything
-    is finalized.
+    nodes. Creating a node via this endpoint will behave the same as the [node list endpoint](/v2/nodes/), but the new
+    node will have the selected node set as its parent.
+
+    ##Node Attributes
+
+    <!--- Copied Attributes from NodeDetail -->
+
+    OSF Node entities have the "nodes" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        title          string             title of project or component
+        description    string             description of the node
+        category       string             node category, must be one of the allowed values
+        date_created   iso8601 timestamp  timestamp that the node was created
+        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        tags           array of strings   list of tags that describe the node
+        registration   boolean            has this project been registered?
+        collection     boolean            is this node a collection of other nodes?
+        dashboard      boolean            is this node visible on the user dashboard?
+        public         boolean            has this node been made publicly-visible?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Create Child Node
+
+    <!--- Copied Creating New Node from NodeList -->
+
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "nodes", # required
+                           "attributes": {
+                             "title":       {title},         # required
+                             "category":    {category},      # required
+                             "description": {description},   # optional
+                             "tags":        [{tag1}, {tag2}] # optional
+                           }
+                         }
+                       }
+        Success:       201 CREATED + node representation
+
+    To create a child node of the current node, issue a POST request to this endpoint.  The `title` and `category`
+    fields are mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  If the
+    node creation is successful the API will return a 201 response with the respresentation of the new node in the body.
+    For the new node's canonical URL, see the `links.self` field of the response.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    <!--- Copied Query Params from NodeList -->
+
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
+    #This Request/Response
+
     """
     permission_classes = (
         ContributorOrPublic,
@@ -471,10 +821,32 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
 class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
-    """Node Links to other nodes.
+    """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
+
+    **TODO: this is placeholder documentation pending finish**
+
+    ##Node Link Attributes
+
+    **TODO: import from NodeLinksDetail**
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Create
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -497,10 +869,30 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
 
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
-    """Node Link details.
+    """Node Link details. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
+
+    **TODO: this is placeholder documentation pending finish**
+
+    ##Attributes
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        $name          $type              $descr
+
+    ##Relationships
+
+    ##Links
+
+    ##Actions
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
     """
     permission_classes = (
         ContributorOrPublicForPointers,
@@ -540,31 +932,51 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
 
 class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
-    """Files attached to a node.
+    """Files attached to a node for a given provider. *Read-only*.
 
-    This gives a list of all of the files that are on your project. Because this works with external services, some
-    ours and some not, there is some extra data that you need for how to interact with those services.
+    This gives a list of all of the files and folders that are attached to your project for the given storage provider.
+    If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenver
+    this endpoint is accessed.  To see the cached metadata, GET the endpoint for the file directly (available through
+    its `links.info` attribute).
 
-    At the top level file list of your project you have a list of providers that are connected to this project. If you
-    want to add more, you will need to do that in the Open Science Framework front end for now. For everything in the
-    data.links dictionary, you'll have two types of fields: `self` and `related`. These are the same as everywhere else:
-    self links are what you use to manipulate the object itself with GET, POST, DELETE, and PUT requests, while
-    related links give you further data about that resource.
+    ##File Attributes
 
-    So if you GET a self link for a file, it will return the file itself for downloading. If you GET a related link for
-    a file, you'll get the metadata about the file. GETting a related link for a folder will get you the listing of
-    what's in that folder. GETting a folder's self link won't work, because there's nothing to get.
+    <!--- Copied Attributes from FileDetail -->
 
-    Which brings us to the other useful thing about the links here: there's a field called `self-methods`. This field
-    will tell you what the valid methods are for the self links given the kind of thing they are (file vs folder) and
-    given your permissions on the object.
+    For an OSF File entity, the `type` is "files" regardless of whether the entity is actually a file or folder.  They
+    can be distinguished by the `kind` attribute.  Files and folders use the same representation, but some attributes may
+    be null for one kind but not the other. `size` will be null for folders.  A list of storage provider keys can be
+    found [here](/v2/#storage-providers).
 
-    NOTE: Most of the API will be stable as far as how the links work because the things they are accessing are fairly
-    stable and predictable, so if you felt the need, you could construct them in the normal REST way and they should
-    be fine.
-    The 'self' links from the NodeFilesList may have to change from time to time, so you are highly encouraged to use
-    the links as we provide them before you use them, and not to reverse engineer the structure of the links as they
-    are at any given time.
+        name          type               description
+        ---------------------------------------------------------------------------------
+        name          string             name of the file or folder; use for display
+        kind          string             "file" or "folder"
+        path          url path           unique path for this entity, used in "move" actions
+        size          integer            size of file in bytes, null for folders
+        provider      string             storage provider for this file. "osfstorage" if stored on the OSF.  Other
+                                         examples include "s3" for Amazon S3, "googledrive" for Google Drive, "box"
+                                         for Box.com.
+        last_touched  iso8601 timestamp  last time the metadata for the file was retrieved. only applies to non-OSF
+                                         storage providers.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Node files may be filtered by `id`, `name`, `node`, `kind`, `path`, `provider`, `size`, and `last_touched`.
+
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -630,6 +1042,48 @@ class NodeProvider(object):
 
 
 class NodeProvidersList(generics.ListAPIView, NodeMixin):
+    """List of storage providers enabled for this node. *Read-only*.
+
+    Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
+    integratations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
+    storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers are
+    configured for this node.  If you want to add more, you will need to do that in the Open Science Framework front end
+    for now.
+
+    In the OSF filesystem model, providers are treated as folders, but with special properties that distinguish them
+    from regular folders.  Every provider folder is considered a root folder, and may not be deleted through the regular
+    file API.
+
+    To see the contents of the provider, issue a GET request to the `relationships.files.links.related.href` attribute
+    of the provider resource.
+
+    ##Provider Attributes
+
+    `type` is "files"
+
+        name      type    description
+        ---------------------------------------------------------------------------------
+        name      string  name of the provider
+        kind      string  type of this file/folder.  always "folder"
+        path      path    relative path of this folder within the provider filesys. always "/"
+        node      string  node this provider belongs to
+        provider  string  provider id, same as "name"
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    #This Request/Response
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
