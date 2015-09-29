@@ -26,6 +26,7 @@ var RegistrationEmbargoViewModel = function() {
     self.pikaday = ko.observable(today);
     var picker = new pikaday(
         {
+            bound: true,
             field: document.getElementById('endDatePicker'),
             onSelect: function() {
                 self.pikaday(picker.toString());

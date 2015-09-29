@@ -126,11 +126,8 @@
                     </p>
                 % endif
                 % if node['is_registration'] and node['registered_meta']:
-                    <p>Registration Supplement:
-                    % for meta in node['registered_meta']:
-                        <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
-                    % endfor
-                    </p>
+                    <br />Registration Supplement:
+                    <a href="${node['url']}register/">${node['registered_schema']['schema']['title']}</a>
                 % endif
                 % if node['is_registration']:
                     <p>

@@ -8,3 +8,4 @@ write_permissions_revoked = signals.signal('write-permissions-revoked')
 after_create_registration = signals.signal('post-create-registration')
 
 archive_callback = signals.signal('archive-callback')
+draft_edited = signals.signal('draft-edited')
