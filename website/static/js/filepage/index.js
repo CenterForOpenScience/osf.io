@@ -18,14 +18,17 @@ var Panel = utils.Panel;
 
 var EDITORS = {'text': FileEditor};
 
-var MakeClient = function(element) {
-    makeClient(element);
+var clipboardConfig = function(element, isInitialized) {
+    if (!isInitialized) {
+        makeClient(element);
+    }
 };
 
 var CopyButton = {
     view: function(ctrl, params) {
-        return m('span.input-group-btn', m('button#copyBtn.btn.btn-default.btn-md[type="button"][style="height:' + params.copyButtonHeight + '"][data-clipboard-text="' + params.link + '"]',
-            {config: MakeClient},
+        return m('span.input-group-btn', m('button#copyBtn.btn.btn-default.btn-md[type="button"]' +
+            '[data-clipboard-text="' + params.link + '"]',
+            {config: clipboardConfig, style: {height: params.height}},
             m('.fa.fa-copy')));
     }
 };
@@ -34,7 +37,7 @@ var SharePopover =  {
     view: function(ctrl, params) {
         var copyButtonHeight = '34px';
         var popoverWidth = '450px';
-        var link = params.link.substring(0, params.link.indexOf('download') + 8) + '%26mode=render';
+        var link = params.link;
         var url = link.substring(0, link.indexOf('render'));
         return m('button.btn.btn-sm.btn-primary.file-share', {onclick: function () {
                 m.render(document.getElementById('popOver'), [
@@ -44,7 +47,7 @@ var SharePopover =  {
                     ]), m('br'),
                     m('.tab-content', [
                         m('.tab-pane.fade.in.active#share', m('.input-group', [
-                            m.component(CopyButton, {link: link, copyButtonHeight: copyButtonHeight}),
+                            CopyButton.view(ctrl, {link: link, height: copyButtonHeight}), //workaround to allow button to show up on first click
                             m('input.form-control[readonly][type="text"][value="'+ link +'"]')
                         ])),
                         m('.tab-pane.fade#embed', [
@@ -269,13 +272,18 @@ var FileViewPage = {
                 }, ctrl.editor.title);
             }
         };
+
+        var link = $('iframe').attr('src') ? $('iframe').attr('src').substring(0, $('iframe').attr('src').indexOf('download') + 8) +
+                '%26mode=render' : 'Data not available';
+        var height = $('iframe').attr('height') ? $('iframe').attr('height') : '0px';
+
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             // Special case whether or not to show the delete button for published Dataverse files
             (ctrl.canEdit() && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
-                m.component(SharePopover, {link: $('iframe').attr('src'), height: $('iframe').attr('height')})
+                m.component(SharePopover, {link: link, height: height})
             ]) : '',
             m('.btn-group.m-t-xs', [
                 m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
