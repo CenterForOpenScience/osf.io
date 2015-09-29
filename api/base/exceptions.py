@@ -10,8 +10,9 @@ def json_api_exception_handler(exc, context):
     from rest_framework.views import exception_handler
     response = exception_handler(exc, context)
 
-    # Error objects may have the following members. Title removed to avoid clash with node "title" errors.
-    top_level_error_keys = ['id', 'links', 'status', 'code', 'detail', 'source', 'meta']
+    # Error objects may have the following members. Title and id removed to avoid clash with "title" and "id" field errors.
+    top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
+    resource_object_identifiers = ['type', 'id']
     errors = []
 
     if response:
@@ -28,11 +29,18 @@ def json_api_exception_handler(exc, context):
             for error_key, error_description in message.iteritems():
                 if error_key in top_level_error_keys:
                     errors.append({error_key: error_description})
+                elif error_key in resource_object_identifiers:
+                    if isinstance(error_description, basestring):
+                        error_description = [error_description]
+                    errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
+                elif error_key == 'attributes':
+                    if isinstance(error_description, list):
+                        errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
                 else:
                     if isinstance(error_description, basestring):
                         error_description = [error_description]
-                    errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason}
-                                   for reason in error_description])
+                    errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason} for reason in error_description])
+
         else:
             if isinstance(message, basestring):
                 message = [message]
@@ -43,6 +51,11 @@ def json_api_exception_handler(exc, context):
     return response
 
 
+class ServiceUnavailableError(APIException):
+    status_code = status.HTTP_503_SERVICE_UNAVAILABLE
+    default_detail = 'Service is unavailable at this time.'
+
+
 class JSONAPIException(APIException):
     """Inherits from the base DRF API exception and adds extra metadata to support JSONAPI error objects
 
@@ -51,6 +64,7 @@ class JSONAPIException(APIException):
         See http://jsonapi.org/format/#error-objects.
         Example: ``source={'pointer': '/data/attributes/title'}``
     """
+    status_code = status.HTTP_400_BAD_REQUEST
     def __init__(self, detail=None, source=None):
         super(JSONAPIException, self).__init__(detail=detail)
         self.source = source
@@ -60,6 +74,12 @@ class Gone(APIException):
     status_code = status.HTTP_410_GONE
     default_detail = ('The requested resource is no longer available.')
 
+
+class Conflict(APIException):
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = ('Resource identifier does not match server endpoint.')
+
+
 class JSONAPIParameterException(JSONAPIException):
     def __init__(self, detail=None, parameter=None):
         source = {
@@ -68,10 +88,19 @@ class JSONAPIParameterException(JSONAPIException):
         super(JSONAPIParameterException, self).__init__(detail=detail, source=source)
 
 
-class InvalidQueryStringValue(JSONAPIParameterException):
+class JSONAPIAttributeException(JSONAPIException):
+    def __init__(self, detail=None, attribute=None):
+        source = {
+            'pointer': '/data/attributes/{}'.format(attribute)
+        }
+        super(JSONAPIAttributeException, self).__init__(detail=detail, source=source)
+
+
+class InvalidQueryStringError(JSONAPIParameterException):
     """Raised when client passes an invalid value to a query string parameter."""
     default_detail = 'Query string contains an invalid value.'
     status_code = http.BAD_REQUEST
+
 
 class InvalidFilterOperator(JSONAPIParameterException):
     """Raised when client passes an invalid operator to a query param filter."""
@@ -82,6 +111,7 @@ class InvalidFilterOperator(JSONAPIParameterException):
         if value and not detail:
             detail = "Value '{0}' is not a supported filter operator; use one of eq, lt, lte, gt, gte.".format(value)
         super(InvalidFilterOperator, self).__init__(detail=detail, parameter='filter')
+
 
 class InvalidFilterValue(JSONAPIParameterException):
     """Raised when client passes an invalid value to a query param filter."""
@@ -104,14 +134,6 @@ class InvalidFilterError(JSONAPIParameterException):
 
     def __init__(self, detail=None):
         super(InvalidFilterError, self).__init__(detail=detail, parameter='filter')
-
-
-class JSONAPIAttributeException(JSONAPIException):
-    def __init__(self, detail=None, parameter=None):
-        source = {
-            'pointer': '/data/attributes/{0}'.format(parameter)
-        }
-        super(JSONAPIAttributeException, self).__init__(detail=detail, source=source)
 
 
 class InvalidFilterComparisonType(JSONAPIAttributeException):
@@ -145,3 +167,8 @@ class UnconfirmedAccountError(APIException):
 class DeactivatedAccountError(APIException):
     status_code = 400
     default_detail = 'Making API requests with credentials associated with a deactivated account is not allowed.'
+
+
+class InvalidModelValueError(JSONAPIException):
+    status_code = 400
+    default_detail = 'Invalid value in POST/PUT/PATCH request.'

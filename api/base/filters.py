@@ -12,7 +12,8 @@ from api.base.exceptions import (
     InvalidFilterOperator,
     InvalidFilterComparisonType,
     InvalidFilterMatchType,
-    InvalidFilterValue
+    InvalidFilterValue,
+    InvalidFilterFieldError
 )
 from api.base import utils
 
@@ -31,7 +32,7 @@ class FilterMixin(object):
     """ View mixin with helper functions for filtering. """
 
     QUERY_PATTERN = re.compile(r'^filter\[(?P<field>\w+)\](\[(?P<op>\w+)\])?$')
-    COMPARISON_OPERATORS = ('gt', 'gte', 'lt', 'lte', 'eq')
+    COMPARISON_OPERATORS = ('gt', 'gte', 'lt', 'lte')
     COMPARABLE_FIELDS = (ser.DateField, ser.DateTimeField, ser.DecimalField, ser.IntegerField)
     MATCH_OPERATORS = ('contains', 'icontains')
     MATCHABLE_FIELDS = (ser.CharField, ser.ListField)
@@ -54,6 +55,7 @@ class FilterMixin(object):
         :param dict query_params:
         :raises InvalidFilterError: If the filter field is not valid
         :raises InvalidFilterComparisonType: If the query contains comparisons against non-date or non-numeric fields
+        :raises InvalidFilterMatchType: If the query contains comparisons against non-string or non-list fields
         :raises InvalidFilterOperator: If the filter operator is not a member of self.COMPARISON_OPERATORS
         :raises InvalidFilterError: If the filter string is otherwise malformed
         :return dict: of the format {
@@ -71,18 +73,18 @@ class FilterMixin(object):
                     field_name = match.groupdict().get('field').strip()
                     if field_name not in self.serializer_class._declared_fields:
                         raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint".format(field_name))
-                    if field_name not in self.serializer_class.filterable_fields:
-                        raise InvalidFilterError
+                    if field_name not in getattr(self.serializer_class, 'filterable_fields', {}):
+                        raise InvalidFilterFieldError(attribute=field_name)
                     field = self.serializer_class._declared_fields[field_name]
                     op = match.groupdict().get('op') or self._get_default_operator(field)
                     if op not in set(self.MATCH_OPERATORS + self.COMPARABLE_FIELDS + (self.DEFAULT_OPERATOR, )):
                         raise InvalidFilterOperator(value=op)
                     if op in self.COMPARISON_OPERATORS:
                         if type(field) not in self.COMPARABLE_FIELDS:
-                            raise InvalidFilterComparisonType(parameter=field_name)
+                            raise InvalidFilterComparisonType(attribute=field_name)
                     if op in self.MATCH_OPERATORS:
                         if type(field) not in self.MATCHABLE_FIELDS:
-                            raise InvalidFilterMatchType(parameter=field_name)
+                            raise InvalidFilterMatchType(attribute=field_name)
                     field_name = self.convert_key(field_name, field)
                     if field_name not in fields:
                         fields[field_name] = []
@@ -126,6 +128,8 @@ class FilterMixin(object):
                     value=value,
                     field_type='date'
                 )
+        elif field_type in (ser.DecimalField, ser.IntegerField):
+            return float(value)
         else:
             return value
 
