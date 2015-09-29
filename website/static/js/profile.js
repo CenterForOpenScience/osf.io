@@ -579,13 +579,13 @@ var SocialViewModel = function(urls, modes) {
     };
     
     self.removeWebsite = function(profileWebsite) {
-        var profileWebsites = ko.toJS(self.profileWebsites()),
-            idx = profileWebsites.indexOf(profileWebsite);
+        var profileWebsites = ko.toJS(self.profileWebsites());
             bootbox.confirm({
                 title: 'Remove website?',
                 message: 'Are you sure you want to remove this website from your profile?',
                 callback: function(confirmed) {
                     if (confirmed) {
+                        var idx = profileWebsites.indexOf(profileWebsite);
                         self.profileWebsites.splice(idx, 1);
                         self.submit();
                         self.changeMessage(
@@ -614,18 +614,23 @@ $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.proto
 
 SocialViewModel.prototype.serialize = function() {
     var serializedData = ko.toJS(this);
-
-    function removeBlankValues(value) {
-        return value !== '';
+    var profileWebsites = serializedData.profileWebsites;
+    function cleanArray(actual){
+      var newArray = [];
+      for(var i = 0; i<actual.length; i++){
+          if (actual[i]){
+            newArray.push(actual[i]);
+        }
+      }
+      return newArray;
     }
-    
-    serializedData.profileWebsites = serializedData.profileWebsites.filter(removeBlankValues);
+    serializedData.profileWebsites = cleanArray(profileWebsites);
     return serializedData;
 };
 
 SocialViewModel.prototype.unserialize = function(data) {
-    var self = this,
-        websiteValue = [];
+    var self = this;
+    var websiteValue = [];
     $.each(data || {}, function(key, value) {
         if (ko.isObservable(self[key]) && key === 'profileWebsites') {
             if (value.length === 0) {
@@ -637,7 +642,7 @@ SocialViewModel.prototype.unserialize = function(data) {
                 });
             }
             self[key](websiteValue);
-        }  
+        }
         else if (ko.isObservable(self[key])) {
             self[key](value);
             // Ensure that validation errors are displayed
