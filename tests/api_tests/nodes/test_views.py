@@ -570,21 +570,6 @@ class TestNodeBulkCreate(ApiTestCase):
 
         self.empty_project = {'type': 'nodes', 'attributes': {'title': "", 'description': "", "category": ""}}
 
-    def test_bulk_create_logged_in(self):
-        res = self.app.post_json_api(self.url, {'data': [self.public_project, self.private_project]}, auth=self.user_one.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(len(res.json['data']), 2)
-        assert_equal(res.json['data'][0]['attributes']['title'], self.public_project['attributes']['title'])
-        assert_equal(res.json['data'][0]['attributes']['category'], self.public_project['attributes']['category'])
-        assert_equal(res.json['data'][0]['attributes']['description'], self.public_project['attributes']['description'])
-        assert_equal(res.json['data'][1]['attributes']['title'], self.private_project['attributes']['title'])
-        assert_equal(res.json['data'][1]['attributes']['category'], self.public_project['attributes']['category'])
-        assert_equal(res.json['data'][1]['attributes']['description'], self.public_project['attributes']['description'])
-        assert_equal(res.content_type, 'application/vnd.api+json')
-
-        res = self.app.get(self.url, auth=self.user_one.auth)
-        assert_equal(len(res.json['data']), 2)
-
     def test_bulk_create_all_or_nothing(self):
         res = self.app.post_json_api(self.url, {'data': [self.public_project, self.empty_project]}, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -662,6 +647,28 @@ class TestNodeBulkCreate(ApiTestCase):
 
         res = self.app.get(self.url, auth=self.user_one.auth)
         assert_equal(len(res.json['data']), 0)
+
+    def test_bulk_create_logged_in(self):
+        res = self.app.post_json_api(self.url, {'data': [self.public_project, self.private_project]}, auth=self.user_one.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(len(res.json['data']), 2)
+        assert_equal(res.json['data'][0]['attributes']['title'], self.public_project['attributes']['title'])
+        assert_equal(res.json['data'][0]['attributes']['category'], self.public_project['attributes']['category'])
+        assert_equal(res.json['data'][0]['attributes']['description'], self.public_project['attributes']['description'])
+        assert_equal(res.json['data'][1]['attributes']['title'], self.private_project['attributes']['title'])
+        assert_equal(res.json['data'][1]['attributes']['category'], self.public_project['attributes']['category'])
+        assert_equal(res.json['data'][1]['attributes']['description'], self.public_project['attributes']['description'])
+        assert_equal(res.content_type, 'application/vnd.api+json')
+
+        res = self.app.get(self.url, auth=self.user_one.auth)
+        assert_equal(len(res.json['data']), 2)
+        id_one = res.json['data'][0]['id']
+        id_two = res.json['data'][1]['id']
+
+        res = self.app.delete_json_api(self.url, {'data': [{'id': id_one, 'type': 'nodes'},
+                                                           {'id': id_two, 'type': 'nodes'}]},
+                                       auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
 
 
 class TestNodeBulkUpdate(ApiTestCase):
