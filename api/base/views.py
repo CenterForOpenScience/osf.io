@@ -105,10 +105,10 @@ def root(request, format=None):
             "id": "3rqxc",
             "type": "users",
             "attributes": {
-              "full_name" : "George Lazenby",
-              "given_name" : "George",
-              "middle_names" : "(The Best Bond)",
-              "family_name" : "Lazenby"
+              "full_name" : "Henrietta Swan Leavitt",
+              "given_name" : "Henrietta",
+              "middle_names" : "Swan",
+              "family_name" : "Leavitt"
             }
           }
         }
