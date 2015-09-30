@@ -435,6 +435,8 @@ def update_file(file_, index=None):
         'tags': [tag._id for tag in file_.tags],
         'name': file_.name,
         'category': 'file',
+        'node': file_.node._id,
+        'node_title': file_.node.title,
     }
 
     es.index(
