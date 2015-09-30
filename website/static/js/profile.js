@@ -498,10 +498,6 @@ var SocialViewModel = function(urls, modes) {
         return false;
     });
 
-    self.canRemove = ko.computed(function () {
-        return self.hasProfileWebsites();
-    });
-
     self.orcid = extendLink(
         ko.observable().extend({trimmed: true, cleanup: cleanByRule(socialRules.orcid)}),
         self, 'orcid', 'http://orcid.org/'
@@ -616,16 +612,11 @@ $.extend(SocialViewModel.prototype, SerializeMixin.prototype, TrackedMixin.proto
 SocialViewModel.prototype.serialize = function() {
     var serializedData = ko.toJS(this);
     var profileWebsites = serializedData.profileWebsites;
-    function cleanArray(actual){
-      var newArray = [];
-      for(var i = 0; i<actual.length; i++){
-          if (actual[i]){
-            newArray.push(actual[i]);
+    serializedData.profileWebsites = profileWebsites.filter(
+        function (value) {
+            return (typeof value === 'string');
         }
-      }
-      return newArray;
-    }
-    serializedData.profileWebsites = cleanArray(profileWebsites);
+    );
     return serializedData;
 };
 
