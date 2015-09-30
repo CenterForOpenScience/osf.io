@@ -479,7 +479,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(ListBulkCreateUpdateDestroyAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -598,7 +598,7 @@ class NodeContributorsList(ListBulkCreateUpdateDestroyAPIView, ListFilterMixin, 
         """
         Correctly formats both bulk and single POST response
         """
-        response = ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
+        response = bulk_generics.ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
         if 'data' in response.data:
             return response
         return Response({'data': response.data}, status=status.HTTP_201_CREATED)
@@ -608,7 +608,7 @@ class NodeContributorsList(ListBulkCreateUpdateDestroyAPIView, ListFilterMixin, 
         """
         Correctly formats bulk PUT/PATCH response
         """
-        response = ListBulkCreateUpdateDestroyAPIView.bulk_update(self, request, *args, **kwargs)
+        response = bulk_generics.ListBulkCreateUpdateDestroyAPIView.bulk_update(self, request, *args, **kwargs)
         return Response({'data': response.data}, status=status.HTTP_200_OK)
 
     # Overrides ListBulkCreateUpdateDestroyAPIView
