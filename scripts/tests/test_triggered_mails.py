@@ -1,6 +1,6 @@
-import mock  # noqa
+import mock
 from datetime import datetime, timedelta
-from nose.tools import *
+from nose.tools import * # noqa
 
 from tests.base import OsfTestCase
 from tests.factories import UserFactory

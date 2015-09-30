@@ -27,13 +27,13 @@ class TestSendQueuedMails(OsfTestCase):
             fullname=user.fullname if user else self.user.fullname,
         )
 
-    @mock.patch('website.mails.mails.send_mail')
+    @mock.patch('website.mails.queued_mails.send_mail')
     def test_queue_addon_mail(self, mock_send):
         self.queue_mail()
         main(dry_run=False)
         assert_true(mock_send.called)
 
-    @mock.patch('website.mails.mails.send_mail')
+    @mock.patch('website.mails.queued_mails.send_mail')
     def test_no_two_emails_to_same_person(self, mock_send):
         user = UserFactory()
         user.osf_mailing_lists[settings.OSF_HELP_LIST] = True

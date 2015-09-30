@@ -24,9 +24,7 @@ def main(dry_run=True):
 
     for mail in emails_to_be_sent:
         logger.warn('Email of type {0} sent to {1}'.format(mail.email_type, mail.to_addr))
-        if dry_run:
-            logger.warn('Dry run mode')
-        else:
+        if not dry_run:
             with TokuTransaction():
                 mail.send_mail()
 

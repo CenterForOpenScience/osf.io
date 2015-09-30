@@ -75,7 +75,7 @@
     ${parent.javascript()}
     <script type="text/javascript">
         window.contextVars = $.extend({}, window.contextVars, {
-            'mailingLists': [${website.settings.MAILCHIMP_GENERAL_LIST | sjson, n }, ${website.settings.OSF_HELP_LIST | sjson, n }]
+            'mailingLists': ${ [website.settings.MAILCHIMP_GENERAL_LIST, website.settings.OSF_HELP_LIST] | sjson, n }
         });
     </script>
 </%def>

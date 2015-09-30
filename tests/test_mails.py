@@ -118,6 +118,6 @@ class TestQueuedMail(OsfTestCase):
             mail=mails.NO_ADDON,
             fullname=user.fullname
         )
-        assert_equal(len(mail.find_same_email_sent_to_same_user()), 0)
+        assert_equal(len(mail.find_sent_of_same_type_and_user()), 0)
         mail.send_mail()
-        assert_equal(len(mail.find_same_email_sent_to_same_user()), 1)
+        assert_equal(len(mail.find_sent_of_same_type_and_user()), 1)

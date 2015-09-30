@@ -10,7 +10,7 @@ def no_login(email):
     return email.user.is_registered and not email.user.date_last_login > datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME
 
 def new_public_project(email):
-    """ Will check to make sure the project that triggered this callback is still public
+    """ Will check to make sure the project that triggered this presend is still public
     before sending the email. It also checks to make sure this is the first (and only)
     new public project email to be sent
 
@@ -25,11 +25,11 @@ def new_public_project(email):
 
     if not node:
         return False
-    public = email.find_same_email_sent_to_same_user()
+    public = email.find_sent_of_same_type_and_user()
     return node.is_public and not len(public)
 
 def welcome_osf4m(email):
-    """ Callback has two functions. First is to make sure that the user has not
+    """ presend has two functions. First is to make sure that the user has not
     converted to a regular OSF user by logging in. Second is to populate the
     data field with downloads by finding the file/project (node_settings) and
     counting downloads of all files within that project

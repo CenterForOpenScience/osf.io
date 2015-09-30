@@ -19,17 +19,12 @@ Usage: ::
 
 """
 import os
-import bson
 import logging
-from datetime import datetime
 
 from mako.lookup import TemplateLookup, Template
 
-from modularodm import fields, Q
 from framework.email import tasks
-from framework.mongo import StoredObject
 from website import settings
-from website.mails import mail_callbacks
 
 logger = logging.getLogger(__name__)
 
@@ -123,79 +118,6 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
             callback()
 
         return ret
-
-def queue_mail(to_addr, mail, send_at, user, **context):
-    """
-    Queue an email to be sent using send_mail after a specified amount
-    of time and if the callback returns True. The callback is attached to
-    the template under mail.
-
-    :param to_addr: the address email is to be sent to
-    :param mail:  the type of mail. Struct following template:
-                        { 'callback': function(),
-                            'template': mako template name,
-                            'subject': mail subject }
-    :param send_at: datetime object of when to send mail
-    :param user: user object attached to mail
-    :param context: IMPORTANT kwargs to be attached to template.
-                    Sending mail will fail if wrong all kwargs are
-                    not parameters.
-    :return: the QueuedMail object created
-    """
-    new_mail = QueuedMail(
-        user=user,
-        to_addr=to_addr,
-        send_at=send_at,
-        email_type=mail['template'],
-        data=context
-    )
-    new_mail.save()
-    return new_mail
-
-class QueuedMail(StoredObject):
-    _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
-    user = fields.ForeignField('User')
-    to_addr = fields.StringField()
-    send_at = fields.DateTimeField()
-    email_type = fields.StringField()
-    data = fields.DictionaryField()
-    sent_at = fields.DateTimeField(index=True)
-
-    def send_mail(self):
-        """
-        Grabs the data from this email, checks for user subscription to help mails,
-
-        constructs the mail object and checks callback. Then attempts to send the email
-        through send_mail()
-        :return: boolean based on whether email was sent.
-        """
-        mail_struct = queue_mail_types[self.email_type]
-        callback = mail_struct['callback'](self)
-        mail = Mail(
-            mail_struct['template'],
-            subject=mail_struct['subject']
-        )
-        self.data['osf_url'] = settings.DOMAIN
-        if callback and self.user.osf_mailing_lists.get(settings.OSF_HELP_LIST):
-            send_mail(self.to_addr, mail, mimetype='html', **(self.data or {}))
-            self.sent_at = datetime.utcnow()
-            self.save()
-            return True
-        else:
-            self.__class__.remove_one(self)
-            return False
-
-    def find_same_email_sent_to_same_user(self):
-        """
-        Queries up for all emails of the same type as self, sent to the same user as self.
-        Does not look for queue-up emails.
-        :return: a list of those emails
-        """
-        return list(self.__class__.find(
-            Q('email_type', 'eq', self.email_type) &
-            Q('user', 'eq', self.user) &
-            Q('sent_at', 'ne', None)
-        ))
 
 # Predefined Emails
 
@@ -312,35 +234,3 @@ WELCOME = Mail(
     'welcome',
     subject='Welcome to the Open Science Framework'
 )
-
-# Predefined emails with callbacks
-NO_ADDON = {
-    'template': 'no_addon',
-    'subject': 'Link an add-on to your OSF project',
-    'callback': mail_callbacks.no_addon
-}
-
-NO_LOGIN = {
-    'template': 'no_login',
-    'subject': 'What you\'re missing on the OSF',
-    'callback': mail_callbacks.no_login
-}
-
-NEW_PUBLIC_PROJECT = {
-    'template': 'new_public_project',
-    'subject': 'Now, public. Next, impact.',
-    'callback': mail_callbacks.new_public_project
-}
-
-WELCOME_OSF4M = {
-    'template': 'welcome_osf4m',
-    'subject': 'The benefits of sharing your presentation',
-    'callback': mail_callbacks.welcome_osf4m
-}
-
-queue_mail_types = {
-    'no_addon': NO_ADDON,
-    'no_login': NO_LOGIN,
-    'new_public_project': NEW_PUBLIC_PROJECT,
-    'welcome_osf4m': WELCOME_OSF4M
-}
