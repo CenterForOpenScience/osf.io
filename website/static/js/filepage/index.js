@@ -27,8 +27,6 @@ var FileViewPage = {
         self.editorMeta = self.context.editor;
         //Force canEdit into a bool
         self.canEdit = m.prop(!!self.context.currentUser.canEdit);
-        self.fileName = m.prop(self.file.name);
-        self.fileNameEdit = m.prop(false);
 
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
@@ -164,7 +162,7 @@ var FileViewPage = {
 
         if(self.canEdit) {
             var $fileName = $('#fileName');
-            var conflict = 'replace';
+            var conflict = 'warn';
             var to = {
                 data: {
                     nodeId: self.node.id,
@@ -195,19 +193,21 @@ var FileViewPage = {
                 },
                 validate: function(value) {
                     if($.trim(value) === ''){
-                        return 'Name cannot be empty';
+                        $osf.growl('Error', 'Name cannot be empty.');
+                        return '   ';
                     } else if(value.length > 100){
-                        return 'Name < 100 characters';
+                        $osf.growl('Error', 'Name should be less than 100 characters');
+                        return '   ';
                     }
                 },
                 success: function(response, value) {
-                    $osf.growl('Success', 'File name changed successfully.', 'success');
+                    window.location.reload();
                 },
                 error: function(response) {
                     var msg = response.responseJSON.message;
                     if (msg) {
                         $osf.growl('Error', msg);
-                        return 'Already exists';
+                        return '      ';
                     } else {
                         // Log unexpected error with Raven
                         Raven.captureMessage('Error in renaming file', {
