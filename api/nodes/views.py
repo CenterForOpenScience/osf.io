@@ -235,9 +235,21 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
     def get_queryset(self):
         if isinstance(self.request.data, list):
             query = Q('_id', 'in', [node['id'] for node in self.request.data])
+
+            user = self.request.user
+            if user.is_anonymous():
+                auth = Auth(None)
+            else:
+                auth = Auth(user)
+
+            nodes = Node.find(query)
+            for node in nodes:
+                if not node.can_edit(auth):
+                    raise PermissionDenied()
+            return nodes
         else:
             query = self.get_query_from_request()
-        return Node.find(query)
+            return Node.find(query)
 
     # overrides ListBulkCreateUpdateDestroyAPIView
     def get_serializer(self, *args, **kwargs):
