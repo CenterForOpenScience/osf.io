@@ -151,7 +151,7 @@
     </script>
     <script type="text/html" id="file">
         <h4><a href="{{ deep_url }}">{{ name }}</a> (File)</h4>
-        <div></div>
+        <h5>From: <a href="{{ node_url }}">{{ node_title }}</a></h5>
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->

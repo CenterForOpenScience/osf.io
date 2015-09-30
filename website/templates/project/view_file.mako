@@ -35,9 +35,11 @@
       <!-- Menu toggle closed -->
       <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
           <div class="row tb-header-row">
-              <i class="fa fa-file p-l-xs p-r-xs"></i>
-              <div class="fangorn-toolbar-icon">
-                  <i class="fa fa-angle-right"></i>
+              <div class="panel-heading clearfix">
+                  <h3 class="panel-title">Files</h3>
+                    <div class="pull-right fangorn-toolbar-icon">
+                        <i class="fa fa-angle-down"></i>
+                    </div>
               </div>
           </div>
       </div>
