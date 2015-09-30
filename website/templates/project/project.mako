@@ -184,7 +184,7 @@
                                               saveLicenseKey: 'node_license',
                                               readonly: ${ node['is_registration'] | sjson, n}">
                         <span id="license">License:</span>
-                        <span class="text-muted"> ${node['license'].get('name', 'None selected')} </span>
+                        <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
 
                       </license-picker>
                     </p>
