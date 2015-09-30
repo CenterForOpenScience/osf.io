@@ -114,11 +114,11 @@ class ExternalProvider(object):
     # Default to OAuth v2.0.
     _oauth_version = OAUTH2
 
-    def __init__(self):
+    def __init__(self, account=None):
         super(ExternalProvider, self).__init__()
 
         # provide an unauthenticated session by default
-        self.account = None
+        self.account = account
 
     def __repr__(self):
         return '<{name}: {status}>'.format(
@@ -214,6 +214,9 @@ class ExternalProvider(object):
         to the OSF after authenticating on the external service.
         """
 
+        if 'error' in request.args:
+            return False
+
         # make sure the user has temporary credentials for this provider
         try:
             cached_credentials = session.data['oauth_states'][self.short_name]
@@ -301,6 +304,8 @@ class ExternalProvider(object):
         if self.account not in user.external_accounts:
             user.external_accounts.append(self.account)
             user.save()
+
+        return True
 
     def _default_handle_callback(self, data):
         """Parse as much out of the key exchange's response as possible.
