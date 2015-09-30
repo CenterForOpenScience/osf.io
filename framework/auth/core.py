@@ -1123,6 +1123,7 @@ class User(GuidStoredObject, AddonModelMixin):
         return self.get_recent_log_ids(since=midnight)
 
     def files_checked_out(self):
+        # done here to prevent Import error due to circular import.
         from website.files.models.osfstorage import FileNode
         return list(FileNode.find(Q('checkout', 'eq', self)))
 

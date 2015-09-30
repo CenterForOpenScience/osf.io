@@ -219,7 +219,6 @@ class TestFileView(ApiTestCase):
         )
         assert_equal(res.status_code, 200)
         self.file.reload()
-        error = None
         with assert_raises(FileNodeorChildCheckedOutError):
             self.file.delete()
 
@@ -238,7 +237,6 @@ class TestFileView(ApiTestCase):
             auth=self.user.auth,
         )
         self.file.reload()
-        error = None
         with assert_raises(FileNodeorChildCheckedOutError):
             folder.delete()
 
@@ -284,6 +282,6 @@ class TestFileView(ApiTestCase):
         )
         self.file.reload()
         assert_equal(self.user, self.file.checkout)
-        self.file.node.remove_contributors([self.user])
+        self.file.node.remove_contributors([self.user], save=True)
         self.file.reload()
         assert_equal(self.file.checkout, None)
