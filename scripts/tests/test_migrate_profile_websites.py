@@ -39,6 +39,11 @@ class TestMigrateProfileWebsites(OsfTestCase):
         self.user_two.save()
         self.user_three = AuthUserFactory()
 
+    def tearDown(self):
+        super(TestMigrateProfileWebsites, self).tearDown()
+        self.user_one.remove()
+        self.user_two.remove()
+
     def test_get_users_with_social_field(self):
         users = []
         for user in get_users_with_social_field():
@@ -65,5 +70,4 @@ class TestMigrateProfileWebsites(OsfTestCase):
         assert_equal(self.user_two.social['impactStory'], 'userTwoImpactStory')
         assert_equal(self.user_two.social['orcid'], 'userTwoOrcid')
         assert_equal(self.user_two.social['researcherId'], 'userTwoResearcherId')
-
         assert_equal(self.user_three.social, {})
