@@ -10,9 +10,6 @@ var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
 
-
-var ZeroClipboard = require('zeroclipboard');
-ZeroClipboard.config('/static/vendor/bower_components/zeroclipboard/dist/ZeroClipboard.swf');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
@@ -33,19 +30,8 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     constructor: function(addonName, url, selector, folderPicker, opts) {
         var self = this;
         self.super.constructor.call(self, addonName, url, selector, folderPicker);
-        // whether the auth token is valid
-        self.validCredentials = ko.observable(true);
-        // Emails of contributors, can only be populated by activating the share dialog
-        self.emails = ko.observableArray([]);
-        self.loading = ko.observable(false);
-        // Whether the contributor emails have been loaded from the server
-        self.loadedEmails = ko.observable(false);
         // externalAccounts
         self.accounts = ko.observableArray();
-        // List of contributor emails as a comma-separated values
-        self.emailList = ko.pureComputed(function() {
-            return self.emails().join([', ']);
-        });
         self.selectedFolderType = ko.pureComputed(function() {
             var userHasAuth = self.userHasAuth();
             var selected = self.selected();
@@ -55,7 +41,6 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
-        // Overrides
         var defaults = {
             onPickFolder: function(evt, item) {
                 evt.preventDefault();
@@ -75,14 +60,20 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
 
                 window.oauthComplete = function(res) {
                     // Update view model based on response
-                    self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
-                    self.updateAccounts(function() {
-                        $osf.putJSON(
-                            self.urls().importAuth, {
-                                external_account_id: self.accounts()[0].id
-                            }
-                        ).done(self.onImportSuccess.bind(self)
-                        ).fail(self.onImportError.bind(self));
+                    self.updateAccounts().then(function() {
+                        try{
+                            $osf.putJSON(
+                                self.urls().importAuth, {
+                                    external_account_id: self.accounts()[0].id
+                                }
+                            ).done(self.onImportSuccess.bind(self)
+                            ).fail(self.onImportError.bind(self));
+
+                            self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
+                        }
+                        catch(err){
+                            self.changeMessage(self.messages.connectAccountDenied(), 'text-failure', 6000);
+                        }
                     });
                 };
                 window.open(self.urls().auth);
@@ -104,52 +95,6 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             }
         );
     },
-    toggleShare: function() {
-        if (this.currentDisplay() === this.SHARE) {
-            this.currentDisplay(null);
-        } else {
-            // Clear selection
-            this.cancelSelection();
-            this.currentDisplay(this.SHARE);
-            this.activateShare();
-        }
-    },
-    fetchEmailList: function(){
-        var self = this;
-
-        var ret = $.Deferred();
-        var promise = ret.promise();
-        if(!self.loadedEmails()){
-            $.ajax({
-                url: self.urls().emails,
-                type: 'GET',
-                dataType: 'json'
-            }).done(function(res){
-                self.loadedEmails(true);
-                ret.resolve(res.results.emails);
-            }).fail(function(xhr, status, error){
-                Raven.captureMessage('Could not GET ' + self.addonName + ' email list', {
-                    url: self.urls().emails,
-                    textStatus: status,
-                    error: error
-                });
-                ret.reject(xhr, status, error);
-            });
-        }
-        else{
-            ret.resolve(self.emails());
-        }
-        return promise;
-    },
-    activateShare: function() {
-        var self = this;
-        self.fetchEmailList()
-            .done(function(emails){
-                self.emails(emails);
-            });
-        var $copyBtn = $(self.selector).find('.copyBtn');
-        new ZeroClipboard($copyBtn);
-    },
     _updateCustomFields: function(settings){
         this.validCredentials(settings.validCredentials);
     },
@@ -159,10 +104,13 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     connectAccount: function() {
         this.options.connectAccount.call(this);
     },
+    /**
+    * Imports addon settings from user's account. If multiple addon accounts are connected, allow user to pick between them.
+    */
     importAuth: function(){
         var self = this;
 
-        self.updateAccounts(function() {
+        self.updateAccounts().then(function () {
             if (self.accounts().length > 1) {
                 bootbox.prompt({
                     title: 'Choose ' + self.addonName + ' Access Token to Import',
@@ -191,50 +139,47 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 });
             }
         });
-    }
-});
+    },
+    /**
+    * Associates selected external account with this node, or handles error.
+    */
+    connectExistingAccount: function(account_id) {
+        var self = this;
 
-OauthAddonFolderPickerViewModel.prototype.connectExistingAccount = function(account_id) {
-     var self = this;
-
-    $osf.putJSON(
-        self.urls().importAuth, {
-            external_account_id: account_id
-        }
-    ).done(self.onImportSuccess.bind(self)
-    ).fail(self.onImportError.bind(self));
-};
-
-OauthAddonFolderPickerViewModel.prototype.updateAccounts = function(callback) {
-    var self = this;
-    var request = $.get(self.urls().accounts);
-    request.done(function(data) {
-        self.accounts(data.accounts.map(function(account) {
-            return {
-                name: account.display_name,
-                id: account.id
-            };
-        }));
-        callback();
-    });
-    request.fail(function(xhr, textStatus, error) {
-        self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
-        Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
-            url: self.url,
-            textStatus: textStatus,
-            error: error
+        return $osf.putJSON(
+            self.urls().importAuth, {
+                external_account_id: account_id
+            }
+        ).done(self.onImportSuccess.bind(self)
+        ).fail(self.onImportError.bind(self));
+    },
+    updateAccounts: function() {
+        var self = this;
+        var request = $.get(self.urls().accounts);
+        return request.done(function(data) {
+            self.accounts(data.accounts.map(function(account) {
+                return {
+                    name: account.display_name,
+                    id: account.id
+                };
+            }));
+        }).fail(function(xhr, textStatus, error) {
+            self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
+            Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
+                url: self.url,
+                textStatus: textStatus,
+                error: error
+            });
         });
-    });
-};
+    },
+});
 
 // Public API
 function OauthAddonNodeConfig(addonName, selector, url, folderPicker, opts) {
     var self = this;
     self.url = url;
     self.folderPicker = folderPicker;
-    if (typeof opts === 'undefined') {
-        opts = {};
-    }
+    opts = opts || {};
     self.viewModel = new OauthAddonFolderPickerViewModel(addonName, url, selector, folderPicker, opts);
     self.viewModel.updateFromData();
     $osf.applyBindings(self.viewModel, selector);
