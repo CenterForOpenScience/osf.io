@@ -39,7 +39,6 @@ except ImportError:
 else:
     TEST_CMD = 'nosetests --rednose'
 
-
 @task
 def server(host=None, port=5000, debug=True, live=False):
     """Run the app server."""

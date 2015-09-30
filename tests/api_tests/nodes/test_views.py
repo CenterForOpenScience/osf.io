@@ -587,7 +587,7 @@ class TestNodeDetail(ApiTestCase):
     def test_top_level_project_has_no_parent(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['relationships']['parent'], {})
+        assert_not_in('parent', res.json['data']['relationships'])
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_child_project_has_parent(self):
