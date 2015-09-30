@@ -10,7 +10,35 @@ from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
 from api.base import utils
-from api.base.exceptions import InvalidQueryStringError
+from api.base.exceptions import InvalidQueryStringError, Conflict
+
+
+class AllowMissing(ser.Field):
+
+    def __init__(self, field, **kwargs):
+        super(AllowMissing, self).__init__(**kwargs)
+        self.field = field
+
+    def to_representation(self, value):
+        return self.field.to_representation(value)
+
+    def bind(self, field_name, parent):
+        super(AllowMissing, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def get_attribute(self, instance):
+        """
+        Overwrite the error message to return a blank value is if there is no existing value.
+        This allows the display of keys that do not exist in the DB (gitHub on a new OSF account for example.)
+        """
+        try:
+            return self.field.get_attribute(instance)
+        except SkipField:
+            return ''
+
+    def to_internal_value(self, data):
+        return self.field.to_internal_value(data)
+
 
 from website.util import rapply as _rapply
 
@@ -24,6 +52,31 @@ def _url_val(val, obj, serializer, **kwargs):
         return getattr(serializer, val)(obj)
     else:
         return val
+
+
+class IDField(ser.CharField):
+    def __init__(self, **kwargs):
+        kwargs['label'] = 'ID'
+        super(IDField, self).__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        update_methods = ['PUT', 'PATCH']
+        if self.context['request'].method in update_methods:
+            if self.root.instance._id != data:
+                raise Conflict()
+        return super(IDField, self).to_internal_value(data)
+
+
+class TypeField(ser.CharField):
+    def __init__(self, **kwargs):
+        kwargs['write_only'] = True
+        kwargs['required'] = True
+        super(TypeField, self).__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        if self.root.Meta.type_ != data:
+            raise Conflict()
+        return super(TypeField, self).to_internal_value(data)
 
 
 class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
@@ -119,7 +172,7 @@ class LinksField(ser.Field):
 
     def to_representation(self, obj):
         ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
-        if hasattr(obj, 'get_absolute_url'):
+        if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = obj.get_absolute_url()
         return ret
 
@@ -290,11 +343,23 @@ class JSONAPISerializer(ser.Serializer):
 
     # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
-        """After validation, scrub HTML from validated_data prior to saving (for create and update views)"""
+        """
+        After validation, scrub HTML from validated_data prior to saving (for create and update views)
+
+        Exclude 'type' and '_id' from validated_data.
+
+        """
         ret = super(JSONAPISerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
             self._validated_data = _rapply(self.validated_data, strip_html)
+
+        self._validated_data.pop('type', None)
+
+        update_methods = ['PUT', 'PATCH']
+        if self.context['request'].method in update_methods:
+            self._validated_data.pop('_id', None)
+
         return ret
 
 

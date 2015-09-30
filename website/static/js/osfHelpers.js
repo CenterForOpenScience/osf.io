@@ -202,7 +202,7 @@ var handleJSONError = function(response) {
 
 var handleEditableError = function(response) {
     Raven.captureMessage('Unexpected error occurred in an editable input');
-    return 'Unexpected error: ' + response.statusText;
+    return 'Error: ' + response.responseJSON.message_long;
 };
 
 var block = function(message) {
@@ -659,8 +659,13 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
+    // Set nav-box width based on screem
+    fixAffixWidth();
+    // Show the nav box
+    $('.osf-affix').each(function (){
+        $(this).show();
+    });
     $(window).resize(debounce(fixAffixWidth, 20, true));
-    $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
 };
 
 // Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable

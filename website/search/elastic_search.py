@@ -119,7 +119,6 @@ def get_counts(count_query, clean=True):
     }
 
     res = es.search(index=INDEX, doc_type=None, search_type='count', body=count_query)
-
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
@@ -168,13 +167,12 @@ def search(query, index=None, doc_type='_all'):
             pass
 
     tags = get_tags(tag_query, index)
-
     try:
         del aggs_query['query']['filtered']['filter']
+        del count_query['query']['filtered']['filter']
     except KeyError:
         pass
     aggregations = get_aggregations(aggs_query, doc_type=doc_type)
-
     counts = get_counts(count_query, index)
 
     # Run the real query and get the results
@@ -442,7 +440,6 @@ def create_index(index=None):
                 'license': {
                     'properties': {
                         'name': NOT_ANALYZED_PROPERTY,
-                        'text': NOT_ANALYZED_PROPERTY
                     }
                 }
             }
@@ -522,7 +519,9 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
 
-        if current_user:
+        if current_user and current_user._id == user._id:
+            n_projects_in_common = -1
+        elif current_user:
             n_projects_in_common = current_user.n_projects_in_common(user)
         else:
             n_projects_in_common = 0

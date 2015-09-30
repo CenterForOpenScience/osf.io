@@ -32,7 +32,7 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError
+from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -52,7 +52,8 @@ logger = logging.getLogger(__name__)
 def edit_node(auth, node, **kwargs):
     post_data = request.json
     edited_field = post_data.get('name')
-    value = strip_html(post_data.get('value', ''))
+    value = post_data.get('value', '')
+
     if edited_field == 'title':
         try:
             node.set_title(value, auth=auth)
@@ -833,7 +834,7 @@ def _get_children(node, auth, indent=0):
     children = []
 
     for child in node.nodes_primary:
-        if not child.is_deleted and child.can_edit(auth):
+        if not child.is_deleted and child.has_permission(auth.user, 'admin'):
             children.append({
                 'id': child._primary_key,
                 'title': child.title,
@@ -860,10 +861,8 @@ def private_link_table(node, **kwargs):
 
 @collect_auth
 @must_be_valid_project
+@must_have_permission(ADMIN)
 def get_editable_children(auth, node, **kwargs):
-
-    if not node.can_edit(auth):
-        return
 
     children = _get_children(node, auth)
 
@@ -1039,6 +1038,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     node_ids = request.json.get('node_ids', [])
     name = request.json.get('name', '')
+
     anonymous = request.json.get('anonymous', False)
 
     if node._id not in node_ids:
@@ -1048,9 +1048,15 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     has_public_node = any(node.is_public for node in nodes)
 
-    new_link = new_private_link(
-        name=name, user=auth.user, nodes=nodes, anonymous=anonymous
-    )
+    try:
+        new_link = new_private_link(
+            name=name, user=auth.user, nodes=nodes, anonymous=anonymous
+        )
+    except ValidationValueError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=e.message)
+        )
 
     if anonymous and has_public_node:
         status.push_status_message(
@@ -1065,12 +1071,29 @@ def project_generate_private_link_post(auth, node, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def project_private_link_edit(auth, **kwargs):
-    new_name = request.json.get('value', '')
+    name = request.json.get('value', '')
+    try:
+        validate_title(name)
+    except ValidationValueError as e:
+        message = 'Invalid link name.' if e.message == 'Invalid title.' else e.message
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=message)
+        )
+
     private_link_id = request.json.get('pk', '')
     private_link = PrivateLink.load(private_link_id)
+
     if private_link:
+        new_name = strip_html(name)
         private_link.name = new_name
         private_link.save()
+        return new_name
+    else:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long='View-only link not found.')
+        )
 
 
 def _serialize_node_search(node):
