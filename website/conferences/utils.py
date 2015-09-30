@@ -76,7 +76,7 @@ def provision_node(conference, message, node, user):
     node.add_contributors(prepare_contributors(conference.admins), log=False)
 
     if not message.is_spam and conference.public_projects:
-        node.set_privacy('public', skip_mail=True, auth=auth)
+        node.set_privacy('public', meeting_creation=True, auth=auth)
 
     node.add_tag(message.conference_name, auth=auth)
     node.add_tag(message.conference_category, auth=auth)

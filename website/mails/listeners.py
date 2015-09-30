@@ -25,11 +25,11 @@ def queue_no_addon_email(user):
     )
 
 @project_signals.set_privacy_public.connect
-def queue_first_public_project_email(user, node, skip_mail):
+def queue_first_public_project_email(user, node, meeting_creation):
     """Queue and email after user has made their first
     non-OSF4M project public.
     """
-    if not skip_mail:
+    if not meeting_creation:
         sent_mail = mails.QueuedMail.find(Q('user', 'eq', user) & Q('sent_at', 'ne', None) &
                                           Q('email_type', 'eq', mails.NEW_PUBLIC_PROJECT_TYPE))
         if not sent_mail.count():

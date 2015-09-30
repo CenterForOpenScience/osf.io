@@ -2772,13 +2772,13 @@ class TestProject(OsfTestCase):
     @mock.patch('website.project.model.mails.queue_mail')
     def test_set_privacy_sends_mail(self, mock_queue):
         self.project.set_privacy('private', auth=self.auth)
-        self.project.set_privacy('public', auth=self.auth, skip_mail=False)
+        self.project.set_privacy('public', auth=self.auth, meeting_creation=False)
         assert_true(mock_queue.called_once())
 
     @mock.patch('website.project.model.mails.queue_mail')
     def test_set_privacy_skips_mail(self, mock_queue):
         self.project.set_privacy('private', auth=self.auth)
-        self.project.set_privacy('public', auth=self.auth, skip_mail=True)
+        self.project.set_privacy('public', auth=self.auth, meeting_creation=True)
         assert_false(mock_queue.called)
 
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self):
