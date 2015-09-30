@@ -9,7 +9,6 @@ from website.project.model import NodeLog
 
 from tests.factories import ProjectFactory
 
-from website.addons.box.tests.factories import BoxFileFactory
 from website.addons.box.tests.utils import BoxAddonTestCase
 from website.addons.box import utils
 from website.addons.box.views.config import serialize_folder
@@ -19,11 +18,9 @@ from website.addons.box.model import BoxNodeSettings
 class TestNodeLogger(BoxAddonTestCase):
 
     def test_log_file_added(self):
-        df = BoxFileFactory()
         logger = utils.BoxNodeLogger(
             node=self.project,
             auth=Auth(self.user),
-            file_obj=df
         )
         logger.log(NodeLog.FILE_ADDED, save=True)
 
@@ -45,21 +42,6 @@ class TestNodeLogger(BoxAddonTestCase):
 
         last_log = project.logs[-1]
         assert_equal(last_log.action, 'box_node_deauthorized')
-
-
-# FIXME(sloria): This test is incorrect. The mocking needs work.
-# class TestRenderFile(OsfTestCase):
-
-#     @mock.patch('website.addons.box.client.BoxClient.get_file_and_metadata')
-#     def test_render_box_file_when_file_has_taken_down_by_dmca(self, mock_get_file):
-#         mock_resp = mock.Mock(spec=BoxResponse)
-#         mock_resp.reason = 'This file is no longer available due to a takedown request under the Digital Millennium Copyright Act'
-#         mock_resp.status = 461
-#         mock_client = mock.Mock(spec=BoxClient)
-#         mock_client.get_file_and_metadata.side_effect = ErrorResponse(mock_resp, 'DMCA takedown')
-#         with patch_client('website.addons.box.utils.get_node_addon_client', mock_client=mock_client):
-#             f = BoxFileFactory()
-#             result = utils.render_box_file(f, client=mock_client)
 
 
 # TODO(mfraezz): Add support for folder sharing urls
