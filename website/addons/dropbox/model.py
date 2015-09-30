@@ -9,7 +9,7 @@ from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
-from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
+from website.addons.dropbox.utils import DropboxNodeLogger
 
 logger = logging.getLogger(__name__)
 
