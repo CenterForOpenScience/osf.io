@@ -8,6 +8,7 @@ from api.base.exceptions import JSONAPIException
 NO_ATTRIBUTES_ERROR = 'Request must include /data/attributes.'
 NO_DATA_ERROR = 'Request must include /data.'
 
+
 class JSONAPIParser(JSONParser):
     """
     Parses JSON-serialized data. Overrides media_type.
