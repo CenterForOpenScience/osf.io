@@ -60,7 +60,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
 
                 window.oauthComplete = function(res) {
                     // Update view model based on response
-                    self.updateAccounts().done(function() {
+                    self.updateAccounts().then(function() {
                         try{
                             $osf.putJSON(
                                 self.urls().importAuth, {
@@ -110,7 +110,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     importAuth: function(){
         var self = this;
 
-        self.updateAccounts().done(function () {
+        self.updateAccounts().then(function () {
             if (self.accounts().length > 1) {
                 bootbox.prompt({
                     title: 'Choose ' + self.addonName + ' Access Token to Import',
@@ -156,15 +156,14 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
     updateAccounts: function() {
         var self = this;
         var request = $.get(self.urls().accounts);
-        request.done(function(data) {
+        return request.done(function(data) {
             self.accounts(data.accounts.map(function(account) {
                 return {
                     name: account.display_name,
                     id: account.id
                 };
             }));
-        });
-        request.fail(function(xhr, textStatus, error) {
+        }).fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.UPDATE_ACCOUNTS_ERROR(), 'text-warning');
             Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
                 url: self.url,
