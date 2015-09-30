@@ -1,7 +1,9 @@
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 from rest_framework import generics
+from rest_framework.exceptions import NotFound
 from api.comments.serializers import CommentSerializer, CommentDetailSerializer
 from website.project.model import Comment
-from api.base.utils import get_object_or_error
 
 
 class CommentMixin(object):
@@ -13,7 +15,12 @@ class CommentMixin(object):
     comment_lookup_url_kwarg = 'comment_id'
 
     def get_comment(self, check_permissions=True):
-        comment = get_object_or_error(Comment, self.kwargs[self.comment_lookup_url_kwarg])
+        pk = self.kwargs[self.comment_lookup_url_kwarg]
+        query = Q('_id', 'eq', pk)
+        try:
+            comment = Comment.find_one(query)
+        except NoResultsFound:
+            raise NotFound
 
         if check_permissions:
             # May raise a permission denied
