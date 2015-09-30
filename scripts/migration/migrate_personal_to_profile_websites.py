@@ -19,15 +19,14 @@ def main():
     migrated_users = 0
     for user in get_users_with_social_field():
         all_users += 1
-        logger.info("Migrating User: %s" % repr(user.fullname))
         if not user.social.get('profileWebsites', None):
             user.social['profileWebsites'] = []
             if user.social.get('personal'):
                 migrate_personal_to_profile_websites(user)
                 migrated_users += 1
-        logger.info("%s/'s social dictionary is now %s" % (repr(user.social), repr(user.fullname)))
+        logger.info("{}'s social dictionary is now {}".format(user.social, user.fullname))
         user.save()
-    logger.info("merged %d users to profileWebsites out of %d total users" % (migrated_users, all_users))
+    logger.info("merged {} users to profileWebsites out of {} total users".format(migrated_users, all_users))
 
 
 def get_users_with_social_field():
