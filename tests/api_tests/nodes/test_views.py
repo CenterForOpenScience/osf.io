@@ -2839,7 +2839,6 @@ class TestNodeContributorDelete(ApiTestCase):
         assert_in(self.user, self.project.contributors)
 
 
-
 class TestNodeRegistrationList(ApiTestCase):
     def setUp(self):
         super(TestNodeRegistrationList, self).setUp()
