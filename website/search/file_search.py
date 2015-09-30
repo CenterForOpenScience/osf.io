@@ -11,7 +11,7 @@ def build_file_body(file_node, parent=None, content=None):
         'name': file_node.name,
         'path': file_node._id,
         'parent': parent._id,
-        'attachment': base64.encodestring(content),
+        'attachment': base64.encodestring(content or ""),
         'category': 'file'
     }
     return file_doc
