@@ -12,6 +12,7 @@ var siteLicenses = require('js/licenses');
 var licenses = siteLicenses.list;
 var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
 var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;
+var licenseGroups = siteLicenses.groups;
 
 var LICENSE_PROPERTIES = {
     'year': 'Year',
@@ -52,6 +53,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         self.previewing = ko.observable(false);
 
         self.licenses = licenses;
+        self.licenseGroups = licenseGroups;
 
         license = license || DEFAULT_LICENSE;
 
@@ -75,9 +77,12 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
                 return self.selectedLicense().id;
             },
             write: function(id) {
-                self.selectedLicense(self.licenses.filter(function(l) {
+                var selected  = self.licenses.filter(function(l) {
                     return l.id === id;
-                })[0]);
+                })[0];
+                if (selected) {
+                    self.selectedLicense(selected);
+                }
             }
         });
         self.selectedLicenseId(license.id);
@@ -133,7 +138,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         });
 
         self.disableSave = ko.computed(function() {
-            return !self.validProps() || !self.dirty() && self.selectedLicenseId() === self.savedLicenseId();
+            return (self.selectedLicenseId() !== DEFAULT_LICENSE.id) && (!self.validProps() || !self.dirty() && self.selectedLicenseId() === self.savedLicenseId());
         });
 
         self.allowEdit = ko.pureComputed(function() {
@@ -179,7 +184,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
     save: function() {
         var self = this;
 
-        if (!self.validProps()) {
+        if (self.disableSave()) {
             return;
         }
 
