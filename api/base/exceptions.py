@@ -3,12 +3,10 @@ import httplib as http
 from rest_framework import status
 from rest_framework.exceptions import APIException, ParseError
 
-def json_api_exception_handler(exc, context):
-    """ Custom exception handler that returns errors object as an array """
-
-    # Import inside method to avoid errors when the OSF is loaded without Django
-    from rest_framework.views import exception_handler
-    response = exception_handler(exc, context)
+def dict_error_formatting(errors, error):
+    """
+    Formats all dictionary error messages for both single and bulk requests
+    """
 
     # Error objects may have the following members. Title and id removed to avoid clash with "title" and "id" field errors.
     top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
@@ -16,24 +14,27 @@ def json_api_exception_handler(exc, context):
     # Resource objects must contain at least 'id' and 'type'
     resource_object_identifiers = ['type', 'id']
 
+    for error_key, error_description in error.iteritems():
+        if isinstance(error_description, basestring):
+            error_description = [error_description]
+
+        if error_key in top_level_error_keys:
+            errors.append({error_key: error_description[0]})
+        elif error_key in resource_object_identifiers:
+            errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
+        elif error_key == 'non_field_errors':
+                errors.extend([{'detail': description for description in error_description}])
+        else:
+            errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason} for reason in error_description])
+
+def json_api_exception_handler(exc, context):
+    """ Custom exception handler that returns errors object as an array """
+
+    # Import inside method to avoid errors when the OSF is loaded without Django
+    from rest_framework.views import exception_handler
+    response = exception_handler(exc, context)
+
     errors = []
-
-    def dict_error_formatting(errors, error):
-        """
-        Formats all dictionary error messages for both single and bulk requests
-        """
-        for error_key, error_description in error.iteritems():
-            if isinstance(error_description, basestring):
-                error_description = [error_description]
-
-            if error_key in top_level_error_keys:
-                errors.append({error_key: error_description[0]})
-            elif error_key in resource_object_identifiers:
-                errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
-            elif error_key == 'non_field_errors':
-                    errors.extend([{'detail': description for description in error_description}])
-            else:
-                errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason} for reason in error_description])
 
     if response:
         message = response.data

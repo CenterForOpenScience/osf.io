@@ -38,6 +38,7 @@ from website.notifications.events.files import FileEvent  # noqa
 FILE_GONE_ERROR_MESSAGE = u'''
 <style>
 .file-download{{display: none;}}
+.file-share{{display: none;}}
 .file-delete{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
@@ -331,6 +332,12 @@ def create_waterbutler_log(payload, **kwargs):
                 source_addon=payload['source']['addon'],
                 destination_addon=payload['destination']['addon'],
             )
+
+        if payload.get('error'):
+            # Action failed but our function succeeded
+            # Bail out to avoid file_signals
+            return {'status': 'success'}
+
     else:
         try:
             metadata = payload['metadata']

@@ -33,19 +33,18 @@ class JSONAPINodeListSerializer(JSONAPIListSerializer):
     the request to be in the serializer context.
     """
 
-    # Overrides JSONAPIListSerialize which doesn't support multiple update by default.
+    # Overrides JSONAPIListSerializer which doesn't support multiple update by default.
     def update(self, instance, validated_data):
+        if len(instance) != len(validated_data):
+            raise exceptions.NotFound()
+        node_mapping = {item._id: item for item in instance}
         data_mapping = {item.get('_id', None): item for item in validated_data}
-        request = self.context['request']
-        auth = Auth(request.user)
+
         ret = []
         for node_id, data in data_mapping.items():
-            node = get_object_or_error(Node, node_id, 'node')
-            if node.can_edit(auth) is False:
-                raise exceptions.PermissionDenied()
-            data_mapping[node_id] = [node, data]
-        for node_id, data_list in data_mapping.items():
-            ret.append(self.child.update(data_list[0], data_list[1]))
+            node = node_mapping.get(node_id, None)
+
+            ret.append(self.child.update(node, data))
         return ret
 
     class Meta:
@@ -242,9 +241,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
     filterable_fields = frozenset([
-        'fullname',
+        'full_name',
         'given_name',
-        'middle_name',
+        'middle_names',
         'family_name',
         'id',
         'bibliographic',
@@ -256,7 +255,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     full_name = ser.CharField(source='fullname', read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
+    middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
     family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)

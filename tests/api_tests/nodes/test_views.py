@@ -768,6 +768,36 @@ class TestNodeBulkUpdate(ApiTestCase):
             {'id': self.public_project_two._id, 'type': 'nodes', 'attributes': {'title': "", 'description': "", "category": ""}}
         ]}
 
+    def test_bulk_update_blank_but_not_empty_title(self):
+        payload = {
+            "data": [
+                {
+                  "id": self.public_project._id,
+                  "type": "nodes",
+                  "attributes": {
+                    "title": "This shouldn't update.",
+                    "category": "instrumentation"
+                  }
+                },
+                {
+                  "id": self.public_project_two._id,
+                  "type": "nodes",
+                  "attributes": {
+                    "title": " ",
+                    "category": "hypothesis"
+                  }
+                }
+              ]
+            }
+        url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        res = self.app.put_json_api(self.url, payload, auth=self.user.auth, expect_errors=True)
+        print res
+        assert_equal(res.status_code, 400)
+
+        res = self.app.get(url)
+        print res
+        assert_equal(res.json['data']['attributes']['title'], self.title)
+
     def test_bulk_update_with_tags(self):
         new_payload = {'data': [{'id': self.public_project._id, 'type': 'nodes', 'attributes': {'title': 'New title', 'category': 'project', 'tags': ['new tag']}}]}
 

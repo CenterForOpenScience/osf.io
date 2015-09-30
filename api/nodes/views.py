@@ -4,7 +4,7 @@ from modularodm import Q
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework_bulk.generics import ListBulkCreateUpdateDestroyAPIView
+from rest_framework_bulk import generics as bulk_generics
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
 from rest_framework.status import is_server_error
 
@@ -130,8 +130,8 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
-    """Projects and components.
+class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
+    """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
     node, meaning additional requests to an individual node's detail view are not necessary.
@@ -234,8 +234,23 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
 
     # overrides ListBulkCreateUpdateDestroyAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        return Node.find(query)
+        if isinstance(self.request.data, list):
+            query = Q('_id', 'in', [node['id'] for node in self.request.data])
+
+            user = self.request.user
+            if user.is_anonymous():
+                auth = Auth(None)
+            else:
+                auth = Auth(user)
+
+            nodes = Node.find(query)
+            for node in nodes:
+                if not node.can_edit(auth):
+                    raise PermissionDenied()
+            return nodes
+        else:
+            query = self.get_query_from_request()
+            return Node.find(query)
 
     # overrides ListBulkCreateUpdateDestroyAPIView
     def get_serializer(self, *args, **kwargs):
@@ -266,7 +281,7 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
         """
         Correctly formats both bulk and single POST response
         """
-        response = ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
+        response = bulk_generics.ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
         if 'data' in response.data:
             return response
         return Response({'data': response.data}, status=status.HTTP_201_CREATED)
@@ -286,7 +301,7 @@ class NodeList(ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
         """
         Correctly formats bulk PUT/PATCH response
         """
-        response = ListBulkCreateUpdateDestroyAPIView.bulk_update(self, request, *args, **kwargs)
+        response = bulk_generics.ListBulkCreateUpdateDestroyAPIView.bulk_update(self, request, *args, **kwargs)
         return Response({'data': response.data}, status=status.HTTP_200_OK)
 
     # Overrides ListBulkCreateUpdateDestroyAPIView
