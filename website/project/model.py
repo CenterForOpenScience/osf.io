@@ -2631,7 +2631,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
             if auth and not skip_mail:
-                project_signals.set_privacy_public.send(user=auth.user, node=self)
+                project_signals.set_privacy_public.send(auth.user, node=self)
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:

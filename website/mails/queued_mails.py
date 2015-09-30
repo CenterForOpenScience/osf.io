@@ -8,7 +8,6 @@ from website import settings
 from website.mails import mail_presends
 
 
-
 class QueuedMail(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
     user = fields.ForeignField('User', index=True, required=True)
