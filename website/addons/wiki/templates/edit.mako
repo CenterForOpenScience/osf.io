@@ -152,8 +152,8 @@
                                       </a></li>
                                   <!-- /ko -->
                               </ul>
-                              <div id="wmd-button-bar"></div>
 
+                              <div id="wmd-button-bar" style="display:inline"></div>
                               <div id="editor" class="wmd-input wiki-editor"
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
