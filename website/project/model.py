@@ -627,6 +627,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
 
+    is_conference_node = fields.BooleanField(default=False)
+
     title = fields.StringField(validate=validate_title)
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
@@ -2630,8 +2632,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 if self.embargo_end_date and not self.is_pending_embargo:
                     self.embargo.state = Embargo.REJECTED
                     self.embargo.save()
-            if auth and not skip_mail:
-                project_signals.set_privacy_public.send(auth.user, node=self)
+            if auth:
+                project_signals.set_privacy_public.send(auth.user, node=self, skip_mail=skip_mail)
             self.is_public = True
         elif permissions == 'private' and self.is_public:
             if self.is_registration and not self.is_pending_embargo:

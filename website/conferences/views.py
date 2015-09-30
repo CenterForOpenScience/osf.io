@@ -93,6 +93,8 @@ def add_poster_by_email(conference, message):
         node, node_created = utils.get_or_create_node(message.subject, user)
         if node_created:
             created.append(node)
+            node.is_conference_node = True
+            node.save()
 
         utils.provision_node(conference, message, node, user)
         utils.record_message(message, created)

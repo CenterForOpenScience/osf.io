@@ -25,22 +25,23 @@ def queue_no_addon_email(user):
     )
 
 @project_signals.set_privacy_public.connect
-def queue_first_public_project_email(user, node):
+def queue_first_public_project_email(user, node, skip_mail):
     """Queue and email after user has made their first
     non-OSF4M project public.
     """
-    sent_mail = mails.QueuedMail.find(Q('user', 'eq', user) & Q('sent_at', 'ne', None) &
-                                      Q('email_type', 'eq', mails.NEW_PUBLIC_PROJECT_TYPE))
-    if not sent_mail.count():
-        mails.queue_mail(
-            to_addr=user.username,
-            mail=mails.NEW_PUBLIC_PROJECT,
-            send_at=datetime.utcnow() + settings.NEW_PUBLIC_PROJECT_WAIT_TIME,
-            user=user,
-            nid=node._id,
-            fullname=user.fullname,
-            project_title=node.title
-        )
+    if not skip_mail:
+        sent_mail = mails.QueuedMail.find(Q('user', 'eq', user) & Q('sent_at', 'ne', None) &
+                                          Q('email_type', 'eq', mails.NEW_PUBLIC_PROJECT_TYPE))
+        if not sent_mail.count():
+            mails.queue_mail(
+                to_addr=user.username,
+                mail=mails.NEW_PUBLIC_PROJECT,
+                send_at=datetime.utcnow() + settings.NEW_PUBLIC_PROJECT_WAIT_TIME,
+                user=user,
+                nid=node._id,
+                fullname=user.fullname,
+                project_title=node.title
+            )
 
 @conference_signals.osf4m_new_user.connect
 def queue_osf4m_welcome_email(user, conference, node):
