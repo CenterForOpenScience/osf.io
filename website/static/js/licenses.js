@@ -27,7 +27,7 @@ var licenseGroups = [
         licenses: [licenses.CC0, licenses.CCBY]
     },
     {
-        name: 'Code = Permissive:',
+        name: 'Code - Permissive:',
         licenses: [licenses.MIT, licenses.Apache2, licenses.BSD2, licenses.BSD3]
     },
     {
