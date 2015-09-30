@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+import time
 import unittest
 import logging
+import functools
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
@@ -22,7 +24,6 @@ from tests.factories import (
 )
 
 TEST_INDEX = 'test'
-
 
 @requires_search
 class SearchTestCase(OsfTestCase):
@@ -47,6 +48,23 @@ def query(term):
 def query_user(name):
     term = 'category:user AND "{}"'.format(name)
     return query(term)
+
+
+def retry_assertion(interval=0.3
+                    , retries=3):
+    def test_wrapper(func):
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            try:
+                func(*args, **kwargs)
+            except AssertionError as e:
+                if retries:
+                    time.sleep(interval)
+                    retry_assertion(interval=interval, retries=retries - 1)(func)(*args, **kwargs)
+                else:
+                    raise e
+        return wrapped
+    return test_wrapper
 
 
 @requires_search
@@ -184,6 +202,55 @@ class TestProject(SearchTestCase):
         docs = query(self.project.title)['results']
         assert_equal(len(docs), 1)
 
+
+@requires_search
+class TestNodeSearch(SearchTestCase):
+
+    def setUp(self):
+        super(TestNodeSearch, self).setUp()
+        self.node = ProjectFactory(is_public=True, title='node')
+        self.public_child = ProjectFactory(parent=self.node, is_public=True, title='public_child')
+        self.private_child = ProjectFactory(parent=self.node, title='private_child')
+        self.public_subchild = ProjectFactory(parent=self.private_child, is_public=True)
+        
+        self.node.node_license = {
+            'name': 'A License',
+            'text': 'A good license'
+        }
+        self.node.save()
+
+        self.query = 'category:project & category:component'
+
+    @retry_assertion()
+    def test_node_license_added_to_search(self):
+        docs = query(self.query)['results']
+        node = [d for d in docs if d['title'] == self.node.title][0]
+        assert_in('license', node)
+        assert_equal(node['license'], self.node.node_license)
+
+    @retry_assertion()
+    def test_node_license_propogates_to_children(self):
+        docs = query(self.query)['results']
+        child = [d for d in docs if d['title'] == self.public_child.title][0]        
+        assert_in('license', child)
+        assert_equal(child['license'], self.node.node_license)
+        child = [d for d in docs if d['title'] == self.public_subchild.title][0]        
+        assert_in('license', child)
+        assert_equal(child['license'], self.node.node_license)
+
+    @retry_assertion()
+    def test_node_license_updates_correctly(self):
+
+        new_license = {
+            'name': 'A Name',
+            'text': 'A not so good license'
+        }
+        self.node.node_license = new_license
+        self.node.save()
+
+        docs = query(self.query)['results']
+        for doc in docs:
+            assert_equal(doc['license'], new_license)
 
 @requires_search
 class TestRegistrationRetractions(SearchTestCase):
