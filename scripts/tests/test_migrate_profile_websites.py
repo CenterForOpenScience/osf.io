@@ -1,4 +1,4 @@
-from tests.factories import AuthUserFactory
+from tests.factories import UserFactory
 from nose.tools import *
 from tests.base import OsfTestCase
 from scripts.migration.migrate_personal_to_profile_websites import main, get_users_with_social_field
@@ -8,7 +8,7 @@ class TestMigrateProfileWebsites(OsfTestCase):
 
     def setUp(self):
         super(TestMigrateProfileWebsites, self).setUp()
-        self.user_one = AuthUserFactory.build(
+        self.user_one = UserFactory.build(
             fullname='Martin Luther King',
             social=dict(
                 github='userOneGithub',
@@ -23,7 +23,7 @@ class TestMigrateProfileWebsites(OsfTestCase):
         )
         self.user_one.save()
 
-        self.user_two = AuthUserFactory.build(
+        self.user_two = UserFactory.build(
             fullname='el-Hajj Malik el-Shabazz',
             social=dict(
                 github='userTwoGithub',
@@ -37,7 +37,8 @@ class TestMigrateProfileWebsites(OsfTestCase):
             )
         )
         self.user_two.save()
-        self.user_three = AuthUserFactory()
+
+        self.user_three = UserFactory()
 
     def tearDown(self):
         super(TestMigrateProfileWebsites, self).tearDown()
