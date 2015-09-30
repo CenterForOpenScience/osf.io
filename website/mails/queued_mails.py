@@ -5,7 +5,7 @@ from modularodm import fields, Q
 from framework.mongo import StoredObject
 from .mails import Mail, send_mail
 from website import settings
-from website.mails import mail_presends
+from website.mails import presends
 
 
 class QueuedMail(StoredObject):
@@ -95,32 +95,32 @@ def queue_mail(to_addr, mail, send_at, user, **context):
 #EMAIL_TYPE = {
 #    'template': the mako template used for email_type,
 #    'subject': subject used for the actual email,
-#    'presend': function undes mail_presends that can modify mail.data and decides whether the email should be sent,
+#    'presend': function undes presends that can modify mail.data and decides whether the email should be sent,
 #               by returning a boolean.
 #}
 
 NO_ADDON = {
     'template': 'no_addon',
     'subject': 'Link an add-on to your OSF project',
-    'presend': mail_presends.no_addon
+    'presend': presends.no_addon
 }
 
 NO_LOGIN = {
     'template': 'no_login',
     'subject': 'What you\'re missing on the OSF',
-    'presend': mail_presends.no_login
+    'presend': presends.no_login
 }
 
 NEW_PUBLIC_PROJECT = {
     'template': 'new_public_project',
     'subject': 'Now, public. Next, impact.',
-    'presend': mail_presends.new_public_project
+    'presend': presends.new_public_project
 }
 
 WELCOME_OSF4M = {
     'template': 'welcome_osf4m',
     'subject': 'The benefits of sharing your presentation',
-    'presend': mail_presends.welcome_osf4m
+    'presend': presends.welcome_osf4m
 }
 
 NO_ADDON_TYPE = 'no_addon'
