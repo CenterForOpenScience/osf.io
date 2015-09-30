@@ -78,7 +78,7 @@ class TestUsers(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         for user in user_json:
-            profile_image_url = user['attributes']['profile_image_url']
+            profile_image_url = user['links']['profile_image']
             query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
             assert_equal(int(query_dict.get('s')[0]), size)
 
@@ -142,9 +142,15 @@ class TestUserDetail(ApiTestCase):
         url = "/{}users/{}/?profile_image_size={}".format(API_BASE, self.user_one._id, size)
         res = self.app.get(url)
         user_json = res.json['data']
-        profile_image_url = user_json['attributes']['profile_image_url']
+        profile_image_url = user_json['links']['profile_image']
         query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
         assert_equal(int(query_dict.get('s')[0]), size)
+
+    def test_profile_image_in_links(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        assert_in('profile_image', user_json['links'])
 
 
 class TestUserNodes(ApiTestCase):
