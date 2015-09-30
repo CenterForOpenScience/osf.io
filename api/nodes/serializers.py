@@ -35,17 +35,17 @@ class JSONAPINodeListSerializer(JSONAPIListSerializer):
 
     # Overrides JSONAPIListSerialize which doesn't support multiple update by default.
     def update(self, instance, validated_data):
+        if len(instance) != len(validated_data):
+            raise exceptions.NotFound()
+        node_mapping = {item._id: item for item in instance}
         data_mapping = {item.get('_id', None): item for item in validated_data}
-        request = self.context['request']
-        auth = Auth(request.user)
+
+        auth = Auth(self.context['request'].user)
         ret = []
         for node_id, data in data_mapping.items():
-            node = get_object_or_error(Node, node_id, 'node')
-            if node.can_edit(auth) is False:
-                raise exceptions.PermissionDenied()
-            data_mapping[node_id] = [node, data]
-        for node_id, data_list in data_mapping.items():
-            ret.append(self.child.update(data_list[0], data_list[1]))
+            node = node_mapping.get(node_id, None)
+
+            ret.append(self.child.update(node, data))
         return ret
 
     class Meta:
