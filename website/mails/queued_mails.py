@@ -130,8 +130,8 @@ WELCOME_OSF4M_TYPE = 'welcome_osf4m'
 
 # Used to keep relationship from stored string 'email_type' to the predefined queued_email objects.
 queue_mail_types = {
-    'no_addon': NO_ADDON,
-    'no_login': NO_LOGIN,
-    'new_public_project': NEW_PUBLIC_PROJECT,
-    'welcome_osf4m': WELCOME_OSF4M
+    NO_ADDON_TYPE: NO_ADDON,
+    NO_LOGIN_TYPE: NO_LOGIN,
+    NEW_PUBLIC_PROJECT_TYPE: NEW_PUBLIC_PROJECT,
+    WELCOME_OSF4M_TYPE: WELCOME_OSF4M
 }
