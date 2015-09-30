@@ -614,9 +614,7 @@ SocialViewModel.prototype.serialize = function() {
     var profileWebsites = serializedData.profileWebsites;
     serializedData.profileWebsites = profileWebsites.filter(
         function (value) {
-            if (value) {
-                return value;
-            }
+            return value;
         }
     );
     return serializedData;
