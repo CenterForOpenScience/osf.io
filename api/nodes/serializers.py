@@ -33,7 +33,7 @@ class JSONAPINodeListSerializer(JSONAPIListSerializer):
     the request to be in the serializer context.
     """
 
-    # Overrides JSONAPIListSerialize which doesn't support multiple update by default.
+    # Overrides JSONAPIListSerializer which doesn't support multiple update by default.
     def update(self, instance, validated_data):
         if len(instance) != len(validated_data):
             raise exceptions.NotFound()

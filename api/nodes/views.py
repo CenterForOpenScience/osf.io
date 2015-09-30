@@ -130,7 +130,7 @@ class WaterButlerMixin(object):
 
 
 class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
-    """Projects and components.
+    """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
     node, meaning additional requests to an individual node's detail view are not necessary.
