@@ -40,7 +40,6 @@ class JSONAPINodeListSerializer(JSONAPIListSerializer):
         node_mapping = {item._id: item for item in instance}
         data_mapping = {item.get('_id', None): item for item in validated_data}
 
-        auth = Auth(self.context['request'].user)
         ret = []
         for node_id, data in data_mapping.items():
             node = node_mapping.get(node_id, None)
