@@ -57,11 +57,12 @@ class CommentSerializer(JSONAPISerializer):
         assert isinstance(comment, Comment), 'comment must be a Comment'
         auth = Auth(self.context['request'].user)
         if validated_data:
-            comment.edit(validated_data['content'], auth=auth, save=True)
+            if validated_data.get('content', None):
+                comment.edit(validated_data['content'], auth=auth, save=True)
             is_deleted = validated_data.get('is_deleted', None)
             if is_deleted:
                 comment.delete(auth, save=True)
-            elif is_deleted == False:
+            elif comment.is_deleted:
                 comment.undelete(auth, save=True)
         return comment
 
