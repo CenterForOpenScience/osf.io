@@ -2,6 +2,16 @@
 Changelog
 *********
 
+0.51.0 (2015-09-24)
+===================
+
+- Alpha release of API v2.
+
+0.50.0 (2015-09-17)
+===================
+
+- Migration of all addon file collecitons to a single GuidFile collection.
+
 0.49.0 (2015-09-11)
 ===================
 

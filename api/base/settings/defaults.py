@@ -61,11 +61,11 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'api.base.renderers.JSONAPIRenderer',
         'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
+        'api.base.renderers.BrowsableAPIRendererNoForms',
     ),
     'DEFAULT_PARSER_CLASSES': (
         'api.base.parsers.JSONAPIParser',
-        'rest_framework.parsers.JSONParser',
+        'api.base.parsers.JSONAPIParserForRegularJSON',
         'rest_framework.parsers.FormParser',
         'rest_framework.parsers.MultiPartParser'
     ),
@@ -174,9 +174,9 @@ SWAGGER_SETTINGS = {
         <p> Collections can be filtered by adding a query parameter in the form:</p>
         <pre>filter[&lt;fieldname&gt;]=&lt;matching information&gt;</pre>
         <p>For example, if you were trying to find <a href="http://en.wikipedia.org/wiki/Lise_Meitner">Lise Meitner</a>:</p>
-        <pre>/users?filter[fullname]=meitn</pre>
+        <pre>/users?filter[full_name]=meitn</pre>
         <p>You can filter on multiple fields, or the same field in different ways, by &-ing the query parameters together.</p>
-        <pre>/users?filter[fullname]=lise&filter[family_name]=mei</pre>
+        <pre>/users?filter[full_name]=lise&filter[family_name]=mei</pre>
         <h3>Links</h3>
         <p> Responses will generally have associated links which are helpers to keep you from having to construct URLs in
         your code or by hand. If you know the route to a high-level resource, you can go to that route. For example:</p>

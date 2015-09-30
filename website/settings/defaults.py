@@ -231,9 +231,6 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 # and uploads in order to save disk space.
 DISK_SAVING_MODE = False
 
-# Add Contributors (most in common)
-MAX_MOST_IN_COMMON_LENGTH = 15
-
 # Seconds before another notification email can be sent to a contributor when added to a project
 CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
 

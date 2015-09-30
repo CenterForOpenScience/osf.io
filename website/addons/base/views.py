@@ -1,5 +1,4 @@
 import os
-import json
 import uuid
 import httplib
 import functools
@@ -39,6 +38,7 @@ from website.notifications.events.files import FileEvent  # noqa
 FILE_GONE_ERROR_MESSAGE = u'''
 <style>
 .file-download{{display: none;}}
+.file-share{{display: none;}}
 .file-delete{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
@@ -550,7 +550,7 @@ def addon_view_file(auth, node, file_node, version):
         'sharejs_uuid': sharejs_uuid,
         'provider': file_node.provider,
         'materialized_path': file_node.materialized_path,
-        'extra': json.dumps(version.metadata.get('extra', {})),
+        'extra': version.metadata.get('extra', {}),
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
     })
