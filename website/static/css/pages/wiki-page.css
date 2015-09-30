@@ -314,7 +314,6 @@
 }
 
 select.form-control {
-    width: inherit;
     padding:1px;
     display: inline;
     height: 24px;
