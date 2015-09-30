@@ -15,7 +15,7 @@ class TestMigrateMailingLists(OsfTestCase):
         self.user2.save()
 
     def test_get_users_with_mailing_lists(self):
-        users_with_mailing_list_ids = [user._id for user in list(get_users_with_no_mailchimp_mailing_lists())]
+        users_with_mailing_list_ids = [user._id for user in get_users_with_no_mailchimp_mailing_lists()]
 
         assert_equal(len(users_with_mailing_list_ids), 2)
 
