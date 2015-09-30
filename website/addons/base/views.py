@@ -331,6 +331,12 @@ def create_waterbutler_log(payload, **kwargs):
                 source_addon=payload['source']['addon'],
                 destination_addon=payload['destination']['addon'],
             )
+
+        if payload.get('error'):
+            # Action failed but our function succeeded
+            # Bail out to avoid file_signals
+            return {'status': 'success'}
+
     else:
         try:
             metadata = payload['metadata']
