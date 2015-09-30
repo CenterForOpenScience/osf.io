@@ -2551,7 +2551,6 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
                            ['admin', 'read', 'read'])
 
 
-
 class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
     def setUp(self):

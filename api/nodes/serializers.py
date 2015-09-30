@@ -223,14 +223,16 @@ class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
 
     # Overrides JSONAPIListSerializer which doesn't support multiple update by default.
     def update(self, instance, validated_data):
+        if len(instance) != len(validated_data):
+            raise exceptions.NotFound()
+        contrib_mapping = {contrib._id: contrib for contrib in instance}
         data_mapping = {item.get('_id', None): item for item in validated_data}
+
         ret = []
         for user_id, data in data_mapping.items():
-            contributor = get_object_or_error(User, user_id, 'contributor')
-            data_mapping[user_id] = [contributor, data]
+            contributor = contrib_mapping.get(user_id, None)
+            ret.append(self.child.update(contributor, data))
 
-        for user_id, data in data_mapping.items():
-            ret.append(self.child.update(data[0], data[1]))
         return ret
 
     class Meta:

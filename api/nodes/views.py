@@ -568,7 +568,13 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
 
     # overrides ListAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        queryset = self.get_queryset_from_request()
+
+        if isinstance(self.request.data, list):
+            contrib_ids = [item['id'] for item in self.request.data]
+            queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
+
+        return queryset
 
         # overrides ListBulkCreateUpdateDestroyAPIView
     def get_serializer(self, *args, **kwargs):
@@ -649,6 +655,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError("Must have at least one registered admin contributor")
+
 
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node. *Writeable*.
