@@ -168,9 +168,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
     filterable_fields = frozenset([
-        'fullname',
+        'full_name',
         'given_name',
-        'middle_name',
+        'middle_names',
         'family_name',
         'id',
         'bibliographic',
@@ -182,7 +182,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     full_name = ser.CharField(source='fullname', read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
+    middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
     family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
