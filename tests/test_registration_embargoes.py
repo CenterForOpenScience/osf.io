@@ -3,6 +3,8 @@ import datetime
 import httplib as http
 import json
 
+from modularodm import Q
+
 import mock
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
@@ -76,7 +78,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         self.registration.save()
         self.registration.reload()
-        assert_equal(len(self.user.embargo__embargoed), 1)
+        assert_equal(len(self.user.embargo__embargoed),
+            Embargo.find(Q('initiated_by', 'eq', self.user)).count())
 
     # Node#embargo_registration tests
     def test_embargo_from_non_admin_raises_PermissionsError(self):
