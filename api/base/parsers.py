@@ -15,6 +15,22 @@ class JSONAPIParser(JSONParser):
     media_type = 'application/vnd.api+json'
     renderer_class = JSONAPIRenderer
 
+    def data_flattener(self, resource_object, stream):
+        """
+        Flattens data objects, making attributes fields the same level as id and type.
+        """
+        if "attributes" not in resource_object and stream.method != 'DELETE':
+            raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
+        id = resource_object.get('id')
+        object_type = resource_object.get('type')
+        attributes = resource_object.get('attributes')
+
+        parsed = {'id': id, 'type': object_type}
+        if attributes:
+            parsed.update(attributes)
+
+        return parsed
+
     # Overrides JSONParser
     def parse(self, stream, media_type=None, parser_context=None):
         """
@@ -25,32 +41,16 @@ class JSONAPIParser(JSONParser):
             raise ParseError()
         data = result.get('data', {})
 
-        def data_flattener(resource_object, stream):
-            """
-            Flattens data objects, making attributes fields the same level as id and type.
-            """
-            if "attributes" not in resource_object and stream.method != 'DELETE':
-                    raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
-            id = resource_object.get('id')
-            object_type = resource_object.get('type')
-            attributes = resource_object.get('attributes')
-
-            parsed = {'id': id, 'type': object_type}
-            if attributes:
-                parsed.update(attributes)
-
-            return parsed
-
         if data:
             if isinstance(data, list):
                 data_collection = []
                 for data_object in data:
-                    parsed_data = data_flattener(data_object, stream)
+                    parsed_data = self.data_flattener(data_object, stream)
                     data_collection.append(parsed_data)
                 return data_collection
 
             else:
-                return data_flattener(data, stream)
+                return self.data_flattener(data, stream)
 
         else:
             raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
