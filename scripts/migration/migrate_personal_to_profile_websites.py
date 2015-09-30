@@ -20,10 +20,9 @@ def main():
     for user in get_users_with_social_field():
         all_users += 1
         if not user.social.get('profileWebsites', None):
-            user.social['profileWebsites'] = []
-            if user.social.get('personal'):
-                migrate_personal_to_profile_websites(user)
-                migrated_users += 1
+            personal = user.social.get('personal', None)
+            user.social['profileWebsites'] = [personal] if personal else []
+            migrated_users += 1
         logger.info("{}'s social dictionary is now {}".format(user.social, user.fullname))
         user.save()
     logger.info("merged {} users to profileWebsites out of {} total users".format(migrated_users, all_users))
@@ -34,9 +33,6 @@ def get_users_with_social_field():
         Q('social', 'ne', {})
     )
 
-
-def migrate_personal_to_profile_websites(user):
-    user.social['profileWebsites'].append(user.social.get('personal'))
 
 if __name__ == '__main__':
     main()
