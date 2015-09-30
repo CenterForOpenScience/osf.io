@@ -209,14 +209,15 @@ var FileViewPage = {
                         $osf.growl('Error', msg);
                         return '      ';
                     } else {
+                        msg = response.responseJSON.message_long;
                         // Log unexpected error with Raven
                         Raven.captureMessage('Error in renaming file', {
                             url: waterbutler.moveUrl(),
                             responseText: response.responseText,
                             statusText: response.statusText
                         });
-                        $osf.growl('Error', 'Error in renaming file.');
-                        return 'Unknown error';
+                        $osf.growl('Error', 'Error in renaming file. ' + msg);
+                        return '   ';
                     }
                 }
             });
