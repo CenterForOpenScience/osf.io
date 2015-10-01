@@ -24,7 +24,7 @@ def queue_no_addon_email(user):
         fullname=user.fullname
     )
 
-@project_signals.set_privacy_public.connect
+@project_signals.privacy_set_public.connect
 def queue_first_public_project_email(user, node, meeting_creation):
     """Queue and email after user has made their first
     non-OSF4M project public.
@@ -43,7 +43,7 @@ def queue_first_public_project_email(user, node, meeting_creation):
                 project_title=node.title
             )
 
-@conference_signals.osf4m_new_user.connect
+@conference_signals.osf4m_user_created.connect
 def queue_osf4m_welcome_email(user, conference, node):
     """Queue an email once a new user is created for OSF for Meetings"""
     root_id = (node.get_addon('osfstorage')).root_node._id

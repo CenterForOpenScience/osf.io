@@ -627,8 +627,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
 
-    is_conference_node = fields.BooleanField(default=False)
-
     title = fields.StringField(validate=validate_title)
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
@@ -2660,7 +2658,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if save:
             self.save()
         if auth and permissions == 'public':
-            project_signals.set_privacy_public.send(auth.user, node=self, meeting_creation=meeting_creation)
+            project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
         return True
 
     def admin_public_wiki(self, user):

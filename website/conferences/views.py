@@ -80,7 +80,7 @@ def add_poster_by_email(conference, message):
         )
         if user_created:
             created.append(user)
-            user.is_conference_user = True
+            user.system_tags.append('osf4m')
             set_password_url = web_url_for(
                 'reset_password',
                 verification_key=user.verification_key,
@@ -93,7 +93,7 @@ def add_poster_by_email(conference, message):
         node, node_created = utils.get_or_create_node(message.subject, user)
         if node_created:
             created.append(node)
-            node.is_conference_node = True
+            node.system_tags.append('osf4m')
             node.save()
 
         utils.provision_node(conference, message, node, user)
@@ -129,7 +129,7 @@ def add_poster_by_email(conference, message):
         is_spam=message.is_spam,
     )
     if node_created and user_created:
-        signals.osf4m_new_user.send(user, conference=conference, node=node)
+        signals.osf4m_user_created.send(user, conference=conference, node=node)
 
 
 def _render_conference_node(node, idx, conf):

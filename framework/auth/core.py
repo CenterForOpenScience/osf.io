@@ -297,10 +297,8 @@ class User(GuidStoredObject, AddonModelMixin):
     #    ...
     # }
 
-    osf_mailing_default = {settings.OSF_HELP_LIST: True}
-
     # email lists to which the user has chosen a subscription setting, being sent from osf, rather than mailchimp
-    osf_mailing_lists = fields.DictionaryField(default=osf_mailing_default)
+    osf_mailing_lists = fields.DictionaryField(default=lambda: {settings.OSF_HELP_LIST: True})
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -387,9 +385,6 @@ class User(GuidStoredObject, AddonModelMixin):
 
     # user language and locale data (e.g. 'en_US')
     locale = fields.StringField(default='en_US')
-
-    # created through osf for meetings:
-    is_conference_user = fields.BooleanField(default=False)
 
     _meta = {'optimistic': True}
 

@@ -4,4 +4,4 @@ import blinker
 
 signals = blinker.Namespace()
 
-osf4m_new_user = signals.signal('osf4m-new-user')
+osf4m_user_created = signals.signal('osf4m-user-created')
