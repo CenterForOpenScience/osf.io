@@ -34,7 +34,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
 )
-from api.base.exceptions import ServiceUnavailableError
+from api.base.exceptions import ServiceUnavailableError, Conflict
 
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
@@ -312,9 +312,18 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
         """
         user = self.request.user
         node_list = []
+        object_type = 'nodes'
+
         if not request.data or 'csrfmiddlewaretoken' in request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
+
+        if not isinstance(request.data, list):
+            raise ValidationError('Expected type "list".')
+
         for item in request.data:
+            item_type = item[u'type']
+            if item_type != object_type:
+                raise Conflict()
             node = get_object_or_error(Node, item[u'id'], display_name='node')
             node_list.append(node)
             if not node.can_edit(Auth(user)):
@@ -623,13 +632,22 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
     # Overrides ListBulkCreateUpdateDestroyAPIView
     def bulk_destroy(self, request, *args, **kwargs):
         """
-        Handles bulk destroy of contributors. Handles permissions and enforces bulk limit.
+        Handles bulk destroy of contributors. Handles validation and enforces bulk limit.
         """
-        user = self.request.user
         contrib_list = []
+        object_type = 'contributors'
+
         if not request.data or 'csrfmiddlewaretoken' in request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
+
+        if not isinstance(request.data, list):
+            raise ValidationError('Expected type "list".')
+
         for item in request.data:
+            item_type = item[u'type']
+            if item_type != object_type:
+                raise Conflict()
+
             user = get_object_or_error(User, item[u'id'], display_name='node')
             contrib_list.append(user)
 
@@ -1037,10 +1055,15 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
         """
         user = self.request.user
         pointer_list = []
+        object_type = 'node_links'
+
 
         # Requires that bulk delete must have request body
         if not request.data or 'csrfmiddlewaretoken' in request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
+
+        if not isinstance(request.data, list):
+            raise ValidationError('Expected type "list".')
 
         node = get_object_or_error(Node, kwargs['node_id'], display_name='node')
         if not node.can_edit(Auth(user)) or node.is_registration:
@@ -1049,6 +1072,9 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
         # TODO validation once rollback of bulk requests complete
         pointer_dict = {pointer._id: pointer for pointer in node.nodes}
         for item in request.data:
+            item_type = item[u'type']
+            if item_type != object_type:
+                raise Conflict()
             if item['id'] not in pointer_dict:
                 raise ValidationError('Node link does not belong to the requested node.')
             pointer_list.append(pointer_dict[item['id']])

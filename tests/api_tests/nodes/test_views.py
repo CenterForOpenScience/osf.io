@@ -1182,19 +1182,39 @@ class TestNodeBulkDelete(ApiTestCase):
         self.private_project_url = "/{}nodes/{}/".format(API_BASE, self.private_project_user_one._id)
 
         self.public_payload = {'data': [{'id': self.project_one._id, 'type': 'nodes'}, {'id': self.project_two._id, 'type': 'nodes'}]}
-        self.private_payload = {'data': [{'id': self.private_project_user_one._id}]}
+        self.private_payload = {'data': [{'id': self.private_project_user_one._id, 'type': 'nodes'}]}
 
     def test_bulk_delete_no_type(self):
         payload = {'data': [
             {'id': self.project_one._id},
             {'id': self.project_two._id}
         ]}
-        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth)
+        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/type.')
+
+    def test_bulk_delete_no_id(self):
+        payload = {'data': [
+            {'type': 'nodes'},
+            {'id': 'nodes'}
+        ]}
+        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/id.')
+
+    def test_bulk_delete_dict_inside_data(self):
+        res = self.app.delete_json_api(self.url, {'data': {'id': self.project_one._id, 'type': 'nodes'}}, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected type "list".')
+
+    def test_bulk_delete_invalid_type(self):
+        res = self.app.delete_json_api(self.url, {'data': [{'type': 'Wrong type', 'id': self.project_one._id}]},
+                                       auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
 
     def test_bulk_delete_public_projects_logged_in(self):
         res = self.app.delete_json_api(self.url, self.public_payload, auth=self.user_one.auth)
-        assert_equal(res.status_code, 204)
+        assert_equal(res.status_code, 205)
 
         res = self.app.get(self.project_one_url, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
@@ -1254,7 +1274,7 @@ class TestNodeBulkDelete(ApiTestCase):
         assert_equal(res.status_code, 200)
 
     def test_bulk_delete_limits(self):
-        new_payload = {'data': [{'id': self.private_project_user_one._id}] * 11 }
+        new_payload = {'data': [{'id': self.private_project_user_one._id, 'type':'node_links'}] * 11 }
         res = self.app.delete_json_api(self.url, new_payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
@@ -2284,6 +2304,10 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             'attributes': {}
         }
 
+    def test_bulk_update_dict_instead_of_list(self):
+        res = self.app.put_json_api(self.public_url, {'data': self.payload_one}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
     def test_bulk_update_contributors_public_project_one_not_found(self):
         empty_payload = {'data': [self.invalid_id, self.payload_one]}
         res = self.app.put_json_api(self.public_url, empty_payload, auth=self.user.auth, expect_errors=True)
@@ -2591,6 +2615,25 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
             'id': self.user_two._id,
             'type': 'Wrong type.'
         }
+
+    def test_bulk_delete_contributors_no_id(self):
+        res = self.app.delete_json_api(self.public_url, {'data': [{'type': 'contributors'}]}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/id.')
+
+    def test_bulk_delete_contributors_no_type(self):
+        res = self.app.delete_json_api(self.public_url, {'data': [{'id': self.public_project._id}]}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/type.')
+
+    def test_bulk_delete_contributors_invalid_type(self):
+        res = self.app.delete_json_api(self.public_url, {'data': [{'type': 'Wrong type', 'id': self.user_two._id}]}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    def test_dict_inside_data(self):
+        res = self.app.delete_json_api(self.public_url, {'data': {'id': self.public_project._id, 'type': 'contributors'}}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected type "list".')
 
     def test_bulk_delete_contributors_public_project_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
@@ -4920,6 +4963,11 @@ class TestBulkDeleteNodeLinks(ApiTestCase):
 
         self.public_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.public_project._id)
 
+    def test_bulk_delete_dict_inside_data(self):
+        res = self.app.delete_json_api(self.public_url, {'data': {'id': self.public_project._id, 'type': 'node_links'}}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected type "list".')
+
     def test_bulk_delete_pointers_no_type(self):
         payload = {'data': [
             {'id': self.public_pointer._id},
@@ -4928,6 +4976,14 @@ class TestBulkDeleteNodeLinks(ApiTestCase):
         res = self.app.delete_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['source']['pointer'], "/data/type")
+
+    def test_bulk_delete_pointers_incorrect_type(self):
+        payload = {'data': [
+            {'id': self.public_pointer._id, 'type': 'Incorrect.'},
+            {'id': self.public_pointer_two._id, 'type': 'Incorrect'}
+        ]}
+        res = self.app.delete_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
 
     def test_bulk_delete_pointers_no_id(self):
         payload = {'data': [
@@ -4946,7 +5002,6 @@ class TestBulkDeleteNodeLinks(ApiTestCase):
         res = self.app.delete_json_api(self.public_url, {}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
-
 
     def test_cannot_delete_if_registration(self):
         registration = RegistrationFactory(project=self.public_project)
