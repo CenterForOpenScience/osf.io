@@ -3749,10 +3749,10 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
 
 
-class TestNodeChildBulkCreate(ApiTestCase):
+class TestNodeChildrenBulkCreate(ApiTestCase):
 
     def setUp(self):
-        super(TestNodeChildBulkCreate, self).setUp()
+        super(TestNodeChildrenBulkCreate, self).setUp()
 
         self.user = AuthUserFactory()
         self.user_two = AuthUserFactory()
@@ -3937,6 +3937,7 @@ class TestNodeChildBulkCreate(ApiTestCase):
 
         self.project.reload()
         assert_equal(len(self.project.nodes), 0)
+
 
 class TestNodeLinksList(ApiTestCase):
 

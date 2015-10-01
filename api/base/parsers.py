@@ -11,7 +11,6 @@ NO_TYPE_ERROR = 'Request must include /data/type.'
 NO_ID_ERROR = 'Request must include /data/id.'
 
 
-
 class JSONAPIParser(JSONParser):
     """
     Parses JSON-serialized data. Overrides media_type.

@@ -27,7 +27,7 @@ class NodeTagField(ser.Field):
 
 class JSONAPINodeListSerializer(JSONAPIListSerializer):
     """
-    Bulk updates instance with the validated data.
+    ListSerializer for nodes - used in bulk operations
 
     Request either completely succeeds or fails. Requires
     the request to be in the serializer context.
@@ -198,7 +198,7 @@ class NodeDetailSerializer(NodeSerializer):
 
 class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
     """
-    List serializer for node contributors.
+    List serializer for node contributors - used in bulk operations.
 
     Request either completely succeeds or fails. Requires
     the request to be in the serializer context.
@@ -355,7 +355,7 @@ class NodeRegistrationSerializer(NodeSerializer):
 
 class JSONAPINodeLinksListSerializer(JSONAPIListSerializer):
     """
-    List serializer for NodeLinks
+    List serializer for node links - used in bulk operations.
 
     Request either completely succeeds or fails. Requires
     the request to be in the serializer context.

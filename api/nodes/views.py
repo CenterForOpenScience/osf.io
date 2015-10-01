@@ -313,7 +313,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
         user = self.request.user
         node_list = []
         if not request.data or 'csrfmiddlewaretoken' in request.data:
-            raise ValidationError('Array must contain resource identifier objects.')
+            raise ValidationError('Request must contain array of resource identifier objects.')
         for item in request.data:
             node = get_object_or_error(Node, item[u'id'], display_name='node')
             node_list.append(node)
@@ -628,7 +628,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
         user = self.request.user
         contrib_list = []
         if not request.data or 'csrfmiddlewaretoken' in request.data:
-            raise ValidationError('Array must contain resource identifier objects.')
+            raise ValidationError('Request must contain array of resource identifier objects.')
         for item in request.data:
             user = get_object_or_error(User, item[u'id'], display_name='node')
             contrib_list.append(user)
