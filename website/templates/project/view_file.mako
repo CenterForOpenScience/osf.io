@@ -19,9 +19,16 @@
 </div>
 <hr>
 <div class="row">
+<div class="col-sm-3">
+  <div id="file-navigation" class="panel-toggle file-tree">
+    <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height" style="display: none">
+      <div class="panel-heading clearfix osf-panel-header-flex" style="display:none">
+        <div id="filesSearch"></div>
+        <div id="toggleIcon" class="pull-right text-right" style="width:5%">
+            <button class="btn btn-link project-toggle" style="padding:0"><i class="fa fa-angle-up"></i></button>
+        </div>
+      </div>
 
-  <div id="file-navigation" class="panel-toggle col-sm-3 file-tree">
-    <div class="osf-panel panel panel-default osf-panel-hide osf-panel-flex reset-height">
       <div class="osf-panel-body-flex file-page reset-height">
         <div id="grid">
           <div class="spinner-loading-wrapper">
@@ -31,17 +38,14 @@
         </div>
       </div>
     </div>
-
       <!-- Menu toggle closed -->
-      <div class="panel panel-default osf-panel-show text-center reset-height pointer"  style="display: none">
-          <div class="row tb-header-row">
-              <div class="panel-heading clearfix">
-                  <h3 class="panel-title">Files</h3>
-                    <div class="pull-right fangorn-toolbar-icon">
-                        <i class="fa fa-angle-down"></i>
-                    </div>
-              </div>
+      <div class="panel panel-default osf-panel-show reset-height pointer">
+        <div class="panel-heading clearfix">
+        <h3 class="panel-title" style="padding-top:3px">Files</h3>
+          <div class="pull-right">
+              <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
           </div>
+        </div>
       </div>
 
        <div class="panel panel-default">
@@ -54,8 +58,7 @@
             <input id="fileTags" value="${','.join(file_tags)}" />
         </div>
         </div>
-  </div>
-
+</div></div>
 <!-- The osf-logo spinner here is from mfr code base -->
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
     <div class="row">
