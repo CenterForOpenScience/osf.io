@@ -112,9 +112,9 @@ class TestContributorViews(OsfTestCase):
         component = NodeFactory(parent=self.project, creator=self.user)
         url = component.api_url_for('get_contributors_from_parent')
         res = self.app.get(url, auth=self.user.auth)
-        # Should be one contributor to the parent who is both visible and
-        # not a contributor on the component
+        # Should be all contributors, client-side handles marking
+        # contributors that are already added to the child.
         assert_equal(
             len(res.json['contributors']),
-            1,
+            2,
         )
