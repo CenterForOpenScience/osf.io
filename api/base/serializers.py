@@ -307,12 +307,12 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
         return super(JSONAPIListSerializer, self).run_validation(data)
 
-    # overrides Serializer: Add HTML-sanitization similar to that used by APIv1 front-end views
+    # overrides ListSerializer: Add HTML-sanitization similar to that used by APIv1 front-end views
     def is_valid(self, clean_html=True, **kwargs):
         """
         After validation, scrub HTML from validated_data prior to saving (for create and update views)
 
-        Exclude 'type' and '_id' from validated_data.
+        Exclude 'type' from validated_data.
 
         """
         ret = super(JSONAPIListSerializer, self).is_valid(**kwargs)
