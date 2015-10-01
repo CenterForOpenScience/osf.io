@@ -29,7 +29,7 @@ class CommentMixin(object):
 
     def serialize_comment_report(self, reports, user_id):
         user_dict = {}
-        user_dict['id'] = user_id
+        user_dict['_id'] = user_id
         user_dict['category'] = reports[user_id]['category']
         user_dict['message'] = reports[user_id]['text']
         return user_dict

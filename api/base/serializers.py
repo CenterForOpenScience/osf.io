@@ -50,7 +50,11 @@ class IDField(ser.CharField):
     def to_internal_value(self, data):
         update_methods = ['PUT', 'PATCH']
         if self.context['request'].method in update_methods:
-            if self.root.instance._id != data:
+            if isinstance(self.root.instance, dict):
+                id = self.root.instance.get('_id', None)
+            else:
+                id = self.root.instance._id
+            if id != data:
                 raise Conflict()
         return super(IDField, self).to_internal_value(data)
 

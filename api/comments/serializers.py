@@ -85,14 +85,14 @@ class CommentDetailSerializer(CommentSerializer):
 
 
 class CommentReportsSerializer(JSONAPISerializer):
-    id = IDField(read_only=True)
+    id = IDField(source='_id', read_only=True)
     type = TypeField()
     category = ser.CharField(required=True)
     message = ser.CharField(required=True)
 
     def create(self, validated_data):
         user = self.context['request'].user
-        validated_data['id'] = user._id
+        validated_data['_id'] = user._id
         comment = self.context['view'].get_comment()
         kwargs = dict(category=validated_data.get('category', None),
                       text=validated_data.get('message', None))
@@ -104,6 +104,20 @@ class CommentReportsSerializer(JSONAPISerializer):
             raise ValidationError('You cannot report your own comment.')
         return validated_data
 
+    def update(self, comment_report, validated_data):
+        user = self.context['request'].user
+        comment = self.context['view'].get_comment()
+
+        if user._id != comment_report.get('_id'):
+            raise ValidationError('You cannot report a comment on behalf of another user.')
+        kwargs = dict(category=validated_data.get('category', None),
+                      text=validated_data.get('message', None))
+        try:
+            comment.report_abuse(user, save=True, **kwargs)
+        except ValueError:
+            raise ValidationError('You cannot report your own comment.')
+        return comment_report
+
     class Meta:
         type_ = 'comment_reports'
 
@@ -112,4 +126,4 @@ class CommentReportDetailSerializer(CommentReportsSerializer):
     """
     Overrides CommentReportSerializer to make id required.
     """
-    id = IDField(required=True)
+    id = IDField(source='_id', required=True)
