@@ -25,7 +25,7 @@
       <div class="panel-heading clearfix osf-panel-header-flex" style="display:none">
         <div id="filesSearch"></div>
         <div id="toggleIcon" class="pull-right text-right" style="width:5%">
-            <button class="btn btn-link project-toggle" style="padding:0"><i class="fa fa-angle-up"></i></button>
+            <button class="btn btn-link" style="padding: 0; padding-top: 0; padding-bottom:0;"><i class="fa fa-angle-up"></i></button>
         </div>
       </div>
 
@@ -43,7 +43,7 @@
         <div class="panel-heading clearfix">
         <h3 class="panel-title" style="padding-top:3px">Files</h3>
           <div class="pull-right">
-              <button class="btn btn-link project-toggle"><i class="fa fa-angle-down"></i></button>
+              <button class="btn btn-link"style="padding-top: 0; padding-bottom:0;"><i class="fa fa-angle-down"></i></button>
           </div>
         </div>
       </div>
