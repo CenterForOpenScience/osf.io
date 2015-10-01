@@ -10,7 +10,6 @@ from framework import sentry
 from framework.auth import cas
 from framework.routing import Rule
 from framework.flask import redirect
-from framework.sessions import session
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
@@ -73,7 +72,6 @@ def get_globals():
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),
-        'access_token': session.data.get('auth_user_access_token') or '',
         'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
     }
@@ -947,6 +945,15 @@ def make_url_map(app):
         ),
         Rule(
             [
+                '/project/<pid>/files/deleted/<trashed_id>/',
+                '/project/<pid>/node/<nid>/files/deleted/<trashed_id>/',
+            ],
+            'get',
+            addon_views.addon_deleted_file,
+            OsfWebRenderer('project/view_file.mako', trust=False)
+        ),
+        Rule(
+            [
                 # Legacy Addon view file paths
                 '/project/<pid>/<provider>/files/<path:path>/',
                 '/project/<pid>/node/<nid>/<provider>/files/<path:path>/',
@@ -1151,6 +1158,9 @@ def make_url_map(app):
         Rule([
             '/project/<pid>/draft/<draft_id>/',
         ], 'delete', project_views.drafts.delete_draft_registration, json_renderer),
+        Rule([
+            '/project/<pid>/draft/<draft_id>/submit/',
+        ], 'post', project_views.drafts.submit_draft_for_review, json_renderer),
 
         # Meta Schemas
         Rule([
@@ -1184,16 +1194,6 @@ def make_url_map(app):
             project_views.contributor.project_manage_contributors,
             json_renderer,
         ),
-
-        Rule([
-            '/project/<pid>/get_most_in_common_contributors/',
-            '/project/<pid>/node/<nid>/get_most_in_common_contributors/',
-        ], 'get', project_views.contributor.get_most_in_common_contributors, json_renderer),
-
-        Rule([
-            '/project/<pid>/get_recently_added_contributors/',
-            '/project/<pid>/node/<nid>/get_recently_added_contributors/',
-        ], 'get', project_views.contributor.get_recently_added_contributors, json_renderer),
 
         Rule([
             '/project/<pid>/get_editable_children/',

@@ -17,139 +17,142 @@
             "info": "http://centerforopenscience.org/prereg/"
         }]
     },
-    "description": "Pre-Registration Prize (pre-data collection): You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study. Publications that pre-register with this template may be eligible for a $1,000 prize. <a href=\"https://osf.io/x5w7h/\">See project page for complete information</a>.",
+    "description": "Pre-Registration Prize (pre-data collection): You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study. Publications that pre-register with this template may be eligible for a $1,000 prize.",
     "pages": [{
         "id": "page1",
         "title": "Basic Information",
-        "questions": [{
-            "nav": "Title",
-            "type": "string",
-            "format": "text",
-            "title": "Title",
-            "description": "What is the working title of your study? It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.",
-            "help": "Effect of sugar on brownie tastiness."
-        },{
-            "nav": "Authors",
-            "type": "string",
-            "format": "text",
-            "title": "Authorship",
-            "description": "The first author of the pre-registered study is the recipient of the award money and must also be the first author of the published manuscript. Additional authors may be added or removed at any time.",
-            "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo"
-        },{
-            "nav": "COI",
-            "type": "string",
-            "format": "textarea",
-            "title": "Conflict of Interest",
-            "description": "Could the results of this project benefit the financial interests of any of its authors, or be reasonably perceived to do so?",
-            "help": "The authors of this study own a majority share of Tastee Sugar Company."
-        },{
-            "nav": "Research",
-            "type": "object",
-            "title": "Research questions and hypotheses",
-            "description": "What are your research questions and hypotheses? Both directional and non-directional hypotheses are acceptable.",
-            "help": "There is strong evidence to suggest that sugar affects taste preferences, but the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe. If taste effects preferences, then mean preference indices will be higher with higher concentrations of sugar.",
-            "properties": {
-                "question": {
-                    "id": "q4a",
-                    "type": "string",
-                    "format": "textarea"
-                },
-                "uploader4": {
-                    "id": "q4b",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+        "questions": {
+            "q01": {
+                "nav": "Title",
+                "type": "string",
+                "format": "text",
+                "title": "Title",
+                "description": "What is the working title of your study? It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.",
+                "help": "Effect of sugar on brownie tastiness."
+            },
+            "q02": {
+                "nav": "Authors",
+                "type": "string",
+                "format": "text",
+                "title": "Authorship",
+                "description": "The first author of the pre-registered study is the recipient of the award money and must also be the first author of the published manuscript. Additional authors may be added or removed at any time.",
+                "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo"
+            },
+            "q03": {
+                "nav": "COI",
+                "type": "string",
+                "format": "textarea",
+                "title": "Conflict of Interest",
+                "description": "Could the results of this project benefit the financial interests of any of its authors, or be reasonably perceived to do so?",
+                "help": "The authors of this study own a majority share of Tastee Sugar Company."
+            },
+            "q04": {
+                "nav": "Research",
+                "type": "object",
+                "title": "Research questions and hypotheses",
+                "description": "What are your research questions and hypotheses? Both directional and non-directional hypotheses are acceptable.",
+                "help": "There is strong evidence to suggest that sugar affects taste preferences, but the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe. If taste effects preferences, then mean preference indices will be higher with higher concentrations of sugar.",
+                "properties": {
+                    "question": {
+                        "id": "q4a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader4": {
+                        "id": "q4b",
+                        "type": "osf-upload",
+                        "format": "osf-upload-toggle"
+                    }
                 }
             }
         }
-                     ]
     }, {
         "id": "page2",
         "title": "Sampling Plan",
         "type": "object",
-        "questions": [{
-            "nav": "Data",
-            "type": "object",
-            "title": "Data collection procedures",
-            "description": "Please describe the process by which you will collect your data. If you are using human subjects, this should include the population from which you obtain subjects, recruitment efforts, payment for participation, how subjects will be selected for eligibility from the initial pool (e.g. inclusion and exclusion rules), and your study timeline. For studies that donÕt include human subjects, include information about how you will collect samples, duration of data gathering efforts, or batch numbers you will use.",
-            "help": "Participants will be recruited through advertisements at local pastry shops. Participants will be paid $10 for agreeing to  participating (raised to $30 if our sample size is not reached within 15 days of beginning recruitment). Participants must be at least 18 years old and be able to eat the ingredients of the pastries.",
-            "properties": {
-                "question": {
-                    "id": "q5a",
-                    "type": "string",
-                    "format": "textarea"
-                },
-                "uploader5": {
-                    "id": "q5b",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+        "questions": {
+            "q05": {
+                "nav": "Data",
+                "type": "object",
+                "title": "Data collection procedures",
+                "description": "Please describe the process by which you will collect your data. If you are using human subjects, this should include the population from which you obtain subjects, recruitment efforts, payment for participation, how subjects will be selected for eligibility from the initial pool (e.g. inclusion and exclusion rules), and your study timeline. For studies that donÕt include human subjects, include information about how you will collect samples, duration of data gathering efforts, or batch numbers you will use.",
+                "help": "Participants will be recruited through advertisements at local pastry shops. Participants will be paid $10 for agreeing to  participating (raised to $30 if our sample size is not reached within 15 days of beginning recruitment). Participants must be at least 18 years old and be able to eat the ingredients of the pastries.",
+                "properties": {
+                    "question": {
+                        "id": "q5a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader5": {
+                        "id": "q5b",
+                        "type": "osf-upload",
+                        "format": "osf-upload-toggle"
+                    }
                 }
-            }
-        },{
-            "nav": "Sample",
-            "type": "object",
-            "title": "Sample size",
-            "description": "What is your sample size? How many units will be analyzed in the study? This could be the number of people, birds, classrooms, plots, interactions, or countries included. If the units are not individuals, then describe the size requirements for each unit. If you are using a clustered or multilevel design, how many units are you collecting at each level of the analysis?",
-            "help": "Our target sample size is 280 participants. We will attempt to recruit up to 320, assuming that not all will complete the total task.",
-            "properties": {
-                "question": {
-                    "id": "q6a",
-                    "type": "string",
-                    "format": "text"
-                },
-                "uploader6": {
-                    "id": "q6b",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+            },
+            "q06": {
+                "nav": "Sample",
+                "type": "object",
+                "title": "Sample size",
+                "description": "What is your sample size? How many units will be analyzed in the study? This could be the number of people, birds, classrooms, plots, interactions, or countries included. If the units are not individuals, then describe the size requirements for each unit. If you are using a clustered or multilevel design, how many units are you collecting at each level of the analysis?",
+                "help": "Our target sample size is 280 participants. We will attempt to recruit up to 320, assuming that not all will complete the total task.",
+                "properties": {
+                    "question": {
+                        "id": "q6a",
+                        "type": "string",
+                        "format": "text"
+                    },
+                    "uploader6": {
+                        "id": "q6b",
+                        "type": "osf-upload",
+                        "format": "osf-upload-toggle"
+                    }
                 }
-            }
-        },{
-            "nav": "Rationale",
-            "type": "object",
-            "title": "Sample size rationale",
-            "description": "This could include a power analysis or an arbitrary constraint such as resource availability. Include a stopping rule.",
-            "help": "We used the software program G*Power to conduct a power analysis. Our goal was to obtain .95 power to detect a medium effect size of .25 at the standard .05 alpha error probability. We will stop recruiting participants at 320 (to account for incomplete data) or after 30 days, whichever comes first.",
-            "properties": {
-                "question": {
-                    "id": "q7a",
-                    "type": "string",
-                    "format": "textarea"
-                },
-                "uploader7": {
-                    "id": "q7b",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+            },
+            "q07": {
+                "nav": "Rationale",
+                "type": "object",
+                "title": "Sample size rationale",
+                "description": "This could include a power analysis or an arbitrary constraint such as resource availability. Include a stopping rule.",
+                "help": "We used the software program G*Power to conduct a power analysis. Our goal was to obtain .95 power to detect a medium effect size of .25 at the standard .05 alpha error probability. We will stop recruiting participants at 320 (to account for incomplete data) or after 30 days, whichever comes first.",
+                "properties": {
+                    "question": {
+                        "id": "q7a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader7": {
+                        "id": "q7b",
+                        "type": "osf-upload",
+                        "format": "osf-upload-toggle"
+                    }
                 }
-            }
-        },{
-            "nav": "Certify",
-            "type": "object",
-            "title": "Please check and certify one of the following statements",
-            "description": "",
-            "help": "",
-            "properties": {
-                "certify": {
-                    "id": "q8b",
-                    "type": "string",
-                    "format": "match",
-                    "match": "I certify"
-                },
-                "statement": {
-                    "id:": "q8a",
-                    "type": "choose",
-                    "format": "singleselect",
-                    "options": [
-                        "I certify that none of the data that will be used in this upcoming study have yet been collected. Please enter your name and the phrase I certify in the following box. Why is this necessary?",
-                        "I will be using pre-existing data in this study. I certify that I have no knowledge about any of its basic descriptive statistics, nor am I aware of any differences or relationships within the data that I will use. Please enter your name and the phrase I certify in the following boxes."
-                    ]
+            },
+            "q08": {
+                "nav": "Certify",
+                "type": "object",
+                "title": "Please check and certify one of the following statements",
+                "description": "",
+                "help": "",
+                "properties": {
+                    "statement": {
+                        "id:": "q8a",
+                        "type": "choose",
+                        "format": "singleselect",
+                        "options": [
+                            "I certify that none of the data that will be used in this upcoming study have yet been collected. Please enter your name and the phrase I certify in the following box. Why is this necessary?",
+                            "I will be using pre-existing data in this study. I certify that I have no knowledge about any of its basic descriptive statistics, nor am I aware of any differences or relationships within the data that I will use. Please enter your name and the phrase I certify in the following boxes."
+                        ]
+                    }
                 }
             }
         }
-                     ]
     }, {
         "id": "page3",
         "title": "Design Plan",
         "type": "object",
-        "questions": [{
+        "questions": {
+            "q09": {
                 "nav": "Type",
                 "type": "choose",
                 "title": "Study type",
@@ -162,7 +165,8 @@
                     "Meta-Analysis (a systematic review of published studies)",
                     "Other (please explain)"
                 ]
-            },{
+            },
+            "q10": {
                 "nav": "Blinding",
                 "type": "choose",
                 "format": "singleselect",
@@ -177,7 +181,8 @@
                     " Yes: I am using non-human study subjects, and researchers collecting data are ignorant of each subjects treatment group.",
                     "No: researchers are aware of the treatment groups."
                 ]
-            },{
+            },
+            "q11": {
                 "nav": "Design",
                 "type": "object",
                 "title": "Study design",
@@ -195,7 +200,8 @@
                         "format": "osf-upload-toggle"
                     }
                 }
-            },{
+            },
+            "q12": {
                 "nav": "Predictor",
                 "type": "object",
                 "title": "Predictor variable(s)",
@@ -213,7 +219,8 @@
                         "format": "osf-upload-toggle"
                     }
                 }
-            },{
+            },
+            "q13": {
                 "nav": "Outcome",
                 "type": "object",
                 "title": "Outcome variable(s)",
@@ -231,7 +238,8 @@
                         "format": "osf-upload-toggle"
                     }
                 }
-            },{
+            },
+            "q14": {
                 "nav": "Covariates",
                 "type": "object",
                 "title": "Covariates.",
@@ -249,7 +257,8 @@
                         "format": "osf-upload-toggle"
                     }
                 }
-            },{
+            },
+            "q15": {
                 "nav": "Randomization",
                 "type": "object",
                 "title": "If you are doing a randomized study, how will you randomize, and at what level? There are many different randomization techniques.",
@@ -268,132 +277,140 @@
                     }
                 }
             }
-        ]
+        }
     }, {
         "id": "page4",
         "title": "Analysis Plan",
         "type": "object",
-        "questions": [{
-            "nav": "Predictors",
-            "type": "object",
-            "title": "Constructing predictor variables",
-            "description": "Sometimes, a main predictor will not be a single measurement, but an index made from several other measurements. What measures will you use and how will they be combined to make your predictor variable(s).",
-            "help": "The predictor variable (percent sugar) will not be constructed from multiple measures.",
-            "properties": {
-                "question": {
-                    "id": "q16a",
-                    "type": "string",
-                    "format": "textarea"
-                },
-                "uploader16": {
-                    "id": "q16b",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+        "questions": {
+            "q16": {
+                "nav": "Predictors",
+                "type": "object",
+                "title": "Constructing predictor variables",
+                "description": "Sometimes, a main predictor will not be a single measurement, but an index made from several other measurements. What measures will you use and how will they be combined to make your predictor variable(s).",
+                "help": "The predictor variable (percent sugar) will not be constructed from multiple measures.",
+                "properties": {
+                    "question": {
+                        "id": "q16a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader16": {
+                        "id": "q16b",
+                        "type": "osf-upload",
+                        "format": "osf-upload-toggle"
+                    }
                 }
-            }
-        },{
-            "nav": "Outcome Variables",
-            "type": "object",
-            "title": "Constructing outcome variables",
-            "description": "Just as with the previous question, how will specific measures be combined to create your outcome variable(s)?",
-            "help": "As taste perception is a complex variable, we will measure it by taking each users geometric mean response from three widely used indices of tastiness: the Tasty Measure Index of Sweetness (1-100 scale), the Yum Scale of Enjoyability (1-10 scale), and the Aural Pleasure Rating of Foods (1-20 scale). A geometric mean will be used because of the scale variation between each of the three indices.",
-            "properties": {
-                "question": {
-                    "id": "q17a",
-                    "type": "string",
-                    "format": "textarea"
-                },
-                "uploader17": {
-                    "id": "q17b",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+            },
+            "q17": {
+                "nav": "Outcome Variables",
+                "type": "object",
+                "title": "Constructing outcome variables",
+                "description": "Just as with the previous question, how will specific measures be combined to create your outcome variable(s)?",
+                "help": "As taste perception is a complex variable, we will measure it by taking each users geometric mean response from three widely used indices of tastiness: the Tasty Measure Index of Sweetness (1-100 scale), the Yum Scale of Enjoyability (1-10 scale), and the Aural Pleasure Rating of Foods (1-20 scale). A geometric mean will be used because of the scale variation between each of the three indices.",
+                "properties": {
+                    "question": {
+                        "id": "q17a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader17": {
+                        "id": "q17b",
+                        "type": "osf-upload",
+                        "format": "osf-upload-toggle"
+                    }
                 }
-            }
-        },{
-            "nav": "Exclusion",
-            "type": "object",
-            "title": "Data exclusion",
-            "description": "How will you determine what data or samples (if any) to exclude from your analyses? How will outliers be handled? You may want to attach a decision tree with an 'if, then' structure to easily formalize the way in which these decisions will be made.",
-            "help": "No checks will be performed to determine eligibility for inclusion besides verification that each subject answered each of the three tastiness indices. Outliers will be included in the analysis.",
-            "properties": {
-                "question": {
-                    "id": "q18a",
-                    "type": "string",
-                    "format": "textarea"
-                },
-                "uploader18": {
-                    "id": "q18b",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+            },
+            "q18": {
+                "nav": "Exclusion",
+                "type": "object",
+                "title": "Data exclusion",
+                "description": "How will you determine what data or samples (if any) to exclude from your analyses? How will outliers be handled? You may want to attach a decision tree with an 'if, then' structure to easily formalize the way in which these decisions will be made.",
+                "help": "No checks will be performed to determine eligibility for inclusion besides verification that each subject answered each of the three tastiness indices. Outliers will be included in the analysis.",
+                "properties": {
+                    "question": {
+                        "id": "q18a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader18": {
+                        "id": "q18b",
+                        "type": "osf-upload",
+                        "format": "osf-upload-toggle"
+                    }
                 }
-            }
-        },{
-            "nav": "Incomplete",
-            "type": "object",
-            "title": "Incomplete or missing data",
-            "description": "How will you deal with incomplete or missing data? Many studies will have missing data points. How you cope with these missing points is important because it can affect the result of your analysis.",
-            "help": "If any of the three indices of tastiness are not completed by a subject, that subject will not be included in the analysis.",
-            "properties": {
-                "question": {
-                    "id": "q19a",
-                    "type": "string",
-                    "format": "textarea"
-                },
-                "uploader19": {
-                    "id": "q19b",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+            },
+            "q19": {
+                "nav": "Incomplete",
+                "type": "object",
+                "title": "Incomplete or missing data",
+                "description": "How will you deal with incomplete or missing data? Many studies will have missing data points. How you cope with these missing points is important because it can affect the result of your analysis.",
+                "help": "If any of the three indices of tastiness are not completed by a subject, that subject will not be included in the analysis.",
+                "properties": {
+                    "question": {
+                        "id": "q19a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader19": {
+                        "id": "q19b",
+                        "type": "osf-upload",
+                        "format": "osf-upload-toggle"
+                    }
                 }
-            }
-        },{
-            "nav": "Statistical Models",
-            "type": "object",
-            "title": "Statistical model",
-            "description": "What statistical model(s) will you use to test your hypothesis(ses)? Please include the type of model (e.g. ANOVA, regression, SEM, etc) as well as the specification of the model (e.g. what variables will be included, and if they will be transformed or centered in any way). If you are using a method other than null hypothesis significance testing, such as a Bayesian method, provide the criteria you will use for making an evidence-based conclusion. Include likely alternative analyses or data transformations. This may be another item where a decision tree could be helpful.",
-            "help": "We will use a 1x4 ANOVA to analyze our results. The categorical independent variable is sugar” whereas the dependent variable, taste,” is continuous. If the the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to determine the differences between levels. We will test the assumption of the ANOVA on equal group variance using the Bartlett test and use a Kruskal-Wallis if p<.05.",
-            "properties": {
-                "question": {
-                    "id": "q20a",
-                    "type": "string",
-                    "format": "textarea"
-                },
-                "uploader20": {
-                    "id": "q20b",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+            },
+            "q20": {
+                "nav": "Statistical Models",
+                "type": "object",
+                "title": "Statistical model",
+                "description": "What statistical model(s) will you use to test your hypothesis(ses)? Please include the type of model (e.g. ANOVA, regression, SEM, etc) as well as the specification of the model (e.g. what variables will be included, and if they will be transformed or centered in any way). If you are using a method other than null hypothesis significance testing, such as a Bayesian method, provide the criteria you will use for making an evidence-based conclusion. Include likely alternative analyses or data transformations. This may be another item where a decision tree could be helpful.",
+                "help": "We will use a 1x4 ANOVA to analyze our results. The categorical independent variable is sugar” whereas the dependent variable, taste,” is continuous. If the the ANOVA indicates that the mean taste perceptions are significantly different (p<.05), then we will use a Tukey-Kramer HSD test to determine the differences between levels. We will test the assumption of the ANOVA on equal group variance using the Bartlett test and use a Kruskal-Wallis if p<.05.",
+                "properties": {
+                    "question": {
+                        "id": "q20a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader20": {
+                        "id": "q20b",
+                        "type": "osf-upload",
+                        "format": "osf-upload-toggle"
+                    }
                 }
-            }
-        },{
-            "nav": "Multiple Comparisons",
-            "type": "object",
-            "title": "Multiple comparisons",
-            "description": "If you are comparing multiple conditions or testing multiple hypotheses, how will you account for this? ",
-            "help": "The only possible instance of requiring adjustment or acknowledgement of multiple comparisons would be the six combinations among the four levels of the independent variable tested in the ANOVA, which will only be investigated if indicated by the ANOVA results by a Tukey HSD.",
-            "properties": {
-                "question": {
-                    "id": "q21a",
-                    "type": "string",
-                    "format": "textarea"
-                },
-                "uploader21": {
-                    "id": "q21b",
-                    "type": "osf-upload",
-                    "format": "osf-upload-toggle"
+            },
+            "q21": {
+                "nav": "Multiple Comparisons",
+                "type": "object",
+                "title": "Multiple comparisons",
+                "description": "If you are comparing multiple conditions or testing multiple hypotheses, how will you account for this? ",
+                "help": "The only possible instance of requiring adjustment or acknowledgement of multiple comparisons would be the six combinations among the four levels of the independent variable tested in the ANOVA, which will only be investigated if indicated by the ANOVA results by a Tukey HSD.",
+                "properties": {
+                    "question": {
+                        "id": "q21a",
+                        "type": "string",
+                        "format": "textarea"
+                    },
+                    "uploader21": {
+                        "id": "q21b",
+                        "type": "osf-upload",
+                        "format": "osf-upload-toggle"
+                    }
                 }
             }
         }
-                     ]
     }, {
         "id": "page5",
         "title": "Script",
         "type": "object",
-        "questions": [{
-            "nav": "Script",
-            "title": "(Optional) Upload an analysis script with clear comments.",
-            "type": "osf-upload",
-            "format": "osf-upload-open",
-            "description": "(Optional) Upload an analysis script with clear comments. This optional step is helpful in order to create a process that is completely transparent and increase the likelihood that your analysis can be replicated. We recommend that you run the code on a simulated dataset in order to check that it will run without errors.",
-            "help": "Here is a link to the R script that we will use to run the ANOVA. It also contains the code for the Tukey HSD we will run if needed. https://osf.io/kexgi/"
-        }]
+        "questions": {
+            "q22": {
+                "nav": "Script",
+                "title": "(Optional) Upload an analysis script with clear comments.",
+                "type": "osf-upload",
+                "format": "osf-upload-open",
+                "description": "(Optional) Upload an analysis script with clear comments. This optional step is helpful in order to create a process that is completely transparent and increase the likelihood that your analysis can be replicated. We recommend that you run the code on a simulated dataset in order to check that it will run without errors.",
+                "help": "Here is a link to the R script that we will use to run the ANOVA. It also contains the code for the Tukey HSD we will run if needed. https://osf.io/kexgi/"
+            }
+        }
     }]
 }

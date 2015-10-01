@@ -446,7 +446,7 @@ describe('Draft', () => {
         var preRegisterErrorsStub;
         var preRegisterPromptsStub;
         var registerStub;
-        before(() => {            
+        before(() => {
             server = utils.createServer(sinon, endpoints);
             getJSONSpy = sinon.spy($, 'getJSON');
             preRegisterErrorsStub = sinon.stub(draft, 'preRegisterErrors');
@@ -475,14 +475,14 @@ describe('Draft', () => {
             draft.beforeRegister().always(function() {
                 assert.isTrue(preRegisterErrorsStub.calledOnce);
                 done();
-            });            
+            });
         });
         it('calls Draft#preRegisterPrompts if there are prompts and no errors', (done) => {
             server.respondWith(
-                beforeRegisterUrl, 
+                beforeRegisterUrl,
                 function (xhr, id) {
-                    xhr.respond(200, 
-                                {'Content-Type': 'application/json'}, 
+                    xhr.respond(200,
+                                {'Content-Type': 'application/json'},
                                 JSON.stringify({
                                     prompts: ['Warn']
                                 }));
@@ -490,18 +490,18 @@ describe('Draft', () => {
             draft.beforeRegister().always(function() {
                 assert.isTrue(preRegisterPromptsStub.calledOnce);
                 done();
-            });           
+            });
         });
         it('calls Draft#register if there are no errors and no prompts', (done) => {
             server.respondWith(
-                beforeRegisterUrl, 
+                beforeRegisterUrl,
                 '{}'
             );
             draft.beforeRegister().always(function() {
                 assert.isTrue(registerStub.calledOnce);
                 done();
-            });            
-        });        
+            });
+        });
     });
     describe('#register', () => {
         var server;
@@ -546,7 +546,7 @@ describe('RegistrationEditor', () => {
             value: faker.company.bsNoun()
         };
     });
-            
+
     var beforeRegisterUrl = faker.internet.ip();
     var registerUrl = faker.internet.ip();
     var params = {
@@ -588,14 +588,14 @@ describe('RegistrationEditor', () => {
             });
         });
     });
-    describe('#create', () => {        
+    describe('#create', () => {
         var postJSONStub;
         var updateDataStub;
         before(() => {
             postJSONStub = sinon.stub($osf, 'postJSON', function() {
                 var ret = $.Deferred();
                 ret.resolve();
-                return ret;                
+                return ret;
             });
             updateDataStub = sinon.stub(editor, 'updateData');
         });
@@ -617,7 +617,7 @@ describe('RegistrationEditor', () => {
                     )
                 );
                 done();
-            });            
+            });
         });
     });
     describe('#save', () => {
@@ -639,14 +639,15 @@ describe('RegistrationEditor', () => {
             var metaSchema = draft.metaSchema;
             questions[0].value('Updated');
             editor.save();
-            
+
             var data = {};
             $.each(questions, function(i, q) {
                 data[q.id] = {
-                    value: q.value()
+                    value: q.value(),
+                    comments: []
                 };
             });
-            
+
             assert.isTrue(
                 putSaveDataStub.calledWith(
                     {

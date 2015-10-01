@@ -29,8 +29,9 @@
       <div id="register-show-submit">
 
         <hr />
-        
-        <p class="help-block">${language.BEFORE_REGISTRATION_INFO}</p>
+        <p class="help-block">
+          ${language.BEFORE_REGISTRATION_INFO | n}
+        </p>
         
         <div class="form-group">
           <label>

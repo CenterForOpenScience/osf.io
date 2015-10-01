@@ -143,12 +143,6 @@
             // Mako variables accessible globally
             window.contextVars = $.extend(true, {}, window.contextVars, {
                 waterbutlerURL: ${ waterbutler_url if waterbutler_url.endswith('/') else waterbutler_url + '/' | sjson, n },
-            % if access_token:
-                accessToken: ${ access_token | sjson, n },
-                userId: ${user_id | sjson, n},
-                reauthUrl: ${reauth_url | sjson, n},
-                profileUrl: ${profile_url | sjson, n},
-            % endif
                 cookieName: ${ cookie_name | sjson, n },
                 apiV2Prefix: ${ api_v2_base | sjson, n }
             });
@@ -222,12 +216,17 @@
     <%include file="footer.mako"/>
 </%def>
 
+<%def name="alert()">
+    <%include file="alert.mako"/>
+</%def>
+
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
             % if status:
-                <%include file="alert.mako"/>
+                ${self.alert()}
             % endif
+
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->

@@ -1,13 +1,21 @@
 from rest_framework import serializers as ser
-
-from website.models import Node
-from framework.auth.core import Auth
 from rest_framework import exceptions
-from api.base.serializers import JSONAPISerializer, Link, WaterbutlerLink, LinksField, JSONAPIHyperlinkedIdentityField
+from modularodm.exceptions import ValidationValueError
+
+from framework.auth.core import Auth
+from framework.exceptions import PermissionsError
+
+from website.models import Node, User
+from website.exceptions import NodeStateError
+from website.util import permissions as osf_permissions
+
+from api.base.utils import get_object_or_error, absolute_reverse
+from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
+from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField
+from api.base.exceptions import InvalidModelValueError
 
 
 class NodeTagField(ser.Field):
-
     def to_representation(self, obj):
         if obj is not None:
             return obj._id
@@ -21,30 +29,42 @@ class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
     # instance
+    filterable_fields = frozenset([
+        'title',
+        'description',
+        'public',
+        'registration',
+        'tags',
+        'category',
+    ])
+
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+
     category_choices = Node.CATEGORY_MAP.keys()
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
-    filterable_fields = frozenset(['title', 'description', 'public'])
 
-    id = ser.CharField(read_only=True, source='_id', label='ID')
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string)
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
-    tags = ser.ListField(child=NodeTagField(), required=False)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     collection = ser.BooleanField(read_only=True, source='is_folder')
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
+    tags = ser.ListField(child=NodeTagField(), required=False)
+
+    # Public is only write-able by admins--see update method
+    public = ser.BooleanField(source='is_public', required=False,
+                              help_text='Nodes that are made public will give read-only access '
+                                        'to everyone. Private nodes require explicit read '
+                                        'permission. Write and admin access are the same for '
+                                        'public and private nodes. Administrators on a parent '
+                                        'node have implicit read permissions for all child nodes',
+                              )
 
     links = LinksField({'html': 'get_absolute_url'})
-    # TODO: When we have 'admin' permissions, make this writable for admins
-    public = ser.BooleanField(source='is_public', read_only=True,
-                              help_text='Nodes that are made public will give read-only access '
-                                                            'to everyone. Private nodes require explicit read '
-                                                            'permission. Write and admin access are the same for '
-                                                            'public and private nodes. Administrators on a parent '
-                                                            'node have implicit read permissions for all child nodes',
-                              )
+    # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
     children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
                                                 lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
@@ -52,17 +72,17 @@ class NodeSerializer(JSONAPISerializer):
     contributors = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
                                                     lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
 
-    files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-files', lookup_field='pk', lookup_url_kwarg='node_id',
+    files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
                                              link_type='related')
 
-    node_links = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})
+    node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
+                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
 
     parent = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='self',
                                               lookup_url_kwarg='node_id')
 
-    registrations = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
-                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})
+    registrations = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
+                                                     lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'}))
 
     class Meta:
         type_ = 'nodes'
@@ -98,38 +118,171 @@ class NodeSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         node = Node(**validated_data)
-        node.save()
+        try:
+            node.save()
+        except ValidationValueError as e:
+            raise InvalidModelValueError(detail=e.message)
         return node
 
-    def update(self, instance, validated_data):
+    def update(self, node, validated_data):
         """Update instance with the validated data. Requires
         the request to be in the serializer context.
         """
-        assert isinstance(instance, Node), 'instance must be a Node'
+        assert isinstance(node, Node), 'node must be a Node'
         auth = self.get_user_auth(self.context['request'])
-        for attr, value in validated_data.items():
-            if attr == 'tags':
-                old_tags = set([tag._id for tag in instance.tags])
-                if value:
-                    current_tags = set(value)
-                else:
-                    current_tags = set()
-                for new_tag in (current_tags - old_tags):
-                    instance.add_tag(new_tag, auth=auth)
-                for deleted_tag in (old_tags - current_tags):
-                    instance.remove_tag(deleted_tag, auth=auth)
-            else:
-                setattr(instance, attr, value)
-        instance.save()
-        return instance
+        tags = validated_data.get('tags')
+        if tags is not None:
+            del validated_data['tags']
+            current_tags = set(tags)
+        else:
+            current_tags = set()
+        old_tags = set([tag._id for tag in node.tags])
+        for new_tag in (current_tags - old_tags):
+            node.add_tag(new_tag, auth=auth)
+        for deleted_tag in (old_tags - current_tags):
+            node.remove_tag(deleted_tag, auth=auth)
+
+        if 'is_public' in validated_data:
+            privacy_key = 'public' if validated_data.pop('is_public') else 'private'
+            try:
+                node.set_privacy(privacy_key, auth=auth, log=True, save=True)
+            except PermissionsError:
+                raise exceptions.PermissionDenied
+
+        if validated_data:
+            try:
+                node.update(validated_data, auth=auth)
+            except ValidationValueError as e:
+                raise InvalidModelValueError(detail=e.message)
+
+        return node
+
+
+class NodeDetailSerializer(NodeSerializer):
+    """
+    Overrides NodeSerializer to make id required.
+    """
+    id = IDField(source='_id', required=True)
+
+class NodeContributorsSerializer(JSONAPISerializer):
+    """ Separate from UserSerializer due to necessity to override almost every field as read only
+    """
+    filterable_fields = frozenset([
+        'fullname',
+        'given_name',
+        'middle_name',
+        'family_name',
+        'id',
+        'bibliographic',
+        'permissions'
+    ])
+
+    id = IDField(source='_id', required=True)
+    type = TypeField()
+
+    full_name = ser.CharField(source='fullname', read_only=True, help_text='Display name used in the general user interface')
+    given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
+    family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
+    date_registered = ser.DateTimeField(read_only=True)
+    bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
+                                     default=True)
+
+    permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
+                                 default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
+                                 help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
+
+    links = LinksField({
+        'html': 'absolute_url',
+        'self': 'get_absolute_url'
+    })
+    nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
+                                             link_type='related')
+
+    profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
+
+    def get_profile_image_url(self, user):
+        size = self.context['request'].query_params.get('profile_image_size')
+        return user.profile_image_url(size=size)
+
+    class Meta:
+        type_ = 'contributors'
+
+    def absolute_url(self, obj):
+        return obj.absolute_url
+
+    def get_absolute_url(self, obj):
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        return absolute_reverse(
+            'nodes:node-contributor-detail',
+            kwargs={
+                'node_id': node_id,
+                'user_id': obj._id
+            }
+        )
+
+    def create(self, validated_data):
+        auth = Auth(self.context['request'].user)
+        node = self.context['view'].get_node()
+        contributor = get_object_or_error(User, validated_data['_id'], display_name='user')
+        # Node object checks for contributor existence but can still change permissions anyway
+        if contributor in node.contributors:
+            raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
+
+        bibliographic = validated_data['bibliographic']
+        permissions = osf_permissions.expand_permissions(validated_data.get('permission')) or osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS
+        node.add_contributor(contributor=contributor, auth=auth, visible=bibliographic, permissions=permissions, save=True)
+        contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
+        contributor.bibliographic = node.get_visible(contributor)
+        contributor.node_id = node._id
+        return contributor
+
+
+class NodeContributorDetailSerializer(NodeContributorsSerializer):
+    """
+    Overrides node contributor serializer to add additional methods
+    """
+    def update(self, instance, validated_data):
+        contributor = instance
+        auth = Auth(self.context['request'].user)
+        node = self.context['view'].get_node()
+
+        visible = validated_data.get('bibliographic')
+        permission = validated_data.get('permission')
+        try:
+            node.update_contributor(contributor, permission, visible, auth, save=True)
+        except NodeStateError as e:
+            raise exceptions.ValidationError(e)
+        contributor.permission = osf_permissions.reduce_permissions(node.get_permissions(contributor))
+        contributor.bibliographic = node.get_visible(contributor)
+        contributor.node_id = node._id
+        return contributor
+
+
+class NodeRegistrationSerializer(NodeSerializer):
+
+    retracted = ser.BooleanField(source='is_retracted', read_only=True,
+        help_text='Whether this registration has been retracted.')
+
+    # TODO: Finish me
+
+    # TODO: Override create?
+
+    def update(self, *args, **kwargs):
+        raise exceptions.ValidationError('Registrations cannot be modified.')
 
 
 class NodeLinksSerializer(JSONAPISerializer):
 
-    id = ser.CharField(read_only=True, source='_id')
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
     target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
-    title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
-                                                                         'points to')
+
+    # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
+    # include this field in the future.
+    # title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
+    #                                                                      'points to')
 
     class Meta:
         type_ = 'node_links'
@@ -160,40 +313,23 @@ class NodeLinksSerializer(JSONAPISerializer):
         pass
 
 
-class NodeFilesSerializer(JSONAPISerializer):
+class NodeProviderSerializer(JSONAPISerializer):
 
-    id = ser.SerializerMethodField()
-    provider = ser.CharField(read_only=True)
-    path = ser.CharField(read_only=True)
-    item_type = ser.CharField(read_only=True)
+    id = ser.SerializerMethodField(read_only=True)
+    kind = ser.CharField(read_only=True)
     name = ser.CharField(read_only=True)
-    metadata = ser.DictField(read_only=True)
+    path = ser.CharField(read_only=True)
+    node = ser.CharField(source='node_id', read_only=True)
+    provider = ser.CharField(read_only=True)
+    files = NodeFileHyperLink(kind='folder', read_only=True, link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
+    links = LinksField({
+        'upload': WaterbutlerLink(),
+        'new_folder': WaterbutlerLink(kind='folder')
+    })
 
     class Meta:
         type_ = 'files'
 
-    links = LinksField({
-        'self': WaterbutlerLink(kwargs={'node_id': '<node_id>'}),
-        'related': {
-            'href': Link('nodes:node-files', kwargs={'node_id': '<node_id>'},
-                    query_kwargs={'path': '<path>', 'provider': '<provider>'}),
-            'meta': {'self_methods': 'valid_self_link_methods'}
-        }
-    })
-
     @staticmethod
     def get_id(obj):
-        ret = obj['provider'] + obj['path']
-        return ret
-
-    @staticmethod
-    def valid_self_link_methods(obj):
-        return obj['valid_self_link_methods']
-
-    def create(self, validated_data):
-        # TODO
-        pass
-
-    def update(self, instance, validated_data):
-        # TODO
-        pass
+        return '{}:{}'.format(obj.node._id, obj.provider)
