@@ -156,7 +156,7 @@ var Question = function(data, id) {
     // A computed to allow rate-limiting save calls
     self.delayedValue = ko.computed(function() {
         return self.value();
-    }).extend({ rateLimit: { method: "notifyWhenChangesStop", timeout: 1000 } });
+    }).extend({ rateLimit: { method: 'notifyWhenChangesStop', timeout: 1000 } });
 
     self.extra = {};
 
@@ -336,14 +336,22 @@ var Draft = function(params, metaSchema) {
         if (self.schemaData) {
             var schema = self.schema();
             $.each(schema.pages, function(i, page) {
+                var completedQuestions = 0;
                 $.each(page.questions, function(qid, question) {
                     var q = self.schemaData[qid];
-                    if (q && (q.value || '').trim()) {
-                        complete++;
+                    // questions with an uploader have the question.value attr instead
+                    if (q && q.question) {
+                        if(!( q.question.value || '').trim() )
+                            completedQuestions++;
+                    } else {
+                        if( q && (q.value || '').trim() )
+                            completedQuestions++;
                     }
-                    total++;
+                    if ( completedQuestions === Object.keys(page.questions).length )
+                        complete++;
                 });
-            });
+                total++;
+    		    });
             return Math.ceil(100 * (complete / total));
         }
         return 0;
@@ -735,6 +743,10 @@ RegistrationEditor.prototype.create = function(schemaData) {
         schema_data: schemaData
     }).then(self.updateData.bind(self));
 };
+RegistrationEditor.prototype.getCompletion = function() {
+    var self = this;
+    return self.draft().completion();
+};
 RegistrationEditor.prototype.putSaveData = function(payload) {
     var self = this;
     $osf.putJSON(self.urls.update.replace('{draft_pk}', self.draft().pk), payload).then(self.updateData.bind(self));
@@ -899,15 +911,13 @@ RegistrationManager.prototype.maybeWarn = function(draft) {
         }
     };
     // TODO: Uncomment to support approvals
-    // if (draft.isApproved) {
-    //     bootbox.confirm(language.beforeEditIsApproved, callback);
-    // }
-    // else if (draft.isPendingReview) {
-    //     bootbox.confirm(language.beforeEditIsPendingReview, callback);
-    // }
-    // else {
-    redirect();
-    // }
+    if (draft.isApproved) {
+        bootbox.confirm(language.beforeEditIsApproved, callback);
+    } else if (draft.isPendingReview) {
+        bootbox.confirm(language.beforeEditIsPendingReview, callback);
+    } else {
+        redirect();
+    }
 };
 
 module.exports = {

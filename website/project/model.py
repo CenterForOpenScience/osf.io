@@ -1882,7 +1882,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         return draft
 
-    def register_node(self, schema, auth, data, parent=None):
+    def register_node(self, schema, auth, template, data, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
