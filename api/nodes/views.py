@@ -172,20 +172,21 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
                          "data": {
                            "type": "nodes", # required
                            "attributes": {
-                             "title":       {title},         # required
-                             "category":    {category},      # required
-                             "description": {description},   # optional
-                             "tags":        [{tag1}, {tag2}] # optional
+                             "title":       {title},          # required
+                             "category":    {category},       # required
+                             "description": {description},    # optional
+                             "tags":        [{tag1}, {tag2}], # optional
+                             "public":      true|false        # optional
                            }
                          }
                        }
         Success:       201 CREATED + node representation
 
     New nodes are created by issuing a POST request to this endpoint.  The `title` and `category` fields are
-    mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  All other fields
-    not listed above will be ignored.  If the node creation is successful the API will return a 201 response with the
-    respresentation of the new node in the body.  For the new node's canonical URL, see the `links.self` field of the
-    response.
+    mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  `public` defaults
+    to false.  All other fields not listed above will be ignored.  If the node creation is successful the API will
+    return a 201 response with the respresentation of the new node in the body.  For the new node's canonical URL, see
+    the `links.self` field of the response.
 
     ##Query Params
 
@@ -199,6 +200,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -312,10 +314,11 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
                            "type": "nodes",   # required
                            "id":   {node_id}, # required
                            "attributes": {
-                             "title":       {title},         # mandatory
-                             "category":    {category},      # mandatory
-                             "description": {description},   # optional
-                             "tags":        [{tag1}, {tag2}] # optional
+                             "title":       {title},          # mandatory
+                             "category":    {category},       # mandatory
+                             "description": {description},    # optional
+                             "tags":        [{tag1}, {tag2}], # optional
+                             "public":      true|false        # optional
                            }
                          }
                        }
