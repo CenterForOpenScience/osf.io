@@ -3,6 +3,7 @@ from rest_framework import serializers as ser
 from framework.guid.model import Guid
 from framework.auth.core import Auth
 from website.project.model import Node, Comment
+from rest_framework.exceptions import ValidationError
 from api.base.serializers import (JSONAPISerializer,
                                   JSONAPIHyperlinkedRelatedField,
                                   JSONAPIHyperlinkedGuidRelatedField,
@@ -81,3 +82,29 @@ class CommentDetailSerializer(CommentSerializer):
     """
     id = IDField(source='_id', required=True)
     deleted = ser.BooleanField(source='is_deleted', required=True)
+
+
+class CommentReportsSerializer(JSONAPISerializer):
+    id = IDField(read_only=True)
+    type = TypeField()
+    category = ser.CharField(required=True)
+    message = ser.CharField(required=True)
+
+    def create(self, validated_data):
+        user = self.context['request'].user
+        validated_data['id'] = user._id
+        comment = self.context['view'].get_comment()
+        kwargs = dict(category=validated_data.get('category', None),
+                      text=validated_data.get('message', None))
+        if user._id in comment.reports:
+            raise ValidationError('Comment already reported.')
+        try:
+            comment.report_abuse(user, save=True, **kwargs)
+        except ValueError:
+            raise ValidationError('You cannot report your own comment.')
+        return validated_data
+
+    class Meta:
+        type_ = 'comment_reports'
+
+
