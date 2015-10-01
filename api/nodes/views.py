@@ -1057,7 +1057,6 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
         pointer_list = []
         object_type = 'node_links'
 
-
         # Requires that bulk delete must have request body
         if not request.data or 'csrfmiddlewaretoken' in request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
