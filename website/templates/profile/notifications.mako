@@ -23,19 +23,19 @@
                     </br>
                     <form>
                         <div class="form-group">
-
                             <input type="checkbox"
-                                   data-bind="checked: subscribed" value="Open Science Framework General"/>
-                            <label>Open Science Framework General</label>
+                                data-bind="checked: subscribed"
+                                value="${settings.MAILCHIMP_GENERAL_LIST}"/>
+                              <label>${settings.MAILCHIMP_GENERAL_LIST}</label>
                             <p class="text-muted" style="padding-left: 15px">Receive general notifications about the OSF every 2-3 weeks.</p>
                         </div>
                     </form>
                     <form>
                         <div class="form-group">
-
                             <input type="checkbox"
-                                   data-bind="checked: subscribed" value="Open Science Framework Help"/>
-                            <label>Open Science Framework Help</label>
+                                data-bind="checked: subscribed"
+                                value="${settings.OSF_HELP_LIST}"/>
+                              <label>${settings.OSF_HELP_LIST}</label>
                             <p class="text-muted" style="padding-left: 15px">Receive helpful tips on how to make the most of the OSF, up to once per week.</p>
                         </div>
                         <div class="p-t-md p-b-md">
