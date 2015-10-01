@@ -107,7 +107,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         if getattr(obj, self.lookup_field) is None:
             return None
 
-        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+        return super(JSONAPIHyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
 
     # overrides HyperlinkedIdentityField
     def to_representation(self, value):
