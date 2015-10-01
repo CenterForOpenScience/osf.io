@@ -307,6 +307,24 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
         return super(JSONAPIListSerializer, self).run_validation(data)
 
+    # overrides ListSerializer: Add HTML-sanitization similar to that used by APIv1 front-end views
+    def is_valid(self, clean_html=True, **kwargs):
+        """
+        After validation, scrub HTML from validated_data prior to saving (for create and update views)
+
+        Exclude 'type' from validated_data.
+
+        """
+        ret = super(JSONAPIListSerializer, self).is_valid(**kwargs)
+
+        if clean_html is True:
+            self._validated_data = _rapply(self.validated_data, strip_html)
+
+        for data in self._validated_data:
+            data.pop('type', None)
+
+        return ret
+
 
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
