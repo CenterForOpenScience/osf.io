@@ -39,6 +39,7 @@ from website.exceptions import NodeStateError
 from website.files.models import FileNode
 from website.files.models import OsfStorageFileNode
 from website.models import Node, Pointer
+from framework.auth.core import User
 from website.util import waterbutler_api_url_for
 
 
@@ -478,8 +479,8 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
-    """Contributors (users) for a node. *Writeable*.
+class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ListFilterMixin, NodeMixin):
+    """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
     have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
@@ -565,9 +566,97 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
             contributors.append(contributor)
         return contributors
 
-    # overrides ListAPIView
+    # overrides ListBulkCreateUpdateDestroyAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        queryset = self.get_queryset_from_request()
+
+        # If bulk request, queryset only contains contributors in request
+        if isinstance(self.request.data, list):
+            contrib_ids = [item['id'] for item in self.request.data]
+            queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
+
+        return queryset
+
+    # overrides ListBulkCreateUpdateDestroyAPIView
+    def get_serializer(self, *args, **kwargs):
+        """
+         Adds many=True to serializer if bulk operation.
+        """
+
+        if "data" in kwargs:
+            data = kwargs["data"]
+
+            if isinstance(data, list):
+                kwargs.update({'many': True})
+
+        return super(NodeContributorsList, self).get_serializer(*args, **kwargs)
+
+    # overrides ListBulkCreateUpdateDestroyAPIView
+    def get_serializer_class(self):
+        """
+        Use NodeContributorDetailSerializer which requires 'id'
+        """
+        serializer_class = NodeContributorsSerializer
+        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+            serializer_class = NodeContributorDetailSerializer
+        return serializer_class
+
+    # overrides ListBulkCreateUpdateDestroyView
+    def create(self, request, *args, **kwargs):
+        """
+        Correctly formats both bulk and single POST response
+        """
+        response = bulk_generics.ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
+        if 'data' in response.data:
+            return response
+        return Response({'data': response.data}, status=status.HTTP_201_CREATED)
+
+    # overrides ListBulkCreateUpdateDestroyAPIView
+    def bulk_update(self, request, *args, **kwargs):
+        """
+        Correctly formats bulk PUT/PATCH response
+        """
+        response = bulk_generics.ListBulkCreateUpdateDestroyAPIView.bulk_update(self, request, *args, **kwargs)
+        return Response({'data': response.data}, status=status.HTTP_200_OK)
+
+    # Overrides ListBulkCreateUpdateDestroyAPIView
+    def bulk_destroy(self, request, *args, **kwargs):
+        """
+        Handles bulk destroy of contributors. Handles permissions and enforces bulk limit.
+        """
+        user = self.request.user
+        contrib_list = []
+        if not request.data or 'csrfmiddlewaretoken' in request.data:
+            raise ValidationError('Array must contain resource identifier objects.')
+        for item in request.data:
+            user = get_object_or_error(User, item[u'id'], display_name='node')
+            contrib_list.append(user)
+
+        if not contrib_list:
+            raise NotFound()
+
+        num_items = len(contrib_list)
+        bulk_limit = JSONAPIListSerializer.DEFAULT_BULK_LIMIT
+
+        if num_items > bulk_limit:
+            raise ValidationError(
+                detail={'non_field_errors': ['Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items)]}
+            )
+
+        self.perform_bulk_destroy(contrib_list)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # Overrides ListBulkCreateUpdateDestroyAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        node = self.get_node()
+        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+            raise ValidationError("Must have at least one visible contributor")
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError("Must have at least one registered admin contributor")
 
 
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):

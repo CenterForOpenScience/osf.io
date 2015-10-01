@@ -195,6 +195,50 @@ class NodeDetailSerializer(NodeSerializer):
     """
     id = IDField(source='_id', required=True)
 
+
+class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
+    """
+    List serializer for node contributors.
+
+    Request either completely succeeds or fails. Requires
+    the request to be in the serializer context.
+    """
+
+    # Overrides JSONAPIListSerializer to confirm all potential contributors exist and are not already contributors
+    def create(self, validated_data):
+        node = self.context['view'].get_node()
+
+        contributor_mapping = {item.get('_id', None): item for item in validated_data}
+        ret = []
+
+        for user_id, data in contributor_mapping.items():
+            contributor = get_object_or_error(User, data['_id'], display_name='user')
+            if contributor in node.contributors:
+                raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
+
+        for user_id, data in contributor_mapping.items():
+            ret.append(self.child.create(data))
+
+        return ret
+
+    # Overrides JSONAPIListSerializer which doesn't support multiple update by default.
+    def update(self, instance, validated_data):
+        if len(instance) != len(validated_data):
+            raise exceptions.NotFound()
+        contrib_mapping = {contrib._id: contrib for contrib in instance}
+        data_mapping = {item.get('_id', None): item for item in validated_data}
+
+        ret = []
+        for user_id, data in data_mapping.items():
+            contributor = contrib_mapping.get(user_id, None)
+            ret.append(self.child.update(contributor, data))
+
+        return ret
+
+    class Meta:
+        type_ = 'contributors'
+
+
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
@@ -232,6 +276,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
                                              link_type='related')
 
     profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
+
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        kwargs['child'] = cls()
+        return JSONAPINodeContributorListSerializer(*args, **kwargs)
 
     def get_profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
