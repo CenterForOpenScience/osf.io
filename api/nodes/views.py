@@ -24,6 +24,7 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
+    NodeLinksDetailSerializer,
     NodeContributorDetailSerializer
 )
 from api.nodes.permissions import (
@@ -254,7 +255,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
     # overrides ListBulkCreateUpdateDestroyAPIView
     def get_serializer(self, *args, **kwargs):
         """
-         Adds many=True to serializer if bulk operation.
+        Adds many=True to serializer if bulk operation.
         """
 
         if "data" in kwargs:
@@ -835,7 +836,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
-class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
+class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
     """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -881,6 +882,81 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
             self.get_node().nodes_pointer
             if not pointer.node.is_deleted
         ]
+
+    # overrides ListBulkCreateDestroyAPIView
+    def get_serializer(self, *args, **kwargs):
+        """
+        Adds many=True to serializer if bulk operation.
+        """
+
+        if "data" in kwargs:
+            data = kwargs["data"]
+
+            if isinstance(data, list):
+                kwargs.update({'many': True})
+
+        return super(NodeLinksList, self).get_serializer(*args, **kwargs)
+
+    # overrides ListBulkCreateDestroView
+    def get_serializer_class(self):
+        """
+        Use NodeLinksDetailSerializer for DELETE which requires 'id'
+        """
+        serializer_class = NodeLinksSerializer
+        if self.request.method == 'DELETE':
+            serializer_class = NodeLinksDetailSerializer
+        return serializer_class
+
+    # overrides ListBulkCreateDestroyView
+    def create(self, request, *args, **kwargs):
+        """
+        Correctly formats both bulk and single POST response
+        """
+        response = bulk_generics.ListBulkCreateDestroyAPIView.create(self, request, *args, **kwargs)
+        if 'data' in response.data:
+            return response
+        return Response({'data': response.data}, status=status.HTTP_201_CREATED)
+
+    # Overrides ListBulkCreateDestroyAPIView
+    def bulk_destroy(self, request, *args, **kwargs):
+        """
+        Handles bulk destroy of node_links. Handles permissions and enforces bulk limit.
+        """
+        user = self.request.user
+        pointer_list = []
+        if not request.data or 'csrfmiddlewaretoken' in request.data:
+            raise ValidationError('Array must contain resource identifier objects.')
+        node = get_object_or_error(Node, kwargs['node_id'], display_name='node')
+        if not node.can_edit(Auth(user)) or node.is_registration:
+            raise PermissionDenied()
+        pointer_dict = {pointer._id: pointer for pointer in node.nodes}
+        for item in request.data:
+            if item['id'] not in pointer_dict:
+                raise ValidationError('Node link does not belong to the requested node.')
+            pointer_list.append(pointer_dict[item['id']])
+
+        num_items = len(pointer_list)
+        bulk_limit = JSONAPIListSerializer.DEFAULT_BULK_LIMIT
+
+        if num_items > bulk_limit:
+            raise ValidationError(
+                detail={'non_field_errors': ['Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items)]}
+            )
+
+        self.perform_bulk_destroy(pointer_list)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    # Overrides ListBulkCreateDestroyAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        node = self.get_node()
+        try:
+            node.rm_pointer(instance, auth=auth)
+        except ValueError as err:  # pointer doesn't belong to node
+            raise ValidationError(err.message)
+        node.save()
 
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
