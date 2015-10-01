@@ -925,7 +925,8 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
         user = self.request.user
         pointer_list = []
         if not request.data or 'csrfmiddlewaretoken' in request.data:
-            raise ValidationError('Array must contain resource identifier objects.')
+            raise ValidationError('Request must contain array of resource identifier objects.')
+
         node = get_object_or_error(Node, kwargs['node_id'], display_name='node')
         if not node.can_edit(Auth(user)) or node.is_registration:
             raise PermissionDenied()

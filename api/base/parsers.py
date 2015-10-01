@@ -7,6 +7,9 @@ from api.base.exceptions import JSONAPIException
 
 NO_ATTRIBUTES_ERROR = 'Request must include /data/attributes.'
 NO_DATA_ERROR = 'Request must include /data.'
+NO_TYPE_ERROR = 'Request must include /data/type.'
+NO_ID_ERROR = 'Request must include /data/id.'
+
 
 class JSONAPIParser(JSONParser):
     """
@@ -15,15 +18,24 @@ class JSONAPIParser(JSONParser):
     media_type = 'application/vnd.api+json'
     renderer_class = JSONAPIRenderer
 
-    def data_flattener(self, resource_object, stream):
+    def data_flattener(self, resource_object, stream, is_list=False):
         """
         Flattens data objects, making attributes fields the same level as id and type.
         """
         if "attributes" not in resource_object and stream.method != 'DELETE':
             raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
+
         id = resource_object.get('id')
         object_type = resource_object.get('type')
         attributes = resource_object.get('attributes')
+
+        # For validating type and id for bulk delete:
+        if is_list is True and stream.method == 'DELETE':
+            if id is None:
+                raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
+
+            if object_type is None:
+                raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
         parsed = {'id': id, 'type': object_type}
         if attributes:
@@ -45,8 +57,9 @@ class JSONAPIParser(JSONParser):
             if isinstance(data, list):
                 data_collection = []
                 for data_object in data:
-                    parsed_data = self.data_flattener(data_object, stream)
+                    parsed_data = self.data_flattener(data_object, stream, True)
                     data_collection.append(parsed_data)
+
                 return data_collection
 
             else:
