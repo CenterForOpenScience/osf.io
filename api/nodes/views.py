@@ -566,17 +566,18 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
             contributors.append(contributor)
         return contributors
 
-    # overrides ListAPIView
+    # overrides ListBulkCreateUpdateDestroyAPIView
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
 
+        # If bulk request, queryset only contains contributors in request
         if isinstance(self.request.data, list):
             contrib_ids = [item['id'] for item in self.request.data]
             queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
 
         return queryset
 
-        # overrides ListBulkCreateUpdateDestroyAPIView
+    # overrides ListBulkCreateUpdateDestroyAPIView
     def get_serializer(self, *args, **kwargs):
         """
          Adds many=True to serializer if bulk operation.
@@ -590,9 +591,10 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
 
         return super(NodeContributorsList, self).get_serializer(*args, **kwargs)
 
+    # overrides ListBulkCreateUpdateDestroyAPIView
     def get_serializer_class(self):
         """
-        Use NodeDetailSerializer which requires 'id'
+        Use NodeContributorDetailSerializer which requires 'id'
         """
         serializer_class = NodeContributorsSerializer
         if self.request.method == 'PUT' or self.request.method == 'PATCH':
@@ -620,7 +622,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
     # Overrides ListBulkCreateUpdateDestroyAPIView
     def bulk_destroy(self, request, *args, **kwargs):
         """
-        Handles bulk destroy of nodes. Handles permissions and enforces bulk limit.
+        Handles bulk destroy of contributors. Handles permissions and enforces bulk limit.
         """
         user = self.request.user
         contrib_list = []

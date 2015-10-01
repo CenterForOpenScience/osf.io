@@ -198,7 +198,7 @@ class NodeDetailSerializer(NodeSerializer):
 
 class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
     """
-    Bulk updates node contributors with the validated data.
+    List serializer for node contributors.
 
     Request either completely succeeds or fails. Requires
     the request to be in the serializer context.
