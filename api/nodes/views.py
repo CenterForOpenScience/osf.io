@@ -716,7 +716,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
+class NodeChildrenList(bulk_generics.ListBulkCreateAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -808,7 +808,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
             Q('is_folder', 'ne', True)
         )
 
-    # overrides ListAPIView
+    # overrides ListBulkCreateAPIView
     def get_queryset(self):
         node = self.get_node()
         req_query = self.get_query_from_request()
@@ -826,7 +826,31 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
         children = [each for each in nodes if each.can_view(auth)]
         return children
 
-    # overrides ListCreateAPIView
+    # overrides ListBulkCreateAPIView
+    def get_serializer(self, *args, **kwargs):
+        """
+         Adds many=True to serializer if bulk operation.
+        """
+
+        if "data" in kwargs:
+            data = kwargs["data"]
+
+            if isinstance(data, list):
+                kwargs.update({'many': True})
+
+        return super(NodeChildrenList, self).get_serializer(*args, **kwargs)
+
+    # overrides ListBulkCreateAPIView
+    def create(self, request, *args, **kwargs):
+        """
+        Correctly formats both bulk and single POST response
+        """
+        response = bulk_generics.ListBulkCreateAPIView.create(self, request, *args, **kwargs)
+        if 'data' in response.data:
+            return response
+        return Response({'data': response.data}, status=status.HTTP_201_CREATED)
+
+    # overrides ListBulkCreateAPIView
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(creator=user, parent=self.get_node())
