@@ -166,6 +166,14 @@ class Comment(GuidStoredObject):
     def pk(self):
         return self._id
 
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('comments:comment-detail', kwargs={'comment_id': self._id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
     @classmethod
     def create(cls, auth, **kwargs):
         comment = cls(**kwargs)

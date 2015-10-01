@@ -4,11 +4,12 @@ from framework.guid.model import Guid
 from framework.auth.core import Auth
 from website.project.model import Node, Comment
 from rest_framework.exceptions import ValidationError
+from api.base.utils import absolute_reverse
 from api.base.serializers import (JSONAPISerializer,
                                   JSONAPIHyperlinkedRelatedField,
                                   JSONAPIHyperlinkedGuidRelatedField,
                                   JSONAPIHyperlinkedIdentityField,
-                                  IDField, TypeField)
+                                  IDField, TypeField, LinksField)
 
 
 class CommentSerializer(JSONAPISerializer):
@@ -25,6 +26,9 @@ class CommentSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
+
+    # LinksField.to_representation adds link to "self"
+    links = LinksField({})
 
     class Meta:
         type_ = 'comments'
@@ -87,6 +91,20 @@ class CommentReportsSerializer(JSONAPISerializer):
     type = TypeField()
     category = ser.CharField(required=True)
     message = ser.CharField(required=True)
+    links = LinksField({'self': 'get_absolute_url'})
+
+    class Meta:
+        type_ = 'comment_reports'
+
+    def get_absolute_url(self, obj):
+        comment_id = self.context['request'].parser_context['kwargs']['comment_id']
+        return absolute_reverse(
+            'comments:report-detail',
+            kwargs={
+                'comment_id': comment_id,
+                'user_id': obj.get('_id', None)
+            }
+        )
 
     def create(self, validated_data):
         user = self.context['request'].user
@@ -115,9 +133,6 @@ class CommentReportsSerializer(JSONAPISerializer):
         except ValueError:
             raise ValidationError('You cannot report your own comment.')
         return comment_report
-
-    class Meta:
-        type_ = 'comment_reports'
 
 
 class CommentReportDetailSerializer(CommentReportsSerializer):
