@@ -26,8 +26,6 @@ class CommentSerializer(JSONAPISerializer):
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
 
-    # add reports as a hyperlinked field instead of a dictionary
-
     class Meta:
         type_ = 'comments'
 

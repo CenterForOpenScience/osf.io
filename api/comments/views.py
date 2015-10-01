@@ -1,7 +1,7 @@
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework import generics
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import NotFound, ValidationError
 from api.comments.serializers import CommentSerializer, CommentDetailSerializer, CommentReportsSerializer, CommentReportDetailSerializer
 from website.project.model import Comment
 
@@ -68,7 +68,7 @@ class CommentReports(generics.ListCreateAPIView, CommentMixin):
         return serialized_reports
 
 
-class CommentReportDetail(generics.RetrieveUpdateAPIView, CommentMixin):
+class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     """Reporting a comment.
     """
     # permission classes
@@ -76,9 +76,18 @@ class CommentReportDetail(generics.RetrieveUpdateAPIView, CommentMixin):
 
     serializer_class = CommentReportDetailSerializer
 
-    # overrides RetrieveAPIView
+    # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         comment = self.get_comment()
         reports = comment.reports
         user_id = self.kwargs['user_id']
         return self.serialize_comment_report(reports, user_id)
+
+    # overrides RetrieveUpdateDestroyAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        comment = self.get_comment()
+        try:
+            comment.unreport_abuse(user, save=True)
+        except ValueError as error:
+            raise ValidationError(error.message)
