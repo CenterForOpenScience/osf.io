@@ -306,6 +306,13 @@ class NodeRegistrationSerializer(NodeSerializer):
 
 
 class JSONAPINodeLinksListSerializer(JSONAPIListSerializer):
+    """
+    List serializer for NodeLinks
+
+    Request either completely succeeds or fails. Requires
+    the request to be in the serializer context.
+    """
+
     class Meta:
         type_ = 'node_links'
 

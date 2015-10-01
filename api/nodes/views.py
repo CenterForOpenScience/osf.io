@@ -924,12 +924,16 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
         """
         user = self.request.user
         pointer_list = []
+
+        # Requires that bulk delete must have request body
         if not request.data or 'csrfmiddlewaretoken' in request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
 
         node = get_object_or_error(Node, kwargs['node_id'], display_name='node')
         if not node.can_edit(Auth(user)) or node.is_registration:
             raise PermissionDenied()
+
+        # TODO validation once rollback of bulk requests complete
         pointer_dict = {pointer._id: pointer for pointer in node.nodes}
         for item in request.data:
             if item['id'] not in pointer_dict:
