@@ -25,7 +25,7 @@ def root(request, format=None):
     #General API Usage
 
     The OSF API generally conforms to the [JSON-API v1.0 spec](http://jsonapi.org/format/1.0/).  Where exceptions
-    exists, they will be noted.  Each endpoint will have its own documentation, but there are some general principles.
+    exist, they will be noted.  Each endpoint will have its own documentation, but there are some general principles.
 
     ##Requests
 
@@ -133,12 +133,12 @@ def root(request, format=None):
     + `id`
 
     The identifier for the entity.  This MUST be included with [PUT and PATCH
-    requests](#formatting-post-put-patch-request-bodies).
+    requests](#formatting-postputpatch-request-bodies).
 
     + `type`
 
     The type identifier of this entity.  This MUST be included with [all create/update
-    requests](#formatting-post-put-patch-request-bodies).
+    requests](#formatting-postputpatch-request-bodies).
 
     + `attributes`
 
@@ -147,7 +147,7 @@ def root(request, format=None):
     + `relationships`
 
     Relationships are urls to other entities or entity collections that have a relationship to the entity. For example,
-    the node entity provides a `contributors` relationship that points to the endpoint to retreive all contributors to
+    the node entity provides a `contributors` relationship that points to the endpoint to retrieve all contributors to
     that node.  It is recommended to use these links rather than to id-filter general entity collection endpoints.
     They'll be faster, easier, and less error-prone.  Generally a relationship will have the following structure:
 
@@ -195,14 +195,14 @@ def root(request, format=None):
     succeeded without the updated attribute, it will still report as successful.  Likewise, if the request would have
     failed without the attribute update, the API will still report a failure.
 
-    Typoed or non-existant attributes will behave the same as non-updatable attributes and be silently
+    Typoed or non-existent attributes will behave the same as non-updatable attributes and be silently
     ignored. If a request is not working the way you expect, make sure to double check your spelling.
 
     ###Errors
 
     When a request fails for whatever reason, the OSF API will return an appropriate HTTP error code and include a
     descriptive error in the body of the response.  The response body will be an object with a key, `errors`, pointing
-    to an array of error objects.  Generally, these error object will consist of a `detail` key with a detailed error
+    to an array of error objects.  Generally, these error objects will consist of a `detail` key with a detailed error
     message, but may include additional information in accordance with the [JSON-API error
     spec](http://jsonapi.org/format/1.0/#error-objects).
 

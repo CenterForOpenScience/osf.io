@@ -288,7 +288,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     ###Files
 
     List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
-    for accessing the actual files stored with this node.
+    for accessing the actual files stored within this node.
 
     ###Parent
 
@@ -849,7 +849,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
     """Files attached to a node for a given provider. *Read-only*.
 
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
-    If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenver
+    If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenever
     this endpoint is accessed.  To see the cached metadata, GET the endpoint for the file directly (available through
     its `links.info` attribute).
 
@@ -960,7 +960,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
     Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
     integratations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
-    storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers are
+    storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers that are
     configured for this node.  If you want to add more, you will need to do that in the Open Science Framework front end
     for now.
 

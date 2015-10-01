@@ -40,7 +40,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     Welcome to the Files API.  Brace yourself, things are about to get *weird*.
 
     The Files API is the one place in the OSF API where we break hard from the JSON-API spec.  This is because most of
-    the behind-the-scenes moving, uploading, deleting, etc. of files and folders is actually be handled for us by a
+    the behind-the-scenes moving, uploading, deleting, etc. of files and folders is actually handled for us by a
     nifty piece of software called [WaterButler](https://github.com/CenterForOpenScience/waterbutler).  WaterButler lets
     us interact with files stored on different cloud storage platforms through a consistent API.  However, it uses
     different conventions for requests, responses, and URL-building, so pay close attention to the documentation for
@@ -52,7 +52,7 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     metadata is cached and can be refreshed by GETting the file via the Node Files List endpoint.
 
     Both files and folders are available through the Files API and are distinguished by the `kind` attribute ("file" for
-    files, "folder" for folders).  Not all actions and relationships are relevent to both files and folders, so the
+    files, "folder" for folders).  Not all actions and relationships are relevant to both files and folders, so the
     applicable types are listed by each heading.
 
     ###Waterbutler Entities
