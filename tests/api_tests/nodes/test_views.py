@@ -1184,6 +1184,14 @@ class TestNodeBulkDelete(ApiTestCase):
         self.public_payload = {'data': [{'id': self.project_one._id, 'type': 'nodes'}, {'id': self.project_two._id, 'type': 'nodes'}]}
         self.private_payload = {'data': [{'id': self.private_project_user_one._id}]}
 
+    def test_bulk_delete_no_type(self):
+        payload = {'data': [
+            {'id': self.project_one._id},
+            {'id': self.project_two._id}
+        ]}
+        res = self.app.delete_json_api(self.url, payload, auth=self.user_one.auth)
+        assert_equal(res.status_code, 400)
+
     def test_bulk_delete_public_projects_logged_in(self):
         res = self.app.delete_json_api(self.url, self.public_payload, auth=self.user_one.auth)
         assert_equal(res.status_code, 204)
@@ -4255,6 +4263,195 @@ class TestNodeLinkCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
 
+class TestNodeLinksBulkCreate(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeLinksBulkCreate, self).setUp()
+        self.user = AuthUserFactory()
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_pointer_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_pointer_project_two = ProjectFactory(is_public=False, creator=self.user)
+
+        self.private_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.private_project._id)
+
+        self.private_payload = {
+            'data': [{
+                "type": "node_links",
+                "attributes": {
+                    "target_node_id": self.private_pointer_project._id
+                }
+            },
+            {
+                "type": "node_links",
+                "attributes": {
+                    "target_node_id": self.private_pointer_project_two._id
+                }
+            }]
+        }
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_pointer_project_two = ProjectFactory(is_public=True, creator=self.user)
+
+        self.public_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.public_project._id)
+        self.public_payload = {
+            'data': [{
+                'type': 'node_links',
+                'attributes': {
+                    'target_node_id': self.public_pointer_project._id
+                }
+            },
+                {
+                'type': 'node_links',
+                'attributes': {
+                    'target_node_id': self.public_pointer_project_two._id
+                }
+            }]
+        }
+
+        self.fake_url = '/{}nodes/{}/node_links/'.format(API_BASE, 'fdxlq')
+        self.fake_payload = {'data': [{'type': 'node_links', 'attributes': {'target_node_id': 'fdxlq'}}]}
+        self.point_to_itself_payload = {'data': [{'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}]}
+
+        self.user_two = AuthUserFactory()
+        self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
+        self.user_two_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.user_two_project._id)
+        self.user_two_payload = {'data': [{'type': 'node_links', 'attributes': {'target_node_id': self.user_two_project._id}}]}
+
+    def test_creates_project_target_not_nested(self):
+        payload = {'data': [{'type': 'node_links', 'target_node_id': self.private_pointer_project._id}]}
+        res = self.app.post_json_api(self.public_url, payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
+
+    def test_bulk_creates_public_node_pointers_logged_out(self):
+        res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_in('detail', res.json['errors'][0])
+
+        res = self.app.get(self.public_url)
+        assert_equal(res.json['data'], [])
+
+    @assert_logs(NodeLog.POINTER_CREATED, 'public_project', -1)
+    @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
+    def test_creates_public_node_pointer_logged_in(self):
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.public_pointer_project._id)
+        assert_equal(res.json['data'][1]['attributes']['target_node_id'], self.public_pointer_project_two._id)
+
+    def test_bulk_creates_private_node_pointers_logged_out(self):
+        res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_in('detail', res.json['errors'][0])
+
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.json['data'], [])
+
+    @assert_logs(NodeLog.POINTER_CREATED, 'private_project', -1)
+    @assert_logs(NodeLog.POINTER_CREATED, 'private_project')
+    def test_creates_private_node_pointer_logged_in_contributor(self):
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.private_pointer_project._id)
+        assert_equal(res.json['data'][1]['attributes']['target_node_id'], self.private_pointer_project_two._id)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+
+    def test_bulk_creates_private_node_pointers_logged_in_non_contributor(self):
+        res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in('detail', res.json['errors'][0])
+
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.json['data'], [])
+
+    def test_bulk_creates_node_pointers_non_contributing_node_to_contributing_node(self):
+        res = self.app.post_json_api(self.private_url, self.user_two_payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in('detail', res.json['errors'][0])
+
+    @assert_logs(NodeLog.POINTER_CREATED, 'private_project')
+    def test_bulk_creates_node_pointers_contributing_node_to_non_contributing_node(self):
+        res = self.app.post_json_api(self.private_url, self.user_two_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.user_two_project._id)
+
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.user_two_project._id)
+
+    def test_bulk_creates_pointers_non_contributing_node_to_fake_node(self):
+        res = self.app.post_json_api(self.private_url, self.fake_payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_bulk_creates_pointers_contributing_node_to_fake_node(self):
+        res = self.app.post_json_api(self.private_url, self.fake_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_bulk_creates_fake_nodes_pointing_to_contributing_node(self):
+        res = self.app.post_json_api(self.fake_url, self.private_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_in('detail', res.json['errors'][0])
+
+        res = self.app.post_json_api(self.fake_url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_in('detail', res.json['errors'][0])
+
+    @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
+    def test_bulk_creates_node_pointer_to_itself(self):
+        res = self.app.post_json_api(self.public_url, self.point_to_itself_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.public_project._id)
+
+    def test_bulk_creates_node_pointer_to_itself_unauthorized(self):
+        res = self.app.post_json_api(self.public_url, self.point_to_itself_payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in('detail', res.json['errors'][0])
+
+    @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
+    @assert_logs(NodeLog.POINTER_CREATED, 'public_project', -1)
+    def test_bulk_creates_node_pointer_already_connected(self):
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.public_pointer_project._id)
+        assert_equal(res.json['data'][1]['attributes']['target_node_id'], self.public_pointer_project_two._id)
+
+        res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Node link to node {} already in list'.format(self.public_pointer_project._id), res.json['errors'][0]['detail'])
+
+    def test_bulk_cannot_add_link_to_registration(self):
+        registration = RegistrationFactory(creator=self.user)
+
+        url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
+        payload = {'data': [{'type': 'node_links', 'attributes': {'target_node_id': self.public_pointer_project._id}}]}
+        res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_bulk_create_node_pointer_no_type(self):
+        payload = {'data': [{'attributes': {'target_node_id': self.user_two_project._id}}]}
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+
+    def test_bulk_create_node_pointer_incorrect_type(self):
+        payload = {'data': [{'type': 'Wrong type.', 'attributes': {'target_node_id': self.user_two_project._id}}]}
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+
+
 class TestNodeFilesList(ApiTestCase):
 
     def setUp(self):
@@ -4670,6 +4867,167 @@ class TestDeleteNodeLink(ApiTestCase):
         # The node link belongs to a different project
         res = self.app.delete(
             '/{}nodes/{}/node_links/{}'.format(API_BASE, project._id, self.public_pointer._id),
+            auth=self.user.auth,
+            expect_errors=True
+        )
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], 'Node link does not belong to the requested node.')
+
+
+class TestBulkDeleteNodeLinks(ApiTestCase):
+
+    def setUp(self):
+        super(TestBulkDeleteNodeLinks, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user, is_public=False)
+        self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
+        self.pointer_project_two = ProjectFactory(creator=self.user, is_public=True)
+
+        self.pointer = self.project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
+        self.pointer_two = self.project.add_pointer(self.pointer_project_two, auth=Auth(self.user), save=True)
+
+        self.private_payload = {
+              "data": [
+                {"type": "node_links", "id": self.pointer._id},
+                {"type": "node_links", "id": self.pointer_two._id}
+              ]
+            }
+
+        self.private_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.project._id)
+
+        self.user_two = AuthUserFactory()
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_pointer_project_two = ProjectFactory(is_public=True, creator=self.user)
+
+        self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
+                                                              auth=Auth(self.user),
+                                                              save=True)
+        self.public_pointer_two = self.public_project.add_pointer(self.public_pointer_project_two,
+                                                              auth=Auth(self.user),
+                                                              save=True)
+
+        self.public_payload = {
+              'data': [
+                {'type': 'node_links', 'id': self.public_pointer._id},
+                {'type': 'node_links', 'id': self.public_pointer_two._id}
+              ]
+            }
+
+        self.public_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.public_project._id)
+
+    def test_bulk_delete_pointers_no_type(self):
+        payload = {'data': [
+            {'id': self.public_pointer._id},
+            {'id': self.public_pointer_two._id}
+        ]}
+        res = self.app.delete_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], "/data/type")
+
+    def test_bulk_delete_pointers_no_id(self):
+        payload = {'data': [
+            {'type': 'node_links'},
+            {'type': 'node_links'}
+        ]}
+        res = self.app.delete_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], "/data/id")
+
+    def test_bulk_delete_pointers_no_data(self):
+        res = self.app.delete_json_api(self.public_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must contain array of resource identifier objects.')
+
+        res = self.app.delete_json_api(self.public_url, {}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
+
+
+    def test_cannot_delete_if_registration(self):
+        registration = RegistrationFactory(project=self.public_project)
+
+        url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
+
+        res = self.app.delete_json_api(url, self.public_payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_bulk_deletes_public_node_pointers_logged_out(self):
+        res = self.app.delete_json_api(self.public_url, self.public_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_in('detail', res.json['errors'][0])
+
+    def test_bulk_deletes_public_node_pointers_fails_if_bad_auth(self):
+        node_count_before = len(self.public_project.nodes_pointer)
+        res = self.app.delete_json_api(self.public_url, self.public_payload, auth=self.user_two.auth, expect_errors=True)
+        # This is could arguably be a 405, but we don't need to go crazy with status codes
+        assert_equal(res.status_code, 403)
+        assert_in('detail', res.json['errors'][0])
+        self.public_project.reload()
+        assert_equal(node_count_before, len(self.public_project.nodes_pointer))
+
+    @assert_logs(NodeLog.POINTER_REMOVED, 'public_project')
+    @assert_logs(NodeLog.POINTER_REMOVED, 'public_project', -1)
+    def test_bulk_deletes_public_node_pointers_succeeds_as_owner(self):
+        node_count_before = len(self.public_project.nodes_pointer)
+        res = self.app.delete_json_api(self.public_url, self.public_payload, auth=self.user.auth)
+        self.public_project.reload()
+        assert_equal(res.status_code, 204)
+        assert_equal(node_count_before - 2, len(self.public_project.nodes_pointer))
+
+    def test_bulk_deletes_private_node_pointers_logged_out(self):
+        res = self.app.delete(self.private_url, self.private_payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+        assert_in('detail', res.json['errors'][0])
+
+    @assert_logs(NodeLog.POINTER_REMOVED, 'project', -1)
+    @assert_logs(NodeLog.POINTER_REMOVED, 'project')
+    def test_bulk_deletes_private_node_pointers_logged_in_contributor(self):
+        res = self.app.delete_json_api(self.private_url, self.private_payload, auth=self.user.auth)
+        self.project.reload()  # Update the model to reflect changes made by post request
+        assert_equal(res.status_code, 204)
+        assert_equal(len(self.project.nodes_pointer), 0)
+
+    def test_bulk_deletes_private_node_pointers_logged_in_non_contributor(self):
+        res = self.app.delete_json_api(self.private_url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_in('detail', res.json['errors'][0])
+
+    @assert_logs(NodeLog.POINTER_REMOVED, 'public_project', -1)
+    @assert_logs(NodeLog.POINTER_REMOVED, 'public_project')
+    def test_return_bulk_deleted_public_node_pointer(self):
+        res = self.app.delete_json_api(self.public_url, self.public_payload, auth=self.user.auth)
+        self.public_project.reload()  # Update the model to reflect changes made by post request
+        assert_equal(res.status_code, 204)
+
+        pointer_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+
+        #check that deleted pointer can not be returned
+        res = self.app.get(pointer_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    @assert_logs(NodeLog.POINTER_REMOVED, 'project', -1)
+    @assert_logs(NodeLog.POINTER_REMOVED, 'project')
+    def test_return_bulk_deleted_private_node_pointer(self):
+        res = self.app.delete_json_api(self.private_url, self.private_payload, auth=self.user.auth)
+        self.project.reload()  # Update the model to reflect changes made by post request
+        assert_equal(res.status_code, 204)
+
+        pointer_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.project._id, self.pointer._id)
+
+        #check that deleted pointer can not be returned
+        res = self.app.get(pointer_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4322
+    def test_bulk_delete_link_that_is_not_linked_to_correct_node(self):
+        project = ProjectFactory(creator=self.user)
+        # The node link belongs to a different project
+        res = self.app.delete_json_api(
+            self.private_url, self.public_payload,
             auth=self.user.auth,
             expect_errors=True
         )

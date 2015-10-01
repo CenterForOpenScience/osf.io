@@ -353,6 +353,18 @@ class NodeRegistrationSerializer(NodeSerializer):
         raise exceptions.ValidationError('Registrations cannot be modified.')
 
 
+class JSONAPINodeLinksListSerializer(JSONAPIListSerializer):
+    """
+    List serializer for NodeLinks
+
+    Request either completely succeeds or fails. Requires
+    the request to be in the serializer context.
+    """
+
+    class Meta:
+        type_ = 'node_links'
+
+
 class NodeLinksSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
@@ -370,6 +382,11 @@ class NodeLinksSerializer(JSONAPISerializer):
     links = LinksField({
         'html': 'get_absolute_url',
     })
+
+    @classmethod
+    def many_init(cls, *args, **kwargs):
+        kwargs['child'] = cls()
+        return JSONAPINodeLinksListSerializer(*args, **kwargs)
 
     def get_absolute_url(self, obj):
         pointer_node = Node.load(obj.node._id)
@@ -391,6 +408,13 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     def update(self, instance, validated_data):
         pass
+
+
+class NodeLinksDetailSerializer(NodeSerializer):
+    """
+    Overrides NodeLinksSerializer to make id required.
+    """
+    id = IDField(source='_id', required=True)
 
 
 class NodeProviderSerializer(JSONAPISerializer):
