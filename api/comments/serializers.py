@@ -108,3 +108,8 @@ class CommentReportsSerializer(JSONAPISerializer):
         type_ = 'comment_reports'
 
 
+class CommentReportDetailSerializer(CommentReportsSerializer):
+    """
+    Overrides CommentReportSerializer to make id required.
+    """
+    id = IDField(required=True)

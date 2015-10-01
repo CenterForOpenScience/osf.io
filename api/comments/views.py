@@ -2,7 +2,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework import generics
 from rest_framework.exceptions import NotFound
-from api.comments.serializers import CommentSerializer, CommentDetailSerializer, CommentReportsSerializer
+from api.comments.serializers import CommentSerializer, CommentDetailSerializer, CommentReportsSerializer, CommentReportDetailSerializer
 from website.project.model import Comment
 
 
@@ -26,6 +26,13 @@ class CommentMixin(object):
             # May raise a permission denied
             self.check_object_permissions(self.request, comment)
         return comment
+
+    def serialize_comment_report(self, reports, user_id):
+        user_dict = {}
+        user_dict['id'] = user_id
+        user_dict['category'] = reports[user_id]['category']
+        user_dict['message'] = reports[user_id]['text']
+        return user_dict
 
 
 class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
@@ -55,12 +62,23 @@ class CommentReports(generics.ListCreateAPIView, CommentMixin):
         serialized_reports = []
 
         for user_id in reports:
-            user_dict = {}
-            user_dict['id'] = user_id
-            user_dict['category'] = reports[user_id]['category']
-            user_dict['message'] = reports[user_id]['text']
-            serialized_reports.append(user_dict)
+            report = self.serialize_comment_report(reports, user_id)
+            serialized_reports.append(report)
 
         return serialized_reports
 
 
+class CommentReportDetail(generics.RetrieveUpdateAPIView, CommentMixin):
+    """Reporting a comment.
+    """
+    # permission classes
+    # required scopes
+
+    serializer_class = CommentReportDetailSerializer
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        comment = self.get_comment()
+        reports = comment.reports
+        user_id = self.kwargs['user_id']
+        return self.serialize_comment_report(reports, user_id)
