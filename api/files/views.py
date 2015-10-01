@@ -172,7 +172,8 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
     You can create a subfolder of an existing folder by issuing a PUT request against the `new_folder` link.  The
     `?kind=folder` portion of the query parameter is already included in the `new_folder` link.  The name of the new
     subfolder should be provided in the `name` query parameter.  The response will contain a [WaterButler folder
-    entity](#folder-entity).
+    entity](#folder-entity).  If a folder with that name already exists in the parent directory, the server will return
+    a 409 Conflict error response.
 
     ###Upload New File (*folders*)
 
@@ -180,11 +181,13 @@ class FileDetail(generics.RetrieveUpdateAPIView, FileMixin):
         URL:          links.upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
-        Success:      201 Created + new file representation
+        Success:      201 Created or 200 OK + new file representation
 
     To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
     request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
-    response will contain a [WaterButler file entity](#file-entity) that describes the new file.
+    response will contain a [WaterButler file entity](#file-entity) that describes the new file.  If a file with the
+    same name already exists in the folder, it will be considered a new version.  In this case, the response will be a
+    200 OK.
 
     ###Update Existing File (*file*)
 
