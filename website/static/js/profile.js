@@ -625,8 +625,10 @@ SocialViewModel.prototype.unserialize = function(data) {
     var websiteValue = [];
     $.each(data || {}, function(key, value) {
         if (ko.isObservable(self[key]) && key === 'profileWebsites') {
-            if (value.length === 0) {
-                value.push('');
+            if (value && value.length === 0) {
+                value.push(ko.observable('').extend({
+                    ensureHttp: true
+                }));
             }
             for (var i = 0; i < value.length; i++) {
                 websiteValue[i] = ko.observable(value[i]).extend({

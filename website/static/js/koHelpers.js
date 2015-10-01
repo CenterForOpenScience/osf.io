@@ -49,6 +49,7 @@ addExtender('cleanup', function(value, cleaner) {
 });
 
 addExtender('ensureHttp', function(value) {
+    value = ko.utils.unwrapObservable(value);
     if (!value || value.search(/^https?:\/\//i) === 0) {
         return value;
     }
