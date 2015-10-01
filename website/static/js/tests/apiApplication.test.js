@@ -13,31 +13,32 @@ describe('apiApplicationsInternals', () => {
         var vmd;
         // Sample data returned by an API call
         var sampleData = {
+            id: '0123456789abcdef0123456789abcdef',
+            type: 'applications',
             attributes: {
                 client_id: '0123456789abcdef0123456789abcdef',
                 client_secret: 'abcdefghij0123456789abcdefghij0123456789',
                 owner: '14abc',
-                name: 'Of course it has a name',
-                description: 'Always nice to have this',
+                name: 'Soda Bunny\'s new outfit',
+                description: 'This field is optional',
                 date_created: '2015-07-21T16:28:28.037000',
-                home_url: 'http://tumblr.com',
+                home_url: 'http://sodabunnyadventures.tumblr.com/',
                 callback_url: 'http://goodwill.org'
             },
             links: {
                 self: 'http://localhost:8000/v2/users/14abc/applications/0123456789abcdef0123456789abcdef/',
                 html: 'http://localhost:5000/settings/applications/0123456789abcdef0123456789abcdef/'
-            },
-            type: 'applications'
+            }
         };
 
         beforeEach(() => {
             vmd = new apiApp._ApplicationData(sampleData);
         });
-        // TODO: Test data populates and test serializer serializes
-        // TODO: Test that changing to incorrect data makes us fail validation
 
         it('loads data into the specified fields', () => {
             var attributes = sampleData.attributes;
+            assert.equal(sampleData.id, vmd.id);
+            assert.equal(sampleData.type, vmd.type);
             assert.equal(attributes.name, vmd.name());
             assert.equal(attributes.description, vmd.description());
             assert.equal(attributes.home_url, vmd.homeUrl());
@@ -47,7 +48,6 @@ describe('apiApplicationsInternals', () => {
             assert.equal(attributes.client_id, vmd.clientId);
             assert.equal(attributes.client_secret, vmd.clientSecret());
 
-            // TODO: May change when links field changes
             assert.equal(sampleData.links.html, vmd.webDetailUrl);
             assert.equal(sampleData.links.self, vmd.apiDetailUrl);
         });
