@@ -38,9 +38,6 @@ ko.bindingHandlers.ace = {
     }
 };
 
-
-
-
 function ViewModel(url, viewText) {
     var self = this;
 
@@ -122,7 +119,6 @@ function ViewModel(url, viewText) {
          wiki1.replace(/(\r\n|\n|\r)/gm, '\n'):' ';
          var clean2 = typeof wiki2 === 'string' ? 
           wiki2.replace(/(\r\n|\n|\r)/gm, '\n'):' ';
-
 
         return clean1 !== clean2;
     };
