@@ -247,9 +247,6 @@ var MetaSchema = function(params) {
     self.schema = params.schema || {};
     self.id = [self.name, self.version].join('_');
 
-    self.requiresApproval = params.requires_approval || false;
-    self.fulfills = params.fulfills || [];
-
     var count = 1;
     $.each(self.schema.pages, function(i, page) {
         var mapped = {};
