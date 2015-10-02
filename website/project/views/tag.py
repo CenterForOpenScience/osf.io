@@ -1,6 +1,7 @@
 import httplib as http
 
 from flask import request
+from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth
@@ -57,13 +58,11 @@ def project_remove_tag(auth, node, **kwargs):
 
 @must_have_permission('write')
 def file_add_tag(**kwargs):
-    from website.models import Tag
-    from website.files.models.base import FileNode
-    file_node = FileNode.load(kwargs.get('fid'))
+    from framework.guid.model import Guid
+    file_node = Guid.load(kwargs.get('guid')).referent
     if not file_node:
         return {'status': 'failure'}, http.BAD_REQUEST
-    data = request.get_json()
-    tag = data.get('tag')
+    tag = kwargs.get('tag')
     if tag not in file_node.tags:
         new_tag = Tag.load(tag)
         if not new_tag:
@@ -75,8 +74,15 @@ def file_add_tag(**kwargs):
 
 @must_have_permission('write')
 def file_remove_tag(**kwargs):
+    from website.models import Node
     from website.files.models.base import FileNode
-    file_node = FileNode.load(kwargs.get('fid'))
+    node = Node.load(kwargs.get('pid'))
+    try:
+        file_node = FileNode.resolve_class(kwargs.get('provider'), FileNode.FILE).find_one(
+            Q('path', 'eq', '/' + kwargs.get('fid')) & Q('node', 'eq', node))
+    except:
+        file_node = None
+        pass
     if not file_node:
         return {'status': 'failure'}, http.BAD_REQUEST
     tag = kwargs.get('tag')

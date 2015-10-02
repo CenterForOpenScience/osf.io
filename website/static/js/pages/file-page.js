@@ -15,11 +15,8 @@ $(function() {
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function (tag) {
-            var url = '/api/v1/project/' + window.contextVars.node.id + '/file' + window.contextVars.file.path + '/tags/';
-            var data = {
-                tag: tag,
-                fileName: window.contextVars.file.name
-            };
+            var url = '/api/v1/project/' + window.contextVars.node.id + '/file/' +
+                window.location.pathname.replace(/\//g,'') + '/tags/';
             var request = $osf.postJSON(url, data);
             request.fail(function (xhr, textStatus, error) {
                 Raven.captureMessage('Failed to add tag', {
@@ -28,11 +25,8 @@ $(function() {
             });
         },
         onRemoveTag: function (tag) {
-            var url = '/api/v1/project/' + window.contextVars.node.id + '/file' + window.contextVars.file.path + '/tags/' + tag + '/';
-            var data = {
-                tag: tag,
-                fileName: window.contextVars.file.name
-            };
+            var url = '/api/v1/project/' + window.contextVars.node.id + '/file/' +
+                window.location.pathname.replace(/\//g,'') + '/tags/' + tag + '/';
             var request = $.ajax({
                 url: url,
                 type: 'DELETE',

@@ -91,7 +91,9 @@ class StoredFileNode(StoredObject):
         'unique': False,
         'key_or_list': [
             ('path', pymongo.ASCENDING),
-            ('node', pymongo.ASCENDING)
+            ('node', pymongo.ASCENDING),
+            ('is_file', pymongo.ASCENDING),
+            ('provider', pymongo.ASCENDING)
         ]
     }]
 

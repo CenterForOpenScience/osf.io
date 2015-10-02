@@ -1231,12 +1231,11 @@ def make_url_map(app):
         ], 'delete', project_views.tag.project_remove_tag, json_renderer),
 
         Rule([
-            '/project/<pid>/file/<fid>/tags/',
-            '/project/<pid>/file/<fid>/tags/<tag>/',
+            '/project/<pid>/file/<guid>/tags/<tag>/',
         ], 'post', project_views.tag.file_add_tag, json_renderer),
 
         Rule([
-            '/project/<pid>/file/<fid>/tags/<tag>/',
+            '/project/<pid>/file/<guid>/tags/<tag>/',
         ], 'delete', project_views.tag.file_remove_tag, json_renderer),
 
         # Add / remove contributors
