@@ -22,7 +22,8 @@ from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     UserFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    CommentFactory
 )
 from tests.utils import assert_logs, assert_not_logs
 
@@ -3114,3 +3115,199 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert(self.public_project._id in res.json['errors'][0]['detail'])
+
+
+class TestNodeCommentsList(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeCommentsList, self).setUp()
+        self.user = AuthUserFactory()
+        self.non_contributor = AuthUserFactory()
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.registration = RegistrationFactory(creator=self.user)
+
+        self.comment = CommentFactory(node=self.private_project, user=self.user)
+        self.public_comment = CommentFactory(node=self.public_project, user=self.user)
+        self.registration_comment = CommentFactory(node=self.registration, user=self.user)
+
+        self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
+        self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
+        self.registration_url = '/{}nodes/{}/comments/'.format(API_BASE, self.registration._id)
+
+    def test_return_public_node_comments_logged_out_user(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_equal(len(comment_json), 1)
+        assert_in(self.public_comment._id, comment_ids)
+
+    def test_return_public_node_comments_logged_in_user(self):
+        res = self.app.get(self.public_url, auth=self.non_contributor)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_equal(len(comment_json), 1)
+        assert_in(self.public_comment._id, comment_ids)
+
+    def test_return_private_node_comments_logged_out_user(self):
+        res = self.app.get(self.private_url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+    def test_return_private_node_comments_logged_in_non_contributor(self):
+        res = self.app.get(self.private_url, auth=self.non_contributor, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+    def test_return_private_node_comments_logged_in_contributor(self):
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_equal(len(comment_json), 1)
+        assert_in(self.comment._id, comment_ids)
+
+    def test_return_registration_comments_logged_in_contributor(self):
+        res = self.app.get(self.registration_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_equal(len(comment_json), 1)
+        assert_in(self.registration_comment._id, comment_ids)
+
+
+class TestNodeCommentCreate(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeCommentCreate, self).setUp()
+        self.user = AuthUserFactory()
+        self.read_only_contributor = AuthUserFactory()
+        self.non_contributor = AuthUserFactory()
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_project.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.private_project.save()
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_project.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.public_project.save()
+
+        self.project_with_public_comment_level = ProjectFactory(is_public=True, creator=self.user)
+        self.project_with_public_comment_level.comment_level = 'public'
+        self.project_with_public_comment_level.save()
+
+        self.registration = RegistrationFactory(creator=self.user)
+
+        self.private_url = '/{}nodes/{}/comments/'.format(API_BASE, self.private_project._id)
+        self.public_url = '/{}nodes/{}/comments/'.format(API_BASE, self.public_project._id)
+        self.public_comments_url = '/{}nodes/{}/comments/'.format(API_BASE, self.project_with_public_comment_level._id)
+        self.registration_url = '/{}nodes/{}/comments/'.format(API_BASE, self.registration._id)
+
+        self.payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': 'This is a comment'
+                }
+            }
+        }
+
+    def test_create_comment_invalid_data(self):
+        res = self.app.post_json_api(self.private_url, "Incorrect data", auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_create_comment_no_type(self):
+        payload = {
+            'data': {
+                'type': '',
+                'attributes': {
+                    'content': 'This is a comment'
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+
+    def test_create_comment_incorrect_type(self):
+        payload = {
+            'data': {
+                'type': 'cookies',
+                'attributes': {
+                    'content': 'This is a comment'
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+
+    def test_create_comment_no_content(self):
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': ''
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes/content')
+
+    def test_private_node_logged_in_admin_can_comment(self):
+        res = self.app.post_json_api(self.private_url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+
+    def test_private_node_logged_in_read_contributor_can_comment(self):
+        res = self.app.post_json_api(self.private_url, self.payload, auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+
+    def test_private_node_non_contributor_cannot_comment(self):
+        res = self.app.post_json_api(self.private_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_private_node_logged_out_user_cannot_comment(self):
+        res = self.app.post_json_api(self.private_url, self.payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+    def test_private_node_with_public_comment_level_non_contributor_cannot_comment(self):
+        """ Test non-contributors cannot comment on a private project
+            with comment_level == 'public' """
+        project = ProjectFactory(is_public=False, creator=self.user)
+        project.comment_level = 'public'
+        project.save()
+        url = '/{}nodes/{}/comments/'.format(API_BASE, project._id)
+        res = self.app.post_json_api(url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+    def test_public_node_any_logged_in_user_can_comment(self):
+        """ Test non-contributors can comment on a public project when it is
+            configured so any logged-in user can comment (comment_level == 'public') """
+        res = self.app.post_json_api(self.public_comments_url, self.payload, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+
+        res = self.app.post_json_api(self.public_comments_url, self.payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+    def test_public_node_only_contributors_can_comment(self):
+        """ Test only contributors can comment on a public project when it is
+            configured so only contributors can comment (comment_level == 'private') """
+        res = self.app.post_json_api(self.public_url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+
+        res = self.app.post_json_api(self.public_url, self.payload, auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+
+        res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+        res = self.app.post_json_api(self.public_url, self.payload, expect_errors=True)
+        assert_equal(res.status_code, 401)

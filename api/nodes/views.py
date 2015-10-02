@@ -27,6 +27,7 @@ from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
     ContributorOrPublicForPointers,
+    ContributorOrPublicForComments,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
 )
@@ -524,13 +525,19 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
 
 class NodeCommentsList(generics.ListCreateAPIView, NodeMixin):
-    # permission_classes
-    # required scopes
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublicForComments,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = CommentSerializer
 
     def get_queryset(self):
-        return Comment.find(Q('node', 'eq', self.get_node()) & Q('is_deleted', 'ne', True))
+        return Comment.find(Q('node', 'eq', self.get_node()))
 
 
 class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
