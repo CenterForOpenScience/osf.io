@@ -11,7 +11,7 @@ from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, Exte
 
 from website.addons.box.model import (
     BoxUserSettings,
-    BoxNodeSettings, BoxFile
+    BoxNodeSettings
 )
 
 # TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
@@ -38,15 +38,3 @@ class BoxNodeSettingsFactory(ModularOdmFactory):
     user_settings = SubFactory(BoxUserSettingsFactory)
     with mock.patch('website.addons.box.model.BoxNodeSettings.fetch_folder_name') as mock_folder:
         mock_folder.return_value = 'Camera Uploads'
-
-
-class BoxFileFactory(ModularOdmFactory):
-    FACTORY_FOR = BoxFile
-
-    node = SubFactory(ProjectFactory)
-    path = 'foo.txt'
-
-    @post_generation
-    def add_box_addon(self, created, extracted):
-        self.node.add_addon('box', auth=Auth(user=self.node.creator))
-        self.node.save()

@@ -75,9 +75,9 @@ class OsfStorageFileNode(FileNode):
 
 class OsfStorageFile(OsfStorageFileNode, File):
 
-    def touch(self, bearer, version=-1, revision=None, **kwargs):
+    def touch(self, bearer, version=None, revision=None, **kwargs):
         try:
-            return self.get_version(int(revision or version))
+            return self.get_version(revision or version)
         except ValueError:
             return None
 
@@ -85,7 +85,7 @@ class OsfStorageFile(OsfStorageFileNode, File):
     def history(self):
         return [v.metadata for v in self.versions]
 
-    def serialize(self, include_full=None, version=-1):
+    def serialize(self, include_full=None, version=None):
         ret = super(OsfStorageFile, self).serialize()
         if include_full:
             ret['fullPath'] = self.materialized_path
@@ -116,10 +116,15 @@ class OsfStorageFile(OsfStorageFileNode, File):
 
         return version
 
-    def get_version(self, version=-1, required=False):
+    def get_version(self, version=None, required=False):
+        if version is None:
+            if self.versions:
+                return self.versions[-1]
+            return None
+
         try:
-            return self.versions[version]
-        except IndexError:
+            return self.versions[int(version) - 1]
+        except (IndexError, ValueError):
             if required:
                 raise exceptions.VersionNotFoundError(version)
             return None

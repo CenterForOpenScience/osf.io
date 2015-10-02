@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
 
-import pymongo
-
 from box import CredentialsV2, BoxClient
 from box.client import BoxClientException
 from modularodm import fields
@@ -11,7 +9,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
-from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase, GuidFile
+from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
 from website.addons.box import settings
@@ -53,41 +51,6 @@ class Box(ExternalProvider):
             'display_name': about['name'],
             'profile_url': 'https://app.box.com/profile/{0}'.format(about['id'])
         }
-
-
-class BoxFile(GuidFile):
-    """A Box file model with a GUID. Created lazily upon viewing a
-    file's detail page.
-    """
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('path', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-    path = fields.StringField(required=True, index=True)
-
-    @property
-    def waterbutler_path(self):
-        if not self.path.startswith('/'):
-            return '/{}'.format(self.path)
-        return self.path
-
-    @property
-    def provider(self):
-        return 'box'
-
-    @property
-    def version_identifier(self):
-        return 'revision'
-
-    @property
-    def unique_identifier(self):
-        return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
-
 
 class BoxUserSettings(AddonOAuthUserSettingsBase):
     """Stores user-specific box information
@@ -179,9 +142,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.user_settings = user_settings
         nodelogger = BoxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
         nodelogger.log(action="node_authorized", save=True)
-
-    def find_or_create_file_guid(self, path):
-        return BoxFile.get_or_create(node=self.owner, path=path)
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""

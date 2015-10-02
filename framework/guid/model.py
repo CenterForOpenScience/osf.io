@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import random
 
+import pymongo
 from modularodm import fields
 
 from framework.mongo import StoredObject
@@ -17,8 +18,13 @@ class BlacklistGuid(StoredObject):
 
 class Guid(StoredObject):
 
+    __indices__ = [{
+        'unique': False,
+        'key_or_list': [('referent.$', pymongo.ASCENDING)]  # Forces a mulitkey index h/t @icereval
+    }]
+
     _id = fields.StringField(primary=True)
-    referent = fields.AbstractForeignField(index=True)
+    referent = fields.AbstractForeignField()
 
     @classmethod
     def generate(self, referent=None):

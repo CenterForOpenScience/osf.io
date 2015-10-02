@@ -20,22 +20,18 @@ class BoxNodeLogger(object):
 
         from website.project.model import NodeLog
 
-        file_obj = BoxFile(path='foo/bar.txt')
-        file_obj.save()
         node = ...
         auth = ...
-        nodelogger = BoxNodeLogger(node, auth, file_obj)
+        nodelogger = BoxNodeLogger(node, auth)
         nodelogger.log(NodeLog.FILE_REMOVED, save=True)
 
 
     :param Node node: The node to add logs to
     :param Auth auth: Authorization of the person who did the action.
-    :param BoxFile file_obj: File object for file-related logs.
     """
-    def __init__(self, node, auth, file_obj=None, path=None):
+    def __init__(self, node, auth, path=None):
         self.node = node
         self.auth = auth
-        self.file_obj = file_obj
         self.path = path
 
     def log(self, action, extra=None, save=False):
@@ -57,18 +53,17 @@ class BoxNodeLogger(object):
             'folder': self.node.get_addon('box', deleted=True).folder_path
         }
         # If logging a file-related action, add the file's view and download URLs
-        if self.file_obj or self.path:
-            path = self.file_obj.path if self.file_obj else self.path
+        if self.path:
             params.update({
                 'urls': {
-                    'view': self.node.web_url_for('addon_view_or_download_file', path=path, provider='box'),
+                    'view': self.node.web_url_for('addon_view_or_download_file', path=self.path, provider='box'),
                     'download': self.node.web_url_for(
                         'addon_view_or_download_file',
-                        path=path,
+                        path=self.path,
                         provider='box'
                     )
                 },
-                'path': path,
+                'path': self.path,
             })
         if extra:
             params.update(extra)

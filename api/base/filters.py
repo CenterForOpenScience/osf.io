@@ -7,6 +7,7 @@ from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
 
 from api.base.exceptions import InvalidFilterError
+from api.base import utils
 
 
 class ODMOrderingFilter(OrderingFilter):
@@ -33,8 +34,6 @@ def query_params_to_fields(query_params):
 class FilterMixin(object):
     """ View mixin with helper functions for filtering. """
 
-    TRUTHY = set(['true', 'True', 1, '1'])
-    FALSY = set(['false', 'False', 0, '0'])
     DEFAULT_OPERATOR = 'eq'
 
     def __init__(self, *args, **kwargs):
@@ -60,9 +59,9 @@ class FilterMixin(object):
         field_type = type(self.serializer_class._declared_fields[field])
         value = value.strip()
         if field_type == ser.BooleanField:
-            if value in self.TRUTHY:
+            if utils.is_truthy(value):
                 return True
-            elif value in self.FALSY:
+            elif utils.is_falsy(value):
                 return False
             # TODO Should we handle if the value is neither TRUTHY nor FALSY (first add test for how we'd expect it to
             # work, then ensure that it works that way).
@@ -180,6 +179,7 @@ class ListFilterMixin(FilterMixin):
     def get_filtered_queryset(self, field_name, value, default_queryset):
         """filters default queryset based on the serializer field type"""
         field = self.serializer_class._declared_fields[field_name]
+        field_name = field.source or field_name
 
         if isinstance(field, ser.SerializerMethodField):
             return_val = [item for item in default_queryset if self.get_serializer_method(field_name)(item) == self.convert_value(value, field_name)]

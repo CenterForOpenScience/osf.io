@@ -216,12 +216,17 @@
     <%include file="footer.mako"/>
 </%def>
 
+<%def name="alert()">
+    <%include file="alert.mako"/>
+</%def>
+
 <%def name="content_wrap()">
     <div class="watermarked">
         <div class="container ${self.container_class()}">
             % if status:
-                <%include file="alert.mako"/>
+                ${self.alert()}
             % endif
+
             ${self.content()}
         </div><!-- end container -->
     </div><!-- end watermarked -->

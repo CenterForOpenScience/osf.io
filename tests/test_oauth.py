@@ -76,6 +76,14 @@ def _prepare_mock_500_error():
         content_type='application/json',
     )
 
+def _prepare_mock_401_error():
+    httpretty.register_uri(
+        httpretty.POST,
+        'https://mock2.com/callback',
+        body='{"error": "user denied access"}',
+        status=401,
+        content_type='application/json',
+    )
 
 class TestExternalAccount(OsfTestCase):
     # Test the ExternalAccount object and associated views.
@@ -442,6 +450,30 @@ class TestExternalProviderOAuth2(OsfTestCase):
                 error_raised.exception.code,
                 503,
             )
+
+    @httpretty.activate
+    def test_user_denies_access(self):
+
+        # Create a 401 error
+        _prepare_mock_401_error()
+
+        user = UserFactory()
+        # Fake a request context for the callback
+        with self.app.app.test_request_context(
+                path="/oauth/callback/mock2/",
+                query_string="error=mock_error&code=mock_code&state=mock_state"
+        ):
+            # make sure the user is logged in
+            authenticate(user=user, access_token=None, response=None)
+
+            session.data['oauth_states'] = {
+                self.provider.short_name: {
+                    'state': 'mock_state',
+                },
+            }
+            session.save()
+
+            assert_false(self.provider.auth_callback(user=user))
 
     @httpretty.activate
     def test_multiple_users_associated(self):

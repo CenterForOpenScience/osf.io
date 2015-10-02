@@ -7,7 +7,7 @@ from box import BoxClientException
 from framework.auth import Auth
 from framework.exceptions import HTTPError
 from website.addons.box.model import (
-    BoxUserSettings, BoxNodeSettings, BoxFile
+    BoxUserSettings, BoxNodeSettings
 )
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
@@ -17,72 +17,6 @@ from website.addons.box.tests.factories import (
     BoxNodeSettingsFactory,
 )
 from website.addons.base import exceptions
-
-
-class TestFileGuid(OsfTestCase):
-    def setUp(self):
-        super(OsfTestCase, self).setUp()
-        self.user = UserFactory()
-        self.project = ProjectFactory(creator=self.user)
-        self.project.add_addon('box', auth=Auth(self.user))
-        self.node_addon = self.project.get_addon('box')
-
-    def test_provider(self):
-        assert_equal('box', BoxFile().provider)
-
-    def test_correct_path(self):
-        guid = BoxFile(node=self.project, path='1234567890/foo/bar')
-
-        assert_equals(guid.path, '1234567890/foo/bar')
-        assert_equals(guid.waterbutler_path, '/1234567890/foo/bar')
-
-    @mock.patch('website.addons.base.requests.get')
-    def test_unique_identifier(self, mock_get):
-        uid = '#!'
-        mock_response = mock.Mock(ok=True, status_code=200)
-        mock_get.return_value = mock_response
-        mock_response.json.return_value = {
-            'data': {
-                'extra': {
-                    'etag': uid
-                },
-            }
-        }
-
-        guid = BoxFile(node=self.project, path='1234567890/foo/bar')
-        guid.enrich()
-        assert_equals(uid, guid.unique_identifier)
-
-    @mock.patch('website.addons.base.requests.get')
-    def test_unique_identifier_version(self, mock_get):
-        uid = '#!'
-        mock_response = mock.Mock(ok=True, status_code=200)
-        mock_get.return_value = mock_response
-        mock_response.json.return_value = {
-            'data': {
-                'extra': {},
-                'version': uid
-            }
-        }
-
-        guid = BoxFile(node=self.project, path='1234567890/foo/bar')
-        guid.enrich()
-        assert_equals(uid, guid.unique_identifier)
-
-    def test_node_addon_get_or_create(self):
-        guid, created = self.node_addon.find_or_create_file_guid('1234567890/foo/bar')
-
-        assert_true(created)
-        assert_equal(guid.path, '1234567890/foo/bar')
-        assert_equal(guid.waterbutler_path, '/1234567890/foo/bar')
-
-    def test_node_addon_get_or_create_finds(self):
-        guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
-        guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
-
-        assert_true(created1)
-        assert_false(created2)
-        assert_equals(guid1, guid2)
 
 
 class TestUserSettingsModel(OsfTestCase):

@@ -8,9 +8,8 @@ from framework.auth.core import User
 from website.files.models import FileNode
 from api.base.utils import absolute_reverse
 from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
-from api.base.serializers import Link, JSONAPISerializer, LinksField
 from api.base.serializers import JSONAPIHyperlinkedIdentityField
-
+from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 
 class CheckoutField(JSONAPIHyperlinkedIdentityField):
 
@@ -60,15 +59,15 @@ class FileSerializer(JSONAPISerializer):
         'provider',
         'last_touched',
     ])
-    id = ser.CharField(read_only=True, source='_id')
+    id = IDField(source='_id', read_only=True)
+    type = TypeField()
+    checkout = CheckoutField()
     name = ser.CharField(read_only=True, help_text='Display name used in the general user interface')
     kind = ser.CharField(read_only=True, help_text='Either folder or file')
     path = ser.CharField(read_only=True, help_text='The unique path used to reference this object')
     size = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
-
-    checkout = CheckoutField()
 
     files = NodeFileHyperLink(kind='folder', link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
     versions = NodeFileHyperLink(kind='file', link_type='related', view_name='files:file-versions', kwargs=(('file_id', '_id'), ))
@@ -77,6 +76,7 @@ class FileSerializer(JSONAPISerializer):
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),
         'upload': WaterbutlerLink(),
+        'delete': WaterbutlerLink(),
         'download': WaterbutlerLink(must_be_file=True),
         'new_folder': WaterbutlerLink(must_be_folder=True, kind='folder')
     })
@@ -100,6 +100,13 @@ class FileSerializer(JSONAPISerializer):
         return super(FileSerializer, self).is_valid(clean_html=False, **kwargs)
 
 
+class FileDetailSerializer(FileSerializer):
+    """
+    Overrides FileSerializer to make id required.
+    """
+    id = IDField(source='_id', required=True)
+
+
 class FileVersionSerializer(JSONAPISerializer):
     filterable_fields = frozenset([
         'id',
@@ -107,9 +114,8 @@ class FileVersionSerializer(JSONAPISerializer):
         'identifier',
         'content_type',
     ])
-    id = ser.CharField(read_only=True, source='_id')
+    id = ser.CharField(read_only=True, source='identifier')
     size = ser.IntegerField(read_only=True, help_text='The size of this file at this version')
-    identifier = ser.CharField(read_only=True, help_text='This version\'s unique identifier from it\'s original service')
     content_type = ser.CharField(read_only=True, help_text='The mime type of this file at this verison')
     links = LinksField({
         'self': 'self_url',
@@ -117,11 +123,11 @@ class FileVersionSerializer(JSONAPISerializer):
     })
 
     class Meta:
-        type_ = 'file_version'
+        type_ = 'file_versions'
 
     def self_url(self, obj):
         return absolute_reverse('files:version-detail', kwargs={
-            'version_id': obj._id,
+            'version_id': obj.identifier,
             'file_id': self.context['view'].kwargs['file_id']
         })
 
