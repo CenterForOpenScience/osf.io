@@ -92,11 +92,9 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
     """
 
     def __init__(self, view_name=None, **kwargs):
-        kwargs['read_only'] = True
-        kwargs['source'] = '*'
         self.meta = kwargs.pop('meta', None)
         self.link_type = kwargs.pop('link_type', 'url')
-        super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
+        super(JSONAPIHyperlinkedIdentityField, self).__init__(view_name=view_name, **kwargs)
 
     # overrides HyperlinkedIdentityField
     def get_url(self, obj, view_name, request, format):
@@ -109,7 +107,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         if getattr(obj, self.lookup_field) is None:
             return None
 
-        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+        return super(JSONAPIHyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
 
     # overrides HyperlinkedIdentityField
     def to_representation(self, value):
