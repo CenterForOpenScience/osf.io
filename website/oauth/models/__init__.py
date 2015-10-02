@@ -114,11 +114,11 @@ class ExternalProvider(object):
     # Default to OAuth v2.0.
     _oauth_version = OAUTH2
 
-    def __init__(self):
+    def __init__(self, account=None):
         super(ExternalProvider, self).__init__()
 
         # provide an unauthenticated session by default
-        self.account = None
+        self.account = account
 
     def __repr__(self):
         return '<{name}: {status}>'.format(
@@ -214,6 +214,9 @@ class ExternalProvider(object):
         to the OSF after authenticating on the external service.
         """
 
+        if 'error' in request.args:
+            return False
+
         # make sure the user has temporary credentials for this provider
         try:
             cached_credentials = session.data['oauth_states'][self.short_name]
@@ -301,6 +304,8 @@ class ExternalProvider(object):
             user.external_accounts.append(self.account)
             user.save()
 
+        return True
+
     def _default_handle_callback(self, data):
         """Parse as much out of the key exchange's response as possible.
 
@@ -355,6 +360,18 @@ class ExternalProvider(object):
         :return dict:
         """
         pass
+
+
+class ApiOAuth2Scope(StoredObject):
+    """
+    Store information about recognized OAuth2 scopes. Only scopes registered under this database model can
+        be requested by third parties.
+    """
+    _id = fields.StringField(primary=True,
+                             default=lambda: str(ObjectId()))
+    name = fields.StringField(unique=True, required=True, index=True)
+    description = fields.StringField(required=True)
+    is_active = fields.BooleanField(default=True, index=True)  # TODO: Add mechanism to deactivate a scope?
 
 
 class ApiOAuth2Application(StoredObject):

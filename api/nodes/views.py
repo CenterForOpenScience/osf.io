@@ -3,15 +3,39 @@ import requests
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.status import is_server_error
 
 from framework.auth.core import Auth
-from website.exceptions import NodeStateError
-from website.models import Node, Pointer
-from api.users.serializers import ContributorSerializer
+from framework.auth.oauth_scopes import CoreScopes
+
+from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_error, waterbutler_url_for
-from .serializers import NodeSerializer, NodeLinksSerializer, NodeFilesSerializer
-from .permissions import ContributorOrPublic, ReadOnlyIfRegistration, ContributorOrPublicForPointers
+from api.base.utils import get_object_or_error
+from api.files.serializers import FileSerializer
+from api.users.views import UserMixin
+from api.nodes.serializers import (
+    NodeSerializer,
+    NodeLinksSerializer,
+    NodeDetailSerializer,
+    NodeProviderSerializer,
+    NodeContributorsSerializer,
+    NodeRegistrationSerializer,
+    NodeContributorDetailSerializer
+)
+from api.nodes.permissions import (
+    AdminOrPublic,
+    ContributorOrPublic,
+    ContributorOrPublicForPointers,
+    ContributorDetailPermissions,
+    ReadOnlyIfRegistration,
+)
+from api.base.exceptions import ServiceUnavailableError
+
+from website.exceptions import NodeStateError
+from website.files.models import FileNode
+from website.files.models import OsfStorageFileNode
+from website.models import Node, Pointer
+from website.util import waterbutler_api_url_for
 
 
 class NodeMixin(object):
@@ -22,7 +46,7 @@ class NodeMixin(object):
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self):
+    def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
@@ -33,26 +57,159 @@ class NodeMixin(object):
         if node.is_folder:
             raise NotFound
         # May raise a permission denied
-        self.check_object_permissions(self.request, node)
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
         return node
+
+class WaterButlerMixin(object):
+
+    path_lookup_url_kwarg = 'path'
+    provider_lookup_url_kwarg = 'provider'
+
+    def get_file_item(self, item):
+        file_node = FileNode.resolve_class(
+            item['provider'],
+            FileNode.FOLDER if item['kind'] == 'folder'
+            else FileNode.FILE
+        ).get_or_create(self.get_node(check_object_permissions=False), item['path'])
+
+        file_node.update(None, item, user=self.request.user)
+
+        self.check_object_permissions(self.request, file_node)
+
+        return file_node
+
+    def fetch_from_waterbutler(self):
+        node = self.get_node(check_object_permissions=False)
+        path = self.kwargs[self.path_lookup_url_kwarg]
+        provider = self.kwargs[self.provider_lookup_url_kwarg]
+
+        if provider == 'osfstorage':
+            # Kinda like /me for a user
+            # The one odd case where path is not really path
+            if path == '/':
+                obj = node.get_addon('osfstorage').get_root()
+            else:
+                obj = get_object_or_error(
+                    OsfStorageFileNode,
+                    Q('node', 'eq', node._id) &
+                    Q('_id', 'eq', path.strip('/')) &
+                    Q('is_file', 'eq', not path.endswith('/'))
+                )
+
+            self.check_object_permissions(self.request, obj)
+
+            return obj
+
+        url = waterbutler_api_url_for(node._id, provider, path, meta=True)
+
+        waterbutler_request = requests.get(
+            url,
+            cookies=self.request.COOKIES,
+            headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
+        )
+
+        if waterbutler_request.status_code == 401:
+            raise PermissionDenied
+
+        if waterbutler_request.status_code == 404:
+            raise NotFound
+
+        if is_server_error(waterbutler_request.status_code):
+            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
+
+        try:
+            return waterbutler_request.json()['data']
+        except KeyError:
+            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
-    """Projects and components.
+    """Nodes that represent projects and components. *Writeable*.
+
+    Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
+    node, meaning additional requests to an individual node's detail view are not necessary.
+
+    <!--- Copied Spiel from NodeDetail -->
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
-    is that a project is the top-level node, and components are children of the project. There is also a category field
-    that includes the option of project. The categorization essentially determines which icon is displayed by the
-    Node in the front-end UI and helps with search organization. Top-level Nodes may have a category other than
-    project, and children nodes may have a category of project.
+    is that a project is the top-level node, and components are children of the project. There is also a [category
+    field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
+    which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
+    a category other than project, and children nodes may have a category of project.
 
-    By default, a GET will return a list of public nodes, sorted by date_modified. You can filter Nodes by their title,
-    description, and public fields.
+    ##Node Attributes
+
+    <!--- Copied Attributes from NodeDetail -->
+
+    OSF Node entities have the "nodes" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        title          string             title of project or component
+        description    string             description of the node
+        category       string             node category, must be one of the allowed values
+        date_created   iso8601 timestamp  timestamp that the node was created
+        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        tags           array of strings   list of tags that describe the node
+        registration   boolean            has this project been registered?
+        collection     boolean            is this node a collection of other nodes?
+        dashboard      boolean            is this node visible on the user dashboard?
+        public         boolean            has this node been made publicly-visible?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Creating New Nodes
+
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "nodes", # required
+                           "attributes": {
+                             "title":       {title},         # required
+                             "category":    {category},      # required
+                             "description": {description},   # optional
+                             "tags":        [{tag1}, {tag2}] # optional
+                           }
+                         }
+                       }
+        Success:       201 CREATED + node representation
+
+    New nodes are created by issuing a POST request to this endpoint.  The `title` and `category` fields are
+    mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  All other fields
+    not listed above will be ignored.  If the node creation is successful the API will return a 201 response with the
+    respresentation of the new node in the body.  For the new node's canonical URL, see the `links.self` field of the
+    response.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
     serializer_class = NodeSerializer
+
     ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin
@@ -86,20 +243,117 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
 
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
-    """Projects and component details.
+    """Details about a given node (project or component). *Writeable*.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
-    is that a project is the top-level node, and components are children of the project. There is also a category field
-    that includes the option of project. The categorization essentially determines which icon is displayed by the
-    Node in the front-end UI and helps with search organization. Top-level Nodes may have a category other than
-    project, and children nodes may have a category of project.
+    is that a project is the top-level node, and components are children of the project. There is also a [category
+    field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
+    which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
+    a category other than project, and children nodes may have a category of project.
+
+    ###Permissions
+
+    Nodes that are made public will give read-only access to everyone. Private nodes require explicit read
+    permission. Write and admin access are the same for public and private nodes. Administrators on a parent node have
+    implicit read permissions for all child nodes.
+
+    ##Attributes
+
+    OSF Node entities have the "nodes" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        title          string             title of project or component
+        description    string             description of the node
+        category       string             node category, must be one of the allowed values
+        date_created   iso8601 timestamp  timestamp that the node was created
+        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        tags           array of strings   list of tags that describe the node
+        registration   boolean            has this project been registered?
+        collection     boolean            is this node a collection of other nodes?
+        dashboard      boolean            is this node visible on the user dashboard?
+        public         boolean            has this node been made publicly-visible?
+
+    ##Relationships
+
+    ###Children
+
+    List of nodes that are children of this node.  New child nodes may be added through this endpoint.
+
+    ###Contributors
+
+    List of users who are contributors to this node.  Contributors may have "read", "write", or "admin" permissions.  A
+    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
+
+    ###Files
+
+    List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
+    for accessing the actual files stored with this node.
+
+    ###Parent
+
+    If this node is a child node of another node, the parent's canonical endpoint will be available in the
+    `parent.links.self.href` key.  Otherwise, it will be null.
+
+    ##Links
+
+        self:  the canonical api endpoint of this node
+        html:  this node's page on the OSF website
+
+    ##Actions
+
+    ###Update
+
+        Method:        PUT / PATCH
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "nodes",   # required
+                           "id":   {node_id}, # required
+                           "attributes": {
+                             "title":       {title},         # mandatory
+                             "category":    {category},      # mandatory
+                             "description": {description},   # optional
+                             "tags":        [{tag1}, {tag2}] # optional
+                           }
+                         }
+                       }
+        Success:       200 OK + node representation
+
+    To update a node, issue either a PUT or a PATCH request against the `links.self` URL.  The `title` and `category`
+    fields are mandatory if you PUT and optional if you PATCH.  The `tags` parameter must be an array of strings.
+    Non-string values will be accepted and stringified, but we make no promises about the stringification output.  So
+    don't do that.
+
+    ###Delete
+
+        Method:   DELETE
+        URL:      links.self
+        Params:   <none>
+        Success:  204 No Content
+
+    To delete a node, issue a DELETE request against `links.self`.  A successful delete will return a 204 No Content
+    response. Attempting to delete a node you do not own will result in a 403 Forbidden.
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+
     """
     permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
 
-    serializer_class = NodeSerializer
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+
+    serializer_class = NodeDetailSerializer
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -108,6 +362,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
+        # TODO: The method it overrides already returns request (plus more stuff). Why does this method exist?
         return {'request': self.request}
 
     # overrides RetrieveUpdateDestroyAPIView
@@ -122,21 +377,81 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
-    """Contributors (users) for a node.
+class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
+    """Contributors (users) for a node. *Writeable*.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
     have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
     contributors. From a permissions standpoint, both are the same, but bibliographic contributors
     are included in citations, while non-bibliographic contributors are not included in citations.
-    """
 
+    ##Node Contributor Attributes
+
+    <!--- Copied Attributes from NodeContributorDetail -->
+
+    `type` is "contributors"
+
+        name           type     description
+        ---------------------------------------------------------------------------------
+        bibliographic  boolean  Whether the user will be included in citations for this node or not
+        permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
+
+    All other attributes are inherited from the User object.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Adding Contributors
+
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "contributors", # required
+                           "attributes": {
+                             "id":            {user_id},             # required
+                             "bibliographic": true|false,            # optional
+                             "permission":    "read"|"write"|"admin" # optional
+                           }
+                         }
+                       }
+        Success:       201 CREATED + node contributor representation
+
+    Contributors can be added to nodes are by issuing a POST request to this endpoint.  The `id` attribute is mandatory and
+    must be a valid user id.  `bibliographic` is a boolean and defaults to `true`.  `permission` must be a [valid OSF
+    permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`. All other fields not listed above will be
+    ignored.  If the request is successful the API will return a 201 response with the respresentation of the new node
+    contributor in the body.  For the new node contributor's canonical URL, see the `links.self` field of the response.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    NodeContributors may be filtered by their `full_name`, `given_name`, `middle_names`, `family_name`, `id`,
+    `bibliographic`, or `permissions` attributes.  The `description`, and `category` are string fields and will be filtered
+    using simple substring matching.  `bibliographic` is a boolean, and can be filtered using truthy values,
+    such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in the query will cause the match to fail
+    regardless.
+
+    #This Request/Response
+    """
     permission_classes = (
+        AdminOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
 
-    serializer_class = ContributorSerializer
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+
+    serializer_class = NodeContributorsSerializer
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -144,6 +459,8 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         contributors = []
         for contributor in node.contributors:
             contributor.bibliographic = contributor._id in visible_contributors
+            contributor.permission = node.get_permissions(contributor)[-1]
+            contributor.node_id = node._id
             contributors.append(contributor)
         return contributors
 
@@ -152,19 +469,141 @@ class NodeContributorsList(generics.ListAPIView, ListFilterMixin, NodeMixin):
         return self.get_queryset_from_request()
 
 
+class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
+    """Detail of a contributor for a node. *Writeable*.
+
+    Contributors are users who can make changes to the node or, in the case of private nodes,
+    have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
+    contributors. From a permissions standpoint, both are the same, but bibliographic contributors
+    are included in citations, while non-bibliographic contributors are not included in citations.
+
+    Contributors can be viewed, removed, and have their permissions and bibliographic status changed via this
+    endpoint.
+
+    ##Attributes
+
+    `type` is "contributors"
+
+        name           type     description
+        ---------------------------------------------------------------------------------
+        bibliographic  boolean  Whether the user will be included in citations for this node or not
+        permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
+
+    All other attributes are inherited from the User object.
+
+    ##Relationships
+
+    ###Nodes
+
+    This endpoint shows the list of all nodes the user contributes to.
+
+    ##Links
+
+        self:  the canonical api endpoint of this node
+        html:  this node's page on the OSF website
+
+    ##Actions
+
+    ###Update Contributor
+
+        Method:        PUT / PATCH
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "contributors",        # required
+                           "id":   {contributor_user_id}, # required
+                           "attributes": {
+                             "bibiliographic": true|false,            # optional
+                             "permission":     "read"|"write"|"admin" # optional
+                           }
+                         }
+                       }
+        Success:       200 OK + node representation
+
+    To update a contributor's bibliographic preferences or access permissions for the node, issue a PUT request to the
+    `self` link. Since this endpoint has no mandatory attributes, PUT and PATCH are functionally the same.  If the given
+    user is not already in the contributor list, a 404 Not Found error will be returned.  A node must always have at
+    least one admin, and any attempt to downgrade the permissions of a sole admin will result in a 400 Bad Request
+    error.
+
+    ###Remove Contributor
+
+        Method:        DELETE
+        URL:           links.self
+        Query Params:  <none>
+        Success:       204 No Content
+
+    To remove a contributor from a node, issue a DELETE request to the `self` link.  Attempting to remove the only admin
+    from a node will result in a 400 Bad Request response.
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+
+    """
+    permission_classes = (
+        ContributorDetailPermissions,
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
+    required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+
+    serializer_class = NodeContributorDetailSerializer
+
+    # overrides RetrieveAPIView
+    def get_object(self):
+        node = self.get_node()
+        user = self.get_user()
+        # May raise a permission denied
+        self.check_object_permissions(self.request, user)
+        if user not in node.contributors:
+            raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+        user.permission = node.get_permissions(user)[-1]
+        user.bibliographic = node.get_visible(user)
+        user.node_id = node._id
+        return user
+
+    # overrides DestroyAPIView
+    def perform_destroy(self, instance):
+        node = self.get_node()
+        current_user = self.request.user
+        auth = Auth(current_user)
+        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+            raise ValidationError("Must have at least one visible contributor")
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError("Must have at least one registered admin contributor")
+
+
+# TODO: Support creating registrations
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     """Registrations of the current node.
 
     Registrations are read-only snapshots of a project. This view lists all of the existing registrations
-     created for the current node."""
+    created for the current node.
+
+    **TODO: registrations via api are still a WIP**
+
+     """
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
     )
 
-    serializer_class = NodeSerializer
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
+
+    serializer_class = NodeRegistrationSerializer
 
     # overrides ListAPIView
+    # TODO: Filter out retractions by default
     def get_queryset(self):
         nodes = self.get_node().node__registrations
         user = self.request.user
@@ -176,30 +615,114 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
-    """Children of the current node.
+class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
+    """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
-    nodes. Currently, if there is a discrepancy between the children count and the number of children returned, it
-    probably indicates private nodes that aren't being returned. That discrepancy should disappear before everything
-    is finalized.
+    nodes. Creating a node via this endpoint will behave the same as the [node list endpoint](/v2/nodes/), but the new
+    node will have the selected node set as its parent.
+
+    ##Node Attributes
+
+    <!--- Copied Attributes from NodeDetail -->
+
+    OSF Node entities have the "nodes" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        title          string             title of project or component
+        description    string             description of the node
+        category       string             node category, must be one of the allowed values
+        date_created   iso8601 timestamp  timestamp that the node was created
+        date_modified  iso8601 timestamp  timestamp when the node was last updated
+        tags           array of strings   list of tags that describe the node
+        registration   boolean            has this project been registered?
+        collection     boolean            is this node a collection of other nodes?
+        dashboard      boolean            is this node visible on the user dashboard?
+        public         boolean            has this node been made publicly-visible?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Create Child Node
+
+    <!--- Copied Creating New Node from NodeList -->
+
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "nodes", # required
+                           "attributes": {
+                             "title":       {title},         # required
+                             "category":    {category},      # required
+                             "description": {description},   # optional
+                             "tags":        [{tag1}, {tag2}] # optional
+                           }
+                         }
+                       }
+        Success:       201 CREATED + node representation
+
+    To create a child node of the current node, issue a POST request to this endpoint.  The `title` and `category`
+    fields are mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  If the
+    node creation is successful the API will return a 201 response with the respresentation of the new node in the body.
+    For the new node's canonical URL, see the `links.self` field of the response.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    <!--- Copied Query Params from NodeList -->
+
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
+    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
+    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+
+    #This Request/Response
+
     """
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
+    required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
 
     serializer_class = NodeSerializer
 
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        return (
+            Q('is_deleted', 'ne', True) &
+            Q('is_folder', 'ne', True)
+        )
+
     # overrides ListAPIView
     def get_queryset(self):
-        nodes = self.get_node().nodes
+        node = self.get_node()
+        req_query = self.get_query_from_request()
+
+        query = (
+            Q('_id', 'in', [e._id for e in node.nodes if e.primary]) &
+            req_query
+        )
+        nodes = Node.find(query)
         user = self.request.user
         if user.is_anonymous():
             auth = Auth(None)
         else:
             auth = Auth(user)
-        children = [node for node in nodes if node.can_view(auth) and node.primary and not node.is_deleted]
+        children = [each for each in nodes if each.can_view(auth)]
         return children
 
     # overrides ListCreateAPIView
@@ -208,34 +731,92 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin):
         serializer.save(creator=user, parent=self.get_node())
 
 
+# TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
+# currently query on a Pointer's node's attributes.
+# e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
 class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
-    """Node Links to other nodes.
+    """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
+
+    **TODO: this is placeholder documentation pending finish**
+
+    ##Node Link Attributes
+
+    **TODO: import from NodeLinksDetail**
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Create
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope,
     )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeLinksSerializer
 
     def get_queryset(self):
-        pointers = self.get_node().nodes_pointer
-        return pointers
+        return [
+            pointer for pointer in
+            self.get_node().nodes_pointer
+            if not pointer.node.is_deleted
+        ]
 
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
-    """Node Link details.
+    """Node Link details. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
+
+    **TODO: this is placeholder documentation pending finish**
+
+    ##Attributes
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        $name          $type              $descr
+
+    ##Relationships
+
+    ##Links
+
+    ##Actions
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
     """
     permission_classes = (
         ContributorOrPublicForPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
     )
+
+    required_read_scopes = [CoreScopes.NODE_LINKS_READ]
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeLinksSerializer
 
@@ -264,123 +845,178 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeFilesList(generics.ListAPIView, NodeMixin):
-    """Files attached to a node.
+class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
+    """Files attached to a node for a given provider. *Read-only*.
 
-    This gives a list of all of the files that are on your project. Because this works with external services, some
-    ours and some not, there is some extra data that you need for how to interact with those services.
+    This gives a list of all of the files and folders that are attached to your project for the given storage provider.
+    If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenver
+    this endpoint is accessed.  To see the cached metadata, GET the endpoint for the file directly (available through
+    its `links.info` attribute).
 
-    At the top level file list of your project you have a list of providers that are connected to this project. If you
-    want to add more, you will need to do that in the Open Science Framework front end for now. For everything in the
-    data.links dictionary, you'll have two types of fields: `self` and `related`. These are the same as everywhere else:
-    self links are what you use to manipulate the object itself with GET, POST, DELETE, and PUT requests, while
-    related links give you further data about that resource.
+    ##File Attributes
 
-    So if you GET a self link for a file, it will return the file itself for downloading. If you GET a related link for
-    a file, you'll get the metadata about the file. GETting a related link for a folder will get you the listing of
-    what's in that folder. GETting a folder's self link won't work, because there's nothing to get.
+    <!--- Copied Attributes from FileDetail -->
 
-    Which brings us to the other useful thing about the links here: there's a field called `self-methods`. This field
-    will tell you what the valid methods are for the self links given the kind of thing they are (file vs folder) and
-    given your permissions on the object.
+    For an OSF File entity, the `type` is "files" regardless of whether the entity is actually a file or folder.  They
+    can be distinguished by the `kind` attribute.  Files and folders use the same representation, but some attributes may
+    be null for one kind but not the other. `size` will be null for folders.  A list of storage provider keys can be
+    found [here](/v2/#storage-providers).
 
-    NOTE: Most of the API will be stable as far as how the links work because the things they are accessing are fairly
-    stable and predictable, so if you felt the need, you could construct them in the normal REST way and they should
-    be fine.
-    The 'self' links from the NodeFilesList may have to change from time to time, so you are highly encouraged to use
-    the links as we provide them before you use them, and not to reverse engineer the structure of the links as they
-    are at any given time.
+        name          type               description
+        ---------------------------------------------------------------------------------
+        name          string             name of the file or folder; use for display
+        kind          string             "file" or "folder"
+        path          url path           unique path for this entity, used in "move" actions
+        size          integer            size of file in bytes, null for folders
+        provider      string             storage provider for this file. "osfstorage" if stored on the OSF.  Other
+                                         examples include "s3" for Amazon S3, "googledrive" for Google Drive, "box"
+                                         for Box.com.
+        last_touched  iso8601 timestamp  last time the metadata for the file was retrieved. only applies to non-OSF
+                                         storage providers.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
+
+    Node files may be filtered by `id`, `name`, `node`, `kind`, `path`, `provider`, `size`, and `last_touched`.
+
+    #This Request/Response
     """
-    serializer_class = NodeFilesSerializer
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        base_permissions.TokenHasScope,
+    )
 
+    serializer_class = FileSerializer
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    def get_queryset(self):
+        # Don't bother going to waterbutler for osfstorage
+        files_list = self.fetch_from_waterbutler()
+
+        if isinstance(files_list, list):
+            return [self.get_file_item(file) for file in files_list]
+
+        if isinstance(files_list, dict) or getattr(files_list, 'is_file', False):
+            # We should not have gotten a file here
+            raise NotFound
+
+        return list(files_list.children)
+
+
+class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        base_permissions.TokenHasScope,
+    )
+
+    serializer_class = FileSerializer
+
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    def get_object(self):
+        fobj = self.fetch_from_waterbutler()
+        if isinstance(fobj, dict):
+            return self.get_file_item(fobj)
+
+        if isinstance(fobj, list) or not getattr(fobj, 'is_file', True):
+            # We should not have gotten a folder here
+            raise NotFound
+
+        return fobj
+
+
+class NodeProvider(object):
+
+    def __init__(self, provider, node):
+        self.path = '/'
+        self.node = node
+        self.kind = 'folder'
+        self.name = provider
+        self.provider = provider
+        self.node_id = node._id
+        self.pk = node._id
+
+
+class NodeProvidersList(generics.ListAPIView, NodeMixin):
+    """List of storage providers enabled for this node. *Read-only*.
+
+    Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
+    integratations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
+    storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers are
+    configured for this node.  If you want to add more, you will need to do that in the Open Science Framework front end
+    for now.
+
+    In the OSF filesystem model, providers are treated as folders, but with special properties that distinguish them
+    from regular folders.  Every provider folder is considered a root folder, and may not be deleted through the regular
+    file API.
+
+    To see the contents of the provider, issue a GET request to the `relationships.files.links.related.href` attribute
+    of the provider resource.
+
+    ##Provider Attributes
+
+    `type` is "files"
+
+        name      type    description
+        ---------------------------------------------------------------------------------
+        name      string  name of the provider
+        kind      string  type of this file/folder.  always "folder"
+        path      path    relative path of this folder within the provider filesys. always "/"
+        node      string  node this provider belongs to
+        provider  string  provider id, same as "name"
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    *None*.
+
+    ##Query Params
+
+    + `page=<Int>` -- page number of results to view, default 1
+
+    #This Request/Response
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        base_permissions.TokenHasScope,
     )
 
-    def get_valid_self_link_methods(self, root_folder=False):
-        valid_methods = {'file': ['GET'], 'folder': [], }
-        user = self.request.user
-        if user is None or user.is_anonymous():
-            return valid_methods
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-        permissions = self.get_node().get_permissions(user)
-        if 'write' in permissions:
-            valid_methods['file'].append('POST')
-            valid_methods['file'].append('DELETE')
-            valid_methods['folder'].append('POST')
-            if not root_folder:
-                valid_methods['folder'].append('DELETE')
+    serializer_class = NodeProviderSerializer
 
-        return valid_methods
-
-    def get_file_item(self, item, cookie, obj_args):
-        file_item = {
-            'valid_self_link_methods': self.get_valid_self_link_methods()[item['kind']],
-            'provider': item['provider'],
-            'path': item['path'],
-            'name': item['name'],
-            'node_id': self.get_node()._primary_key,
-            'cookie': cookie,
-            'args': obj_args,
-            'waterbutler_type': 'file',
-            'item_type': item['kind'],
-        }
-        if file_item['item_type'] == 'folder':
-            file_item['metadata'] = {}
-        else:
-            file_item['metadata'] = {
-                'content_type': item['contentType'],
-                'modified': item['modified'],
-                'size': item['size'],
-                'extra': item['extra'],
-            }
-        return file_item
+    def get_provider_item(self, provider):
+        return NodeProvider(provider, self.get_node())
 
     def get_queryset(self):
-        query_params = self.request.query_params
-
-        addons = self.get_node().get_addons()
-        user = self.request.user
-        cookie = None if self.request.user.is_anonymous() else user.get_or_create_cookie()
-        node_id = self.get_node()._id
-        obj_args = self.request.parser_context['args']
-
-        provider = query_params.get('provider')
-        path = query_params.get('path', '/')
-        files = []
-
-        if provider is None:
-            valid_self_link_methods = self.get_valid_self_link_methods(True)
-            for addon in addons:
-                if addon.config.has_hgrid_files:
-                    files.append({
-                        'valid_self_link_methods': valid_self_link_methods['folder'],
-                        'provider': addon.config.short_name,
-                        'name': addon.config.short_name,
-                        'path': path,
-                        'node_id': node_id,
-                        'cookie': cookie,
-                        'args': obj_args,
-                        'waterbutler_type': 'file',
-                        'item_type': 'folder',
-                        'metadata': {},
-                    })
-        else:
-            url = waterbutler_url_for('data', provider, path, self.kwargs['node_id'], cookie, obj_args)
-            waterbutler_request = requests.get(url)
-            if waterbutler_request.status_code == 401:
-                raise PermissionDenied
-            try:
-                waterbutler_data = waterbutler_request.json()['data']
-            except KeyError:
-                raise ValidationError('Could not retrieve files information.')
-
-            if isinstance(waterbutler_data, list):
-                for item in waterbutler_data:
-                    file = self.get_file_item(item, cookie, obj_args)
-                    files.append(file)
-            else:
-                files.append(self.get_file_item(waterbutler_data, cookie, obj_args))
-
-        return files
+        return [
+            self.get_provider_item(addon.config.short_name)
+            for addon
+            in self.get_node().get_addons()
+            if addon.config.has_hgrid_files
+            and addon.complete
+        ]

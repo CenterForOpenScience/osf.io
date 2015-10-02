@@ -7,6 +7,7 @@ import copy
 import math
 import logging
 import unicodedata
+import functools
 
 import six
 
@@ -86,6 +87,28 @@ def requires_search(func):
 
 
 @requires_search
+def get_aggregations(query, doc_type):
+    query['aggregations'] = {
+        'licenses': {
+            'terms': {
+                'field': 'license.name'
+            }
+        }
+    }
+
+    res = es.search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
+    ret = {
+        doc_type: {
+            item['key']: item['doc_count']
+            for item in agg['buckets']
+        }
+        for doc_type, agg in res['aggregations'].iteritems()
+    }
+    ret['total'] = res['hits']['total']
+    return ret
+
+
+@requires_search
 def get_counts(count_query, clean=True):
     count_query['aggregations'] = {
         'counts': {
@@ -96,7 +119,6 @@ def get_counts(count_query, clean=True):
     }
 
     res = es.search(index=INDEX, doc_type=None, search_type='count', body=count_query)
-
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
@@ -133,16 +155,24 @@ def search(query, index=None, doc_type='_all'):
     """
     index = index or INDEX
     tag_query = copy.deepcopy(query)
+    aggs_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
 
     for key in ['from', 'size', 'sort']:
         try:
             del tag_query[key]
+            del aggs_query[key]
             del count_query[key]
         except KeyError:
             pass
 
     tags = get_tags(tag_query, index)
+    try:
+        del aggs_query['query']['filtered']['filter']
+        del count_query['query']['filtered']['filter']
+    except KeyError:
+        pass
+    aggregations = get_aggregations(aggs_query, doc_type=doc_type)
     counts = get_counts(count_query, index)
 
     # Run the real query and get the results
@@ -152,6 +182,7 @@ def search(query, index=None, doc_type='_all'):
     return_value = {
         'results': format_results(results),
         'counts': counts,
+        'aggs': aggregations,
         'tags': tags,
         'typeAliases': ALIASES
     }
@@ -191,7 +222,8 @@ def format_result(result, parent_id=None):
         'category': result.get('category'),
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
-        'n_wikis': len(result['wikis'])
+        'n_wikis': len(result['wikis']),
+        'license': result.get('license'),
     }
 
     return formatted_result
@@ -219,16 +251,16 @@ COMPONENT_CATEGORIES = set([k for k in Node.CATEGORY_MAP.keys() if not k == 'pro
 
 def get_doctype_from_node(node):
 
-    if node.category in COMPONENT_CATEGORIES:
-        return 'component'
-    elif node.is_registration:
+    if node.is_registration:
         return 'registration'
+    elif node.category in COMPONENT_CATEGORIES:
+        return 'component'
     else:
         return node.category
 
 
 @requires_search
-def update_node(node, index=None):
+def update_node(node, index=None, bulk=False):
     index = index or INDEX
     from website.addons.wiki.model import NodeWikiPage
 
@@ -280,9 +312,9 @@ def update_node(node, index=None):
             'wikis': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
+            'license': node.license,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
-
         if not node.is_retracted:
             for wiki in [
                 NodeWikiPage.load(x)
@@ -290,35 +322,47 @@ def update_node(node, index=None):
             ]:
                 elastic_document['wikis'][wiki.page_name] = wiki.raw_text(node)
 
-        es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
+        if bulk:
+            return elastic_document
+        else:
+            es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
 
-def bulk_update_contributors(nodes, index=INDEX):
-    """Updates only the list of contributors of input projects
+def bulk_update_nodes(serialize, nodes, index=INDEX):
+    """Updates the list of input projects
 
-    :param nodes: Projects, components or registrations
-    :param index: Index of the nodes
+    :param function Node-> dict serialize:
+    :param Node[] nodes: Projects, components or registrations
+    :param str index: Index of the nodes
     :return:
     """
     actions = []
     for node in nodes:
-        actions.append({
-            '_op_type': 'update',
-            '_index': index,
-            '_id': node._id,
-            '_type': get_doctype_from_node(node),
-            'doc': {
-                'contributors': [
-                    {
-                        'fullname': user.fullname,
-                        'url': user.profile_url if user.is_active else None
-                    } for user in node.visible_contributors
-                    if user is not None
-                    and user.is_active
-                ]
-            }
-        })
-    return helpers.bulk(es, actions)
+        serialized = serialize(node)
+        if serialized:
+            actions.append({
+                '_op_type': 'update',
+                '_index': index,
+                '_id': node._id,
+                '_type': get_doctype_from_node(node),
+                'doc': serialized
+            })
+    if actions:
+        return helpers.bulk(es, actions)
+
+def serialize_contributors(node):
+    return {
+        'contributors': [
+            {
+                'fullname': user.fullname,
+                'url': user.profile_url if user.is_active else None
+            } for user in node.visible_contributors
+            if user is not None
+            and user.is_active
+        ]
+    }
+
+bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contributors)
 
 
 @requires_search
@@ -388,9 +432,18 @@ def create_index(index=None):
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 
-    es.indices.create(index, ignore=[400])
+    es.indices.create(index, ignore=[400])  # HTTP 400 if index already exists
     for type_ in document_types:
-        mapping = {'properties': {'tags': NOT_ANALYZED_PROPERTY}}
+        mapping = {
+            'properties': {
+                'tags': NOT_ANALYZED_PROPERTY,
+                'license': {
+                    'properties': {
+                        'name': NOT_ANALYZED_PROPERTY,
+                    }
+                }
+            }
+        }
         if type_ in project_like_types:
             analyzers = {field: ENGLISH_ANALYZER_PROPERTY
                          for field in analyzed_fields}
@@ -417,7 +470,6 @@ def create_index(index=None):
             }
             mapping['properties'].update(fields)
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
-
 
 @requires_search
 def delete_doc(elastic_document_id, node, index=None, category=None):
@@ -467,7 +519,9 @@ def search_contributor(query, page=0, size=10, exclude=None, current_user=None):
         # TODO: use utils.serialize_user
         user = User.load(doc['id'])
 
-        if current_user:
+        if current_user and current_user._id == user._id:
+            n_projects_in_common = -1
+        elif current_user:
             n_projects_in_common = current_user.n_projects_in_common(user)
         else:
             n_projects_in_common = 0
