@@ -172,20 +172,21 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
                          "data": {
                            "type": "nodes", # required
                            "attributes": {
-                             "title":       {title},         # required
-                             "category":    {category},      # required
-                             "description": {description},   # optional
-                             "tags":        [{tag1}, {tag2}] # optional
+                             "title":       {title},          # required
+                             "category":    {category},       # required
+                             "description": {description},    # optional
+                             "tags":        [{tag1}, {tag2}], # optional
+                             "public":      true|false        # optional
                            }
                          }
                        }
         Success:       201 CREATED + node representation
 
     New nodes are created by issuing a POST request to this endpoint.  The `title` and `category` fields are
-    mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  All other fields
-    not listed above will be ignored.  If the node creation is successful the API will return a 201 response with the
-    respresentation of the new node in the body.  For the new node's canonical URL, see the `links.self` field of the
-    response.
+    mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  `public` defaults
+    to false.  All other fields not listed above will be ignored.  If the node creation is successful the API will
+    return a 201 response with the respresentation of the new node in the body.  For the new node's canonical URL, see
+    the `links.self` field of the response.
 
     ##Query Params
 
@@ -199,6 +200,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -288,7 +290,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     ###Files
 
     List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
-    for accessing the actual files stored with this node.
+    for accessing the actual files stored within this node.
 
     ###Parent
 
@@ -312,10 +314,11 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
                            "type": "nodes",   # required
                            "id":   {node_id}, # required
                            "attributes": {
-                             "title":       {title},         # mandatory
-                             "category":    {category},      # mandatory
-                             "description": {description},   # optional
-                             "tags":        [{tag1}, {tag2}] # optional
+                             "title":       {title},          # mandatory
+                             "category":    {category},       # mandatory
+                             "description": {description},    # optional
+                             "tags":        [{tag1}, {tag2}], # optional
+                             "public":      true|false        # optional
                            }
                          }
                        }
@@ -411,9 +414,9 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
-                           "type": "contributors", # required
+                           "type": "contributors",        # required
+                           "id":   {contributor_user_id}, # required
                            "attributes": {
-                             "id":            {user_id},             # required
                              "bibliographic": true|false,            # optional
                              "permission":    "read"|"write"|"admin" # optional
                            }
@@ -849,9 +852,56 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
     """Files attached to a node for a given provider. *Read-only*.
 
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
-    If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenver
+    If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenever
     this endpoint is accessed.  To see the cached metadata, GET the endpoint for the file directly (available through
     its `links.info` attribute).
+
+    When a create/update/delete action is performed against the file or folder, the action is handled by an external
+    service called WaterButler.  The WaterButler response format differs slightly from the OSF's.
+
+    <!--- Copied from FileDetail.Spiel -->
+
+    ###Waterbutler Entities
+
+    When an action is performed against a WaterButler endpoint, it will generally respond with a file entity, a folder
+    entity, or no content.
+
+    ####File Entity
+
+        name          type       description
+        -------------------------------------------------------------------------
+        name          string     name of the file
+        path          string     unique identifier for this file entity for this
+                                 project and storage provider. may not end with '/'
+        materialized  string     the full path of the file relative to the storage
+                                 root.  may not end with '/'
+        kind          string     "file"
+        etag          string     etag - http caching identifier w/o wrapping quotes
+        modified      timestamp  last modified timestamp - format depends on provider
+        contentType   string     MIME-type when available
+        provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
+                                 equivalent to addon_short_name on the OSF
+        size          integer    size of file in bytes
+        extra         object     may contain additional data beyond what's describe here,
+                                 depending on the provider
+          version     integer    version number of file. will be 1 on initial upload
+          downloads   integer    count of the number times the file has been downloaded
+          hashes      object
+            md5       string     md5 hash of file
+            sha256    string     SHA-256 hash of file
+
+    ####Folder Entity
+
+        name          type    description
+        ----------------------------------------------------------------------
+        name          string  name of the folder
+        path          string  unique identifier for this folder entity for this
+                              project and storage provider. must end with '/'
+        materialized  string  the full path of the folder relative to the storage
+                              root.  must end with '/'
+        kind          string  "folder"
+        etag          string  etag - http caching identifier w/o wrapping quotes
+        extra         object  varies depending on provider
 
     ##File Attributes
 
@@ -880,7 +930,129 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
 
     ##Actions
 
-    *None*.
+    <!--- Copied from FileDetail.Actions -->
+
+    The `links` property of the response provides endpoints for common file operations. The currently-supported actions
+    are:
+
+    ###Get Info (*files, folders*)
+
+        Method:   GET
+        URL:      links.info
+        Params:   <none>
+        Success:  200 OK + file representation
+
+    The contents of a folder or details of a particular file can be retrieved by performing a GET request against the
+    `info` link. The response will be a standard OSF response format with the [OSF File attributes](#attributes).
+
+    ###Download (*files*)
+
+        Method:   GET
+        URL:      links.download
+        Params:   <none>
+        Success:  200 OK + file body
+
+    To download a file, issue a GET request against the `download` link.  The response will have the Content-Disposition
+    header set, which will will trigger a download in a browser.
+
+    ###Create Subfolder (*folders*)
+
+        Method:       PUT
+        URL:          links.new_folder
+        Query Params: ?kind=folder&name={new_folder_name}
+        Body:         <empty>
+        Success:      201 Created + new folder representation
+
+    You can create a subfolder of an existing folder by issuing a PUT request against the `new_folder` link.  The
+    `?kind=folder` portion of the query parameter is already included in the `new_folder` link.  The name of the new
+    subfolder should be provided in the `name` query parameter.  The response will contain a [WaterButler folder
+    entity](#folder-entity).  If a folder with that name already exists in the parent directory, the server will return
+    a 409 Conflict error response.
+
+    ###Upload New File (*folders*)
+
+        Method:       PUT
+        URL:          links.upload
+        Query Params: ?kind=file&name={new_file_name}
+        Body (Raw):   <file data (not form-encoded)>
+        Success:      201 Created or 200 OK + new file representation
+
+    To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
+    request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
+    response will contain a [WaterButler file entity](#file-entity) that describes the new file.  If a file with the
+    same name already exists in the folder, it will be considered a new version.  In this case, the response will be a
+    200 OK.
+
+    ###Update Existing File (*file*)
+
+        Method:       PUT
+        URL:          links.upload
+        Query Params: ?kind=file
+        Body (Raw):   <file data (not form-encoded)>
+        Success:      200 OK + updated file representation
+
+    To update an existing file, issue a PUT request to the file's `upload` link with the raw file data in the request
+    body and the `kind` query parameter set to `"file"`.  The update action will create a new version of the file.
+    The response will contain a [WaterButler file entity](#file-entity) that describes the updated file.
+
+    ###Rename (*files, folders*)
+
+        Method:        POST
+        URL:           links.move
+        Query Params:  <none>
+        Body (JSON):   {
+                        "action": "rename",
+                        "rename": {new_file_name}
+                       }
+        Success:       200 OK + new entity representation
+
+    To rename a file or folder, issue a POST request to the `move` link with the `action` body parameter set to
+    `"rename"` and the `rename` body parameter set to the desired name.  The response will contain either a folder
+    entity or file entity with the new name.
+
+    ###Move & Copy (*files, folders*)
+
+        Method:        POST
+        URL:           links.move
+        Query Params:  <none>
+        Body (JSON):   {
+                        // mandatory
+                        "action":   "move"|"copy",
+                        "path":     {path_attribute_of_target_folder},
+                        // optional
+                        "rename":   {new_name},
+                        "conflict": "replace"|"keep", // defaults to 'replace'
+                        "resource": {node_id},        // defaults to current {node_id}
+                        "provider": {provider}        // defaults to current {provider}
+                       }
+        Succes:        200 OK + new entity representation
+
+    Move and copy actions both use the same request structure, a POST to the `move` url, but with different values for
+    the `action` body parameters.  The `path` parameter is also required and should be the OSF `path` attribute of the
+    folder being written to.  The `rename` and `conflict` parameters are optional.  If you wish to change the name of
+    the file or folder at its destination, set the `rename` parameter to the new name.  The `conflict` param governs how
+    name clashes are resolved.  Possible values are `replace` and `keep`.  `replace` is the default and will overwrite
+    the file that already exists in the target folder.  `keep` will attempt to keep both by adding a suffix to the new
+    file's name until it no longer conflicts.  The suffix will be ' (**x**)' where **x** is a increasing integer
+    starting from 1.  This behavior is intended to mimic that of the OS X Finder.  The response will contain either a
+    folder entity or file entity with the new name.
+
+    Files and folders can also be moved between nodes and providers.  The `resource` parameter is the id of the node
+    under which the file/folder should be moved.  It *must* agree with the `path` parameter, that is the `path` must
+    identify a valid folder under the node identified by `resource`.  Likewise, the `provider` parameter may be used to
+    move the file/folder to another storage provider, but both the `resource` and `path` parameters must belong to a
+    node and folder already extant on that provider.  Both `resource` and `provider` default to the current node and
+    providers.
+
+    ###Delete (*file, folders*)
+
+        Method:        DELETE
+        URL:           links.delete
+        Query Params:  <none>
+        Success:       204 No Content
+
+    To delete a file or folder send a DELETE request to the `delete` link.  Nothing will be returned in the response
+    body.
 
     ##Query Params
 
@@ -891,6 +1063,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
     Node files may be filtered by `id`, `name`, `node`, `kind`, `path`, `provider`, `size`, and `last_touched`.
 
     #This Request/Response
+
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -960,16 +1133,59 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
     Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
     integratations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
-    storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers are
+    storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers that are
     configured for this node.  If you want to add more, you will need to do that in the Open Science Framework front end
     for now.
 
     In the OSF filesystem model, providers are treated as folders, but with special properties that distinguish them
     from regular folders.  Every provider folder is considered a root folder, and may not be deleted through the regular
-    file API.
+    file API.  To see the contents of the provider, issue a GET request to the `relationships.files.links.related.href`
+    attribute of the provider resource.  The `new_folder` and `upload` actions are handled by another service called
+    WaterButler, whose response format differs slightly from the OSF's.
 
-    To see the contents of the provider, issue a GET request to the `relationships.files.links.related.href` attribute
-    of the provider resource.
+    <!--- Copied from FileDetail.Spiel -->
+
+    ###Waterbutler Entities
+
+    When an action is performed against a WaterButler endpoint, it will generally respond with a file entity, a folder
+    entity, or no content.
+
+    ####File Entity
+
+        name          type       description
+        -------------------------------------------------------------------------
+        name          string     name of the file
+        path          string     unique identifier for this file entity for this
+                                 project and storage provider. may not end with '/'
+        materialized  string     the full path of the file relative to the storage
+                                 root.  may not end with '/'
+        kind          string     "file"
+        etag          string     etag - http caching identifier w/o wrapping quotes
+        modified      timestamp  last modified timestamp - format depends on provider
+        contentType   string     MIME-type when available
+        provider      string     id of provider e.g. "osfstorage", "s3", "googledrive".
+                                 equivalent to addon_short_name on the OSF
+        size          integer    size of file in bytes
+        extra         object     may contain additional data beyond what's describe here,
+                                 depending on the provider
+          version     integer    version number of file. will be 1 on initial upload
+          downloads   integer    count of the number times the file has been downloaded
+          hashes      object
+            md5       string     md5 hash of file
+            sha256    string     SHA-256 hash of file
+
+    ####Folder Entity
+
+        name          type    description
+        ----------------------------------------------------------------------
+        name          string  name of the folder
+        path          string  unique identifier for this folder entity for this
+                              project and storage provider. must end with '/'
+        materialized  string  the full path of the folder relative to the storage
+                              root.  must end with '/'
+        kind          string  "folder"
+        etag          string  etag - http caching identifier w/o wrapping quotes
+        extra         object  varies depending on provider
 
     ##Provider Attributes
 
@@ -989,7 +1205,35 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
     ##Actions
 
-    *None*.
+    <!--- Copied from FileDetail.Actions -->
+
+    ###Create Subfolder (*folders*)
+
+        Method:       PUT
+        URL:          links.new_folder
+        Query Params: ?kind=folder&name={new_folder_name}
+        Body:         <empty>
+        Success:      201 Created + new folder representation
+
+    You can create a subfolder of an existing folder by issuing a PUT request against the `new_folder` link.  The
+    `?kind=folder` portion of the query parameter is already included in the `new_folder` link.  The name of the new
+    subfolder should be provided in the `name` query parameter.  The response will contain a [WaterButler folder
+    entity](#folder-entity).  If a folder with that name already exists in the parent directory, the server will return
+    a 409 Conflict error response.
+
+    ###Upload New File (*folders*)
+
+        Method:       PUT
+        URL:          links.upload
+        Query Params: ?kind=file&name={new_file_name}
+        Body (Raw):   <file data (not form-encoded)>
+        Success:      201 Created or 200 OK + new file representation
+
+    To upload a file to a folder, issue a PUT request to the folder's `upload` link with the raw file data in the
+    request body, and the `kind` and `name` query parameters set to `'file'` and the desired name of the file.  The
+    response will contain a [WaterButler file entity](#file-entity) that describes the new file.  If a file with the
+    same name already exists in the folder, it will be considered a new version.  In this case, the response will be a
+    200 OK.
 
     ##Query Params
 
