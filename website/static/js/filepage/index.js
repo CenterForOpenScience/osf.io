@@ -82,7 +82,7 @@ var SharePopover =  {
                         button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', popoverWidth).css('width', popoverWidth);
                     });
                 }
-            }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<p id="popOver">Content Loading...</p>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share');
+            }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"></div>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share');
     }
 };
 
