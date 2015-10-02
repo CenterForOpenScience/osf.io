@@ -79,8 +79,7 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def api(self):
         """authenticated ExternalProvider instance"""
         if self._api is None:
-            self._api = Box()
-            self._api.account = self.external_account
+            self._api = Box(self.external_account)
         return self._api
 
     @property
