@@ -62,7 +62,8 @@ class IDField(ser.CharField):
     def to_internal_value(self, data):
         update_methods = ['PUT', 'PATCH']
         if self.context['request'].method in update_methods:
-            if self.root.instance._id != data:
+            id_field = getattr(self.root.instance, self.source)
+            if id_field != data:
                 raise Conflict()
         return super(IDField, self).to_internal_value(data)
 
