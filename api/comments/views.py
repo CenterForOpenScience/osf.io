@@ -2,7 +2,8 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework import generics
 from rest_framework.exceptions import NotFound, ValidationError
-from api.comments.serializers import CommentSerializer, CommentDetailSerializer, CommentReportsSerializer, CommentReportDetailSerializer
+from api.comments.serializers import CommentSerializer, CommentDetailSerializer, CommentReportsSerializer, CommentReportDetailSerializer, CommentReport
+from api.base.exceptions import Gone
 from website.project.model import Comment
 
 
@@ -26,13 +27,6 @@ class CommentMixin(object):
             # May raise a permission denied
             self.check_object_permissions(self.request, comment)
         return comment
-
-    def serialize_comment_report(self, reports, user_id):
-        user_dict = {}
-        user_dict['_id'] = user_id
-        user_dict['category'] = reports[user_id]['category']
-        user_dict['message'] = reports[user_id]['text']
-        return user_dict
 
 
 class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
@@ -60,11 +54,9 @@ class CommentReports(generics.ListCreateAPIView, CommentMixin):
         comment = self.get_comment()
         reports = comment.reports
         serialized_reports = []
-
         for user_id in reports:
-            report = self.serialize_comment_report(reports, user_id)
+            report = CommentReport(user_id, reports[user_id]['category'], reports[user_id]['text'])
             serialized_reports.append(report)
-
         return serialized_reports
 
 
@@ -81,7 +73,10 @@ class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
         comment = self.get_comment()
         reports = comment.reports
         user_id = self.kwargs['user_id']
-        return self.serialize_comment_report(reports, user_id)
+        if user_id in reports:
+            return CommentReport(user_id, reports[user_id]['category'], reports[user_id]['text'])
+        else:
+            raise Gone(detail='The requested comment report is no longer available.')
 
     # overrides RetrieveUpdateDestroyAPIView
     def perform_destroy(self, instance):
