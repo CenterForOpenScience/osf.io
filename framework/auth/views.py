@@ -158,7 +158,7 @@ def auth_logout(redirect_url=None):
     else:
         cas_endpoint = cas.get_logout_url(redirect_url)
     resp = redirect(cas_endpoint)
-    resp.delete_cookie(settings.COOKIE_NAME)
+    resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
     return resp
 
 

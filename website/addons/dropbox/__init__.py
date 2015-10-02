@@ -3,7 +3,7 @@ import os
 from website.addons.dropbox import model, routes, views
 
 
-MODELS = [model.DropboxUserSettings, model.DropboxNodeSettings, model.DropboxFile]
+MODELS = [model.DropboxUserSettings, model.DropboxNodeSettings]
 USER_SETTINGS_MODEL = model.DropboxUserSettings
 NODE_SETTINGS_MODEL = model.DropboxNodeSettings
 

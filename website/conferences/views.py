@@ -15,6 +15,7 @@ from website import settings
 from website.models import Node
 from website.util import web_url_for
 from website.mails import send_mail
+from website.files.models import StoredFileNode
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 
 from website.conferences import utils
@@ -125,13 +126,14 @@ def add_poster_by_email(conference, message):
 
 
 def _render_conference_node(node, idx, conf):
-    storage_settings = node.get_addon('osfstorage')
-    records = storage_settings.root_node.children
     try:
         record = next(
-            each for each in records
-            if not each.is_deleted,
-        )
+            x for x in
+            StoredFileNode.find(
+                Q('node', 'eq', node) &
+                Q('is_file', 'eq', True)
+            ).limit(1)
+        ).wrapped()
         download_count = record.get_download_count()
 
         download_url = node.web_url_for(

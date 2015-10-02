@@ -55,9 +55,7 @@
       <div class="file-view-panels col-sm-3"></div>
     </div>
   </div>
-
 </div>
-
 
 ## Begin Modals
 <div class="modal fade" id="connectedModal" tabindex="-1">
@@ -167,7 +165,6 @@
             safeName: ${ file_name | h, sjson},
             materializedPath: ${ materialized_path | sjson, n },
           urls: {
-              external: ${ (urls['external'] or '') | sjson, n },
         %if error is None:
               render: ${ urls['render'] | sjson, n },
         %endif
@@ -192,6 +189,7 @@
           canEdit: ${ int(user['can_edit']) | sjson, n }
         }
       });
+      window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
     </script>
 
     <link href="/static/css/pages/file-view-page.css" rel="stylesheet">

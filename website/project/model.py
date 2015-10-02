@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import itertools
+import functools
 import os
 import re
 import urllib
 import logging
+import pymongo
 import datetime
 import urlparse
 from collections import OrderedDict
@@ -507,9 +509,16 @@ def validate_title(value):
     if value is None or not value.strip():
         raise ValidationValueError('Title cannot be blank.')
 
+    value = sanitize.strip_html(value)
+
+    if value is None or not value.strip():
+        raise ValidationValueError('Invalid title.')
+
     if len(value) > 200:
         raise ValidationValueError('Title cannot exceed 200 characters.')
+
     return True
+
 
 def validate_user(value):
     if value != {}:
@@ -518,16 +527,27 @@ def validate_user(value):
             raise ValidationValueError('User does not exist.')
     return True
 
+
 class NodeUpdateError(Exception):
     def __init__(self, reason, key, *args, **kwargs):
         super(NodeUpdateError, self).__init__(*args, **kwargs)
         self.key = key
         self.reason = reason
 
+
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     #: Whether this is a pointer or not
     primary = True
+
+    __indices__ = [{
+        'unique': False,
+        'key_or_list': [
+            ('tags.$', pymongo.ASCENDING),
+            ('is_public', pymongo.ASCENDING),
+            ('is_deleted', pymongo.ASCENDING),
+        ]
+    }]
 
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
@@ -544,6 +564,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'is_deleted',
         'wiki_pages_current',
         'is_retracted',
+        'node_license',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -566,6 +587,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'title',
         'description',
         'category',
+        'node_license',
     ]
 
     _id = fields.StringField(primary=True)
@@ -609,6 +631,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
 
+    # Representation of a nodes's license
+    # {
+    #  'id':  <id>,
+    #  'name': <name>,
+    #  'text': <license text>,
+    #  'year' (optional): <year>,
+    #  'copyrightHolders' (optional): <copyright_holders>
+    # }
+    node_license = fields.DictionaryField(default=dict)
+
     # One of 'public', 'private'
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
@@ -648,7 +680,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     }
 
     def __init__(self, *args, **kwargs):
+
+        tags = kwargs.pop('tags', [])
+
         super(Node, self).__init__(*args, **kwargs)
+
+        # Ensure when Node is created with tags through API, tags are added to Tag
+        if tags:
+            for tag in tags:
+                self.add_tag(tag, Auth(self.creator), save=False, log=False)
 
         if kwargs.get('_is_loaded', False):
             return
@@ -669,6 +709,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pk(self):
         return self._id
+
+    @property
+    def license(self):
+        node_license = self.node_license
+        if not node_license and self.parent_node:
+            return self.parent_node.license
+        return node_license
 
     @property
     def category_display(self):
@@ -1069,8 +1116,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.is_contributor(auth.user)
 
     def update(self, fields, auth=None, save=True):
+        """Update the node with the given fields.
+
+        :param dict fields: Dictionary of field_name:value pairs.
+        :param Auth auth: Auth object for the user making the update.
+        :param bool save: Whether to save after updating the object.
+        """
         if self.is_registration:
             raise NodeUpdateError(reason="Registered content cannot be updated")
+        if not fields:  # Bail out early if there are no fields to update
+            return False
         values = {}
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
@@ -1174,6 +1229,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             need_update = False
         if need_update:
             self.update_search()
+
+        if 'node_license' in saved_fields:
+            children = [c for c in self.get_descendants_recursive(
+                include=lambda n: n.node_license == {}
+            )]
+            # this returns generator, that would get unspooled anyways
+            if children:
+                Node.bulk_update_search(children)
 
         # This method checks what has changed.
         if settings.PIWIK_HOST and update_piwik:
@@ -1297,6 +1360,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             raise ValueError(
                 'Pointer to node {0} already in list'.format(node._id)
             )
+
+        if self.is_registration:
+            raise NodeStateError('Cannot add a pointer to a registration')
 
         # If a folder, prevent more than one pointer to that folder. This will prevent infinite loops on the Dashboard.
         # Also, no pointers to the dashboard project, which could cause loops as well.
@@ -1562,7 +1628,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         validate_title(title)
 
         original_title = self.title
-        self.title = title
+        self.title = sanitize.strip_html(title)
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
@@ -1586,7 +1652,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param bool save: Save self after updating.
         """
         original = self.description
-        self.description = description
+        self.description = sanitize.strip_html(description)
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
@@ -1606,6 +1672,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website import search
         try:
             search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    @classmethod
+    def bulk_update_search(cls, nodes):
+        from website import search
+        try:
+            serialize = functools.partial(search.search.update_node, bulk=True)
+            search.search.bulk_update_nodes(serialize, nodes)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1741,6 +1817,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
+        forked.node_license = original.license
 
         # Forks default to private status
         forked.is_public = False
@@ -1827,6 +1904,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.node_license = original.license
 
         registered.save()
 
@@ -1870,23 +1948,24 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-    def add_tag(self, tag, auth, save=True):
+    def add_tag(self, tag, auth, save=True, log=True):
         if tag not in self.tags:
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(_id=tag)
             new_tag.save()
             self.tags.append(new_tag)
-            self.add_log(
-                action=NodeLog.TAG_ADDED,
-                params={
-                    'parent_node': self.parent_id,
-                    'node': self._primary_key,
-                    'tag': tag,
-                },
-                auth=auth,
-                save=False,
-            )
+            if log:
+                self.add_log(
+                    action=NodeLog.TAG_ADDED,
+                    params={
+                        'parent_node': self.parent_id,
+                        'node': self._primary_key,
+                        'tag': tag,
+                    },
+                    auth=auth,
+                    save=False,
+                )
             if save:
                 self.save()
 
@@ -2209,7 +2288,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 params={
                     'project': self.parent_id,
                     'node': self._primary_key,
-                    'contributor': contributor._id,
+                    'contributors': [contributor._id],
                 },
                 auth=auth,
                 save=False,
@@ -2252,6 +2331,50 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             return False
 
         return True
+
+    def update_contributor(self, user, permission, visible, auth, save=False):
+        """ TODO: this method should be updated as a replacement for the main loop of
+        Node#manage_contributors. Right now there are redundancies, but to avoid major
+        feature creep this will not be included as this time.
+
+        Also checks to make sure unique admin is not removing own admin privilege.
+        """
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError("Only admins can modify contributor permissions")
+        permissions = expand_permissions(permission) or DEFAULT_CONTRIBUTOR_PERMISSIONS
+        admins = [contrib for contrib in self.contributors if self.has_permission(contrib, 'admin') and contrib.is_active]
+        if not len(admins) > 1:
+            # has only one admin
+            admin = admins[0]
+            if admin == user and ADMIN not in permissions:
+                raise NodeStateError('{} is the only admin.'.format(user.fullname))
+        if user not in self.contributors:
+            raise ValueError(
+                'User {0} not in contributors'.format(user.fullname)
+            )
+        if permission:
+            permissions = expand_permissions(permission)
+            if set(permissions) != set(self.get_permissions(user)):
+                self.set_permissions(user, permissions, save=save)
+                permissions_changed = {
+                    user._id: permissions
+                }
+                self.add_log(
+                    action=NodeLog.PERMISSIONS_UPDATED,
+                    params={
+                        'project': self.parent_id,
+                        'node': self._id,
+                        'contributors': permissions_changed,
+                    },
+                    auth=auth,
+                    save=save
+                )
+                with TokuTransaction():
+                    if ['read'] in permissions_changed.values():
+                        project_signals.write_permissions_revoked.send(self)
+        if visible is not None:
+            self.set_visible(user, visible, auth=auth, save=save)
+            self.update_visible_ids()
 
     def manage_contributors(self, user_dicts, auth, save=False):
         """Reorder and remove contributors.
@@ -2495,6 +2618,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
         """
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
             if self.is_registration:
                 if self.is_pending_embargo:
@@ -2853,9 +2978,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def require_approval(self, user):
         if not self.is_registration:
-            raise NodeStateError('Only registrations may be embargoed')
+            raise NodeStateError('Only registrations can require registration approval')
         if not self.has_permission(user, 'admin'):
-            raise PermissionsError('Only admins may embargo a registration')
+            raise PermissionsError('Only admins can initiate a registration approval')
 
         approval = self._initiate_approval(user)
 
@@ -2955,12 +3080,13 @@ class PrivateLink(StoredObject):
             "id": self._id,
             "date_created": iso8601format(self.date_created),
             "key": self.key,
-            "name": self.name,
+            "name": sanitize.unescape_entities(self.name),
             "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
                       for x in self.nodes if not x.is_deleted],
             "anonymous": self.anonymous
         }
+
 
 class Sanction(StoredObject):
     """Sanction object is a generic way to track approval states"""
@@ -3099,6 +3225,7 @@ class Sanction(StoredObject):
             else:
                 self._notify_non_authorizer(contrib)
 
+
 class EmailApprovableSanction(Sanction):
 
     AUTHORIZER_NOTIFY_EMAIL_TEMPLATE = None
@@ -3176,6 +3303,7 @@ class EmailApprovableSanction(Sanction):
             'reject': self._rejection_url(user._id)
         }
         self.save()
+
 
 class Embargo(EmailApprovableSanction):
     """Embargo object for registrations waiting to go public."""
@@ -3293,6 +3421,7 @@ class Embargo(EmailApprovableSanction):
         )
         # Remove backref to parent project if embargo was for a new registration
         if not self.for_existing_registration:
+            parent_registration.delete_registration_tree(save=True)
             parent_registration.registered_from = None
         # Delete parent registration if it was created at the time the embargo was initiated
         if not self.for_existing_registration:
@@ -3313,12 +3442,12 @@ class Embargo(EmailApprovableSanction):
             },
             auth=Auth(self.initiated_by),
         )
-        self.state == self.COMPLETED
         self.save()
 
     def approve_embargo(self, user, token):
         """Add user to approval list if user is admin and token verifies."""
         self.approve(user, token)
+
 
 class Retraction(EmailApprovableSanction):
     """Retraction object for public registrations."""
@@ -3441,7 +3570,6 @@ class Retraction(EmailApprovableSanction):
         # so that retracted subrojects/components don't appear in search
         for node in parent_registration.get_descendants_recursive():
             node.update_search()
-        self.state == self.APPROVED
         self.save()
 
     def approve_retraction(self, user, token):
@@ -3449,6 +3577,7 @@ class Retraction(EmailApprovableSanction):
 
     def disapprove_retraction(self, user, token):
         self.reject(user, token)
+
 
 class RegistrationApproval(EmailApprovableSanction):
 
@@ -3548,7 +3677,6 @@ class RegistrationApproval(EmailApprovableSanction):
         for node in register.root.node_and_primary_descendants():
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
-        self.state = self.APPROVED
         self.save()
 
     def _on_reject(self, user, token):
