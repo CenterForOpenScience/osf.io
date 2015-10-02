@@ -414,9 +414,9 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
-                           "type": "contributors", # required
+                           "type": "contributors",        # required
+                           "id":   {contributor_user_id}, # required
                            "attributes": {
-                             "id":            {user_id},             # required
                              "bibliographic": true|false,            # optional
                              "permission":    "read"|"write"|"admin" # optional
                            }
