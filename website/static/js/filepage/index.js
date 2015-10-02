@@ -10,6 +10,7 @@ var utils = require('./util.js');
 var FileEditor = require('./editor.js');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
+var language = require('js/osfLanguage.js');
 
 // Sanity
 var Panel = utils.Panel;
@@ -204,19 +205,22 @@ var FileViewPage = {
                     window.location.reload();
                 },
                 error: function(response) {
-                    var msg = response.responseJSON.message;
-                    if (msg) {
+                    var msg = $osf.htmlEscape(response.responseJSON.message);
+                    var msg_long = response.responseJSON.message_long;
+                    if (msg_long) {
+                        $osf.growl('Error', msg_long);
+                        return '      ';
+                    } else if (msg) {
                         $osf.growl('Error', msg);
                         return '      ';
                     } else {
-                        msg = response.responseJSON.message_long;
                         // Log unexpected error with Raven
                         Raven.captureMessage('Error in renaming file', {
                             url: waterbutler.moveUrl(),
                             responseText: response.responseText,
                             statusText: response.statusText
                         });
-                        $osf.growl('Error', 'Error in renaming file. ' + msg);
+                        $osf.growl('Error', language.Addons.rename.generalError);
                         return '   ';
                     }
                 }
