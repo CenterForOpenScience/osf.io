@@ -6,6 +6,7 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from website.models import Node, User
+from framework.transactions.context import TokuTransactionAPI
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
@@ -41,10 +42,22 @@ class JSONAPINodeListSerializer(JSONAPIListSerializer):
         data_mapping = {item.get('_id', None): item for item in validated_data}
 
         ret = []
+
         for node_id, data in data_mapping.items():
             node = node_mapping.get(node_id, None)
-
             ret.append(self.child.update(node, data))
+
+
+        # try:
+        #     with TokuTransactionAPI():
+        #         for node_id, data in data_mapping.items():
+        #             node = node_mapping.get(node_id, None)
+        #             ret.append(self.child.update(node, data))
+        # except InvalidModelValueError as err:
+        #     raise InvalidModelValueError(err)
+        # except exceptions.PermissionDenied() as err:
+        #     raise exceptions.PermissionDenied(err)
+
         return ret
 
     class Meta:
