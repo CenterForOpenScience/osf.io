@@ -75,7 +75,7 @@ def root(request, format=None):
 
     ###Formatting POST/PUT/PATCH request bodies
 
-    The OSF API follows the JSON-API spec for (create and update requests)[http://jsonapi.org/format/#crud].  This means
+    The OSF API follows the JSON-API spec for [create and update requests](http://jsonapi.org/format/1.0/#crud).  This means
     all request bodies must be wrapped with some metadata.  Each request body must be an object with a `data` key
     containing at least a `type` member.  The value of the `type` member must agree with the `type` of the entities
     represented by the endpoint.  If not, a 409 Conflict will be returned.  The request should also contain an
