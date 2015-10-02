@@ -22,5 +22,5 @@ OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('osf-standard-2.json')),
     ensure_schema_structure(from_json('brandt-prereg-2.json')),
     ensure_schema_structure(from_json('brandt-postcomp-2.json')),
-    #ensure_schema_structure(from_json('prereg-prize-test.json'))
+    ensure_schema_structure(from_json('prereg-prize-test.json'))
 ]
