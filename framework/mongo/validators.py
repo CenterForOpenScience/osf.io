@@ -20,14 +20,14 @@ def choice_in(choices, ignore_case=False):
     :return:
     """
 
-    if ignore_case is True:
+    if ignore_case:
         choice_set = frozenset(e.upper() if isinstance(e, basestring) else e
                                for e in choices)
     else:
         choice_set = frozenset(choices)
 
     def validator(value):
-        if ignore_case is True and isinstance(value, basestring):
+        if ignore_case and isinstance(value, basestring):
             value = value.upper()
 
         if value in choice_set:
