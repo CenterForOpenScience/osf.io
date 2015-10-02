@@ -2,5 +2,5 @@
 
 export HOME="/home"
 cd /opt/apps/osf
-source env/bin/activate
+source /opt/data/envs/osf/bin/activate
 python -m scripts.send_queued_mail
