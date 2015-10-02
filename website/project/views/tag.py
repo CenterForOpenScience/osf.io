@@ -74,15 +74,8 @@ def file_add_tag(**kwargs):
 
 @must_have_permission('write')
 def file_remove_tag(**kwargs):
-    from website.models import Node
-    from website.files.models.base import FileNode
-    node = Node.load(kwargs.get('pid'))
-    try:
-        file_node = FileNode.resolve_class(kwargs.get('provider'), FileNode.FILE).find_one(
-            Q('path', 'eq', '/' + kwargs.get('fid')) & Q('node', 'eq', node))
-    except:
-        file_node = None
-        pass
+    from framework.guid.model import Guid
+    file_node = Guid.load(kwargs.get('guid')).referent
     if not file_node:
         return {'status': 'failure'}, http.BAD_REQUEST
     tag = kwargs.get('tag')

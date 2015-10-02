@@ -1729,6 +1729,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if message:
                 status.push_status_message(message, kind='info', trust=False)
 
+        from website.files.models.base import FileNode
+        from website.search import search
+        for file_ in list(FileNode.find(Q('node', 'eq', self))):
+            search.update_file(file_, delete=True)
+
         log_date = date or datetime.datetime.utcnow()
 
         # Add log to parent

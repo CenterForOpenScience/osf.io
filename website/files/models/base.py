@@ -364,6 +364,7 @@ class FileNode(object):
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
         StoredFileNode.remove_one(self.stored_object)
+        search.update_file(self, delete=True)
         return trashed
 
     def copy_under(self, destination_parent, name=None):

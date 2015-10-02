@@ -52,9 +52,9 @@ def update_user(user, index=None):
     search_engine.update_user(user, index=index)
 
 @requires_search
-def update_file(file_, index=None):
+def update_file(file_, index=None, delete=False):
     index = index or settings.ELASTIC_INDEX
-    search_engine.update_file(file_, index=index)
+    search_engine.update_file(file_, index=index, delete_=delete)
 
 @requires_search
 def delete_all():
