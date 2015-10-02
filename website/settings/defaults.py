@@ -9,7 +9,6 @@ import os
 import json
 import hashlib
 from datetime import timedelta
-from celery.schedules import crontab
 
 os_env = os.environ
 
@@ -287,16 +286,22 @@ CELERY_IMPORTS = (
     'website.archiver.tasks'
 )
 
-#  Setting up a scheduler, essentially replaces an independent cron job
-CELERYBEAT_SCHEDULE = {
-    '5-minute-emails': {
-        'task': 'notify.send_users_email',
-        'schedule': crontab(minute='*/5'),
-        'args': ('email_transactional',),
-    },
-    'daily-emails': {
-        'task': 'notify.send_users_email',
-        'schedule': crontab(minute=0, hour=0),
-        'args': ('email_digest',),
-    },
-}
+# celery.schedule will not be installed when running invoke requirements the first time.
+try:
+    from celery.schedules import crontab
+except ImportError:
+    pass
+else:
+    #  Setting up a scheduler, essentially replaces an independent cron job
+    CELERYBEAT_SCHEDULE = {
+        '5-minute-emails': {
+            'task': 'notify.send_users_email',
+            'schedule': crontab(minute='*/5'),
+            'args': ('email_transactional',),
+        },
+        'daily-emails': {
+            'task': 'notify.send_users_email',
+            'schedule': crontab(minute=0, hour=0),
+            'args': ('email_digest',),
+        },
+    }
