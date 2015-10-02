@@ -336,18 +336,9 @@ var Draft = function(params, metaSchema) {
         if (self.schemaData) {
             var schema = self.schema();
             $.each(schema.pages, function(i, page) {
-                var completedQuestions = 0;
                 $.each(page.questions, function(qid, question) {
                     var q = self.schemaData[qid];
-                    // questions with an uploader have the question.value attr instead
-                    if (q && q.question) {
-                        if(!( q.question.value || '').trim() )
-                            completedQuestions++;
-                    } else {
-                        if( q && (q.value || '').trim() )
-                            completedQuestions++;
-                    }
-                    if ( completedQuestions === Object.keys(page.questions).length )
+                    if ( q && (q.value || '').trim() )
                         complete++;
                 });
                 total++;
