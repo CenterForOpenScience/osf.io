@@ -13,10 +13,10 @@ from api.base.serializers import (JSONAPISerializer,
 
 
 class CommentReport():
-        def __init__(self, user_id, category, text):
-            self._id = user_id
-            self.category = category
-            self.text = text
+    def __init__(self, user_id, category, text):
+        self._id = user_id
+        self.category = category
+        self.text = text
 
 
 class CommentSerializer(JSONAPISerializer):
@@ -28,6 +28,7 @@ class CommentSerializer(JSONAPISerializer):
     node = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk', lookup_url_kwarg='node_id', link_type='related', read_only=True)
     target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
     replies = JSONAPIHyperlinkedIdentityField(view_name='comments:comment-replies', lookup_field='pk', link_type='self', lookup_url_kwarg='comment_id')
+    reports = JSONAPIHyperlinkedIdentityField(view_name='comments:comment-reports', lookup_field='pk', lookup_url_kwarg='comment_id', link_type='related', read_only=True)
 
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
