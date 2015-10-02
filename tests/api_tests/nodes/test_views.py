@@ -1465,6 +1465,22 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
+    def test_node_update_blank_but_not_empty_title(self):
+        data = {
+            'data': {
+                'id': self.public_project._id,
+                'type': 'nodes',
+                'attributes': {
+                    'title': ' ',
+                    'category': 'project',
+                    'tags': ['new tag']
+                }
+            }
+        }
+        res = self.app.put_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+
     @assert_not_logs(NodeLog.MADE_PUBLIC, 'private_project')
     def test_cannot_make_project_public_if_non_contributor(self):
         non_contrib = AuthUserFactory()
