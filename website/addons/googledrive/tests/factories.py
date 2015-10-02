@@ -15,7 +15,6 @@ from tests.factories import (
 from website.addons.googledrive.model import (
     GoogleDriveUserSettings,
     GoogleDriveNodeSettings,
-    GoogleDriveGuidFile,
 )
 
 
