@@ -665,10 +665,10 @@ class TestNodeBulkCreate(ApiTestCase):
         id_one = res.json['data'][0]['id']
         id_two = res.json['data'][1]['id']
 
-        # res = self.app.delete_json_api(self.url, {'data': [{'id': id_one, 'type': 'nodes'},
-        #                                                    {'id': id_two, 'type': 'nodes'}]},
-        #                                auth=self.user_one.auth, expect_errors=True)
-        # assert_equal(res.status_code, 204)
+        res = self.app.delete_json_api(self.url, {'data': [{'id': id_one, 'type': 'nodes'},
+                                                           {'id': id_two, 'type': 'nodes'}]},
+                                       auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
 
 
 class TestNodeBulkUpdate(ApiTestCase):
