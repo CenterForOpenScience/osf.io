@@ -47,7 +47,6 @@ var ApplicationData = oop.defclass({
 
         // Other fields. Owner and client ID should never change within this view.
         this.id = data.id;
-        this.type = data.type;
 
         this.owner = attributes.owner;
         this.clientId = attributes.client_id;
@@ -67,7 +66,7 @@ var ApplicationData = oop.defclass({
         return { // Convert data to JSON-serializable format consistent with JSON API v1.0 spec
             data: {
                 id: this.id,
-                type: this.type,
+                type: 'applications',
                 attributes: {
                     name: this.name(),
                     description: this.description() || '',

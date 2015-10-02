@@ -38,7 +38,6 @@ describe('apiApplicationsInternals', () => {
         it('loads data into the specified fields', () => {
             var attributes = sampleData.attributes;
             assert.equal(sampleData.id, vmd.id);
-            assert.equal(sampleData.type, vmd.type);
             assert.equal(attributes.name, vmd.name());
             assert.equal(attributes.description, vmd.description());
             assert.equal(attributes.home_url, vmd.homeUrl());
