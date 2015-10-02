@@ -1,7 +1,8 @@
 """
 Validators for use in ModularODM
 """
-from modularodm.exceptions import ValidationValueError
+import collections
+from modularodm.exceptions import ValidationError, ValidationValueError
 
 
 def string_required(value):
@@ -27,6 +28,9 @@ def choice_in(choices, ignore_case=False):
         choice_set = frozenset(choices)
 
     def validator(value):
+
+        if not isinstance(value, collections.Hashable):
+            raise ValidationError('Must specify a single choice; value cannot be a collection')
         if ignore_case and isinstance(value, basestring):
             value = value.upper()
 
