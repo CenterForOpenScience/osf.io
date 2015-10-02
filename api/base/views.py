@@ -122,6 +122,17 @@ def root(request, format=None):
     PUT requests require all mandatory attributes to be set, even if their value is unchanged. PATCH requests may omit
     mandatory attributes, whose value will be unchanged.
 
+    ###Attribute Validation
+
+    Endpoints that allow creation or modification of entities generally limit updates to certain attributes of the
+    entity.  If you attempt to set an attribute that does not permit updates (such as a `date_created` timestamp), the
+    API will silently ignore that attribute.  This will not affect the response from the API: if the request would have
+    succeeded without the updated attribute, it will still report as successful.  Likewise, if the request would have
+    failed without the attribute update, the API will still report a failure.
+
+    Typoed or non-existent attributes will behave the same as non-updatable attributes and be silently ignored. If a
+    request is not working the way you expect, make sure to double check your spelling.
+
     ##Responses
 
     ###Entities
@@ -186,17 +197,6 @@ def root(request, format=None):
     The meta key contains the total number of entities available, as well as the current number of results displayed per
     page.  If there are only enough results to fill one page, the `first`, `last`, `prev`, and `next` values will be
     null.
-
-    ###Attribute Validation
-
-    Endpoints that allow creation or modification of entities generally limit updates to certain attributes of the
-    entity.  If you attempt to set an attribute that does not permit updates (such as a `date_created` timestamp), the
-    API will silently ignore that attribute.  This will not affect the response from the API: if the request would have
-    succeeded without the updated attribute, it will still report as successful.  Likewise, if the request would have
-    failed without the attribute update, the API will still report a failure.
-
-    Typoed or non-existent attributes will behave the same as non-updatable attributes and be silently
-    ignored. If a request is not working the way you expect, make sure to double check your spelling.
 
     ###Errors
 
