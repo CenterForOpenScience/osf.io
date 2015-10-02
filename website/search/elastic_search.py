@@ -435,8 +435,10 @@ def update_file(file_, index=None):
         'tags': [tag._id for tag in file_.tags],
         'name': file_.name,
         'category': 'file',
-        'node_url': file_.deep_url.split('files')[0],
+        'node_url': file_.node.absolute_url,
         'node_title': file_.node.title,
+        'parent_url': file_.node.parent_node.absolute_url if file_.node.parent_node else None,
+        'parent_title': file_.node.parent_node.title if file_.node.parent_node else None,
     }
 
     es.index(

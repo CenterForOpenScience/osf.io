@@ -151,7 +151,12 @@
     </script>
     <script type="text/html" id="file">
         <h4><a href="{{ deep_url }}">{{ name }}</a> (File)</h4>
-        <h5>From: <a href="{{ node_url }}">{{ node_title }}</a></h5>
+        <!-- ko if: parent_url -->
+        <h5>From: <a data-bind="attr.href: parent_url">{{ parent_title }}</a> / <a data-bind="attr.href: node_url">{{ node_title }}</a></h5>
+        <!-- /ko -->
+        <!-- ko if: !parent_url -->
+        <h5>From: <span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: node_url">{{ node_title }}</a></h5>
+        <!-- /ko -->
         <!-- ko if: tags.length > 0 -->
         <div data-bind="template: 'tag-cloud'"></div>
         <!-- /ko -->
