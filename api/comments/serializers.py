@@ -96,7 +96,9 @@ class CommentDetailSerializer(CommentSerializer):
 class CommentReportsSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    category = ser.CharField(required=True)
+    category = ser.ChoiceField(choices=[('spam', 'Spam or advertising'),
+                                        ('hate', 'Hate speech'),
+                                        ('violence', 'Violence or harmful behavior')], required=True)
     message = ser.CharField(source='text', required=True)
     links = LinksField({'self': 'get_absolute_url'})
 
