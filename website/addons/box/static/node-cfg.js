@@ -1,7 +1,7 @@
 'use strict';
 
 require('./box.css');
-var BoxNodeConfig = require('./boxNodeConfig').BoxNodeConfig;
+var OauthAddonNodeConfig = require('js/oauthAddonNodeConfig').OauthAddonNodeConfig;
 
 var url = window.contextVars.node.urls.api + 'box/settings/';
-new BoxNodeConfig('Box', '#boxScope', url, '#boxGrid');
+new OauthAddonNodeConfig('Box', '#boxScope', url, '#boxGrid');
