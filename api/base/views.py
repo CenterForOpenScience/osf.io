@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -78,4 +78,8 @@ def root(request, format=None):
     })
 
 def error_404(request, format=None, *args, **kwargs):
-    return HttpResponse('{"errors":[{"detail":"Not found."}]}', status=404, content_type='application/json')
+    return JsonResponse(
+        {'errors': [{'detail': 'Not found.'}]},
+        status=404,
+        content_type='application/vnd.api+json; application/json'
+    )
