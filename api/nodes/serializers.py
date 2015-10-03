@@ -6,7 +6,6 @@ from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
 from website.models import Node, User
-from framework.transactions.context import TokuTransactionAPI
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
