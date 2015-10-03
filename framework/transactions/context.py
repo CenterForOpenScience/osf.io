@@ -49,30 +49,6 @@ class TokuTransaction(object):
                 raise
 
 
-class TokuTransactionAPI(TokuTransaction):
-    """Transaction context manager. Begin transaction on enter; rollback or
-    commit on exit. TokuMX does not support nested transactions; catch and
-    ignore attempts to nest transactions.
-    """
-
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        # if self.pending:
-        if exc_type:
-            commands.rollback(self.database)
-            self.pending = False
-            raise exc_type, exc_val, exc_tb
-        try:
-            commands.commit(self.database)
-            self.pending = False
-        except OperationFailure as error:
-            message = utils.get_error_message(error)
-            if messages.LOCK_ERROR in message:
-                commands.rollback(self.database)
-                self.pending = False
-            raise
-
-
 def transaction(database=None):
     """Transaction decorator factory. Create a decorator that wraps the
     decorated function in a transaction using the provided database object.

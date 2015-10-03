@@ -47,17 +47,6 @@ class JSONAPINodeListSerializer(JSONAPIListSerializer):
             node = node_mapping.get(node_id, None)
             ret.append(self.child.update(node, data))
 
-
-        # try:
-        #     with TokuTransactionAPI():
-        #         for node_id, data in data_mapping.items():
-        #             node = node_mapping.get(node_id, None)
-        #             ret.append(self.child.update(node, data))
-        # except InvalidModelValueError as err:
-        #     raise InvalidModelValueError(err)
-        # except exceptions.PermissionDenied() as err:
-        #     raise exceptions.PermissionDenied(err)
-
         return ret
 
     class Meta:
