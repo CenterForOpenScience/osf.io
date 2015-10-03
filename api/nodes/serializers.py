@@ -10,7 +10,7 @@ from framework.transactions.context import TokuTransactionAPI
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_object_or_error, absolute_reverse
+from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 from api.base.serializers import JSONAPISerializer, WaterbutlerLink, JSONAPIListSerializer, NodeFileHyperLink, IDField, TypeField
 from api.base.exceptions import InvalidModelValueError
@@ -270,21 +270,21 @@ class NodeContributorsSerializer(JSONAPISerializer):
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
 
-    links = LinksField({
+    links = LinksField(add_dev_only_items({
         'html': 'absolute_url',
         'self': 'get_absolute_url'
-    })
+    }, {
+        'profile_image': 'profile_image_url',
+    }))
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')
-
-    profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
 
     @classmethod
     def many_init(cls, *args, **kwargs):
         kwargs['child'] = cls()
         return JSONAPINodeContributorListSerializer(*args, **kwargs)
 
-    def get_profile_image_url(self, user):
+    def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
 

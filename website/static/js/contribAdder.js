@@ -181,13 +181,12 @@ var AddContributorViewModel = oop.extend(Paginator, {
         $.getJSON(
             self.nodeApiUrl + 'get_contributors_from_parent/', {},
             function(result) {
-                if (!result.contributors.length) {
-                    self.notification({
-                        'message': 'All contributors from parent already included.',
-                        'level': 'info'
-                    });
-                }
-                self.results(result.contributors);
+                var contributors = result.contributors.map(function(user) {
+                    var added = (self.contributors().indexOf(user.id) !== -1);
+                    var updatedUser = $.extend({}, user, {added:added});
+                    return updatedUser;
+                });
+                self.results(contributors);
             }
         );
     },

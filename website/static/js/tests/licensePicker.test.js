@@ -56,7 +56,6 @@ describe('LicensePicker', () => {
     describe('#save', () => {
         var dialogStub;
         var ajaxStub;
-
         beforeEach(() => {            
             dialogStub = sinon.stub(bootbox, 'dialog');
             ajaxStub = sinon.stub($, 'ajax', function() {
@@ -64,17 +63,17 @@ describe('LicensePicker', () => {
                 ret.resolve();
                 return ret.promise();
             });
-            sinon.stub(lp, 'validProps', function() {return true;});
+            sinon.stub(lp, 'disableSave', function() {return false;});
         });
         afterEach(() => {
             bootbox.dialog.restore();
             $.ajax.restore();
-            if (lp.validProps.restore) {
-                lp.validProps.restore();
+            if (lp.disableSave.restore) {
+                lp.disableSave.restore();
             }
         });
         it('returns without saving if required fields are missing', () => {
-            lp.validProps.restore();
+            lp.disableSave.restore();
             lp.save();
             assert.isFalse(dialogStub.called);
             assert.isFalse(ajaxStub.called);

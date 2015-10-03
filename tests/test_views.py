@@ -1131,7 +1131,7 @@ class TestUserProfile(OsfTestCase):
     def test_unserialize_social(self):
         url = api_url_for('unserialize_social')
         payload = {
-            'personal': 'http://frozen.pizza.com/reviews',
+            'profileWebsites': ['http://frozen.pizza.com/reviews'],
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
         }
@@ -1147,9 +1147,9 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_social_validation_failure(self):
         url = api_url_for('unserialize_social')
-        # personal URL is invalid
+        # profileWebsites URL is invalid
         payload = {
-            'personal': 'http://invalidurl',
+            'profileWebsites': ['http://goodurl.com', 'http://invalidurl'],
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
         }
@@ -1164,6 +1164,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_serialize_social_editable(self):
         self.user.social['twitter'] = 'howtopizza'
+        self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
         self.user.save()
         url = api_url_for('serialize_social')
         res = self.app.get(
@@ -1171,12 +1172,14 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com'])
         assert_true(res.json.get('github') is None)
         assert_true(res.json['editable'])
 
     def test_serialize_social_not_editable(self):
         user2 = AuthUserFactory()
         self.user.social['twitter'] = 'howtopizza'
+        self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
         self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
         res = self.app.get(
@@ -1184,6 +1187,7 @@ class TestUserProfile(OsfTestCase):
             auth=user2.auth,
         )
         assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com'])
         assert_true(res.json.get('github') is None)
         assert_false(res.json['editable'])
 
