@@ -39,7 +39,10 @@ class TokuTransactionsMiddleware(object):
         exception occurs.
         """
         try:
-            commands.commit()
+            if response.status_code >= 400:
+                commands.rollback()
+            else:
+                commands.commit()
         except OperationFailure as err:
             message = utils.get_error_message(err)
             if messages.NO_TRANSACTION_TO_COMMIT_ERROR not in message:
