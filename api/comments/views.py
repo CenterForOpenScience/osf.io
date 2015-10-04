@@ -29,6 +29,16 @@ class CommentMixin(object):
         return comment
 
 
+class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
+    # permission_classes
+    # required scopes
+
+    serializer_class = CommentSerializer
+
+    def get_queryset(self):
+        return Comment.find(Q('target', 'eq', self.get_comment()) & Q('is_deleted', 'ne', True))
+
+
 class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
     """Details about a specific comment.
     """
