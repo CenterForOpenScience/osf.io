@@ -1,9 +1,14 @@
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
-from rest_framework import generics
+from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError
 from api.comments.serializers import CommentSerializer, CommentDetailSerializer, CommentReportsSerializer, CommentReportDetailSerializer, CommentReport
 from api.base.exceptions import Gone
+from api.base import permissions as base_permissions
+from api.nodes.permissions import (
+    ContributorOrPublicForComments
+)
+from framework.auth.oauth_scopes import CoreScopes
 from website.project.model import Comment
 
 
@@ -30,8 +35,14 @@ class CommentMixin(object):
 
 
 class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
-    # permission_classes
-    # required scopes
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublicForComments,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = CommentSerializer
 
