@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from rest_framework import permissions
 
-from website.models import Node, Pointer, User
+from website.models import Node, Pointer, User, Comment
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth
@@ -67,8 +67,10 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
 class ContributorOrPublicForComments(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node or Pointer, got {}'.format(obj)
         auth = get_user_auth(request)
+        if isinstance(obj, Comment):
+            obj = obj.node
+        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node or Pointer, got {}'.format(obj)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
         else:
