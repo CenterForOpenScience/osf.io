@@ -3,11 +3,12 @@ import httplib as http
 from rest_framework import status
 from rest_framework.exceptions import APIException, ParseError
 
-def dict_error_formatting(errors, error):
+def dict_error_formatting(error):
     """
     Formats all dictionary error messages for both single and bulk requests
     """
 
+    formatted_error_list = []
     # Error objects may have the following members. Title and id removed to avoid clash with "title" and "id" field errors.
     top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
 
@@ -19,13 +20,15 @@ def dict_error_formatting(errors, error):
             error_description = [error_description]
 
         if error_key in top_level_error_keys:
-            errors.append({error_key: error_description[0]})
+            formatted_error_list.append({error_key: error_description[0]})
         elif error_key in resource_object_identifiers:
-            errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
+            formatted_error_list.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
         elif error_key == 'non_field_errors':
-                errors.extend([{'detail': description for description in error_description}])
+                formatted_error_list.extend([{'detail': description for description in error_description}])
         else:
-            errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason} for reason in error_description])
+            formatted_error_list.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason} for reason in error_description])
+
+    return formatted_error_list
 
 def json_api_exception_handler(exc, context):
     """
@@ -49,13 +52,13 @@ def json_api_exception_handler(exc, context):
                 }
             ])
         elif isinstance(message, dict):
-            dict_error_formatting(errors, message)
+            errors.extend(dict_error_formatting(message))
         else:
             if isinstance(message, basestring):
                 message = [message]
             for error in message:
                 if isinstance(error, dict):
-                    dict_error_formatting(errors, error)
+                    errors.extend(dict_error_formatting(error))
                 else:
                     errors.append({'detail': error})
 
