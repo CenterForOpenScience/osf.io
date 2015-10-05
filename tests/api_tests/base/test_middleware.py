@@ -9,14 +9,25 @@ from api.base.middleware import TokuTransactionsMiddleware
 from tests.base import ApiTestCase
 
 class TestMiddlewareRollback(ApiTestCase):
+    def setUp(self):
+        super(TestMiddlewareRollback, self).setUp()
+        self.middleware = TokuTransactionsMiddleware()
+        self.mock_response = mock.Mock()
     
     @mock.patch('api.base.middleware.commands')
     def test_400_error_causes_rollback(self, mock_commands):
 
-        middleware = TokuTransactionsMiddleware()
-        mock_response = mock.Mock()
-        mock_response.status_code = 400
-        middleware.process_response(mock.Mock(), mock_response)
+        self.mock_response.status_code = 400
+        self.middleware.process_response(mock.Mock(), self.mock_response)
 
-        assert_is(mock_commands.rollback.assert_called_once_with(), None)
+        assert_true(mock_commands.rollback.called)
+
+    @mock.patch('api.base.middleware.commands')
+    def test_200_OK_causes_commit(self, mock_commands):
+
+        self.mock_response.status_code = 200
+        self.middleware.process_response(mock.Mock(), self.mock_response)
+
+        assert_true(mock_commands.commit.called)
+
 
