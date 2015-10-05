@@ -1,3 +1,6 @@
+from website.addons.evernote import model
+
+
 # MUST
 
 SHORT_NAME = 'evernote'
@@ -28,4 +31,13 @@ INCLUDE_CSS = {}
 
 #OWNERS = ['user', 'node']
 OWNERS = ['user', 'node']
+
+
+MODELS = [
+    model.EvernoteUserSettings,
+    model.EvernoteNodeSettings
+]
+
+USER_SETTINGS_MODEL = model.EvernoteUserSettings
+NODE_SETTINGS_MODEL = model.EvernoteNodeSettings
 
