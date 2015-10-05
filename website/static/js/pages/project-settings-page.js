@@ -128,8 +128,12 @@ $(document).ready(function() {
             var $elm = $(elm);
             formData[$elm.attr('name')] = $elm.is(':checked');
         });
+
+        var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
         var msgElm = $(this).find('.addon-settings-message');
-        $.ajax({
+        
+        var submit = function(){
+            $.ajax({
             url: ctx.node.urls.api + 'settings/addons/',
             data: JSON.stringify(formData),
             type: 'POST',
@@ -147,6 +151,34 @@ $(document).ready(function() {
                 }
             }
         });
+        }
+        // unchecked warning adopted from profile-settings-addons-page.js
+        if(unchecked.length > 0) {
+            var uncheckedText = $.map(unchecked, function(el){
+                return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
+            }).join('');
+            uncheckedText = ['<ul>', uncheckedText, '</ul>'].join('');
+            bootbox.confirm({
+                title: 'Are you sure you want to remove the add-ons you have deselected? ',
+                message: uncheckedText,
+                callback: function(result) {
+                    if (result) {
+                        submit();
+                    } else{
+                        unchecked.each(function(i, el){ $(el).prop('checked', true); });
+                    }
+                },
+                buttons:{
+                    confirm:{
+                        label:'Remove',
+                        className:'btn-danger'
+                    }
+                }
+            });
+        }
+        else {
+            submit();
+        }
 
         return false;
 
