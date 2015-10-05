@@ -53,8 +53,14 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
 class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
     """Details about a specific comment.
     """
-    # permission classes
-    # required scopes
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        ContributorOrPublicForComments,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_BASE_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = CommentDetailSerializer
 

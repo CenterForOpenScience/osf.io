@@ -69,12 +69,16 @@ class ContributorOrPublicForComments(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
         if isinstance(obj, Comment):
+            comment = obj
             obj = obj.node
         assert isinstance(obj, (Node, Pointer)), 'obj must be a Node or Pointer, got {}'.format(obj)
         if request.method in permissions.SAFE_METHODS:
             return obj.is_public or obj.can_view(auth)
         else:
-            return obj.can_comment(auth)
+            if view.get_view_name() == 'Comment Detail':
+                return comment.user._id == auth.user._id
+            else:
+                return obj.can_comment(auth)
 
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
