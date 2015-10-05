@@ -64,14 +64,6 @@ def do_migration(records, dry):
                 account._id, user._id,
             ))
 
-            # Add external account to authorized nodes
-            for node_addon in get_authorized_node_settings(user_addon):
-                node_addon.set_auth(account, user)
-
-                logger.info('Added external account {0} to node {1}'.format(
-                    account._id, node_addon.owner._id,
-                ))
-
         if dry:
             logger.info('[Dry] Creating Box ExternalAccount:\n\tdisplay_name={0}\n\toauth_key={1}\n\trefresh_token={2}\n\tprovider_id={3}'.format(
                 old_account.username, old_account.access_token, old_account.refresh_token, old_account.user_id
