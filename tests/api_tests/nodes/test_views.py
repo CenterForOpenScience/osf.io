@@ -3265,7 +3265,7 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(errors[0], {'detail': 'Not found.'})
-
+    
     def test_forbidden_formatting(self):
         res = self.app.get(self.private_url, auth=self.non_contrib.auth, expect_errors=True)
         errors = res.json['errors']

@@ -410,6 +410,14 @@ class NodeLog(StoredObject):
     def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
         if not user:
+            # Handle legacy non-registered users, which were
+            # represented as a dict
+            if isinstance(contributor, dict):
+                if 'nr_name' in contributor:
+                    return {
+                        'fullname': contributor['nr_name'],
+                        'registered': False,
+                    }
             return None
         if self.node:
             fullname = user.display_full_name(node=self.node)
