@@ -74,7 +74,7 @@ def do_migration(records, dry):
                 ))
 
         if dry:
-            logger.info('[Dry] Creating Box ExternalAccount:\n\tdisplay_name={0}\n\toauth_key={1}\n\refresh_token={2}\n\tprovider_id={3}'.format(
+            logger.info('[Dry] Creating Box ExternalAccount:\n\tdisplay_name={0}\n\toauth_key={1}\n\trefresh_token={2}\n\tprovider_id={3}'.format(
                 old_account.username, old_account.access_token, old_account.refresh_token, old_account.user_id
             ))
             logger.info('[Dry] Added external account to user {0}'.format(
