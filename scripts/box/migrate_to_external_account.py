@@ -64,7 +64,7 @@ def do_migration(records):
         user.save()
 
         # Remove oauth_settings from user settings object
-        user_addon.clear()
+        user_addon.oauth_settings = None
         user_addon.save()
 
         logger.info('Added external account {0} to user {1}'.format(
