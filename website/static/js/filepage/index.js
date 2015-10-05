@@ -40,9 +40,9 @@ var SharePopover =  {
         var link = params.link;
 
         var url = link.substring(0, link.indexOf('render'));
-        return m('button.btn.btn-sm.btn-primary.file-share', {onclick: function popOverShow() {
+        return m('button#sharebutton.disabled.btn.btn-sm.btn-primary.file-share', {onclick: function popOverShow() {
                 var pop = document.getElementById('popOver');
-                //This is bad, shoudl only happen for Firefox, thanks @chrisseto
+                //This is bad, should only happen for Firefox, thanks @chrisseto
                 if (!pop){
                     return window.setTimeout(popOverShow, 100);
                 }
@@ -74,7 +74,8 @@ var SharePopover =  {
                         ])
                     ])
                 ]);
-            }, config: function(element, isInitialized) {
+            },
+            config: function(element, isInitialized) {
                 if(!isInitialized){
                     var button = $(element).popover();
                     button.on('show.bs.popover', function(e){

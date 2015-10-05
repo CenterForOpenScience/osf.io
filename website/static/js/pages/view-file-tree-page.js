@@ -11,6 +11,7 @@ $(document).ready(function() {
     })
     .done(function (data) {
         new fileBrowser(data);
+        $('#sharebutton').removeClass('disabled');
     });
 
     var panelToggle = $('.panel-toggle');
