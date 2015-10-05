@@ -8,152 +8,179 @@
   <h2 class="text-300">Contributors</h2>
 </div>
 
-<div class="row">
-    <div class="col-lg-10 col-lg-offset-1">
-        <div class="col-lg-6">
-            <div id="manageContributors" class="scripted">
-                <h3> Contributors
-                    <!-- ko if: canEdit -->
-                        <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
-                          <i class="fa fa-plus"></i> Add
-                        </a>
-                    <!-- /ko -->
-                    <div class="filters">
-                        <span>
-                        <i class="fa fa-search"></i>
-                        </span>
-                        <input type="text" placeholder="Name" search=".nameSearch" class="searchable"/>
-                        <span>
-                            <i class="fa fa-search"></i>
-                        </span>
-                        <input type="text" placeholder="Permissions" search=".permission-search" class="searchable"/>
-                        <div class="btn-group filtergroup" role="group" filter=".permission-filter" >
-                            <button type="button" class="btn btn-default filter-btn" match="Administrator">Admins</button>
-                            <button type="button" class="btn btn-default filter-btn" match="Read + Write">Read + Write</button>
-                            <button type="button" class="btn btn-default filter-btn" match="Read">Read</button>
-                        </div>
-                        <div class="btn-group filtergroup" role="group" filter=".cited-filter">
-                            <button type="button" class="btn btn-default filter-btn"  match=", cited">Cited</button>
-                            <button type="button" class="btn btn-default filter-btn" match=", not cited">Not Cited</button>
-                        </div>
-                    </div>
-
-                </h3>
-                % if 'admin' in user['permissions'] and not node['is_registration']:
-                    <p>Drag and drop contributors to change listing order.</p>
-                % endif
-                <table  id="manageContributorsTable"
-                    class="table responsive-table responsive-table-xxs"
-                    data-bind="template: {
-                        name: 'contribTable',
-                        afterRender: responsiveTable,
-                        options: {
-                            containment: '#manageContributors'
-                        },
-                        data: 'contrib'
-                    }">
-            </table>
-            <span id="adminContributorsAnchor" class="project-page anchor"></span>
-            <div id="adminContributors" data-bind="if: adminContributors.length">
-                <h4>
-                    Admins on Parent Projects
-                    <i class="fa fa-question-circle admin-info"
-                          data-content="These users are not contributors on
-                          this component but can view and register it because they
-                            are administrators on a parent project."
-                          data-toggle="popover"
-                          data-title="Admins on Parent Projects"
-                          data-container="body"
-                          data-placement="right"
-                          data-html="true"
-                    ></i>
-                </h4>
-                <table  id="adminContributorsTable"
-                        class="table responsive-table responsive-table-xxs"
-                        data-bind="template: {
-                            name: 'contribTable',
-                            afterRender: responsiveTable,
-                            options: {
-                                containment: '#manageContributors'
-                            },
-                            data: 'admin'
-                        }">
-                </table>
+<div class="col-md-3 col-xs-12">
+    <div class="filters">
+        <input type="text" class="form-control searchable" id="nameSearch" placeholder="Search by name"/>
+        <h5>Permissions:</h5>
+        <div class="btn-group btn-group-justified-vertical filtergroup" id='permissionFilter'>
+            <div class="btn-group">
+                <button class="filter-btn btn-default btn" id="admins">Administrator</button>
             </div>
-                ${buttonGroup()}
+            <div class="btn-group">
+                <button class="filter-btn btn-default btn" id="write">Read + Write</button>
+            </div>
+            <div class="btn-group">
+                <button class="filter-btn btn-default btn" id="read">Read</button>
             </div>
         </div>
-
-        <div class="col-lg-6">
-            % if 'admin' in user['permissions']:
-                <h3>View-only Links
-                    <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
-                      <i class="fa fa-plus"></i> Add
-                    </a>
-                </h3>
-                <p>Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.</p>
-                <div class="scripted" id="linkScope">
-                    <div class="row" aria-multiselectable="true"            data-bind="template:
-                                    {name: 'linkCard',
-                                    foreach: privateLinks,
-                                    afterRender: afterRenderLink}">
-                    </div>
-                </div>
-            % endif
+        <h5>Cited:</h5>
+        <div class="btn-group btn-group-justified-vertical filtergroup" id='citedFilter'>
+            <div class="btn-group">
+                <button class="filter-btn btn-default btn" id='cited'>Cited</button>
+            </div>
+            <div class="btn-group">
+                <button class="filter-btn btn-default btn" id='notCited'>Not Cited</button>
+            </div>
         </div>
     </div>
 </div>
 
+<div class="col-md-9 col-xs-12">
+    <div id="manageContributors" class="scripted">
+        <h3> Contributors
+            <!-- ko if: canEdit -->
+                <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
+                  <i class="fa fa-plus"></i> Add
+                </a>
+            <!-- /ko -->
+        </h3>
+        % if 'admin' in user['permissions'] and not node['is_registration']:
+            <p>Drag and drop contributors to change listing order.</p>
+        % endif
+
+
+    <table  id="manageContributorsTable"
+            class="table responsive-table responsive-table-xxs"
+            data-bind="template: {
+                name: 'contribTable',
+                afterRender: afterRender,
+                options: {
+                    containment: '#manageContributors'
+                },
+                data: 'contrib'
+                }">
+    </table>
+    <span id="adminContributorsAnchor" class="project-page anchor"></span>
+    <div id="adminContributors" data-bind="if: adminContributors.length">
+        <h4>
+            Admins on Parent Projects
+            <i class="fa fa-question-circle admin-info"
+                  data-content="These users are not contributors on
+                  this component but can view and register it because they
+                    are administrators on a parent project."
+                  data-toggle="popover"
+                  data-title="Admins on Parent Projects"
+                  data-container="body"
+                  data-placement="right"
+                  data-html="true"
+            ></i>
+        </h4>
+        <table  id="adminContributorsTable"
+                class="table responsive-table responsive-table-xxs"
+                data-bind="template: {
+                    name: 'contribTable',
+                    afterRender: afterRender,
+                    options: {
+                        containment: '#manageContributors'
+                    },
+                    data: 'admin'
+                }">
+        </table>
+    </div>
+        ${buttonGroup()}
+    </div>
+
+    % if 'admin' in user['permissions']:
+        <h3>View-only Links
+            <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
+              <i class="fa fa-plus"></i> Add
+            </a>
+        </h3>
+        <p>Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.</p>
+        <div class="scripted" id="linkScope">
+            <table id="privateLinkTable" class="table responsive-table responsive-table-xs">
+                <thead>
+                    <tr>
+                        <th class="responsive-table-hide">Link Name</th>
+                        <th style="width: 120px;">Shared Components</th>
+                        <th>Created Date</th>
+                        <th>Created By</th>
+                        <th style="width: 78px">Anonymous</th>
+                        <th style="width: 78px"></th>
+                    </tr>
+                </thead>
+                <tbody data-bind="template: {
+                            name: 'linkTbl'
+                        }">
+                </tbody>
+            </table>
+        </div>
+    % endif
+</div>
+
 <link rel="stylesheet" href="/static/css/pages/contributor-page.css">
 
-<script id="linkCard" type="text/html">
-    <div data-bind="attr: {class: classes}">
-        <div class="panel panel-default">
-            <div class="panel-heading" data-bind="attr: {id: 'linkHeading' + $index(), href: '#linkCard' + $index()}" role="button" data-toggle="collapse" aria-expanded="false" aria-controls="card" onclick="toggleIcon(this)">
-                <button onclick="cancelProp(event)" style="vertical-align: top;" title="Copy to clipboard" class="btn btn-default btn-sm" data-bind="attr: {data-clipboard-text: linkUrl}" >
-                    <i class="fa fa-copy"></i>
-                </button>
-                <span class="header-content">
-                    <span class="link-name m-b-xs" data-bind="text: name, tooltip: {title: 'Link name'}"></span>
-                    <a onclick="cancelProp(event)" style="display: block; font-style: italic; font-size: 75%;" data-bind="attr: {href: linkUrl}, text: linkUrl"></a>
-                </span>
-                <div class="pull-right">
-                    <i class="fa fa-angle-down toggle-icon"></i>
-                </div>
-
-            </div>
-            <div data-bind="attr: {id: 'linkCard' + $index()}" class="panel-collapse collapse" data-bind="attr: {aria-labelledby: 'linkHeading' + $index()}">
-                <div class="panel-body">
-                    <span style="display: block"><h5>Shares</h5></span>
-                    <ul class="private-link-list narrow-list" data-bind="foreach: nodesList">
-                       <li data-bind="style:{marginLeft: $data.scale}">
-                          <span data-bind="getIcon: $data.category"></span>
-                          <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
-                       </li>
-                    </ul>
-                    <span style="display: block"><h5>Created on</h5></span>
-                    <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
-                    <span style="display: block"><h5>Created by</h5></span>
-                        <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block" style="width: 300px"></a>
-                    <span style="display: block"><h5>Anonymous</h5></span>
-                    <span style="display: block" data-bind="html: anonymousDisplay"></span>
-                    <!-- ko if: $root.nodeIsPublic && anonymous -->
-                        <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="fa fa-question-circle fa-sm"></i>
-                    <!-- /ko -->
-                    <button style="display: block" type="button" class="btn btn-danger" data-bind="click: $root.removeLink, tooltip: {title: removeLink}">
-                        Remove
+<script id="linkTbl" type="text/html">
+    <!-- ko foreach: privateLinks -->
+    <tr>
+        <td>
+            <span class="link-name m-b-xs" data-bind="text: name" style="display: inline-block;"></span>
+            <span class="fa fa-angle-down toggle-icon"></span>
+            <div>
+                <div class="btn-group" style="width: 100% display: flex; display: -webkit-flex; display: -ms-flex;">
+                    <button title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button"
+                            data-bind="attr: {data-clipboard-text: linkUrl}" >
+                        <i class="fa fa-copy"></i>
                     </button>
+                    <input style='width: 100%' class="table-only link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
+                    <input style='width: 75%' class="card-subheader link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                 </div>
             </div>
-        </div>
-    </div>
+        </td>
+
+        <td>
+            <div class="td-content">
+                <ul class="private-link-list narrow-list" data-bind="foreach: nodesList">
+                    <li data-bind="style:{marginLeft: $data.scale}">
+                        <span data-bind="getIcon: $data.category"></span>
+                        <a data-bind="text:$data.title, attr: {href: $data.url}"></a>
+                    </li>
+                </ul>
+            </div>
+        </td>
+        <td>
+            <div class="td-content">
+                <span class="link-create-date" data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}"></span>
+            </div>
+        </td>
+        <td>
+            <div class="td-content">
+                <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block" style="width: 300px"></a>
+            </div>
+        </td>
+        <td>
+            <div class="td-content">
+                <span data-bind="html: anonymousDisplay"></span>
+                <!-- ko if: $root.nodeIsPublic && anonymous -->
+                <i data-bind="tooltip: {title: 'Public projects are not anonymized.'}" class="fa fa-question-circle fa-sm"></i>
+                <!-- /ko -->
+            </div>
+        </td>
+        <td>
+            <div class="td-content">
+                <button data-bind="click:  $root.removeLink" type="button" class="btn btn-danger to-top-element">Remove</button>
+            </div>
+        </td>
+    </tr>
+    <!-- /ko -->
 </script>
 
 <script id="contribTable" type="text/html">
     <thead>
         <tr>
-            <th  style="min-width: 140px">Name</th>
-            <th  style="min-width: 127px">
+            <th class="responsive-table-hide" style="width: 40px">Name</th>
+            <th style="min-width: 140px"></th>
+            <th style="min-width: 127px">
                 Permissions
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
@@ -163,7 +190,7 @@
                     data-html="true"
                 ></i>
             </th>
-            <th>
+            <th style="width: 109px">
                 Bibliographic Contributor
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
@@ -173,18 +200,16 @@
                     data-html="true"
                 ></i>
             </th>
-            <th></th>
+            <th style="width: 78px"></th>
         </tr>
     </thead>
     <!-- ko if: $data == 'contrib' -->
-    <tbody id="contributors" data-bind="sortable: {
-            template: 'contribRow',
-            isEnabled: $root.isEnabled,
-            data: $root.contributors,
+    <tbody id="contributors" data-bind="template: {
+            name: 'contribRow',
+            foreach: $root.contributors,
             as: 'contributor',
             afterMove: $root.afterMove
-        }">
-    </tbody>
+    }"></tbody>
     <!-- /ko -->
     <!--ko if: $data == 'admin' -->
         <tbody data-bind="template: {
@@ -200,64 +225,78 @@
     <tr class="items" data-bind="click: unremove, css: {'contributor-delete-staged': $parent.deleteStaged}">
         <td>
             <img data-bind="attr: {src: contributor.gravatar_url}" />
-                <span data-bind="ifnot: profileUrl">
-                    <span class="nameSearch" data-bind="text: contributor.shortname"></span>
+            <span class="fa fa-angle-down toggle-icon"></span>
+            <div class="card-header">
+                <span style="display: block" data-bind="ifnot: profileUrl">
+                    <span class="name-search" data-bind="text: contributor.shortname"></span>
                 </span>
-                <span data-bind="if: profileUrl">
-                    <a class="no-sort nameSearch" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
+                <span style="display: block" data-bind="if: profileUrl">
+                    <a onclick="cancelProp(event)" class="no-sort name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
                 </span>
-                <span style="display: none" data-bind="text: curPermission().text" class="permission-filter permission-search"></span>
-                <span style="display: none" data-bind="text: visibleText()" class="cited-filter"></span>
+                <span style="display: block" data-bind="text: permissionText()" class="permission-filter permission-search"></span>
+            </div>
+        </td>
+        <td class="table-only">
+            <span data-bind="ifnot: profileUrl">
+                <span class="name-search" data-bind="text: contributor.shortname"></span>
+            </span>
+            <span data-bind="if: profileUrl">
+                <a class="no-sort name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
+            </span>
         </td>
         <td class="permissions">
-            <!-- ko if: contributor.canEdit() -->
-                <span data-bind="visible: notDeleteStaged">
-                    <select class="form-control input-sm" data-bind="
-                        options: permissionList,
-                        value: curPermission,
-                        optionsText: 'text',
-##                         event: {change: function() {flagChange($parents[1])}},
-                        style: { font-weight: change() ? 'normal' : 'bold' }"
-                    >
-                    </select>
-                </span>
-                <span data-bind="visible: deleteStaged">
-                    <span data-bind="text: formatPermission"></span>
-                </span>
-            <!-- /ko -->
-            <!-- ko ifnot: contributor.canEdit() -->
-                <span data-bind="text: formatPermission"></span>
-            <!-- /ko -->
+            <div class="td-content">
+                <!-- ko if: contributor.canEdit() -->
+                    <span data-bind="visible: notDeleteStaged">
+                        <select class="form-control input-sm" data-bind="
+                            options: $parents[1].permissionList,
+                            value: permission,
+                            optionsText: function(val) {
+                                return $parents[1].permissionDict[val];
+                                },
+                             style: { font-weight: permissionChange() ? 'normal' : 'bold' }"
+                        >
+                        </select>
+                    </span>
+                    <span data-bind="visible: deleteStaged">
+                        <span data-bind="text: permissionText()"></span>
+                    </span>
+                <!-- /ko -->
+                <!-- ko ifnot: contributor.canEdit() -->
+                    <span data-bind="text: permissionText()"></span>
+                <!-- /ko -->
+            </div>
         </td>
         <td>
-            <input
-                type="checkbox" class="no-sort biblio"
-                data-bind="checked: visible, enable: $data.canEdit() && !contributor.isAdmin"
-            />
+            <div class="td-content">
+                <input
+                    type="checkbox" class="no-sort biblio cited-filter"
+                    data-bind="checked: visible, enable: $data.canEdit() && !contributor.isAdmin"
+                />
+            </div>
         </td>
-        <td class="to-top responsive-table-hide">
-            <div class="to-top-element">
-            <!-- ko if: contributor.canEdit() -->
-                <!-- ko ifnot: deleteStaged -->
-                    <!-- Note: Prevent clickBubble so that removing a
-                    contributor does not immediately un-remove her. -->
-                        <button type="button" class="btn btn-danger" data-bind="click: remove, clickBubble: false">Remove</button>
+        <td>
+            <div class="td-content">
+                <!-- ko if: contributor.canEdit() -->
+                    <!-- ko ifnot: deleteStaged -->
+                        <!-- Note: Prevent clickBubble so that removing a
+                        contributor does not immediately un-remove her. -->
+                            <button type="button" class="btn btn-danger" data-bind="click: remove, clickBubble: false">Remove</button>
+                    <!-- /ko -->
+                    <!-- ko if: deleteStaged -->
+                        Save to Remove
+                    <!-- /ko -->
                 <!-- /ko -->
-                <!-- ko if: deleteStaged -->
-                    Save to Remove
-                <!-- /ko -->
-            <!-- /ko -->
 
-            <!-- ko ifnot: contributor.canEdit() -->
-                <!-- ko if: canRemove -->
-                    <button type="button" class="btn btn-danger" data-bind="click: function() { $data.removeSelf($parents[1])}">Remove2</button>
+                <!-- ko ifnot: contributor.canEdit() -->
+                    <!-- ko if: canRemove -->
+                        <button type="button" class="btn btn-danger" data-bind="click: function() { $data.removeSelf($parents[1])}">Remove2</button>
+                    <!-- /ko -->
                 <!-- /ko -->
-            <!-- /ko -->
             </div>
         </td>
     </tr>
 </script>
-
 
 <%def name="buttonGroup()">
     % if 'admin' in user['permissions']:

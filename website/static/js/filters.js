@@ -1,76 +1,53 @@
 (function($){
     $.fn.filters = function (options) {
         var settings = $.extend({
-            items: '.items',
-            buttonClass: '.filter-btn',
-            inputClass: '.searchable',
-            buttonGroupClass: '.filtergroup'
+            items: '.items'
         }, options);
 
-        var active = {};
+        var filterConstraints = {};
+        var searchConstraints = {};
 
-        var search = function(el, constraints) {
+        var search = function(el) {
             var content, exists;
-            for (key in constraints) {
+            for (key in searchConstraints) {
                 content = jQuery(el.querySelector(key)).text().toLowerCase();
-                exists = content.indexOf(constraints[key]);
+                exists = content.indexOf(searchConstraints[key]);
                 if (exists == -1) {
                     return false;
                 }
             }
             return true;
         };
-        var getSearchConstraints = function() {
-            var inputs, selector, constraints, text;
-            constraints = {};
-            inputs = $(settings.inputClass);
-            for (var i = 0; i < inputs.length; i++) {
-                selector = $(inputs[i]).attr('search');
-                text = $(inputs[i]).val().toLowerCase()
-                constraints[selector] = text;
-            }
-            return constraints;
-        };
 
-        var filter = function(el, constraints) {
-            var content;
-            for (key in constraints) {
-                content = jQuery(el.querySelector(key)).text();
-                if (constraints[key].indexOf(content) == -1) {
-                    return false;
+        var filter = function(el) {
+            var content, type, selector, match;
+            for (key in filterConstraints) {
+                selector = settings.groups[key]['filter'];
+                type = settings.groups[key]['type'];
+                match = filterConstraints[key];
+                if (type === "text") {
+                    content = jQuery(el.querySelector(selector)).text();
+                    if (match.indexOf(content) == -1) {
+                        return false;
+                    }
+                }
+                else if (type === "checkbox") {
+                    if (match.indexOf(el.querySelector(selector).checked) == -1) {
+                        return false;
+                    }
                 }
             }
             return true;
         };
 
-        var getFilterConstraints = function() {
-            var toggle, selector, text, constraints;
-            constraints = {};
-            for (key in active) {
-                for (var j = 0; j < active[key].length; j++) {
-                    toggle = active[key][j];
-                    selector = $(toggle.parentElement).attr('filter');
-                    text = $(toggle).attr('match');
-                    if (constraints[selector] === undefined) {
-                        constraints[selector] = [text];
-                    } else {
-                        constraints[selector].push(text);
-                    }
-                }
-            }
-            return constraints;
-        };
-
         var toggle = function() {
             var activeItems = $(settings.items);
-            var searchConstraints = getSearchConstraints();
-            var filterConstraints = getFilterConstraints();
             $(settings.items).each(function() {
-                if (!search(this, searchConstraints)) {
+                if (!search(this)) {
                     activeItems.splice(activeItems.index(this), 1);
                     $(this).fadeOut();
                 }
-                else if (!filter(this, filterConstraints)){
+                else if (!filter(this)){
                     activeItems.splice(activeItems.index(this), 1);
                     $(this).fadeOut();
                 }
@@ -81,21 +58,39 @@
             }
         };
 
-        jQuery(settings.buttonClass).on('click', function () {
-            var buttonGroup = this.parentElement.getAttribute('filter');
-            $(this).toggleClass('btn-primary btn-default');
-            if (active[buttonGroup] === undefined) {
-                active[buttonGroup] = [this];
-            } else if (active[buttonGroup].indexOf(this) == -1) {
-                active[buttonGroup].push(this);
-            } else {
-                active[buttonGroup].splice(active[buttonGroup].indexOf(this), 1);
+        for (key in settings.groups) {
+            for (key in settings.groups[key].buttons) {
+                $('#' + key).on('click', function() {
+                    $(this).toggleClass('btn-primary btn-default');
+                    var group = this.parentElement.parentElement.id;
+                    var match = settings.groups[group].buttons[this.id];
+                    try {
+                        var index = filterConstraints[group].indexOf(match);
+                        if (index == -1) {
+                            filterConstraints[group].push(match);
+                        }
+                        else {
+                            filterConstraints[group].splice(index, 1);
+                            if (filterConstraints[group].length == 0) {
+                                delete filterConstraints[group];
+                            }
+                        }
+                    }
+                    catch(TypeError) {
+                        filterConstraints[group] = [match];
+                    }
+                    toggle();
+                });
             }
-            toggle();
-        });
+        }
 
-        return jQuery(settings.inputClass).keyup(function() {
-            toggle();
-        });
+        for (key in settings.inputs) {
+            jQuery('#' + key).keyup(function() {
+                var selector = settings.inputs[this.id];
+                var text = $(this).val().toLowerCase();
+                searchConstraints[selector] = text;
+                toggle();
+            });
+        }
     }
 }(jQuery));

@@ -6,8 +6,11 @@ var ContribAdder = require('js/contribAdder');
 var PrivateLinkManager = require('js/privateLinkManager');
 var PrivateLinkTable = require('js/privateLinkTable');
 var ko = require('knockout');
-require('js/filters');
+var rt = require('js/responsiveTable');
+require('jquery-ui');
 require('js/cards');
+require('js/filters');
+
 
 var ctx = window.contextVars;
 
@@ -23,6 +26,41 @@ $('body').on('nodeLoad', function(event, data) {
             data.parent_node.id,
             data.parent_node.title
         );
+    }
+});
+
+$('.filters').filters({
+    container: '#contribList',
+    callback: function (filtered, empty) {
+        if (empty) {
+            $("#noContributors").show();
+        }
+        else {
+            $("#noContributors").hide();
+            ko.contextFor($('#contributors').get(0)).$parent.sortable(filtered);
+        }
+    },
+    groups: {
+        permissionFilter: {
+            filter: '.permission-filter',
+            type: 'text',
+            buttons: {
+                admins: "Administrator",
+                write: "Read + Write",
+                read:"Read"
+                }
+        },
+        citedFilter: {
+            filter: '.cited-filter',
+            type: 'checkbox',
+            buttons: {
+                cited: true,
+                notCited: false
+            }
+        }
+    },
+    inputs: {
+        nameSearch: '.name-search'
     }
 });
 
@@ -43,15 +81,43 @@ $(function() {
     });
 });
 
-$('.filters').filters({
-    container: '#contribList',
-    callback: function(filtered, empty) {
-        if (empty) {
-            $("#noContributors").show();
-        }
-        else {
-            $("#noContributors").hide();
-            ko.contextFor($('#contributors').get(0)).$data.sortable(!filtered);
-        }
+var checkWindowWidth = function() {
+    if ($(window).width() <= 600) {
+        $('table.responsive-table-xxs tbody tr td:first-child').attr('role','button').attr('onclick', 'toggleExpand(this.parentElement)');
     }
+    else {
+        $('table.responsive-table-xxs tbody td>div:hidden').css('display', '');
+    }
+    if ($(window).width() <= 768) {
+        $('table.responsive-table-xs tbody tr td:first-child').attr('role','button').attr('onclick', 'toggleExpand(this.parentElement)');
+    }
+    else {
+        $('table.responsive-table-xs tbody td>div:hidden').css('display', '');
+    }
+};
+
+$(window).load(function() {
+    checkWindowWidth();
+    rt.responsiveTable($('#privateLinkTable')[0]);
 });
+
+$(window).resize(function() {
+    checkWindowWidth();
+});
+
+window.toggleExpand = function(el) {
+    var $this = $(el.querySelectorAll('td:not(:first-child):not(.table-only)>div'));
+    if ($this.is(":hidden")) {
+        $(el.firstElementChild).toggleClass('expanded');
+        $this.slideToggle();
+    }
+    else {
+        $this.slideToggle(function() {
+            if ($(el.firstElementChild).is('.expanded')){
+                $(el.firstElementChild).toggleClass('expanded')
+            }
+        });
+    }
+
+    toggleIcon(el);
+};

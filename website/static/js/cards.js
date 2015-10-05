@@ -7,7 +7,7 @@ $(document).ready(function() {
     };
 
     window.toggleIcon = function(el) {
-        jQuery(el.querySelector("i.toggle-icon")).toggleClass("fa-angle-down fa-angle-up");
+        jQuery(el.querySelector(".toggle-icon")).toggleClass("fa-angle-down fa-angle-up");
     };
 });
 
