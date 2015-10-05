@@ -324,7 +324,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
             data = kwargs["data"]
 
             if isinstance(data, list):
-                kwargs.update({'many': True})
+                kwargs['many'] = True
 
         return super(NodeList, self).get_serializer(*args, **kwargs)
 
@@ -721,7 +721,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
             data = kwargs["data"]
 
             if isinstance(data, list):
-                kwargs.update({'many': True})
+                kwargs['many'] = True
 
         return super(NodeContributorsList, self).get_serializer(*args, **kwargs)
 
@@ -1093,7 +1093,7 @@ class NodeChildrenList(bulk_generics.ListBulkCreateAPIView, NodeMixin, ODMFilter
             data = kwargs["data"]
 
             if isinstance(data, list):
-                kwargs.update({'many': True})
+                kwargs['many'] = True
 
         return super(NodeChildrenList, self).get_serializer(*args, **kwargs)
 
@@ -1210,7 +1210,7 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
             data = kwargs["data"]
 
             if isinstance(data, list):
-                kwargs.update({'many': True})
+                kwargs['many'] = True
 
         return super(NodeLinksList, self).get_serializer(*args, **kwargs)
 
