@@ -314,13 +314,6 @@ class NodeLinksSerializer(JSONAPISerializer):
         pass
 
 
-class NodeLinksDetailSerializer(NodeLinksSerializer):
-    """
-    Overrides NodeLinksSerializer to make id required.
-    """
-    id = IDField(source='_id', required=True)
-
-
 class NodeProviderSerializer(JSONAPISerializer):
 
     id = ser.SerializerMethodField(read_only=True)

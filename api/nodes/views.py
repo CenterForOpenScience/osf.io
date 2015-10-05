@@ -1216,15 +1216,6 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
 
         return super(NodeLinksList, self).get_serializer(*args, **kwargs)
 
-    # overrides ListBulkCreateDestroView
-    def get_serializer_class(self):
-        """
-        Use NodeLinksDetailSerializer for DELETE which requires 'id'
-        """
-        serializer_class = NodeLinksSerializer
-        if self.request.method == 'DELETE':
-            serializer_class = NodeLinksDetailSerializer
-        return serializer_class
 
     # overrides ListBulkCreateDestroyView
     def create(self, request, *args, **kwargs):
