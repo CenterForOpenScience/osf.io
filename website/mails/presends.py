@@ -8,7 +8,8 @@ def no_addon(email):
     return len(email.user.get_addons()) == 0
 
 def no_login(email):
-    from website.models import QueuedMail, NO_LOGIN_TYPE
+    from website.models import QueuedMail
+    from website.mails import NO_LOGIN_TYPE
     sent = QueuedMail.find(Q('user', 'eq', email.user) & Q('email_type', 'eq', NO_LOGIN_TYPE))
     if sent.count():
         return False
