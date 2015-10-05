@@ -52,11 +52,11 @@ var SharePopover =  {
                         m('li', m('a[href="#embed"][data-toggle="tab"]', 'Embed'))
                     ]), m('br'),
                     m('.tab-content', [
-                        m('.tab-pane.fade.in.active#share', m('.input-group', [
+                        m('.tab-pane.active#share', m('.input-group', [
                             CopyButton.view(ctrl, {link: link, height: copyButtonHeight}), //workaround to allow button to show up on first click
                             m('input.form-control[readonly][type="text"][value="'+ link +'"]')
                         ])),
-                        m('.tab-pane.fade#embed', [
+                        m('.tab-pane#embed', [
                             m('p', 'Dynamically Render iFrame with JavaScript'),
                             m('textarea.form-control[readonly][type="text"][value="' +
                                 '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+

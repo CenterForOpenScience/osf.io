@@ -110,6 +110,9 @@ var FolderPickerViewModel = oop.defclass({
             connectAccountSuccess: ko.pureComputed(function() {
                 return 'Successfully connected a ' + self.addonName + ' account';
             }),
+            connectAccountDenied: ko.pureComputed(function() {
+                return 'Error while authorizing addon. Please log in to your ' + self.addonName + ' account and grant access to the OSF to enable this addon.';
+            }),
             submitSettingsSuccess: ko.pureComputed(function() {
                 throw new Error('Subclasses of FolderPickerViewModel must provide a message for successful settings updates. ' +
                                 'This should take the form: "Successfully linked \'{FOLDER_NAME}\'. Go to the <a href="{URL}"> ' +
