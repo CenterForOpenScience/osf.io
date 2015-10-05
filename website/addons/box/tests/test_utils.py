@@ -44,31 +44,6 @@ class TestNodeLogger(BoxAddonTestCase):
         assert_equal(last_log.action, 'box_node_deauthorized')
 
 
-# TODO(mfraezz): Add support for folder sharing urls
-# def test_get_share_folder_uri():
-#     expected = 'https://box.com/home/foo?shareoptions=1&share_subfolder=0&share=1'
-#     assert_equal(utils.get_share_folder_uri('/foo/'), expected)
-#     assert_equal(utils.get_share_folder_uri('foo'), expected)
-
-
-def test_serialize_folder():
-    metadata = {
-        u'bytes': 0,
-        u'icon': u'folder',
-        u'is_dir': True,
-        u'modified': u'Sat, 22 Mar 2014 05:40:29 +0000',
-        u'path': u'/datasets/New Folder',
-        u'rev': u'3fed51f002c12fc',
-        u'revision': 67032351,
-        u'root': u'box',
-        u'size': u'0 bytes',
-        u'thumb_exists': False
-    }
-    result = BoxSerializer().serialize_folder(metadata)
-    assert_equal(result['path'], metadata['path'])
-    assert_equal(result['name'], 'Box' + metadata['path'])
-
-
 class TestBoxAddonFolder(BoxAddonTestCase):
 
     @mock.patch.object(BoxNodeSettings, 'fetch_folder_name', lambda self: 'foo')

@@ -10,22 +10,6 @@ class BoxSerializer(OAuthAddonSerializer):
     def credentials_owner(self, user_settings=None):
         return user_settings.owner or self.user_settings.owner
 
-    def serialize_folder(self, folder):
-        """Serializes metadata to a dict with the display name and path
-        of the folder.
-        """
-        # if path is root
-        if folder['path'] == '' or folder['path'] == '/':
-            name = '/ (Full Box)'
-        else:
-            name = 'Box' + folder['path']
-        return {
-            'data': folder,
-            'kind': 'folder',
-            'name': name,
-            'path': folder['path'],
-        }
-
     @property
     def user_is_owner(self):
         if self.user_settings is None or self.node_settings is None:
