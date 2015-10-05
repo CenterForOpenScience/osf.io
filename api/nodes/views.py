@@ -1137,7 +1137,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
     """List of storage providers enabled for this node. *Read-only*.
 
     Users of the OSF may access their data on a [number of cloud-storage](/v2/#storage-providers) services that have
-    integratations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
+    integrations with the OSF.  We call these "providers".  By default every node has access to the OSF-provided
     storage but may use as many of the supported providers as desired.  This endpoint lists all of the providers that are
     configured for this node.  If you want to add more, you will need to do that in the Open Science Framework front end
     for now.
