@@ -18,26 +18,28 @@ class JSONAPIParser(JSONParser):
     media_type = 'application/vnd.api+json'
     renderer_class = JSONAPIRenderer
 
-    def data_flattener(self, resource_object, stream, is_list=False):
+    @staticmethod
+    def flatten_data(resource_object, stream, is_list=False):
         """
         Flattens data objects, making attributes fields the same level as id and type.
         """
+
         if "attributes" not in resource_object and stream.method != 'DELETE':
             raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
 
-        id = resource_object.get('id')
+        object_id = resource_object.get('id')
         object_type = resource_object.get('type')
-        attributes = resource_object.get('attributes')
 
         # For validating type and id for bulk delete:
-        if is_list is True and stream.method == 'DELETE':
-            if id is None:
+        if is_list and stream.method == 'DELETE':
+            if object_id is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
             if object_type is None:
                 raise JSONAPIException(source={'pointer': '/data/type'}, detail=NO_TYPE_ERROR)
 
-        parsed = {'id': id, 'type': object_type}
+        attributes = resource_object.get('attributes')
+        parsed = {'id': object_id, 'type': object_type}
         if attributes:
             parsed.update(attributes)
 
@@ -57,13 +59,13 @@ class JSONAPIParser(JSONParser):
             if isinstance(data, list):
                 data_collection = []
                 for data_object in data:
-                    parsed_data = self.data_flattener(data_object, stream, True)
+                    parsed_data = self.flatten_data(data_object, stream, is_list=True)
                     data_collection.append(parsed_data)
 
                 return data_collection
 
             else:
-                return self.data_flattener(data, stream)
+                return self.flatten_data(data, stream)
 
         else:
             raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)

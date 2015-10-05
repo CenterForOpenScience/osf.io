@@ -1,10 +1,10 @@
 import re
 import collections
 
-from rest_framework.fields import SkipField, empty
+from rest_framework import exceptions
 from rest_framework.reverse import reverse
 from rest_framework import serializers as ser
-from rest_framework import exceptions
+from rest_framework.fields import SkipField, empty
 
 from website import settings
 from website.util.sanitize import strip_html
@@ -57,12 +57,13 @@ def _url_val(val, obj, serializer, **kwargs):
 
 class IDField(ser.CharField):
     """
-    ID field that validates that 'id' in the request body is the same as the instance 'id' for single requests
+    ID field that validates that 'id' in the request body is the same as the instance 'id' for single requests.
     """
     def __init__(self, **kwargs):
         kwargs['label'] = 'ID'
         super(IDField, self).__init__(**kwargs)
 
+    #Overrides CharField
     def to_internal_value(self, data):
         update_methods = ['PUT', 'PATCH']
         request = self.context['request']
@@ -307,12 +308,11 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
         ret = []
 
-        for node_id, data in data_mapping.items():
-            node = instance_mapping.get(node_id, None)
-            ret.append(self.child.update(node, data))
+        for resource_id, data in data_mapping.items():
+            resource = instance_mapping.get(resource_id, None)
+            ret.append(self.child.update(resource, data))
 
         return ret
-
 
     # overrides ListSerializer
     def run_validation(self, data=empty):

@@ -9,10 +9,10 @@ from website.models import Node, User
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
+from api.base.exceptions import InvalidModelValueError
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
-from api.base.serializers import JSONAPISerializer, WaterbutlerLink, JSONAPIListSerializer, NodeFileHyperLink, IDField, TypeField
-from api.base.exceptions import InvalidModelValueError
+from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField
 
 
 class NodeTagField(ser.Field):
@@ -314,7 +314,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         pass
 
 
-class NodeLinksDetailSerializer(NodeSerializer):
+class NodeLinksDetailSerializer(NodeLinksSerializer):
     """
     Overrides NodeLinksSerializer to make id required.
     """

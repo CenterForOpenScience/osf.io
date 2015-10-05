@@ -296,6 +296,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
 
     # overrides ListBulkCreateUpdateDestroyAPIView
     def get_queryset(self):
+        # For bulk requests, queryset is formed from request body.
         if isinstance(self.request.data, list):
             query = Q('_id', 'in', [node['id'] for node in self.request.data])
 
@@ -375,7 +376,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
         node_list = []
         object_type = 'nodes'
 
-        if not request.data or 'csrfmiddlewaretoken' in request.data:
+        if not request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
 
         if not isinstance(request.data, list):
@@ -731,7 +732,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
         Use NodeContributorDetailSerializer which requires 'id'
         """
         serializer_class = NodeContributorsSerializer
-        if self.request.method == 'PUT' or self.request.method == 'PATCH':
+        if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
             serializer_class = NodeContributorDetailSerializer
         return serializer_class
 
@@ -761,7 +762,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
         contrib_list = []
         object_type = 'contributors'
 
-        if not request.data or 'csrfmiddlewaretoken' in request.data:
+        if not request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
 
         if not isinstance(request.data, list):
@@ -797,6 +798,8 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
         node = self.get_node()
         if len(node.visible_contributors) == 1 and node.get_visible(instance):
             raise ValidationError("Must have at least one visible contributor")
+        if instance not in node.contributors:
+                raise NotFound('{} cannot be found in the list of contributors.'.format(user))
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError("Must have at least one registered admin contributor")
@@ -1241,8 +1244,8 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
         pointer_list = []
         object_type = 'node_links'
 
-        # Requires that bulk delete must have request body
-        if not request.data or 'csrfmiddlewaretoken' in request.data:
+        # Requires that bulk delete have request body
+        if not request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
 
         if not isinstance(request.data, list):
@@ -1252,7 +1255,6 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
         if not node.can_edit(Auth(user)) or node.is_registration:
             raise PermissionDenied()
 
-        # TODO validation once rollback of bulk requests complete
         pointer_dict = {pointer._id: pointer for pointer in node.nodes}
         for item in request.data:
             item_type = item[u'type']

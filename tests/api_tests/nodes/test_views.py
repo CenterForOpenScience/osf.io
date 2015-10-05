@@ -649,7 +649,7 @@ class TestNodeBulkCreate(ApiTestCase):
         assert_equal(len(res.json['data']), 0)
 
     def test_bulk_create_logged_in(self):
-        res = self.app.post_json_api(self.url, {'data': [self.public_project, self.private_project]}, auth=self.user_one.auth)
+        res = self.app.post_json_api(self.url, {'data': [self.public_project, self.private_project]}, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 201)
         assert_equal(len(res.json['data']), 2)
         assert_equal(res.json['data'][0]['attributes']['title'], self.public_project['attributes']['title'])
@@ -1239,6 +1239,9 @@ class TestNodeBulkDelete(ApiTestCase):
         res = self.app.get(self.project_one_url, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
 
+        res = self.app.get(self.project_two_url, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+
     def test_bulk_delete_private_projects_logged_out(self):
         res = self.app.delete_json_api(self.url, self.private_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
@@ -1273,6 +1276,7 @@ class TestNodeBulkDelete(ApiTestCase):
     def test_bulk_delete_all_or_nothing(self):
         new_payload = {'data': [{'id': self.private_project_user_one._id, 'type': 'nodes'}, {'id': self.private_project_user_two._id, 'type': 'nodes'}]}
         res = self.app.delete_json_api(self.url, new_payload, auth=self.user_one.auth, expect_errors=True)
+        print res
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
@@ -2641,6 +2645,24 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
             'id': self.user_two._id,
             'type': 'Wrong type.'
         }
+
+    def test_bulk_delete_invalid_id(self):
+        res = self.app.delete_json_api(self.public_url, {'data': [{'id': '12345', 'type':'contributors'}]}, auth=self.user.auth,
+                                       expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_bulk_delete_non_contributor(self):
+        res = self.app.delete_json_api(self.public_url, {'data': [{'id': self.user_four._id, 'type':'contributors'}]}, auth=self.user.auth,
+                                       expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_bulk_delete_all_contributors(self):
+        res = self.app.delete_json_api(self.public_url, {'data': [self.payload_one, self.payload_two,
+                                                                  {'id': self.user._id, 'type': 'contributors'}]},
+                                       auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        self.public_project.reload()
+        assert_equal(len(self.public_project.contributors), 3)
 
     def test_bulk_delete_contributors_no_id(self):
         res = self.app.delete_json_api(self.public_url, {'data': [{'type': 'contributors'}]}, auth=self.user.auth, expect_errors=True)
@@ -4399,6 +4421,9 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+
+        res = self.app.get(self.public_url)
+        assert_equal(res.json['data'], [])
 
     def test_bulk_creates_project_target_not_nested(self):
         payload = {'data': [{'type': 'node_links', 'target_node_id': self.private_pointer_project._id}]}
