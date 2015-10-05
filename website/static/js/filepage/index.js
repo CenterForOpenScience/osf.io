@@ -171,7 +171,7 @@ var FileViewPage = {
                     provider: self.file.provider,
                 }
             };
-            var from = JSON.parse(JSON.stringify(to));
+            var from = $.extend(true, {}, to);
             from.data.path = self.file.path;
             $fileName.editable({
                 type: 'text',
