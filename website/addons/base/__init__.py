@@ -300,16 +300,6 @@ class AddonUserSettingsBase(AddonSettingsBase):
         })
         return ret
 
-    def merge(self, user_settings):
-        """Merge `user_settings` into this instance"""
-        if user_settings.__class__ is not self.__class__:
-            raise TypeError('Cannot merge different addons')
-        if not self.nodes_authorized:
-            self.merge = True
-        else:
-            raise TypeError('There are nodes associated with this addon')
-        self.save()
-
 
 @oauth_complete.connect
 def oauth_complete(provider, account, user):
