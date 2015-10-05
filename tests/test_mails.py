@@ -121,3 +121,11 @@ class TestQueuedMail(OsfTestCase):
         assert_equal(len(mail.find_sent_of_same_type_and_user()), 0)
         mail.send_mail()
         assert_equal(len(mail.find_sent_of_same_type_and_user()), 1)
+
+    @mock.patch('website.mails.send_mail')
+    def test_user_is_not_active(self, send_mail):
+        user = UserFactory()
+        user.is_registered = False
+        user.save()
+        mail = self.queue_mail(user=user)
+        assert_false(mail.send_mail())
