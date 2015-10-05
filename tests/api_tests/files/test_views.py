@@ -147,8 +147,6 @@ class TestFileView(ApiTestCase):
             auth=user.auth,
             expect_errors=True,
         )
-        print res
-
         self.file.reload()
         assert_equal(res.status_code, 403)
         assert_equal(self.file.checkout, self.user)
