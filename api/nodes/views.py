@@ -333,17 +333,17 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
         """
         Use NodeDetailSerializer which requires 'id'
         """
-        serializer_class = NodeSerializer
         if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
-            serializer_class = NodeDetailSerializer
-        return serializer_class
+            return NodeDetailSerializer
+        else:
+            return NodeSerializer
 
     # overrides ListBulkCreateUpdateDestroyView
     def create(self, request, *args, **kwargs):
         """
         Correctly formats both bulk and single POST response
         """
-        response = bulk_generics.ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
+        response = super(NodeList, self).create(request, *args, **kwargs)
         if 'data' in response.data:
             return response
         return Response({'data': response.data}, status=status.HTTP_201_CREATED)
@@ -363,7 +363,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
         """
         Correctly formats bulk PUT/PATCH response
         """
-        response = bulk_generics.ListBulkCreateUpdateDestroyAPIView.bulk_update(self, request, *args, **kwargs)
+        response = super(NodeList, self).bulk_update(request, *args, **kwargs)
         return Response({'data': response.data}, status=status.HTTP_200_OK)
 
     # Overrides ListBulkCreateUpdateDestroyAPIView
@@ -598,7 +598,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
     Contributors can be added to nodes are by issuing a POST request to this endpoint.  The `id` attribute is mandatory and
     must be a valid user id.  `bibliographic` is a boolean and defaults to `true`.  `permission` must be a [valid OSF
     permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`. All other fields not listed above will be
-    ignored.  If the request is successful the API will return a 201 response with the respresentation of the new node
+    ignored.  If the request is successful the API will return a 201 response with the representation of the new node
     contributor in the body.  For the new node contributor's canonical URL, see the `links.self` field of the response.
 
     ###Adding Multiple Contributors
@@ -632,7 +632,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
                            "type": "contributors",        # required
                            "id":   {contributor_user_id}, # required
                            "attributes": {
-                             "bibiliographic": true|false,            # optional
+                             "bibliographic": true|false,            # optional
                              "permission":     "read"|"write"|"admin" # optional
                            }
                          }]
@@ -730,17 +730,17 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
         """
         Use NodeContributorDetailSerializer which requires 'id'
         """
-        serializer_class = NodeContributorsSerializer
         if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
-            serializer_class = NodeContributorDetailSerializer
-        return serializer_class
+            return NodeContributorDetailSerializer
+        else:
+            return NodeContributorsSerializer
 
     # overrides ListBulkCreateUpdateDestroyView
     def create(self, request, *args, **kwargs):
         """
         Correctly formats both bulk and single POST response
         """
-        response = bulk_generics.ListBulkCreateUpdateDestroyAPIView.create(self, request, *args, **kwargs)
+        response = super(NodeContributorsList, self).create(request, *args, **kwargs)
         if 'data' in response.data:
             return response
         return Response({'data': response.data}, status=status.HTTP_201_CREATED)
@@ -750,7 +750,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
         """
         Correctly formats bulk PUT/PATCH response
         """
-        response = bulk_generics.ListBulkCreateUpdateDestroyAPIView.bulk_update(self, request, *args, **kwargs)
+        response = super(NodeContributorsList, self).bulk_update(request, *args, **kwargs)
         return Response({'data': response.data}, status=status.HTTP_200_OK)
 
     # Overrides ListBulkCreateUpdateDestroyAPIView
@@ -1102,7 +1102,7 @@ class NodeChildrenList(bulk_generics.ListBulkCreateAPIView, NodeMixin, ODMFilter
         """
         Correctly formats both bulk and single POST response
         """
-        response = bulk_generics.ListBulkCreateAPIView.create(self, request, *args, **kwargs)
+        response = super(NodeChildrenList, self).create(request, *args, **kwargs)
         if 'data' in response.data:
             return response
         return Response({'data': response.data}, status=status.HTTP_201_CREATED)
@@ -1220,7 +1220,7 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
         """
         Correctly formats both bulk and single POST response
         """
-        response = bulk_generics.ListBulkCreateDestroyAPIView.create(self, request, *args, **kwargs)
+        response = super(NodeLinksList, self).create(request, *args, **kwargs)
         if 'data' in response.data:
             return response
         return Response({'data': response.data}, status=status.HTTP_201_CREATED)

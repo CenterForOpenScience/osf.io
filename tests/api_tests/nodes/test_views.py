@@ -5101,6 +5101,8 @@ class TestBulkDeleteNodeLinks(ApiTestCase):
         assert_equal(res.status_code, 204)
         assert_equal(node_count_before - 2, len(self.public_project.nodes_pointer))
 
+        self.public_project.reload()
+
     def test_bulk_deletes_private_node_pointers_logged_out(self):
         res = self.app.delete(self.private_url, self.private_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
