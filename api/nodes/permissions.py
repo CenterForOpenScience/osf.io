@@ -5,6 +5,7 @@ from website.models import Node, Pointer, User, Comment
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth
+from api.comments.serializers import CommentReport
 
 class ContributorOrPublic(permissions.BasePermission):
 
@@ -68,6 +69,10 @@ class ContributorOrPublicForComments(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         auth = get_user_auth(request)
+        if isinstance(obj, CommentReport):
+            comment_id = request.parser_context['kwargs']['comment_id']
+            comment = Comment.load(comment_id)
+            obj = comment.node
         if isinstance(obj, Comment):
             comment = obj
             obj = obj.node

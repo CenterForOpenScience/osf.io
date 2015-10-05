@@ -104,7 +104,7 @@ class CommentReportsSerializer(JSONAPISerializer):
     category = ser.ChoiceField(choices=[('spam', 'Spam or advertising'),
                                         ('hate', 'Hate speech'),
                                         ('violence', 'Violence or harmful behavior')], required=True)
-    message = ser.CharField(source='text', required=True)
+    message = ser.CharField(source='text', required=False, allow_blank=True)
     links = LinksField({'self': 'get_absolute_url'})
 
     class Meta:

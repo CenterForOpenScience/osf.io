@@ -77,16 +77,21 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
 class CommentReports(generics.ListCreateAPIView, CommentMixin):
     """Reporting a comment.
     """
-    # permission classes
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        ContributorOrPublicForComments,
+        base_permissions.TokenHasScope,
+    )
     # required scopes
 
     serializer_class = CommentReportsSerializer
 
     def get_queryset(self):
+        user_id = self.request.user._id
         comment = self.get_comment()
         reports = comment.reports
         serialized_reports = []
-        for user_id in reports:
+        if user_id in reports:
             report = CommentReport(user_id, reports[user_id]['category'], reports[user_id]['text'])
             serialized_reports.append(report)
         return serialized_reports
@@ -95,7 +100,11 @@ class CommentReports(generics.ListCreateAPIView, CommentMixin):
 class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     """Reporting a comment.
     """
-    # permission classes
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        ContributorOrPublicForComments,
+        base_permissions.TokenHasScope,
+    )
     # required scopes
 
     serializer_class = CommentReportDetailSerializer
