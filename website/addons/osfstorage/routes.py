@@ -112,6 +112,24 @@ api_routes = {
             views.osfstorage_copy_hook,
             json_renderer,
         ),
+
+        Rule(
+            [
+                '/project/<pid>/osfstorage/<fid>/tags/<tag>/',
+            ],
+            'post',
+            views.osfstorage_add_tag,
+            json_renderer
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/osfstorage/<fid>/tags/<tag>/',
+            ],
+            'delete',
+            views.osfstorage_remove_tag,
+            json_renderer
+        ),
     ],
 
 }

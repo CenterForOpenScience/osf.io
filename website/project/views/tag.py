@@ -55,31 +55,3 @@ def project_remove_tag(auth, node, **kwargs):
     if tag:
         node.remove_tag(tag=tag, auth=auth)
         return {'status': 'success'}
-
-@must_have_permission('write')
-def file_add_tag(**kwargs):
-    from framework.guid.model import Guid
-    file_node = Guid.load(kwargs.get('guid')).referent
-    if not file_node:
-        return {'status': 'failure'}, http.BAD_REQUEST
-    tag = kwargs.get('tag')
-    if tag not in file_node.tags:
-        new_tag = Tag.load(tag)
-        if not new_tag:
-            new_tag = Tag(_id=tag)
-        new_tag.save()
-        file_node.tags.append(new_tag)
-        file_node.save()
-        return {'status': 'success'}, http.OK
-
-@must_have_permission('write')
-def file_remove_tag(**kwargs):
-    from framework.guid.model import Guid
-    file_node = Guid.load(kwargs.get('guid')).referent
-    if not file_node:
-        return {'status': 'failure'}, http.BAD_REQUEST
-    tag = kwargs.get('tag')
-    if tag in file_node.tags:
-        file_node.tags.remove(tag)
-        file_node.save()
-        return {'status': 'success'}, http.OK

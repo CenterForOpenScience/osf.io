@@ -47,7 +47,7 @@
           </div>
         </div>
       </div>
-
+    %if (file_tags or 'write' in user['permissions']) and provider == 'osfstorage':
        <div class="panel panel-default">
         <div class="panel-heading clearfix">
             <h3 class="panel-title">Tags</h3>
@@ -58,6 +58,7 @@
             <input id="fileTags" value="${','.join(file_tags)}" />
         </div>
         </div>
+    %endif
 </div></div>
 <!-- The osf-logo spinner here is from mfr code base -->
   <div id="fileViewPanelLeft" class="col-sm-9 panel-expand">
@@ -180,7 +181,7 @@
             provider: ${ provider | sjson, n },
             safeName: ${ file_name | h, sjson},
             materializedPath: ${ materialized_path | sjson, n },
-            file_tags: ${file_tags | sjson, n},
+            file_tags: ${file_tags if file_tags else False| sjson, n},
           urls: {
         %if error is None:
               render: ${ urls['render'] | sjson, n },
