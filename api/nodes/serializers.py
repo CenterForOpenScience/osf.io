@@ -1,15 +1,15 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
-
 from modularodm.exceptions import ValidationValueError
 
 from framework.auth.core import Auth
+from framework.exceptions import PermissionsError
 
 from website.models import Node, User
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_object_or_error, absolute_reverse
+from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField
 from api.base.exceptions import InvalidModelValueError
@@ -53,7 +53,9 @@ class NodeSerializer(JSONAPISerializer):
     collection = ser.BooleanField(read_only=True, source='is_folder')
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
     tags = ser.ListField(child=NodeTagField(), required=False)
-    public = ser.BooleanField(source='is_public', read_only=True,
+
+    # Public is only write-able by admins--see update method
+    public = ser.BooleanField(source='is_public', required=False,
                               help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
                                         'permission. Write and admin access are the same for '
@@ -139,11 +141,20 @@ class NodeSerializer(JSONAPISerializer):
             node.add_tag(new_tag, auth=auth)
         for deleted_tag in (old_tags - current_tags):
             node.remove_tag(deleted_tag, auth=auth)
+
+        if 'is_public' in validated_data:
+            privacy_key = 'public' if validated_data.pop('is_public') else 'private'
+            try:
+                node.set_privacy(privacy_key, auth=auth, log=True, save=True)
+            except PermissionsError:
+                raise exceptions.PermissionDenied
+
         if validated_data:
             try:
                 node.update(validated_data, auth=auth)
             except ValidationValueError as e:
                 raise InvalidModelValueError(detail=e.message)
+
         return node
 
 
@@ -157,9 +168,9 @@ class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
     filterable_fields = frozenset([
-        'fullname',
+        'full_name',
         'given_name',
-        'middle_name',
+        'middle_names',
         'family_name',
         'id',
         'bibliographic',
@@ -171,7 +182,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     full_name = ser.CharField(source='fullname', read_only=True, help_text='Display name used in the general user interface')
     given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    middle_name = ser.CharField(read_only=True, source='middle_names', help_text='For bibliographic citations')
+    middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
     family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
     suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
     date_registered = ser.DateTimeField(read_only=True)
@@ -182,16 +193,16 @@ class NodeContributorsSerializer(JSONAPISerializer):
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
 
-    links = LinksField({
+    links = LinksField(add_dev_only_items({
         'html': 'absolute_url',
         'self': 'get_absolute_url'
-    })
+    }, {
+        'profile_image': 'profile_image_url',
+    }))
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')
 
-    profile_image_url = ser.SerializerMethodField(required=False, read_only=True)
-
-    def get_profile_image_url(self, user):
+    def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
         return user.profile_image_url(size=size)
 

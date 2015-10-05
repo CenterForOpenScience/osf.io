@@ -120,7 +120,6 @@ def get_counts(count_query, clean=True):
     }
 
     res = es.search(index=INDEX, doc_type=None, search_type='count', body=count_query)
-
     counts = {x['key']: x['doc_count'] for x in res['aggregations']['counts']['buckets'] if x['key'] in ALIASES.keys()}
 
     counts['total'] = sum([val for val in counts.values()])
@@ -169,13 +168,12 @@ def search(query, index=None, doc_type='_all'):
             pass
 
     tags = get_tags(tag_query, index)
-
     try:
         del aggs_query['query']['filtered']['filter']
+        del count_query['query']['filtered']['filter']
     except KeyError:
         pass
     aggregations = get_aggregations(aggs_query, doc_type=doc_type)
-
     counts = get_counts(count_query, index)
 
     # Run the real query and get the results
