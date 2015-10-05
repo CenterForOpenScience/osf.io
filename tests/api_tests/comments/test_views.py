@@ -79,16 +79,149 @@ class TestCommentRepliesList(ApiTestCase):
 
 
 class TestCommentRepliesCreate(ApiTestCase):
-    pass
+    def setUp(self):
+        super(TestCommentRepliesCreate, self).setUp()
+        self.user = AuthUserFactory()
+        self.read_only_contributor = AuthUserFactory()
+        self.non_contributor = AuthUserFactory()
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_project.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.private_project.save()
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_project.add_contributor(self.read_only_contributor, permissions=['read'])
+        self.public_project.save()
+        self.registration = RegistrationFactory(creator=self.user)
+
+        self.comment = CommentFactory(node=self.private_project, user=self.user)
+        self.public_comment = CommentFactory(node=self.public_project, user=self.user)
+        self.registration_comment = CommentFactory(node=self.registration, user=self.user)
+
+        self.private_url = '/{}comments/{}/replies/'.format(API_BASE, self.comment._id)
+        self.public_url = '/{}comments/{}/replies/'.format(API_BASE, self.public_comment._id)
+        self.registration_url = '/{}comments/{}/replies/'.format(API_BASE, self.registration_comment._id)
+
+        self.payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': 'This is a reply'
+                }
+            }
+        }
+
+    def test_create_reply_invalid_data(self):
+        res = self.app.post_json_api(self.private_url, "Invalid data", auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
+    def test_create_reply_incorrect_type(self):
+        payload = {
+            'data': {
+                'type': 'Incorrect type',
+                'attributes': {
+                    'content': 'This is a reply'
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+        assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+
+    def test_create_reply_no_type(self):
+        payload = {
+            'data': {
+                'type': '',
+                'attributes': {
+                    'content': 'This is a reply'
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+
+    def test_create_reply_no_content(self):
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': ''
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes/content')
+
+    def test_private_node_logged_in_admin_can_reply(self):
+        res = self.app.post_json_api(self.private_url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+
+    def test_private_node_logged_in_read_only_contributor_can_reply(self):
+        res = self.app.post_json_api(self.private_url, self.payload, auth=self.read_only_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+
+    # def test_private_node_non_contributor_cannot_reply(self):
+    #     res = self.app.post_json_api(self.private_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+    #     assert_equal(res.status_code, 403)
+
+    def test_private_node_logged_out_user_cannot_reply(self):
+        res = self.app.post_json_api(self.private_url, self.payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+    # def test_private_node_with_public_comment_level_non_contributor_cannot_reply(self):
+    #     project = ProjectFactory(is_public=False)
+    #     comment = CommentFactory(node=project, user=self.user)
+    #     reply = CommentFactory(node=project, target=comment, user=self.user)
+    #     project.comment_level = 'public'
+    #     project.save()
+    #     url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
+    #
+    #     res = self.app.post_json_api(url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+    #     assert_equal(res.status_code, 403)
+
+    def test_public_node_any_logged_in_user_can_reply(self):
+        project = ProjectFactory(is_public=True)
+        comment = CommentFactory(node=project, user=self.user)
+        reply = CommentFactory(node=project, target=comment, user=self.user)
+        project.comment_level = 'public'
+        project.save()
+        url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
+
+        res = self.app.post_json_api(url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+
+        res = self.app.post_json_api(url, self.payload, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+
+        res = self.app.post_json_api(self.public_url, self.payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
+    def test_public_node_only_logged_in_contributors_can_reply(self):
+        res = self.app.post_json_api(self.public_url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
+
+        # res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+        # assert_equal(res.status_code, 403)
+
+        res = self.app.post_json_api(self.public_url, self.payload, expect_errors=True)
+        assert_equal(res.status_code, 401)
 
 
 class TestCommentDetailView(ApiTestCase):
-    pass
+    pass #Retrieve, Update
 
 
 class TestReportsView(ApiTestCase):
-    pass
+    pass # List, Create
 
 
 class TestReportDetailView(ApiTestCase):
-    pass
+    pass # Retrieve, Update, Destroy
