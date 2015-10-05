@@ -15,6 +15,7 @@ from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error
 from api.files.serializers import FileSerializer
+from api.base.settings import REST_FRAMEWORK
 from api.base.serializers import JSONAPIListSerializer
 from api.users.views import UserMixin
 from api.nodes.serializers import (
@@ -394,7 +395,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
             raise NotFound()
 
         num_items = len(node_list)
-        bulk_limit = JSONAPIListSerializer.DEFAULT_BULK_LIMIT
+        bulk_limit = REST_FRAMEWORK['DEFAULT_BULK_LIMIT']
 
         if num_items > bulk_limit:
             raise ValidationError(
@@ -780,7 +781,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
             raise NotFound()
 
         num_items = len(contrib_list)
-        bulk_limit = JSONAPIListSerializer.DEFAULT_BULK_LIMIT
+        bulk_limit = REST_FRAMEWORK['DEFAULT_BULK_LIMIT']
 
         if num_items > bulk_limit:
             raise ValidationError(
@@ -1265,7 +1266,8 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
             pointer_list.append(pointer_dict[item['id']])
 
         num_items = len(pointer_list)
-        bulk_limit = JSONAPIListSerializer.DEFAULT_BULK_LIMIT
+        bulk_limit = REST_FRAMEWORK['DEFAULT_BULK_LIMIT']
+
 
         if num_items > bulk_limit:
             raise ValidationError(

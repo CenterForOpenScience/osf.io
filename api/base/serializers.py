@@ -4,13 +4,14 @@ import collections
 from rest_framework import exceptions
 from rest_framework.reverse import reverse
 from rest_framework import serializers as ser
-from rest_framework.fields import SkipField, empty
+from rest_framework.fields import SkipField
 
 from website import settings
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
 from api.base import utils
+from api.base.settings import REST_FRAMEWORK
 from api.base.exceptions import InvalidQueryStringError, Conflict
 
 
@@ -291,7 +292,6 @@ class NodeFileHyperLink(JSONAPIHyperlinkedIdentityField):
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
-    DEFAULT_BULK_LIMIT = 10
 
     def to_representation(self, data):
         # Don't envelope when serializing collection
@@ -315,9 +315,9 @@ class JSONAPIListSerializer(ser.ListSerializer):
         return ret
 
     # overrides ListSerializer
-    def run_validation(self, data=empty):
+    def run_validation(self, data):
         meta = getattr(self, 'Meta', None)
-        bulk_limit = getattr(meta, 'bulk_limit', self.DEFAULT_BULK_LIMIT)
+        bulk_limit = getattr(meta, 'bulk_limit', REST_FRAMEWORK['DEFAULT_BULK_LIMIT'])
 
         num_items = len(data)
 

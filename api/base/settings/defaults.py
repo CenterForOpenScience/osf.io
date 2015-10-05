@@ -54,6 +54,7 @@ RAVEN_CONFIG = {
 
 REST_FRAMEWORK = {
     'PAGE_SIZE': 10,
+    'DEFAULT_BULK_LIMIT': 10,
 
     # Order is important here because of a bug in rest_framework_swagger. For now,
     # rest_framework.renderers.JSONRenderer needs to be first, at least until
