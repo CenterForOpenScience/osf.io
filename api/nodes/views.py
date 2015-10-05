@@ -16,7 +16,6 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error
 from api.files.serializers import FileSerializer
 from api.base.settings import REST_FRAMEWORK
-from api.base.serializers import JSONAPIListSerializer
 from api.users.views import UserMixin
 from api.nodes.serializers import (
     NodeSerializer,
@@ -25,7 +24,6 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
-    NodeLinksDetailSerializer,
     NodeContributorDetailSerializer
 )
 from api.nodes.permissions import (
@@ -310,7 +308,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
             nodes = Node.find(query)
             for node in nodes:
                 if not node.can_edit(auth):
-                    raise PermissionDenied()
+                    raise PermissionDenied
             return nodes
         else:
             query = self.get_query_from_request()
@@ -390,7 +388,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
             node = get_object_or_error(Node, item[u'id'], display_name='node')
             node_list.append(node)
             if not node.can_edit(Auth(user)):
-                raise PermissionDenied()
+                raise PermissionDenied
         if not node_list:
             raise NotFound()
 
@@ -1245,7 +1243,7 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
 
         node = get_object_or_error(Node, kwargs['node_id'], display_name='node')
         if not node.can_edit(Auth(user)) or node.is_registration:
-            raise PermissionDenied()
+            raise PermissionDenied
 
         pointer_dict = {pointer._id: pointer for pointer in node.nodes}
         for item in request.data:
