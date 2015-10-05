@@ -72,7 +72,6 @@ def do_migration(records):
         ))
 
     for node in BoxNodeSettings.find():
-        import ipdb; ipdb.set_trace()
         if node.foreign_user_settings is None:
             continue
         logger.info('Migrating user_settings for box {}'.format(node._id))
