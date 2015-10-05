@@ -2164,6 +2164,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return None
 
     @property
+    def forked_from_id(self):
+        if self.forked_from:
+            return self.forked_from._id
+        return None
+
+    @property
     def project_or_component(self):
         return 'project' if self.category == 'project' else 'component'
 

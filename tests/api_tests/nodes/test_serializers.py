@@ -6,10 +6,12 @@ from django.http import HttpRequest
 from dateutil.parser import parse as parse_date
 
 from tests.base import DbTestCase, ApiTestCase, assert_datetime_equal
-from tests.factories import UserFactory, NodeFactory, RegistrationFactory
+from tests.factories import UserFactory, NodeFactory, RegistrationFactory, ProjectFactory
 
+from framework.auth import Auth
 from api.nodes.serializers import NodeSerializer, NodeRegistrationSerializer
 from api.base.settings.defaults import API_BASE
+
 
 def make_test_request():
     from rest_framework.request import Request
@@ -22,9 +24,13 @@ def make_test_request():
 
 class TestNodeSerializer(DbTestCase):
 
-    def test_serialization(self):
-        user = UserFactory()
-        node = NodeFactory()
+    def setUp(self):
+        super(TestNodeSerializer, self).setUp()
+        self.user = UserFactory()
+
+    def test_node_serialization(self):
+        parent = ProjectFactory(creator=self.user)
+        node = NodeFactory(creator=self.user, parent=parent)
         req = make_test_request()
         result = NodeSerializer(node, context={'request': req}).data
         data = result['data']
@@ -48,8 +54,30 @@ class TestNodeSerializer(DbTestCase):
         assert_in('contributors', relationships)
         assert_in('files', relationships)
         assert_in('parent', relationships)
+        parent_link = relationships['parent']['links']['related']['href']
+        assert_equal(
+            urlparse(parent_link).path,
+            '/{}nodes/{}/'.format(API_BASE, parent._id)
+        )
         assert_in('registrations', relationships)
+        assert_in('forked_from', relationships)
+        forked_from = relationships['forked_from']['links']['related']['href']
+        # None because node is not a fork
+        assert_is_none(forked_from)
 
+    def test_fork_serialization(self):
+        node = NodeFactory(creator=self.user)
+        fork = node.fork_node(auth=Auth(user=node.creator))
+        result = NodeSerializer(fork, context={'request': make_test_request()}).data
+        data = result['data']
+
+        # Relationships
+        relationships = data['relationships']
+        forked_from = relationships['forked_from']['links']['related']['href']
+        assert_equal(
+            urlparse(forked_from).path,
+            '/{}nodes/{}/'.format(API_BASE, node._id)
+        )
 
 class TestNodeRegistrationSerializer(DbTestCase):
 

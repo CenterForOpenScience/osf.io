@@ -587,7 +587,7 @@ class TestNodeDetail(ApiTestCase):
     def test_top_level_project_has_no_parent(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['relationships']['parent']['links']['self']['href'], None)
+        assert_equal(res.json['data']['relationships']['parent']['links']['related']['href'], None)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_child_project_has_parent(self):
@@ -595,7 +595,7 @@ class TestNodeDetail(ApiTestCase):
         public_component_url = '/{}nodes/{}/'.format(API_BASE, public_component._id)
         res = self.app.get(public_component_url)
         assert_equal(res.status_code, 200)
-        url = res.json['data']['relationships']['parent']['links']['self']['href']
+        url = res.json['data']['relationships']['parent']['links']['related']['href']
         assert_equal(urlparse(url).path, self.public_url)
 
     def test_node_has_children_link(self):
@@ -3265,7 +3265,7 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(errors[0], {'detail': 'Not found.'})
-    
+
     def test_forbidden_formatting(self):
         res = self.app.get(self.private_url, auth=self.non_contrib.auth, expect_errors=True)
         errors = res.json['errors']

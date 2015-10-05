@@ -79,14 +79,18 @@ class NodeSerializer(JSONAPISerializer):
     node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
                                                   lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
 
-    parent = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='self',
+    parent = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
                                               lookup_url_kwarg='node_id')
 
     registrations = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
                                                      lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'}))
 
-
-    # TODO: forked_from
+    forked_from = JSONAPIHyperlinkedIdentityField(
+        view_name='nodes:node-detail',
+        lookup_field='forked_from_id',
+        link_type='related',
+        lookup_url_kwarg='node_id'
+    )
 
     class Meta:
         type_ = 'nodes'
