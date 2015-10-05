@@ -50,6 +50,7 @@ class NodeSerializer(JSONAPISerializer):
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
+    fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_folder')
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
     tags = ser.ListField(child=NodeTagField(), required=False)
@@ -83,6 +84,9 @@ class NodeSerializer(JSONAPISerializer):
 
     registrations = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
                                                      lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'}))
+
+
+    # TODO: forked_from
 
     class Meta:
         type_ = 'nodes'
