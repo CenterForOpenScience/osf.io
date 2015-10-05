@@ -3,7 +3,7 @@ from rest_framework import serializers as ser
 from framework.guid.model import Guid
 from framework.auth.core import Auth
 from website.project.model import Node, Comment
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.utils import absolute_reverse
 from api.base.serializers import (JSONAPISerializer,
                                   JSONAPIHyperlinkedRelatedField,
@@ -42,6 +42,7 @@ class CommentSerializer(JSONAPISerializer):
         type_ = 'comments'
 
     def create(self, validated_data):
+        user = self.context['request'].user
         node_id = self.context['view'].kwargs.get('node_id', None)
         target_id = self.context['view'].kwargs.get('comment_id', None)
 
@@ -52,15 +53,18 @@ class CommentSerializer(JSONAPISerializer):
             target = Comment.load(target_id)
             node = target.node
 
-        validated_data['user'] = self.context['request'].user
+        validated_data['user'] = user
         validated_data['node'] = node
         validated_data['target'] = target
         now = datetime.utcnow()
         validated_data['date_created'] = now
         validated_data['date_modified'] = now
 
-        comment = Comment(**validated_data)
-        comment.save()
+        if node.can_comment(Auth(user)):
+            comment = Comment(**validated_data)
+            comment.save()
+        else:
+            raise PermissionDenied("Not authorized to comment on this project.")
 
         return comment
 
