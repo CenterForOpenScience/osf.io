@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
+from modularodm import Q
 
 from website import settings
 
 def no_addon(email):
-    return len(email.user.get_addons()) == 0 and email.user.is_registered
+    return len(email.user.get_addons()) == 0
 
 def no_login(email):
-    return email.user.is_registered and not email.user.date_last_login > datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME
+    from website.models import QueuedMail
+    sent = QueuedMail.find(Q('user', 'eq', email.user) & Q('email_type', 'eq', 'no_login'))
+    if sent.count():
+        return False
+    return email.user.date_last_login > datetime.utcnow() - settings.NO_LOGIN_WAIT_TIME
 
 def new_public_project(email):
     """ Will check to make sure the project that triggered this presend is still public

@@ -1,12 +1,14 @@
 import sys
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from modularodm import Q
 
 from framework.transactions.context import TokuTransaction
 from website.app import init_app
 from website import mails, settings
+
+from scripts.utils import add_file_logger
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -47,4 +49,6 @@ def pop_and_verify_mails_for_each_user(user_queue):
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
     init_app(routes=False)
+    if not dry_run:
+        add_file_logger(logger, __file__)
     main(dry_run=dry_run)
