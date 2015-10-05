@@ -71,12 +71,13 @@ def do_migration(records):
             account._id, user._id,
         ))
 
-        for node in BoxNodeSettings.find():
-            if node.foreign_user_settings is None:
-                continue
-            logger.info('Migrating user_settings for box {}'.format(node._id))
-            node.user_settings = node.foreign_user_settings
-            node.save()
+    for node in BoxNodeSettings.find():
+        import ipdb; ipdb.set_trace()
+        if node.foreign_user_settings is None:
+            continue
+        logger.info('Migrating user_settings for box {}'.format(node._id))
+        node.user_settings = node.foreign_user_settings
+        node.save()
 
 
 def get_targets():
@@ -88,7 +89,7 @@ def get_targets():
 def main(dry=True):
     init_app(set_backends=True, routes=False)  # Sets the storage backends on all models
     with TokuTransaction():
-        do_migration(get_targets(), dry=dry)
+        do_migration(get_targets())
         if dry:
             raise Exception('Abort Transaction - Dry Run')
 
