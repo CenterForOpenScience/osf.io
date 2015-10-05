@@ -19,19 +19,19 @@ class JSONAPIParser(JSONParser):
     renderer_class = JSONAPIRenderer
 
     @staticmethod
-    def flatten_data(resource_object, stream, is_list=False):
+    def flatten_data(resource_object, request_method, is_list=False):
         """
         Flattens data objects, making attributes fields the same level as id and type.
         """
 
-        if "attributes" not in resource_object and stream.method != 'DELETE':
+        if "attributes" not in resource_object and request_method != 'DELETE':
             raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
 
         object_id = resource_object.get('id')
         object_type = resource_object.get('type')
 
         # For validating type and id for bulk delete:
-        if is_list and stream.method == 'DELETE':
+        if is_list and request_method == 'DELETE':
             if object_id is None:
                 raise JSONAPIException(source={'pointer': '/data/id'}, detail=NO_ID_ERROR)
 
@@ -55,17 +55,18 @@ class JSONAPIParser(JSONParser):
             raise ParseError()
         data = result.get('data', {})
 
+        method = parser_context['request'].method
         if data:
             if isinstance(data, list):
                 data_collection = []
                 for data_object in data:
-                    parsed_data = self.flatten_data(data_object, stream, is_list=True)
+                    parsed_data = self.flatten_data(data_object, method, is_list=True)
                     data_collection.append(parsed_data)
 
                 return data_collection
 
             else:
-                return self.flatten_data(data, stream)
+                return self.flatten_data(data, method)
 
         else:
             raise JSONAPIException(source={'pointer': '/data'}, detail=NO_DATA_ERROR)
