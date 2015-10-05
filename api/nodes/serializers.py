@@ -25,33 +25,6 @@ class NodeTagField(ser.Field):
         return data
 
 
-class JSONAPINodeListSerializer(JSONAPIListSerializer):
-    """
-    ListSerializer for nodes - used in bulk operations
-
-    Request either completely succeeds or fails. Requires
-    the request to be in the serializer context.
-    """
-
-    # Overrides JSONAPIListSerializer which doesn't support multiple update by default.
-    def update(self, instance, validated_data):
-        if len(instance) != len(validated_data):
-            raise exceptions.NotFound()
-        node_mapping = {item._id: item for item in instance}
-        data_mapping = {item.get('_id', None): item for item in validated_data}
-
-        ret = []
-
-        for node_id, data in data_mapping.items():
-            node = node_mapping.get(node_id, None)
-            ret.append(self.child.update(node, data))
-
-        return ret
-
-    class Meta:
-        type_ = 'nodes'
-
-
 class NodeSerializer(JSONAPISerializer):
     # TODO: If we have to redo this implementation in any of the other serializers, subclass ChoiceField and make it
     # handle blank choices properly. Currently DRF ChoiceFields ignore blank options, which is incorrect in this
@@ -110,11 +83,6 @@ class NodeSerializer(JSONAPISerializer):
 
     registrations = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
                                                      lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'}))
-
-    @classmethod
-    def many_init(cls, *args, **kwargs):
-        kwargs['child'] = cls()
-        return JSONAPINodeListSerializer(*args, **kwargs)
 
     class Meta:
         type_ = 'nodes'
@@ -197,49 +165,6 @@ class NodeDetailSerializer(NodeSerializer):
     id = IDField(source='_id', required=True)
 
 
-class JSONAPINodeContributorListSerializer(JSONAPIListSerializer):
-    """
-    List serializer for node contributors - used in bulk operations.
-
-    Request either completely succeeds or fails. Requires
-    the request to be in the serializer context.
-    """
-
-    # Overrides JSONAPIListSerializer to confirm all potential contributors exist and are not already contributors
-    def create(self, validated_data):
-        node = self.context['view'].get_node()
-
-        contributor_mapping = {item.get('_id', None): item for item in validated_data}
-        ret = []
-
-        for user_id, data in contributor_mapping.items():
-            contributor = get_object_or_error(User, data['_id'], display_name='user')
-            if contributor in node.contributors:
-                raise exceptions.ValidationError('{} is already a contributor'.format(contributor.fullname))
-
-        for user_id, data in contributor_mapping.items():
-            ret.append(self.child.create(data))
-
-        return ret
-
-    # Overrides JSONAPIListSerializer which doesn't support multiple update by default.
-    def update(self, instance, validated_data):
-        if len(instance) != len(validated_data):
-            raise exceptions.NotFound()
-        contrib_mapping = {contrib._id: contrib for contrib in instance}
-        data_mapping = {item.get('_id', None): item for item in validated_data}
-
-        ret = []
-        for user_id, data in data_mapping.items():
-            contributor = contrib_mapping.get(user_id, None)
-            ret.append(self.child.update(contributor, data))
-
-        return ret
-
-    class Meta:
-        type_ = 'contributors'
-
-
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
@@ -277,11 +202,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
     }))
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')
-
-    @classmethod
-    def many_init(cls, *args, **kwargs):
-        kwargs['child'] = cls()
-        return JSONAPINodeContributorListSerializer(*args, **kwargs)
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
@@ -354,18 +274,6 @@ class NodeRegistrationSerializer(NodeSerializer):
         raise exceptions.ValidationError('Registrations cannot be modified.')
 
 
-class JSONAPINodeLinksListSerializer(JSONAPIListSerializer):
-    """
-    List serializer for node links - used in bulk operations.
-
-    Request either completely succeeds or fails. Requires
-    the request to be in the serializer context.
-    """
-
-    class Meta:
-        type_ = 'node_links'
-
-
 class NodeLinksSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
@@ -383,11 +291,6 @@ class NodeLinksSerializer(JSONAPISerializer):
     links = LinksField({
         'html': 'get_absolute_url',
     })
-
-    @classmethod
-    def many_init(cls, *args, **kwargs):
-        kwargs['child'] = cls()
-        return JSONAPINodeLinksListSerializer(*args, **kwargs)
 
     def get_absolute_url(self, obj):
         pointer_node = Node.load(obj.node._id)

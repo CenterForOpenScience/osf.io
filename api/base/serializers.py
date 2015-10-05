@@ -85,8 +85,15 @@ class TypeField(ser.CharField):
 
     # Overrides CharField
     def to_internal_value(self, data):
-        if self.root.Meta.type_ != data:
+        request_data = self.context['request'].data
+        if isinstance(request_data, list):
+            meta = self.root.child.Meta.type_
+        else:
+            meta = self.root.Meta.type_
+
+        if meta != data:
             raise Conflict()
+
         return super(TypeField, self).to_internal_value(data)
 
 
@@ -290,6 +297,22 @@ class JSONAPIListSerializer(ser.ListSerializer):
         return [
             self.child.to_representation(item, envelope=None) for item in data
         ]
+
+    # Overrides ListSerializer which doesn't support multiple update by default
+    def update(self, instance, validated_data):
+        if len(instance) != len(validated_data):
+            raise exceptions.NotFound()
+        instance_mapping = {item._id: item for item in instance}
+        data_mapping = {item.get('_id', None): item for item in validated_data}
+
+        ret = []
+
+        for node_id, data in data_mapping.items():
+            node = instance_mapping.get(node_id, None)
+            ret.append(self.child.update(node, data))
+
+        return ret
+
 
     # overrides ListSerializer
     def run_validation(self, data=empty):
