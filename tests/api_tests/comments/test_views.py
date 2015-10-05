@@ -441,8 +441,8 @@ class TestCommentRepliesCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
 
-        # res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
-        # assert_equal(res.status_code, 403)
+        res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
         res = self.app.post_json_api(self.public_url, self.payload, expect_errors=True)
         assert_equal(res.status_code, 401)
