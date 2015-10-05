@@ -49,6 +49,11 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
     def get_queryset(self):
         return Comment.find(Q('target', 'eq', self.get_comment()) & Q('is_deleted', 'ne', True))
 
+    # overrides ListCreateAPIView
+    def perform_create(self, serializer):
+        self.check_object_permissions(self.request, self.get_comment())
+        serializer.save()
+
 
 class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
     """Details about a specific comment.
