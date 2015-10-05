@@ -17,9 +17,10 @@ def gravatar(user, use_ssl=False, d=None, r=None, size=None):
 
     # Order of query params matters, due to a quirk with gravatar
     params = [
-        ('d', 'identicon'),
-        ('s', size),
+        ('d', 'identicon')
     ]
+    if size:
+        params.append(('s', size))
     if r:
         params.append(('r', r))
     url = base_url + hash_code + '?' + urllib.urlencode(params)

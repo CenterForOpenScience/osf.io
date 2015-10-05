@@ -4,6 +4,7 @@ import os
 
 from modularodm import Q
 
+from website.search import search
 from website.files import exceptions
 from website.files.models.base import File, Folder, FileNode, FileVersion
 
@@ -129,6 +130,13 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 raise exceptions.VersionNotFoundError(version)
             return None
 
+    def delete(self, user=None, parent=None):
+        search.update_file(self, delete=True)
+        return super(OsfStorageFile, self).delete(user, parent)
+
+    def save(self):
+        search.update_file(self)
+        return super(OsfStorageFile, self).save()
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
 

@@ -1,7 +1,6 @@
 import httplib as http
 
 from flask import request
-from modularodm import Q
 from modularodm.exceptions import ValidationError
 
 from framework.auth.decorators import collect_auth

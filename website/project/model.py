@@ -410,6 +410,14 @@ class NodeLog(StoredObject):
     def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
         if not user:
+            # Handle legacy non-registered users, which were
+            # represented as a dict
+            if isinstance(contributor, dict):
+                if 'nr_name' in contributor:
+                    return {
+                        'fullname': contributor['nr_name'],
+                        'registered': False,
+                    }
             return None
         if self.node:
             fullname = user.display_full_name(node=self.node)
@@ -1116,8 +1124,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.is_contributor(auth.user)
 
     def update(self, fields, auth=None, save=True):
+        """Update the node with the given fields.
+
+        :param dict fields: Dictionary of field_name:value pairs.
+        :param Auth auth: Auth object for the user making the update.
+        :param bool save: Whether to save after updating the object.
+        """
         if self.is_registration:
             raise NodeUpdateError(reason="Registered content cannot be updated")
+        if not fields:  # Bail out early if there are no fields to update
+            return False
         values = {}
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
@@ -1731,7 +1747,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         from website.files.models.base import FileNode
         from website.search import search
-        for file_ in list(FileNode.find(Q('node', 'eq', self))):
+        for file_ in list(FileNode.find(Q('node', 'eq', self) & Q('provider', 'eq', 'osfstorage'))):
             search.update_file(file_, delete=True)
 
         log_date = date or datetime.datetime.utcnow()
@@ -2615,6 +2631,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
         """
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
             if self.is_registration:
                 if self.is_pending_embargo:

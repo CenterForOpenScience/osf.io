@@ -20,7 +20,7 @@ from framework.analytics import get_basic_counters
 from website import util
 from website.files import utils
 from website.files import exceptions
-from website.search import search
+
 
 __all__ = (
     'File',
@@ -122,7 +122,7 @@ class StoredFileNode(StoredObject):
     # Should only be used for OsfStorage
     checkout = fields.AbstractForeignField('User')
 
-    #Tags for a file
+    #Tags for a file, currently only used for osfStorage
     tags = fields.ForeignField('Tag', list=True)
 
     # For Django compatibility
@@ -337,7 +337,6 @@ class FileNode(object):
         Implemented top level so that child class may override it
         and just call super.save rather than self.stored_object.save
         """
-        search.update_file(self)
         self.stored_object.save()
 
     def serialize(self, **kwargs):
@@ -364,7 +363,6 @@ class FileNode(object):
         trashed = self._create_trashed(user=user, parent=parent)
         self._repoint_guids(trashed)
         StoredFileNode.remove_one(self.stored_object)
-        search.update_file(self, delete=True)
         return trashed
 
     def copy_under(self, destination_parent, name=None):
