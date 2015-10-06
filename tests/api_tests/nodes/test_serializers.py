@@ -2,24 +2,15 @@
 from urlparse import urlparse
 
 from nose.tools import *  # flake8: noqa
-from django.http import HttpRequest
 from dateutil.parser import parse as parse_date
 
 from tests.base import DbTestCase, ApiTestCase, assert_datetime_equal
+from tests.utils import make_drf_request
 from tests.factories import UserFactory, NodeFactory, RegistrationFactory, ProjectFactory
 
 from framework.auth import Auth
 from api.nodes.serializers import NodeSerializer, NodeRegistrationSerializer
 from api.base.settings.defaults import API_BASE
-
-
-def make_test_request():
-    from rest_framework.request import Request
-    http_request = HttpRequest()
-    http_request.META['SERVER_NAME'] = 'localhost'
-    http_request.META['SERVER_PORT'] = 8000
-    # A DRF Request wraps a Django HttpRequest
-    return Request(http_request)
 
 
 class TestNodeSerializer(DbTestCase):
@@ -31,7 +22,7 @@ class TestNodeSerializer(DbTestCase):
     def test_node_serialization(self):
         parent = ProjectFactory(creator=self.user)
         node = NodeFactory(creator=self.user, parent=parent)
-        req = make_test_request()
+        req = make_drf_request()
         result = NodeSerializer(node, context={'request': req}).data
         data = result['data']
         assert_equal(data['id'], node._id)
@@ -68,7 +59,7 @@ class TestNodeSerializer(DbTestCase):
     def test_fork_serialization(self):
         node = NodeFactory(creator=self.user)
         fork = node.fork_node(auth=Auth(user=node.creator))
-        result = NodeSerializer(fork, context={'request': make_test_request()}).data
+        result = NodeSerializer(fork, context={'request': make_drf_request()}).data
         data = result['data']
 
         # Relationships
@@ -83,7 +74,7 @@ class TestNodeRegistrationSerializer(DbTestCase):
 
     def test_serialization(self):
         user = UserFactory()
-        req = make_test_request()
+        req = make_drf_request()
         reg = RegistrationFactory(creator=user)
         result = NodeRegistrationSerializer(reg, context={'request': req}).data
         data = result['data']
