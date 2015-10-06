@@ -29,16 +29,16 @@ var ProjectSettings= ProjectSettings.ProjectSettings;
 
 describe('ProjectSettings', () => {
     var category = faker.internet.domainWord();
-    var categories = [];
+    var categoryOptions = [];
     for (var i = 0; i < 10; i++) {
-        categories.push(faker.internet.domainWord());
+        categoryOptions.push(faker.internet.domainWord());
     }
     var updateUrl = faker.internet.ip();
-    var vm = new ProjectSettings({category: category, categories: categories, updateUrl: updateUrl});
+    var vm = new ProjectSettings({category: category, categoryOptions: categoryOptions, updateUrl: updateUrl});
     describe('#constructor', function() {
         it('throws an error if no updateUrl is passed', () => {
             var broken = function() {
-                new ProjectSettings({category: category, categories: categories});
+                new ProjectSettings({category: category, categoryOptions: categoryOptions});
             };
             assert.throws(broken , vm.INSTANTIATION_ERROR_MESSAGE);
         });
@@ -123,7 +123,7 @@ describe('ProjectSettings', () => {
             server.restore();
         });
         it('sends a put to the updateUrl with the selected category, and updates the category on success', (done) => {
-            var newcategory = categories[0];
+            var newcategory = categoryOptions[0];
             vm.selectedCategory(newcategory);
             vm.updateCategory()
                 .always(function() {
@@ -212,7 +212,7 @@ describe('ProjectSettings', () => {
             vm.resetMessage.restore();
         });
         it('restores the selectedCategory, title, and description to those of the VM, and resets the message', () => {
-            vm.selectedCategory(categories[0]);
+            vm.selectedCategory(categoryOptions[0]);
             vm.changeMessage('Some message', 'some-class');
             vm.cancelAll();
             assert.equal(vm.selectedCategory(), vm.category);

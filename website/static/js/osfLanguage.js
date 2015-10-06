@@ -83,5 +83,10 @@ module.exports = {
         dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         creationSuccess: 'Successfully registered new application',
         dataUpdated: 'Application data updated'
+    },
+    ProjectSettings: {
+        updateSuccessMessage: 'Category, title, and description updated successfully',
+        updateErrorMessage: 'Error updating project settings',
+        instantiationErrorMessage: 'Trying to instantiate ProjectSettings view model without an update URL'
     }
 };

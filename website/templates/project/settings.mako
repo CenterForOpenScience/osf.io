@@ -76,7 +76,7 @@
                         <div class="form-group">
                             <label>Category:</label>
                             <select data-bind="attr.disabled: disabled,
-                                                         options: categories,
+                                                         options: categoryOptions,
                                                          optionsValue: 'value',
                                                          optionsText: 'label',
                                                          value: selectedCategory"></select>
@@ -96,11 +96,10 @@
                                              valueUpdate: 'afterkeydown'",
                             class="form-control resize-vertical"></textarea>
                         </div>
-                            <button data-bind="click: updateCategory"
-                            class="btn btn-success">Save Changes</button>
-                            <button data-bind="click: cancelAll"
+                           <button data-bind="click: cancelAll"
                             class="btn btn-default">Cancel</button>
-                            </span>
+                            <button data-bind="click: updateAll"
+                            class="btn btn-success">Save changes</button>
                             <br>
                             <span data-bind="css: messageClass, html: message"></span>
 
@@ -387,8 +386,7 @@
     <script>
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
-      window.contextVars.node.description = '${node['description']}';
-      window.contextVars.node.api_url = '${node['api_url']}';
+      window.contextVars.node.description = ${node['description'] | sjson, n };
       window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };
     </script>
