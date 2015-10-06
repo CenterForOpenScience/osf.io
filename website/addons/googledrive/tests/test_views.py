@@ -30,7 +30,7 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         self.app.authenticate(*self.user.auth)
 
     def test_list_googledrive_accounts_returns_accounts_single(self):
-        url = api_url_for('list_googledrive_user_accounts', Auth(self.user))
+        url = api_url_for('list_googledrive_user_accounts')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['accounts']), 1)
@@ -41,14 +41,14 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         external_account = GoogleDriveAccountFactory()
         self.user.external_accounts.append(external_account) # self.account is already present
         self.user.save()
-        url = api_url_for('list_googledrive_user_accounts', Auth(self.user))
+        url = api_url_for('list_googledrive_user_accounts')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['accounts']), 2)
 
     def test_googledrive_config_get_return_correct_urls(self):
         # self.node_settings.set_auth(external_account=self.account, user=self.user)
-        url = self.project.api_url_for('googledrive_config_get', Auth(self.user))
+        url = self.project.api_url_for('googledrive_config_get')
         res = self.app.get(url)
         result = res.json['result']
         assert_equal(result['urls']['accounts'],  self.project.api_url_for('list_googledrive_user_accounts'))
@@ -64,14 +64,14 @@ class TestGoogleDriveConfigViews(OsfTestCase):
     def test_googledrive_config_get_has_auth(self):
         self.node_settings.set_auth(external_account=self.account, user=self.user)
         self.node_settings.save()
-        url = self.project.api_url_for('googledrive_config_get', Auth(self.user))
+        url = self.project.api_url_for('googledrive_config_get')
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
         result = res.json['result']
         assert_true(result['nodeHasAuth'])
 
     def test_googledrive_config_get_does_not_has_auth(self):
-        url = self.project.api_url_for('googledrive_config_get', Auth(self.user))
+        url = self.project.api_url_for('googledrive_config_get')
         res = self.app.get(url)
         result = res.json['result']
         assert_false(result['nodeHasAuth'])
