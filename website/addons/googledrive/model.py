@@ -94,6 +94,10 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     _api = None
 
+    foreign_user_settings = fields.ForeignField(
+        'googledriveusersettings', backref='authorized'
+    )
+
     @property
     def api(self):
         """Authenticated ExternalProvider instance"""
@@ -117,6 +121,8 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             # `urllib` does not properly handle unicode.
             # encode input to `str`, decode output back to `unicode`
             return urllib.unquote(os.path.split(self.folder_path)[1].encode('utf-8')).decode('utf-8')
+        else:
+            return '/ (Full Google Drive)'
 
     def clear_auth(self):
         self.drive_folder_id = None
