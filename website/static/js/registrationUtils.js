@@ -168,14 +168,14 @@ var Question = function(data, id) {
      * @returns {Boolean} true if the nextComment <input> is not blank
      **/
     self.allowAddNext = ko.computed(function() {
-        return !$osf.isBlank(self.nextComment());
+        return (self.nextComment() || '').trim();
     });
 
     /**
      * @returns {Boolean} true if the value <input> is not blank
      **/
     self.isComplete = ko.computed(function() {
-        return !$osf.isBlank(self.value());
+        return (self.value() || '').trim();
     });
 
     self.init();
@@ -332,7 +332,7 @@ var Draft = function(params, metaSchema) {
             $.each(schema.pages, function(i, page) {
                 $.each(page.questions, function(qid, question) {
                     var q = self.schemaData[qid];
-                    if(q && !$osf.isBlank(q.value)) {
+                    if(q && (q.value || '').trim()) {
                         complete++;
                     }
                     total++;
