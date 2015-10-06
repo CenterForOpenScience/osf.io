@@ -125,6 +125,19 @@ class TestAddonAuth(OsfTestCase):
         assert_equal(res.status_code, 401)
 
     def test_auth_bad_cookie(self):
+        url = self.build_url(cookie=self.cookie)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        data = jwt.decode(res.json, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        assert_equal(data['auth'], views.make_auth(self.user))
+        assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
+        assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
+        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True))
+        observed_url = furl.furl(data['callback_url'])
+        observed_url.port = expected_url.port
+        assert_equal(expected_url, observed_url)
+
+    def test_auth_cookie(self):
         url = self.build_url(cookie=self.cookie[::-1])
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 401)
@@ -447,8 +460,8 @@ def assert_urls_equal(url1, url2):
         setattr(furl2, attr, None)
     # Note: furl params are ordered and cause trouble
     assert_equal(dict(furl1.args), dict(furl2.args))
-    furl1.args ={}
-    furl2.args ={}
+    furl1.args = {}
+    furl2.args = {}
     assert_equal(furl1, furl2)
 
 
