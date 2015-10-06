@@ -131,22 +131,20 @@ class TestGoogleDriveUserSettings(OsfTestCase):
         )
         self.user_settings.save()
 
-        assert_true(
-            self.user_settings.verify_oauth_access(
-                node=self.node,
-                external_account=self.external_account,
-                metadata={'folder': 'fake_folder_id'}
-            )
+        correct_meta_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id'}
         )
 
-        assert_false(
-            self.user_settings.verify_oauth_access(
-                node=self.node,
-                external_account=self.external_account,
-                metadata={'folder': 'another_folder_id'}
-            )
+        incorrect_meta_no_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'another_folder_id'}
         )
 
+        assert_true(correct_meta_access)
+        assert_false(incorrect_meta_no_access)
 
 
 class TestGoogleDriveNodeSettings(OsfTestCase):
@@ -207,14 +205,12 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
             self.node_settings.drive_folder_id
         )
 
-        # user_settings was updated
-        # TODO: The call to grant_oauth_access in set_auth should be mocked
-        assert_true(
-            self.user_settings.verify_oauth_access(
-                node=self.node,
-                external_account=external_account,
-                )
+        set_auth_gives_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=external_account,
         )
+
+        assert_true(set_auth_gives_access)
 
     def test_set_auth_wrong_user(self):
         external_account = ExternalAccountFactory()
@@ -272,19 +268,19 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
             'fake-folder-id',
             )
 
-        # user_settings was updated
-        assert_true(
-            self.user_settings.verify_oauth_access(
-                node=self.node,
-                external_account=external_account,
-                metadata={'folder': 'fake-folder-id'}
-            )
+        has_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=external_account,
+            metadata={'folder': 'fake-folder-id'}
         )
+
+        # user_settings was updated
+        assert_true(has_access)
 
         log = self.node.logs[-1]
         assert_equal(log.action, 'googledrive_folder_selected')
         assert_equal(log.params['folder_id'], folder['id'])
-        assert_equal(log.params['folder_name'], folder['name'])
+        assert_equal(log.params['folder_name'], folder['path'])
 
     def test_has_auth_false(self):
         external_account = ExternalAccountFactory()

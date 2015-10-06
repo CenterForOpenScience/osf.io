@@ -98,7 +98,7 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         last_log = self.project.logs[-1]
         assert_equal(last_log.action, 'googledrive_folder_selected')
         params = last_log.params
-        assert_equal(params['folder_name'], 'Google Drive/ My Folder')
+        assert_equal(params['folder_name'], ' My Folder')
 
     def test_googledrive_import_user_auth(self):
         url = self.project.api_url_for('googledrive_import_user_auth', auth=self.user.auth)
