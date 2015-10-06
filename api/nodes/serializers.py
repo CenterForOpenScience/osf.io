@@ -11,7 +11,7 @@ from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
-from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField
+from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField, JSONAPIListField
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -52,7 +52,7 @@ class NodeSerializer(JSONAPISerializer):
     registration = ser.BooleanField(read_only=True, source='is_registration')
     collection = ser.BooleanField(read_only=True, source='is_folder')
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
-    tags = ser.ListField(child=NodeTagField(), required=False)
+    tags = JSONAPIListField(child=NodeTagField(), required=False)
 
     # Public is only write-able by admins--see update method
     public = ser.BooleanField(source='is_public', required=False,
