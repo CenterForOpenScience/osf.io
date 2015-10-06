@@ -10,9 +10,9 @@ Changes:
  - Attach external account to all node settings
 
 First, run the following in a mongo shell:
-    db.getCollection('boxnodesettings').update({'user_settings': {'$type': 2}}, {$rename: { user_settings: 'foreign_user_settings'}}, {multi: true})
+    db.getCollection('googledrivenodesettings').update({'user_settings': {'$type': 2}}, {$rename: { user_settings: 'foreign_user_settings'}}, {multi: true})
 
-Then change the user_settings field of BoxNodeSettings to foreign_user_settings
+Then change the user_settings field of GoogleDriveNodeSettings to foreign_user_settings
 """
 
 import sys
@@ -31,7 +31,7 @@ from website.oauth.models import ExternalAccount
 logger = logging.getLogger(__name__)
 
 
-def do_migration(records, dry):
+def do_migration(records):
     for user_addon in records:
         user = user_addon.owner
         old_account = user_addon.oauth_settings
@@ -69,7 +69,7 @@ def do_migration(records, dry):
         ))
 
     # Add external account to authorized nodes
-    for node_addon in GoogleDriveNodeSettings.find():
+    for node in GoogleDriveNodeSettings.find():
         if node.foreign_user_settings is None:
             continue
         logger.info('Migrating user_settings for googledrive {}'.format(node._id))
