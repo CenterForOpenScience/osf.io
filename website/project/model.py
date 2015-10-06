@@ -1891,7 +1891,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         return draft
 
-    def register_node(self, schema, auth, template, data, parent=None):
+    def register_node(self, schema, auth, data, template=None, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1909,6 +1909,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
 
+        template = template or ''
         template = urllib.unquote_plus(template)
         template = to_mongo(template)
 
@@ -1957,7 +1958,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
                 child_registration = node_contained.register_node(
-                    schema, auth, template, data, parent=registered
+                    schema=schema,
+                    auth=auth,
+                    data=data,
+                    template=template,
+                    parent=registered,
                 )
                 if child_registration and not child_registration.primary:
                     registered.nodes.append(child_registration)
