@@ -1735,9 +1735,6 @@ var FGToolbar = {
                         var panelVisible = panelToggle.find('.osf-panel-hide');
                         var panelHidden = panelToggle.find('.osf-panel-show');
 
-                        //panelToggle.removeClass('col-sm-3').addClass('col-sm-1');
-                        //panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
-
                         panelVisible.hide();
                         panelHidden.show();
                     },

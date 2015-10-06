@@ -74,7 +74,8 @@ var SharePopover =  {
                         ])
                     ])
                 ]);
-            }, config: function(element, isInitialized) {
+            },
+            config: function(element, isInitialized) {
                 if(!isInitialized){
                     var button = $(element).popover();
                     button.on('show.bs.popover', function(e){
