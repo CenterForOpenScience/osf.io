@@ -67,13 +67,14 @@ class WaterButlerMixin(object):
     provider_lookup_url_kwarg = 'provider'
 
     def get_file_item(self, item):
+        attrs = item['attributes']
         file_node = FileNode.resolve_class(
-            item['provider'],
-            FileNode.FOLDER if item['kind'] == 'folder'
+            attrs['provider'],
+            FileNode.FOLDER if attrs['kind'] == 'folder'
             else FileNode.FILE
-        ).get_or_create(self.get_node(check_object_permissions=False), item['path'])
+        ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
 
-        file_node.update(None, item, user=self.request.user)
+        file_node.update(None, attrs, user=self.request.user)
 
         self.check_object_permissions(self.request, file_node)
 
