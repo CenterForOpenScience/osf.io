@@ -306,11 +306,9 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
 
         self.node_settings.set_auth(external_account, self.user)
 
-        # mendeley_list_id should have no effect
         self.node_settings.drive_folder_id = None
         assert_true(self.node_settings.has_auth)
 
-        # mendeley_list_id should have no effect
         self.node_settings.drive_folder_id = 'totally fake ID'
         assert_true(self.node_settings.has_auth)
 
