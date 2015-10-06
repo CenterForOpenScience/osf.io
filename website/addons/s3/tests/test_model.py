@@ -229,6 +229,6 @@ class TestCallbacks(OsfTestCase):
         registration = self.project.register_node(
             schema=None,
             auth=Auth(user=self.project.creator),
-            data='hodor'
+            data='hodor',
         )
         assert_false(registration.has_addon('s3'))

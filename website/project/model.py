@@ -3,6 +3,7 @@ import itertools
 import functools
 import os
 import re
+import urllib
 import logging
 import pymongo
 import datetime
@@ -32,7 +33,7 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
-from framework.mongo.utils import to_mongo_key, unique_on
+from framework.mongo.utils import to_mongo, to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
@@ -420,6 +421,14 @@ class NodeLog(StoredObject):
     def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
         if not user:
+            # Handle legacy non-registered users, which were
+            # represented as a dict
+            if isinstance(contributor, dict):
+                if 'nr_name' in contributor:
+                    return {
+                        'fullname': contributor['nr_name'],
+                        'registered': False,
+                    }
             return None
         if self.node:
             fullname = user.display_full_name(node=self.node)
@@ -1882,7 +1891,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         return draft
 
-    def register_node(self, schema, auth, template, data, parent=None):
+    def register_node(self, schema, auth, data, template=None, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1899,6 +1908,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
+
+        template = template or ''
+        template = urllib.unquote_plus(template)
+        template = to_mongo(template)
 
         when = datetime.datetime.utcnow()
 
@@ -1921,7 +1934,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta = data
+        registered.registered_meta[template] = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
@@ -1945,7 +1958,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
                 child_registration = node_contained.register_node(
-                    schema, auth, data, parent=registered
+                    schema=schema,
+                    auth=auth,
+                    data=data,
+                    template=template,
+                    parent=registered,
                 )
                 if child_registration and not child_registration.primary:
                     registered.nodes.append(child_registration)
@@ -2554,6 +2571,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 self.save()
 
             project_signals.contributor_added.send(self, contributor=contributor)
+
             return True
 
         # Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.

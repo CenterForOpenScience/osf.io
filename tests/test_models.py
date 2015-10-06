@@ -1848,11 +1848,16 @@ class TestNode(OsfTestCase):
             Q('schema_version', 'eq', 1)
         )
         data = {'some': 'data'}
-        reg = root.register_node(meta_schema, self.consolidate_auth, data)
+        reg = root.register_node(
+            schema=meta_schema,
+            auth=self.auth,
+            data=data,
+            template=meta_schema.name,
+        )
         r1 = reg.nodes[0]
         r1a = r1.nodes[0]
         for r in [reg, r1, r1a]:
-            assert_equal(r.registered_meta, data)
+            assert_equal(r.registered_meta, {meta_schema.name: data})
             assert_equal(r.registered_schema, meta_schema)
 
     def test_create_draft_registration(self):
@@ -3345,10 +3350,14 @@ class TestRegisterNode(OsfTestCase):
             project=self.project,
             user=user2,
             data='Something else',
+            template='Test Schema',
         )
         assert_equal(registration2.registered_from, self.project)
         assert_equal(registration2.registered_user, user2)
-        assert_equal(registration2.registered_meta, 'Something else')
+        assert_equal(
+            registration2.registered_meta,
+            {'Test Schema': 'Something else'}
+        )
 
         # Test default user
         assert_equal(self.registration.registered_user, self.user)

@@ -206,6 +206,7 @@ class RegistrationFactory(AbstractNodeFactory):
             schema=schema,
             auth=auth,
             data=data,
+            template=template,
         )
 
         def add_approval_step(reg):
