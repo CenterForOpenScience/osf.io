@@ -581,6 +581,7 @@ def update_node(auth, node, **kwargs):
         updated_fields_dict = {
             key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
             for key in updated_field_names
+            if key != 'logs'
         }
         return {
             'updated_fields': updated_fields_dict
