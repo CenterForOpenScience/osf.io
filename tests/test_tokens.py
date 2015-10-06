@@ -23,7 +23,7 @@ REJECTED_MSG = "This registration {0} has been rejected."
 class MockAuth(object):
 
     def __init__(self, user):
-        self.user = user        
+        self.user = user
         self.logged_in = True
 
 mock_auth = lambda user: mock.patch('framework.auth.Auth.from_kwargs', mock.Mock(return_value=MockAuth(user)))

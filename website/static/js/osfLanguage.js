@@ -77,7 +77,7 @@ module.exports = {
     apiOauth2Application: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
         deactivateConfirm: 'Are you sure you want to deactivate this application for all users and revoke all access tokens? This cannot be reversed.',
-        deactivateError: 'Could not delete application. ' + REFRESH_OR_SUPPORT,
+        deactivateError: 'Could not deactivate application. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         dataFetchError: 'Data not loaded. ' + REFRESH_OR_SUPPORT,
         dataListFetchError: 'Could not load list of developer applications at this time. ' + REFRESH_OR_SUPPORT,
         dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',

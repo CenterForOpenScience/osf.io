@@ -1,9 +1,13 @@
 import re
 import functools
+import operator
 
 from modularodm import Q
 from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
+
+from api.base.exceptions import InvalidFilterError
+from api.base import utils
 
 
 class ODMOrderingFilter(OrderingFilter):
@@ -27,16 +31,9 @@ def query_params_to_fields(query_params):
     }
 
 
-# Used to make intersection "reduce-able"
-def intersect(x, y):
-    return x & y
-
-
 class FilterMixin(object):
     """ View mixin with helper functions for filtering. """
 
-    TRUTHY = set(['true', 'True', 1, '1'])
-    FALSY = set(['false', 'False', 0, '0'])
     DEFAULT_OPERATOR = 'eq'
 
     def __init__(self, *args, **kwargs):
@@ -62,9 +59,9 @@ class FilterMixin(object):
         field_type = type(self.serializer_class._declared_fields[field])
         value = value.strip()
         if field_type == ser.BooleanField:
-            if value in self.TRUTHY:
+            if utils.is_truthy(value):
                 return True
-            elif value in self.FALSY:
+            elif utils.is_falsy(value):
                 return False
             # TODO Should we handle if the value is neither TRUTHY nor FALSY (first add test for how we'd expect it to
             # work, then ensure that it works that way).
@@ -86,7 +83,7 @@ class ODMFilterMixin(FilterMixin):
 
     field_comparison_operators = {
         ser.CharField: 'icontains',
-        ser.ListField: 'in',
+        ser.ListField: 'contains',
     }
 
     def __init__(self, *args, **kwargs):
@@ -125,13 +122,15 @@ class ODMFilterMixin(FilterMixin):
 
         fields_dict = query_params_to_fields(query_params)
         if fields_dict:
-            query_parts = [
-                Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value, field=key))
-                for key, value in fields_dict.items() if self.is_filterable_field(key=key)
-            ]
-            # TODO Ensure that if you try to filter on an invalid field, it returns a useful error. Fix related test.
+            query_parts = []
+            for key, value in fields_dict.items():
+                if self.is_filterable_field(key=key):
+                    query = Q(self.convert_key(key=key), self.get_comparison_operator(key=key), self.convert_value(value=value, field=key))
+                    query_parts.append(query)
+                else:
+                    raise InvalidFilterError
             try:
-                query = functools.reduce(intersect, query_parts)
+                query = functools.reduce(operator.and_, query_parts)
             except TypeError:
                 query = None
         else:
@@ -173,11 +172,14 @@ class ListFilterMixin(FilterMixin):
             for field_name, value in fields_dict.items():
                 if self.is_filterable_field(key=field_name):
                     queryset = queryset.intersection(set(self.get_filtered_queryset(field_name, value, default_queryset)))
+                else:
+                    raise InvalidFilterError
         return list(queryset)
 
     def get_filtered_queryset(self, field_name, value, default_queryset):
         """filters default queryset based on the serializer field type"""
         field = self.serializer_class._declared_fields[field_name]
+        field_name = field.source or field_name
 
         if isinstance(field, ser.SerializerMethodField):
             return_val = [item for item in default_queryset if self.get_serializer_method(field_name)(item) == self.convert_value(value, field_name)]

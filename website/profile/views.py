@@ -408,7 +408,7 @@ def oauth_application_detail(auth, **kwargs):
         raise HTTPError(http.NOT_FOUND)
     if record.owner != auth.user:
         raise HTTPError(http.FORBIDDEN)
-    if record.active is False:
+    if record.is_active is False:
         raise HTTPError(http.GONE)
 
     app_detail_url = api_v2_url("applications/{}/".format(client_id))  # Send request to this URL

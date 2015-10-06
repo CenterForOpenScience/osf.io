@@ -99,16 +99,16 @@ var isValidBucketName = function(bucketName, allowPeriods) {
         isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
     } else {isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d-]{2,61}[^.]$/;}
 
-    return isValidBucket.exec(bucketName) == null;
+    return isValidBucket.test(bucketName);
 };
 
 ViewModel.prototype.selectBucket = function() {
     var self = this;
 
     self.loading(true);
-    
+
     var ret = $.Deferred();
-    if (isValidBucketName(self.selectedBucket(), false)) {
+    if (!isValidBucketName(self.selectedBucket(), false)) {
         self.loading(false);
         bootbox.alert({
             title: 'Invalid bucket name',
@@ -116,7 +116,7 @@ ViewModel.prototype.selectBucket = function() {
         });
         ret.reject();
     } else {
-        $osf.postJSON(            
+        $osf.postJSON(
                 self.urls().set_bucket, {
                     's3_bucket': self.selectedBucket(),
                     'encrypt_uploads': self.encryptUploads()
@@ -506,5 +506,6 @@ var S3Config = function(selector, settings) {
 
 module.exports = {
     S3NodeConfig: S3Config,
-    _S3NodeConfigViewModel: ViewModel
+    _S3NodeConfigViewModel: ViewModel,
+    _isValidBucketName: isValidBucketName
 };

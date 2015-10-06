@@ -13,14 +13,16 @@ describe('apiApplicationsInternals', () => {
         var vmd;
         // Sample data returned by an API call
         var sampleData = {
-            client_id: '0123456789abcdef0123456789abcdef',
-            client_secret: 'abcdefghij0123456789abcdefghij0123456789',
-            owner: '14abc',
-            name: 'Of course it has a name',
-            description: 'Always nice to have this',
-            date_created: '2015-07-21T16:28:28.037000',
-            home_url: 'http://tumblr.com',
-            callback_url: 'http://goodwill.org',
+            attributes: {
+                client_id: '0123456789abcdef0123456789abcdef',
+                client_secret: 'abcdefghij0123456789abcdefghij0123456789',
+                owner: '14abc',
+                name: 'Of course it has a name',
+                description: 'Always nice to have this',
+                date_created: '2015-07-21T16:28:28.037000',
+                home_url: 'http://tumblr.com',
+                callback_url: 'http://goodwill.org'
+            },
             links: {
                 self: 'http://localhost:8000/v2/users/14abc/applications/0123456789abcdef0123456789abcdef/',
                 html: 'http://localhost:5000/settings/applications/0123456789abcdef0123456789abcdef/'
@@ -35,14 +37,15 @@ describe('apiApplicationsInternals', () => {
         // TODO: Test that changing to incorrect data makes us fail validation
 
         it('loads data into the specified fields', () => {
-            assert.equal(sampleData.name, vmd.name());
-            assert.equal(sampleData.description, vmd.description());
-            assert.equal(sampleData.home_url, vmd.homeUrl());
-            assert.equal(sampleData.callback_url, vmd.callbackUrl());
+            var attributes = sampleData.attributes;
+            assert.equal(attributes.name, vmd.name());
+            assert.equal(attributes.description, vmd.description());
+            assert.equal(attributes.home_url, vmd.homeUrl());
+            assert.equal(attributes.callback_url, vmd.callbackUrl());
 
-            assert.equal(sampleData.owner, vmd.owner);
-            assert.equal(sampleData.client_id, vmd.clientId);
-            assert.equal(sampleData.client_secret, vmd.clientSecret());
+            assert.equal(attributes.owner, vmd.owner);
+            assert.equal(attributes.client_id, vmd.clientId);
+            assert.equal(attributes.client_secret, vmd.clientSecret());
 
             // TODO: May change when links field changes
             assert.equal(sampleData.links.html, vmd.webDetailUrl);
