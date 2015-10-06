@@ -170,8 +170,8 @@ def get_auth(auth, **kwargs):
             auth.user = User.from_cookie(request.args.get('cookie'))
 
     try:
-        data = jwt.decode(request.args.get('payload', ''), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)
-    except jwt.InvalidTokenError:
+        data = jwt.decode(request.args.get('payload', ''), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+    except (jwt.InvalidTokenError, KeyError):
         raise HTTPError(httplib.FORBIDDEN)
 
     try:
@@ -200,13 +200,15 @@ def get_auth(auth, **kwargs):
 
     return jwt.encode({
         'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
-        'credentials': credentials,
-        'settings': waterbutler_settings,
-        'callback_url': node.api_url_for(
-            ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
-            _absolute=True,
-        ),
+        'data': {
+            'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
+            'credentials': credentials,
+            'settings': waterbutler_settings,
+            'callback_url': node.api_url_for(
+                ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
+                _absolute=True,
+            ),
+        }
     }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)
 
 

@@ -100,17 +100,17 @@ class TestAddonAuth(OsfTestCase):
         self.node_addon.save()
 
     def build_url(self, **kwargs):
-        options = {'payload': jwt.encode(dict(dict(
+        options = {'payload': jwt.encode({'data': dict(dict(
             action='download',
             nid=self.node._id,
             provider=self.node_addon.config.short_name,
-        ), **kwargs), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)}
+        ), **kwargs)}, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)}
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):
         url = self.build_url()
         res = self.app.get(url, auth=self.user.auth)
-        data = jwt.decode(res.json, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)
+        data = jwt.decode(res.json, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
