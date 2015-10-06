@@ -13,7 +13,6 @@ from framework.exceptions import HTTPError
 from framework.status import push_status_message
 
 from website.exceptions import NodeStateError
-from website.util import sanitize
 from website.util.permissions import ADMIN
 from website.project.decorators import (
     must_be_valid_project,

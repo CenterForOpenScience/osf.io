@@ -156,7 +156,7 @@ var Question = function(data, id) {
     // A computed to allow rate-limiting save calls
     self.delayedValue = ko.computed(function() {
         return self.value();
-    }).extend({ rateLimit: { method: "notifyWhenChangesStop", timeout: 1000 } });
+    }).extend({ rateLimit: { method: 'notifyWhenChangesStop', timeout: 1000 } });
 
     self.extra = {};
 
