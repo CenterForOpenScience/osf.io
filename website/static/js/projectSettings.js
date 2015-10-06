@@ -140,4 +140,4 @@ var getConfirmationCode = function(nodeType) {
 module.exports = {
     ProjectSettings: ProjectSettings,
     getConfirmationCode: getConfirmationCode
-}
+};
