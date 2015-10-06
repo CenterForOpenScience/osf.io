@@ -1357,7 +1357,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         # regression test for changes in filter fields
         # fullname is now full_name
         url_fullname = '/{}nodes/{}/contributors/?filter[fullname]=foo'.format(API_BASE, self.project._id)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url_fullname, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
@@ -1365,11 +1365,11 @@ class TestNodeContributorFiltering(ApiTestCase):
 
         # middle_name is now middle_names
         url_middle_name = '/{}nodes/{}/contributors/?filter[middle_name]=foo'.format(API_BASE, self.project._id)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        res = self.app.get(url_middle_name, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')        
+        assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')
 
 class TestNodeContributorAdd(NodeCRUDTestCase):
 
