@@ -5,7 +5,14 @@ var fileBrowser = require('../fileViewTreebeard');
 var nodeApiUrl = window.contextVars.node.urls.api;
 
 $(document).ready(function() {
-
+    // Treebeard Files view
+    $.ajax({
+        url: nodeApiUrl + 'files/grid/'
+    })
+    .done(function (data) {
+        new fileBrowser(data);
+        $('#sharebutton').removeClass('disabled');
+    });
 
     var panelToggle = $('.panel-toggle');
     var panelExpand = $('.panel-expand');
