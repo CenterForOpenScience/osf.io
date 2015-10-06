@@ -73,8 +73,8 @@
                 </a>
                 <div class="progress progress-bar-md">
                     <div class="progress-bar progress-bar-success" role="progressbar" aria-valuemin="0" aria-valuemax="100"
-                         data-bind="attr.aria-completion: getCompletion(),
-                                    style: {width: getCompletion() + '%'}">
+                         data-bind="attr.aria-completion: $root.draft().completion(),
+                                    style: {width: $root.draft().completion() + '%'}">
                         <span class="sr-only"></span>
                     </div>
                 </div>

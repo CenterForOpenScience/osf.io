@@ -338,10 +338,10 @@ var Draft = function(params, metaSchema) {
             $.each(schema.pages, function(i, page) {
                 $.each(page.questions, function(qid, question) {
                     var q = self.schemaData[qid];
-                    if ( q && (q.value || '').trim() )
+                    if ( q && ((q.value || '').trim() !== ''))
                         complete++;
+                    total++;
                 });
-                total++;
     		    });
             return Math.ceil(100 * (complete / total));
         }
@@ -733,10 +733,6 @@ RegistrationEditor.prototype.create = function(schemaData) {
         schema_version: metaSchema.version,
         schema_data: schemaData
     }).then(self.updateData.bind(self));
-};
-RegistrationEditor.prototype.getCompletion = function() {
-    var self = this;
-    return self.draft().completion();
 };
 RegistrationEditor.prototype.putSaveData = function(payload) {
     var self = this;
