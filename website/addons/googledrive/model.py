@@ -26,8 +26,8 @@ class GoogleDriveProvider(ExternalProvider):
     client_id = drive_settings.CLIENT_ID
     client_secret = drive_settings.CLIENT_SECRET
 
-    auth_url_base = "https://accounts.google.com/o/oauth2/auth?access_type=offline&approval_prompt=force"
-    callback_url = 'https://www.googleapis.com/oauth2/v3/token'
+    auth_url_base = '{}{}'.format(drive_settings.OAUTH_BASE_URL, 'auth?access_type=offline&approval_prompt=force')
+    callback_url = '{}{}'.format(drive_settings.API_BASE_URL, 'oauth2/v3/token')
 
     default_scopes = drive_settings.OAUTH_SCOPE
     _auth_client = GoogleAuthClient()
@@ -99,7 +99,6 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         """Authenticated ExternalProvider instance"""
         if self._api is None:
             self._api = GoogleDriveProvider(self.external_account)
-            #self._api.account = self.external_account
         return self._api
 
     @property
@@ -137,7 +136,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         """
         self.drive_folder_id = folder['id']
         self.folder_path = folder['path']
-        self.drive_folder_name = folder['name']
+        self.drive_folder_name = self.folder_name()
 
         if self.external_account not in self.user_settings.external_accounts:
             # Tell the user's addon settings that this node is connecting
@@ -169,7 +168,6 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         elif self.drive_folder_id == 'root':
             return 'Full Google Drive'
         else:
-            # folder = self.folder_metadata(self.drive_folder_id)
             return self.drive_folder_name
 
     def serialize_waterbutler_credentials(self):
@@ -190,7 +188,6 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         }
 
     def create_waterbutler_log(self, auth, action, metadata):
-        # cleaned_path = clean_path(metadata['path'])
         url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'], provider='googledrive')
 
         self.owner.add_log(
@@ -288,7 +285,6 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 message += (
                     u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
-            #
             return message
 
     def after_delete(self, node, user):
