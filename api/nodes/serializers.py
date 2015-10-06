@@ -189,7 +189,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)
 
-    permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
+    permissions = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, source='permission', required=False, allow_null=True,
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
 
