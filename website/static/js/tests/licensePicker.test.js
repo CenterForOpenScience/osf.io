@@ -56,7 +56,7 @@ describe('LicensePicker', () => {
     describe('#save', () => {
         var dialogStub;
         var ajaxStub;
-        beforeEach(() => {            
+        beforeEach(() => {
             dialogStub = sinon.stub(bootbox, 'dialog');
             ajaxStub = sinon.stub($, 'ajax', function() {
                 var ret = $.Deferred();
@@ -95,9 +95,9 @@ describe('LicensePicker', () => {
                     contentType: 'application/json',
                     data: JSON.stringify(payload)
                 };
-                assert.isTrue(ajaxStub.calledWith(args));                             
+                assert.isTrue(ajaxStub.calledWith(args));
                 done();
-            }); 
+            });
         });
     });
 });
