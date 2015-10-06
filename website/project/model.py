@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import itertools
+import functools
 import os
 import re
+import urllib
 import logging
 import pymongo
 import datetime
@@ -31,7 +33,7 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
-from framework.mongo.utils import to_mongo_key, unique_on
+from framework.mongo.utils import to_mongo, to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
@@ -84,10 +86,23 @@ class MetaSchema(StoredObject):
     schema = fields.DictionaryField()
     category = fields.StringField()
 
-    # Deprecated legacy field
+    # Version of the Knockout metadata renderer to use (e.g. if data binds
+    # change)
     metadata_version = fields.IntegerField()
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = fields.IntegerField()
+
+    @property
+    def requires_approval(self):
+        return self.schema.get('config', {}).get('requiresApproval', False)
+
+    @property
+    def fulfills(self):
+        return self.schema.get('config', {}).get('fulfills', [])
+
+    @property
+    def messages(self):
+        return self.schema.get('config', {}).get('messages', {})
 
 def ensure_schema(schema, name, version=1):
     try:
@@ -111,6 +126,7 @@ def ensure_schemas():
     """
     for schema in OSF_META_SCHEMAS:
         ensure_schema(schema, schema['name'], version=schema.get('version', 1))
+
 
 class MetaData(GuidStoredObject):
 
@@ -405,6 +421,14 @@ class NodeLog(StoredObject):
     def _render_log_contributor(self, contributor, anonymous=False):
         user = User.load(contributor)
         if not user:
+            # Handle legacy non-registered users, which were
+            # represented as a dict
+            if isinstance(contributor, dict):
+                if 'nr_name' in contributor:
+                    return {
+                        'fullname': contributor['nr_name'],
+                        'registered': False,
+                    }
             return None
         if self.node:
             fullname = user.display_full_name(node=self.node)
@@ -504,9 +528,16 @@ def validate_title(value):
     if value is None or not value.strip():
         raise ValidationValueError('Title cannot be blank.')
 
+    value = sanitize.strip_html(value)
+
+    if value is None or not value.strip():
+        raise ValidationValueError('Invalid title.')
+
     if len(value) > 200:
         raise ValidationValueError('Title cannot exceed 200 characters.')
+
     return True
+
 
 def validate_user(value):
     if value != {}:
@@ -515,11 +546,13 @@ def validate_user(value):
             raise ValidationValueError('User does not exist.')
     return True
 
+
 class NodeUpdateError(Exception):
     def __init__(self, reason, key, *args, **kwargs):
         super(NodeUpdateError, self).__init__(*args, **kwargs)
         self.key = key
         self.reason = reason
+
 
 class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
@@ -552,6 +585,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'is_deleted',
         'wiki_pages_current',
         'is_retracted',
+        'node_license',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -574,6 +608,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'title',
         'description',
         'category',
+        'node_license',
     ]
 
     _id = fields.StringField(primary=True)
@@ -619,6 +654,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
 
+    # Representation of a nodes's license
+    # {
+    #  'id':  <id>,
+    #  'name': <name>,
+    #  'text': <license text>,
+    #  'year' (optional): <year>,
+    #  'copyrightHolders' (optional): <copyright_holders>
+    # }
+    node_license = fields.DictionaryField(default=dict)
+
     # One of 'public', 'private'
     # TODO: Add validator
     comment_level = fields.StringField(default='private')
@@ -658,7 +703,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     }
 
     def __init__(self, *args, **kwargs):
+
+        tags = kwargs.pop('tags', [])
+
         super(Node, self).__init__(*args, **kwargs)
+
+        # Ensure when Node is created with tags through API, tags are added to Tag
+        if tags:
+            for tag in tags:
+                self.add_tag(tag, Auth(self.creator), save=False, log=False)
 
         if kwargs.get('_is_loaded', False):
             return
@@ -679,6 +732,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pk(self):
         return self._id
+
+    @property
+    def license(self):
+        node_license = self.node_license
+        if not node_license and self.parent_node:
+            return self.parent_node.license
+        return node_license
 
     @property
     def category_display(self):
@@ -703,7 +763,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.parent_node:
                 return self.parent_node.is_pending_registration
             return False
-        return self.registration_approval.pending_approval
+        return self.registration_approval.is_pending_approval
 
     @property
     def is_registration_approved(self):
@@ -727,7 +787,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.parent_node:
                 return self.parent_node.is_pending_retraction
             return False
-        return self.retraction.pending_approval
+        return self.retraction.is_pending_approval
 
     @property
     def embargo_end_date(self):
@@ -743,7 +803,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.parent_node:
                 return self.parent_node.is_pending_embargo
             return False
-        return self.embargo.pending_approval
+        return self.embargo.is_pending_approval
 
     @property
     def is_pending_embargo_for_existing_registration(self):
@@ -876,6 +936,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
 
+        :param User user: User to grant permission to
         :param str permission: Permission to grant
         :param bool save: Save changes
         :raises: ValueError if user already has permission
@@ -1079,8 +1140,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self.is_contributor(auth.user)
 
     def update(self, fields, auth=None, save=True):
+        """Update the node with the given fields.
+
+        :param dict fields: Dictionary of field_name:value pairs.
+        :param Auth auth: Auth object for the user making the update.
+        :param bool save: Whether to save after updating the object.
+        """
         if self.is_registration:
             raise NodeUpdateError(reason="Registered content cannot be updated")
+        if not fields:  # Bail out early if there are no fields to update
+            return False
         values = {}
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
@@ -1184,6 +1253,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             need_update = False
         if need_update:
             self.update_search()
+
+        if 'node_license' in saved_fields:
+            children = [c for c in self.get_descendants_recursive(
+                include=lambda n: n.node_license == {}
+            )]
+            # this returns generator, that would get unspooled anyways
+            if children:
+                Node.bulk_update_search(children)
 
         # This method checks what has changed.
         if settings.PIWIK_HOST and update_piwik:
@@ -1575,7 +1652,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         validate_title(title)
 
         original_title = self.title
-        self.title = title
+        self.title = sanitize.strip_html(title)
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
@@ -1599,7 +1676,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param bool save: Save self after updating.
         """
         original = self.description
-        self.description = description
+        self.description = sanitize.strip_html(description)
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={
@@ -1619,6 +1696,16 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         from website import search
         try:
             search.search.update_node(self)
+        except search.exceptions.SearchUnavailableError as e:
+            logger.exception(e)
+            log_exception()
+
+    @classmethod
+    def bulk_update_search(cls, nodes):
+        from website import search
+        try:
+            serialize = functools.partial(search.search.update_node, bulk=True)
+            search.search.bulk_update_nodes(serialize, nodes)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1754,6 +1841,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
+        forked.node_license = original.license
 
         # Forks default to private status
         forked.is_public = False
@@ -1803,7 +1891,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         return draft
 
-    def register_node(self, schema, auth, data, parent=None):
+    def register_node(self, schema, auth, data, template=None, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1820,6 +1908,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
+
+        template = template or ''
+        template = urllib.unquote_plus(template)
+        template = to_mongo(template)
 
         when = datetime.datetime.utcnow()
 
@@ -1842,7 +1934,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta = data
+        registered.registered_meta[template] = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
@@ -1850,6 +1942,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.node_license = original.license
 
         registered.save()
 
@@ -1865,7 +1958,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
                 child_registration = node_contained.register_node(
-                    schema, auth, data, parent=registered
+                    schema=schema,
+                    auth=auth,
+                    data=data,
+                    template=template,
+                    parent=registered,
                 )
                 if child_registration and not child_registration.primary:
                     registered.nodes.append(child_registration)
@@ -1893,23 +1990,24 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if save:
                 self.save()
 
-    def add_tag(self, tag, auth, save=True):
+    def add_tag(self, tag, auth, save=True, log=True):
         if tag not in self.tags:
             new_tag = Tag.load(tag)
             if not new_tag:
                 new_tag = Tag(_id=tag)
             new_tag.save()
             self.tags.append(new_tag)
-            self.add_log(
-                action=NodeLog.TAG_ADDED,
-                params={
-                    'parent_node': self.parent_id,
-                    'node': self._primary_key,
-                    'tag': tag,
-                },
-                auth=auth,
-                save=False,
-            )
+            if log:
+                self.add_log(
+                    action=NodeLog.TAG_ADDED,
+                    params={
+                        'parent_node': self.parent_id,
+                        'node': self._primary_key,
+                        'tag': tag,
+                    },
+                    auth=auth,
+                    save=False,
+                )
             if save:
                 self.save()
 
@@ -2476,7 +2574,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
             return True
 
-        #Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
+        # Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
         elif contrib_to_add in self.contributors and permissions is not None:
             self.set_permissions(contrib_to_add, permissions)
             if save:
@@ -2562,6 +2660,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
         """
+        if auth and not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError('Must be an admin to change privacy settings.')
         if permissions == 'public' and not self.is_public:
             if self.is_registration:
                 if self.is_pending_embargo:
@@ -2920,9 +3020,9 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     def require_approval(self, user):
         if not self.is_registration:
-            raise NodeStateError('Only registrations may be embargoed')
+            raise NodeStateError('Only registrations can require registration approval')
         if not self.has_permission(user, 'admin'):
-            raise PermissionsError('Only admins may embargo a registration')
+            raise PermissionsError('Only admins can initiate a registration approval')
 
         approval = self._initiate_approval(user)
 
@@ -3022,7 +3122,7 @@ class PrivateLink(StoredObject):
             "id": self._id,
             "date_created": iso8601format(self.date_created),
             "key": self.key,
-            "name": self.name,
+            "name": sanitize.unescape_entities(self.name),
             "creator": {'fullname': self.creator.fullname, 'url': self.creator.profile_url},
             "nodes": [{'title': x.title, 'url': x.url, 'scale': str(self.node_scale(x)) + 'px', 'category': x.category}
                       for x in self.nodes if not x.is_deleted],
@@ -3031,13 +3131,20 @@ class PrivateLink(StoredObject):
 
 
 class Sanction(StoredObject):
-    """Sanction object is a generic way to track approval states"""
-
+    """Sanction class is a generic way to track approval states"""
+    # Tell modularodm not to attach backends
     abstract = True
 
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+
+    # Neither approved not cancelled
     UNAPPROVED = 'unapproved'
+    # Has approval
     APPROVED = 'approved'
+    # Rejected by at least one person
     REJECTED = 'rejected'
+    # One of 'unapproved', 'active', 'cancelled', or 'completed
+    state = fields.StringField(default=UNAPPROVED)
 
     DISPLAY_NAME = 'Sanction'
     # SHORT_NAME must correspond with the associated foreign field to query against,
@@ -3049,8 +3156,15 @@ class Sanction(StoredObject):
     REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {DISPLAY_NAME}'
     REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {DISPLAY_NAME}.'
 
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    # Controls whether or not the Sanction needs unanimous approval or just a single approval
+    ANY = 'any'
+    UNANIMOUS = 'unanimous'
+    mode = UNANIMOUS
+
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
+    # are automatically made ACTIVE by a daily cron job
+    # Use end_date=None for a non-expiring Sanction
     end_date = fields.DateTimeField(default=None)
 
     # Sanction subclasses must have an initiated_by field
@@ -3068,10 +3182,10 @@ class Sanction(StoredObject):
     state = fields.StringField(default='unapproved')
 
     def __repr__(self):
-        return '<Sanction(end_date={self.end_date}) with _id {self._id}>'.format(self=self)
+        return '<Sanction(end_date={self.end_date!r}) with _id {self._id!r}>'.format(self=self)
 
     @property
-    def pending_approval(self):
+    def is_pending_approval(self):
         return self.state == Sanction.UNAPPROVED
 
     @property
@@ -3083,6 +3197,10 @@ class Sanction(StoredObject):
         return self.state == Sanction.REJECTED
 
     def _validate_authorizer(self, user):
+        """Subclasses may choose to provide extra restrictions on who can be an authorizer
+
+        :return Boolean: True if user is allowed to be an authorizer else False
+        """
         return True
 
     def add_authorizer(self, user, approved=False, save=False):
@@ -3111,6 +3229,11 @@ class Sanction(StoredObject):
         return False
 
     def remove_authorizer(self, user):
+        """Remove a user as an authorizer
+
+        :param User user:
+        :return Boolean: True if user is removed else False
+        """
         if user._id not in self.approval_state:
             return False
 
@@ -3119,16 +3242,30 @@ class Sanction(StoredObject):
         return True
 
     def _on_approve(self, user, token):
-        if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
+        """Callback for when a single user approves a Sanction. Calls #_on_complete under two conditions:
+        - mode is ANY and the Sanction has not already been cancelled
+        - mode is UNANIMOUS and all users have given approval
+
+        :param User user:
+        :param str token: user's approval token
+        """
+        if self.mode == self.ANY or all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
             self.state = Sanction.APPROVED
             self._on_complete(user)
 
     def _on_reject(self, user, token):
-        """Early termination of a Sanction"""
+        """Callback for rejection of a Sanction
+
+        :param User user:
+        :param str token: user's approval token
+        """
         raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
 
     def _on_complete(self, user):
-        """When a Sanction has unanimous approval"""
+        """Callback for when a Sanction has approval and enters the ACTIVE state
+
+        :param User user:
+        """
         raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
 
     def approve(self, user, token):
@@ -3280,7 +3417,7 @@ class Embargo(EmailApprovableSanction):
     # show up in any search related fields.
     @property
     def pending_registration(self):
-        return not self.for_existing_registration and self.pending_approval
+        return not self.for_existing_registration and self.is_pending_approval
 
     def __repr__(self):
         parent_registration = None
@@ -3635,6 +3772,17 @@ class RegistrationApproval(EmailApprovableSanction):
         )
 
 
+class DraftRegistrationApproval(Sanction):
+
+    mode = Sanction.ANY
+
+    def _on_complete(self, user, token):
+        pass  # draft approval state gets loaded dynamically from this record
+
+    def _on_reject(self, user, token):
+        pass  # draft approval state gets loaded dynamically from this record
+
+
 class DraftRegistration(AddonModelMixin, StoredObject):
 
     is_draft_registration = True
@@ -3676,81 +3824,97 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     # have already been archived.
     # storage = fields.ForeignField('osfstoragenodesettings')
 
-    # Dictionary field mapping
-    # { 'requiresApproval': true, 'fulfills': [{ 'name': 'Prereg Prize', 'info': <infourl> }]}
-    # config = fields.DictionaryField()
+    approval = fields.ForeignField('draftregistrationapproval', default=None)
 
-    # Dictionary field mapping a draft's states during the review process to their value
-    # { 'isApproved': false, 'isPendingReview': false, 'paymentSent': false }
-    # flags = fields.DictionaryField()
+    # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
+    # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
+    # and these values are added to the DraftRegistration
+    flags = fields.DictionaryField()
+
+    notes = fields.StringField()
 
     def __init__(self, *args, **kwargs):
         super(DraftRegistration, self).__init__(*args, **kwargs)
-        # TODO (samchrisinger): uncomment when we have flags/config
-        #meta_schema = self.registration_schema  # or kwargs.get('registration_schema')
-        #if meta_schema:
-        #    schema = meta_schema.schema
-        #    config = schema.get('config', {})
-        #    self.config = config
-        # TODO: uncomment to set flags
-        #     if not self.registration_schema:
-        #         flags = schema.get('flags', {})
-        #         for flag, value in flags.iteritems():
-        #             self.flags[flag] = value
+        meta_schema = self.registration_schema or kwargs.get('registration_schema')
+        if meta_schema:
+            schema = meta_schema.schema
+            if not self.registration_schema:
+                flags = schema.get('flags', {})
+                for flag, value in flags.iteritems():
+                    self.flags[flag] = value
 
-    # TODO: uncomment to expose approval/review properties
-    #    @property
-    #    def is_pending_review(self):
-    #        return self.flags.get('isPendingReview')
-    #
-    #    @is_pending_review.setter
-    #    def is_pending_review(self, value):
-    #        self.flags['isPendingReview'] = value
-    #
-    #    @property
-    #    def is_approved(self):
-    #        self.flags.get('isApproved')
-    #
-    #    @is_approved.setter
-    #    def is_approved(self, value):
-    #        self.flags['isApproved'] = value
+    @property
+    def requires_approval(self):
+        return self.registration_schema.requires_approval
+
+    @property
+    def is_pending_review(self):
+        return self.approval.is_pending_approval if (self.requires_approval and self.approval) else False
+
+    @property
+    def is_approved(self):
+        if self.requires_approval and not self.approval:
+            return False
+        elif self.requires_approval and self.approval:
+            return self.approval.is_approved
+        else:
+            return True
 
     def update_metadata(self, metadata, save=True):
-        # TODO: uncommnet to disallow editing drafts that are approved or pending approval
+        # TODO(barbour-em): delete or implement in schema
         # if self.is_pending_review or self.is_approved:
         #    raise NodeStateError('Cannot edit while this draft is being reviewed')
+
         changes = []
-        for key, value in metadata.iteritems():
-            old_value = self.registration_metadata.get(key)
+        for question_id, value in metadata.iteritems():
+
+            old_value = self.registration_metadata.get(question_id)
+
+            if old_value:
+                old_comments = old_value.get('comments', [])
+                new_comments = value.get('comments', [])
+
+                #  we are using the `created` attribute sort of as a primary key
+                old_comment_ids = [comment['created'] for comment in old_comments]
+
+                # Handle comment conflicts
+                for old_comment in old_comments:
+                    for new_comment in new_comments:
+                        new_id = new_comment.get('created', [])
+                        # if the primary key is already in use and the old comment is more recent,
+                        if new_id in old_comment_ids and old_comment['lastModified'] > new_comment['lastModified']:
+                            # use the old one instead
+                            loc = new_comments.index(new_comment)
+                            new_comments[loc] = old_comment
+
             if not old_value or old_value.get('value') != value.get('value'):
-                changes.append(key)
+                changes.append(question_id)
+
         self.registration_metadata.update(metadata)
+
         if save:
             self.save()
-        # TODO: uncomment to nullify approval state if edited
-        # project_signals.draft_edited.send(self, changes)
-        # self.after_edit(changes)
+        project_signals.draft_edited.send(changes)
+        self.after_edit(changes)
         return changes
 
     def before_edit(self, auth):
+        # TODO(samchrisinger): Make sure we still need this
         messages = []
-        # TODO: uncomment to provide pre-edit warnings for drafts that are approved or are pending approval
-        # if self.flags.get('isApproved'):
-        #     messages.append('The draft registration you are editing is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.')
-        # if self.flags.get('isPendingReview'):
-        #     messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.')
+        if self.is_approved:
+            messages.append('The draft registration you are editing is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.')
+        if self.flags.get('isPendingReview'):
+            messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be canceled and you will need to submit for approval again.')
         return messages
 
     def after_edit(self, changes):
-        pass
-        # TODO: uncomment when we support review/approval
-        ## revoke approval and review status if changed
-        #if changes:
-        #    self.flags.update({
-        #        'isPendingReview': False,
-        #        'isApproved': False
-        #    })
-        #    self.save()
+
+        if changes:
+            self.flags.update({
+                'isPendingReview': False,
+                'isApproved': False
+            })
+            self.save()
 
     def find_question(self, qid):
         for page in self.registration_schema.schema['pages']:
@@ -3758,26 +3922,25 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                 if question_id == qid:
                     return question
 
-    # TODO: uncomment when we support commenting
-    # def get_comments(self):
-    #    """ Returns a list of all comments made on a draft in the format of :
-    #    [{
-    #      [QUESTION_ID]: {
-    #        'question': [QUESTION],
-    #        'comments': [LIST_OF_COMMENTS]
-    #        }
-    #    },]
-    #    """
-    #
-    #    all_comments = []
-    #    for question_id, value in self.registration_metadata.iteritems():
-    #        all_comments.append({
-    #            question_id: {
-    #                'question': self.find_question(question_id),
-    #                'comments': value['comments'] if 'comments' in value else ''
-    #            }
-    #        })
-    #    return all_comments
+    def get_comments(self):
+        """ Returns a list of all comments made on a draft in the format of :
+        [{
+          [QUESTION_ID]: {
+            'question': [QUESTION],
+            'comments': [LIST_OF_COMMENTS]
+           }
+        },]
+       """
+
+        all_comments = []
+        for question_id, value in self.registration_metadata.iteritems():
+            all_comments.append({
+                question_id: {
+                    'question': self.find_question(question_id),
+                    'comments': value['comments'] if 'comments' in value else ''
+                }
+            })
+        return all_comments
 
     def register(self, auth):
 

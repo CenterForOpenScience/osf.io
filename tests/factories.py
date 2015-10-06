@@ -35,6 +35,7 @@ from website.project.model import (
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.archiver import ARCHIVER_SUCCESS
+from website.project import utils as project_utils
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -205,6 +206,7 @@ class RegistrationFactory(AbstractNodeFactory):
             schema=schema,
             auth=auth,
             data=data,
+            template=template,
         )
 
         def add_approval_step(reg):
@@ -263,10 +265,11 @@ class SanctionFactory(ModularOdmFactory):
 
     @classmethod
     def _create(cls, target_class, approve=False, *args, **kwargs):
-        user = UserFactory()
+        user = kwargs.get('user') or UserFactory()
         sanction = ModularOdmFactory._create(target_class, initiated_by=user, *args, **kwargs)
         reg_kwargs = {
-            'owner': user,
+            'creator': user,
+            'user': user,
             sanction.SHORT_NAME: sanction
         }
         RegistrationFactory(**reg_kwargs)

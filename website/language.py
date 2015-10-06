@@ -1,4 +1,3 @@
-
 # -*- coding: utf-8 -*-
 """Various text used throughout the website, e.g. status messages, errors, etc.
 """
@@ -103,7 +102,6 @@ BEFORE_FORK_HAS_POINTERS = (
 )
 
 REGISTRATION_INFO = '''
-
 <p>Registration creates a frozen version of the project that can never be
 edited or deleted but can be retracted. You can register your project by
 selecting a registration form, entering information about your project, and

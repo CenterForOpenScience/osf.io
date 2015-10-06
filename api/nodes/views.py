@@ -3,6 +3,7 @@ import requests
 from modularodm import Q
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import PermissionDenied, ValidationError, NotFound
+from rest_framework.status import is_server_error
 
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
@@ -15,18 +16,20 @@ from api.users.views import UserMixin
 from api.nodes.serializers import (
     NodeSerializer,
     NodeLinksSerializer,
+    NodeDetailSerializer,
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
-    NodeContributorDetailSerializer,
+    NodeContributorDetailSerializer
 )
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
-    ReadOnlyIfRegistration,
     ContributorOrPublicForPointers,
-    ContributorDetailPermissions
+    ContributorDetailPermissions,
+    ReadOnlyIfRegistration,
 )
+from api.base.exceptions import ServiceUnavailableError
 
 from website.exceptions import NodeStateError
 from website.files.models import FileNode
@@ -43,7 +46,7 @@ class NodeMixin(object):
     serializer_class = NodeSerializer
     node_lookup_url_kwarg = 'node_id'
 
-    def get_node(self):
+    def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
             Node,
             self.kwargs[self.node_lookup_url_kwarg],
@@ -54,8 +57,71 @@ class NodeMixin(object):
         if node.is_folder:
             raise NotFound
         # May raise a permission denied
-        self.check_object_permissions(self.request, node)
+        if check_object_permissions:
+            self.check_object_permissions(self.request, node)
         return node
+
+class WaterButlerMixin(object):
+
+    path_lookup_url_kwarg = 'path'
+    provider_lookup_url_kwarg = 'provider'
+
+    def get_file_item(self, item):
+        file_node = FileNode.resolve_class(
+            item['provider'],
+            FileNode.FOLDER if item['kind'] == 'folder'
+            else FileNode.FILE
+        ).get_or_create(self.get_node(check_object_permissions=False), item['path'])
+
+        file_node.update(None, item, user=self.request.user)
+
+        self.check_object_permissions(self.request, file_node)
+
+        return file_node
+
+    def fetch_from_waterbutler(self):
+        node = self.get_node(check_object_permissions=False)
+        path = self.kwargs[self.path_lookup_url_kwarg]
+        provider = self.kwargs[self.provider_lookup_url_kwarg]
+
+        if provider == 'osfstorage':
+            # Kinda like /me for a user
+            # The one odd case where path is not really path
+            if path == '/':
+                obj = node.get_addon('osfstorage').get_root()
+            else:
+                obj = get_object_or_error(
+                    OsfStorageFileNode,
+                    Q('node', 'eq', node._id) &
+                    Q('_id', 'eq', path.strip('/')) &
+                    Q('is_file', 'eq', not path.endswith('/'))
+                )
+
+            self.check_object_permissions(self.request, obj)
+
+            return obj
+
+        url = waterbutler_api_url_for(node._id, provider, path, meta=True)
+
+        waterbutler_request = requests.get(
+            url,
+            cookies=self.request.COOKIES,
+            headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
+        )
+
+        if waterbutler_request.status_code == 401:
+            raise PermissionDenied
+
+        if waterbutler_request.status_code == 404:
+            raise NotFound
+
+        if is_server_error(waterbutler_request.status_code):
+            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
+
+        try:
+            return waterbutler_request.json()['data']
+        except KeyError:
+            raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
@@ -122,6 +188,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     project, and children nodes may have a category of project.
     """
     permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
@@ -130,7 +197,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
-    serializer_class = NodeSerializer
+    serializer_class = NodeDetailSerializer
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -230,6 +297,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         removed = node.remove_contributor(instance, auth)
         if not removed:
             raise ValidationError("Must have at least one registered admin contributor")
+
 
 # TODO: Support creating registrations
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
@@ -352,6 +420,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         ContributorOrPublicForPointers,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ReadOnlyIfRegistration,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -384,7 +453,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeFilesList(generics.ListAPIView, NodeMixin):
+class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
     """Files attached to a node.
 
     This gives a list of all of the files that are on your project. Because this works with external services, some
@@ -413,69 +482,53 @@ class NodeFilesList(generics.ListAPIView, NodeMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublic,
-        ReadOnlyIfRegistration,
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
         base_permissions.TokenHasScope,
     )
+
+    serializer_class = FileSerializer
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    serializer_class = FileSerializer
-
-    def get_file_item(self, item):
-        file_node = FileNode.resolve_class(
-            item['provider'],
-            FileNode.FOLDER if item['kind'] == 'folder'
-            else FileNode.FILE
-        ).get_or_create(self.get_node(), item['path'])
-
-        file_node.update(None, item, user=self.request.user)
-
-        return file_node
-
     def get_queryset(self):
         # Don't bother going to waterbutler for osfstorage
-        if self.kwargs['provider'] == 'osfstorage':
-            self.check_object_permissions(self.request, self.get_node())
-            # Kinda like /me for a user
-            # The one odd case where path is not really path
-            if self.kwargs['path'] == '/':
-                return list(self.get_node().get_addon('osfstorage').get_root().children)
+        files_list = self.fetch_from_waterbutler()
 
-            fobj = OsfStorageFileNode.find_one(
-                Q('node', 'eq', self.get_node()._id) &
-                Q('path', 'eq', self.kwargs['path'])
-            )
+        if isinstance(files_list, list):
+            return [self.get_file_item(file) for file in files_list]
 
-            if fobj.is_file:
-                return [fobj]
+        if isinstance(files_list, dict) or getattr(files_list, 'is_file', False):
+            # We should not have gotten a file here
+            raise NotFound
 
-            return list(fobj.children)
+        return list(files_list.children)
 
-        url = waterbutler_api_url_for(
-            self.get_node()._id,
-            self.kwargs['provider'],
-            self.kwargs['path'],
-            meta=True
-        )
 
-        waterbutler_request = requests.get(
-            url,
-            cookies=self.request.COOKIES,
-            headers={'Authorization': self.request.META.get('HTTP_AUTHORIZATION')},
-        )
-        if waterbutler_request.status_code == 401:
-            raise PermissionDenied
-        try:
-            files_list = waterbutler_request.json()['data']
-        except KeyError:
-            raise ValidationError(detail='detail: Could not retrieve files information.')
+class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
+        base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
+        base_permissions.TokenHasScope,
+    )
 
-        if isinstance(files_list, dict):
-            files_list = [files_list]
+    serializer_class = FileSerializer
 
-        return [self.get_file_item(file) for file in files_list]
+    required_read_scopes = [CoreScopes.NODE_FILE_READ]
+    required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+
+    def get_object(self):
+        fobj = self.fetch_from_waterbutler()
+        if isinstance(fobj, dict):
+            return self.get_file_item(fobj)
+
+        if isinstance(fobj, list) or not getattr(fobj, 'is_file', True):
+            # We should not have gotten a folder here
+            raise NotFound
+
+        return fobj
 
 
 class NodeProvider(object):

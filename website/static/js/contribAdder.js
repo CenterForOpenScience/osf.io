@@ -13,17 +13,13 @@ var $osf = require('./osfHelpers');
 var Paginator = require('./paginator');
 
 var NODE_OFFSET = 25;
-// Max number of recent/common contributors to show
-var MAX_RECENT = 5;
-
-// TODO: Remove dependency on contextVars
-var nodeApiUrl = window.contextVars.node.urls.api;
-var nodeId = window.contextVars.node.id;
 
 function Contributor(data) {
     $.extend(this, data);
     if (data.n_projects_in_common === 1) {
         this.displayProjectsInCommon = data.n_projects_in_common + ' project in common';
+    } else if (data.n_projects_in_common === -1) {
+        this.displayProjectsInCommon = 'Yourself';
     } else if (data.n_projects_in_common !== 0) {
         this.displayProjectsInCommon = data.n_projects_in_common + ' projects in common';
     } else {
@@ -32,11 +28,13 @@ function Contributor(data) {
 }
 
 var AddContributorViewModel = oop.extend(Paginator, {
-    constructor: function(title, parentId, parentTitle) {
+    constructor: function(title, nodeId, parentId, parentTitle) {
         this.super.constructor.call(this);
         var self = this;
 
         self.title = title;
+        self.nodeId = nodeId;
+        self.nodeApiUrl = '/api/v1/project/' + self.nodeId + '/';
         self.parentId = parentId;
         self.parentTitle = parentTitle;
 
@@ -57,27 +55,37 @@ var AddContributorViewModel = oop.extend(Paginator, {
         });
         self.query = ko.observable();
         self.results = ko.observableArray([]);
+        self.contributors = ko.observableArray([]);
         self.selection = ko.observableArray();
         self.notification = ko.observable('');
         self.inviteError = ko.observable('');
         self.totalPages = ko.observable(0);
         self.nodes = ko.observableArray([]);
         self.nodesToChange = ko.observableArray();
-        $.getJSON(
-            nodeApiUrl + 'get_editable_children/', {},
-            function(result) {
-                $.each(result.children || [], function(idx, child) {
-                    child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
-                });
-                self.nodes(result.children);
-            }
-        );
+
         self.foundResults = ko.pureComputed(function() {
             return self.query() && self.results().length;
         });
 
         self.noResults = ko.pureComputed(function() {
             return self.query() && !self.results().length;
+        });
+
+        self.addAllVisible = ko.pureComputed(function() {
+            var selected_ids = self.selection().map(function(user){
+                return user.id;
+            });
+            for(var i = 0; i < self.results().length; i++) {
+                if(self.contributors().indexOf(self.results()[i].id) === -1 &&
+                   selected_ids.indexOf(self.results()[i].id) === -1) {
+                    return true;
+                }
+            }
+            return false;
+        });
+
+        self.removeAllVisible = ko.pureComputed(function() {
+            return self.selection().length > 0;
         });
 
         self.inviteName = ko.observable();
@@ -108,7 +116,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
     },
     /**
      * A simple Contributor model that receives data from the
-     * contributor search endpoint. Adds an addiitonal displayProjectsinCommon
+     * contributor search endpoint. Adds an additional displayProjectsinCommon
      * attribute which is the human-readable display of the number of projects the
      * currently logged-in user has in common with the contributor.
      */
@@ -123,11 +131,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
             return $.getJSON(
                 '/api/v1/user/search/', {
                     query: self.query(),
-                    excludeNode: nodeId,
                     page: self.pageToGet
                 },
                 function(result) {
                     var contributors = result.users.map(function(userData) {
+                        userData.added = (self.contributors().indexOf(userData.id) !== -1);
                         return new Contributor(userData);
                     });
                     self.results(contributors);
@@ -142,11 +150,36 @@ var AddContributorViewModel = oop.extend(Paginator, {
             self.totalPages(0);
         }
     },
+    getContributors: function() {
+        var self = this;
+        self.notification(false);
+        return $.getJSON(
+            self.nodeApiUrl + 'get_contributors/', {},
+            function(result) {
+                var contributors = result.contributors.map(function(userData) {
+                    return userData.id;
+                });
+                self.contributors(contributors);
+            }
+        );
+    },
+    getEditableChildren: function() {
+        var self = this;
+        return $.getJSON(
+            self.nodeApiUrl + 'get_editable_children/', {},
+            function(result) {
+                $.each(result.children || [], function(idx, child) {
+                    child.margin = NODE_OFFSET + child.indent * NODE_OFFSET + 'px';
+                });
+                self.nodes(result.children);
+            }
+        );
+    },
     importFromParent: function() {
         var self = this;
         self.notification(false);
         $.getJSON(
-            nodeApiUrl + 'get_contributors_from_parent/', {},
+            self.nodeApiUrl + 'get_contributors_from_parent/', {},
             function(result) {
                 if (!result.contributors.length) {
                     self.notification({
@@ -157,74 +190,6 @@ var AddContributorViewModel = oop.extend(Paginator, {
                 self.results(result.contributors);
             }
         );
-    },
-    recentlyAdded: function() {
-        var self = this;
-        self.notification(false);
-        var url = nodeApiUrl + 'get_recently_added_contributors/?max=' + MAX_RECENT.toString();
-        return $.getJSON(
-            url, {},
-            function(result) {
-                if (!result.contributors.length) {
-                    self.notification({
-                        'message': 'All recent collaborators already included.',
-                        'level': 'info'
-                    });
-                }
-                var contribs = [];
-                var numToDisplay = result.contributors.length;
-                for (var i = 0; i < numToDisplay; i++) {
-                    contribs.push(new Contributor(result.contributors[i]));
-                }
-                self.results(contribs);
-                self.numberOfPages(1);
-            }
-        ).fail(function(xhr, textStatus, error) {
-            self.notification({
-                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
-                    'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
-                'level': 'warning'
-            });
-            Raven.captureMessage('Could not GET recentlyAdded contributors.', {
-                url: url,
-                textStatus: textStatus,
-                error: error
-            });
-        });
-    },
-    mostInCommon: function() {
-        var self = this;
-        self.notification(false);
-        var url = nodeApiUrl + 'get_most_in_common_contributors/?max=' + MAX_RECENT.toString();
-        return $.getJSON(
-            url, {},
-            function(result) {
-                if (!result.contributors.length) {
-                    self.notification({
-                        'message': 'All frequent collaborators already included.',
-                        'level': 'info'
-                    });
-                }
-                var contribs = [];
-                var numToDisplay = result.contributors.length;
-                for (var i = 0; i < numToDisplay; i++) {
-                    contribs.push(new Contributor(result.contributors[i]));
-                }
-                self.results(contribs);
-                self.numberOfPages(1);
-            }
-        ).fail(function(xhr, textStatus, error) {
-            self.notification({
-                'message': 'OSF was unable to resolve your request. If this issue persists, ' +
-                    'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.',
-                'level': 'warning'
-            });
-            Raven.captureMessage('Could not GET mostInCommon contributors.', {
-                url: url,
-                textStatus: textStatus,
-                error: error
-            });
-        });
     },
     addTips: function(elements) {
         elements.forEach(function(element) {
@@ -294,8 +259,11 @@ var AddContributorViewModel = oop.extend(Paginator, {
     },
     addAll: function() {
         var self = this;
+        var selected_ids = self.selection().map(function(user){
+            return user.id;
+        });
         $.each(self.results(), function(idx, result) {
-            if (self.selection().indexOf(result) === -1) {
+            if (selected_ids.indexOf(result.id) === -1 && self.contributors().indexOf(result.id) === -1) {
                 self.add(result);
             }
         });
@@ -331,7 +299,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
         var self = this;
         $osf.block();
         return $osf.postJSON(
-            nodeApiUrl + 'contributors/', {
+            self.nodeApiUrl + 'contributors/', {
                 users: ko.utils.arrayMap(self.selection(), function(user) {
                     var permission = user.permission().value; //removes the value from the object
                     var tUser = JSON.parse(ko.toJSON(user)); //The serialized user minus functions
@@ -360,7 +328,7 @@ var AddContributorViewModel = oop.extend(Paginator, {
     postInviteRequest: function(fullname, email) {
         var self = this;
         return $osf.postJSON(
-            nodeApiUrl + 'invite_contributor/', {
+            self.nodeApiUrl + 'invite_contributor/', {
                 'fullname': fullname,
                 'email': email
             }
@@ -389,20 +357,23 @@ var AddContributorViewModel = oop.extend(Paginator, {
 // Public API //
 ////////////////
 
-function ContribAdder(selector, nodeTitle, nodeId, parentTitle) {
+function ContribAdder(selector, nodeTitle, nodeId, parentId, parentTitle) {
     var self = this;
     self.selector = selector;
     self.$element = $(selector);
     self.nodeTitle = nodeTitle;
     self.nodeId = nodeId;
+    self.parentId = parentId;
     self.parentTitle = parentTitle;
     self.viewModel = new AddContributorViewModel(self.nodeTitle,
-        self.nodeId, self.parentTitle);
+        self.nodeId, self.parentId, self.parentTitle);
     self.init();
 }
 
 ContribAdder.prototype.init = function() {
     var self = this;
+    self.viewModel.getContributors();
+    self.viewModel.getEditableChildren();
     ko.applyBindings(self.viewModel, self.$element[0]);
     // Clear popovers on dismiss start
     self.$element.on('hide.bs.modal', function() {
@@ -412,10 +383,6 @@ ContribAdder.prototype.init = function() {
     // or cancel button.
     self.$element.on('hidden.bs.modal', function() {
         self.viewModel.clear();
-    });
-    // Load recently added contributors every time the modal is activated.
-    self.$element.on('shown.bs.modal', function() {
-        self.viewModel.recentlyAdded();
     });
 };
 

@@ -3,6 +3,8 @@ import datetime
 import httplib as http
 import json
 
+from modularodm import Q
+
 import mock
 from nose.tools import *  # noqa
 from tests.base import fake, OsfTestCase
@@ -76,7 +78,8 @@ class RegistrationEmbargoModelsTestCase(OsfTestCase):
         )
         self.registration.save()
         self.registration.reload()
-        assert_equal(len(self.user.embargo__embargoed), 1)
+        assert_equal(len(self.user.embargo__embargoed),
+            Embargo.find(Q('initiated_by', 'eq', self.user)).count())
 
     # Node#embargo_registration tests
     def test_embargo_from_non_admin_raises_PermissionsError(self):
@@ -612,11 +615,12 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         res = self.app.get(
             registration.web_url_for('view_project', token=rejection_token),
             auth=self.user.auth,
-        )        
+        )
         registration.embargo.reload()
         assert_equal(registration.embargo.state, Embargo.REJECTED)
         assert_false(registration.is_pending_embargo)
         assert_equal(res.status_code, 302)
+        assert_true(project._id in res.location)
 
     @mock.patch('flask.redirect')
     def test_GET_disapprove_for_existing_registration_with_valid_token_redirects_to_registration(self, mock_redirect):
@@ -637,6 +641,7 @@ class RegistrationEmbargoApprovalDisapprovalViewsTestCase(OsfTestCase):
         assert_equal(self.registration.embargo.state, Embargo.REJECTED)
         assert_false(self.registration.is_pending_embargo)
         assert_true(mock_redirect.called_with(self.registration.web_url_for('view_project')))
+
 
 class RegistrationEmbargoViewsTestCase(OsfTestCase):
     def setUp(self):
