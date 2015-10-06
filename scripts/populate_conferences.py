@@ -474,6 +474,15 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+    'CNI2015': {
+        'name': 'Coalition for Networked Information (CNI) Fall Membership Meeting 2015',
+        'info_url': 'https://www.cni.org/events/membership-meetings/upcoming-meeting/fall-2015/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
     },
 }
 
