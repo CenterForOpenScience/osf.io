@@ -72,8 +72,6 @@ var ProjectSettings = oop.extend(
             self.title(self.titlePlaceholder);
             self.description(self.descriptionPlaceholder);
             self.resetMessage();
-         alert(self.updateUrl);
-
         }
     });
 
