@@ -42,7 +42,7 @@ FILE_GONE_ERROR_MESSAGE = u'''
 .file-delete{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This link to the file "{file_name}" is not longer valid.
+This link to the file "{file_name}" is no longer valid.
 </div>'''
 
 
@@ -495,13 +495,14 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             'message_long': 'This file does not exist'
         })
 
+    # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':
         return make_response(('', 200, {
-            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None))
+            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier))
         }))
 
     if action == 'download':
-        return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None)))
+        return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier)))
 
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)

@@ -6,6 +6,7 @@ import pkgutil
 
 import mock
 
+from nose import SkipTest
 from nose.tools import *  # flake8: noqa
 
 from tests.base import ApiTestCase
@@ -14,6 +15,7 @@ from tests import factories
 from api.base.settings.defaults import API_BASE
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
+from website.settings import DEBUG_MODE
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -22,6 +24,20 @@ class TestApiBaseViews(ApiTestCase):
     def test_root_returns_200(self):
         res = self.app.get('/{}'.format(API_BASE))
         assert_equal(res.status_code, 200)
+
+    def test_does_not_exist_returns_404(self):
+        res = self.app.get('/{}{}'.format(API_BASE,"notapage"), expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_does_not_exist_formatting(self):
+        if DEBUG_MODE:
+            raise SkipTest
+        else:
+            url = '/{}{}/'.format(API_BASE, 'notapage')
+            res = self.app.get(url, expect_errors=True)
+            errors = res.json['errors']
+            assert(isinstance(errors, list))
+            assert_equal(errors[0], {'detail': 'Not found.'})        
 
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
         base_permissions = [            
