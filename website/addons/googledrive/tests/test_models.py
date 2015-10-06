@@ -185,7 +185,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
         self.user.save()
 
         # this should be reset after the call
-        self.node_settings.drive_folder_id = 'anything'
+        self.node_settings.folder_id = 'anything'
 
         self.node_settings.set_auth(
             external_account=external_account,
@@ -202,7 +202,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
             self.user_settings
         )
         assert_is_none(
-            self.node_settings.drive_folder_id
+            self.node_settings.folder_id
         )
 
         set_auth_gives_access = self.user_settings.verify_oauth_access(
@@ -225,17 +225,17 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
 
     def test_clear_auth(self):
         self.node_settings.external_account = ExternalAccountFactory()
-        self.node_settings.drive_folder_id = 'something'
+        self.node_settings.folder_id = 'something'
         self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
 
         self.node_settings.clear_auth()
 
         assert_is_none(self.node_settings.external_account)
-        assert_is_none(self.node_settings.drive_folder_id)
+        assert_is_none(self.node_settings.folder_id)
         assert_is_none(self.node_settings.user_settings)
         assert_is_none(self.node_settings.folder_path)
-        assert_is_none(self.node_settings.drive_folder_name)
+        assert_is_none(self.node_settings.folder_name)
 
     def test_set_target_folder(self):
 
@@ -255,7 +255,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
             user=self.user,
             )
 
-        assert_is_none(self.node_settings.drive_folder_id)
+        assert_is_none(self.node_settings.folder_id)
 
         self.node_settings.set_target_folder(
             folder,
@@ -264,7 +264,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
 
         # instance was updated
         assert_equal(
-            self.node_settings.drive_folder_id,
+            self.node_settings.folder_id,
             'fake-folder-id',
             )
 
@@ -306,14 +306,14 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
 
         self.node_settings.set_auth(external_account, self.user)
 
-        self.node_settings.drive_folder_id = None
+        self.node_settings.folder_id = None
         assert_true(self.node_settings.has_auth)
 
-        self.node_settings.drive_folder_id = 'totally fake ID'
+        self.node_settings.folder_id = 'totally fake ID'
         assert_true(self.node_settings.has_auth)
 
     def test_selected_folder_name_root(self):
-        self.node_settings.drive_folder_id = 'root'
+        self.node_settings.folder_id = 'root'
 
         assert_equal(
             self.node_settings.selected_folder_name,
@@ -321,7 +321,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
         )
 
     def test_selected_folder_name_empty(self):
-        self.node_settings.drive_folder_id = None
+        self.node_settings.folder_id = None
 
         assert_equal(
             self.node_settings.selected_folder_name,
@@ -329,8 +329,8 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
         )
 
     def test_selected_folder_name(self):
-        self.node_settings.drive_folder_id = 'fake-id'
-        self.node_settings.drive_folder_name = 'fake-folder-name'
+        self.node_settings.folder_id = 'fake-id'
+        self.node_settings.folder_path = 'fake-folder-name'
         self.node_settings.save()
         assert_equal(
             self.node_settings.selected_folder_name,
@@ -352,9 +352,8 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
             self.node_settings.serialize_waterbutler_credentials()
 
     def test_serialize_settings(self):
-        self.node_settings.folder_path = 'camera uploads/pizza.nii'
-        self.node_settings.drive_folder_id = 'fake-id'
-        self.node_settings.drive_folder_name = 'fake-folder-name'
+        self.node_settings.folder_id = 'fake-id'
+        self.node_settings.folder_path = 'fake-folder-name'
         self.node_settings.save()
 
         settings = self.node_settings.serialize_waterbutler_settings()
@@ -363,7 +362,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
             'folder': {
                 'id': 'fake-id',
                 'name': 'fake-folder-name',
-                'path': 'camera uploads/pizza.nii',
+                'path': 'fake-folder-name',
                 }
         }
 

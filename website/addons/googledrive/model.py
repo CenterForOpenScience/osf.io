@@ -87,8 +87,8 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = GoogleDriveProvider
     provider_name = 'googledrive'
 
-    drive_folder_id = fields.StringField(default=None)
-    drive_folder_name = fields.StringField(default=None)
+    folder_id = fields.StringField(default=None)
+    folder_name = fields.StringField(default=None)
     folder_path = fields.StringField()
     serializer = GoogleDriveSerializer
 
@@ -110,11 +110,12 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return bool(self.has_auth and self.user_settings.verify_oauth_access(
             node=self.owner,
             external_account=self.external_account,
-            metadata={'folder': self.drive_folder_id}
+            metadata={'folder': self.folder_id}
         ))
 
+    @property
     def folder_name(self):
-        if not self.drive_folder_id:
+        if not self.folder_id:
             return None
 
         if self.folder_path != '/':
@@ -125,13 +126,12 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             return '/ (Full Google Drive)'
 
     def clear_auth(self):
-        self.drive_folder_id = None
+        self.folder_id = None
         self.folder_path = None
-        self.drive_folder_name = None
         return super(GoogleDriveNodeSettings, self).clear_auth()
 
     def set_auth(self, *args, **kwargs):
-        self.drive_folder_id = None
+        self.folder_id = None
         return super(GoogleDriveNodeSettings, self).set_auth(*args, **kwargs)
 
     def set_target_folder(self, folder, auth):
@@ -140,16 +140,15 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         :param dict folder:
         :param User user:
         """
-        self.drive_folder_id = folder['id']
+        self.folder_id = folder['id']
         self.folder_path = folder['path']
-        self.drive_folder_name = self.folder_name()
 
         if self.external_account not in self.user_settings.external_accounts:
             # Tell the user's addon settings that this node is connecting
             self.user_settings.grant_oauth_access(
                 node=self.owner,
                 external_account=self.external_account,
-                metadata={'folder': self.drive_folder_id}
+                metadata={'folder': self.folder_id}
             )
             self.user_settings.save()
 
@@ -161,20 +160,20 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'folder_id': self.drive_folder_id,
-                'folder_name': self.drive_folder_name,
+                'folder_id': self.folder_id,
+                'folder_name': self.folder_name,
             },
             auth=auth,
         )
 
     @property
     def selected_folder_name(self):
-        if self.drive_folder_id is None:
+        if self.folder_id is None:
             return ''
-        elif self.drive_folder_id == 'root':
+        elif self.folder_id == 'root':
             return 'Full Google Drive'
         else:
-            return self.drive_folder_name
+            return self.folder_name
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
@@ -182,13 +181,13 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return {'token': self.fetch_access_token()}
 
     def serialize_waterbutler_settings(self):
-        if not self.drive_folder_id:
+        if not self.folder_id:
             raise exceptions.AddonError('Folder is not configured')
 
         return {
             'folder': {
-                'id': self.drive_folder_id,
-                'name': self.drive_folder_name,
+                'id': self.folder_id,
+                'name': self.folder_name,
                 'path': self.folder_path
             }
         }

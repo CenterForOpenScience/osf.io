@@ -32,6 +32,8 @@ class TestGoogleDrivePostMergeMigration(OsfTestCase):
         node.add_addon('googledrive', auth=Auth(user))
         node_addon = node.get_addon('googledrive')
         node_addon.foreign_user_settings = user_addon
+        node_addon.folder_id = 'abcdef0'
+        node_addon.folder_path = '/'
         node_addon.save()
 
         assert_equal(node_addon.external_account, None)

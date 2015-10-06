@@ -53,7 +53,7 @@ def googledrive_folders(node_addon, **kwargs):
 def googledrive_addon_folder(node_settings, auth, **kwargs):
     """Return the Rubeus/HGrid-formatted response for the root folder only."""
     # Quit if node settings does not have authentication
-    if not node_settings.has_auth or not node_settings.drive_folder_id:
+    if not node_settings.has_auth or not node_settings.folder_id:
         return None
     node = node_settings.owner
     root = rubeus.build_addon_root(
