@@ -221,12 +221,24 @@ utils.maybeQuashEvent = function (event) {
 
 /* Adds a filter to the list of filters if it doesn't already exist */
 utils.updateFilter = function (vm, filter, required) {
-    if (required && vm.requiredFilters.indexOf(filter) === -1) {
-        vm.requiredFilters.push(filter);
-    } else if (vm.optionalFilters.indexOf(filter) === -1 && !required) {
-        vm.optionalFilters.push(filter);
-    }
+    filters = utils.wrapFilter(filter);
+    filters.forEach(function(f){
+        if (required && vm.requiredFilters.indexOf(f) === -1) {
+            vm.requiredFilters.push(f);
+        } else if (vm.optionalFilters.indexOf(f) === -1 && !required) {
+            vm.optionalFilters.push(f);
+        }
+    });
     utils.search(vm);
+};
+
+/* Helper function to accept string or array of strings for updateFilter */
+utils.wrapFilter = function(filter){
+    if( typeof filter === 'string' ) {
+        return [filter];
+    }else{
+        return filter;
+    }
 };
 
 /* Removes a filter from the list of filters */
