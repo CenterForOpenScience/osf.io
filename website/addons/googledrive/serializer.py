@@ -27,9 +27,4 @@ class GoogleDriveSerializer(OAuthAddonSerializer):
             except ExpiredAuthError:
                 valid_credentials = False
         result['validCredentials'] = valid_credentials
-        if self.node_settings.has_auth:
-            path = self.node_settings.folder_path
-            if path is not None:
-                result['currentPath'] = '/' + path.lstrip('/')
-                result['currentFolder'] = '/ (Full Google Drive)' if path == '/' else '/' + path
         return {'result': result}
