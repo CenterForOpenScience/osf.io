@@ -40,3 +40,20 @@ class TestGoogleDrivePostMergeMigration(OsfTestCase):
         node_addon.reload()
 
         assert_equal(node_addon.external_account, account)
+
+    def test_migration_no_account(self):
+        GoogleDriveUserSettings.remove()
+
+        user = UserFactory()
+        node = ProjectFactory(creator=user)
+
+        user.add_addon('googledrive', auth=Auth(user))
+        user_addon = user.get_addon('googledrive')
+        user_addon.save()
+
+        node.add_addon('googledrive', auth=Auth(user))
+        node_addon = node.get_addon('googledrive')
+        node_addon.foreign_user_settings = user_addon
+        node_addon.save()
+
+        do_migration()  # Would raise exception if fail
