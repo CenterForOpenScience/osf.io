@@ -2603,6 +2603,26 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
+    def test_tags_post_object_instead_of_list(self):
+        url = '/{}nodes/'.format(API_BASE)
+        payload = {'data': {
+            'type': 'nodes',
+            'attributes': {
+                'title': 'new title',
+                'category': 'project',
+                'tags': {'foo': 'bar'}
+            }
+        }}
+        res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
+    def test_tags_patch_object_instead_of_list(self):
+        self.one_new_tag_json['data']['attributes']['tags'] = {'foo': 'bar'}
+        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
 
 class TestNodeLinkCreate(ApiTestCase):
 
