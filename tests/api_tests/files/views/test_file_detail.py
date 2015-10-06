@@ -5,12 +5,13 @@ from nose.tools import *  # flake8: noqa
 from api.base.settings.defaults import API_BASE
 from website.addons.osfstorage import settings as osfstorage_settings
 
-from tests.base import ApiTestCase, fake
+from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     UserFactory,
     AuthUserFactory
 )
+
 
 class TestFileView(ApiTestCase):
     def setUp(self):
