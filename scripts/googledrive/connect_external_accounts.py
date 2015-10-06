@@ -29,6 +29,7 @@ def do_migration():
         node_addon.set_auth(account, user_addon.owner)
         node_addon.drive_folder_id = node_addon.folder_id
         node_addon.drive_folder_name = node_addon.folder_name()
+        node_addon.save()
         logger.info('Added external account {0} to node {1}'.format(
             account._id, node_addon.owner._id,
         ))
