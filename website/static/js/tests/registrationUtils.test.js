@@ -77,7 +77,7 @@ describe('Comment', () => {
         });
         it('defaults user to the global currentUser', () => {
             var comment = new Comment();
-            assert.deepEqual(comment.user, window.contextVars.currentUser);
+            assert.deepEqual(comment.user, $osf.currentUser());
         });
     });
     describe('#saved', () => {
@@ -326,10 +326,16 @@ describe('Question', () => {
         it('creates a new Comment using the value of Question.nextComment, and clears Question.nextComment', () => {
             assert.equal(q.comments().length, 0);
             q.nextComment('A good comment');
-            q.addComment();
+            q.addComment(function() {});
             assert.equal(q.comments().length, 1);
             assert.equal(q.nextComment(), '');
         });
+        it('calls the provided save function'), () => {
+            var mock = new sinon.spy();
+            q.nextComment('A comment');
+            q.addComment(mock);
+            assert.isTrue(mock.called);
+        };
     });
     describe('#toggleExample', () => {
         it('toggles the value of Question.showExample', () => {
