@@ -1867,13 +1867,16 @@ class TestNodeUpdate(OsfTestCase):
     def setUp(self):
         super(TestNodeUpdate, self).setUp()
         self.user = UserFactory()
-        self.node = ProjectFactory(creator=self.user, is_public=False)
+        self.node = ProjectFactory(creator=self.user, category='project', is_public=False)
 
     def test_update_title(self):
         # Creator (admin) can update
         new_title = fake.catch_phrase()
-        self.node.update({'title': new_title}, auth=Auth(self.user))
+        self.node.update({'title': new_title}, auth=Auth(self.user), save=True)
         assert_equal(self.node.title, new_title)
+
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, NodeLog.EDITED_TITLE)
 
         # Write contrib can update
         new_title2 = fake.catch_phrase()
@@ -1882,6 +1885,61 @@ class TestNodeUpdate(OsfTestCase):
         self.node.save()
         self.node.update({'title': new_title2}, auth=Auth(write_contrib))
         assert_equal(self.node.title, new_title2)
+
+    def test_update_description(self):
+        new_title = fake.bs()
+
+        self.node.update({'title': new_title}, auth=Auth(self.user))
+        assert_equal(self.node.title, new_title)
+
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, NodeLog.EDITED_TITLE)
+
+    def test_update_title_and_category(self):
+        new_title = fake.bs()
+
+        new_category = 'data'
+
+        self.node.update({'title': new_title, 'category': new_category}, auth=Auth(self.user), save=True)
+        assert_equal(self.node.title, new_title)
+        assert_equal(self.node.category, 'data')
+
+        penultimate_log, last_log = self.node.logs[-2], self.node.logs[-1]
+        assert_equal(penultimate_log.action, NodeLog.EDITED_TITLE)
+        assert_equal(last_log.action, NodeLog.UPDATED_FIELDS)
+
+    def test_update_is_public(self):
+        self.node.update({'is_public': True}, auth=Auth(self.user), save=True)
+        assert_true(self.node.is_public)
+
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, NodeLog.MADE_PUBLIC)
+
+        self.node.update({'is_public': False}, auth=Auth(self.user), save=True)
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, NodeLog.MADE_PRIVATE)
+
+    def test_updating_title_twice_with_same_title(self):
+        original_n_logs = len(self.node.logs)
+        new_title = fake.bs()
+        self.node.update({'title': new_title}, auth=Auth(self.user), save=True)
+        assert_equal(len(self.node.logs), original_n_logs + 1)  # sanity check
+
+        # Call update with same title
+        self.node.update({'title': new_title}, auth=Auth(self.user), save=True)
+        # A new log is not created
+        assert_equal(len(self.node.logs), original_n_logs + 1)
+
+    def test_updating_description_twice_with_same_content(self):
+        original_n_logs = len(self.node.logs)
+        new_desc = fake.bs()
+        self.node.update({'description': new_desc}, auth=Auth(self.user), save=True)
+        assert_equal(len(self.node.logs), original_n_logs + 1)  # sanity check
+
+        # Call update with same description
+        self.node.update({'description': new_desc}, auth=Auth(self.user), save=True)
+        # A new log is not created
+        assert_equal(len(self.node.logs), original_n_logs + 1)
 
     # TODO: test permissions, non-writable fields
 
@@ -2683,7 +2741,7 @@ class TestProject(OsfTestCase):
     def test_is_registration_of(self):
         project = ProjectFactory()
         with mock_archive(project) as reg1:
-            with mock_archive(reg1) as reg2: 
+            with mock_archive(reg1) as reg2:
                 assert_true(reg1.is_registration_of(project))
                 assert_true(reg2.is_registration_of(project))
 
@@ -2721,7 +2779,7 @@ class TestProject(OsfTestCase):
         }
         self.project.node_license = license
         self.project.save()
-        with mock_archive(self.project, autocomplete=True) as registration:        
+        with mock_archive(self.project, autocomplete=True) as registration:
             assert_equal(registration.node_license, license)
 
     def test_is_contributor_unregistered(self):

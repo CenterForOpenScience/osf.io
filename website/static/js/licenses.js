@@ -14,8 +14,7 @@ var DEFAULT_LICENSE = {
 };
 var OTHER_LICENSE = {
     id: 'OTHER',
-    name: 'License not listed - choose to add',
-    text: 'Please see the "license.txt" uploaded in this project\'s OSF Storage'
+    name: 'License - Other'
 };
 list.unshift(DEFAULT_LICENSE);
 list.push(OTHER_LICENSE);
@@ -47,4 +46,3 @@ module.exports = {
     OTHER_LICENSE: OTHER_LICENSE,
     groups: licenseGroups
 };
-    
