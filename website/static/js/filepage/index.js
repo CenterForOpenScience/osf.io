@@ -194,11 +194,9 @@ var FileViewPage = {
                 },
                 validate: function(value) {
                     if($.trim(value) === ''){
-                        $osf.growl('Error', 'Name cannot be empty.');
-                        return '   ';
+                        return 'Name cannot be blank.';
                     } else if(value.length > 100){
-                        $osf.growl('Error', 'Name should be less than 100 characters');
-                        return '   ';
+                        return 'Please enter a name less than 100 characters.';
                     }
                 },
                 success: function(response, value) {
@@ -206,13 +204,13 @@ var FileViewPage = {
                 },
                 error: function(response) {
                     var msg = $osf.htmlEscape(response.responseJSON.message);
-                    var msg_long = response.responseJSON.message_long;
-                    if (msg_long) {
-                        $osf.growl('Error', msg_long);
-                        return '      ';
+                    var msgLong = response.responseJSON.message_long;
+                    if (msgLong) {
+                        $osf.growl('Error', msgLong);
+                        return ' ';
                     } else if (msg) {
                         $osf.growl('Error', msg);
-                        return '      ';
+                        return ' ';
                     } else {
                         // Log unexpected error with Raven
                         Raven.captureMessage('Error in renaming file', {
@@ -221,7 +219,7 @@ var FileViewPage = {
                             statusText: response.statusText
                         });
                         $osf.growl('Error', language.Addons.rename.generalError);
-                        return '   ';
+                        return ' ';
                     }
                 }
             });

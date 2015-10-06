@@ -75,7 +75,7 @@ module.exports = {
         },
         rename: {
             generalError: 'Error in renaming file. If error persists please contact ' +
-                '<a href="mailto: ' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL + '</a>',
+                SUPPORT_LINK,
         },
     },
     apiOauth2Application: {
