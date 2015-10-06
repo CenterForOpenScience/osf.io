@@ -166,13 +166,13 @@ def get_auth(auth, **kwargs):
             if cas_resp.authenticated:
                 auth.user = User.load(cas_resp.user)
 
-        if not auth.user:
-            auth.user = User.from_cookie(request.args.get('cookie'))
-
     try:
         data = jwt.decode(request.args.get('payload', ''), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
     except (jwt.InvalidTokenError, KeyError):
         raise HTTPError(httplib.FORBIDDEN)
+
+    if not auth.user:
+        auth.user = User.from_cookie(data.get('cookie', ''))
 
     try:
         action = data['action']
