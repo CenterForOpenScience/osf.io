@@ -489,6 +489,7 @@ var FolderPickerViewModel = oop.defclass({
                     folderIcons : true,
                     filter : false,
                     custom : function(item, col) {
+                        //This is bad, but probably necessary. GoogleDrive returns URI encoded folder names, but (most/all?) others don't
                         return m('span', decodeURIComponent(item.data.name));
                     }
                 },
