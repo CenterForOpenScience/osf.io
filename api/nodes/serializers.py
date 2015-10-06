@@ -294,7 +294,6 @@ class NodeLinksSerializer(JSONAPISerializer):
         'self': 'get_absolute_url'
     })
 
-
     def get_absolute_url(self, obj):
         node_id = self.context['request'].parser_context['kwargs']['node_id']
         return absolute_reverse(
