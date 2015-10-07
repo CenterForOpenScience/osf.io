@@ -25,7 +25,7 @@
                     </div>
                 </div>
             </div>
-
+            <div data-bind="ifnot: hasValidWebsites" class="text-danger">Please enter a valid website</div>
             <div class="p-t-sm p-b-sm">
                 <a class="btn btn-default" data-bind="click: addWebsiteInput">
                     Add website
@@ -102,16 +102,23 @@
                         data-bind="click: cancel"
                     >Discard changes</button>
 
-                <button
+                <button data-bind="visible: hasValidWebsites()"
                         type="submit"
                         class="btn btn-success"
                     >Save</button>
 
-            </div>
+                <button data-bind="visible: !hasValidWebsites()"
+                        type="submit"
+                        class="btn btn-default disabled"
+                    >Save</button>
+           </div>
 
             <!-- Flashed Messages -->
             <div class="help-block">
                 <p data-bind="html: message, attr.class: messageClass"></p>
+            </div>
+            <div data-bind="ifnot: hasValidWebsites" class="text-danger">
+                Please update your website before saving
             </div>
 
         </form>
