@@ -737,7 +737,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def pk(self):
         return self._id
 
-
     @property
     def license(self):
         node_license = self.node_license
