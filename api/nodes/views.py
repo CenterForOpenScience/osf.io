@@ -1269,6 +1269,11 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
 
 class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
+    """List of comments for a node.
+
+    By default, a GET will return both deleted and not deleted comments. Comments may be
+    filtered by their `deleted` field.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublicForComments,
@@ -1280,6 +1285,7 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
 
     serializer_class = CommentSerializer
 
+    # overrides ODMFilterMixin
     def get_default_odm_query(self):
         return Q('node', 'eq', self.get_node())
 

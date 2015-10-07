@@ -35,6 +35,11 @@ class CommentMixin(object):
 
 
 class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
+    """Replies to a comment.
+
+    By default, a GET will return both deleted and not deleted replies. Comment replies may be
+    filtered by their `deleted` field.
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublicForComments,
@@ -56,8 +61,7 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
 
 
 class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
-    """Details about a specific comment.
-    """
+    """Details about a specific comment."""
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublicForComments,
@@ -75,8 +79,7 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
 
 
 class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
-    """Reporting a comment.
-    """
+    """List of reports made for a comment."""
     permission_classes = (
         drf_permissions.IsAuthenticated,
         ContributorOrPublicForComments,
@@ -100,8 +103,7 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
 
 
 class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
-    """Reporting a comment.
-    """
+    """Details about a specific comment report."""
     permission_classes = (
         drf_permissions.IsAuthenticated,
         ContributorOrPublicForComments,
