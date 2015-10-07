@@ -75,7 +75,8 @@ var entry = {
         'js/citations',
         'js/osfHelpers',
         'js/osfToggleHeight',
-        'mithril'
+        'mithril',
+        'js/components/autocomplete',
     ]
 };
 
