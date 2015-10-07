@@ -3503,3 +3503,29 @@ class TestNodeCommentCreate(ApiTestCase):
 
         res = self.app.post_json_api(self.public_url, self.payload, expect_errors=True)
         assert_equal(res.status_code, 401)
+
+
+class TestCommentFiltering(ApiTestCase):
+
+    def test_filtering_deleted_comments(self):
+        user = AuthUserFactory()
+        project = ProjectFactory(creator=user)
+        comment = CommentFactory(node=project, user=user)
+        deleted_comment = CommentFactory(node=project, user=user, is_deleted=True)
+        base_url = '/{}nodes/{}/comments/'.format(API_BASE, project._id)
+
+        # no filter
+        res = self.app.get(base_url, auth=user.auth)
+        assert_equal(len(res.json['data']), 2)
+
+        # filter for non-deleted comments
+        url = base_url + '?filter[deleted]=False'
+        res = self.app.get(url, auth=user.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_false(res.json['data'][0]['attributes']['deleted'])
+
+        # filter for deleted comments
+        url = base_url + '?filter[deleted]=True'
+        res = self.app.get(url, auth=user.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_true(res.json['data'][0]['attributes']['deleted'])
