@@ -303,7 +303,8 @@ class JSONAPIListSerializer(ser.ListSerializer):
     def update(self, instance, validated_data):
         if len(instance) != len(validated_data):
             raise exceptions.NotFound()
-        instance_mapping = {item._id: item for item in instance}
+        id_lookup = getattr(self.child.Meta, 'unique_identifier', '_id')
+        instance_mapping = {getattr(item, id_lookup): item for item in instance}
         data_mapping = {item.get('_id', None): item for item in validated_data}
 
         ret = []
