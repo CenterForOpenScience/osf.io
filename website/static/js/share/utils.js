@@ -236,9 +236,8 @@ utils.updateFilter = function (vm, filter, required) {
 utils.wrapFilter = function(filter){
     if( typeof filter === 'string' ) {
         return [filter];
-    }else{
-        return filter;
     }
+    return filter;
 };
 
 /* Removes a filter from the list of filters */
