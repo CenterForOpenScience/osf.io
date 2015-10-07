@@ -591,12 +591,18 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ('other', 'Other'),
     ])
 
+    # Fields that are writable by Node.update
     WRITABLE_WHITELIST = [
         'title',
         'description',
         'category',
+        'is_public',
         'node_license',
     ]
+
+    # Named constants
+    PRIVATE = 'private'
+    PUBLIC = 'public'
 
     _id = fields.StringField(primary=True)
 
@@ -1138,44 +1144,59 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for key, value in fields.iteritems():
             if key not in self.WRITABLE_WHITELIST:
                 continue
-            with warnings.catch_warnings():
-                try:
-                    # This is in place because historically projects and components
-                    # live on different ElasticSearch indexes, and at the time of Node.save
-                    # there is no reliable way to check what the old Node.category
-                    # value was. When the cateogory changes it is possible to have duplicate/dead
-                    # search entries, so always delete the ES doc on categoryt change
-                    # TODO: consolidate Node indexes into a single index, refactor search
-                    if key == 'category':
-                        self.delete_search_entry()
-                    ###############
-                    values[key] = {
-                        'old': getattr(self, key),
-                        'new': value,
-                    }
-                    setattr(self, key, value)
-                except AttributeError:
-                    raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
-                except warnings.Warning:
-                    raise NodeUpdateError(reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key)
+            # Title and description have special methods for logging purposes
+            if key == 'title':
+                self.set_title(title=value, auth=auth, save=False)
+            elif key == 'description':
+                self.set_description(description=value, auth=auth, save=False)
+            elif key == 'is_public':
+                self.set_privacy(
+                    Node.PUBLIC if value else Node.PRIVATE,
+                    auth=auth,
+                    log=True,
+                    save=False
+                )
+            else:
+                with warnings.catch_warnings():
+                    try:
+                        # This is in place because historically projects and components
+                        # live on different ElasticSearch indexes, and at the time of Node.save
+                        # there is no reliable way to check what the old Node.category
+                        # value was. When the cateogory changes it is possible to have duplicate/dead
+                        # search entries, so always delete the ES doc on categoryt change
+                        # TODO: consolidate Node indexes into a single index, refactor search
+                        if key == 'category':
+                            self.delete_search_entry()
+                        ###############
+                        values[key] = {
+                            'old': getattr(self, key),
+                            'new': value,
+                        }
+                        setattr(self, key, value)
+                    except AttributeError:
+                        raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
+                    except warnings.Warning:
+                        raise NodeUpdateError(reason="Attribute '{0}' doesn't exist on the Node class".format(key), key=key)
         if save:
             updated = self.save()
         else:
             updated = []
         for key in values:
             values[key]['new'] = getattr(self, key)
-        self.add_log(NodeLog.UPDATED_FIELDS,
-                     params={
-                         'node': self._id,
-                         'updated_fields': {
-                             key: {
-                                 'old': values[key]['old'],
-                                 'new': values[key]['new']
-                             }
-                             for key in values
-                         }
-                     },
-                     auth=auth)
+        if values:
+            self.add_log(
+                NodeLog.UPDATED_FIELDS,
+                params={
+                    'node': self._id,
+                    'updated_fields': {
+                        key: {
+                            'old': values[key]['old'],
+                            'new': values[key]['new']
+                        }
+                        for key in values
+                    }
+                },
+                auth=auth)
         return updated
 
     def save(self, *args, **kwargs):
@@ -1636,7 +1657,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         validate_title(title)
 
         original_title = self.title
-        self.title = sanitize.strip_html(title)
+        new_title = sanitize.strip_html(title)
+        # Title hasn't changed after sanitzation, bail out
+        if original_title == new_title:
+            return False
+        self.title = new_title
         self.add_log(
             action=NodeLog.EDITED_TITLE,
             params={
@@ -1660,7 +1685,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param bool save: Save self after updating.
         """
         original = self.description
-        self.description = sanitize.strip_html(description)
+        new_description = sanitize.strip_html(description)
+        if original == new_description:
+            return False
+        self.description = new_description
         self.add_log(
             action=NodeLog.EDITED_DESCRIPTION,
             params={

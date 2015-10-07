@@ -20,7 +20,7 @@
             <div class="form-inline">
                 <div class="form-group">
                     <label> Choose a license: </label>
-                    <select class="form-control" data-bind="groupOptions: licenseGroups, 
+                    <select class="form-control" data-bind="groupOptions: licenseGroups,
                                                             value: selectedLicenseId,
                                                             optionsText: 'name',
                                                             optionsValue: 'id'">
@@ -40,7 +40,7 @@
               </div>
             </div>
         </div>
-        <div class="col-md" style="width:100%" data-bind="if: previewing">
+        <div class="col-md" style="width:100%" data-bind="if: previewing && selectedLicenseText()">
             <pre data-bind="text: selectedLicenseText" style="border:none;width:100%;text-align:justify"></pre>
         </div>
         <button class="btn btn-success pull-right" data-bind="click: save,

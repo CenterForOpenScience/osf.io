@@ -54,10 +54,8 @@ describe('LicensePicker', () => {
         });
     });
     describe('#save', () => {
-        var dialogStub;
         var ajaxStub;
-        beforeEach(() => {            
-            dialogStub = sinon.stub(bootbox, 'dialog');
+        beforeEach(() => {
             ajaxStub = sinon.stub($, 'ajax', function() {
                 var ret = $.Deferred();
                 ret.resolve();
@@ -66,7 +64,6 @@ describe('LicensePicker', () => {
             sinon.stub(lp, 'disableSave', function() {return false;});
         });
         afterEach(() => {
-            bootbox.dialog.restore();
             $.ajax.restore();
             if (lp.disableSave.restore) {
                 lp.disableSave.restore();
@@ -75,13 +72,7 @@ describe('LicensePicker', () => {
         it('returns without saving if required fields are missing', () => {
             lp.disableSave.restore();
             lp.save();
-            assert.isFalse(dialogStub.called);
             assert.isFalse(ajaxStub.called);
-        });
-        it('asks confirmation if the user has selected the OTHER license', () => {
-            lp.selectedLicenseId('OTHER');
-            lp.save();
-            assert.calledOnce(dialogStub);
         });
         it('otherwise makes a request based on the value of saveUrl, saveMethod, and saveLicenseKey', (done) => {
             lp.selectedLicenseId('MIT');
@@ -95,9 +86,9 @@ describe('LicensePicker', () => {
                     contentType: 'application/json',
                     data: JSON.stringify(payload)
                 };
-                assert.isTrue(ajaxStub.calledWith(args));                             
+                assert.isTrue(ajaxStub.calledWith(args));
                 done();
-            }); 
+            });
         });
     });
 });
