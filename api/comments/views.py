@@ -47,7 +47,7 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
     serializer_class = CommentSerializer
 
     def get_queryset(self):
-        return Comment.find(Q('target', 'eq', self.get_comment()) & Q('is_deleted', 'ne', True))
+        return Comment.find(Q('target', 'eq', self.get_comment()))
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
