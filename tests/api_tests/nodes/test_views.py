@@ -3071,6 +3071,12 @@ class TestNodeLinkDetail(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
+    def test_self_link_points_to_node_link_detail_url(self):
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        url = res.json['data']['links']['self']
+        assert_in(self.public_url, url)
+
 
 class TestDeleteNodeLink(ApiTestCase):
 
@@ -3080,7 +3086,7 @@ class TestDeleteNodeLink(ApiTestCase):
         self.project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
         self.pointer = self.project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
-        self.private_url = '/{}nodes/{}/node_links/{}'.format(API_BASE, self.project._id, self.pointer._id)
+        self.private_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.project._id, self.pointer._id)
 
         self.user_two = AuthUserFactory()
 
@@ -3089,7 +3095,14 @@ class TestDeleteNodeLink(ApiTestCase):
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
                                                               auth=Auth(self.user),
                                                               save=True)
-        self.public_url = '/{}nodes/{}/node_links/{}'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+        self.public_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+
+    def test_delete_node_link_no_permissions_for_target_node(self):
+        pointer_project = ProjectFactory(creator=self.user_two, is_public=False)
+        pointer = self.public_project.add_pointer(pointer_project, auth=Auth(self.user), save=True)
+        url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, pointer._id)
+        res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
 
     def test_cannot_delete_if_registration(self):
         registration = RegistrationFactory(project=self.public_project)
@@ -3102,7 +3115,7 @@ class TestDeleteNodeLink(ApiTestCase):
         assert_equal(res.status_code, 200)
         pointer_id = res.json['data'][0]['id']
 
-        url = '/{}nodes/{}/node_links/{}'.format(
+        url = '/{}nodes/{}/node_links/{}/'.format(
             API_BASE,
             registration._id,
             pointer_id,
@@ -3174,7 +3187,7 @@ class TestDeleteNodeLink(ApiTestCase):
         project = ProjectFactory(creator=self.user)
         # The node link belongs to a different project
         res = self.app.delete(
-            '/{}nodes/{}/node_links/{}'.format(API_BASE, project._id, self.public_pointer._id),
+            '/{}nodes/{}/node_links/{}/'.format(API_BASE, project._id, self.public_pointer._id),
             auth=self.user.auth,
             expect_errors=True
         )
