@@ -29,7 +29,6 @@ var socialRules = {
             '(\\#[-a-z\\d_]*)?$'
 };
 
-
 var cleanByRule = function(rule) {
     return function(value) {
         var match = value.match(rule);
