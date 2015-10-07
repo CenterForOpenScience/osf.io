@@ -2691,9 +2691,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if save:
             self.save()
-            from website.files.models.base import FileNode
-            for file_ in list(FileNode.find(Q('node', 'eq', self))):
-                file_.save()
         return True
 
     def admin_public_wiki(self, user):

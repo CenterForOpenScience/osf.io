@@ -55,7 +55,7 @@
             </div>
         </div>
         <div class="panel-body">
-            <input id="fileTags" value="${','.join(file_tags)}" />
+            <input id="fileTags" value="${','.join(file_tags) if file_tags else ''}" />
         </div>
         </div>
     %endif
