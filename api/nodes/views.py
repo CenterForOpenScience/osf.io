@@ -1214,7 +1214,6 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
 
         return super(NodeLinksList, self).get_serializer(*args, **kwargs)
 
-
     # overrides ListBulkCreateDestroyView
     def create(self, request, *args, **kwargs):
         """
@@ -1256,7 +1255,6 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
 
         num_items = len(pointer_list)
         bulk_limit = REST_FRAMEWORK['DEFAULT_BULK_LIMIT']
-
 
         if num_items > bulk_limit:
             raise ValidationError(
