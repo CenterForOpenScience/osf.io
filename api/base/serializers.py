@@ -1,5 +1,5 @@
-import collections
 import re
+import collections
 
 from rest_framework.reverse import reverse
 from rest_framework.fields import SkipField
@@ -12,21 +12,35 @@ from website.util import waterbutler_api_url_for
 from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict
 
-def _rapply(d, func, *args, **kwargs):
-    """Apply a function to all values in a dictionary, recursively. Handles lists and dicts currently,
-    as those are the only complex structures currently supported by DRF Serializer Fields."""
-    if isinstance(d, collections.Mapping):
-        return {
-            key: _rapply(value, func, *args, **kwargs)
-            for key, value in d.iteritems()
-        }
-    if isinstance(d, list):
-        return [
-            _rapply(item, func, *args, **kwargs) for item in d
-        ]
-    else:
-        return func(d, *args, **kwargs)
 
+class AllowMissing(ser.Field):
+
+    def __init__(self, field, **kwargs):
+        super(AllowMissing, self).__init__(**kwargs)
+        self.field = field
+
+    def to_representation(self, value):
+        return self.field.to_representation(value)
+
+    def bind(self, field_name, parent):
+        super(AllowMissing, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def get_attribute(self, instance):
+        """
+        Overwrite the error message to return a blank value is if there is no existing value.
+        This allows the display of keys that do not exist in the DB (gitHub on a new OSF account for example.)
+        """
+        try:
+            return self.field.get_attribute(instance)
+        except SkipField:
+            return ''
+
+    def to_internal_value(self, data):
+        return self.field.to_internal_value(data)
+
+
+from website.util import rapply as _rapply
 
 def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
@@ -48,7 +62,8 @@ class IDField(ser.CharField):
     def to_internal_value(self, data):
         update_methods = ['PUT', 'PATCH']
         if self.context['request'].method in update_methods:
-            if self.root.instance._id != data:
+            id_field = getattr(self.root.instance, self.source, '_id')
+            if id_field != data:
                 raise Conflict()
         return super(IDField, self).to_internal_value(data)
 
@@ -78,11 +93,9 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
     """
 
     def __init__(self, view_name=None, **kwargs):
-        kwargs['read_only'] = True
-        kwargs['source'] = '*'
         self.meta = kwargs.pop('meta', None)
         self.link_type = kwargs.pop('link_type', 'url')
-        super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
+        super(JSONAPIHyperlinkedIdentityField, self).__init__(view_name=view_name, **kwargs)
 
     # overrides HyperlinkedIdentityField
     def get_url(self, obj, view_name, request, format):
@@ -95,7 +108,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         if getattr(obj, self.lookup_field) is None:
             return None
 
-        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+        return super(JSONAPIHyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
 
     # overrides HyperlinkedIdentityField
     def to_representation(self, value):

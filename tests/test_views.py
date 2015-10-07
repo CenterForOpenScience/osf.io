@@ -14,7 +14,7 @@ import time
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 
-from modularodm import Q, fields
+from modularodm import Q
 from modularodm.exceptions import ValidationError
 from dateutil.parser import parse as parse_date
 
@@ -63,18 +63,24 @@ from tests.factories import (
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
+
 class Addon(MockAddonNodeSettings):
     @property
     def complete(self):
         return True
+
     def archive_errors(self):
         return 'Error'
+
+
 class Addon2(MockAddonNodeSettings):
     @property
     def complete(self):
         return True
+
     def archive_errors(self):
         return 'Error'
+
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
@@ -86,6 +92,26 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.link.nodes.append(self.project)
         self.link.save()
         self.project_url = self.project.web_url_for('view_project')
+
+    def test_edit_private_link_empty(self):
+        node = ProjectFactory(creator=self.user)
+        link = PrivateLinkFactory()
+        link.nodes.append(node)
+        link.save()
+        url = node.api_url_for("project_private_link_edit")
+        res = self.app.put_json(url, {'pk': link._id, 'value': ''}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Title cannot be blank', res.body)
+
+    def test_edit_private_link_invalid(self):
+        node = ProjectFactory(creator=self.user)
+        link = PrivateLinkFactory()
+        link.nodes.append(node)
+        link.save()
+        url = node.api_url_for("project_private_link_edit")
+        res = self.app.put_json(url, {'pk': link._id, 'value': '<a></a>'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Invalid link name.', res.body)
 
     def test_not_anonymous_for_public_project(self):
         anonymous_link = PrivateLinkFactory(anonymous=True)
@@ -176,6 +202,20 @@ class TestProjectViews(OsfTestCase):
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
 
+    def test_edit_title_empty(self):
+        node = ProjectFactory(creator=self.user1)
+        url = node.api_url_for("edit_node")
+        res = self.app.post_json(url, {'name': 'title', 'value': ''}, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Title cannot be blank', res.body)
+
+    def test_edit_title_invalid(self):
+        node = ProjectFactory(creator=self.user1)
+        url = node.api_url_for("edit_node")
+        res = self.app.post_json(url, {'name': 'title', 'value': '<a></a>'}, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Invalid title.', res.body)
+
     def test_cannot_remove_only_visible_contributor_before_remove_contributor(self):
         self.project.visible_contributor_ids.remove(self.user1._id)
         self.project.save()
@@ -205,7 +245,6 @@ class TestProjectViews(OsfTestCase):
         assert_false(ret)
         self.project.reload()
         assert_true(self.project.is_contributor(self.user2))
-
 
     def test_can_view_nested_project_as_admin(self):
         self.parent_project = NodeFactory(
@@ -599,7 +638,6 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(data['errors']), 2)
 
-
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive')
     def test_registered_projects_contributions(self, mock_archive):
@@ -935,6 +973,22 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 302)
         assert_in(self.project.web_url_for('project_statistics', _guid=True), res.location)
 
+    def test_update_node(self):
+        url = self.project.api_url_for('update_node')
+        res = self.app.put_json(url, {'title': 'newtitle'}, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(self.project.title, 'newtitle')
+
+    # Regression test
+    def test_update_node_with_tags(self):
+        self.project.add_tag('cheezebørger', auth=Auth(self.project.creator), save=True)
+        url = self.project.api_url_for('update_node')
+        res = self.app.put_json(url, {'title': 'newtitle'}, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(self.project.title, 'newtitle')
+
 
 class TestEditableChildrenViews(OsfTestCase):
 
@@ -1091,7 +1145,7 @@ class TestUserProfile(OsfTestCase):
     def test_unserialize_social(self):
         url = api_url_for('unserialize_social')
         payload = {
-            'personal': 'http://frozen.pizza.com/reviews',
+            'profileWebsites': ['http://frozen.pizza.com/reviews'],
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
         }
@@ -1107,9 +1161,9 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_social_validation_failure(self):
         url = api_url_for('unserialize_social')
-        # personal URL is invalid
+        # profileWebsites URL is invalid
         payload = {
-            'personal': 'http://invalidurl',
+            'profileWebsites': ['http://goodurl.com', 'http://invalidurl'],
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
         }
@@ -1124,6 +1178,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_serialize_social_editable(self):
         self.user.social['twitter'] = 'howtopizza'
+        self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
         self.user.save()
         url = api_url_for('serialize_social')
         res = self.app.get(
@@ -1131,12 +1186,14 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com'])
         assert_true(res.json.get('github') is None)
         assert_true(res.json['editable'])
 
     def test_serialize_social_not_editable(self):
         user2 = AuthUserFactory()
         self.user.social['twitter'] = 'howtopizza'
+        self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
         self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
         res = self.app.get(
@@ -1144,6 +1201,7 @@ class TestUserProfile(OsfTestCase):
             auth=user2.auth,
         )
         assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com'])
         assert_true(res.json.get('github') is None)
         assert_false(res.json['editable'])
 

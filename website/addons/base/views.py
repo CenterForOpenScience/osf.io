@@ -38,10 +38,11 @@ from website.notifications.events.files import FileEvent  # noqa
 FILE_GONE_ERROR_MESSAGE = u'''
 <style>
 .file-download{{display: none;}}
+.file-share{{display: none;}}
 .file-delete{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This link to the file "{file_name}" is not longer valid.
+This link to the file "{file_name}" is no longer valid.
 </div>'''
 
 

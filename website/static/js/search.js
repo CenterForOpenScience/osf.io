@@ -34,6 +34,7 @@ var Tag = function(tagInfo){
     self.count = tagInfo.doc_count;
 };
 
+
 var User = function(result){
     var self = this;
     self.category = result.category;
@@ -145,13 +146,13 @@ var ViewModel = function(params) {
         };
     });
 
-
     self.fullQuery = ko.pureComputed(function() {
-        return {
-            'filtered': {
-                'query': self.queryObject()
+        var query = {
+            filtered: {
+                query: self.queryObject()
             }
         };
+        return query;
     });
 
     self.sortCategories = function(a, b) {
@@ -189,7 +190,7 @@ var ViewModel = function(params) {
     };
 
     self._makeTagString = function(tagName) {
-        return 'tags:("' + tagName.replace(/"/g, '\\\"') + '")';        
+        return 'tags:("' + tagName.replace(/"/g, '\\\"') + '")';
     };
     self.addTag = function(tagName) {
         var tagString = self._makeTagString(tagName);
@@ -199,12 +200,12 @@ var ViewModel = function(params) {
                 query += ' AND ';
             }
             query += tagString;
-            self.query(query); 
-            self.onUpdateTags();                      
-        }     
+            self.query(query);
+            self.onUpdateTags();
+        }
     };
     self.removeTag = function(tagName, _, e) {
-        e.stopPropagation();            
+        e.stopPropagation();
         var query = self.query();
         var tagRegExp = /(?:AND)?\s*tags\:\([\'\"](.+?)[\'\"]\)/g;
         var matches = query.match(tagRegExp);
@@ -212,7 +213,7 @@ var ViewModel = function(params) {
         while (matches.length) {
             var match = matches.pop();
             if ((match.match(tagName) || []).length) {
-                query = query.replace(match, '');   
+                query = query.replace(match, '');
                 dirty = true;
             }
         }
@@ -242,7 +243,11 @@ var ViewModel = function(params) {
         query = query.replace(/\s?AND tags:/g, ' AND tags:');
         self.query(query);
 
-        var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
+        var jsonData = {
+            query: self.fullQuery(),
+            from: self.currentIndex(),
+            size: self.resultsPerPage()
+        };
         var url = self.queryUrl + self.category().url();
 
         $osf.postJSON(url, jsonData).success(function(data) {
