@@ -20,6 +20,11 @@ class CommentReport():
 
 
 class CommentSerializer(JSONAPISerializer):
+
+    filterable_fields = frozenset([
+        'deleted'
+    ])
+
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     content = ser.CharField()

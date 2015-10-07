@@ -1268,7 +1268,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         ]
 
 
-class NodeCommentsList(generics.ListCreateAPIView, NodeMixin):
+class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublicForComments,
@@ -1280,5 +1280,8 @@ class NodeCommentsList(generics.ListCreateAPIView, NodeMixin):
 
     serializer_class = CommentSerializer
 
+    def get_default_odm_query(self):
+        return Q('node', 'eq', self.get_node())
+
     def get_queryset(self):
-        return Comment.find(Q('node', 'eq', self.get_node()))
+        return Comment.find(self.get_query_from_request())
