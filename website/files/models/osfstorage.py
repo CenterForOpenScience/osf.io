@@ -134,8 +134,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
         search.update_file(self, delete=True)
         return super(OsfStorageFile, self).delete(user, parent)
 
-    def save(self):
-        search.update_file(self)
+    def save(self, skip_search=False):
+        print '\n\n File: ' + self.name + ', ' + self._id + '\n\n'
+        if not skip_search:
+            search.update_file(self)
         return super(OsfStorageFile, self).save()
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):

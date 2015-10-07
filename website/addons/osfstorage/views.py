@@ -251,7 +251,6 @@ def osfstorage_remove_tag(file_node, **kwargs):
     tag = Tag.load(tag)
     if tag and tag in file_node.tags:
         file_node.tags.remove(tag)
-        file_node.tags.remove(tag)
         file_node.save()
         return {'status': 'success'}, httplib.OK
     return {'status': 'failure'}, httplib.BAD_REQUEST

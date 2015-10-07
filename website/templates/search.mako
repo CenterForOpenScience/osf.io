@@ -150,7 +150,7 @@
         <!-- /ko -->
     </script>
     <script type="text/html" id="file">
-        <h4><a href="{{ deep_url }}">{{ name }}</a> (File)</h4>
+        <h4><a href="{{ deep_url }}">{{ name }}</a> (<span data-bind="if: is_registration">Registration </span>File)</h4>
         <!-- ko if: parent_url -->
         <h5>From: <a data-bind="attr.href: parent_url">{{ parent_title }}</a> / <a data-bind="attr.href: node_url">{{ node_title }}</a></h5>
         <!-- /ko -->

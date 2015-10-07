@@ -328,9 +328,9 @@ def update_node(node, index=None, bulk=False):
             return elastic_document
         else:
             es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
-
+    #TODO @hmoco, make this a celry task that takes care of updating files
     from website.files.models.base import FileNode
-    for file_ in list(FileNode.find(Q('node', 'eq', node) & Q('provider', 'eq', 'osfstorage'))):
+    for file_ in list(FileNode.find(Q('node', 'eq', node) & Q('provider', 'eq', 'osfstorage') & Q('is_file', 'eq', True))):
         update_file(file_)
 
 
@@ -418,11 +418,11 @@ def update_user(user, index=None):
     es.index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
 
 @requires_search
-def update_file(file_, index=None):
+def update_file(file_, index=None, delete=False):
 
     index = index or INDEX
 
-    if not file_.node.is_public or file.node.is_deleted or file.node.is_archiving:
+    if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
         es.delete(
             index=index,
             doc_type='file',
