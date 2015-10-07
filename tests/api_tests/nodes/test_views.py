@@ -2429,7 +2429,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         res = self.app.put_json_api(self.public_url, contrib_update_list, auth=self.user.auth, expect_errors=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
 
-    def test_bulk_update_contributors_invalid_permissions_or_bibliographic(self):
+    def test_bulk_update_contributors_invalid_permissions(self):
         res = self.app.put_json_api(self.public_url, {'data': [self.payload_two, {'id': self.user_two._id, 'type': 'contributors', 'attributes': {'permission': 'super-user'}}]},
                                     auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -2440,6 +2440,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         assert_items_equal([data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']],
                            ['admin', 'read', 'read'])
 
+    def test_bulk_update_contributors_invalid_bibliographic(self):
         res = self.app.put_json_api(self.public_url, {'data': [self.payload_two, {'id': self.user_two._id, 'type': 'contributors', 'attributes': {'bibliographic': 'true and false'}}]},
                                     auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -2576,10 +2577,11 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
         assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
 
-    def test_bulk_partial_update_contributors_wrong_type_and_id(self):
+    def test_bulk_partial_update_contributors_wrong_type(self):
         res = self.app.patch_json_api(self.public_url, {'data': [self.invalid_type]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
+    def test_bulk_partial_update_contributors_wrong_id(self):
         res = self.app.patch_json_api(self.public_url, {'data': [self.invalid_id]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
@@ -2588,7 +2590,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         res = self.app.patch_json_api(self.public_url, contrib_update_list, auth=self.user.auth, expect_errors=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
 
-    def test_bulk_partial_update_invalid_permissions_or_bibliographic(self):
+    def test_bulk_partial_update_invalid_permissions(self):
         res = self.app.patch_json_api(self.public_url, {'data': [self.payload_two, {'id': self.user_two._id, 'type': 'contributors', 'attributes': {'permission': 'super-user'}}]},
                                     auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -2599,6 +2601,8 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         assert_items_equal([data[0]['attributes']['permission'], data[1]['attributes']['permission'], data[2]['attributes']['permission']],
                            ['admin', 'read', 'read'])
 
+
+    def test_bulk_partial_update_invalid_bibliographic(self):
         res = self.app.patch_json_api(self.public_url, {'data': [self.payload_two, {'id': self.user_two._id, 'type': 'contributors', 'attributes': {'bibliographic': 'true and false'}}]},
                                     auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -2660,6 +2664,7 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
                                                                   {'id': self.user._id, 'type': 'contributors'}]},
                                        auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Must have at least one visible contributor')
         self.public_project.reload()
         assert_equal(len(self.public_project.contributors), 3)
 
@@ -2692,8 +2697,6 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
 
-        self.public_project.reload()
-
     def test_bulk_delete_contributors_public_projects_logged_out(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 3)
@@ -2713,8 +2716,6 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
 
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
-
-        self.private_project.reload()
 
     def test_bulk_delete_contributors_private_projects_logged_out(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
@@ -4439,12 +4440,12 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.json['data'], [])
 
-    @assert_logs(NodeLog.POINTER_CREATED, 'public_project', -1)
-    @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
-    def test_bulk_creates_public_node_pointer_logged_in(self):
+    def test_bulk_creates_public_node_pointer_logged_in_non_contrib(self):
         res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
+    def test_bulk_creates_public_node_pointer_logged_in_contrib(self):
         res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
@@ -5065,6 +5066,7 @@ class TestBulkDeleteNodeLinks(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Request must contain array of resource identifier objects.')
 
+    def test_bulk_delete_pointers_payload_is_empty_dict(self):
         res = self.app.delete_json_api(self.public_url, {}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
