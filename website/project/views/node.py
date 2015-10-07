@@ -576,12 +576,15 @@ def update_node(auth, node, **kwargs):
     # category, title, and discription which can be edited by write permission contributor
     data = r_strip_html(request.get_json())
     try:
+        updated_field_names = node.update(data, auth=auth)
+        # Need to cast tags to a string to make them JSON-serialiable
+        updated_fields_dict = {
+            key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
+            for key in updated_field_names
+            if key != 'logs'
+        }
         return {
-            'updated_fields': {
-                key: getattr(node, key)
-                for key in
-                node.update(data, auth=auth)
-            }
+            'updated_fields': updated_fields_dict
         }
     except NodeUpdateError as e:
         raise HTTPError(400, data=dict(
