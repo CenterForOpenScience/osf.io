@@ -3367,6 +3367,14 @@ class TestNodeCommentsList(ApiTestCase):
         assert_equal(len(comment_json), 1)
         assert_in(self.registration_comment._id, comment_ids)
 
+    def test_return_both_deleted_and_undeleted_comments(self):
+        deleted_comment = CommentFactory(node=self.private_project, user=self.user)
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        comment_json = res.json['data']
+        comment_ids = [comment['id'] for comment in comment_json]
+        assert_in(self.comment._id, comment_ids)
+        assert_in(deleted_comment._id, comment_ids)
 
 class TestNodeCommentCreate(ApiTestCase):
 
