@@ -151,7 +151,7 @@ $(document).ready(function() {
                 }
             }
         });
-        }
+        };
         // unchecked warning adopted from profile-settings-addons-page.js
         if(unchecked.length > 0) {
             var uncheckedText = $.map(unchecked, function(el){
