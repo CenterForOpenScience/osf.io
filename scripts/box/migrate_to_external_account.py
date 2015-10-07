@@ -8,14 +8,6 @@ Changes:
  - Create external account for authorized user settings
  - Attach external account to user settings
  - Attach external account to all node settings
-
-
-First run the following in a mongo shell:
-
-    db.getCollection('boxnodesettings').update({'user_settings': {'$type': 2}}, {$rename: { user_settings: 'foreign_user_settings'}}, {multi: true})
-
-Then change the user_settings field of BoxNodeSettings to foreign_user_settings
-
 """
 
 import sys
@@ -35,6 +27,8 @@ logger = logging.getLogger(__name__)
 
 
 def do_migration(records):
+    database['boxnodesettings'].update({'user_settings': {'$type': 2}}, {'$rename': { 'user_settings': 'foreign_user_settings'}}, multi=True)
+
     for user_addon in records:
         user = user_addon.owner
         old_account = user_addon.oauth_settings
