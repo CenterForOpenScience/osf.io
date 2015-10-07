@@ -47,7 +47,7 @@
           </div>
         </div>
       </div>
-    %if (file_tags or 'write' in user['permissions']) and provider == 'osfstorage':
+    %if (file_tags or 'write' in user['permissions']) and provider == 'osfstorage' and not error:
        <div class="panel panel-default">
         <div class="panel-heading clearfix">
             <h3 class="panel-title">Tags</h3>
