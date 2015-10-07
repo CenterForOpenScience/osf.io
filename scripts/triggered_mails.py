@@ -37,7 +37,7 @@ def find_inactive_users_with_no_inactivity_email_sent_or_queued():
     inactive_emails = mails.QueuedMail.find(Q('email_type', 'eq', mails.NO_LOGIN_TYPE))
 
     #This is done to prevent User query returns comparison to User, as equality fails
-    #on datetime fields due to pymongo rounding. Instead here id is compared and then
+    #on datetime fields due to pymongo rounding. Instead here _id is compared.
     users_sent_id = [email.user._id for email in inactive_emails]
     inactive_ids = [user._id for user in inactive_users if user.is_active]
     users_to_send = [User.load(id) for id in (set(inactive_ids) - set(users_sent_id))]
