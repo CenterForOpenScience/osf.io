@@ -71,7 +71,7 @@ class OsfStorageFileNode(FileNode):
     def save(self):
         self.path = ''
         self.materialized_path = ''
-        super(OsfStorageFileNode, self).save()
+        return super(OsfStorageFileNode, self).save()
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
@@ -135,10 +135,10 @@ class OsfStorageFile(OsfStorageFileNode, File):
         return super(OsfStorageFile, self).delete(user, parent)
 
     def save(self, skip_search=False):
-        print '\n\n File: ' + self.name + ', ' + self._id + '\n\n'
+        ret = super(OsfStorageFile, self).save()
         if not skip_search:
             search.update_file(self)
-        return super(OsfStorageFile, self).save()
+        return ret
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
 

@@ -337,7 +337,7 @@ class FileNode(object):
         Implemented top level so that child class may override it
         and just call super.save rather than self.stored_object.save
         """
-        self.stored_object.save()
+        return self.stored_object.save()
 
     def serialize(self, **kwargs):
         return {
