@@ -23,7 +23,6 @@ class TestGoogleDrivePostMergeMigration(OsfTestCase):
 
         user.external_accounts = [account]
 
-
         user.add_addon('googledrive', auth=Auth(user))
         user_addon = user.get_addon('googledrive')
         user_addon.save()
@@ -37,11 +36,15 @@ class TestGoogleDrivePostMergeMigration(OsfTestCase):
         node_addon.save()
 
         assert_equal(node_addon.external_account, None)
+        assert_equal(node_addon.folder_id, 'abcdef0')
 
         do_migration()
         node_addon.reload()
 
         assert_equal(node_addon.external_account, account)
+        assert_equal(node_addon.folder_id, 'abcdef0')
+        assert_equal(node_addon.folder_path, '/')
+        assert_equal(node_addon.folder_name, '/ (Full Google Drive)')
 
     def test_migration_no_account(self):
         GoogleDriveUserSettings.remove()
