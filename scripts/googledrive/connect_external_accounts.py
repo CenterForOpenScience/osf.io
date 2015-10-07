@@ -20,13 +20,19 @@ logger = logging.getLogger(__name__)
 
 def do_migration():
     for node_addon in GoogleDriveNodeSettings.find(Q('foreign_user_settings', 'ne', None)):
+        f_id = None
         user_addon = node_addon.foreign_user_settings
         user = user_addon.owner
         if not user_addon.external_accounts:
             logger.warning('User {0} has no googledrive external account'.format(user._id))
             continue
         account = user_addon.external_accounts[0]
-        node_addon.set_auth(account, user_addon.owner)
+
+        if node_addon.folder_id:
+            f_id = node_addon.folder_id
+
+        node_addon.set_auth(account, user_addon.owner)  #.set_auth will reset the folder_id field
+        node_addon.folder_id = f_id
         node_addon.save()
         logger.info('Added external account {0} to node {1}'.format(
             account._id, node_addon.owner._id,
