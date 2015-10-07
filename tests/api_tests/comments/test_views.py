@@ -663,7 +663,7 @@ class TestCommentReportsView(ApiTestCase):
 
     def test_public_node_non_contributor_can_report_comment(self):
         """ Test that when a public project allows any osf user to
-            comment (comment_level = 'public), non-contributors
+            comment (comment_level == 'public), non-contributors
             can also report comments.
         """
         project = ProjectFactory(is_public=True)
@@ -817,7 +817,6 @@ class TestReportDetailView(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['message'], payload['data']['attributes']['message'])
 
-    # DELETE
     def test_private_node_reporting_contributor_can_delete_report_detail(self):
         comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.contributor)
         comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
