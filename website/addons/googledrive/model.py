@@ -164,7 +164,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     folder_id = fields.StringField(default=None)
     folder_path = fields.StringField(default=None)
 
-    user_settings = fields.ForeignField(
+    foreign_user_settings = fields.ForeignField(
         'googledriveusersettings', backref='authorized'
     )
 
