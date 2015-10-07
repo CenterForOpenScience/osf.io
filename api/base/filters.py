@@ -179,17 +179,16 @@ class ListFilterMixin(FilterMixin):
     def get_filtered_queryset(self, field_name, value, default_queryset):
         """filters default queryset based on the serializer field type"""
         field = self.serializer_class._declared_fields[field_name]
-        field_name = field.source or field_name
 
         if isinstance(field, ser.SerializerMethodField):
             return_val = [item for item in default_queryset if self.get_serializer_method(field_name)(item) == self.convert_value(value, field_name)]
         elif isinstance(field, ser.BooleanField):
-            return_val = [item for item in default_queryset if getattr(item, field_name, None) == self.convert_value(value, field_name)]
+            return_val = [item for item in default_queryset if getattr(item, field.source, None) == self.convert_value(value, field_name)]
         elif isinstance(field, ser.CharField):
-            return_val = [item for item in default_queryset if value.lower() in getattr(item, field_name, None).lower()]
+            return_val = [item for item in default_queryset if value.lower() in getattr(item, field.source, None).lower()]
         else:
             # TODO Ensure that if you try to filter on an invalid field, it returns a useful error.
-            return_val = [item for item in default_queryset if value in getattr(item, field_name, None)]
+            return_val = [item for item in default_queryset if value in getattr(item, field.source, None)]
 
         return return_val
 
