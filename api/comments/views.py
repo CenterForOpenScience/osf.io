@@ -74,7 +74,7 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
         return self.get_comment()
 
 
-class CommentReports(generics.ListCreateAPIView, CommentMixin):
+class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
     """Reporting a comment.
     """
     permission_classes = (
