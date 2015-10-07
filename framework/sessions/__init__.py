@@ -5,6 +5,7 @@ import urllib
 import urlparse
 import bson.objectid
 import httplib as http
+from datetime import datetime
 
 import itsdangerous
 
@@ -171,8 +172,9 @@ def before_request():
 def after_request(response):
     if session.data.get('auth_user_id'):
         session.save()
+        #import here to prevent circular import error
         from framework.auth.core import _get_current_user
-        from datetime import datetime
+
         user = _get_current_user()
         if user:
             user.date_last_login = datetime.utcnow()
