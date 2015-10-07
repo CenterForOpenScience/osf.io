@@ -4,7 +4,6 @@ import logging
 from datetime import datetime
 
 import furl
-import pymongo
 import requests
 from modularodm import fields
 from framework.mongo import StoredObject
@@ -14,7 +13,7 @@ from framework.auth import Auth
 from framework.exceptions import HTTPError
 
 from website.addons.base import exceptions
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
 from website.addons.box import settings
@@ -23,40 +22,6 @@ from website.addons.box.client import get_client_from_user_settings
 
 
 logger = logging.getLogger(__name__)
-
-
-class BoxFile(GuidFile):
-    """A Box file model with a GUID. Created lazily upon viewing a
-    file's detail page.
-    """
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('path', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-    path = fields.StringField(required=True, index=True)
-
-    @property
-    def waterbutler_path(self):
-        if not self.path.startswith('/'):
-            return '/{}'.format(self.path)
-        return self.path
-
-    @property
-    def provider(self):
-        return 'box'
-
-    @property
-    def version_identifier(self):
-        return 'revision'
-
-    @property
-    def unique_identifier(self):
-        return self._metadata_cache['extra'].get('etag') or self._metadata_cache['version']
 
 
 class BoxOAuthSettings(StoredObject):
@@ -287,9 +252,6 @@ class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         self.user_settings = user_settings
         nodelogger = BoxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
         nodelogger.log(action="node_authorized", save=True)
-
-    def find_or_create_file_guid(self, path):
-        return BoxFile.get_or_create(node=self.owner, path=path)
 
     # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
     def delete(self, save=True):

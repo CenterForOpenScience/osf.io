@@ -78,9 +78,9 @@ class TestUsers(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         for user in user_json:
-            profile_image_url = user['attributes']['profile_image_url']
+            profile_image_url = user['links']['profile_image']
             query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
-            assert_equal(int(query_dict.get('size')[0]), size)
+            assert_equal(int(query_dict.get('s')[0]), size)
 
 
 class TestUserDetail(ApiTestCase):
@@ -115,6 +115,21 @@ class TestUserDetail(ApiTestCase):
         user_json = res.json['data']
         assert_not_equal(user_json['attributes']['full_name'], self.user_one.fullname)
 
+    def test_get_new_users(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_two._id)
+        res = self.app.get(url)
+        assert_equal(res.status_code, 200)
+        user_json = res.json['data']['attributes']
+        assert_equal(user_json['full_name'], self.user_two.fullname)
+        assert_equal(user_json['gitHub'], '')
+        assert_equal(user_json['scholar'], '')
+        assert_equal(user_json['personal_website'], '')
+        assert_equal(user_json['twitter'], '')
+        assert_equal(user_json['linkedIn'], '')
+        assert_equal(user_json['impactStory'], '')
+        assert_equal(user_json['orcid'], '')
+        assert_equal(user_json['researcherId'], '')
+
     def test_get_incorrect_pk_user_not_logged_in(self):
         url = "/{}users/{}/".format(API_BASE, self.user_two._id)
         res = self.app.get(url, auth=self.user_one.auth)
@@ -127,9 +142,15 @@ class TestUserDetail(ApiTestCase):
         url = "/{}users/{}/?profile_image_size={}".format(API_BASE, self.user_one._id, size)
         res = self.app.get(url)
         user_json = res.json['data']
-        profile_image_url = user_json['attributes']['profile_image_url']
+        profile_image_url = user_json['links']['profile_image']
         query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
-        assert_equal(int(query_dict.get('size')[0]), size)
+        assert_equal(int(query_dict.get('s')[0]), size)
+
+    def test_profile_image_in_links(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        assert_in('profile_image', user_json['links'])
 
 
 class TestUserNodes(ApiTestCase):
@@ -486,8 +507,29 @@ class TestUserUpdate(ApiTestCase):
             }
         }
 
+        self.blank_but_not_empty_full_name = {
+            'data': {
+                'id': self.user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': ' '
+                }
+
+            }
+        }
+
     def tearDown(self):
         super(TestUserUpdate, self).tearDown()
+
+    def test_update_user_blank_but_not_empty_full_name(self):
+        res = self.app.put_json_api(self.user_one_url, self.blank_but_not_empty_full_name, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Value must not be empty.')
+
+    def test_partial_update_user_blank_but_not_empty_full_name(self):
+        res = self.app.patch_json_api(self.user_one_url, self.blank_but_not_empty_full_name, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Value must not be empty.')
 
     def test_patch_user_incorrect_type(self):
         res = self.app.put_json_api(self.user_one_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)
@@ -738,7 +780,7 @@ class TestDeactivatedUser(ApiTestCase):
         super(TestDeactivatedUser, self).setUp()
         self.user = AuthUserFactory()
 
-    def test_deactivated_user_returns_400_response(self):
+    def test_requesting_as_deactivated_user_returns_400_response(self):
         url = '/{}users/{}/'.format(API_BASE, self.user._id)
         res = self.app.get(url, auth=self.user.auth , expect_errors=True)
         assert_equal(res.status_code, 200)
@@ -746,6 +788,15 @@ class TestDeactivatedUser(ApiTestCase):
         self.user.save()
         res = self.app.get(url, auth=self.user.auth , expect_errors=True)
         assert_equal(res.status_code, 400)
+
+    def test_requesting_deactivated_user_returns_410_response(self):
+        url = '/{}users/{}/'.format(API_BASE, self.user._id)
+        res = self.app.get(url, auth=self.user.auth , expect_errors=True)
+        assert_equal(res.status_code, 200)
+        self.user.is_disabled = True
+        self.user.save()
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 410)
 
 
 class TestExceptionFormatting(ApiTestCase):
