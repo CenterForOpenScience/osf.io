@@ -102,23 +102,16 @@
                         data-bind="click: cancel"
                     >Discard changes</button>
 
-                <button data-bind="visible: hasValidWebsites()"
+                <button
                         type="submit"
                         class="btn btn-success"
                     >Save</button>
 
-                <button data-bind="visible: !hasValidWebsites()"
-                        type="submit"
-                        class="btn btn-default disabled"
-                    >Save</button>
-           </div>
+            </div>
 
             <!-- Flashed Messages -->
             <div class="help-block">
                 <p data-bind="html: message, attr.class: messageClass"></p>
-            </div>
-            <div data-bind="ifnot: hasValidWebsites" class="text-danger">
-                Please update your website before saving
             </div>
 
         </form>

@@ -332,7 +332,14 @@ BaseViewModel.prototype.cancel = function(data, event) {
 };
 
 BaseViewModel.prototype.submit = function() {
-    if (this.hasValidProperty() && this.isValid()) {
+    if (this.hasValidWebsites()) {
+        this.changeMessage(
+            'Please update your website',
+            'text-danger',
+            5000
+        );
+    }
+    else if (this.hasValidProperty() && this.isValid()) {
         $osf.putJSON(
             this.urls.crud,
             this.serialize()
