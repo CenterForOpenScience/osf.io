@@ -530,8 +530,8 @@ class NodeCommentsList(generics.ListCreateAPIView, NodeMixin):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
+    required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentSerializer
 

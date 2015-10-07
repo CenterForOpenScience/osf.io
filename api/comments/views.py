@@ -41,8 +41,8 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
+    required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentSerializer
 
@@ -64,8 +64,8 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
+    required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentDetailSerializer
 
@@ -82,7 +82,9 @@ class CommentReports(generics.ListCreateAPIView, CommentMixin):
         ContributorOrPublicForComments,
         base_permissions.TokenHasScope,
     )
-    # required scopes
+
+    required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
+    required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentReportsSerializer
 
@@ -105,7 +107,9 @@ class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
         ContributorOrPublicForComments,
         base_permissions.TokenHasScope,
     )
-    # required scopes
+
+    required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
+    required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentReportDetailSerializer
 
