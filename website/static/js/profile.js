@@ -332,7 +332,7 @@ BaseViewModel.prototype.cancel = function(data, event) {
 };
 
 BaseViewModel.prototype.submit = function() {
-    if (this.hasValidWebsites()) {
+    if (!this.hasValidWebsites()) {
         this.changeMessage(
             'Please update your website',
             'text-danger',
