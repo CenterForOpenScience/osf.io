@@ -55,7 +55,6 @@ def _url_val(val, obj, serializer, **kwargs):
     else:
         return val
 
-
 class IDField(ser.CharField):
     """
     ID field that validates that 'id' in the request body is the same as the instance 'id' for single requests.
@@ -66,9 +65,8 @@ class IDField(ser.CharField):
 
     #Overrides CharField
     def to_internal_value(self, data):
-        update_methods = ['PUT', 'PATCH']
         request = self.context['request']
-        if request.method in update_methods and not isinstance(request.data, list):
+        if request.method in utils.UPDATE_METHODS and not isinstance(request.data, list):
             if self.root.instance._id != data:
                 raise Conflict()
         return super(IDField, self).to_internal_value(data)
@@ -421,8 +419,7 @@ class JSONAPISerializer(ser.Serializer):
 
         self._validated_data.pop('type', None)
 
-        update_methods = ['PUT', 'PATCH']
-        if self.context['request'].method in update_methods:
+        if self.context['request'].method in utils.UPDATE_METHODS:
             self._validated_data.pop('_id', None)
 
         return ret
