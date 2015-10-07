@@ -38,6 +38,7 @@ class TokuTransactionsMiddleware(object):
         """Commit transaction if it exists, rolling back in an
         exception occurs.
         """
+
         try:
             if response.status_code >= 400:
                 commands.rollback()

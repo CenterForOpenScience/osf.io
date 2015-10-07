@@ -40,9 +40,9 @@ var SharePopover =  {
         var link = params.link;
 
         var url = link.substring(0, link.indexOf('render'));
-        return m('button.btn.btn-sm.btn-primary.file-share', {onclick: function popOverShow() {
+        return m('button#sharebutton.disabled.btn.btn-sm.btn-primary.file-share', {onclick: function popOverShow() {
                 var pop = document.getElementById('popOver');
-                //This is bad, shoudl only happen for Firefox, thanks @chrisseto
+                //This is bad, should only happen for Firefox, thanks @chrisseto
                 if (!pop){
                     return window.setTimeout(popOverShow, 100);
                 }
@@ -57,7 +57,7 @@ var SharePopover =  {
                             m('input.form-control[readonly][type="text"][value="'+ link +'"]')
                         ])),
                         m('.tab-pane#embed', [
-                            m('p', 'Dynamically Render iFrame with JavaScript'),
+                            m('p', 'Dynamically render iframe with JavaScript'),
                             m('textarea.form-control[readonly][type="text"][value="' +
                                 '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
                                 '<link href="' + url + 'static/css/mfr.css" media="all" rel="stylesheet">' +
@@ -67,14 +67,15 @@ var SharePopover =  {
                                     'var mfrRender = new mfr.Render("mfrIframe", "' + link + '");' +
                                 '</script>' + '"]'
                             ), m('br'),
-                            m('p', 'Direct iFrame with Fixed Height and Width'),
+                            m('p', 'Direct iframe with fixed height and width'),
                             m('textarea.form-control[readonly][value="' +
                                 '<iframe src="' + link + '" width="100%" scrolling="yes" height="' + params.height + '" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen>"]'
                             )
                         ])
                     ])
                 ]);
-            }, config: function(element, isInitialized) {
+            },
+            config: function(element, isInitialized) {
                 if(!isInitialized){
                     var button = $(element).popover();
                     button.on('show.bs.popover', function(e){
