@@ -73,7 +73,7 @@
                         <!-- /ko -->
                         <div class="row" class="hidden-xs" data-bind="if: showLicenses" class="row">
                             <div class="col-md-12">
-                                <h4> Filter by License:</h4>
+                                <h4> Filter by license:</h4>
                                 <span data-bind="if: licenses">
                                 <ul class="nav nav-pills nav-stacked"
                                     data-bind="foreach: {data: licenses, as: 'license'}">
