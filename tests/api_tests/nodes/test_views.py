@@ -883,8 +883,8 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
     def test_bulk_update_private_projects_logged_in_read_only_contrib(self):
-        self.private_project.add_contributor(self.user_two, permissions=['read'])
-        self.private_project_two.add_contributor(self.user_two, permissions=['read'])
+        self.private_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
+        self.private_project_two.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
         res = self.app.put_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
@@ -1128,8 +1128,8 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         assert_equal(res.json['data']['attributes']['title'], self.title)
 
     def test_bulk_partial_update_private_projects_logged_in_read_only_contrib(self):
-        self.private_project.add_contributor(self.user_two, permissions=['read'])
-        self.private_project_two.add_contributor(self.user_two, permissions=['read'])
+        self.private_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
+        self.private_project_two.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
         res = self.app.patch_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
@@ -1264,8 +1264,7 @@ class TestNodeBulkDelete(ApiTestCase):
         assert_equal(res.status_code, 200)
 
     def test_bulk_delete_private_projects_logged_in_read_only_contributor(self):
-        self.private_project_user_one.add_contributor(self.user_two, permissions=['read'])
-        self.private_project_user_one.save()
+        self.private_project_user_one.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
         res = self.app.delete_json_api(self.url, self.private_payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
@@ -2237,7 +2236,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         assert_equal(len(res.json['data']), 1)
 
     def test_node_contributor_bulk_create_logged_in_read_only_contrib_private_project(self):
-        self.private_project.add_contributor(self.user_two, permissions=['read'])
+        self.private_project.add_contributor(self.user_two, permissions=[permissions.READ], save=True)
         res = self.app.post_json_api(self.private_url, {'data': [self.payload_two]}, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -3036,7 +3035,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         assert_equal(len(self.private_project.contributors), 1)
 
     def test_adds_contributor_private_project_non_admin(self):
-        self.private_project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user))
+        self.private_project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user), save=True)
         res = self.app.post_json_api(self.private_url, self.data_user_three,
                                  auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
