@@ -572,7 +572,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'is_deleted',
         'wiki_pages_current',
         'is_retracted',
-        'node_license',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -597,7 +596,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'description',
         'category',
         'is_public',
-        'node_license',
     ]
 
     # Named constants
@@ -644,16 +642,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     title = fields.StringField(validate=validate_title)
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
-
-    # Representation of a nodes's license
-    # {
-    #  'id':  <id>,
-    #  'name': <name>,
-    #  'text': <license text>,
-    #  'year' (optional): <year>,
-    #  'copyrightHolders' (optional): <copyright_holders>
-    # }
-    node_license = fields.DictionaryField(default=dict)
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -723,13 +711,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pk(self):
         return self._id
-
-    @property
-    def license(self):
-        node_license = self.node_license
-        if not node_license and self.parent_node:
-            return self.parent_node.license
-        return node_license
 
     @property
     def category_display(self):
@@ -1258,14 +1239,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             need_update = False
         if need_update:
             self.update_search()
-
-        if 'node_license' in saved_fields:
-            children = [c for c in self.get_descendants_recursive(
-                include=lambda n: n.node_license == {}
-            )]
-            # this returns generator, that would get unspooled anyways
-            if children:
-                Node.bulk_update_search(children)
 
         # This method checks what has changed.
         if settings.PIWIK_HOST and update_piwik:
@@ -1853,7 +1826,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
-        forked.node_license = original.license
 
         # Forks default to private status
         forked.is_public = False
@@ -1940,7 +1912,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
-        registered.node_license = original.license
 
         registered.save()
 
