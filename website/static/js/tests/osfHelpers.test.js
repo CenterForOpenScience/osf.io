@@ -416,45 +416,10 @@ describe('osfHelpers', () => {
         });
     });
 
-    describe('iterObject', () => {
-        var get = function(obj, key) {
-            return obj[key];
-        };
-
-        it('maps an object to an array {key: KEY, value: VALUE} pairs', () => {
-            var obj = {
-                foo: 'bar',
-                cat: 'dog'
-            };
-            var keys = Object.keys(obj);
-            var values = keys.map(get.bind(null, obj));
-            var iterable = $osf.iterObject(obj);
-            for(var i = 0; i < iterable.length; i++) {
-                var item = iterable[i];
-                assert.include(keys, item.key);
-                assert.include(values, item.value);
-            }            
-        });
-    });
-
-    describe('isBlank', () => {
-        it('is false for falsey and strings of zero or more whitespace characters', () => {
-            assert.isTrue($osf.isBlank(false));
-            assert.isTrue($osf.isBlank(null));
-            assert.isTrue($osf.isBlank(undefined));
-            assert.isTrue($osf.isBlank('        '));
-
-            assert.isFalse($osf.isBlank(1));
-            assert.isFalse($osf.isBlank(true));
-            assert.isFalse($osf.isBlank('abcd'));
-            assert.isFalse($osf.isBlank('   a'));
-        });
-    });
-
     describe('indexOf', () => {
         it('returns a positive integer index if it finds a matching item', () => {
             var list = [];
-            for(var i = 0; i < 5; i++){                
+            for(var i = 0; i < 5; i++){
                 list.push({
                     foo: 'bar' + i
                 });
@@ -468,7 +433,7 @@ describe('osfHelpers', () => {
         });
         it('returns -1 if no item is matched', () => {
             var list = [];
-            for(var i = 0; i < 5; i++){                
+            for(var i = 0; i < 5; i++){
                 list.push({
                     foo: 'bar' + i
                 });
@@ -478,21 +443,6 @@ describe('osfHelpers', () => {
             };
             var found = $osf.indexOf(list, search);
             assert.equal(-1, found);
-        });
-    });
-    
-    describe('not', () => {
-        it('returns a partial function that negates the return value of callables', () => {
-            var I = function(cond){
-                return !!cond;
-            };
-            var notI = $osf.not(I);
-            assert.isTrue(notI(false));
-            assert.isFalse(notI(true));
-        });
-        it('returns a partial function that negates the value of non callables', () => {
-            assert.isTrue($osf.not(false)());
-            assert.isFalse($osf.not(true)());
         });
     });
 });
