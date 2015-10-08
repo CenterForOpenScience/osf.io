@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
-import mock
+import json
 import base64
 from urlparse import urlparse
+
+import mock
 from nose.tools import *  # flake8: noqa
+import httpretty
 
 from framework.auth.core import Auth
 
 from website.addons.github import model
 from website.models import Node, NodeLog
 from website.views import find_dashboard
-from website.util import permissions
+from website.util import permissions, waterbutler_api_url_for
 from website.util.sanitize import strip_html
-
 from api.base.settings.defaults import API_BASE
-
 from tests.base import ApiTestCase, fake
 from tests.factories import (
     DashboardFactory,
@@ -966,7 +967,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['title'], strip_html(new_title))
         assert_equal(res.json['data']['attributes']['description'], strip_html(new_description))
 
-    @assert_logs(NodeLog.UPDATED_FIELDS, 'public_project')
+    @assert_logs(NodeLog.EDITED_TITLE, 'public_project')
     def test_partial_update_project_updates_project_correctly_and_sanitizes_html(self):
         new_title = 'An <script>alert("even cooler")</script> project'
         res = self.app.patch_json_api(self.public_url, {
@@ -1014,7 +1015,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
-    @assert_logs(NodeLog.UPDATED_FIELDS, 'public_project')
+    @assert_logs(NodeLog.EDITED_TITLE, 'public_project')
     def test_partial_update_public_project_logged_in(self):
         res = self.app.patch_json_api(self.public_url, {
             'data': {
@@ -1057,7 +1058,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
-    @assert_logs(NodeLog.UPDATED_FIELDS, 'private_project')
+    @assert_logs(NodeLog.EDITED_TITLE, 'private_project')
     def test_partial_update_private_project_logged_in_contributor(self):
         res = self.app.patch_json_api(self.private_url, {
             'data': {
@@ -2749,6 +2750,59 @@ class TestNodeLinkCreate(ApiTestCase):
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
+def prepare_mock_wb_response(
+        node=None,
+        provider='github',
+        files=None,
+        folder=True,
+        path='/',
+        method=httpretty.GET,
+        status_code=200
+    ):
+    """Prepare a mock Waterbutler response with httpretty.
+
+    :param Node node: Target node.
+    :param str provider: Addon provider
+    :param list files: Optional list of files. You can specify partial data; missing values
+        will have defaults.
+    :param folder: True if mocking out a folder response, False if a file response.
+    :param path: Waterbutler path, passed to waterbutler_api_url_for.
+    :param str method: HTTP method.
+    :param int status_code: HTTP status.
+    """
+    node = node
+    files = files or []
+    wb_url = waterbutler_api_url_for(node._id, provider=provider, path=path, meta=True)
+
+    default_file = {
+        u'contentType': None,
+        u'extra': {u'downloads': 0, u'version': 1},
+        u'kind': u'file',
+        u'modified': None,
+        u'name': u'NewFile',
+        u'path': u'/NewFile',
+        u'provider': provider,
+        u'size': None,
+        u'materialized': '/',
+    }
+
+    if len(files):
+        data = [dict(default_file, **each) for each in files]
+    else:
+        data = [default_file]
+    if not folder:
+        data = data[0]
+
+    body = json.dumps({
+        u'data': data
+    })
+    httpretty.register_uri(
+        method,
+        wb_url,
+        body=body,
+        status=status_code,
+        content_type='application/json'
+    )
 
 class TestNodeFilesList(ApiTestCase):
 
@@ -2762,6 +2816,15 @@ class TestNodeFilesList(ApiTestCase):
 
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_url = '/{}nodes/{}/files/'.format(API_BASE, self.public_project._id)
+        httpretty.enable()
+
+    def tearDown(self):
+        super(TestNodeFilesList, self).tearDown()
+        httpretty.disable()
+        httpretty.reset()
+
+    def _prepare_mock_wb_response(self, node=None, **kwargs):
+        prepare_mock_wb_response(node=node or self.project, **kwargs)
 
     def test_returns_public_files_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)
@@ -2834,115 +2897,33 @@ class TestNodeFilesList(ApiTestCase):
         assert_in('github', providers)
         assert_in('osfstorage', providers)
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_returns_node_files_list(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 200
-        mock_res.json.return_value = {
-            u'data': [{
-                u'contentType': None,
-                u'extra': {u'downloads': 0, u'version': 1},
-                u'kind': u'file',
-                u'modified': None,
-                u'name': u'NewFile',
-                u'path': u'/',
-                u'provider': u'github',
-                u'size': None,
-                u'materialized': '/',
-            }]
-        }
-        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
-        mock_waterbutler_request.return_value = mock_res
-
+    def test_returns_node_files_list(self):
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}])
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
-        res = self.app.get(url, auth=self.user.auth, headers={
-            'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
-        })
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
-        mock_waterbutler_request.assert_called_once_with(
-            'http://localhost:7777/v1/resources/{}/providers/github/?meta=True'.format(self.project._id),
-            cookies={'foo':'bar'},
-            headers={'Authorization': auth_header}
-        )
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_returns_node_file(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 200
-        mock_res.json.return_value = {
-            u'data': {
-                u'contentType': None,
-                u'extra': {u'downloads': 0, u'version': 1},
-                u'kind': u'file',
-                u'modified': None,
-                u'name': u'NewFile',
-                u'path': u'/NewFile',
-                u'provider': u'github',
-                u'size': None,
-                u'materialized': '/',
-            }
-        }
-        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
-        mock_waterbutler_request.return_value = mock_res
-
+    def test_returns_node_file(self):
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], folder=False, path='/file')
         url = '/{}nodes/{}/files/github/file'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
         })
+        assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['name'], 'NewFile')
         assert_equal(res.json['data']['attributes']['provider'], 'github')
-        mock_waterbutler_request.assert_called_once_with(
-            'http://localhost:7777/v1/resources/{}/providers/github/file?meta=True'.format(self.project._id),
-            cookies={'foo':'bar'},
-            headers={'Authorization': auth_header}
-        )
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_notfound_node_file_returns_folder(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 200
-        mock_res.json.return_value = {
-            u'data': [{
-                u'contentType': None,
-                u'extra': {u'downloads': 0, u'version': 1},
-                u'kind': u'file',
-                u'modified': None,
-                u'name': u'NewFile',
-                u'path': u'/NewFile',
-                u'provider': u'github',
-                u'size': None,
-                u'materialized': '/',
-            }]
-        }
-        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
-        mock_waterbutler_request.return_value = mock_res
-
+    def test_notfound_node_file_returns_folder(self):
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], path='/file')
         url = '/{}nodes/{}/files/github/file'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
         })
         assert_equal(res.status_code, 404)
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_notfound_node_folder_returns_file(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 200
-        mock_res.json.return_value = {
-            u'data': {
-                u'contentType': None,
-                u'extra': {u'downloads': 0, u'version': 1},
-                u'kind': u'file',
-                u'modified': None,
-                u'name': u'NewFile',
-                u'path': u'/NewFile',
-                u'provider': u'github',
-                u'size': None,
-                u'materialized': '/',
-            }
-        }
-        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
-        mock_waterbutler_request.return_value = mock_res
+    def test_notfound_node_folder_returns_file(self):
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], folder=False, path='/')
 
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
@@ -2950,57 +2931,50 @@ class TestNodeFilesList(ApiTestCase):
         })
         assert_equal(res.status_code, 404)
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_waterbutler_server_error_returns_503(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 500
-        mock_waterbutler_request.return_value = mock_res
+    def test_waterbutler_server_error_returns_503(self):
+        self._prepare_mock_wb_response(status_code=500)
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
         })
         assert_equal(res.status_code, 503)
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_waterbutler_invalid_data_returns_503(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 400
-        mock_res.json.return_value = {}  # no data
-        mock_waterbutler_request.return_value = mock_res
+    def test_waterbutler_invalid_data_returns_503(self):
+        wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
+        httpretty.register_uri(
+            httpretty.GET,
+            wb_url,
+            body=json.dumps({}),
+            status=400
+        )
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
-            'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
-        })
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 503)
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_handles_unauthenticated_waterbutler_request(self, mock_waterbutler_request):
+    def test_handles_unauthenticated_waterbutler_request(self):
+        self._prepare_mock_wb_response(status_code=401)
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 401
-        mock_waterbutler_request.return_value = mock_res
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_handles_notfound_waterbutler_request(self, mock_waterbutler_request):
-        url = '/{}nodes/{}/files/gilkjadsflhub/'.format(API_BASE, self.project._id)
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 404
-        mock_waterbutler_request.return_value = mock_res
+    def test_handles_notfound_waterbutler_request(self):
+        invalid_provider = 'gilkjadsflhub'
+        self._prepare_mock_wb_response(status_code=404, provider=invalid_provider)
+        url = '/{}nodes/{}/files/{}/'.format(API_BASE, self.project._id, invalid_provider)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
         assert_in('detail', res.json['errors'][0])
 
-
-    @mock.patch('api.nodes.views.requests.get')
-    def test_handles_bad_waterbutler_request(self, mock_waterbutler_request):
+    def test_handles_bad_waterbutler_request(self):
+        wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
+        httpretty.register_uri(
+            httpretty.GET,
+            wb_url,
+            body=json.dumps({}),
+            status=418
+        )
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 418
-        mock_res.json.return_value = {}
-        mock_waterbutler_request.return_value = mock_res
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 503)
         assert_in('detail', res.json['errors'][0])
@@ -3009,6 +2983,47 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert 'relationships' in res.json['data'][0]
+
+
+class TestNodeFilesListFiltering(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeFilesListFiltering, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        httpretty.enable()
+        # Prep HTTP mocks
+        prepare_mock_wb_response(
+            node=self.project,
+            provider='github',
+            files=[
+                {'name': 'abc', 'path': '/abc/', 'materialized': '/abc/', 'kind': 'folder'},
+                {'name': 'xyz', 'path': '/xyz', 'materialized': '/xyz', 'kind': 'file'},
+            ]
+        )
+
+    def tearDown(self):
+        super(TestNodeFilesListFiltering, self).tearDown()
+        httpretty.disable()
+        httpretty.reset()
+
+    def test_node_files_are_filterable_by_name(self):
+        url = '/{}nodes/{}/files/github/?filter[name]=xyz'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)  # filters out 'abc'
+        assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
+
+    def test_node_files_are_filterable_by_path(self):
+        url = '/{}nodes/{}/files/github/?filter[path]=abc'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
+        assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
+
+    def test_node_files_are_filterable_by_kind(self):
+        url = '/{}nodes/{}/files/github/?filter[kind]=folder'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
+        assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
 
 class TestNodeLinkDetail(ApiTestCase):
