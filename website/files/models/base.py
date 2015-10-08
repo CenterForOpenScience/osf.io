@@ -57,6 +57,7 @@ class TrashedFileNode(StoredObject):
     checkout = fields.AbstractForeignField('User')
     deleted_by = fields.AbstractForeignField('User')
     deleted_on = fields.DateTimeField(auto_now_add=True)
+    tags = fields.ForeignField('Tag', list=True)
 
     @property
     def deep_url(self):
