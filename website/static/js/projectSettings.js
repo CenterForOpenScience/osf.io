@@ -37,7 +37,7 @@ var ProjectSettings = oop.extend(
             self.selectedCategory = ko.observable(params.category);
         },
         /*error handler*/
-         updateError: function(xhr, status, error) {
+        updateError: function(xhr, status, error) {
             var self = this;
             self.changeMessage(language.updateErrorMessage, 'text-danger');
             Raven.captureMessage(language.updateErrorMessage, {

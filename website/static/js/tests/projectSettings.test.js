@@ -64,7 +64,7 @@ describe('ProjectSettings', () => {
         it('updates the message, and captures the error with Raven', () => {
             var error = faker.lorem.sentence();
             vm.updateError({}, error, {});
-            assert.calledWith(changeMessageSpy, language.updateErrorMessage, 'text-error');
+            assert.calledWith(changeMessageSpy, language.updateErrorMessage);
             assert.calledWith(ravenStub, language.updateErrorMessage, {
                 url: updateUrl,
                 textStatus: error,
@@ -98,7 +98,7 @@ describe('ProjectSettings', () => {
         });
         it('sends a put to the updateUrl with the settings inputs and updates them on success', (done) => {
             var newcategory = categoryOptions[0];
-            vm.categoryPlaceholder(newcategory);
+            vm.selectedCategory(newcategory);
             vm.title('New title');
             vm.description('New description');
             vm.updateAll()
@@ -118,10 +118,10 @@ describe('ProjectSettings', () => {
             vm.resetMessage.restore();
         });
         it('restores the category, title, and description to those of the VM, and resets the message', () => {
-            vm.categoryPlaceholder(categoryOptions[0]);
+            vm.selectedCategory(categoryOptions[0]);
             vm.changeMessage('Some message', 'some-class');
             vm.cancelAll();
-            assert.equal(vm.categoryPlaceholder(), vm.category);
+            assert.equal(vm.selectedCategory(), vm.categoryPlaceholder);
             assert.equal(vm.title(), vm.titlePlaceholder);
             assert.equal(vm.description(), vm.descriptionPlaceholder);
             assert.called(resetMessageSpy);
