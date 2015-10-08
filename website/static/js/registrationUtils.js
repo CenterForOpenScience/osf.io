@@ -14,94 +14,6 @@ var language = require('js/osfLanguage').registrations;
 var editorExtensions = require('js/registrationEditorExtensions');
 
 /**
- * @class Comment
- * Model for storing/editing/deleting comments on form fields
- *
- * @param {Object} data: optional data to instatiate model with
- * @param {User} data.user
- * @param {Date} data.lastModified
- * @param {String} data.value
- *
- * @type User
- * @property {String} id
- * @property {String} name
- **/
-function Comment(data) {
-        var self = this;
-
-        self.saved = ko.observable(data ? true : false);
-
-        data = data || {};
-        self.user = data.user || $osf.currentUser();
-        self.lastModified = new Date(data.lastModified) || new Date();
-        self.value = ko.observable(data.value || '');
-        self.value.subscribe(function() {
-            self.lastModified = new Date();
-        });
-
-        self.created = new Date(data.created) || new Date();
-
-        self.isDeleted = ko.observable(data.isDeleted || false);
-        self.isDeleted.subscribe(function(isDeleted) {
-            if (isDeleted) {
-                self.value('');
-            }
-        });
-
-        self.seenBy = ko.observableArray([self.user.id] || []);
-        /**
-         * Returns the author as the actual user, not 'You'
-         **/
-        self.author = ko.pureComputed(function() {
-            return self.user.fullname;
-        });
-
-        /**
-         * Returns 'You' if the current user is the commenter, else the commenter's name
-         */
-        self.getAuthor = ko.pureComputed(function() {
-            if (self.user.id === $osf.currentUser().id) {
-                return 'You';
-            } else {
-                return self.user.fullname;
-            }
-        });
-
-        /**
-         * Returns true if the current user is the comment creator
-         **/
-        self.canDelete = ko.pureComputed(function() {
-            return self.user.id === $osf.currentUser().id;
-        });
-        /**
-         * Returns true if the comment is saved and the current user is the comment creator
-         **/
-        self.canEdit = ko.pureComputed(function() {
-            return !self.isDeleted() && self.saved() && self.user.id === $osf.currentUser().id;
-        });
-    }
-    /** Toggle the comment's save state **/
-Comment.prototype.toggleSaved = function(save) {
-    var self = this;
-
-    self.saved(!self.saved());
-    if (self.saved()) {
-        save();
-    }
-};
-/** Indicate that a comment is deleted **/
-Comment.prototype.delete = function(save) {
-    var self = this;
-
-    self.isDeleted(true);
-    save();
-};
-/** Indicate that a user has seen a comment **/
-Comment.prototype.viewComment = function(user) {
-    this.seenBy.push(user.id);
-};
-
-/**
  * @class Question
  * Model for schema questions
  *
@@ -164,19 +76,6 @@ var Question = function(data, id) {
     self.showExample = ko.observable(false);
     self.showUploader = ko.observable(false);
 
-    self.comments = ko.observableArray(
-        $.map(data.comments || [], function(comment) {
-            return new Comment(comment);
-        })
-    );
-    self.nextComment = ko.observable('');
-    /**
-     * @returns {Boolean} true if the nextComment <input> is not blank
-     **/
-    self.allowAddNext = ko.computed(function() {
-        return (self.nextComment() || '').trim() !== '';
-    });
-
     /**
      * @returns {Boolean} true if the value <input> is not blank
      **/
@@ -196,22 +95,6 @@ Question.prototype.init = function() {
             self.properties[prop] = new Question(field, prop);
         });
     }
-};
-/**
- * Creates a new comment from the current value of Question.nextComment and clears nextComment
- *
- * @param {function}: save: save function for the current registrationDraft
- **/
-Question.prototype.addComment = function(save) {
-    var self = this;
-
-    var comment = new Comment({
-        value: self.nextComment()
-    });
-    comment.seenBy.push($osf.currentUser().id);
-    self.comments.push(comment);
-    self.nextComment('');
-    save();
 };
 /**
  * Shows/hides the Question example
@@ -503,16 +386,10 @@ RegistrationEditor.prototype.init = function(draft) {
                     val = schemaData[question.id][prop];
                     if (val) {
                         subQuestion.value(val.value);
-                        subQuestion.comments($.map(val.comments || [], function(data) {
-                            return new Comment(data);
-                        }));
                     }
                 });
             } else {
                 question.value(val.value);
-                question.comments($.map(val.comments || [], function(data) {
-                    return new Comment(data);
-                }));
             }
         }
     });
@@ -577,32 +454,6 @@ RegistrationEditor.prototype.check = function() {
         window.location = self.draft().urls.register_page;
     }
 };
-RegistrationEditor.prototype.viewComments = function() {
-    var self = this;
-
-    var comments = self.currentQuestion().comments();
-    $.each(comments, function(index, comment) {
-        if (comment.seenBy().indexOf($osf.currentUser().id) === -1) {
-            comment.seenBy.push($osf.currentUser().id);
-        }
-    });
-};
-RegistrationEditor.prototype.getUnseenComments = function(qid) {
-    var self = this;
-
-    var question = self.draft().schemaData[qid];
-    var comments = question.comments || [];
-    for (var key in question) {
-        if (key === 'comments') {
-            for (var i = 0; i < question[key].length - 1; i++) {
-                if (question[key][i].indexOf($osf.currentUser().id) === -1) {
-                    comments.push(question[key][i]);
-                }
-            }
-        }
-    }
-    return comments;
-};
 /**
  * Load the next question into the editor, wrapping around if needed
  **/
@@ -617,10 +468,8 @@ RegistrationEditor.prototype.nextQuestion = function() {
     });
     if (index + 1 === questions.length) {
         self.currentQuestion(questions.shift());
-        self.viewComments();
     } else {
         self.currentQuestion(questions[index + 1]);
-        self.viewComments();
     }
 };
 /**
@@ -637,10 +486,8 @@ RegistrationEditor.prototype.previousQuestion = function() {
     });
     if (index - 1 < 0) {
         self.currentQuestion(questions.pop());
-        self.viewComments();
     } else {
         self.currentQuestion(questions[index - 1]);
-        self.viewComments();
     }
 };
 /**
@@ -651,7 +498,6 @@ RegistrationEditor.prototype.selectPage = function(page) {
 
     var firstQuestion = page.questions[Object.keys(page.questions)[0]];
     self.currentQuestion(firstQuestion);
-    self.viewComments();
 };
 /**
  * Update draft primary key and updated time on server response
@@ -755,14 +601,12 @@ RegistrationEditor.prototype.save = function() {
                 $.each(question.properties, function(prop, subQuestion) {
                     value[prop] = {
                         value: subQuestion.value(),
-                        comments: ko.toJS(subQuestion.comments())
                     };
                 });
                 data[qid] = value;
             } else {
                 data[qid] = {
                     value: question.value(),
-                    comments: ko.toJS(question.comments())
                 };
             }
         });
@@ -912,7 +756,6 @@ RegistrationManager.prototype.maybeWarn = function(draft) {
 };
 
 module.exports = {
-    Comment: Comment,
     Question: Question,
     MetaSchema: MetaSchema,
     Draft: Draft,
