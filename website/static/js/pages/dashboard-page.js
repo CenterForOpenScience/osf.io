@@ -1,6 +1,5 @@
 /**
- * Initialization code for the dashboard pages. Starts up the Project Organizer
- * and binds the onboarder Knockout components.
+ * Initialization code for the dashboard pages.
  */
 
 'use strict';
@@ -10,8 +9,6 @@ var ko = require('knockout');
 var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
-// Knockout components for the onboarder
-require('js/onboarder.js');
 var $osf = require('js/osfHelpers');
 var LogFeed = require('js/logFeed');
 var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
