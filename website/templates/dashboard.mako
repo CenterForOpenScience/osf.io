@@ -12,14 +12,7 @@
             <hr />
         </div><!-- end div -->
 
-        <div class="project-organizer" id="projectOrganizerScope">
-            <div id="project-grid">
-                <div class="spinner-loading-wrapper">
-                    <div class="logo-spin logo-lg"></div>
-                     <p class="m-t-sm fg-load-message"> Loading projects...  </p>
-                </div>
-            </div>
-        </div><!-- end project-organizer -->
+
     </div><!-- end col -->
 
     ## Knockout componenet templates
