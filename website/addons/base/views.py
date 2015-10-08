@@ -167,7 +167,12 @@ def get_auth(auth, **kwargs):
                 auth.user = User.load(cas_resp.user)
 
     try:
-        data = jwt.decode(request.args.get('payload', ''), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(
+            request.args.get('payload', ''),
+            settings.WATERBUTLER_JWT_SECRET,
+            options={'require_exp': True},
+            algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+        )['data']
     except (jwt.InvalidTokenError, KeyError):
         raise HTTPError(httplib.FORBIDDEN)
 
