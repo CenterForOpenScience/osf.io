@@ -701,7 +701,22 @@ var confirmDangerousAction = function (options) {
 
     bootbox.dialog(bootboxOptions);
 };
-
+/**
+ * Maps an object to an array of {key: KEY, value: VALUE} pairs
+ *
+ * @param {Object} obj
+ * @returns {Array} array of key, value pairs
+ **/
+var iterObject = function(obj) {
+    var ret = [];
+    $.each(obj, function(prop, value) {
+        ret.push({
+            key: prop,
+            value: value
+        });
+    });
+    return ret;
+};
 /** A future-proof getter for the current user
 **/
 var currentUser = function(){
@@ -758,5 +773,6 @@ module.exports = window.$.osf = {
     isIE: isIE,
     isSafari:isSafari,
     indexOf: indexOf,
+    iterObject: iterObject,
     currentUser: currentUser
 };

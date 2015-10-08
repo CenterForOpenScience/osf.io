@@ -71,7 +71,13 @@
                               }" style="float:right; padding-right:5px;">Next
                   <i style="display:inline-block; padding-right: 5px; padding-left: 5px;" class="fa fa-arrow-right"></i>
                 </a>
-                <br />
+                <div class="progress progress-bar-md">
+                    <div class="progress-bar progress-bar-success" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                         data-bind="attr.aria-completion: $root.draft().completion(),
+                                    style: {width: $root.draft().completion() + '%'}">
+                        <span class="sr-only"></span>
+                    </div>
+                </div>
                 <br />
                 <!-- EDITOR -->
                 <div data-bind="if: currentQuestion">
@@ -84,7 +90,7 @@
                 </button>
                 <span data-bind="tooltip: {
                                    title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
-                                 }">                      
+                                 }">
                   <a data-bind="css: {'disabled': !canRegister()},
                                 click: $root.check" type="button" class="pull-right btn btn-success">Register
                   </a>

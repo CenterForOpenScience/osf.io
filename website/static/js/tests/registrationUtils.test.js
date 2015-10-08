@@ -381,7 +381,7 @@ describe('MetaSchema', () => {
 
 describe('Draft', () => {
     var ms = mkMetaSchema()[2];
-    
+
     var beforeRegisterUrl = faker.internet.ip();
     var registerUrl = faker.internet.ip();
     var params = {
@@ -522,20 +522,20 @@ describe('Draft', () => {
         });
         it('POSTS the data passed into beforeRegister, and redirects on a success response', (done) => {
             server.respondWith(
-                beforeRegisterUrl, 
+                beforeRegisterUrl,
                 '{}'
             );
             var data = {some: 'data'};
-            draft.beforeRegister(data).always(() => {                
+            draft.beforeRegister(data).always(() => {
                 assert.isTrue(
-                    postJSONStub.calledOnce && 
+                    postJSONStub.calledOnce &&
                     postJSONStub.calledWith(
                         registerUrl,
                         data
                     )
                 );
                 done();
-            });            
+            });
         });
     });
 });
