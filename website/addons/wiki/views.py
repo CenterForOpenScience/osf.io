@@ -84,7 +84,7 @@ def _get_wiki_versions(node, name, anonymous=False):
         {
             'version': version.version,
             'user_fullname': privacy_info_handle(version.user.fullname, anonymous, name=True),
-            'date': version.date.replace(microsecond=0).isoformat(),
+            'date': '{} UTC'.format(version.date.replace(microsecond=0).isoformat().replace('T', ' ')),
         }
         for version in reversed(versions)
     ]

@@ -275,3 +275,42 @@ ENABLE_ARCHIVER = True
 
 JWT_SECRET = 'changeme'
 JWT_ALGORITHM = 'HS256'
+
+##### CELERY #####
+
+# Default RabbitMQ broker
+BROKER_URL = 'amqp://'
+
+# Default RabbitMQ backend
+CELERY_RESULT_BACKEND = 'amqp://'
+
+#  Modules to import when celery launches
+CELERY_IMPORTS = (
+    'framework.tasks',
+    'framework.tasks.signals',
+    'framework.email.tasks',
+    'framework.analytics.tasks',
+    'website.mailchimp_utils',
+    'website.notifications.tasks',
+    'website.archiver.tasks'
+)
+
+# celery.schedule will not be installed when running invoke requirements the first time.
+try:
+    from celery.schedules import crontab
+except ImportError:
+    pass
+else:
+    #  Setting up a scheduler, essentially replaces an independent cron job
+    CELERYBEAT_SCHEDULE = {
+        '5-minute-emails': {
+            'task': 'notify.send_users_email',
+            'schedule': crontab(minute='*/5'),
+            'args': ('email_transactional',),
+        },
+        'daily-emails': {
+            'task': 'notify.send_users_email',
+            'schedule': crontab(minute=0, hour=0),
+            'args': ('email_digest',),
+        },
+    }
