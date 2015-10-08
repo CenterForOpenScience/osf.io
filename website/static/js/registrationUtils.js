@@ -13,11 +13,6 @@ var language = require('js/osfLanguage').registrations;
 
 var editorExtensions = require('js/registrationEditorExtensions');
 
-var currentUser = window.contextVars.currentUser || {
-    id: null,
-    name: 'Anonymous'
-};
-
 /**
  * @class Comment
  * Model for storing/editing/deleting comments on form fields
@@ -37,7 +32,7 @@ function Comment(data) {
         self.saved = ko.observable(data ? true : false);
 
         data = data || {};
-        self.user = data.user || currentUser;
+        self.user = data.user || $osf.currentUser();
         self.lastModified = new Date(data.lastModified) || new Date();
         self.value = ko.observable(data.value || '');
         self.value.subscribe(function() {
@@ -65,7 +60,7 @@ function Comment(data) {
          * Returns 'You' if the current user is the commenter, else the commenter's name
          */
         self.getAuthor = ko.pureComputed(function() {
-            if (self.user.id === currentUser.id) {
+            if (self.user.id === $osf.currentUser().id) {
                 return 'You';
             } else {
                 return self.user.fullname;
@@ -76,13 +71,13 @@ function Comment(data) {
          * Returns true if the current user is the comment creator
          **/
         self.canDelete = ko.pureComputed(function() {
-            return self.user.id === currentUser.id;
+            return self.user.id === $osf.currentUser().id;
         });
         /**
          * Returns true if the comment is saved and the current user is the comment creator
          **/
         self.canEdit = ko.pureComputed(function() {
-            return !self.isDeleted() && self.saved() && self.user.id === currentUser.id;
+            return !self.isDeleted() && self.saved() && self.user.id === $osf.currentUser().id;
         });
     }
     /** Toggle the comment's save state **/
@@ -128,7 +123,13 @@ var Question = function(data, id) {
 
     self.id = id || -1;
 
-    self.value = ko.observable(data.value || null);
+    if (data.value && typeof(data.value) === 'function') {
+        // For subquestions, this could be an observable
+        _value = data.value();
+    } else {
+        _value = data.value || null;
+    }
+    self.value = ko.observable(_value);
     self.setValue = function(val) {
         self.value(val);
     };
@@ -207,7 +208,7 @@ Question.prototype.addComment = function(save) {
     var comment = new Comment({
         value: self.nextComment()
     });
-    comment.seenBy.push(currentUser.id);
+    comment.seenBy.push($osf.currentUser().id);
     self.comments.push(comment);
     self.nextComment('');
     save();
@@ -580,8 +581,8 @@ RegistrationEditor.prototype.viewComments = function() {
 
     var comments = self.currentQuestion().comments();
     $.each(comments, function(index, comment) {
-        if (comment.seenBy().indexOf(currentUser.id) === -1) {
-            comment.seenBy.push(currentUser.id);
+        if (comment.seenBy().indexOf($osf.currentUser().id) === -1) {
+            comment.seenBy.push($osf.currentUser().id);
         }
     });
 };
@@ -593,7 +594,7 @@ RegistrationEditor.prototype.getUnseenComments = function(qid) {
     for (var key in question) {
         if (key === 'comments') {
             for (var i = 0; i < question[key].length - 1; i++) {
-                if (question[key][i].indexOf(currentUser.id) === -1) {
+                if (question[key][i].indexOf($osf.currentUser().id) === -1) {
                     comments.push(question[key][i]);
                 }
             }
@@ -695,7 +696,7 @@ RegistrationEditor.prototype.submitForReview = function() {
 RegistrationEditor.prototype.submit = function() {
     var self = this;
     var currentNode = window.contextVars.node;
-    var currentUser = window.contextVars.currentUser;
+    var currentUser = $osf.currentUser();
     var messages = self.draft().messages;
     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
         if (result) {
