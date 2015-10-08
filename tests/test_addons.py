@@ -2,6 +2,7 @@
 
 import time
 import mock
+import datetime
 import unittest
 from nose.tools import *  # noqa
 
@@ -104,7 +105,9 @@ class TestAddonAuth(OsfTestCase):
             action='download',
             nid=self.node._id,
             provider=self.node_addon.config.short_name,
-        ), **kwargs)}, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)}
+            ), **kwargs),
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)}
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):
