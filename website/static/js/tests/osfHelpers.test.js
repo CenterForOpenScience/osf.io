@@ -415,6 +415,27 @@ describe('osfHelpers', () => {
             assert.calledOnce(bootboxStub);
         });
     });
+    
+    describe('iterObject', () => {
+        var get = function(obj, key) {
+            return obj[key];
+        };
+
+        it('maps an object to an array {key: KEY, value: VALUE} pairs', () => {
+            var obj = {
+                foo: 'bar',
+                cat: 'dog'
+            };
+            var keys = Object.keys(obj);
+            var values = keys.map(get.bind(null, obj));
+            var iterable = $osf.iterObject(obj);
+            for(var i = 0; i < iterable.length; i++) {
+                var item = iterable[i];
+                assert.include(keys, item.key);
+                assert.include(values, item.value);
+            }
+        });
+    });
 
     describe('indexOf', () => {
         it('returns a positive integer index if it finds a matching item', () => {
