@@ -165,6 +165,11 @@ def before_request():
         try:
             session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
             session = Session.load(session_id) or Session(_id=session_id)
+            from framework.auth.core import _get_current_user
+            user = _get_current_user()
+            if user:
+                user.date_last_login = datetime.utcnow()
+                user.save()
             set_session(session)
             return
         except:
