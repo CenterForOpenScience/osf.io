@@ -18,6 +18,7 @@ from modularodm.storage.base import KeyExistsException
 from website.app import init_app
 from scripts import utils as script_utils
 from framework.transactions.context import TokuTransaction
+from framework.mongo import database
 
 from website.addons.box.model import BoxUserSettings
 from website.addons.box.model import BoxNodeSettings
@@ -58,7 +59,7 @@ def do_migration(records):
         user.save()
 
         # Remove oauth_settings from user settings object
-        user_addon.oauth_settings.remove()
+        user_addon.oauth_settings = None
         user_addon.save()
 
         logger.info('Added external account {0} to user {1}'.format(
