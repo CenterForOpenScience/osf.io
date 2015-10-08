@@ -174,5 +174,5 @@ def before_request():
 def after_request(response):
     if session.data.get('auth_user_id'):
         session.save()
-        
+
     return response
