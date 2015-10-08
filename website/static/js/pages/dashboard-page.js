@@ -16,20 +16,7 @@ var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
 var url = '/api/v1/dashboard/get_nodes/';
 var request = $.getJSON(url, function(response) {
     var allNodes = response.nodes;
-    //  For uploads, only show nodes for which user has write or admin permissions
-    var uploadSelection = ko.utils.arrayFilter(allNodes, function(node) {
-        return $.inArray(node.permissions, ['write', 'admin']) !== -1;
-    });
-
-    // If we need to change what nodes can be registered, filter here
-    var registrationSelection = ko.utils.arrayFilter(allNodes, function(node) {
-        return $.inArray(node.permissions, ['admin']) !== -1;
-    });
-
-    $osf.applyBindings({nodes: allNodes}, '#obGoToProject');
-    $osf.applyBindings({nodes: registrationSelection, enableComponents: true}, '#obRegisterProject');
-    $osf.applyBindings({nodes: uploadSelection}, '#obUploader');
-    $osf.applyBindings({nodes: allNodes}, '#obCreateProject');
+    //.. Getting nodes
 });
 request.fail(function(xhr, textStatus, error) {
     Raven.captureMessage('Could not fetch dashboard nodes.', {
@@ -69,12 +56,12 @@ $(document).ready(function() {
         url:  '/api/v1/dashboard/'
     });
     request.done(function(data) {
-        var po = new ProjectOrganizer({
-            placement : 'dashboard',
-            divID: 'project-grid',
-            filesData: data.data,
-            multiselect : true
-        });
+        //var po = new ProjectOrganizer({
+        //    placement : 'dashboard',
+        //    divID: 'project-grid',
+        //    filesData: data.data,
+        //    multiselect : true
+        //});
 
         ensureUserTimezone(data.timezone, data.locale, data.id);
     });
@@ -88,5 +75,3 @@ $(document).ready(function() {
 
 });
 
-// Initialize logfeed
-new LogFeed('#logScope', '/api/v1/watched/logs/');
