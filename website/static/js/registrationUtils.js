@@ -337,6 +337,7 @@ var Draft = function(params, metaSchema) {
         if (self.schemaData) {
             var schema = self.schema();
             $.each(schema.pages, function(i, page) {
+                var completedQuestions = 0;
                 $.each(page.questions, function(qid, question) {
                     var q = self.schemaData[qid];
                     if ( q && ((q.value || '').trim() !== ''))
@@ -734,6 +735,10 @@ RegistrationEditor.prototype.create = function(schemaData) {
         schema_version: metaSchema.version,
         schema_data: schemaData
     }).then(self.updateData.bind(self));
+};
+RegistrationEditor.prototype.getCompletion = function() {
+    var self = this;
+    return self.draft().completion();
 };
 RegistrationEditor.prototype.putSaveData = function(payload) {
     var self = this;

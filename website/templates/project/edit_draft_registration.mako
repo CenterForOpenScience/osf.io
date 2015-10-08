@@ -79,7 +79,6 @@
                     </div>
                 </div>
                 <br />
-                <br />
                 <!-- EDITOR -->
                 <div data-bind="if: currentQuestion">
                   <div id="registrationEditor" data-bind="template: {data: currentQuestion, name: 'editor'}">
