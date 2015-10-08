@@ -151,6 +151,8 @@ def before_request():
             session.data['auth_user_username'] = user.username
             session.data['auth_user_id'] = user._primary_key
             session.data['auth_user_fullname'] = user.fullname
+            user.date_last_login = datetime.utcnow()
+            user.save()
         else:
             # Invalid key: Not found in database
             session.data['auth_error_code'] = http.FORBIDDEN
@@ -172,14 +174,5 @@ def before_request():
 def after_request(response):
     if session.data.get('auth_user_id'):
         session.save()
-        #import here to prevent circular import error
-        from framework.auth.core import _get_current_user
-
-        user = _get_current_user()
-        if user:
-            try:
-                user.date_last_login = datetime.utcnow()
-                user.save()
-            except:
-                pass
+        
     return response
