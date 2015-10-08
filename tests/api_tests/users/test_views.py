@@ -78,7 +78,7 @@ class TestUsers(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         for user in user_json:
-            profile_image_url = user['attributes']['profile_image_url']
+            profile_image_url = user['links']['profile_image']
             query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
             assert_equal(int(query_dict.get('s')[0]), size)
 
@@ -142,9 +142,15 @@ class TestUserDetail(ApiTestCase):
         url = "/{}users/{}/?profile_image_size={}".format(API_BASE, self.user_one._id, size)
         res = self.app.get(url)
         user_json = res.json['data']
-        profile_image_url = user_json['attributes']['profile_image_url']
+        profile_image_url = user_json['links']['profile_image']
         query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
         assert_equal(int(query_dict.get('s')[0]), size)
+
+    def test_profile_image_in_links(self):
+        url = "/{}users/{}/".format(API_BASE, self.user_one._id)
+        res = self.app.get(url)
+        user_json = res.json['data']
+        assert_in('profile_image', user_json['links'])
 
 
 class TestUserNodes(ApiTestCase):
@@ -501,8 +507,29 @@ class TestUserUpdate(ApiTestCase):
             }
         }
 
+        self.blank_but_not_empty_full_name = {
+            'data': {
+                'id': self.user_one._id,
+                'type': 'users',
+                'attributes': {
+                    'full_name': ' '
+                }
+
+            }
+        }
+
     def tearDown(self):
         super(TestUserUpdate, self).tearDown()
+
+    def test_update_user_blank_but_not_empty_full_name(self):
+        res = self.app.put_json_api(self.user_one_url, self.blank_but_not_empty_full_name, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Value must not be empty.')
+
+    def test_partial_update_user_blank_but_not_empty_full_name(self):
+        res = self.app.patch_json_api(self.user_one_url, self.blank_but_not_empty_full_name, auth=self.user_one.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Value must not be empty.')
 
     def test_patch_user_incorrect_type(self):
         res = self.app.put_json_api(self.user_one_url, self.incorrect_type, auth=self.user_one.auth, expect_errors=True)

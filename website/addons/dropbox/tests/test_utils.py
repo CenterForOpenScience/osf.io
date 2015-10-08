@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
 """Tests for website.addons.dropbox.utils."""
-import io
 import os
 
 from nose.tools import *  # noqa (PEP8 asserts)
-from werkzeug.wrappers import Response
 
 from framework.auth import Auth
 from website.project.model import NodeLog
@@ -12,7 +10,6 @@ from website.project.model import NodeLog
 from tests.base import OsfTestCase
 from tests.factories import ProjectFactory
 
-from website.addons.dropbox.tests.factories import DropboxFileFactory
 from website.addons.dropbox.tests.utils import DropboxAddonTestCase
 from website.addons.dropbox import utils
 from website.addons.dropbox.views.config import serialize_folder
@@ -21,11 +18,9 @@ from website.addons.dropbox.views.config import serialize_folder
 class TestNodeLogger(DropboxAddonTestCase):
 
     def test_log_file_added(self):
-        df = DropboxFileFactory()
         logger = utils.DropboxNodeLogger(
             node=self.project,
             auth=Auth(self.user),
-            file_obj=df
         )
         logger.log(NodeLog.FILE_ADDED, save=True)
 
@@ -75,21 +70,6 @@ def test_is_subdir():
 
     assert_true(utils.is_subdir('foo/bar', 'Foo/bar'))
     assert_true(utils.is_subdir('Foo/bar', 'foo/bar'))
-
-
-# FIXME(sloria): This test is incorrect. The mocking needs work.
-# class TestRenderFile(OsfTestCase):
-
-#     @mock.patch('website.addons.dropbox.client.DropboxClient.get_file_and_metadata')
-#     def test_render_dropbox_file_when_file_has_taken_down_by_dmca(self, mock_get_file):
-#         mock_resp = mock.Mock(spec=DropboxResponse)
-#         mock_resp.reason = 'This file is no longer available due to a takedown request under the Digital Millennium Copyright Act'
-#         mock_resp.status = 461
-#         mock_client = mock.Mock(spec=DropboxClient)
-#         mock_client.get_file_and_metadata.side_effect = ErrorResponse(mock_resp, 'DMCA takedown')
-#         with patch_client('website.addons.dropbox.utils.get_node_addon_client', mock_client=mock_client):
-#             f = DropboxFileFactory()
-#             result = utils.render_dropbox_file(f, client=mock_client)
 
 
 def test_clean_path():
@@ -147,5 +127,3 @@ class TestMetadataSerialization(OsfTestCase):
         assert_equal(result['name'], filename)
         assert_equal(result['path'], metadata['path'])
         assert_equal(result['ext'], os.path.splitext(filename)[1])
-
-

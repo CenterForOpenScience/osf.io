@@ -82,8 +82,10 @@ def validate_year(item):
 
 
 validate_url = URLValidator()
-def validate_personal_site(value):
-    if value:
+
+
+def validate_profile_websites(profile_websites):
+    for value in profile_websites or []:
         try:
             validate_url(value)
         except ValidationError:
@@ -92,7 +94,7 @@ def validate_personal_site(value):
 
 
 def validate_social(value):
-    validate_personal_site(value.get('personal'))
+    validate_profile_websites(value.get('profileWebsites'))
 
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
@@ -195,7 +197,7 @@ class User(GuidStoredObject, AddonModelMixin):
         'github': u'http://github.com/{}',
         'scholar': u'http://scholar.google.com/citation?user={}',
         'twitter': u'http://twitter.com/{}',
-        'personal': u'{}',
+        'profileWebsites': [],
         'linkedIn': u'https://www.linkedin.com/profile/view?id={}',
         'impactStory': u'https://impactstory.org/{}',
         'researcherId': u'http://researcherid.com/rid/{}',
@@ -358,7 +360,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # Social links
     social = fields.DictionaryField(validate=validate_social)
     # Format: {
-    #     'personal': <personal site>,
+    #     'profileWebsites': <list of profile websites>
     #     'twitter': <twitter id>,
     # }
 
@@ -888,12 +890,14 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def social_links(self):
-        return {
-            key: self.SOCIAL_FIELDS[key].format(val)
-            for key, val in self.social.items()
-            if val and
-            self.SOCIAL_FIELDS.get(key)
-        }
+        social_user_fields = {}
+        for key, val in self.social.items():
+            if val and key in self.SOCIAL_FIELDS:
+                if not isinstance(val, basestring):
+                    social_user_fields[key] = val
+                else:
+                    social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
+        return social_user_fields
 
     @property
     def biblio_name(self):

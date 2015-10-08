@@ -19,22 +19,18 @@ class GoogleDriveNodeLogger(object):
 
         from website.project.model import NodeLog
 
-        file_obj = GoogleDriveGuidFile(path='foo/bar.txt')
-        file_obj.save()
         node = ...
         auth = ...
-        nodelogger = GoogleDriveNodeLogger(node, auth, file_obj)
+        nodelogger = GoogleDriveNodeLogger(node, auth)
         nodelogger.log(NodeLog.FILE_REMOVED, save=True)
 
 
     :param Node node: The node to add logs to
     :param Auth auth: Authorization of the person who did the action.
-    :param GoogleDriveGuidFile file_obj: File object for file-related logs.
     """
-    def __init__(self, node, auth, file_obj=None, path=None):
+    def __init__(self, node, auth, path=None):
         self.node = node
         self.auth = auth
-        self.file_obj = file_obj
         self.path = path
 
     def log(self, action, extra=None, save=False):
