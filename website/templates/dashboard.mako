@@ -15,47 +15,7 @@
 
     </div><!-- end col -->
 
-    ## Knockout componenet templates
-    <%include file="components/dashboard_templates.mako"/>
-    <div class="col-sm-5">
-        <div class="p-b-xs m-t-lg m-b-xs" id="obTabHead">
-            <ul class="nav nav-tabs" role="tablist">
-            <li class="active"><a href="#quicktasks" role="tab" data-toggle="tab">Quick Tasks</a></li>
-            <li><a href="#watchlist" role="tab" data-toggle="tab">Watchlist</a></li>
-            ## %if 'badges' in addons_enabled:
-            ## <li><a href="#badges" role="tab" data-toggle="tab">Badges</a></li>
-            ## %endif
-            </ul>
 
-        </div><!-- end #obTabHead -->
-        <div class="tab-content" >
-            <div class="m-t-md tab-pane active" id="quicktasks">
-                <ul class="ob-widget-list"> <!-- start onboarding -->
-                    <div id="obGoToProject">
-                        <osf-ob-goto params="data: nodes"></osf-ob-goto>
-                    </div>
-                    <div id="obCreateProject">
-                        <osf-ob-create params="data: nodes"></osf-ob-create>
-                    </div>
-
-                    % if not disk_saving_mode:
-                    <div id="obRegisterProject">
-                        <osf-ob-register params="data: nodes"></osf-ob-register>
-                    </div>
-                    <div id="obUploader">
-                        <osf-ob-uploader params="data: nodes"></osf-ob-uploader>
-                    </div>
-                    % endif
-                </ul> <!-- end onboarding -->
-            </div>
-            <div class="m-t-md tab-pane" id="watchlist">
-                <%include file="log_list.mako" args="scripted=False"/>
-            </div>
-            ## %if 'badges' in addons_enabled:
-                ## <%include file="dashboard_badges.mako"/>
-            ## %endif
-        </div><!-- end .tab-content -->
-    </div><!-- end col -->
 </div><!-- end row -->
 %if 'badges' in addons_enabled:
     <div class="row">
