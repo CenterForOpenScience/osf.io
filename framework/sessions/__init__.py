@@ -177,6 +177,9 @@ def after_request(response):
 
         user = _get_current_user()
         if user:
-            user.date_last_login = datetime.utcnow()
-            user.save()
+            try:
+                user.date_last_login = datetime.utcnow()
+                user.save()
+            except:
+                pass
     return response

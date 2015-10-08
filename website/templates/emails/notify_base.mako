@@ -43,7 +43,7 @@
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                            <p class="small text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or <a href="http://osf.io/settings">user settings</a>.</p>
+                            <p class="small text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or <a href="http://osf.io/settings/notifications/">user settings</a>.</p>
                         </td>
                     </tr>
                 </tbody>
