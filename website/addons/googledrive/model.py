@@ -17,6 +17,7 @@ from website.addons.base import AddonOAuthNodeSettingsBase, AddonOAuthUserSettin
 from website.addons.googledrive import settings as drive_settings
 from website.addons.googledrive.serializer import GoogleDriveSerializer
 from website.addons.googledrive.client import GoogleAuthClient, GoogleDriveClient
+from website.addons.googledrive.utils import GoogleDriveNodeLogger
 
 
 class GoogleDriveProvider(ExternalProvider):
@@ -143,7 +144,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_id = folder['id']
         self.folder_path = folder['path']
 
-        if self.external_account not in self.user_settings.external_accounts:
+        if not self.complete:
             # Tell the user's addon settings that this node is connecting
             self.user_settings.grant_oauth_access(
                 node=self.owner,
@@ -174,6 +175,21 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             return 'Full Google Drive'
         else:
             return self.folder_name
+
+    def deauthorize(self, auth=None, add_log=True):
+        """Remove user authorization from this node and log the event."""
+        node = self.owner
+
+        if add_log:
+            extra = {'folder_id': self.folder_id}
+            nodelogger = GoogleDriveNodeLogger(node=node, auth=auth)
+            nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+
+        self.folder_id = None
+        self.user_settings = None
+        self.clear_auth()
+
+        self.save()
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
