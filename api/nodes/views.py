@@ -413,23 +413,33 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         Method:        POST
         URL:           links.self
         Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "contributors",        # required
-                           "id":   {contributor_user_id}, # required
-                           "attributes": {
-                             "bibliographic": true|false,            # optional
-                             "permission":    "read"|"write"|"admin" # optional
-                           }
-                         }
-                       }
+        Body (JSON): {
+                        "data": {
+                            "type": "contributors",     # required
+                            "attributes": {
+                                "bibliographic": true|false,            # optional
+                                "permission": "read"|"write"|"admin"    # optional
+                            },
+                            "relationships": {
+                                "users": {
+                                    "data": {
+                                        "type": "users",               # required
+                                        "id":   {contributor_user_id}, # required
+                                    }
+                                }
+                            }
+                        }
+                    }
         Success:       201 CREATED + node contributor representation
 
-    Contributors can be added to nodes are by issuing a POST request to this endpoint.  The `id` attribute is mandatory and
-    must be a valid user id.  `bibliographic` is a boolean and defaults to `true`.  `permission` must be a [valid OSF
-    permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`. All other fields not listed above will be
-    ignored.  If the request is successful the API will return a 201 response with the respresentation of the new node
-    contributor in the body.  For the new node contributor's canonical URL, see the `links.self` field of the response.
+    Contributors can be added to nodes by issuing a POST request to this endpoint.  This effectively creates a relationship
+    between the node and the user.  Besides the top-level type, there are optional "attributes" which describe the
+    relationship between the node and the user. `bibliographic` is a boolean and defaults to `true`.  `permission` must
+    be a [valid OSF permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`.  The user must be described as a
+    relationship object with a "data" member, containing the user "type" and user "id".  The id must be a valid user id.
+    All other fields not listed above will be ignored.  If the request is successful the API will return
+    a 201 response with the representation of the new node contributor in the body.  For the new node contributor's
+    canonical URL, see the `links.self` field of the response.
 
     ##Query Params
 
