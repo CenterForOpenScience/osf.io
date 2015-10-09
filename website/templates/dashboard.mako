@@ -39,6 +39,7 @@
 
 <%def name="stylesheets()">
     ${parent.stylesheets()}
+    <link rel="stylesheet" href="/static/css/file-browser.css">
 </%def>
 
 <%def name="javascript_bottom()">
