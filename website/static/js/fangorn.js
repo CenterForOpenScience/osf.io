@@ -1783,6 +1783,20 @@ var FGToolbar = {
                     break;
                 }
             }
+            //Additional check to not show the button if all the files are already checkedout by user
+            if (showCheckout){
+                var anyNotChecked = false;
+                for (i = 0, len = items.length; i < len; i++) {
+                    each = items[i];
+                    if (!each.data.extra.checkout) {
+                        anyNotChecked = true;
+                        break;
+                    }
+                }
+                if (!anyNotChecked) {
+                    showCheckout = false;
+                }
+            }
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
                 if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && each.data.extra.checkout === window.contextVars.currentUser.id)) {
@@ -1822,8 +1836,6 @@ var FGToolbar = {
                                             }
                                         }
                                     })
-                                }).fail(function(resp) {
-                                    $osf.growl('Error', 'Unable to check-out file.');
                                 });
                             });
                             window.location.reload();
@@ -1854,8 +1866,6 @@ var FGToolbar = {
                                             }
                                         }
                                     })
-                                }).fail(function(resp) {
-                                    $osf.growl('Error', 'Unable to check-in file.');
                                 });
                             }
                             window.location.reload();
