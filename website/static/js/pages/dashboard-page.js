@@ -26,8 +26,9 @@ request.fail(function(xhr, textStatus, error) {
     });
 });
 
-var url = '/api/v1/dashboard/get_nodes/';
-m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, { url : url } ));
+var nodesListUrl = '/api/v1/dashboard/get_nodes/';
+var treeListUrl = '/api/v1/project/jx8cv/';
+m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, { url : treeListUrl } ));
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
