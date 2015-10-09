@@ -40,6 +40,8 @@ class FileEvent(Event):
     def html_message(self):
         """Most basic html message"""
         f_type, action = self.action.split('_')
+        if self.payload['metadata']['materialized'].endswith('/'):
+            f_type = u'folder'
         return u'{action} {f_type} "<b>{name}</b>".'.format(
             action=action,
             f_type=f_type,
@@ -50,6 +52,8 @@ class FileEvent(Event):
     def text_message(self):
         """Most basic message without html tags. For future use."""
         f_type, action = self.action.split('_')
+        if self.payload['metadata']['materialized'].endswith('/'):
+            f_type = u'folder'
         return u'{action} {f_type} "{name}".'.format(
             action=action,
             f_type=f_type,

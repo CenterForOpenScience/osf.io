@@ -133,22 +133,33 @@
         <div class="row" data-bind="if: contents().length">
             <div data-bind="foreach: contents">
                 <div class="col-xs-12">
-                    <div class="panel panel-default">
-                        <div class="panel-heading card-heading" data-bind="attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false" onclick="toggleIcon(this)">
-                            <div class="header-content">
-                                <h5>{{ institution }}</h5>
-                                <span class="subheading">{{ startMonth }} {{startYear }} - {{ endView }}</span>
+                    <!-- ko if: expandable() -->
+                        <div class="panel panel-default">
+                            <div class="panel-heading card-heading" data-bind="attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false" onclick="toggleIcon(this)">
+                                <div class="header-content">
+                                    <h5>{{ institution }}</h5>
+                                    <span data-bind="ifnot: startYear() === null" class="subheading">{{ startMonth }} {{startYear }} - {{ endView }}</span>
+                                </div>
+                                <span class="fa fa-angle-down toggle-icon"></span>
                             </div>
-                            <span class="fa fa-angle-down toggle-icon"></span>
-                        </div>
-                        <div data-bind="attr: {id: 'schoolCard' + $index()}" class="panel-collapse collapse" data-bind="attr: {aria-labelledby: 'schoolHeading' + $index()}">
-                            <div class="panel-body">
-                                <span data-bind="if: department().length"><h5>Department:</h5> {{ department }}</span>
-                                <span data-bind="if: degree().length"><h5>Degree:</h5> {{ degree }}</span>
-                                <span> data-bind="if: startYear().length"><h5>Dates:</h5> {{ startMonth }} {{startYear }} - {{ endView }}</span>
+                            <div data-bind="attr: {id: 'schoolCard' + $index()}" class="panel-collapse collapse" data-bind="attr: {aria-labelledby: 'schoolHeading' + $index()}">
+                                <div class="panel-body">
+                                    <span data-bind="if: department().length"><h5>Department:</h5> {{ department }}</span>
+                                    <span data-bind="if: degree().length"><h5>Degree:</h5> {{ degree }}</span>
+                                    <span data-bind="ifnot: startYear() === null"><h5>Dates:</h5> {{ startMonth }} {{startYear }} - {{ endView }}</span>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    <!-- /ko -->
+                    <!-- ko ifnot: expandable() -->
+                        <div class="panel panel-default">
+                            <div class="panel-heading no-bottom-border">
+                                <div class="header-content">
+                                    <h5>{{ institution }}</h5>
+                                </div>
+                            </div>
+                        </div>
+                    <!-- /ko -->
                 </div>
             </div>
 

@@ -23,6 +23,7 @@ $('body').on('nodeLoad', function(event, data) {
         new ContribAdder(
             '#addContributors',
             data.node.title,
+            data.node.id,
             data.parent_node.id,
             data.parent_node.title
         );
@@ -93,14 +94,14 @@ var checkWindowWidth = function() {
         $('table.responsive-table-xxs tbody tr td:first-child').attr('role','button').attr('onclick', 'toggleExpand(this.parentElement)');
     }
     else {
-        $('table.responsive-table-xxs tbody tr,td>div').css('display', '');
+        $('table.responsive-table-xxs tbody tr:not(:hidden) td>div.header').css('display', '');
         $('table.responsive-table-xxs tbody tr td:first-child').removeAttr('role').removeAttr('onclick');
     }
     if ($(window).width() <= 768) {
         $('table.responsive-table-xs tbody tr td:first-child').attr('role','button').attr('onclick', 'toggleExpand(this.parentElement)');
     }
     else {
-        $('table.responsive-table-xs tbody tr,td>div').css('display', '');
+        $('table.responsive-table-xs tbody td>div.header').css('display', '');
         $('table.responsive-table-xs tbody tr td:first-child').removeAttr('role').removeAttr('onclick');
     }
 };

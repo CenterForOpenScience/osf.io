@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+import time
 import unittest
 import logging
+import functools
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
@@ -22,7 +24,6 @@ from tests.factories import (
 )
 
 TEST_INDEX = 'test'
-
 
 @requires_search
 class SearchTestCase(OsfTestCase):
@@ -47,6 +48,23 @@ def query(term):
 def query_user(name):
     term = 'category:user AND "{}"'.format(name)
     return query(term)
+
+
+def retry_assertion(interval=0.3
+                    , retries=3):
+    def test_wrapper(func):
+        @functools.wraps(func)
+        def wrapped(*args, **kwargs):
+            try:
+                func(*args, **kwargs)
+            except AssertionError as e:
+                if retries:
+                    time.sleep(interval)
+                    retry_assertion(interval=interval, retries=retries - 1)(func)(*args, **kwargs)
+                else:
+                    raise e
+        return wrapped
+    return test_wrapper
 
 
 @requires_search
@@ -183,7 +201,6 @@ class TestProject(SearchTestCase):
         self.project.set_privacy('public')
         docs = query(self.project.title)['results']
         assert_equal(len(docs), 1)
-
 
 @requires_search
 class TestRegistrationRetractions(SearchTestCase):

@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from collections import Counter
 import httplib as http
-import itertools
 import time
 
 from flask import request
@@ -134,66 +132,8 @@ def get_contributors_from_parent(auth, node, **kwargs):
     contribs = [
         profile_utils.add_contributor_json(contrib)
         for contrib in parent.visible_contributors
-        if contrib._id not in node.visible_contributor_ids
     ]
 
-    return {'contributors': contribs}
-
-
-@must_be_contributor_or_public
-def get_most_in_common_contributors(auth, node, **kwargs):
-    node_contrib_ids = set(node.contributors._to_primary_keys())
-    try:
-        n_contribs = int(request.args.get('max', None))
-    except (TypeError, ValueError):
-        n_contribs = settings.MAX_MOST_IN_COMMON_LENGTH
-
-    contrib_counts = Counter(contrib_id
-        for node in auth.user.node__contributed
-        for contrib_id in node.contributors._to_primary_keys()
-        if contrib_id not in node_contrib_ids)
-
-    active_contribs = itertools.ifilter(
-        lambda c: User.load(c[0]).is_active,
-        contrib_counts.most_common()
-    )
-
-    limited = itertools.islice(active_contribs, n_contribs)
-
-    contrib_objs = [(User.load(_id), count) for _id, count in limited]
-
-    contribs = [
-        profile_utils.add_contributor_json(most_contrib, auth.user)
-        for most_contrib, count in sorted(contrib_objs, key=lambda t: (-t[1], t[0].fullname))
-    ]
-    return {'contributors': contribs}
-
-
-@must_be_contributor_or_public
-def get_recently_added_contributors(auth, node, **kwargs):
-
-    max_results = request.args.get('max')
-    if max_results:
-        try:
-            max_results = int(max_results)
-        except (TypeError, ValueError):
-            raise HTTPError(http.BAD_REQUEST)
-    if not max_results:
-        max_results = len(auth.user.recently_added)
-
-    # only include active contributors
-    active_contribs = itertools.ifilter(
-        lambda c: c.is_active and c._id not in node.contributors,
-        auth.user.recently_added
-    )
-
-    # Limit to max_results
-    limited_contribs = itertools.islice(active_contribs, max_results)
-
-    contribs = [
-        profile_utils.add_contributor_json(contrib, auth.user)
-        for contrib in limited_contribs
-    ]
     return {'contributors': contribs}
 
 
@@ -549,8 +489,9 @@ def notify_added_contributor(node, contributor, throttle=None):
     # Exclude forks and templates because the user forking/templating the project gets added
     # via 'add_contributor' but does not need to get notified.
     # Only email users for projects, or for components where they are not contributors on the parent node.
-    if (contributor.is_registered and not node.template_node and not node.is_fork
-            and not node.parent_node or (node.parent_node and not node.parent_node.is_contributor(contributor))):
+    if (contributor.is_registered and not node.template_node and not node.is_fork and
+            (not node.parent_node or
+                (node.parent_node and not node.parent_node.is_contributor(contributor)))):
         contributor_record = contributor.contributor_added_email_records.get(node._id, {})
         if contributor_record:
             timestamp = contributor_record.get('last_sent', None)

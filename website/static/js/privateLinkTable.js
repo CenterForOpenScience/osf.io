@@ -11,32 +11,6 @@ require('bootstrap-editable');
 
 var ctx = window.contextVars;
 
-var setupEditable = function(elm, data) {
-    var $elm = $(elm);
-    var $editable = $elm.find('.link-name');
-    $editable.editable({
-        type: 'text',
-        url: ctx.node.urls.api + 'private_link/edit/',
-        placement: 'bottom',
-        ajaxOptions: {
-            type: 'PUT',
-            dataType: 'json',
-            contentType: 'application/json'
-        },
-        send: 'always',
-        title: 'Edit Link Name',
-        params: function(params){
-            // Send JSON data
-            params.pk = data.id;
-            return JSON.stringify(params);
-        },
-        success: function(response, value) {
-            data.name(value);
-        },
-        error: $osf.handleEditableError
-    });
-};
-
 function LinkViewModel(data, $root) {
 
     var self = this;
@@ -156,12 +130,39 @@ function ViewModel(url, nodeIsPublic) {
         });
     };
 
+    self.setupEditable = function(elm, data) {
+        var $elm = $(elm);
+        var $editable = $elm.find('.link-name');
+        $editable.editable({
+            type: 'text',
+            url: ctx.node.urls.api + 'private_link/edit/',
+            placement: 'bottom',
+            ajaxOptions: {
+                type: 'PUT',
+                dataType: 'json',
+                contentType: 'application/json'
+            },
+            send: 'always',
+            title: 'Edit Link Name',
+            params: function(params){
+                // Send JSON data
+                params.pk = data.id;
+                return JSON.stringify(params);
+            },
+            success: function(response) {
+                data.name(response);
+                fetch();
+            },
+            error: $osf.handleEditableError
+        });
+    };
+
     self.afterRenderLink = function(elm, data) {
         var $tr = $(elm);
         var target = $tr.find('button>i.fa.fa-copy')[0].parentElement;
         clipboard(target);
         $tr.find('.remove-private-link').tooltip();
-        setupEditable(elm, data);
+        self.setupEditable(elm, data);
         $('.private-link-list').osfToggleHeight({height: 50});
     };
 

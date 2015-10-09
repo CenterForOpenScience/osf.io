@@ -106,7 +106,8 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.unremove = function() {
         if (self.deleteStaged()) {
             self.deleteStaged(false);
-            parent.visibleCount(parent.visibleCount() + 1);
+            parent.visibleCount(parent.visibleCount() + self.visible());
+            parent.adminCount(parent.adminCount() + (self.permission() === 'admin'));
         }
         // Allow default action
         return true;
@@ -223,7 +224,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     });
 
     self.sortable = function(filtered) {
-        if (!isRegistration) {
+        if (!isRegistration && user.is_admin) {
             if (filtered) {
                 $('#contributors').sortable("disable");
                 self.isSortable(false);
@@ -390,7 +391,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     //TODO: investigate changing how sortable is added
     self.afterRender = function(elements) {
         rt.responsiveTable(elements[0].parentElement.parentElement);
-        if (!isRegistration) {
+        if (!isRegistration && user.is_admin) {
             self.isSortable(true);
             var filtered = elements.filter(function(el){
                 return el.nodeType == 1 && el.nodeName === "TBODY";
