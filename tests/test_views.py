@@ -10,7 +10,6 @@ import mock
 import httplib as http
 import math
 import time
-import datetime
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
@@ -4592,23 +4591,23 @@ class TestDraftRegistrationViews(OsfTestCase):
         )
         self.draft.save()
 
-        current_month = datetime.datetime.now().strftime("%B")
-        current_year = datetime.datetime.now().strftime("%Y")
+        current_month = dt.datetime.now().strftime("%B")
+        current_year = dt.datetime.now().strftime("%Y")
 
-        valid_date = datetime.datetime.now() + datetime.timedelta(days=180)
-        self.valid_embargo_payload = json.dumps({
+        valid_date = dt.datetime.now() + dt.timedelta(days=180)
+        self.valid_embargo_payload = {
             u'embargoEndDate': unicode(valid_date.strftime('%a, %d, %B %Y %H:%M:%S')) + u' GMT',
             u'registrationChoice': 'embargo',
             u'summary': unicode(fake.sentence())
-        })
-        self.invalid_embargo_date_payload = json.dumps({
+        }
+        self.invalid_embargo_date_payload = {
             u'embargoEndDate': u"Thu, 01 {month} {year} 05:00:00 GMT".format(
                 month=current_month,
                 year=str(int(current_year) - 1)
             ),
             u'registrationChoice': 'embargo',
             u'summary': unicode(fake.sentence())
-        })
+        }
 
     def tearDown(self, *args, **kwargs):
         super(TestDraftRegistrationViews, self).tearDown(*args, **kwargs)
@@ -4683,7 +4682,7 @@ class TestDraftRegistrationViews(OsfTestCase):
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_adds_to_parent_project_logs(self, mock_enquque):
         initial_project_logs = len(self.node.logs)
-        res = self.app.post(
+        res = self.app.post_json(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_embargo_payload,
             content_type='application/json',
@@ -4697,7 +4696,7 @@ class TestDraftRegistrationViews(OsfTestCase):
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_draft_registration_with_embargo_is_not_public(self, mock_enqueue):
-        res = self.app.post(
+        res = self.app.post_json(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_embargo_payload,
             content_type='application/json',
@@ -4715,7 +4714,7 @@ class TestDraftRegistrationViews(OsfTestCase):
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_register_draft_registration_invalid_embargo_end_date_raises_HTTPError(self, mock_enqueue):
-        res = self.app.post(
+        res = self.app.post_json(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.invalid_embargo_date_payload,
             content_type='application/json',
