@@ -28,88 +28,90 @@ var defaults = {
  * Initialize File Browser. Prepeares an option object within FileBrowser
  * @constructor
  */
-function FileBrowser(options) {
-    this.options = $.extend({}, defaults, options);
-    this.init();
-}
-
-FileBrowser.prototype.init = function _fb_init () {
-    var self = this;
-    // Load data
-
-    // Build html
-    var wrapper = $(this.options.wrapper);
-    if(self.options.views.breadcrumbs){
-        this.breadcrumbs = new Breadcrumbs(self.options);
+var FileBrowser = {
+    controller : function (args) {
+        this.args = $.extend({}, defaults, args);
+    },
+    view : function (ctrl) {
+        return m('', [
+            m.component(Breadcrumbs),
+            m('.fb-sidebar', [
+                m.component(Collections),
+                m.component(Filters)
+            ]),
+            m('.fb-main', m.component(ProjectOrganizer)),
+            m('.fb-infobar', m.component(Information))
+        ]);
     }
-    if(self.options.views.collections){
-        this.collections = new Collections(self.options);
-    }
-
 };
-
 
 /**
  * Collections Module.
  * @constructor
  */
-function Collections(options) {
-    this.wrapper = $(options.wrapper);
-    this.init = function () {
-        this.wrapper.append('<div>Collections</div>');
-    };
-    this.init();
+var Collections  = {
+    controller : function (args) {
 
-}
+    },
+    view : function (ctrl) {
+        return m('.fb-collections', 'Collections');
+    }
+};
 
 /**
  * Breadcrumbs Module.
  * @constructor
  */
-function Breadcrumbs(options) {
-    var self = this;
-    this.wrapper = $(options.wrapper);
-    this.init = function () {
-        console.log(this);
-        this.wrapper.append('<div>Breadcrumbs</div>');
-    };
-}
+var Breadcrumbs = {
+    controller : function (args) {
+
+    },
+    view : function (ctrl) {
+        return m('.fb-breadcrumbs', 'Breadcrumbs');
+    }
+};
+
 
 /**
  * Filters Module.
  * @constructor
  */
-function Filters(options) {
-    this.wrapper = $(options.wrapper);
-    this.init = function () {
-        this.wrapper.append('<div>Filters</div>');
-    };
-    this.init();
-}
+var Filters = {
+    controller : function (args) {
+
+    },
+    view : function (ctrl) {
+        return m('.fb-filters', 'Filters');
+    }
+};
+
 
 /**
  * Project Organizer Module.
  * @constructor
  */
-function ProjectOrganizer(options) {
-    this.wrapper = $(options.wrapper);
-    this.init = function () {
-        this.wrapper.append('<div>Project Organizer</div>');
-    };
-    this.init();
-}
+var ProjectOrganizer = {
+    controller : function (args) {
+
+    },
+    view : function (ctrl) {
+        return m('.fb-project-organizer', 'Project Organizer');
+    }
+};
+
 
 /**
  * Information Module.
  * @constructor
  */
-function Information(options) {
-    this.wrapper = $(options.wrapper);
-    this.init = function () {
-        this.wrapper.append('<div>Information</div>');
-    };
-    this.init();
-}
+var Information = {
+    controller : function (args) {
+
+    },
+    view : function (ctrl) {
+        return m('.fb-information', 'Information');
+    }
+};
 
 
 
