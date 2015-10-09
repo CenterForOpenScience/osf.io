@@ -102,7 +102,6 @@ class WaterButlerMixin(object):
             return obj
 
         url = waterbutler_api_url_for(node._id, provider, path, meta=True)
-
         waterbutler_request = requests.get(
             url,
             cookies=self.request.COOKIES,
@@ -848,7 +847,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
+class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
     """Files attached to a node for a given provider. *Read-only*.
 
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
@@ -1077,7 +1076,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
 
@@ -1089,6 +1088,10 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
             raise NotFound
 
         return list(files_list.children)
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):

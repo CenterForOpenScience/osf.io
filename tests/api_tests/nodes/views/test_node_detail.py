@@ -455,7 +455,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.json['data']['attributes']['title'], strip_html(new_title))
         assert_equal(res.json['data']['attributes']['description'], strip_html(new_description))
 
-    @assert_logs(NodeLog.UPDATED_FIELDS, 'public_project')
+    @assert_logs(NodeLog.EDITED_TITLE, 'public_project')
     def test_partial_update_project_updates_project_correctly_and_sanitizes_html(self):
         new_title = 'An <script>alert("even cooler")</script> project'
         res = self.app.patch_json_api(self.public_url, {
@@ -503,7 +503,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
-    @assert_logs(NodeLog.UPDATED_FIELDS, 'public_project')
+    @assert_logs(NodeLog.EDITED_TITLE, 'public_project')
     def test_partial_update_public_project_logged_in(self):
         res = self.app.patch_json_api(self.public_url, {
             'data': {
@@ -546,7 +546,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 401)
         assert_in('detail', res.json['errors'][0])
 
-    @assert_logs(NodeLog.UPDATED_FIELDS, 'private_project')
+    @assert_logs(NodeLog.EDITED_TITLE, 'private_project')
     def test_partial_update_private_project_logged_in_contributor(self):
         res = self.app.patch_json_api(self.private_url, {
             'data': {

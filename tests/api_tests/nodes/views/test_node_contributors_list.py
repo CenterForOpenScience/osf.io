@@ -444,4 +444,3 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
         self.private_project.reload()
         assert_not_in(self.user_two, self.private_project.contributors)
-

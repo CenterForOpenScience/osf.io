@@ -516,4 +516,3 @@ class TestNodeContributorDelete(ApiTestCase):
 
         self.project.reload()
         assert_in(self.user, self.project.contributors)
-

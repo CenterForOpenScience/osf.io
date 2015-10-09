@@ -202,56 +202,6 @@ class TestProject(SearchTestCase):
         docs = query(self.project.title)['results']
         assert_equal(len(docs), 1)
 
-
-@requires_search
-class TestNodeSearch(SearchTestCase):
-
-    def setUp(self):
-        super(TestNodeSearch, self).setUp()
-        self.node = ProjectFactory(is_public=True, title='node')
-        self.public_child = ProjectFactory(parent=self.node, is_public=True, title='public_child')
-        self.private_child = ProjectFactory(parent=self.node, title='private_child')
-        self.public_subchild = ProjectFactory(parent=self.private_child, is_public=True)
-        
-        self.node.node_license = {
-            'name': 'A License',
-            'text': 'A good license'
-        }
-        self.node.save()
-
-        self.query = 'category:project & category:component'
-
-    @retry_assertion()
-    def test_node_license_added_to_search(self):
-        docs = query(self.query)['results']
-        node = [d for d in docs if d['title'] == self.node.title][0]
-        assert_in('license', node)
-        assert_equal(node['license'], self.node.node_license)
-
-    @retry_assertion()
-    def test_node_license_propogates_to_children(self):
-        docs = query(self.query)['results']
-        child = [d for d in docs if d['title'] == self.public_child.title][0]        
-        assert_in('license', child)
-        assert_equal(child['license'], self.node.node_license)
-        child = [d for d in docs if d['title'] == self.public_subchild.title][0]        
-        assert_in('license', child)
-        assert_equal(child['license'], self.node.node_license)
-
-    @retry_assertion()
-    def test_node_license_updates_correctly(self):
-
-        new_license = {
-            'name': 'A Name',
-            'text': 'A not so good license'
-        }
-        self.node.node_license = new_license
-        self.node.save()
-
-        docs = query(self.query)['results']
-        for doc in docs:
-            assert_equal(doc['license'], new_license)
-
 @requires_search
 class TestRegistrationRetractions(SearchTestCase):
 
