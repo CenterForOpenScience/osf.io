@@ -1580,7 +1580,7 @@ var FGItemButtons = {
                                                     id: item.data.path.replace('/', ''),
                                                     type: 'files',
                                                     attributes: {
-                                                        checkout: null,
+                                                        checkout: null
                                                     }
                                                 }
                                             })

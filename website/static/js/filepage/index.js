@@ -114,7 +114,7 @@ var FileViewPage = {
         };
         if (self.file.provider === 'osfstorage'){
             self.canEdit = function() {
-                return ((!self.file.checkout_user) || (self.file.checkout_user === self.context.currentUser.id)) ? (self.context.currentUser.canEdit ? true : false) : false;
+                return ((!self.file.checkout_user) || (self.file.checkout_user === self.context.currentUser.id)) ? self.context.currentUser.canEdit : false;
             };
             self.isCheckout_user();
         } else {
