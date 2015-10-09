@@ -50,6 +50,7 @@ class NodeSerializer(JSONAPISerializer):
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
+    fork = ser.BooleanField(read_only=True, source='is_fork')
     collection = ser.BooleanField(read_only=True, source='is_folder')
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
     tags = ser.ListField(child=NodeTagField(), required=False)
@@ -78,11 +79,18 @@ class NodeSerializer(JSONAPISerializer):
     node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
                                                   lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
 
-    parent = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='self',
+    parent = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
                                               lookup_url_kwarg='node_id')
 
     registrations = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
                                                      lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'}))
+
+    forked_from = JSONAPIHyperlinkedIdentityField(
+        view_name='nodes:node-detail',
+        lookup_field='forked_from_id',
+        link_type='related',
+        lookup_url_kwarg='node_id'
+    )
 
     class Meta:
         type_ = 'nodes'
@@ -142,18 +150,13 @@ class NodeSerializer(JSONAPISerializer):
         for deleted_tag in (old_tags - current_tags):
             node.remove_tag(deleted_tag, auth=auth)
 
-        if 'is_public' in validated_data:
-            privacy_key = 'public' if validated_data.pop('is_public') else 'private'
-            try:
-                node.set_privacy(privacy_key, auth=auth, log=True, save=True)
-            except PermissionsError:
-                raise exceptions.PermissionDenied
-
         if validated_data:
             try:
                 node.update(validated_data, auth=auth)
             except ValidationValueError as e:
                 raise InvalidModelValueError(detail=e.message)
+            except PermissionsError:
+                raise exceptions.PermissionDenied
 
         return node
 
@@ -264,6 +267,21 @@ class NodeRegistrationSerializer(NodeSerializer):
 
     retracted = ser.BooleanField(source='is_retracted', read_only=True,
         help_text='Whether this registration has been retracted.')
+    date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
+
+    registered_by = JSONAPIHyperlinkedIdentityField(
+        view_name='users:user-detail',
+        lookup_field='registered_user_id',
+        link_type='related',
+        lookup_url_kwarg='user_id'
+    )
+
+    registered_from = JSONAPIHyperlinkedIdentityField(
+        view_name='nodes:node-detail',
+        lookup_field='registered_from_id',
+        link_type='related',
+        lookup_url_kwarg='node_id'
+    )
 
     # TODO: Finish me
 

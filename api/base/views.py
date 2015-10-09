@@ -1,8 +1,9 @@
+from django.http import JsonResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .utils import absolute_reverse
 from api.users.serializers import UserSerializer
+from .utils import absolute_reverse
 
 @api_view(('GET',))
 def root(request, format=None):
@@ -25,7 +26,7 @@ def root(request, format=None):
     #General API Usage
 
     The OSF API generally conforms to the [JSON-API v1.0 spec](http://jsonapi.org/format/1.0/).  Where exceptions
-    exists, they will be noted.  Each endpoint will have its own documentation, but there are some general principles.
+    exist, they will be noted.  Each endpoint will have its own documentation, but there are some general principles.
 
     ##Requests
 
@@ -75,7 +76,7 @@ def root(request, format=None):
 
     ###Formatting POST/PUT/PATCH request bodies
 
-    The OSF API follows the JSON-API spec for (create and update requests)[http://jsonapi.org/format/#crud].  This means
+    The OSF API follows the JSON-API spec for [create and update requests](http://jsonapi.org/format/1.0/#crud).  This means
     all request bodies must be wrapped with some metadata.  Each request body must be an object with a `data` key
     containing at least a `type` member.  The value of the `type` member must agree with the `type` of the entities
     represented by the endpoint.  If not, a 409 Conflict will be returned.  The request should also contain an
@@ -122,6 +123,17 @@ def root(request, format=None):
     PUT requests require all mandatory attributes to be set, even if their value is unchanged. PATCH requests may omit
     mandatory attributes, whose value will be unchanged.
 
+    ###Attribute Validation
+
+    Endpoints that allow creation or modification of entities generally limit updates to certain attributes of the
+    entity.  If you attempt to set an attribute that does not permit updates (such as a `date_created` timestamp), the
+    API will silently ignore that attribute.  This will not affect the response from the API: if the request would have
+    succeeded without the updated attribute, it will still report as successful.  Likewise, if the request would have
+    failed without the attribute update, the API will still report a failure.
+
+    Typoed or non-existent attributes will behave the same as non-updatable attributes and be silently ignored. If a
+    request is not working the way you expect, make sure to double check your spelling.
+
     ##Responses
 
     ###Entities
@@ -133,12 +145,12 @@ def root(request, format=None):
     + `id`
 
     The identifier for the entity.  This MUST be included with [PUT and PATCH
-    requests](#formatting-post-put-patch-request-bodies).
+    requests](#formatting-postputpatch-request-bodies).
 
     + `type`
 
     The type identifier of this entity.  This MUST be included with [all create/update
-    requests](#formatting-post-put-patch-request-bodies).
+    requests](#formatting-postputpatch-request-bodies).
 
     + `attributes`
 
@@ -147,7 +159,7 @@ def root(request, format=None):
     + `relationships`
 
     Relationships are urls to other entities or entity collections that have a relationship to the entity. For example,
-    the node entity provides a `contributors` relationship that points to the endpoint to retreive all contributors to
+    the node entity provides a `contributors` relationship that points to the endpoint to retrieve all contributors to
     that node.  It is recommended to use these links rather than to id-filter general entity collection endpoints.
     They'll be faster, easier, and less error-prone.  Generally a relationship will have the following structure:
 
@@ -187,22 +199,11 @@ def root(request, format=None):
     page.  If there are only enough results to fill one page, the `first`, `last`, `prev`, and `next` values will be
     null.
 
-    ###Attribute Validation
-
-    Endpoints that allow creation or modification of entities generally limit updates to certain attributes of the
-    entity.  If you attempt to set an attribute that does not permit updates (such as a `date_created` timestamp), the
-    API will silently ignore that attribute.  This will not affect the response from the API: if the request would have
-    succeeded without the updated attribute, it will still report as successful.  Likewise, if the request would have
-    failed without the attribute update, the API will still report a failure.
-
-    Typoed or non-existant attributes will behave the same as non-updatable attributes and be silently
-    ignored. If a request is not working the way you expect, make sure to double check your spelling.
-
     ###Errors
 
     When a request fails for whatever reason, the OSF API will return an appropriate HTTP error code and include a
     descriptive error in the body of the response.  The response body will be an object with a key, `errors`, pointing
-    to an array of error objects.  Generally, these error object will consist of a `detail` key with a detailed error
+    to an array of error objects.  Generally, these error objects will consist of a `detail` key with a detailed error
     message, but may include additional information in accordance with the [JSON-API error
     spec](http://jsonapi.org/format/1.0/#error-objects).
 
@@ -267,3 +268,10 @@ def root(request, format=None):
             'users': absolute_reverse('users:user-list'),
         }
     })
+
+def error_404(request, format=None, *args, **kwargs):
+    return JsonResponse(
+        {'errors': [{'detail': 'Not found.'}]},
+        status=404,
+        content_type='application/vnd.api+json; application/json'
+    )

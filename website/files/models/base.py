@@ -505,7 +505,7 @@ class File(FileNode):
             logger.warning('Unable to find {} got status code {}'.format(self, resp.status_code))
             return None
 
-        return self.update(revision, resp.json()['data'])
+        return self.update(revision, resp.json()['data']['attributes'])
         # TODO Switch back to head requests
         # return self.update(revision, json.loads(resp.headers['x-waterbutler-metadata']))
 
