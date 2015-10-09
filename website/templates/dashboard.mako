@@ -5,19 +5,16 @@
 % if disk_saving_mode:
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
-<div class="row">
-    <div class="col-sm-7">
-        <div>
-          <h3>Projects </h3>
-          <p>Browse and organize all your projects</p>
-            <hr />
-        </div><!-- end div -->
+
+  <h3>Projects </h3>
+  <p>Browse and organize all your projects</p>
 
 
-    </div><!-- end col -->
+<div id="fileBrowser"></div>
 
 
-</div><!-- end row -->
+
+
 %if 'badges' in addons_enabled:
     <div class="row">
         <div class="col-sm-5">

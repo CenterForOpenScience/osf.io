@@ -25,7 +25,8 @@ request.fail(function(xhr, textStatus, error) {
     });
 });
 
-var filBrowser = new FB();
+var filBrowser = new FB({});
+
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
     var clientLocale = window.navigator.userLanguage || window.navigator.language;
