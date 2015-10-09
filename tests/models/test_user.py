@@ -123,6 +123,10 @@ class TestUser(base.OsfTestCase):
 
 class TestUserMerging(base.OsfTestCase):
     ADDONS_UNDER_TEST = {
+        'deletable': {
+            'user_settings': factories.MockAddonUserSettings,
+            'node_settings': factories.MockAddonNodeSettings,
+        },
         'unmergeable': {
             'user_settings': factories.MockAddonUserSettings,
             'node_settings': factories.MockAddonNodeSettings,
@@ -179,8 +183,8 @@ class TestUserMerging(base.OsfTestCase):
 
     def test_can_be_merged_delete_unmergable_addon(self):
         self.user.add_addon('mergeable')
-        self.user.add_addon('unmergeable')
-        self.ADDONS_UNDER_TEST['unmergeable']['user_settings'].deleted = 'True'
+        self.user.add_addon('deletable')
+        self.user.delete_addon('deletable')
 
         assert_true(self.user.can_be_merged)
 
