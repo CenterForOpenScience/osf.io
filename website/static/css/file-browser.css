@@ -9,7 +9,7 @@
 }
 
 .fb-sidebar {
-    width: 30%;
+    width: 25%;
     display: block;
     height: 500px;
     float: left;
@@ -18,7 +18,7 @@
 }
 
 .fb-main {
-    width: 50%;
+    width: 55%;
     float: left;
     background-color: antiquewhite;
     height: 500px;
