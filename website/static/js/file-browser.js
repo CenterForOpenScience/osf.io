@@ -35,33 +35,81 @@ function FileBrowser(options) {
 
 FileBrowser.prototype.init = function _fb_init () {
     var self = this;
-    console.log(self);
     // Load data
+
     // Build html
     var wrapper = $(this.options.wrapper);
-    wrapper.append('<div>Breadcrumbs</div>');
-    wrapper.append('<div>Collections</div>');
-    wrapper.append('<div>Filters</div>');
-    wrapper.append('<div>Browser</div>');
-    wrapper.append('<div>Information</div>');
+    if(self.options.views.breadcrumbs){
+        this.breadcrumbs = new Breadcrumbs(self.options);
+    }
+    if(self.options.views.collections){
+        this.collections = new Collections(self.options);
+    }
+
 };
 
 
 /**
- * Initialize Collections Module.
+ * Collections Module.
  * @constructor
  */
 function Collections(options) {
-    this.options = $.extend({}, options);
+    this.wrapper = $(options.wrapper);
+    this.init = function () {
+        this.wrapper.append('<div>Collections</div>');
+    };
+    this.init();
+
+}
+
+/**
+ * Breadcrumbs Module.
+ * @constructor
+ */
+function Breadcrumbs(options) {
+    var self = this;
+    this.wrapper = $(options.wrapper);
+    this.init = function () {
+        console.log(this);
+        this.wrapper.append('<div>Breadcrumbs</div>');
+    };
+}
+
+/**
+ * Filters Module.
+ * @constructor
+ */
+function Filters(options) {
+    this.wrapper = $(options.wrapper);
+    this.init = function () {
+        this.wrapper.append('<div>Filters</div>');
+    };
     this.init();
 }
 
-Collections.prototype.init = function _fb_init () {
-    var self = this;
-    console.log(self);
-};
+/**
+ * Project Organizer Module.
+ * @constructor
+ */
+function ProjectOrganizer(options) {
+    this.wrapper = $(options.wrapper);
+    this.init = function () {
+        this.wrapper.append('<div>Project Organizer</div>');
+    };
+    this.init();
+}
 
-
+/**
+ * Information Module.
+ * @constructor
+ */
+function Information(options) {
+    this.wrapper = $(options.wrapper);
+    this.init = function () {
+        this.wrapper.append('<div>Information</div>');
+    };
+    this.init();
+}
 
 
 
