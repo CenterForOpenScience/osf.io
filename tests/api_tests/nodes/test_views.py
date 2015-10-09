@@ -1365,19 +1365,33 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         self.user_three = AuthUserFactory()
         self.data_user_two = {
             'data': {
-                'id': self.user_two._id,
                 'type': 'contributors',
                 'attributes': {
-                    'bibliographic': True
+                    'bibliographic': True,
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_two._id,
+                        }
+                    }
                 }
             }
         }
         self.data_user_three = {
-            'data': {
-                'id': self.user_three._id,
+             'data': {
                 'type': 'contributors',
                 'attributes': {
-                    'bibliographic': True
+                    'bibliographic': True,
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': self.user_three._id,
+                        }
+                    }
                 }
             }
         }
@@ -1394,22 +1408,37 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     def test_add_contributor_no_type(self):
         data = {
             'data': {
-                'id': self.user_two._id,
                 'attributes': {
                     'bibliographic': True
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
                 }
             }
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], "/data/type")
 
     def test_add_contributor_incorrect_type(self):
         data = {
-            'data': {
-                'type': 'Incorrect type.',
+             'data': {
+                'type': 'Incorrect type',
                 'attributes': {
-                    'id': self.user_two._id,
                     'bibliographic': True
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
                 }
             }
         }
@@ -1439,11 +1468,18 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_non_bibliographic_contributor_private_project_admin(self):
         data = {
-            'data': {
-                'id': self.user_two._id,
+             'data': {
                 'type': 'contributors',
                 'attributes': {
                     'bibliographic': False
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
                 }
             }
         }
@@ -1487,10 +1523,18 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_contributor_without_bibliographic_private_project_admin(self):
         data = {
-            'data': {
-                'id': self.user_two._id,
+             'data': {
                 'type': 'contributors',
-                'attributes': {}
+                'attributes': {
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
+                }
             }
         }
         res = self.app.post_json_api(self.private_url, data, auth=self.user.auth, expect_errors=True)
@@ -1502,12 +1546,19 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_admin_contributor_private_project_admin(self):
         data = {
-            'data': {
-                'id': self.user_two._id,
+             'data': {
                 'type': 'contributors',
                 'attributes': {
-                        'permission': permissions.ADMIN,
-                        'bibliographic': True
+                    'bibliographic': True,
+                    'permission': permissions.ADMIN
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
                 }
             }
         }
@@ -1522,12 +1573,19 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_write_contributor_private_project_admin(self):
         data = {
-            'data': {
-                'id': self.user_two._id,
+             'data': {
                 'type': 'contributors',
                 'attributes': {
-                    'permission': permissions.WRITE,
-                    'bibliographic': True
+                    'bibliographic': True,
+                    'permission': permissions.WRITE
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
                 }
             }
         }
@@ -1542,12 +1600,19 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_read_contributor_private_project_admin(self):
         data = {
-            'data': {
-                'id': self.user_two._id,
+             'data': {
                 'type': 'contributors',
                 'attributes': {
-                    'permission': permissions.READ,
-                    'bibliographic': True
+                    'bibliographic': True,
+                    'permission': permissions.READ
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
                 }
             }
         }
@@ -1561,12 +1626,19 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def test_adds_invalid_permission_contributor_private_project_admin(self):
         data = {
-            'data': {
-                'id': self.user_two._id,
+             'data': {
                 'type': 'contributors',
                 'attributes': {
+                    'bibliographic': True,
                     'permission': 'invalid',
-                    'bibliographic': True
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
                 }
             }
         }
@@ -1579,12 +1651,19 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
     @assert_logs(NodeLog.CONTRIB_ADDED, 'private_project')
     def test_adds_none_permission_contributor_private_project_admin_uses_default_permissions(self):
         data = {
-            'data': {
-                'id': self.user_two._id,
+             'data': {
                 'type': 'contributors',
                 'attributes': {
-                    'permission': None,
-                    'bibliographic': True
+                    'bibliographic': True,
+                    'permission': None
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id,
+                            'type': 'users'
+                        }
+                    }
                 }
             }
         }
@@ -1606,11 +1685,18 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def test_adds_non_existing_user_private_project_admin(self):
         data = {
-            'data': {
-                'id': 'Fake',
+             'data': {
                 'type': 'contributors',
                 'attributes': {
-                        'bibliographic': True
+                    'bibliographic': True
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': 'FAKE',
+                            'type': 'users'
+                        }
+                    }
                 }
             }
         }
