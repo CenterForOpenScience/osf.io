@@ -175,7 +175,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', required=True)
     type = TypeField()
-    target_type = TargetTypeField()
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)
@@ -228,6 +227,13 @@ class NodeContributorsSerializer(JSONAPISerializer):
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
         return contributor
+
+
+class NodeContributorsCreateSerializer(NodeContributorsSerializer):
+    """
+    Overrides NodeContributorsSerializer to add target_type field
+    """
+    target_type = TargetTypeField()
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
