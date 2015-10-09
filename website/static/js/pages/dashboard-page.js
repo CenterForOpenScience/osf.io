@@ -10,9 +10,10 @@ var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
 var $osf = require('js/osfHelpers');
-var FB = require('js/file-browser.js');
+var FileBrowser = require('js/file-browser.js');
 var LogFeed = require('js/logFeed');
 var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
+var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 
 var url = '/api/v1/dashboard/get_nodes/';
 var request = $.getJSON(url, function(response) {
@@ -25,7 +26,7 @@ request.fail(function(xhr, textStatus, error) {
     });
 });
 
-var filBrowser = new FB({});
+m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, { text : 'Hello World' } ));
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
