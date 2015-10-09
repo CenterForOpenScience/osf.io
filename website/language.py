@@ -71,7 +71,7 @@ CANNOT_MERGE_ACCOUNTS_SHORT = 'Cannot Merge Accounts'
 CANNOT_MERGE_ACCOUNTS_LONG = (
     'Accounts cannot be merged due to a possible conflict with add-ons.  '
     'Before you continue, please <a href="/settings/addons/"> deactivate '
-    'any add-ons</a> authorized on this account and try again.'
+    'any add-ons</a> to be merged into your primary account.'
 )
 
 MERGE_COMPLETE = 'Accounts successfully merged.'

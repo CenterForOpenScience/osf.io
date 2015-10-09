@@ -180,9 +180,9 @@ class TestUserMerging(base.OsfTestCase):
     def test_can_be_merged_delete_unmergable_addon(self):
         self.user.add_addon('mergeable')
         self.user.add_addon('unmergeable')
-        self.user.delete_addon('unmergable')
+        self.ADDONS_UNDER_TEST['unmergeable']['user_settings'].deleted = 'True'
 
-        assert_false(self.user.can_be_merged)
+        assert_true(self.user.can_be_merged)
 
     def test_merge_unconfirmed_into_unmergeable(self):
         self.user.add_addon('unmergeable')
