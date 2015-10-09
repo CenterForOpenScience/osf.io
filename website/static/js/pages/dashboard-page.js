@@ -26,7 +26,8 @@ request.fail(function(xhr, textStatus, error) {
     });
 });
 
-m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, { text : 'Hello World' } ));
+var url = '/api/v1/dashboard/get_nodes/';
+m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, { url : url } ));
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
