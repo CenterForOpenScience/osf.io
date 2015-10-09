@@ -20,7 +20,8 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
-    NodeContributorDetailSerializer
+    NodeContributorDetailSerializer,
+    NodeContributorsCreateSerializer
 )
 from api.nodes.permissions import (
     AdminOrPublic,
@@ -477,6 +478,12 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
             contributor.node_id = node._id
             contributors.append(contributor)
         return contributors
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return NodeContributorsCreateSerializer
+        else:
+            return NodeContributorsSerializer
 
     # overrides ListAPIView
     def get_queryset(self):
