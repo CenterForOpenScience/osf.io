@@ -11,7 +11,8 @@ def ensure_schema_structure(schema):
 here = os.path.split(os.path.abspath(__file__))[0]
 
 def from_json(fname):
-    return json.load(open(os.path.join(here, fname)))
+    with open(os.path.join(here, fname)) as f:
+        return json.load(f)
 
 OSF_META_SCHEMAS = [
     ensure_schema_structure(from_json('osf-open-ended-1.json')),
