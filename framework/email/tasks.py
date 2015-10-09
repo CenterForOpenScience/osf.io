@@ -22,6 +22,7 @@ def send_email(from_addr, to_addr, subject, message, mimetype='html', ttls=True,
 
     :return: True if successful
     """
+
     username = username or settings.MAIL_USERNAME
     password = password or settings.MAIL_PASSWORD
     mail_server = mail_server or settings.MAIL_SERVER

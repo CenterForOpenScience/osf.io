@@ -296,7 +296,7 @@ else:
     CELERYBEAT_SCHEDULE = {
         '5-minute-emails': {
             'task': 'notify.send_users_email',
-            'schedule': crontab(minute='*/5'),
+            'schedule': crontab(minute='*/1'),
             'args': ('email_transactional',),
         },
         'daily-emails': {
