@@ -9,6 +9,7 @@
     <div class="col-sm-7">
         <div>
           <h3>Projects </h3>
+          <p>Browse and organize all your projects</p>
             <hr />
         </div><!-- end div -->
 

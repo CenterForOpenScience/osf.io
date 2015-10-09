@@ -10,6 +10,7 @@ var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
 var $osf = require('js/osfHelpers');
+var FB = require('js/file-browser.js');
 var LogFeed = require('js/logFeed');
 var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
 
@@ -24,6 +25,7 @@ request.fail(function(xhr, textStatus, error) {
     });
 });
 
+var filBrowser = new FB();
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
     var clientLocale = window.navigator.userLanguage || window.navigator.language;
