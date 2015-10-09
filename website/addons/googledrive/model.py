@@ -176,7 +176,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         else:
             return self.folder_name
 
-    def deauthorize(self, auth=None, add_log=True):
+    def deauthorize(self, auth=None, add_log=True, save=False):
         """Remove user authorization from this node and log the event."""
         node = self.owner
 
@@ -189,7 +189,8 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.user_settings = None
         self.clear_auth()
 
-        self.save()
+        if save:
+            self.save()
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
@@ -309,5 +310,4 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             return message
 
     def after_delete(self, node, user):
-        self.deauthorize(Auth(user=user), add_log=True)
-        self.save()
+        self.deauthorize(Auth(user=user), add_log=True, save=True)
