@@ -154,8 +154,19 @@
     </div>
 </script>
 
-<script type="text/html" id="importContributors">
+<script>
+ function setAllBoxes(value) {
+     var boxes = document.querySelectorAll('input[type="checkbox"]');
+     $.each(boxes, function(i, box) {
+         this.checked = value;
+     });
+ }
+</script>
 
+<script type="text/html" id="importContributors">
+    <div col-lg-12>
+        <p>Select: <a onClick="setAllBoxes(true)">All</a> | <a onClick="setAllBoxes(false)">None</a></p>
+    </div>
     <div data-bind="foreach: {data: contributors, as: 'contrib'}">
         <div class="checkbox">
             <label>
