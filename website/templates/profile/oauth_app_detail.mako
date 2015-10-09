@@ -39,6 +39,10 @@
                         <span data-bind="visible: $root.showSecret()"><i class="fa fa-eye-slash"></i> Hide</span>
                         <span data-bind="visible: !$root.showSecret()"><i class="fa fa-eye"></i> Show</span>
                     </a>
+                    <a class="btn btn-danger btn-xs m-l-sm" data-bind="click: $root.resetSecret.bind($root)">Reset Secret</a>
+                    <i class="fa fa-info-circle text-muted"
+                        data-bind="tooltip: {title:'Resetting the client secret will invalidate any applictions using this secret, and any keys validated by this secret.',
+                                             placement: 'bottom'}"></i>
                 </p>
                 <p data-bind="visible: !$root.isCreateView()">
                     <a data-bind="click: $root.deleteApplication.bind($root)" class="text-danger">Deactivate application</a>

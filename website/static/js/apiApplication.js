@@ -381,6 +381,36 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             }
         });
     },
+    resetSecret: function (appData) {
+        bootbox.confirm({
+            title: 'Reset client secret?',
+            message: language.apiOauth2Application.resetSecretConfirm,
+            callback: function (confirmed) {
+                if (confirmed){
+                    var request = this.client.resetSecret(appData);
+                    request.done(function (dataObj) {
+                        this.appData(dataObj);
+                        this.originalValues(dataObj.serialize());
+                        this.changeMessage(
+                            language.apiOauth2Application.dataUpdated,
+                            'text-success',
+                            5000);
+                    }.bind(this));
+                    request.fail(function (xhr, status, error) {
+                        $osf.growl('Error',
+                            language.apiOauth2Application.dataSendError,
+                            'danger');
+
+                        Raven.captureMessage('Error updating instance', {
+                            url: this.apiDetailUrl,
+                            status: status,
+                            error: error
+                        });
+                    }.bind(this));
+                }
+            }
+        });
+    },
     visitList: function () {
         window.location = this.webListUrl;
     },
