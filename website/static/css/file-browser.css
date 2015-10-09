@@ -32,3 +32,19 @@
     float: left;
     width: 20%;
 }
+
+.fb-breadcrumbs ul {
+padding: 0;}
+
+.fb-breadcrumbs ul li {
+    display: inline;
+    padding: 0 3px;
+}
+
+.fb-breadcrumbs ul li:after {
+}
+
+.fb-breadcrumbs>ul>li>.fa {
+    margin-left: 5px;
+    color: #999999;
+}
