@@ -5,7 +5,7 @@
         <form role="form" data-bind="submit: submit">
 
             <div class="form-group">
-                <label>Personal Site</label>
+                <label>Personal site</label>
                 <div class="input-group">
                 <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
                 <input class="form-control" data-bind="value: personal" placeholder="http://personalsite.com"/>

@@ -7,7 +7,7 @@
 <div id="projectScope">
     <header class="subhead" id="overview">
         <div class="row">
-            <div class="col-sm-6 col-md-7 cite-container">
+            <div class="col-sm-5 col-md-7 cite-container">
                 % if parent_node['exists']:
                     % if parent_node['can_view'] or parent_node['is_public'] or parent_node['is_contributor']:
                         <h2 class="node-parent-title">
@@ -23,7 +23,7 @@
                     <span id="nodeTitleEditable" class="overflow">${node['title']}</span>
                 </h2>
             </div>
-            <div class="col-sm-6 col-md-5">
+            <div class="col-sm-7 col-md-5">
                 <div class="btn-toolbar node-control pull-right"
                     % if not user_name:
                         data-bind="tooltip: {title: 'Log-in or create an account to watch/duplicate this project', placement: 'bottom'}"
@@ -46,14 +46,14 @@
                     <div class="btn-group" style="display: none;" data-bind="visible: true">
 
                         <!-- ko ifnot: inDashboard -->
-                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to Dashboard Folder',
+                           <a id="addDashboardFolder" data-bind="click: addToDashboard, tooltip: {title: 'Add to dashboard folder',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-plus"></i>
                            </a>
                         <!-- /ko -->
                         <!-- ko if: inDashboard -->
-                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from Dashboard Folder',
+                           <a id="removeDashboardFolder" data-bind="click: removeFromDashboard, tooltip: {title: 'Remove from dashboard folder',
                             placement: 'bottom', container : 'body'}" class="btn btn-default">
                                <i class="fa fa-folder-open"></i>
                                <i class="fa fa-minus"></i>
@@ -126,7 +126,7 @@
                     </p>
                 % endif
                 % if node['is_registration'] and node['registered_meta']:
-                    <p>Registration Supplement:
+                    <p>Registration supplement:
                     % for meta in node['registered_meta']:
                         <a href="${node['url']}register/${meta['name_no_ext']}">${meta['name_clean']}</a>
                     % endfor
@@ -134,12 +134,12 @@
                 % endif
                 % if node['is_registration']:
                     <p>
-                    Date Registered:
+                    Date registered:
                     <span data-bind="text: dateRegistered.local, tooltip: {title: dateRegistered.utc}" class="date node-date-registered"></span>
                     </p>
                 % endif
                     <p>
-                    Date Created:
+                    Date created:
                     <span data-bind="text: dateCreated.local, tooltip: {title: dateCreated.utc}" class="date node-date-created"></span>
                     % if not node['is_registration']:
                         | Last Updated:
