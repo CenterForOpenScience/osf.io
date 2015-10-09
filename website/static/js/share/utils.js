@@ -221,7 +221,7 @@ utils.maybeQuashEvent = function (event) {
 
 /* Adds a filter to the list of filters if it doesn't already exist */
 utils.updateFilter = function (vm, filter, required) {
-    filters = utils.wrapFilter(filter);
+    var filters = ensureArray(filter);
     filters.forEach(function(f){
         if (required && vm.requiredFilters.indexOf(f) === -1) {
             vm.requiredFilters.push(f);
@@ -232,13 +232,9 @@ utils.updateFilter = function (vm, filter, required) {
     utils.search(vm);
 };
 
-/* Helper function to accept string or array of strings for updateFilter */
-utils.wrapFilter = function(filter){
-    if( typeof filter === 'string' ) {
-        return [filter];
-    }
-    return filter;
-};
+function ensureArray(value) {
+    return Array.isArray(value) ? value : [value];
+}
 
 /* Removes a filter from the list of filters */
 utils.removeFilter = function (vm, filter) {
