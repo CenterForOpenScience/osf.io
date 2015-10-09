@@ -175,6 +175,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', required=True)
     type = TypeField()
+    target_type = TargetTypeField()
 
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)
@@ -197,6 +198,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'contributors'
+        target_type_ = 'users'
 
     def absolute_url(self, obj):
         return obj.absolute_url
@@ -232,6 +234,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
+
     def update(self, instance, validated_data):
         contributor = instance
         auth = Auth(self.context['request'].user)
@@ -266,7 +269,6 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    target_type = TargetTypeField()
     target_node_id = ser.CharField(write_only=True, source='node._id', help_text='The ID of the node that this Node Link points to')
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
@@ -278,7 +280,6 @@ class NodeLinksSerializer(JSONAPISerializer):
                                               lookup_url_kwarg='node_id')
     class Meta:
         type_ = 'node_links'
-        target_type = 'nodes'
 
     links = LinksField({
         'self': 'get_absolute_url'
