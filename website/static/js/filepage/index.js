@@ -109,6 +109,7 @@ var FileViewPage = {
                         self.file.checkout_user +'"> collaborator</a>. It needs to be checked back in before any changes can be made. </div>')));
                 }
             }).fail(function(resp) {
+                $osf.growl('Error', 'Unable to get check-out status of this file.');
             });
         };
         if (self.file.provider === 'osfstorage'){
