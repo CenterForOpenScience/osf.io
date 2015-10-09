@@ -11,7 +11,7 @@ from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
-from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField
+from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField, TargetTypeField
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -266,6 +266,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
+    target_type = TargetTypeField()
     target_node_id = ser.CharField(write_only=True, source='node._id', help_text='The ID of the node that this Node Link points to')
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
@@ -277,6 +278,7 @@ class NodeLinksSerializer(JSONAPISerializer):
                                               lookup_url_kwarg='node_id')
     class Meta:
         type_ = 'node_links'
+        target_type = 'nodes'
 
     links = LinksField({
         'self': 'get_absolute_url'
