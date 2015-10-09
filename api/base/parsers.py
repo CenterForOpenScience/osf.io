@@ -36,11 +36,8 @@ class JSONAPIParser(JSONParser):
         if not target_type:
             raise JSONAPIException(source={'pointer': '/relationships/<related_resource_name>/data/type'}, detail=NO_TYPE_ERROR )
 
-        if related_resource != target_type:
-            raise JSONAPIException(source={'pointer': '/relationships/<related_resource_name>'}, detail='Related resource name must be related resource type.')
-
         id = data.get('id')
-        return {'id': id, target_type: target_type}
+        return {'id': id, 'target_type': target_type}
 
 
     def parse(self, stream, media_type=None, parser_context=None):
@@ -69,15 +66,13 @@ class JSONAPIParser(JSONParser):
             object_type = data.get('type')
             attributes = data.get('attributes')
 
-            if relationships:
-                relationships = self.flatten_relationships(relationships)
-
             parsed = {'id': id, 'type': object_type}
 
             if attributes:
                 parsed.update(attributes)
 
             if relationships:
+                relationships = self.flatten_relationships(relationships)
                 parsed.update(relationships)
 
             return parsed
