@@ -30,11 +30,19 @@ var defaults = {
  */
 var FileBrowser = {
     controller : function (args) {
-        this.args = $.extend({}, defaults, args);
+        var self = this;
+        self.args = $.extend({}, defaults, args);
+        self.data = m.prop([]);
+        m.request({method: "GET", url: args.url}).then(self.data).then(function(){ console.log(self.data())});
+        self.path = [
+            { label : 'First', href : "/first"},
+            { label : 'Second', href : "/second"},
+            { label : 'Third', href : "/third"},
+        ];
     },
     view : function (ctrl) {
         return m('', [
-            m.component(Breadcrumbs),
+            m.component(Breadcrumbs, ctrl.path),
             m('.fb-sidebar', [
                 m.component(Collections),
                 m.component(Filters)
@@ -63,11 +71,21 @@ var Collections  = {
  * @constructor
  */
 var Breadcrumbs = {
-    controller : function (args) {
-
+    controller : function (data) {
+        this.data = data || [];
     },
     view : function (ctrl) {
-        return m('.fb-breadcrumbs', 'Breadcrumbs');
+        return m('.fb-breadcrumbs', m('ul', [
+            ctrl.data.map(function(item, index, array){
+                if(index === array.length-1){
+                    return m('li',  item.label);
+                }
+                return m('li',
+                    m('a', { href : item.href},  item.label),
+                    m('i.fa.fa-chevron-right')
+                );
+            })
+        ]));
     }
 };
 
