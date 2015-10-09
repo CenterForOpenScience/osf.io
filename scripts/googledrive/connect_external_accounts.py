@@ -34,6 +34,13 @@ def do_migration():
         node_addon.set_auth(account, user_addon.owner)  #.set_auth will reset the folder_id field
         node_addon.folder_id = f_id
         node_addon.save()
+
+        user_addon.grant_oauth_access(
+            node=node_addon.owner,
+            external_account=account,
+            metadata={'folder': f_id}
+        )
+
         logger.info('Added external account {0} to node {1}'.format(
             account._id, node_addon.owner._id,
         ))
