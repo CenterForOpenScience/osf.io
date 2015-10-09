@@ -1396,7 +1396,8 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
 
-    def test_contributor_update_invalid_data(self):
+
+    def test_contributor_create_invalid_data(self):
         res = self.app.post_json_api(self.public_url, "Incorrect data", auth=self.user_three.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
@@ -1404,6 +1405,148 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         res = self.app.post_json_api(self.public_url, ["Incorrect data"], auth=self.user_three.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+
+    def test_add_contributor_no_relationships(self):
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+
+    def test_add_contributor_empty_relationships(self):
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                },
+                'relationships': {}
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+
+    def test_add_contributor_no_user_key_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                },
+                'relationships': {
+                    'id': self.user_two._id,
+                    'type': 'users'
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Malformed request.')
+
+    def test_add_contributor_no_data_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                },
+                'relationships': {
+                    'data': {
+                        'id': self.user_two._id
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
+
+    def test_add_contributor_no_target_type_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /type.')
+
+
+    def test_add_contributor_no_target_id_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users'
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], 'data/id')
+
+    def test_add_contributor_incorrect_target_id_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'users',
+                            'id': '12345'
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_add_contributor_incorrect_target_type_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'contributors',
+                'attributes': {
+                    'bibliographic': True
+                },
+                'relationships': {
+                    'users': {
+                        'data': {
+                            'type': 'Incorrect!',
+                            'id': self.user_two._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
 
     def test_add_contributor_no_type(self):
         data = {
