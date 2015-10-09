@@ -158,10 +158,6 @@ def new_draft_registration(auth, node, *args, **kwargs):
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def edit_draft_registration_page(auth, node, draft, **kwargs):
-    messages = draft.before_edit(auth)
-    for message in messages:
-        status.push_status_message(message, trust=False)
-
     ret = project_utils.serialize_node(node, auth, primary=True)
     ret['draft'] = serialize_draft_registration(draft, auth)
     return ret

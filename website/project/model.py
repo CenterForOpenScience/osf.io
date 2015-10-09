@@ -3881,15 +3881,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         self.after_edit(changes)
         return changes
 
-    def before_edit(self, auth):
-        # TODO(samchrisinger): Make sure we still need this
-        messages = []
-        if self.is_approved:
-            messages.append('The draft registration you are editing is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.')
-        if self.flags.get('isPendingReview'):
-            messages.append('The draft registration you are editing is currently pending review. Please note that if you make any changes (excluding comments) this request will be canceled and you will need to submit for approval again.')
-        return messages
-
     def after_edit(self, changes):
 
         if changes:
