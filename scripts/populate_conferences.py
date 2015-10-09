@@ -475,6 +475,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'CNI2015': {
+        'name': 'Coalition for Networked Information (CNI) Fall Membership Meeting 2015',
+        'info_url': 'https://www.cni.org/events/membership-meetings/upcoming-meeting/fall-2015/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
@@ -495,14 +505,13 @@ def populate_conferences():
         try:
             conf.save()
         except ModularOdmException:
-            print('{0} Conference already exists. Updating existing record...'.format(meeting))
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
                 setattr(conf, key, value)
             conf.admins = admin_objs
             changed_fields = conf.save()
             if changed_fields:
-                print('Changed: {}'.format(changed_fields))
+                print('Updated {}: {}'.format(meeting, changed_fields))
         else:
             print('Added new Conference: {}'.format(meeting))
 

@@ -57,7 +57,7 @@ var SharePopover =  {
                             m('input.form-control[readonly][type="text"][value="'+ link +'"]')
                         ])),
                         m('.tab-pane#embed', [
-                            m('p', 'Dynamically Render iFrame with JavaScript'),
+                            m('p', 'Dynamically render iframe with JavaScript'),
                             m('textarea.form-control[readonly][type="text"][value="' +
                                 '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
                                 '<link href="' + url + 'static/css/mfr.css" media="all" rel="stylesheet">' +
@@ -67,7 +67,7 @@ var SharePopover =  {
                                     'var mfrRender = new mfr.Render("mfrIframe", "' + link + '");' +
                                 '</script>' + '"]'
                             ), m('br'),
-                            m('p', 'Direct iFrame with Fixed Height and Width'),
+                            m('p', 'Direct iframe with fixed height and width'),
                             m('textarea.form-control[readonly][value="' +
                                 '<iframe src="' + link + '" width="100%" scrolling="yes" height="' + params.height + '" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen>"]'
                             )
