@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 # 2015 Sept 18
 CUT_OFF_DATE = (2015, 9, 18)
 
-BACKUP_COLLECTION = '20151009pagecounters'
+BACKUP_COLLECTION = 'zzz20151009pagecounters'
+NEW_COLLECTION = '20151009pagecountersmigrated'
 
 
 def get_keys_after(obj, y, m, d):
@@ -27,11 +28,11 @@ def get_keys_after(obj, y, m, d):
 
 
 def do_migration():
-    database.pagecounters.rename(BACKUP_COLLECTION)
+    # database.pagecounters.rename(BACKUP_COLLECTION)
 
-    for current_version in database[BACKUP_COLLECTION].find():
+    for current_version in database['pagecounters'].find():
         if not current_version['_id'].startswith('download'):
-            database.pagecounters.insert(current_version)
+            database[NEW_COLLECTION].insert(current_version)
             continue
 
         try:
@@ -39,17 +40,17 @@ def do_migration():
         except ValueError:
             if current_version['_id'].count(':') != 2:
                 logging.warning('Found malformed _id {}'.format(current_version['_id']))
-            database.pagecounters.insert(current_version)
+            database[NEW_COLLECTION].insert(current_version)
             continue
 
         try:
             version = int(version)
         except ValueError:
             logging.warning('Found malformed version in _id {}'.format(current_version['_id']))
-            database.pagecounters.insert(current_version)
+            database[NEW_COLLECTION].insert(current_version)
             continue
 
-        next_version = database[BACKUP_COLLECTION].find_one({
+        next_version = database['pagecounters'].find_one({
             '_id': ':'.join(['download', nid, fid, str(version + 1)])
         })
 
@@ -86,7 +87,10 @@ def do_migration():
             continue
 
         logger.debug('Updating entry {}'.format(current_version['_id']))
-        database.pagecounters.insert(current_version)
+        database[NEW_COLLECTION].insert(current_version)
+
+    database['pagecounters'].rename(BACKUP_COLLECTION)
+    database[NEW_COLLECTION].rename('pagecounters')
 
 
 def main(dry=True):
