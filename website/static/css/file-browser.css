@@ -1,0 +1,34 @@
+.fileBrowser {
+    height: 500px;
+    width: 100%;
+}
+
+.fb-breadcrumbs {
+    background-color: #efefef;
+    padding: 10px;
+}
+
+.fb-sidebar {
+    width: 30%;
+    display: block;
+    height: 500px;
+    float: left;
+    background-color: aliceblue;
+    padding: 10px;
+}
+
+.fb-main {
+    width: 50%;
+    float: left;
+    background-color: antiquewhite;
+    height: 500px;
+    padding: 10px;
+}
+
+.fb-infobar {
+    background-color: coral;
+    height: 500px;
+    padding: 10px;
+    float: left;
+    width: 20%;
+}
