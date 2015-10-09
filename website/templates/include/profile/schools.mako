@@ -132,24 +132,20 @@
 
         <div class="row" data-bind="if: contents().length">
             <div data-bind="foreach: contents">
-                <div class="col-sm-12 col-xs-6">
+                <div class="col-xs-12">
                     <div class="panel panel-default">
-                        <div class="panel-heading" data-bind="attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false" onclick="toggleIcon(this)">
+                        <div class="panel-heading card-heading" data-bind="attr: {id: 'schoolHeading' + $index(), href: '#schoolCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false" onclick="toggleIcon(this)">
                             <div class="header-content">
                                 <h5>{{ institution }}</h5>
-                                <span style="display: block; font-style: italic; font-size: 75%">{{ startMonth }} {{startYear }} - {{ endView }}</span>
+                                <span class="subheading">{{ startMonth }} {{startYear }} - {{ endView }}</span>
                             </div>
-                            <div class="pull-right">
-                                <i class="fa fa-angle-down toggle-icon"></i>
-                            </div>
+                            <span class="fa fa-angle-down toggle-icon"></span>
                         </div>
                         <div data-bind="attr: {id: 'schoolCard' + $index()}" class="panel-collapse collapse" data-bind="attr: {aria-labelledby: 'schoolHeading' + $index()}">
                             <div class="panel-body">
-                                <span style="display: block" data-bind="if: department().length"><h5>Department:</h5> {{ department }}</span>
-                                <span style="display: block" data-bind="if: degree().length"><h5>Degree:</h5> {{ degree }}</span>
-                                <span style="display: block" data-bind="if: startYear().length">
-                                    <span><h5>Dates:</h5> {{ startMonth }} {{startYear }} - {{ endView }}</span>
-                                </span>
+                                <span data-bind="if: department().length"><h5>Department:</h5> {{ department }}</span>
+                                <span data-bind="if: degree().length"><h5>Degree:</h5> {{ degree }}</span>
+                                <span> data-bind="if: startYear().length"><h5>Dates:</h5> {{ startMonth }} {{startYear }} - {{ endView }}</span>
                             </div>
                         </div>
                     </div>

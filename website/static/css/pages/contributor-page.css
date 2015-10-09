@@ -24,8 +24,15 @@
     background-color: #F5F5F5;
 }
 
-#privateLinkTable .btn-group .btn-mini{
-    padding:5px;
+.link-name {
+    display: inline-block;
+}
+
+#privateLinkTable .btn-group {
+    width: 100%;
+    display: flex;
+    display: -webkit-flex;
+    display: -ms-flex;
 }
 
 .contributor-delete-staged {
@@ -37,12 +44,69 @@
     border-right: none;
 }
 
+.contrib-placeholder {
+    background: #EFEFEF;
+    width: 100%;
+    height: 40px;
+}
+
+.sortable-bars {
+    display: inline-block;
+    position: absolute;
+    top: 50%;
+    transform: translate(0, -50%);
+    -webkit-transform: translate(0, -50%);
+    -ms-transform: translate(0, -50%);
+    color: #ccc;
+    cursor: pointer;
+}
+
+#noContributors {
+    display: none;
+}
+
+#noAdminContribs {
+    display: none;
+}
+
+select.input-sm {
+    white-space: nowrap;
+    min-width: 111px;
+}
+
+#manageContributorsTableth:first-child(:not(.sortable)),
+#adminContributorsTable th:first-child(:not(.sortable)) {
+    width: 40px;
+}
+
+#manageContributorsTable th:first-child.sortable,
+#adminContributorsTable th:first-child.sortable {
+    width: 87px;
+    text-indent: 20px;
+}
+
+#manageContributorsTable th:nth-child(4),
+#adminContributorsTable th:nth-child(4) {
+    width: 109px;
+}
+
+#privateLinkTable th:nth-child(2) {
+    width: 120px;
+}
+
 /*Responsive tables*/
 table.responsive-table thead th {
     font-weight: 600;
 }
+
+table.responsive-table thead th.min-width {
+    width: 1px;
+}
+
 table.responsive-table thead th, table.responsive-table tbody td {
-  padding: .8rem; font-size: 1.4rem;
+    padding: .8rem;
+    font-size: 1.4rem;
+    position: relative;
 }
 
 table.responsive-table tbody td>.header {
@@ -56,14 +120,31 @@ table.responsive-table tbody tr td:first-child .toggle-icon {
 table.responsive-table tbody tr td .card-header {
     display: none;
     vertical-align: middle;
+    margin-left: 8px;
 }
 
-table.responsive-table tbody tr td .card-subheader {
-    display: none;
-    vertical-align: middle;
+table.responsive-table tbody tr td .card-header > span{
+    display: block;
 }
 
 @media screen and (max-width: 600px) {
+    table.responsive-table-xxs tr.contrib-placeholder td {
+        margin: 0;
+        padding: 0;
+        height: 0;
+        background: transparent;
+    }
+
+    table.responsive-table-xxs tr:nth-child(2).contrib-placeholder td {
+        border-width: 0 !important;
+    }
+
+    table.responsive-table-xxs tr.contrib-placeholder {
+        background: white;
+        margin-top: -1px;
+    }
+
+
     table.responsive-table-xxs thead { display: none; }
     table.responsive-table-xxs tbody td {
         display: block;
@@ -89,16 +170,12 @@ table.responsive-table tbody tr td .card-subheader {
     }
 
 
-    table.responsive-table-xxs tbody tr td:last-child {
+    table.responsive-table-xxs tbody tr:not(.contrib-placeholder) td:last-child {
         border-bottom-width: 1px;
     }
 
     table.responsive-table-xxs tbody tr td .card-header {
         display: inline-block;
-    }
-
-    table.responsive-table-xxs tbody tr td .card-subheader {
-        display: block;
     }
 
     table.responsive-table-xxs tbody tr .table-only {
@@ -131,13 +208,12 @@ table.responsive-table tbody tr td .card-subheader {
 
     table.responsive-table-xxs tbody tr td:first-child .toggle-icon {
         position: absolute;
-        right: 0;
+        right: 15px;
         top: 50%;
         transform: translate(0, -50%);
         -webkit-transform: translate(0, -50%);
         -ms-transform: translate(0, -50%);
         display: inline-block;
-        margin: 0 15px 0 0;
     }
 
     table.responsive-table-xxs tbody .card-body {
@@ -192,8 +268,9 @@ table.responsive-table tbody tr td .card-subheader {
         display: inline-block;
     }
 
-    table.responsive-table-xs tbody tr td .card-subheader {
+    table.responsive-table-xs tbody tr td .link-url {
         display: block;
+        width: 75%;
     }
 
     table.responsive-table-xs tbody tr .table-only {
@@ -226,13 +303,12 @@ table.responsive-table tbody tr td .card-subheader {
 
     table.responsive-table-xs tbody tr td:first-child .toggle-icon {
         position: absolute;
-        right: 0;
+        right: 15px;
         top: 50%;
         transform: translate(0, -50%);
         -webkit-transform: translate(0, -50%);
         -ms-transform: translate(0, -50%);
         display: inline-block;
-        margin: 0 15px 0 0;
     }
 
     table.responsive-table-xs tbody .card-body {

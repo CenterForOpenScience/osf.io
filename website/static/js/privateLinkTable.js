@@ -53,7 +53,6 @@ function LinkViewModel(data, $root) {
         return self.$root.nodeUrl() + '?view_only=' + data.key;
     });
     self.nodesList = ko.observableArray(data.nodes);
-    self.removeLink = 'Remove this link';
 
     self.anonymousDisplay = ko.computed(function() {
         var openTag = '<span>';
@@ -93,6 +92,10 @@ function ViewModel(url, nodeIsPublic) {
     self.url = url;
     self.privateLinks = ko.observableArray();
     self.nodeUrl = ko.observable(null);
+
+    self.visible = ko.computed(function() {
+        return self.privateLinks().length > 0;
+    });
 
     function onFetchSuccess(response) {
         var node = response.node;

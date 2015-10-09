@@ -11,8 +11,9 @@ var $osf = require('./osfHelpers');
 
 //http://stackoverflow.com/questions/12822954/get-previous-value-of-an-observable-in-subscribe-of-same-observable
 ko.subscribable.fn.subscribeChanged = function (callback) {
-    var savedValue = this.peek();
-    return this.subscribe(function (latestValue) {
+    var self = this;
+    var savedValue = self.peek();
+    return self.subscribe(function (latestValue) {
         var oldValue = savedValue;
         savedValue = latestValue;
         callback(latestValue, oldValue);
@@ -28,7 +29,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.originals = {
         permission: contributor.permission,
-        cited: contributor.visible,
+        visible: contributor.visible,
         index: index
     };
 
@@ -50,10 +51,10 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.visible.subscribeChanged(function(newValue, oldValue) {
         if (oldValue === true) {
-            parent.citedCount(parent.citedCount() - 1);
+            parent.visibleCount(parent.visibleCount() - 1);
         }
         if (newValue === true) {
-            parent.citedCount(parent.citedCount() + 1);
+            parent.visibleCount(parent.visibleCount() + 1);
         }
     });
 
@@ -62,8 +63,17 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     });
 
     self.reset = function() {
+        if (self.deleteStaged()) {
+            if (self.visible()) {
+                parent.visibleCount(parent.visibleCount() + 1);
+            }
+            if (self.permission() === 'admin') {
+                parent.adminCount(parent.adminCount() + 1);
+            }
+            self.deleteStaged(false);
+        }
         self.permission(self.originals.permission);
-        self.visible(self.originals.cited);
+        self.visible(self.originals.visible);
         self.index(self.originals.index);
     };
 
@@ -72,8 +82,8 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.currentUserCanEdit = currentUserCanEdit;
     self.isAdmin = isAdmin;
 
-    self.deleteStaged = ko.observable(contributor.deleteStaged || false);
-    self.removeContributor = 'Remove contributor';
+    self.deleteStaged = ko.observable(false);
+
     self.pageOwner = pageOwner;
 
     self.serialize = function() {
@@ -81,24 +91,27 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     };
 
     self.canEdit = ko.computed(function() {
-      return self.currentUserCanEdit && !self.isAdmin;
+        return self.currentUserCanEdit && !self.isAdmin;
     });
 
     self.remove = function() {
+        if (parent.visibleCount() > 0 && self.visible()) {
+            parent.visibleCount(parent.visibleCount() - 1);
+        }
+        if (parent.adminCount() > 0 && self.permission() === 'admin') {
+            parent.adminCount(parent.adminCount() - 1);
+        }
         self.deleteStaged(true);
     };
-    self.unremove = function(data, event) {
-        var $target = $(event.target);
-        if (!$target.hasClass('contrib-button')) {
+    self.unremove = function() {
+        if (self.deleteStaged()) {
             self.deleteStaged(false);
+            parent.visibleCount(parent.visibleCount() + 1);
         }
         // Allow default action
         return true;
     };
     self.profileUrl = ko.observable(contributor.url);
-    self.notDeleteStaged = ko.computed(function() {
-        return !self.deleteStaged();
-    });
 
     self.canRemove = ko.computed(function(){
         return (self.id === pageOwner.id) && !isRegistration;
@@ -106,15 +119,13 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.isDirty = ko.pureComputed(function() {
         return self.permissionChange() ||
-                self.visible() != self.originals.cited ||
-                self.index() != self.originals.index;
+            self.visible() != self.originals.visible ||
+            self.index() != self.originals.index || self.deleteStaged();
     });
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl
     // gets refactored, update this to use global method.
     self.removeSelf = function(parent) {
-        parent.messages([]);
-
         var id = self.id,
             name = self.fullname;
         var payload = {
@@ -122,15 +133,11 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             name: self.fullname
         };
 
-        //TODO: fix this conditional
-        if (parent.validVisible() === 1 && self.visible()){
-            parent.messages.push(
-                new MessageModel(
-                    'Must have at least one bibliographic contributor',
-                    'error'
-                )
-            );
-        } else {
+        if (parent.visibleCount() > 0 && self.visible()) {
+            parent.visibleCount(parent.visibleCount() - 1);
+        }
+
+        if (parent.visibleCount() > 0) {
             $osf.postJSON(
                 window.contextVars.node.urls.api + 'beforeremovecontributors/',
                 payload
@@ -206,36 +213,29 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
     self.permissionList = Object.keys(self.permissionDict);
 
-    self.filtersOptions = [];
-
     self.contributors = ko.observableArray();
-
-    self.sortContributors = function() {
-        return self.contributors.sort(function(left, right) {
-            if (left.index() === right.index()) {
-                return left.originals.index < right.originals.index ? -1 : 1;
-            }
-            return left.index() < right.index() ? -1 : 1;
-        });
-    };
 
     self.adminContributors = adminContributors;
 
     self.user = ko.observable(user);
-    // TODO: Does this need to be an observable?
-    self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
     self.canEdit = ko.computed(function() {
-        return (self.userIsAdmin()) && !isRegistration;
+        return ($.inArray('admin', user.permissions) > -1) && !isRegistration;
     });
 
     self.sortable = function(filtered) {
-        if (filtered) {
-            $('#contributors').sortable("disable");
-        }
-        else {
-            $('#contributors').sortable("enable");
+        if (!isRegistration) {
+            if (filtered) {
+                $('#contributors').sortable("disable");
+                self.isSortable(false);
+            }
+            else {
+                $('#contributors').sortable("enable");
+                self.isSortable(true);
+            }
         }
     };
+
+    self.isSortable = ko.observable(false);
 
     // Hack: Ignore beforeunload when submitting
     // TODO: Single-page-ify and remove this
@@ -258,13 +258,13 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
     self.adminCount = ko.observable(0);
 
-    self.citedCount = ko.observable(0);
+    self.visibleCount = ko.observable(0);
 
     self.canSubmit = ko.computed(function() {
-        return self.changed() && self.adminCount() && self.citedCount();
+        return self.changed() && self.adminCount() && self.visibleCount();
     });
 
-    self.messages = ko.computed(function(failed) {
+    self.messages = ko.computed(function() {
         var messages = [];
         if(!self.adminCount()) {
             messages.push(
@@ -274,16 +274,13 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                 )
             );
         }
-        if (!self.citedCount()) {
+        if (!self.visibleCount()) {
             messages.push(
                 new MessageModel(
                     'Must have at least one bibliographic contributor',
                     'error'
                 )
             );
-        }
-        if (failed) {
-
         }
         return messages;
     });
@@ -296,7 +293,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                 self.adminCount(self.adminCount() + 1);
             }
             if (item.visible) {
-                self.citedCount(self.citedCount() + 1);
+                self.visibleCount(self.visibleCount() + 1);
             }
             return new ContributorModel(item, self.canEdit(), self.user(), isRegistration, false, index, self);
         }));
@@ -308,34 +305,31 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         });
     };
 
-    self.initListeners = function() {
-        var self = this;
-        // Warn on add contributors if pending changes
-        $('[href="#addContributors"]').on('click', function() {
-            if (self.changed()) {
-                $osf.growl('Error:',
-                        'Your contributor list has unsaved changes. Please ' +
-                        'save or cancel your changes before adding ' +
-                        'contributors.'
-                );
-                return false;
-            }
-        });
-        // Warn on URL change if pending changes
-        $(window).on('beforeunload', function() {
-            if (self.changed() && !self.forceSubmit()) {
-                // TODO: Use GrowlBox.
-                return 'There are unsaved changes to your contributor ' +
-                    'settings. Are you sure you want to leave this page?';
-            }
-        });
-    };
+    // Warn on add contributors if pending changes
+    $('[href="#addContributors"]').on('click', function() {
+        if (self.changed()) {
+            $osf.growl('Error:',
+                    'Your contributor list has unsaved changes. Please ' +
+                    'save or cancel your changes before adding ' +
+                    'contributors.'
+            );
+            return false;
+        }
+    });
+    // Warn on URL change if pending changes
+    $(window).bind('beforeunload', function() {
+        if (self.changed() && !self.forceSubmit()) {
+            // TODO: Use GrowlBox.
+            return 'There are unsaved changes to your contributor settings';
+        }
+    });
 
     self.init();
-    self.initListeners();
 
-    //TODO: sort self.contributors() on serialization
     self.serialize = function() {
+        self.contributors(self.contributors.sort(function(left, right) {
+            return left.index() > right.index() ? 1 : -1;
+        }));
         return ko.utils.arrayMap(
             ko.utils.arrayFilter(self.contributors(), function(contributor) {
                 return !contributor.deleteStaged();
@@ -358,8 +352,6 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         })
     };
 
-
-    //TODO: update this code
     self.submit = function() {
         self.forceSubmit(true);
         bootbox.confirm({
@@ -368,7 +360,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
             callback: function(result) {
                 if (result) {
                     $osf.postJSON(
-                        window.contextVars.node.urls.api + 'blah/contributors/manage/',
+                        window.contextVars.node.urls.api + 'contributors/manage/',
                         {contributors: self.serialize()}
                     ).done(function(response) {
                         // TODO: Don't reload the page here; instead use code below
@@ -378,14 +370,10 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
                             window.location.reload();
                         }
                     }).fail(function(xhr) {
-                        //TODO: Fix this section
                         var response = xhr.responseJSON;
-                        //self.messages.push(
-                        //    new MessageModel(
-                        //        'Submission failed: ' + response.message_long,
-                        //        'error'
-                        //    )
-                        //);
+                        $osf.growl('Error:',
+                            'Submission failed: ' + response.message_long
+                        );
                         self.forceSubmit(false);
                     });
                 }
@@ -402,18 +390,30 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     //TODO: investigate changing how sortable is added
     self.afterRender = function(elements) {
         rt.responsiveTable(elements[0].parentElement.parentElement);
-        var filtered = elements.filter(function(el){
-            return el.nodeType == 1 && el.nodeName === "TBODY";
-        });
-        if (jQuery(filtered[0]).attr('id') === 'contributors') {
-            $(filtered[0]).sortable({
-                update: function (event, ui) {
-                    ko.contextFor(ui.item[0]).$data.index(ui.item.index());
-                }
+        if (!isRegistration) {
+            self.isSortable(true);
+            var filtered = elements.filter(function(el){
+                return el.nodeType == 1 && el.nodeName === "TBODY";
             });
+            if (jQuery(filtered[0]).attr('id') === 'contributors') {
+                $(filtered[0]).sortable({
+                    update: function (event, ui) {
+                        var moved, targetIndex, currentIndex, i, contributor;
+                        moved = ko.contextFor(ui.item[0]).$data;
+                        targetIndex = ui.item.index();
+                        currentIndex = moved.index();
+                        moved.index(targetIndex);
+                        self.contributors().splice(currentIndex, 1);
+                        self.contributors().splice(targetIndex, 0, moved);
+                        for (i = 0; contributor = self.contributors()[i]; i++) {
+                            contributor.index(i);
+                        }
+                    },
+                    placeholder :'contrib-placeholder'
+                });
+            }
         }
     };
-
 };
 
 ////////////////

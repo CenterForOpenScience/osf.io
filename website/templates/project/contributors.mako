@@ -11,7 +11,14 @@
 <div class="col-md-3 col-xs-12">
     <div class="filters">
         <input type="text" class="form-control searchable" id="nameSearch" placeholder="Search by name"/>
-        <h5>Permissions:</h5>
+        <h5>Permissions
+                <i class="fa fa-question-circle permission-info"
+                    data-toggle="popover"
+                    data-title="Permission Information"
+                    data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i></h5>
         <div class="btn-group btn-group-justified-vertical filtergroup" id='permissionFilter'>
             <div class="btn-group">
                 <button class="filter-btn btn-default btn" id="admins">Administrator</button>
@@ -23,13 +30,20 @@
                 <button class="filter-btn btn-default btn" id="read">Read</button>
             </div>
         </div>
-        <h5>Cited:</h5>
-        <div class="btn-group btn-group-justified-vertical filtergroup" id='citedFilter'>
+        <h5>Bibliographic Contributor
+                <i class="fa fa-question-circle visibility-info"
+                    data-toggle="popover"
+                    data-title="Bibliographic Contributor Information"
+                    data-container="body"
+                    data-placement="right"
+                    data-html="true"
+                ></i></h5>
+        <div class="btn-group btn-group-justified-vertical filtergroup" id='visibleFilter'>
             <div class="btn-group">
-                <button class="filter-btn btn-default btn" id='cited'>Cited</button>
+                <button class="filter-btn btn-default btn" id='visible'>Bibliographic</button>
             </div>
             <div class="btn-group">
-                <button class="filter-btn btn-default btn" id='notCited'>Not Cited</button>
+                <button class="filter-btn btn-default btn" id='notVisible'>Non-Bibliographic</button>
             </div>
         </div>
     </div>
@@ -39,7 +53,7 @@
     <div id="manageContributors" class="scripted">
         <h3> Contributors
             <!-- ko if: canEdit -->
-                <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
+                <a href="#addContributors" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
                   <i class="fa fa-plus"></i> Add
                 </a>
             <!-- /ko -->
@@ -60,6 +74,9 @@
                 data: 'contrib'
                 }">
     </table>
+    <div id="noContributors" class="text-danger">
+        No contributors found
+    </div>
     <span id="adminContributorsAnchor" class="project-page anchor"></span>
     <div id="adminContributors" data-bind="if: adminContributors.length">
         <h4>
@@ -86,27 +103,31 @@
                     data: 'admin'
                 }">
         </table>
+        <div id="noAdminContribs" class="text-danger">
+            No administrators from parent project found.
+        </div>
     </div>
         ${buttonGroup()}
     </div>
 
     % if 'admin' in user['permissions']:
         <h3>View-only Links
-            <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm" style="margin-left:20px;margin-top: -3px">
+            <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
               <i class="fa fa-plus"></i> Add
             </a>
         </h3>
         <p>Create a link to share this project so those who have the link can view&mdash;but not edit&mdash;the project.</p>
         <div class="scripted" id="linkScope">
-            <table id="privateLinkTable" class="table responsive-table responsive-table-xs">
+            <table id="privateLinkTable" class="table responsive-table responsive-table-xs"
+                    data-bind="if: visible">
                 <thead>
                     <tr>
                         <th class="responsive-table-hide">Link Name</th>
-                        <th style="width: 120px;">Shared Components</th>
+                        <th>Shared Components</th>
                         <th>Created Date</th>
                         <th>Created By</th>
-                        <th style="width: 78px">Anonymous</th>
-                        <th style="width: 78px"></th>
+                        <th class="min-width">Anonymous</th>
+                        <th class="min-width"></th>
                     </tr>
                 </thead>
                 <tbody data-bind="template: {
@@ -124,16 +145,15 @@
     <!-- ko foreach: privateLinks -->
     <tr>
         <td>
-            <span class="link-name m-b-xs" data-bind="text: name" style="display: inline-block;"></span>
+            <span class="link-name m-b-xs" data-bind="text: name"></span>
             <span class="fa fa-angle-down toggle-icon"></span>
             <div>
-                <div class="btn-group" style="width: 100% display: flex; display: -webkit-flex; display: -ms-flex;">
+                <div class="btn-group">
                     <button title="Copy to clipboard" class="btn btn-default btn-sm m-r-xs copy-button"
                             data-bind="attr: {data-clipboard-text: linkUrl}" >
                         <i class="fa fa-copy"></i>
                     </button>
-                    <input style='width: 100%' class="table-only link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
-                    <input style='width: 75%' class="card-subheader link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
+                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
                 </div>
             </div>
         </td>
@@ -155,7 +175,7 @@
         </td>
         <td>
             <div class="td-content">
-                <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block" style="width: 300px"></a>
+                <a data-bind="text: creator.fullname, attr: {href: creator.url}" class="overflow-block"></a>
             </div>
         </td>
         <td>
@@ -178,9 +198,11 @@
 <script id="contribTable" type="text/html">
     <thead>
         <tr>
-            <th class="responsive-table-hide" style="width: 40px">Name</th>
-            <th style="min-width: 140px"></th>
-            <th style="min-width: 127px">
+            <th class="responsive-table-hide"
+                data-bind="css: {sortable: ($data === 'contrib' && $root.isSortable())}">Name
+            </th>
+            <th></th>
+            <th>
                 Permissions
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
@@ -190,7 +212,7 @@
                     data-html="true"
                 ></i>
             </th>
-            <th style="width: 109px">
+            <th>
                 Bibliographic Contributor
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
@@ -200,15 +222,14 @@
                     data-html="true"
                 ></i>
             </th>
-            <th style="width: 78px"></th>
+            <th class="min-width"></th>
         </tr>
     </thead>
     <!-- ko if: $data == 'contrib' -->
     <tbody id="contributors" data-bind="template: {
             name: 'contribRow',
             foreach: $root.contributors,
-            as: 'contributor',
-            afterMove: $root.afterMove
+            as: 'contributor'
     }"></tbody>
     <!-- /ko -->
     <!--ko if: $data == 'admin' -->
@@ -222,18 +243,24 @@
 </script>
 
 <script id="contribRow" type="text/html">
-    <tr class="items" data-bind="click: unremove, css: {'contributor-delete-staged': $parent.deleteStaged}">
+    <tr data-bind="click: unremove, css: {'contributor-delete-staged': $parent.deleteStaged}, attr: {class: $parent}">
         <td>
-            <img data-bind="attr: {src: contributor.gravatar_url}" />
+            <!-- ko if: ($parent === 'contrib' && $root.isSortable()) -->
+                <span class="fa fa-bars sortable-bars"></span>
+                <img class="m-l-md" data-bind="attr: {src: contributor.gravatar_url}" />
+            <!-- /ko -->
+            <!-- ko ifnot: ($parent === 'contrib' && $root.isSortable()) -->
+                <img data-bind="attr: {src: contributor.gravatar_url}" />
+            <!-- /ko -->
             <span class="fa fa-angle-down toggle-icon"></span>
             <div class="card-header">
-                <span style="display: block" data-bind="ifnot: profileUrl">
+                <span data-bind="ifnot: profileUrl">
                     <span class="name-search" data-bind="text: contributor.shortname"></span>
                 </span>
-                <span style="display: block" data-bind="if: profileUrl">
+                <span data-bind="if: profileUrl">
                     <a onclick="cancelProp(event)" class="no-sort name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
                 </span>
-                <span style="display: block" data-bind="text: permissionText()" class="permission-filter permission-search"></span>
+                <span data-bind="text: permissionText()" class="permission-filter permission-search"></span>
             </div>
         </td>
         <td class="table-only">
@@ -247,7 +274,7 @@
         <td class="permissions">
             <div class="td-content">
                 <!-- ko if: contributor.canEdit() -->
-                    <span data-bind="visible: notDeleteStaged">
+                    <span data-bind="visible: !deleteStaged()">
                         <select class="form-control input-sm" data-bind="
                             options: $parents[1].permissionList,
                             value: permission,
@@ -270,8 +297,8 @@
         <td>
             <div class="td-content">
                 <input
-                    type="checkbox" class="no-sort biblio cited-filter"
-                    data-bind="checked: visible, enable: $data.canEdit() && !contributor.isAdmin"
+                    type="checkbox" class="no-sort biblio visible-filter"
+                    data-bind="checked: visible, enable: $data.canEdit() && !contributor.isAdmin && !deleteStaged()"
                 />
             </div>
         </td>
@@ -290,7 +317,7 @@
 
                 <!-- ko ifnot: contributor.canEdit() -->
                     <!-- ko if: canRemove -->
-                        <button type="button" class="btn btn-danger" data-bind="click: function() { $data.removeSelf($parents[1])}">Remove2</button>
+                        <button type="button" class="btn btn-danger" data-bind="click: function() { $data.removeSelf($parents[1])}">Remove</button>
                     <!-- /ko -->
                 <!-- /ko -->
             </div>
@@ -300,9 +327,10 @@
 
 <%def name="buttonGroup()">
     % if 'admin' in user['permissions']:
-        <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
-        <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
-        <br /><br />
+        <div class="m-b-sm">
+            <a class="btn btn-danger contrib-button" data-bind="click: cancel, visible: changed">Discard Changes</a>
+            <a class="btn btn-success contrib-button" data-bind="click: submit, visible: canSubmit">Save Changes</a>
+        </div>
     % endif
         <div data-bind="foreach: messages">
             <div data-bind="css: cssClass">{{ text }}</div>
