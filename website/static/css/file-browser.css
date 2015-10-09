@@ -14,7 +14,6 @@
     height: 500px;
     float: left;
     background-color: aliceblue;
-    padding: 10px;
 }
 
 .fb-main {
@@ -33,18 +32,35 @@
     width: 20%;
 }
 
-.fb-breadcrumbs ul {
-padding: 0;}
+.fb-breadcrumbs ul, .fb-collections ul {
+    padding: 0;
+    list-style: none;
+}
 
 .fb-breadcrumbs ul li {
     display: inline;
     padding: 0 3px;
 }
 
-.fb-breadcrumbs ul li:after {
-}
 
 .fb-breadcrumbs>ul>li>.fa {
     margin-left: 5px;
     color: #999999;
+}
+
+.fb-collections ul li {
+    padding: 3px 0;
+}
+
+.fb-collections ul li.active {
+    background-color: #ccc;
+}
+
+li {
+}
+
+li {}
+
+.fb-collections ul>li {
+    padding: 7px;
 }
