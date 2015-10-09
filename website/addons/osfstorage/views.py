@@ -163,7 +163,7 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not is_folder:
         try:
-            if file_node.checkout is None or file_node.checkout == user:
+            if file_node.checkout is None or file_node.checkout._id == user._id:
                 version = file_node.create_version(
                     user,
                     dict(payload['settings'], **dict(

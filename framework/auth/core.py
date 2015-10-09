@@ -1129,7 +1129,7 @@ class User(GuidStoredObject, AddonModelMixin):
     def files_checked_out(self):
         # done here to prevent Import error due to circular import.
         from website.files.models.osfstorage import FileNode
-        return list(FileNode.find(Q('checkout', 'eq', self)))
+        return FileNode.find(Q('checkout', 'eq', self))
 
     @property
     def can_be_merged(self):

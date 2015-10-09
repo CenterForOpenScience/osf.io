@@ -1822,10 +1822,9 @@ var FGToolbar = {
                                             }
                                         }
                                     })
-                                }).done(function(resp) {
-                                }).fail(function(resp) { // jshint ignore:line
+                                }).fail(function(resp) {
                                     $osf.growl('Error', 'Unable to check-out file.');
-                                }); // jshint ignore:line
+                                });
                             });
                             window.location.reload();
                         },
@@ -1855,10 +1854,9 @@ var FGToolbar = {
                                             }
                                         }
                                     })
-                                }).done(function(resp) {
-                                }).fail(function(resp) { // jshint ignore:line
+                                }).fail(function(resp) {
                                     $osf.growl('Error', 'Unable to check-in file.');
-                                }); // jshint ignore:line
+                                });
                             }
                             window.location.reload();
                         },

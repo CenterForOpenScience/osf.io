@@ -2320,7 +2320,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             results.append(outcome)
             if outcome:
                 for file_checked in contrib.files_checked_out():
-                    if file_checked.node == self:
+                    if file_checked.node._id == self._id:
                         file_checked.checkout = None
                         file_checked.save()
             removed.append(contrib._id)
