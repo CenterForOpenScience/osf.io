@@ -33,18 +33,24 @@ var FileBrowser = {
         var self = this;
         self.args = $.extend({}, defaults, args);
         self.data = m.prop([]);
-        m.request({method: "GET", url: args.url}).then(self.data).then(function(){ console.log(self.data())});
-        self.path = [
-            { label : 'First', href : "/first"},
-            { label : 'Second', href : "/second"},
-            { label : 'Third', href : "/third"},
+        m.request({method: 'GET', url: args.url}).then(self.data).then(function(){ console.log(self.data()); });
+        self.breadcrumbs = [
+            { label : 'First', href : '/first'},
+            { label : 'Second', href : '/second'},
+            { label : 'Third', href : '/third'}
+        ];
+        self.collections = [
+            { id:1, label : 'Dashboard', href : '#'},
+            { id:2, label : 'All My Registrations', href : '#'},
+            { id:3, label : 'All My Projects', href : '#'},
+            { id:4, label : 'Another Collection', href : '#'}
         ];
     },
     view : function (ctrl) {
         return m('', [
-            m.component(Breadcrumbs, ctrl.path),
+            m.component(Breadcrumbs, ctrl.breadcrumbs),
             m('.fb-sidebar', [
-                m.component(Collections),
+                m.component(Collections, {list : ctrl.collections, selected : 1 } ),
                 m.component(Filters)
             ]),
             m('.fb-main', m.component(ProjectOrganizer)),
@@ -58,11 +64,23 @@ var FileBrowser = {
  * @constructor
  */
 var Collections  = {
-    controller : function (args) {
-
+    controller : function (data) {
+        this.list = data.list|| [];
+        this.selected = data.selected;
     },
     view : function (ctrl) {
-        return m('.fb-collections', 'Collections');
+        var selectedCSS;
+        return m('.fb-collections', m('ul', [
+            ctrl.list.map(function(item, index, array){
+                selectedCSS = item.id === ctrl.selected ? '.active' : '';
+                if (index === array.length-1){
+                    return m('li' + selectedCSS,  item.label);
+                }
+                return m('li' + selectedCSS,
+                    m('a', { href : item.href},  item.label)
+                );
+            })
+        ]));
     }
 };
 
