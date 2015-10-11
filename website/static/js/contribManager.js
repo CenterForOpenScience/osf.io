@@ -59,7 +59,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     });
 
     self.permissionChange = ko.computed(function() {
-        return self.permission() != self.originals.permission;
+        return self.permission() !== self.originals.permission;
     });
 
     self.reset = function() {
@@ -120,8 +120,8 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.isDirty = ko.pureComputed(function() {
         return self.permissionChange() ||
-            self.visible() != self.originals.visible ||
-            self.index() != self.originals.index || self.deleteStaged();
+            self.visible() !== self.originals.visible ||
+            self.index() !== self.originals.index || self.deleteStaged();
     });
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl
@@ -226,11 +226,11 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.sortable = function(filtered) {
         if (!isRegistration && user.is_admin) {
             if (filtered) {
-                $('#contributors').sortable("disable");
+                $('#contributors').sortable('disable');
                 self.isSortable(false);
             }
             else {
-                $('#contributors').sortable("enable");
+                $('#contributors').sortable('enable');
                 self.isSortable(true);
             }
         }
@@ -350,7 +350,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         $rows.detach().appendTo($tbody);
         self.contributors().forEach(function(contributor) {
             contributor.reset();
-        })
+        });
     };
 
     self.submit = function() {
@@ -394,9 +394,9 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         if (!isRegistration && user.is_admin) {
             self.isSortable(true);
             var filtered = elements.filter(function(el){
-                return el.nodeType == 1 && el.nodeName === "TBODY";
+                return el.nodeType === 1 && el.nodeName === 'TBODY';
             });
-            if (jQuery(filtered[0]).attr('id') === 'contributors') {
+            if ($(filtered[0]).attr('id') === 'contributors') {
                 $(filtered[0]).sortable({
                     update: function (event, ui) {
                         var moved, targetIndex, currentIndex, i, contributor;

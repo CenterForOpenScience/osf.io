@@ -14,7 +14,7 @@
                 if (searchConstraints.hasOwnProperty(key)) {
                     var content = jQuery(el.querySelector(key)).text().toLowerCase();
                     var exists = content.indexOf(searchConstraints[key]);
-                    if (exists == -1) {
+                    if (exists === -1) {
                         return false;
                     }
                 }
@@ -25,17 +25,17 @@
         var filter = function(el) {
             for (var key in filterConstraints) {
                 if (filterConstraints.hasOwnProperty(key)) {
-                    var selector = settings.groups[key]['filter'];
-                    var type = settings.groups[key]['type'];
+                    var selector = settings.groups[key].filter;
+                    var type = settings.groups[key].type;
                     var match = filterConstraints[key];
-                    if (type === "text") {
+                    if (type === 'text') {
                         var content = jQuery(el.querySelector(selector)).text();
-                        if (match.indexOf(content) == -1) {
+                        if (match.indexOf(content) === -1) {
                             return false;
                         }
                     }
-                    else if (type === "checkbox") {
-                        if (match.indexOf(el.querySelector(selector).checked) == -1) {
+                    else if (type === 'checkbox') {
+                        if (match.indexOf(el.querySelector(selector).checked) === -1) {
                             return false;
                         }
                     }
@@ -75,46 +75,50 @@
             }
         };
 
+        var clickFunction = function() {
+            var self = this;
+            $(self).toggleClass('btn-primary btn-default');
+            var group = self.parentElement.parentElement.id;
+            var match = settings.groups[group].buttons[self.id];
+            try {
+                var index = filterConstraints[group].indexOf(match);
+                if (index === -1) {
+                    filterConstraints[group].push(match);
+                }
+                else {
+                    filterConstraints[group].splice(index, 1);
+                    if (filterConstraints[group].length === 0) {
+                        delete filterConstraints[group];
+                    }
+                }
+            }
+            catch(TypeError) {
+                filterConstraints[group] = [match];
+            }
+            toggle();
+        };
+
         for (var group in settings.groups) {
             if (settings.groups.hasOwnProperty(group)) {
                 for (var value in settings.groups[group].buttons) {
                     if (settings.groups[group].buttons.hasOwnProperty(value)) {
-                        $('#' + value).on('click', function() {
-                            var self = this;
-                            $(self).toggleClass('btn-primary btn-default');
-                            var group = self.parentElement.parentElement.id;
-                            var match = settings.groups[group].buttons[self.id];
-                            try {
-                                var index = filterConstraints[group].indexOf(match);
-                                if (index == -1) {
-                                    filterConstraints[group].push(match);
-                                }
-                                else {
-                                    filterConstraints[group].splice(index, 1);
-                                    if (filterConstraints[group].length == 0) {
-                                        delete filterConstraints[group];
-                                    }
-                                }
-                            }
-                            catch(TypeError) {
-                                filterConstraints[group] = [match];
-                            }
-                            toggle();
-                        });
+                        $('#' + value).on('click', clickFunction);
                     }
                 }
             }
         }
 
+        function keyupFunction() {
+            var self = this;
+            var selector = settings.inputs[self.id];
+            searchConstraints[selector] = $(self).val().toLowerCase();
+            toggle();
+        }
+
         for (var key in settings.inputs) {
             if (settings.inputs.hasOwnProperty(key)) {
-                jQuery('#' + key).keyup(function() {
-                    var self = this;
-                    var selector = settings.inputs[self.id];
-                    searchConstraints[selector] = $(self).val().toLowerCase();
-                    toggle();
-                });
+                jQuery('#' + key).keyup(keyupFunction);
             }
         }
-    }
+    };
 }(jQuery));

@@ -44,20 +44,6 @@ function LinkViewModel(data, $root) {
         }
         return [openTag, text, closeTag].join('');
     });
-
-    self.classes = ko.computed(function() {
-        var length = $root.privateLinks().length;
-        if (length >= 3) {
-            return "col-lg-12 col-md-4 col-sm-6 col-xs-12"
-        }
-        else if (length == 2) {
-            return "col-lg-12 col-sm-6 col-xs-12"
-        }
-        else if (length == 1 ) {
-            return "col-xs-12"
-        }
-    })
-
 }
 
 function ViewModel(url, nodeIsPublic) {

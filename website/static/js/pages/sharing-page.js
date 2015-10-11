@@ -53,9 +53,9 @@ $('.filters').filters({
             filter: '.permission-filter',
             type: 'text',
             buttons: {
-                admins: "Administrator",
-                write: "Read + Write",
-                read:"Read"
+                admins: 'Administrator',
+                write: 'Read + Write',
+                read: 'Read'
                 }
         },
         visibleFilter: {
@@ -120,16 +120,16 @@ $(window).resize(function() {
 
 window.toggleExpand = function(el) {
     var $self = $(el.querySelectorAll('td:not(:first-child):not(.table-only)>div'));
-    if ($self.is(":hidden")) {
+    if ($self.is(':hidden')) {
         $(el.firstElementChild).toggleClass('expanded');
         $self.slideToggle();
     }
     else {
         $self.slideToggle(function() {
             if ($(el.firstElementChild).is('.expanded')){
-                $(el.firstElementChild).toggleClass('expanded')
+                $(el.firstElementChild).toggleClass('expanded');
             }
         });
     }
-    toggleIcon(el);
+    window.toggleIcon(el);
 };

@@ -11,11 +11,11 @@ var responsiveRow = function(row, headers) {
         headers = row.parentElement.parentElement.querySelectorAll('th');
     }
     for (var k = 0, cell; cell = row.cells[k]; k++) {
-        if (jQuery(cell).has("*").length == 0) {
-            cell.innerHTML = "<p>" + cell.innerHTML + "</p>";
+        if (jQuery(cell).has('*').length === 0) {
+            cell.innerHTML = '<p>' + cell.innerHTML + '</p>';
         }
-        if (jQuery(cell).has("div.header").length == 0  && !$(headers[k]).hasClass('responsive-table-hide') && headers[k].innerHTML !== "") {
-            jQuery(cell).prepend("<div class='header'>" + headers[k].innerHTML.replace(/\r?\n|\r/, "") + "</div>");
+        if (jQuery(cell).has('div.header').length === 0  && !$(headers[k]).hasClass('responsive-table-hide') && headers[k].innerHTML !== '') {
+            jQuery(cell).prepend('<div class=\'header\'>' + headers[k].innerHTML.replace(/\r?\n|\r/, '') + '</div>');
         }
     }
 };
