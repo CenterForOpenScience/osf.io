@@ -4,13 +4,6 @@
 
         <form role="form" data-bind="submit: submit">
 
-<<<<<<< HEAD
-            <div class="form-group">
-                <label>Personal site</label>
-                <div class="input-group">
-                <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
-                <input class="form-control" data-bind="value: personal" placeholder="http://personalsite.com"/>
-=======
             <label>Your websites</label>
             <div data-bind="sortable: {
                         data: profileWebsites,
@@ -30,7 +23,6 @@
                     </div>
                     <div class="form-group" data-bind="visible: $index() != ($parent.profileWebsites().length - 1)">
                     </div>
->>>>>>> 91d28b170401de7fdf8ee333cb3e5d44d3071aac
                 </div>
             </div>
 

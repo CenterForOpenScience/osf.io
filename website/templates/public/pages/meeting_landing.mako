@@ -28,17 +28,10 @@
                 <!-- Nav tabs -->
                 <ul class="nav nav-tabs m-b-md" role="tablist">
                     <li role="presentation" class="active">
-<<<<<<< HEAD
                         <a href="#meetings" aria-controls="meetings" role="tab" data-toggle="tab">All meetings</a>
                     </li>
                     <li role="presentation">
                         <a href="#submissions" aria-controls="submissions" role="tab" data-toggle="tab">All submissions</a>
-=======
-                        <a href="#meetings" aria-controls="meetings" role="tab" data-toggle="tab">All Meetings</a>
-                    </li>
-                    <li role="presentation">
-                        <a href="#submissions" aria-controls="submissions" role="tab" data-toggle="tab">All Submissions</a>
->>>>>>> 91d28b170401de7fdf8ee333cb3e5d44d3071aac
                     </li>
                 </ul>
                 <!-- Tab panes -->
