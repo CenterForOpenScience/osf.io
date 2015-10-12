@@ -105,7 +105,7 @@
             % if summary['is_retracted']:
                 <h4>Recent activity information has been retracted.</h4>
             % else:
-                Recent activity
+                Recent Activity
                 <!-- ko stopBinding: true -->
                     <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
                         <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
