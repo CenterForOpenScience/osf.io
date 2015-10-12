@@ -14,14 +14,7 @@ var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var defaults = {
     wrapper : '#fileBrowser',  // Default ID for wrapping empty div, all contents will be filled in.
     tboptions : {},
-    fullWidth : true,
-    views : {
-        collections : true,
-        filters : true,
-        browser : true,
-        info : true,
-        breadcrumbs : true,
-    }
+    fullWidth : true
 };
 
 /**
