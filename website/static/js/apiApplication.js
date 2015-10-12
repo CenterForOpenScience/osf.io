@@ -53,6 +53,7 @@ var ApplicationData = oop.defclass({
         this.clientSecret = ko.observable(attributes.client_secret);
         this.webDetailUrl = data.links ? data.links.html : undefined;
         this.apiDetailUrl = data.links ? data.links.self : undefined;
+        this.apiResetUrl = data.links ? data.links.reset : undefined;
 
         // Enable value validation in form
         this.validated =  ko.validatedObservable(this);
@@ -137,6 +138,10 @@ var ApplicationDataClient = oop.defclass({
     deleteOne: function (appData) {
         var url = appData.apiDetailUrl;
         return $osf.ajaxJSON('DELETE', url, {isCors: true});
+    },
+    resetOne: function (appData){
+        var url = appData.apiResetUrl;
+        return this._sendData(appData, url, 'PATCH');
     },
     unserialize: function (apiData) {
         var result;
@@ -251,6 +256,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
 
         // // If no detail url provided, render view as though it was a creation form. Otherwise, treat as READ/UPDATE.
         this.apiDetailUrl = ko.observable(urls.apiDetailUrl);
+        this.apiResetUrl = ko.observable(urls.apiResetUrl);
         this.isCreateView = ko.computed(function () {
             return !this.apiDetailUrl();
         }.bind(this));
@@ -381,32 +387,33 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
             }
         });
     },
-    resetSecret: function (appData) {
+    resetSecret: function () {
+        var appData = this.appData();
+        var self = this;
         bootbox.confirm({
             title: 'Reset client secret?',
             message: language.apiOauth2Application.resetSecretConfirm,
             callback: function (confirmed) {
                 if (confirmed){
-                    var request = this.client.resetSecret(appData);
+                    var request = self.client.resetOne(appData);
                     request.done(function (dataObj) {
-                        this.appData(dataObj);
-                        this.originalValues(dataObj.serialize());
-                        this.changeMessage(
+                        self.appData().clientSecret(dataObj.clientSecret());
+                        self.changeMessage(
                             language.apiOauth2Application.dataUpdated,
                             'text-success',
                             5000);
-                    }.bind(this));
+                    }.bind(self));
                     request.fail(function (xhr, status, error) {
                         $osf.growl('Error',
-                            language.apiOauth2Application.dataSendError,
+                            language.apiOauth2Application.resetSecretError,
                             'danger');
 
-                        Raven.captureMessage('Error updating instance', {
-                            url: this.apiDetailUrl,
+                        Raven.captureMessage('Error resetting instance secret', {
+                            url: self.apiResetUrl,
                             status: status,
                             error: error
                         });
-                    }.bind(this));
+                    }.bind(self));
                 }
             }
         });
