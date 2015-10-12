@@ -678,6 +678,7 @@ class NodeCRUDTestCase(ApiTestCase):
 
         self.fake_url = '/{}nodes/{}/'.format(API_BASE, '12345')
 
+
 def make_node_payload(node, attributes):
     return {
         'data': {
@@ -686,6 +687,7 @@ def make_node_payload(node, attributes):
             'attributes': attributes,
         }
     }
+
 
 class TestNodeUpdate(NodeCRUDTestCase):
 
@@ -3230,6 +3232,7 @@ class TestNodeLinkCreate(ApiTestCase):
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+
 
 def prepare_mock_wb_response(
         node=None,

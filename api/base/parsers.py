@@ -1,4 +1,3 @@
-from urlparse import urlparse
 from rest_framework.parsers import JSONParser
 from rest_framework.exceptions import ParseError
 
@@ -34,11 +33,10 @@ class JSONAPIParser(JSONParser):
 
         target_type = data.get('type')
         if not target_type:
-            raise JSONAPIException(source={'pointer': '/relationships/<related_resource_name>/data/type'}, detail=NO_TYPE_ERROR )
+            raise JSONAPIException(source={'pointer': '/relationships/<related_resource_name>/data/type'}, detail=NO_TYPE_ERROR)
 
         id = data.get('id')
         return {'id': id, 'target_type': target_type}
-
 
     def parse(self, stream, media_type=None, parser_context=None):
         """
@@ -60,7 +58,6 @@ class JSONAPIParser(JSONParser):
             else:
                 if 'attributes' not in data:
                     raise JSONAPIException(source={'pointer': '/data/attributes'}, detail=NO_ATTRIBUTES_ERROR)
-
 
             id = data.get('id')
             object_type = data.get('type')
