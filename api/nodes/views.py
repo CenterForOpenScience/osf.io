@@ -19,9 +19,11 @@ from api.nodes.serializers import (
     NodeDetailSerializer,
     NodeProviderSerializer,
     NodeContributorsSerializer,
-    NodeRegistrationSerializer,
     NodeContributorDetailSerializer
 )
+
+from api.registrations.serializers import RegistrationSerializer
+
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
@@ -60,6 +62,7 @@ class NodeMixin(object):
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
         return node
+
 
 class WaterButlerMixin(object):
 
@@ -603,7 +606,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
-    serializer_class = NodeRegistrationSerializer
+    serializer_class = RegistrationSerializer
 
     # overrides ListAPIView
     # TODO: Filter out retractions by default
