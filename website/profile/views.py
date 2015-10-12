@@ -391,7 +391,8 @@ def oauth_application_register(auth, **kwargs):
     # TODO: Remove dev_only restriction when APIv2 is released into production
     app_list_url = api_v2_url("applications/")  # POST request to this url
     return {"app_list_url": app_list_url,
-            "app_detail_url": ''}
+            "app_detail_url": '',
+            "app_reset_url": ''}
 
 @dev_only
 @must_be_logged_in
@@ -412,8 +413,10 @@ def oauth_application_detail(auth, **kwargs):
         raise HTTPError(http.GONE)
 
     app_detail_url = api_v2_url("applications/{}/".format(client_id))  # Send request to this URL
+    app_reset_url = api_v2_url("applications/{}/reset/".format(client_id))
     return {"app_list_url": '',
-            "app_detail_url": app_detail_url}
+            "app_detail_url": app_detail_url,
+            "app_reset_url": app_reset_url}
 
 def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
