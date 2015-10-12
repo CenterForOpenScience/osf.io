@@ -20,12 +20,12 @@ class JSONAPIParser(JSONParser):
 
     def flatten_relationships(self, relationships):
         """
-        Flatten relationships if used for creating relationships between resource objects
+        Flatten relationships dictionary if used for creating relationships between resource objects
         """
         if not isinstance(relationships, dict):
                 raise ParseError()
         related_resource = relationships.keys()[0]
-        if not isinstance(relationships[related_resource], dict):
+        if not isinstance(relationships[related_resource], dict) or related_resource == 'data':
             raise ParseError()
         data = relationships[related_resource].get('data')
 
@@ -54,8 +54,8 @@ class JSONAPIParser(JSONParser):
 
             path = stream.path
             related_resources = ['contributors', 'node_links']
-            for resource in related_resources:
-                if stream.method == 'POST' and resource in path and not relationships:
+            if stream.method == 'POST' and related_resources[0] in path or related_resources[1] in path:
+                if not relationships:
                     raise JSONAPIException(source={'pointer': '/data/relationships'}, detail=NO_RELATIONSHIPS_ERROR)
             else:
                 if 'attributes' not in data:
