@@ -273,9 +273,11 @@ class NodeRegistrationSerializer(NodeSerializer):
 
 class NodeLinksSerializer(JSONAPISerializer):
 
-    id = IDField(source='_id', read_only=True)
+    id = IDField(source='_id')
     type = TypeField()
-    target_node_id = ser.CharField(write_only=True, source='node._id', help_text='The ID of the node that this Node Link points to')
+    target_type = TargetTypeField()
+
+    # target_node_id = ser.CharField(write_only=True, source='node._id', help_text='The ID of the node that this Node Link points to')
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
     # include this field in the future.
@@ -286,6 +288,7 @@ class NodeLinksSerializer(JSONAPISerializer):
                                               lookup_url_kwarg='node_id')
     class Meta:
         type_ = 'node_links'
+        target_type_ = 'nodes'
 
     links = LinksField({
         'self': 'get_absolute_url'
@@ -306,7 +309,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         user = request.user
         auth = Auth(user)
         node = self.context['view'].get_node()
-        pointer_node = Node.load(validated_data['node']['_id'])
+        pointer_node = Node.load(validated_data['_id'])
         if not pointer_node:
             raise exceptions.NotFound('Node not found.')
         try:
