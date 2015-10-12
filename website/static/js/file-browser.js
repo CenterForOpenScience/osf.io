@@ -33,7 +33,8 @@ var FileBrowser = {
         var self = this;
         self.args = $.extend({}, defaults, args);
         self.data = m.prop([]);
-        m.request({method: 'GET', url: args.url}).then(self.data).then(function(){ console.log(self.data()); });
+
+        m.request({method: 'GET', url: args.url}).then(self.data).then(function(){ console.log(self.data()); self.renderCollections(); });
         self.breadcrumbs = [
             { label : 'First', href : '/first'},
             { label : 'Second', href : '/second'},
@@ -45,6 +46,12 @@ var FileBrowser = {
             { id:3, label : 'All My Projects', href : '#'},
             { id:4, label : 'Another Collection', href : '#'}
         ];
+
+        self.renderCollections = function _renderDo(){
+            self.data().data.map(function(item){
+                console.log(item.category);
+            });
+        };
     },
     view : function (ctrl) {
         return m('', [
