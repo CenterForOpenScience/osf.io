@@ -165,8 +165,8 @@ def before_request():
         try:
             session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
             session = Session.load(session_id) or Session(_id=session_id)
-            from framework.auth.core import _get_current_user
-            user = _get_current_user()
+            from website.models import User
+            user = User.load(session.data.get('auth_user_id'))
             if user:
                 user.date_last_login = datetime.utcnow()
                 user.save()
