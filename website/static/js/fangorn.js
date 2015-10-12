@@ -1785,15 +1785,15 @@ var FGToolbar = {
             }
             //Additional check to not show the button if all the files are already checkedout by user
             if (showCheckout){
-                var anyNotChecked = false;
+                var allChecked = true;
                 for (i = 0, len = items.length; i < len; i++) {
                     each = items[i];
                     if (!each.data.extra.checkout) {
-                        anyNotChecked = true;
+                        allChecked = false;
                         break;
                     }
                 }
-                if (!anyNotChecked) {
+                if (allChecked) {
                     showCheckout = false;
                 }
             }
