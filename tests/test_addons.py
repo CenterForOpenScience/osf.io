@@ -6,6 +6,7 @@ import datetime
 import unittest
 from nose.tools import *  # noqa
 
+import jwe
 import jwt
 import furl
 import itsdangerous
@@ -84,6 +85,7 @@ class TestAddonAuth(OsfTestCase):
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
         self.configure_addon()
+        self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
     def configure_addon(self):
         self.user.add_addon('github')
@@ -101,19 +103,19 @@ class TestAddonAuth(OsfTestCase):
         self.node_addon.save()
 
     def build_url(self, **kwargs):
-        options = {'payload': jwt.encode({'data': dict(dict(
+        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
             action='download',
             nid=self.node._id,
             provider=self.node_addon.config.short_name,
             ), **kwargs),
             'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
-        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)}
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):
         url = self.build_url()
         res = self.app.get(url, auth=self.user.auth)
-        data = jwt.decode(res.json, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
@@ -131,7 +133,7 @@ class TestAddonAuth(OsfTestCase):
         url = self.build_url(cookie=self.cookie)
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 200)
-        data = jwt.decode(res.json, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
         assert_equal(data['auth'], views.make_auth(self.user))
         assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
         assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
