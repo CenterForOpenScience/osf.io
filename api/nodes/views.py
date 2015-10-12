@@ -404,6 +404,11 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
+    ##Relationships
+
+    ###User
+
+    This endpoint shows the contributor user detail.
     ##Actions
 
     ###Adding Contributors
@@ -415,27 +420,27 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
                       "data": {
                         "type": "contributors",     # required
                         "attributes": {
-                            "bibliographic": true|false,            # optional
-                            "permission": "read"|"write"|"admin"    # optional
+                          "bibliographic": true|false,            # optional
+                          "permission": "read"|"write"|"admin"    # optional
                         },
                         "relationships": {
-                            "users": {
-                                "data": {
-                                    "type": "users",                 # required
-                                    "id":   "{contributor_user_id}", # required
-                                }
+                          "users": {
+                            "data": {
+                              "type": "users",                 # required
+                              "id":   "{contributor_user_id}", # required
                             }
                         }
                     }
                 }
+            }
         Success:       201 CREATED + node contributor representation
 
     Contributors can be added to nodes by issuing a POST request to this endpoint.  This effectively creates a relationship
     between the node and the user.  Besides the top-level type, there are optional "attributes" which describe the
     relationship between the node and the user. `bibliographic` is a boolean and defaults to `true`.  `permission` must
-    be a [valid OSF permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`.  The contributor must be described as a
-    relationship object with a "data" member, containing the user `type` and user `id`.  The id must be a valid user id.
-    All other fields not listed above will be ignored.  If the request is successful the API will return
+    be a [valid OSF permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`.  The contributor must be
+    described as a relationship object with a "data" member, containing the user `type` and user `id`.  The id must be a
+    valid user id.  All other fields not listed above will be ignored.  If the request is successful the API will return
     a 201 response with the representation of the new node contributor in the body.  For the new node contributor's
     canonical URL, see the `links.self` field of the response.
 
@@ -507,18 +512,17 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         bibliographic  boolean  Whether the user will be included in citations for this node or not
         permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
 
-    All other attributes are inherited from the User object.
-
     ##Relationships
 
-    ###Nodes
+    ###User
 
-    This endpoint shows the list of all nodes the user contributes to.
+    This endpoint shows the contributor user detail.
 
     ##Links
 
-        self:  the canonical api endpoint of this node
-        html:  this node's page on the OSF website
+        self:  the relationship url for this node contributor
+        html:  this user's page on the OSF website
+        profile_image: this user's gravatar
 
     ##Actions
 
@@ -767,6 +771,12 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
+    ##Relationships
+
+    ### Target Node
+
+    This endpoint shows the target node detail.
+
     ##Actions
 
     ###Adding Node Links
@@ -832,7 +842,17 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         None
 
     ##Links
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+        self:  the relationship url for this node link
+        html:  this node's page on the OSF website
+        profile_image: this contributor's gravatar
+
+    ##Relationships
+
+    ###Target node
+
+    This endpoint shows the target node detail.
+
 
 
     ##Actions
