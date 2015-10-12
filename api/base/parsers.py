@@ -19,7 +19,9 @@ class JSONAPIParser(JSONParser):
 
     def flatten_relationships(self, relationships):
         """
-        Flatten relationships dictionary which has information needed to create related resource objects
+        Flattens relationships dictionary which has information needed to create related resource objects.
+
+        Validates that formatting of relationships dictionary is correct.
         """
         if not isinstance(relationships, dict):
                 raise ParseError()
@@ -52,8 +54,9 @@ class JSONAPIParser(JSONParser):
 
             path = stream.path
             related_resources = ['contributors', 'node_links']
-            # Request must include "relationships", "attributes", or both
-            if stream.method == 'POST' and related_resources[0] in path or related_resources[1] in path:
+
+            # Request must include "relationships" or "attributes"
+            if stream.method == 'POST' and (related_resources[0] in path or related_resources[1] in path):
                 if not relationships:
                     raise JSONAPIException(source={'pointer': '/data/relationships'}, detail=NO_RELATIONSHIPS_ERROR)
             else:

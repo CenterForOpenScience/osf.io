@@ -83,7 +83,7 @@ class TypeField(ser.CharField):
 
 class TargetTypeField(TypeField):
     """
-     Enforces that the related resource has the correct type
+    Enforces that the related resource has the correct type
     """
 
     def to_internal_value(self, data):
@@ -91,6 +91,7 @@ class TargetTypeField(TypeField):
             raise Conflict()
         # Super call intentional to prevent target_type_ being checked against type_
         return super(TypeField, self).to_internal_value(data)
+
 
 class JSONAPIListField(ser.ListField):
     def to_internal_value(self, data):
