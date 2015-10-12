@@ -1,6 +1,6 @@
-# Requirements to be installed on server deployments
 -r ../requirements.txt
--r metrics.txt
+
+# Requirements to be installed on server deployments
 
 # scripts osfstorage
 pyrax==1.9.4

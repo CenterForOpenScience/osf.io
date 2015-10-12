@@ -62,7 +62,7 @@ def apiserver(port=8000, live=False):
     cmd = 'python manage.py runserver {}'.format(port)
     if live:
         cmd += ' livereload'
-    run(cmd, echo=True)
+    run(cmd, echo=True, pty=True)
 
 
 SHELL_BANNER = """
@@ -284,10 +284,25 @@ def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors
 
 
 @task(aliases=['celery'])
-def celery_worker(level="debug"):
+def celery_worker(level="debug", hostname=None, beat=False):
     """Run the Celery process."""
     cmd = 'celery worker -A framework.tasks -l {0}'.format(level)
-    run(bin_prefix(cmd))
+    if hostname:
+        cmd = cmd + ' --hostname={}'.format(hostname)
+    # beat sets up a cron like scheduler, refer to website/settings
+    if beat:
+        cmd = cmd + ' --beat'
+    run(bin_prefix(cmd), pty=True)
+
+
+@task(aliases=['beat'])
+def celery_beat(level="debug", schedule=None):
+    """Run the Celery process."""
+    # beat sets up a cron like scheduler, refer to website/settings
+    cmd = 'celery beat -A framework.tasks -l {0}'.format(level)
+    if schedule:
+        cmd = cmd + ' --schedule={}'.format(schedule)
+    run(bin_prefix(cmd), pty=True)
 
 
 @task
@@ -361,7 +376,7 @@ def pip_install(req_file):
 
 
 @task(aliases=['req'])
-def requirements(addons=False, release=False, dev=False):
+def requirements(addons=False, release=False, dev=False, metrics=False):
     """Install python dependencies.
 
     Examples:
@@ -369,6 +384,7 @@ def requirements(addons=False, release=False, dev=False):
         inv requirements --dev
         inv requirements --addons
         inv requirements --release
+        inv requirements --metrics
     """
     if release or addons:
         addon_requirements()
@@ -377,6 +393,8 @@ def requirements(addons=False, release=False, dev=False):
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:  # then dev requirements
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    elif metrics:  # then dev requirements
+        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
     else:  # then base requirements
         req_file = os.path.join(HERE, 'requirements.txt')
     run(pip_install(req_file), echo=True)
@@ -445,25 +463,34 @@ def karma(single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(addons=False, release=False, dev=False):
+def wheelhouse(addons=False, release=False, dev=False, metrics=False):
+    """Install python dependencies.
+
+    Examples:
+
+        inv wheelhouse --dev
+        inv wheelhouse --addons
+        inv wheelhouse --release
+        inv wheelhouse --metrics
+    """
+    if release or addons:
+        for directory in os.listdir(settings.ADDON_PATH):
+            path = os.path.join(settings.ADDON_PATH, directory)
+            if os.path.isdir(path):
+                req_file = os.path.join(path, 'requirements.txt')
+                if os.path.exists(req_file):
+                    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+                    run(cmd, pty=True)
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    elif metrics:
+        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
     cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
     run(cmd, pty=True)
-
-    if not addons:
-        return
-    for directory in os.listdir(settings.ADDON_PATH):
-        path = os.path.join(settings.ADDON_PATH, directory)
-        if os.path.isdir(path):
-            req_file = os.path.join(path, 'requirements.txt')
-            if os.path.exists(req_file):
-                cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
-                run(cmd, pty=True)
 
 
 @task
@@ -789,6 +816,15 @@ def webpack(clean=False, watch=False, dev=False):
 
 
 @task()
+def build_js_config_files():
+    from website import settings
+    from website.app import build_js_config_files as _build_js_config_files
+    print('Building JS config files...')
+    _build_js_config_files(settings)
+    print("...Done.")
+
+
+@task()
 def assets(dev=False, watch=False):
     """Install and build static assets."""
     npm = 'npm install'
@@ -796,6 +832,7 @@ def assets(dev=False, watch=False):
         npm += ' --production'
     run(npm, echo=True)
     bower_install()
+    build_js_config_files()
     # Always set clean=False to prevent possible mistakes
     # on prod
     webpack(clean=False, watch=watch, dev=dev)

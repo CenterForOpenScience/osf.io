@@ -149,8 +149,8 @@
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
-                    DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
-                    ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
+                    DOI <span data-bind="text: doi"></span> |
+                    ARK <span data-bind="text: ark"></span>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->

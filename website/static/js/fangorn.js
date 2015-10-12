@@ -1711,11 +1711,19 @@ var FGToolbar = {
                 generalButtons.push(m.component(FGButton, {
                     onclick: function(event){
                         var mithrilContent = m('div', [
+<<<<<<< HEAD
                             m('p', [ m('b', 'Select rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
                             m('p', [ m('b', 'Select multiple files:'), m('span', ' Use Command or Shift keys to select multiple files.')]),
                             m('p', [ m('b', 'Open files:'), m('span', ' Click a file name to go to the file.')]),
                             m('p', [ m('b', 'Open files in new tab:'), m('span',  ' Press Command (or Ctrl in Windows) and  click a file name to open it in a new tab.')]),
                             m('p', [ m('b', 'Copy files:'), m('span', ' Press Option (or Alt in Windows) while dragging a file to a new folder or component.')])
+=======
+                            m('p', [ m('b', 'Select Rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
+                            m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use Command or Shift keys to select multiple files.')]),
+                            m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
+                            m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and  click a file name to open it in a new tab.')]),
+                            m('p', [ m('b', 'Copy Files:'), m('span', ' Press Option (or Alt in Windows) while dragging a file to a new folder or component.')])
+>>>>>>> 91d28b170401de7fdf8ee333cb3e5d44d3071aac
                         ]);
                         var mithrilButtons = m('button', {
                                 'type':'button',

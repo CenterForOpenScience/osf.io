@@ -2,6 +2,66 @@
 Changelog
 *********
 
+0.53.0 (2015-10-08)
+===================
+
+- Use JWTs for authenticating with Waterbutler and MFR.
+
+0.52.0 (2015-10-07)
+===================
+
+- Add Share button on file detail pages with UI for embedding rendered files.
+- User profiles can have multiple personal websites.
+- Update Add contributor UI to show current contributors in search.
+- APIv2: Lots of documentation updates.
+- APIv2: Fix bug that caused a 500 when updating a user's name.
+- APIv2: Fix bug that caused an invalid log when updating a Node's title or description.
+- Dev: Remove dead file GUID code left over from 0.50.0.
+
+0.51.0 (2015-09-24)
+===================
+
+- Alpha release of API v2.
+
+0.50.0 (2015-09-17)
+===================
+
+- Migration of all addon file collecitons to a single GuidFile collection.
+
+0.49.0 (2015-09-11)
+===================
+
+- Add email subscriptions to file events, configurable from project settings.
+- File rendering: Add support for multi-sheet XLSX files.
+- File rendering: Add filtering support for tabular formats.
+- APIv2: Responses are compliant with the JSON API 1.0 spec.
+- APIv2: Unauthenticated responses correctly return a 401 rather than 403 response.
+- APIv2: Add endpoints and UI for creating Developer Applications (hidden until APIv2 is released).
+- Log file rename events.
+
+0.48.0 (2015-08-31)
+===================
+
+- Add project settings that allows a project's wiki to be editable by any OSF user.
+- MD5 and SHA1 hashes appear in a file's Revisions table.
+- Update UI for OSF for Meetings page.
+- Various UI improvements.
+
+0.47.0 (2015-08-15)
+===================
+
+- Project registrations require approval from admin contributors.
+- Add tokens module for implementing JWT token-based actions. Currently allows
+generating URLs for registration approval/disapproval, embargo
+approval/disapproval, and retraction approval/disapproval.
+- Change sign-up flow: users are taken to Dashboard after confirming their
+email address.
+- APIv2: Fix serialization of Node tags. Remove Node system tags from
+response.
+- APIv2: Fix node and user endpoints so that they don't return deleted
+nodes/users.
+- APIv2: Implement POST and PATCH for the User resource.
+
 0.46.0 (2015-08-17)
 ===================
 
@@ -404,3 +464,5 @@ install` to installthem.
 in the ``setUp`` and ``tearDown`` methods.
 - Developers: Update stale requirements.
 - Various bugfixes and minor UI improvements.
+
+# vi: ft=markdown

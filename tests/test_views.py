@@ -14,7 +14,7 @@ import time
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 
-from modularodm import Q, fields
+from modularodm import Q
 from modularodm.exceptions import ValidationError
 from dateutil.parser import parse as parse_date
 
@@ -27,7 +27,7 @@ from framework.tasks import handlers
 
 from website import mailchimp_utils
 from website.views import _rescale_ratio
-from website.util import permissions, sanitize
+from website.util import permissions
 from website.models import Node, Pointer, NodeLog
 from website.project.model import ensure_schemas, has_anonymous_link
 from website.project.views.contributor import (
@@ -46,7 +46,6 @@ from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
-from website.archiver import utils as archiver_utils
 
 
 from tests.base import (
@@ -57,25 +56,31 @@ from tests.base import (
     assert_datetime_equal,
 )
 from tests.factories import (
-    UserFactory, ProjectFactory, WatchConfigFactory,
+    UserFactory, ApiOAuth2ApplicationFactory, ProjectFactory, WatchConfigFactory,
     NodeFactory, NodeLogFactory, AuthUserFactory, UnregUserFactory,
     RegistrationFactory, CommentFactory, PrivateLinkFactory, UnconfirmedUserFactory, DashboardFactory, FolderFactory,
     ProjectWithAddonFactory, MockAddonNodeSettings,
 )
 from website.settings import ALL_MY_REGISTRATIONS_ID, ALL_MY_PROJECTS_ID
 
+
 class Addon(MockAddonNodeSettings):
     @property
     def complete(self):
         return True
+
     def archive_errors(self):
         return 'Error'
+
+
 class Addon2(MockAddonNodeSettings):
     @property
     def complete(self):
         return True
+
     def archive_errors(self):
         return 'Error'
+
 
 class TestViewingProjectWithPrivateLink(OsfTestCase):
 
@@ -87,6 +92,26 @@ class TestViewingProjectWithPrivateLink(OsfTestCase):
         self.link.nodes.append(self.project)
         self.link.save()
         self.project_url = self.project.web_url_for('view_project')
+
+    def test_edit_private_link_empty(self):
+        node = ProjectFactory(creator=self.user)
+        link = PrivateLinkFactory()
+        link.nodes.append(node)
+        link.save()
+        url = node.api_url_for("project_private_link_edit")
+        res = self.app.put_json(url, {'pk': link._id, 'value': ''}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Title cannot be blank', res.body)
+
+    def test_edit_private_link_invalid(self):
+        node = ProjectFactory(creator=self.user)
+        link = PrivateLinkFactory()
+        link.nodes.append(node)
+        link.save()
+        url = node.api_url_for("project_private_link_edit")
+        res = self.app.put_json(url, {'pk': link._id, 'value': '<a></a>'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Invalid link name.', res.body)
 
     def test_not_anonymous_for_public_project(self):
         anonymous_link = PrivateLinkFactory(anonymous=True)
@@ -177,6 +202,20 @@ class TestProjectViews(OsfTestCase):
         self.project.add_contributor(self.user2, auth=Auth(self.user1))
         self.project.save()
 
+    def test_edit_title_empty(self):
+        node = ProjectFactory(creator=self.user1)
+        url = node.api_url_for("edit_node")
+        res = self.app.post_json(url, {'name': 'title', 'value': ''}, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Title cannot be blank', res.body)
+
+    def test_edit_title_invalid(self):
+        node = ProjectFactory(creator=self.user1)
+        url = node.api_url_for("edit_node")
+        res = self.app.post_json(url, {'name': 'title', 'value': '<a></a>'}, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_in('Invalid title.', res.body)
+
     def test_cannot_remove_only_visible_contributor_before_remove_contributor(self):
         self.project.visible_contributor_ids.remove(self.user1._id)
         self.project.save()
@@ -206,7 +245,6 @@ class TestProjectViews(OsfTestCase):
         assert_false(ret)
         self.project.reload()
         assert_true(self.project.is_contributor(self.user2))
-
 
     def test_can_view_nested_project_as_admin(self):
         self.parent_project = NodeFactory(
@@ -546,7 +584,7 @@ class TestProjectViews(OsfTestCase):
         assert_equal("tag_removed", self.project.logs[-1].action)
         assert_equal("foo'ta#@%#%^&g?", self.project.logs[-1].params['tag'])
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_register_template_page(self, mock_archive):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
             self.project._primary_key)
@@ -560,7 +598,7 @@ class TestProjectViews(OsfTestCase):
         reg = Node.load(self.project.node__registrations[-1])
         assert_true(reg.is_registration)
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_register_template_with_embargo_creates_embargo(self, mock_archive):
         url = "/api/v1/project/{0}/register/Replication_Recipe_(Brandt_et_al.,_2013):_Post-Completion/".format(
             self.project._primary_key)
@@ -600,9 +638,8 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(data['errors']), 2)
 
-
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     def test_registered_projects_contributions(self, mock_archive):
         # register a project
         self.project.register_node(None, Auth(user=self.project.creator), '', None)
@@ -930,6 +967,28 @@ class TestProjectViews(OsfTestCase):
         assert_in('fork_count', res.json['node'])
         assert_equal(0, res.json['node']['fork_count'])
 
+    def test_statistic_page_redirect(self):
+        url = self.project.web_url_for('project_statistics_redirect')
+        res = self.app.get(url, auth=self.auth)
+        assert_equal(res.status_code, 302)
+        assert_in(self.project.web_url_for('project_statistics', _guid=True), res.location)
+
+    def test_update_node(self):
+        url = self.project.api_url_for('update_node')
+        res = self.app.put_json(url, {'title': 'newtitle'}, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(self.project.title, 'newtitle')
+
+    # Regression test
+    def test_update_node_with_tags(self):
+        self.project.add_tag('cheezebørger', auth=Auth(self.project.creator), save=True)
+        url = self.project.api_url_for('update_node')
+        res = self.app.put_json(url, {'title': 'newtitle'}, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(self.project.title, 'newtitle')
+
 
 class TestEditableChildrenViews(OsfTestCase):
 
@@ -1086,7 +1145,7 @@ class TestUserProfile(OsfTestCase):
     def test_unserialize_social(self):
         url = api_url_for('unserialize_social')
         payload = {
-            'personal': 'http://frozen.pizza.com/reviews',
+            'profileWebsites': ['http://frozen.pizza.com/reviews'],
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
         }
@@ -1102,9 +1161,9 @@ class TestUserProfile(OsfTestCase):
 
     def test_unserialize_social_validation_failure(self):
         url = api_url_for('unserialize_social')
-        # personal URL is invalid
+        # profileWebsites URL is invalid
         payload = {
-            'personal': 'http://invalidurl',
+            'profileWebsites': ['http://goodurl.com', 'http://invalidurl'],
             'twitter': 'howtopizza',
             'github': 'frozenpizzacode',
         }
@@ -1119,6 +1178,7 @@ class TestUserProfile(OsfTestCase):
 
     def test_serialize_social_editable(self):
         self.user.social['twitter'] = 'howtopizza'
+        self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
         self.user.save()
         url = api_url_for('serialize_social')
         res = self.app.get(
@@ -1126,12 +1186,14 @@ class TestUserProfile(OsfTestCase):
             auth=self.user.auth,
         )
         assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com'])
         assert_true(res.json.get('github') is None)
         assert_true(res.json['editable'])
 
     def test_serialize_social_not_editable(self):
         user2 = AuthUserFactory()
         self.user.social['twitter'] = 'howtopizza'
+        self.user.social['profileWebsites'] = ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com']
         self.user.save()
         url = api_url_for('serialize_social', uid=self.user._id)
         res = self.app.get(
@@ -1139,6 +1201,7 @@ class TestUserProfile(OsfTestCase):
             auth=user2.auth,
         )
         assert_equal(res.json.get('twitter'), 'howtopizza')
+        assert_equal(res.json.get('profileWebsites'), ['http://www.cos.io', 'http://www.osf.io', 'http://www.wordup.com'])
         assert_true(res.json.get('github') is None)
         assert_false(res.json['editable'])
 
@@ -1519,6 +1582,32 @@ class TestUserProfile(OsfTestCase):
     #     assert_true(user2.url in res.body)
 
 
+class TestUserProfileApplicationsPage(OsfTestCase):
+
+    def setUp(self):
+        super(TestUserProfileApplicationsPage, self).setUp()
+        self.user = AuthUserFactory()
+        self.user2 = AuthUserFactory()
+
+        self.platform_app = ApiOAuth2ApplicationFactory(owner=self.user)
+        self.detail_url = web_url_for('oauth_application_detail', client_id=self.platform_app.client_id)
+
+    def test_non_owner_cant_access_detail_page(self):
+        res = self.app.get(self.detail_url, auth=self.user2.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    def test_owner_cant_access_deleted_application(self):
+        self.platform_app.is_active = False
+        self.platform_app.save()
+        res = self.app.get(self.detail_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.GONE)
+
+    def test_owner_cant_access_nonexistent_application(self):
+        url = web_url_for('oauth_application_detail', client_id='nonexistent')
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.NOT_FOUND)
+
+
 class TestUserAccount(OsfTestCase):
 
     def setUp(self):
@@ -1873,7 +1962,7 @@ class TestAddingContributorViews(OsfTestCase):
             mails.CONTRIBUTOR_ADDED,
             user=contributor,
             node=project)
-        assert_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()))
+        assert_almost_equal(contributor.contributor_added_email_records[project._id]['last_sent'], int(time.time()), delta=1)
 
     @mock.patch('website.mails.send_mail')
     def test_contributor_added_email_not_sent_to_unreg_user(self, send_mail):
@@ -1900,7 +1989,7 @@ class TestAddingContributorViews(OsfTestCase):
         project.use_as_template(auth=Auth(project.creator))
         assert_false(send_mail.called)
 
-    @mock.patch('website.archiver.tasks.archive.si')
+    @mock.patch('website.archiver.tasks.archive')
     @mock.patch('website.mails.send_mail')
     def test_registering_project_does_not_send_contributor_added_email(self, send_mail, mock_archive):
         project = ProjectFactory()
@@ -4024,12 +4113,12 @@ class TestReorderComponents(OsfTestCase):
         self.creator = AuthUserFactory()
         self.contrib = AuthUserFactory()
         # Project is public
-        self.project = ProjectFactory.build(creator=self.creator, public=True)
+        self.project = ProjectFactory.build(creator=self.creator, is_public=True)
         self.project.add_contributor(self.contrib, auth=Auth(self.creator))
 
         # subcomponent that only creator can see
-        self.public_component = NodeFactory(creator=self.creator, public=True)
-        self.private_component = NodeFactory(creator=self.creator, public=False)
+        self.public_component = NodeFactory(creator=self.creator, is_public=True)
+        self.private_component = NodeFactory(creator=self.creator, is_public=False)
         self.project.nodes.append(self.public_component)
         self.project.nodes.append(self.private_component)
 
@@ -4060,7 +4149,7 @@ class TestDashboardViews(OsfTestCase):
 
     # https://github.com/CenterForOpenScience/openscienceframework.org/issues/571
     def test_components_with_are_accessible_from_dashboard(self):
-        project = ProjectFactory(creator=self.creator, public=False)
+        project = ProjectFactory(creator=self.creator, is_public=False)
         component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
@@ -4132,7 +4221,7 @@ class TestDashboardViews(OsfTestCase):
         assert_equal(res.status_code, 400)
 
     def test_registered_components_with_are_accessible_from_dashboard(self):
-        project = ProjectFactory(creator=self.creator, public=False)
+        project = ProjectFactory(creator=self.creator, is_public=False)
         component = NodeFactory(creator=self.creator, parent=project)
         component.add_contributor(self.contrib, auth=Auth(self.creator))
         component.save()
@@ -4147,7 +4236,7 @@ class TestDashboardViews(OsfTestCase):
         assert_equal(len(res.json['data']), 1)
 
     def test_archiving_nodes_appear_in_all_my_registrations(self):
-        project = ProjectFactory(creator=self.creator, public=False)
+        project = ProjectFactory(creator=self.creator, is_public=False)
         reg = RegistrationFactory(project=project, user=self.creator)
 
         # Get the All My Registrations smart folder from the dashboard

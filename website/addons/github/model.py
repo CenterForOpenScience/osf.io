@@ -5,7 +5,6 @@ import urlparse
 import itertools
 import httplib as http
 
-import pymongo
 from github3 import GitHubError
 from modularodm import fields
 
@@ -14,7 +13,6 @@ from framework.mongo import StoredObject
 
 from website import settings
 from website.util import web_url_for
-from website.addons.base import GuidFile
 from website.addons.base import exceptions
 from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import StorageAddonBase
@@ -22,73 +20,10 @@ from website.addons.base import StorageAddonBase
 from website.addons.github import utils
 from website.addons.github.api import GitHub
 from website.addons.github import settings as github_settings
-from website.addons.github.exceptions import ApiError, NotFoundError, TooBigToRenderError
+from website.addons.github.exceptions import ApiError, NotFoundError
 
 
 hook_domain = github_settings.HOOK_DOMAIN or settings.DOMAIN
-
-
-class GithubGuidFile(GuidFile):
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('path', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-
-    path = fields.StringField(index=True)
-
-    def maybe_set_version(self, **kwargs):
-        # branches are always required for file requests, if not specified
-        # file server will assume default branch. e.g. master or develop
-        if not kwargs.get('ref'):
-            kwargs['ref'] = kwargs.pop('branch', None)
-        super(GithubGuidFile, self).maybe_set_version(**kwargs)
-
-    @property
-    def waterbutler_path(self):
-        return self.path
-
-    @property
-    def provider(self):
-        return 'github'
-
-    @property
-    def version_identifier(self):
-        return 'ref'
-
-    @property
-    def unique_identifier(self):
-        return self._metadata_cache['extra']['fileSha']
-
-    @property
-    def name(self):
-        return os.path.split(self.path)[1]
-
-    @property
-    def external_url(self):
-        return self._metadata_cache['extra']['webView']
-
-    @property
-    def extra(self):
-        if not self._metadata_cache:
-            return {}
-
-        return {
-            'sha': self._metadata_cache['extra']['fileSha'],
-        }
-
-    def _exception_from_response(self, response):
-        try:
-            if response.json()['errors'][0]['code'] == 'too_large':
-                raise TooBigToRenderError(self)
-        except (KeyError, IndexError):
-            pass
-
-        super(GithubGuidFile, self)._exception_from_response(response)
 
 
 class AddonGitHubOauthSettings(StoredObject):
@@ -229,9 +164,6 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     def complete(self):
         return self.has_auth and self.repo is not None and self.user is not None
 
-    def find_or_create_file_guid(self, path):
-        return GithubGuidFile.get_or_create(node=self.owner, path=path)
-
     def authorize(self, user_settings, save=False):
         self.user_settings = user_settings
         self.owner.add_log(
@@ -307,10 +239,9 @@ class AddonGitHubNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
                         '{0} / {1}'.format(repo.owner.login, repo.name)
                         for repo in repos
                     ]
-                except GitHubError as error:
-                    if error.code == http.UNAUTHORIZED:
-                        repo_names = []
-                        valid_credentials = False
+                except GitHubError:
+                    repo_names = []
+                    valid_credentials = False
                 ret.update({'repo_names': repo_names})
             ret.update({
                 'node_has_auth': True,

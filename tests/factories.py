@@ -23,11 +23,9 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
-from website.oauth.models import ExternalAccount
-from website.oauth.models import ExternalProvider
+from website.oauth.models import ApiOAuth2Application, ExternalAccount, ExternalProvider
 from website.project.model import (
-    Node, NodeLog, WatchConfig, Tag, Pointer, Comment, PrivateLink,
-    Retraction, Embargo, Sanction, RegistrationApproval
+    Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
@@ -126,6 +124,17 @@ class TagFactory(ModularOdmFactory):
     FACTORY_FOR = Tag
 
     _id = Sequence(lambda n: "scientastic-{}".format(n))
+
+
+class ApiOAuth2ApplicationFactory(ModularOdmFactory):
+    FACTORY_FOR = ApiOAuth2Application
+
+    owner = SubFactory(UserFactory)
+
+    name = Sequence(lambda n: 'Example OAuth2 Application #{}'.format(n))
+
+    home_url = 'ftp://ftp.ncbi.nlm.nimh.gov/'
+    callback_url = 'http://example.uk'
 
 
 class PrivateLinkFactory(ModularOdmFactory):
@@ -228,6 +237,7 @@ class RegistrationFactory(AbstractNodeFactory):
         reg.save()
         return reg
 
+
 class PointerFactory(ModularOdmFactory):
     FACTORY_FOR = Pointer
     node = SubFactory(NodeFactory)
@@ -250,10 +260,11 @@ class SanctionFactory(ModularOdmFactory):
 
     @classmethod
     def _create(cls, target_class, approve=False, *args, **kwargs):
-        user = UserFactory()
+        user = kwargs.get('user') or UserFactory()
         sanction = ModularOdmFactory._create(target_class, initiated_by=user, *args, **kwargs)
         reg_kwargs = {
-            'owner': user,
+            'creator': user,
+            'user': user,
             sanction.SHORT_NAME: sanction
         }
         RegistrationFactory(**reg_kwargs)
@@ -274,7 +285,6 @@ class EmbargoFactory(SanctionFactory):
 class RegistrationApprovalFactory(SanctionFactory):
     FACTORY_FOR = RegistrationApproval
     user = SubFactory(UserFactory)
-
 
 class NodeWikiFactory(ModularOdmFactory):
     FACTORY_FOR = NodeWikiPage

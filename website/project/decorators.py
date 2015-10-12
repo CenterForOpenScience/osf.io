@@ -13,6 +13,7 @@ from framework.auth.decorators import collect_auth
 from framework.mongo.utils import get_or_http_error
 
 from website.models import Node
+from website import settings
 
 _load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
 
@@ -347,3 +348,33 @@ def must_have_permission(permission):
 
     # Return decorator
     return wrapper
+
+
+def dev_only(func):
+    """Attempting to access this view in production will yield 404 error"""
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        if settings.DEV_MODE is True:
+            return func(*args, **kwargs)
+        else:
+            raise HTTPError(http.NOT_FOUND)
+
+    return wrapped
+
+
+def must_have_write_permission_or_public_wiki(func):
+    """ Checks if user has write permission or wiki is public and publicly editable. """
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        # Ensure `project` and `node` kwargs
+        _inject_nodes(kwargs)
+
+        wiki = kwargs['node'].get_addon('wiki')
+
+        if wiki and wiki.is_publicly_editable:
+            return func(*args, **kwargs)
+        else:
+            return must_have_permission('write')(func)(*args, **kwargs)
+
+    # Return decorated function
+    return wrapped

@@ -99,7 +99,7 @@ var isValidBucketName = function(bucketName, allowPeriods) {
         isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d.-]{2,61}[^.]$/;
     } else {isValidBucket = /^(?!.*(\.\.|-\.))[^.][a-z0-9\d-]{2,61}[^.]$/;}
 
-    return isValidBucket.exec(bucketName) == null;
+    return isValidBucket.test(bucketName);
 };
 
 ViewModel.prototype.selectBucket = function() {
@@ -107,14 +107,16 @@ ViewModel.prototype.selectBucket = function() {
 
     self.loading(true);
 
-    if (isValidBucketName(self.selectedBucket(), false)) {
+    var ret = $.Deferred();
+    if (!isValidBucketName(self.selectedBucket(), false)) {
         self.loading(false);
         bootbox.alert({
             title: 'Invalid bucket name',
             message: 'Sorry, the S3 addon only supports bucket names without periods.'
         });
+        ret.reject();
     } else {
-        return $osf.postJSON(
+        $osf.postJSON(
                 self.urls().set_bucket, {
                     's3_bucket': self.selectedBucket(),
                     'encrypt_uploads': self.encryptUploads()
@@ -125,6 +127,7 @@ ViewModel.prototype.selectBucket = function() {
                 self.changeMessage('Successfully linked S3 bucket "' + self.currentBucket() + '". Go to the <a href="' +
                     self.urls().files + '">Files page</a> to view your content.', 'text-success');
                 self.loading(false);
+                ret.resolve(response);
             })
             .fail(function (xhr, status, error) {
                 self.loading(false);
@@ -137,8 +140,10 @@ ViewModel.prototype.selectBucket = function() {
                     textStatus: status,
                     error: error
                 });
+                ret.reject();
             });
     }
+    return ret.promise();
 };
 
 ViewModel.prototype._deauthorizeNodeConfirm = function() {
@@ -501,5 +506,6 @@ var S3Config = function(selector, settings) {
 
 module.exports = {
     S3NodeConfig: S3Config,
-    _S3NodeConfigViewModel: ViewModel
+    _S3NodeConfigViewModel: ViewModel,
+    _isValidBucketName: isValidBucketName
 };

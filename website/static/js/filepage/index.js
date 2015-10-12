@@ -8,6 +8,7 @@ var waterbutler = require('js/waterbutler');
 // Local requires
 var utils = require('./util.js');
 var FileEditor = require('./editor.js');
+var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
 
@@ -17,6 +18,74 @@ var Panel = utils.Panel;
 
 var EDITORS = {'text': FileEditor};
 
+var clipboardConfig = function(element, isInitialized) {
+    if (!isInitialized) {
+        makeClient(element);
+    }
+};
+
+var CopyButton = {
+    view: function(ctrl, params) {
+        return m('span.input-group-btn', m('button.btn.btn-default.btn-md[type="button"]' +
+            '[data-clipboard-text="' + params.link + '"]',
+            {config: clipboardConfig, style: {height: params.height}},
+            m('.fa.fa-copy')));
+    }
+};
+
+var SharePopover =  {
+    view: function(ctrl, params) {
+        var copyButtonHeight = '34px';
+        var popoverWidth = '450px';
+        var link = params.link;
+
+        var url = link.substring(0, link.indexOf('render'));
+        return m('button#sharebutton.disabled.btn.btn-sm.btn-primary.file-share', {onclick: function popOverShow() {
+                var pop = document.getElementById('popOver');
+                //This is bad, should only happen for Firefox, thanks @chrisseto
+                if (!pop){
+                    return window.setTimeout(popOverShow, 100);
+                }
+                m.render(document.getElementById('popOver'), [
+                    m('ul.nav.nav-tabs.nav-justified', [
+                        m('li.active', m('a[href="#share"][data-toggle="tab"]', 'Share')),
+                        m('li', m('a[href="#embed"][data-toggle="tab"]', 'Embed'))
+                    ]), m('br'),
+                    m('.tab-content', [
+                        m('.tab-pane.active#share', m('.input-group', [
+                            CopyButton.view(ctrl, {link: link, height: copyButtonHeight}), //workaround to allow button to show up on first click
+                            m('input.form-control[readonly][type="text"][value="'+ link +'"]')
+                        ])),
+                        m('.tab-pane#embed', [
+                            m('p', 'Dynamically render iframe with JavaScript'),
+                            m('textarea.form-control[readonly][type="text"][value="' +
+                                '<script>window.jQuery || document.write(\'<script src="//code.jquery.com/jquery-1.11.2.min.js">\\x3C/script>\') </script>'+
+                                '<link href="' + url + 'static/css/mfr.css" media="all" rel="stylesheet">' +
+                                '<div id="mfrIframe" class="mfr mfr-file"></div>' +
+                                '<script src="' + url + 'static/js/mfr.js">' +
+                                '</script> <script>' +
+                                    'var mfrRender = new mfr.Render("mfrIframe", "' + link + '");' +
+                                '</script>' + '"]'
+                            ), m('br'),
+                            m('p', 'Direct iframe with fixed height and width'),
+                            m('textarea.form-control[readonly][value="' +
+                                '<iframe src="' + link + '" width="100%" scrolling="yes" height="' + params.height + '" marginheight="0" frameborder="0" allowfullscreen webkitallowfullscreen>"]'
+                            )
+                        ])
+                    ])
+                ]);
+            },
+            config: function(element, isInitialized) {
+                if(!isInitialized){
+                    var button = $(element).popover();
+                    button.on('show.bs.popover', function(e){
+                        //max-width used to override, and width used to create space for the mithril object to be injected
+                        button.data()['bs.popover'].$tip.css('text-align', 'center').css('max-width', popoverWidth).css('width', popoverWidth);
+                    });
+                }
+            }, 'data-toggle': 'popover', 'data-placement': 'bottom', 'data-content': '<div id="popOver"></div>', 'title': 'Share', 'data-container': 'body', 'data-html': 'true'}, 'Share');
+    }
+};
 
 var FileViewPage = {
     controller: function(context) {
@@ -126,7 +195,7 @@ var FileViewPage = {
 
 
         // Hack to delay creation of the editor
-        // until we know this is the current file revsion
+        // until we know this is the current file revision
         self.enableEditing = function() {
             // Sometimes we can get here twice, check just in case
             if (self.editor || !self.canEdit()) {
@@ -162,41 +231,17 @@ var FileViewPage = {
         //This code was abstracted into a panel toggler at one point
         //it was removed and shoved here due to issues with mithrils caching and interacting
         //With other non-mithril components on the page
-        var panels;
-        if (ctrl.editor) {
-            panels = [ctrl.editor, ctrl.revisions];
-        } else {
-            panels = [ctrl.revisions];
-        }
-
-        var shown = panels.reduce(function(accu, panel) {
-            return accu + (panel.selected ? 1 : 0);
-        }, 0);
-
-        var panelsShown = shown + (ctrl.mfrIframeParent.is(':visible') ? 1 : 0);
+        var panelsShown = (
+            ((ctrl.editor && ctrl.editor.selected) ? 1 : 0) + // Editor panel is active
+            (ctrl.mfrIframeParent.is(':visible') ? 1 : 0)    // View panel is active
+        );
         var mfrIframeParentLayout;
         var fileViewPanelsLayout;
 
-        if (panelsShown === 3) {
-            // view | edit | revisions
-            mfrIframeParentLayout = 'col-sm-4';
-            fileViewPanelsLayout = 'col-sm-8';
-        } else if (panelsShown === 2) {
-            if (ctrl.mfrIframeParent.is(':visible')) {
-                if (ctrl.revisions.selected) {
-                    // view | revisions
-                    mfrIframeParentLayout = 'col-sm-8';
-                    fileViewPanelsLayout = 'col-sm-4';
-                } else {
-                    // view | edit
-                    mfrIframeParentLayout = 'col-sm-6';
-                    fileViewPanelsLayout = 'col-sm-6';
-                }
-            } else {
-                // edit | revisions
-                mfrIframeParentLayout = '';
-                fileViewPanelsLayout = 'col-sm-12';
-            }
+        if (panelsShown === 2) {
+            // view | edit
+            mfrIframeParentLayout = 'col-sm-6';
+            fileViewPanelsLayout = 'col-sm-6';
         } else {
             // view
             if (ctrl.mfrIframeParent.is(':visible')) {
@@ -219,48 +264,86 @@ var FileViewPage = {
             ]);
         }
 
-        m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
-            ctrl.canEdit() ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
-            ]) : '',
-            m('.btn-group.m-t-xs', [
-                m('.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
-            ]),
-            m('.btn-group.btn-group-sm.m-t-xs', [
-                m('.btn.btn-default.disabled', 'Toggle view: ')
-            ].concat(
-                m('.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
+        var editButton = function() {
+            if (ctrl.editor) {
+                return m('button.btn' + (ctrl.editor.selected ? '.btn-primary' : '.btn-default'), {
                     onclick: function (e) {
                         e.preventDefault();
                         // atleast one button must remain enabled.
-                        if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
-                            ctrl.mfrIframeParent.toggle();
+                        if ((!ctrl.editor.selected || panelsShown > 1)) {
+                            ctrl.editor.selected = !ctrl.editor.selected;
+                            ctrl.revisions.selected = false;
                         }
                     }
-                }, 'View')
-            ).concat(
-                panels.map(function(panel) {
-                    return m('.btn' + (panel.selected ? '.btn-primary' : '.btn-default'), {
-                        onclick: function(e) {
-                            e.preventDefault();
-                            // atleast one button must remain enabled.
-                            if (!panel.selected || panelsShown > 1) {
-                                panel.selected = !panel.selected;
-                            }
+                }, ctrl.editor.title);
+            }
+        };
+
+        var link = $('iframe').attr('src') ? $('iframe').attr('src').substring(0, $('iframe').attr('src').indexOf('download') + 8) +
+                '%26mode=render' : 'Data not available';
+        var height = $('iframe').attr('height') ? $('iframe').attr('height') : '0px';
+
+        m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
+            // Special case whether or not to show the delete button for published Dataverse files
+            (ctrl.canEdit() && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
+            ]) : '',
+            window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
+                m.component(SharePopover, {link: link, height: height})
+            ]) : '',
+            m('.btn-group.m-t-xs', [
+                m('button.btn.btn-sm.btn-primary.file-download', {onclick: $(document).trigger.bind($(document), 'fileviewpage:download')}, 'Download')
+            ]),
+            m('.btn-group.btn-group-sm.m-t-xs', [
+               ctrl.editor ? m( '.btn.btn-default.disabled', 'Toggle view: ') : null
+            ].concat(
+                m('button.btn' + (ctrl.mfrIframeParent.is(':visible') ? '.btn-primary' : '.btn-default'), {
+                    onclick: function (e) {
+                        e.preventDefault();
+                        // at least one button must remain enabled.
+                        if (!ctrl.mfrIframeParent.is(':visible') || panelsShown > 1) {
+                            ctrl.mfrIframeParent.toggle();
+                            ctrl.revisions.selected = false;
+                        } else if (ctrl.mfrIframeParent.is(':visible') && !ctrl.editor){
+                            ctrl.mfrIframeParent.toggle();
+                            ctrl.revisions.selected = true;
                         }
-                    }, panel.title);
-                })
-            ))
+                    }
+                }, 'View'), editButton())
+            ),
+            m('.btn-group.m-t-xs', [
+                m('button.btn.btn-sm' + (ctrl.revisions.selected ? '.btn-primary': '.btn-default'), {onclick: function(){
+                    var editable = ctrl.editor && ctrl.editor.selected;
+                    var viewable = ctrl.mfrIframeParent.is(':visible');
+                    if (editable || viewable){
+                        if (viewable){
+                            ctrl.mfrIframeParent.toggle();
+                        }
+                        if (editable) {
+                            ctrl.editor.selected = false;
+                        }
+                        ctrl.revisions.selected = true;
+                    } else {
+                        ctrl.mfrIframeParent.toggle();
+                        if (ctrl.editor) {
+                            ctrl.editor.selected = false;
+                        }
+                        ctrl.revisions.selected = false;
+                    }
+                }}, 'Revisions')
+            ])
         ]));
 
+        if (ctrl.revisions.selected){
+            return m('.file-view-page', m('.panel-toggler', [
+                m('.row', ctrl.revisions)
+            ]));
+        }
+        var editDisplay = (ctrl.editor && !ctrl.editor.selected) ? 'display:none' : '' ;
+        ctrl.triggerResize();
         return m('.file-view-page', m('.panel-toggler', [
-            m('.row', panels.map(function(pane, index) {
-                ctrl.triggerResize();
-                if (!pane.selected) {
-                    return m('[style="display:none"]', pane);
-                }
-                return m('.col-sm-' + Math.floor(12/shown), pane);
-            }))
+            m('.row[style="' + editDisplay + '"]', m('.col-sm-12', ctrl.editor),
+             m('.row[style="display:none"]', ctrl.revisions))
         ]));
     }
 };
@@ -272,12 +355,13 @@ module.exports = function(context) {
         $('#mfrIframe').html(context.file.error);
     } else {
         var url = context.file.urls.render;
-        if (context.accessToken) {
-            url += '&token=' + context.accessToken;
+        if (navigator.appVersion.indexOf('MSIE 9.') !== -1) {
+            url += url.indexOf('?') > -1 ? '&' : '?';
+            url += 'cookie=' + (document.cookie.match(window.contextVars.cookieName + '=(.+?);|$')[1] || '');
         }
 
         if (window.mfr !== undefined) {
-            var mfrRender = new mfr.Render('mfrIframe', url);
+            var mfrRender = new mfr.Render('mfrIframe', url, {}, 'cos_logo.png');
             $(document).on('fileviewpage:reload', function() {
                 mfrRender.reload();
             });

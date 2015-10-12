@@ -12,6 +12,7 @@ from datetime import timedelta
 
 os_env = os.environ
 
+
 def parent_dir(path):
     '''Return the parent of a directory.'''
     return os.path.abspath(os.path.join(path, os.pardir))
@@ -136,16 +137,16 @@ SESSION_HISTORY_IGNORE_RULES = [
 
 # TODO: Configuration should not change between deploys - this should be dynamic.
 CANONICAL_DOMAIN = 'openscienceframework.org'
-COOKIE_DOMAIN = '.openscienceframework.org' # Beaker
+COOKIE_DOMAIN = '.openscienceframework.org'  # Beaker
 SHORT_DOMAIN = 'osf.io'
 
 # TODO: Combine Python and JavaScript config
 COMMENT_MAXLENGTH = 500
 
-# Gravatar options
-GRAVATAR_SIZE_PROFILE = 70
-GRAVATAR_SIZE_ADD_CONTRIBUTOR = 40
-GRAVATAR_SIZE_DISCUSSION = 20
+# Profile image options
+PROFILE_IMAGE_LARGE = 70
+PROFILE_IMAGE_MEDIUM = 40
+PROFILE_IMAGE_SMALL = 20
 
 # Conference options
 CONFERNCE_MIN_COUNT = 5
@@ -174,23 +175,6 @@ WIKI_WHITELIST = {
         'list-style',
     ]
 }
-
-##### Celery #####
-## Default RabbitMQ broker
-BROKER_URL = 'amqp://'
-
-# Default RabbitMQ backend
-CELERY_RESULT_BACKEND = 'amqp://'
-
-# Modules to import when celery launches
-CELERY_IMPORTS = (
-    'framework.tasks',
-    'framework.tasks.signals',
-    'framework.email.tasks',
-    'framework.analytics.tasks',
-    'website.mailchimp_utils',
-    'scripts.send_digest'
-)
 
 # Add-ons
 # Load addons from addons.json
@@ -238,9 +222,6 @@ ALL_MY_REGISTRATIONS_NAME = 'All my registrations'
 # and uploads in order to save disk space.
 DISK_SAVING_MODE = False
 
-# Add Contributors (most in common)
-MAX_MOST_IN_COMMON_LENGTH = 15
-
 # Seconds before another notification email can be sent to a contributor when added to a project
 CONTRIBUTOR_ADDED_EMAIL_THROTTLE = 24 * 3600
 
@@ -285,3 +266,46 @@ ENABLE_ARCHIVER = True
 
 JWT_SECRET = 'changeme'
 JWT_ALGORITHM = 'HS256'
+
+##### CELERY #####
+
+# Default RabbitMQ broker
+BROKER_URL = 'amqp://'
+
+# Default RabbitMQ backend
+CELERY_RESULT_BACKEND = 'amqp://'
+
+#  Modules to import when celery launches
+CELERY_IMPORTS = (
+    'framework.tasks',
+    'framework.tasks.signals',
+    'framework.email.tasks',
+    'framework.analytics.tasks',
+    'website.mailchimp_utils',
+    'website.notifications.tasks',
+    'website.archiver.tasks'
+)
+
+# celery.schedule will not be installed when running invoke requirements the first time.
+try:
+    from celery.schedules import crontab
+except ImportError:
+    pass
+else:
+    #  Setting up a scheduler, essentially replaces an independent cron job
+    CELERYBEAT_SCHEDULE = {
+        '5-minute-emails': {
+            'task': 'notify.send_users_email',
+            'schedule': crontab(minute='*/5'),
+            'args': ('email_transactional',),
+        },
+        'daily-emails': {
+            'task': 'notify.send_users_email',
+            'schedule': crontab(minute=0, hour=0),
+            'args': ('email_digest',),
+        },
+    }
+
+WATERBUTLER_JWT_SECRET = 'ILiekTrianglesALot'
+WATERBUTLER_JWT_ALGORITHM = 'HS256'
+WATERBUTLER_JWT_EXPIRATION = 15
