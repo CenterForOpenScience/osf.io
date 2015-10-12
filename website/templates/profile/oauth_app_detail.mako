@@ -100,7 +100,8 @@
     window.contextVars.urls = {
         webListUrl: ${ web_url_for('oauth_application_list') | sjson, n },
         apiListUrl: ${ app_list_url | sjson, n },
-        apiDetailUrl: ${ app_detail_url | sjson, n }
+        apiDetailUrl: ${ app_detail_url | sjson, n },
+        apiResetUrl: ${ app_reset_url | sjson, n },
     };
 
     // Make sure to display tooltips correctly
