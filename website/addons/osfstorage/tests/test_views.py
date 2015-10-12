@@ -602,4 +602,13 @@ class TestFileTags(StorageTestCase):
         assert_equal(res.json['status'], 'failure')
 
     def test_remove_nonexistent_tag(self):
-        pass
+        file = self.node_settings.get_root().append_file('WonderfulEveryday.mp3')
+        assert_not_in('Chance', file.tags)
+        url = "/api/v1/project/{pid}/osfstorage/{fid}/tags/{tag}/".format(
+            pid=self.project._id,
+            tag='Chance',
+            fid=file._id
+        )
+        res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['status'], 'failure')
