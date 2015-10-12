@@ -2128,12 +2128,16 @@ class TestNodeRegistrationList(ApiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['attributes']['title'], self.public_project.title)
+        assert_equal(res.json['data'][0]['attributes']['registration'], True)
+        url = res.json['data'][0]['relationships']['branched_from']['links']['related']['href']
+        assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
 
     def test_return_public_registrations_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['attributes']['category'], self.public_project.category)
+        assert_equal(res.json['data'][0]['attributes']['registration'], True)
+        url = res.json['data'][0]['relationships']['branched_from']['links']['related']['href']
+        assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_return_private_registrations_logged_out(self):
@@ -2144,7 +2148,9 @@ class TestNodeRegistrationList(ApiTestCase):
     def test_return_private_registrations_logged_in_contributor(self):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data'][0]['attributes']['category'], self.project.category)
+        assert_equal(res.json['data'][0]['attributes']['registration'], True)
+        url = res.json['data'][0]['relationships']['branched_from']['links']['related']['href']
+        assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.project._id))
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_return_private_registrations_logged_in_non_contributor(self):
