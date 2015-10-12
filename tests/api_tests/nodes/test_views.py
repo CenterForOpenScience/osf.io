@@ -588,7 +588,7 @@ class TestNodeDetail(ApiTestCase):
     def test_top_level_project_has_no_parent(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['relationships']['parent']['links']['self']['href'], None)
+        assert_equal(res.json['data']['relationships']['parent']['links']['related']['href'], None)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_child_project_has_parent(self):
@@ -596,7 +596,7 @@ class TestNodeDetail(ApiTestCase):
         public_component_url = '/{}nodes/{}/'.format(API_BASE, public_component._id)
         res = self.app.get(public_component_url)
         assert_equal(res.status_code, 200)
-        url = res.json['data']['relationships']['parent']['links']['self']['href']
+        url = res.json['data']['relationships']['parent']['links']['related']['href']
         assert_equal(urlparse(url).path, self.public_url)
 
     def test_node_has_children_link(self):
@@ -2604,6 +2604,26 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
+    def test_tags_post_object_instead_of_list(self):
+        url = '/{}nodes/'.format(API_BASE)
+        payload = {'data': {
+            'type': 'nodes',
+            'attributes': {
+                'title': 'new title',
+                'category': 'project',
+                'tags': {'foo': 'bar'}
+            }
+        }}
+        res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
+    def test_tags_patch_object_instead_of_list(self):
+        self.one_new_tag_json['data']['attributes']['tags'] = {'foo': 'bar'}
+        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
 
 class TestNodeLinkCreate(ApiTestCase):
 
@@ -2790,11 +2810,16 @@ def prepare_mock_wb_response(
         data = [dict(default_file, **each) for each in files]
     else:
         data = [default_file]
+
+    jsonapi_data = []
+    for datum in data:
+        jsonapi_data.append({'attributes': datum})
+
     if not folder:
-        data = data[0]
+        jsonapi_data = jsonapi_data[0]
 
     body = json.dumps({
-        u'data': data
+        u'data': jsonapi_data
     })
     httpretty.register_uri(
         method,
