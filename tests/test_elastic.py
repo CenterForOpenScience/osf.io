@@ -813,3 +813,29 @@ class TestSearchMigration(SearchTestCase):
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
+
+class TestSearchFiles(SearchTestCase):
+
+    def test_search_file(self):
+        pass
+
+    def test_upload_file(self):
+        pass
+
+    def test_delete_file(self):
+        pass
+
+    def test_add_tag(self):
+        pass
+
+    def test_remove_tag(self):
+        pass
+
+    def test_make_node_private(self):
+        pass
+
+    def test_make_private_node_public(self):
+        pass
+
+    def test_delete_node(self):
+        pass
