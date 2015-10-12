@@ -65,7 +65,7 @@
                                 <tr>
                                     <td colspan="3">
                                         <form data-bind="submit: addEmail">
-                                            <p>To merge an existing account with this one or log in with multiple email addresses, add an alternate email address below.</p>
+                                            <p>To merge an existing account with this one or to log in with multiple email addresses, add an alternate email address below.</p>
 
                                             <div class="form-group">
                                                 ## email input verification is not supported on safari
