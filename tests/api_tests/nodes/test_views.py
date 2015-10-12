@@ -1458,7 +1458,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                     'bibliographic': True
                 },
                 'relationships': {
-                    'data': {
+                    'users': {
                         'id': self.user_two._id
                     }
                 }
@@ -3802,18 +3802,52 @@ class TestExceptionFormatting(ApiTestCase):
 
     def test_create_node_link_no_target_formatting(self):
         url = self.private_url + 'node_links/'
-        res = self.app.post_json_api(url, {'data': {'type': 'node_links', 'attributes': {'target_node_id': ''}}},
-                                     auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(url, {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'id': '',
+                            'type': 'nodes',
+                        }
+                    }
+                }
+            }
+        }, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
-        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/target_node_id'})
+        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/id'})
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
 
     def test_node_link_already_exists(self):
         url = self.private_url + 'node_links/'
-        res = self.app.post_json_api(url, {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}}, auth=self.user.auth)
+        res = self.app.post_json_api(url, {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'id': self.public_project._id,
+                            'type': 'nodes',
+                        }
+                    }
+                }
+            }
+        }, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        res = self.app.post_json_api(url, {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}}, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(url, {'data': {
+            'type': 'node_links',
+            'relationships': {
+                'nodes': {
+                    'data': {
+                        'id': self.public_project._id,
+                        'type': 'nodes'
+                    }
+                }
+            }
+        }}, auth=self.user.auth, expect_errors=True)
+        print res
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert(self.public_project._id in res.json['errors'][0]['detail'])
