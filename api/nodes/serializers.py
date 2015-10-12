@@ -164,6 +164,7 @@ class NodeDetailSerializer(NodeSerializer):
     """
     id = IDField(source='_id', required=True)
 
+
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
@@ -258,19 +259,6 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
         return contributor
-
-
-class NodeRegistrationSerializer(NodeSerializer):
-
-    retracted = ser.BooleanField(source='is_retracted', read_only=True,
-        help_text='Whether this registration has been retracted.')
-
-    # TODO: Finish me
-
-    # TODO: Override create?
-
-    def update(self, *args, **kwargs):
-        raise exceptions.ValidationError('Registrations cannot be modified.')
 
 
 class NodeLinksSerializer(JSONAPISerializer):
