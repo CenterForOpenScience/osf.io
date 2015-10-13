@@ -27,7 +27,7 @@ request.fail(function(xhr, textStatus, error) {
 });
 
 var nodesListUrl = '/api/v1/dashboard/get_nodes/';
-var treeListUrl = '/api/v1/project/jx8cv/';
+var treeListUrl = '/api/v1/dashboard/';
 m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, { url : treeListUrl } ));
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
