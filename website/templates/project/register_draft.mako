@@ -3,56 +3,33 @@
 <%def name="title()">Register ${node['title']}</%def>
 
 <%def name="content()">
-<div class="col-md-6 col-md-offset-3" id="draftRegistrationScope">        
-      <div id="embargo-addon" data-bind="with: $root.embargoAddon">
-        <hr />
-        
-        <p class="help-block">${language.REGISTRATION_EMBARGO_INFO | n}</p>
-        <div class="form-group">
-          <label class="control-label">Registration Choice</label>
-          <select class="form-control" data-bind="options: registrationOptions,
-                                                  value: registrationChoice,
-                                                  optionsText: 'message',
-                                                  optionsValue: 'value',
-                                                  event: {change: checkShowEmbargoDatePicker}"></select>
+    <div class="col-md-12" id="draftRegistrationScope">
+        <h2>Previewing draft registration for ${node['title']}:</h2>
+        <br/>
+        <div class="span8 col-lg-12 columns twelve large-12" style="padding-left: 30px">
+            <div data-bind="foreach: {data: draft.schema().pages, as: 'page'}">
+                <h3 data-bind="attr.id: page.id, text: page.title"></h3>
+                <div data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
+                    <span data-bind="with: $parent.questions[qid]">
+                        <h4 data-bind="attr.id: qid, text: title"></h4>
+                        <span data-bind="text: value"></span>
+                    </span>
+                </div>
+            </div>
         </div>
-        <span data-bind="visible: showEmbargoDatePicker">
-          <div class="form-group">
-            <label class="control-label">Embargo End Date</label>
-            <input type="text" 
-                   data-bind="hasFocus: $root.focusOnPicker"
-                   id="endDatePicker" class="form-control">
-          </div>
-        </span>
-      </div>
-      
-      <div id="register-show-submit">
+        <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
+        <a type="button" class="btn btn-success pull-right"">Submit for review</a>
+        <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: registerDraft">Register without review</button>
 
-        <hr />
-        <p class="help-block">
-          ${language.BEFORE_REGISTRATION_INFO | n}
-        </p>
-        
-        <div class="form-group">
-          <label>
-            Type "register" if you are sure you want to continue
-          </label>
-          <div class="controls">
-            <input class="form-control" data-bind="value: $root.continueText, valueUpdate: 'afterkeydown'" />
-          </div>
-        </div>
-      </div>
-      
-      <button id="register-submit" class="btn btn-primary" data-bind="click: registerDraft,
-                                                                      visible: canSubmit">
-        Register Now
-      </button>     
-</div><!-- end #registration_template -->
 </%def>
 
 <%def name="javascript_bottom()">
 
-  <script type="text/javascript">
+    <script type="text/javascript">
+     // opt into tooltip
+     $(function () {
+         $('[data-toggle="tooltip"]').tooltip()
+     })
     window.contextVars = window.contextVars || {};
     window.contextVars.draft = ${draft | sjson, n};
   </script>
