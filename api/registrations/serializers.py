@@ -2,7 +2,6 @@ from rest_framework import serializers as ser
 from rest_framework import exceptions
 
 from api.base.serializers import JSONAPISerializer
-from api.nodes.serializers import NodeSerializer
 from api.base.serializers import IDField, JSONAPIHyperlinkedRelatedField, LinksField
 
 
@@ -39,7 +38,7 @@ class RegistrationSerializer(JSONAPISerializer):
         return obj.absolute_url
 
 
-class RegistrationDetailSerializer(NodeSerializer):
+class RegistrationDetailSerializer(RegistrationSerializer):
     """
     Overrides NodeSerializer to make id required.
     """
