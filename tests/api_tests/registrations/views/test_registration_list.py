@@ -43,7 +43,7 @@ class TestRegistrationList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['attributes']['registration'], True)
-        url = res.json['data'][0]['relationships']['branched_from']['links']['related']['href']
+        url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
 
     def test_return_registrations_logged_in_contributor(self):
@@ -53,12 +53,12 @@ class TestRegistrationList(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['registration'], True)
         assert_equal(res.json['data'][1]['attributes']['registration'], True)
 
-        branched_from_one = urlparse(res.json['data'][0]['relationships']['branched_from']['links']['related']['href']).path
-        branched_from_two = urlparse(res.json['data'][1]['relationships']['branched_from']['links']['related']['href']).path
+        registered_from_one = urlparse(res.json['data'][0]['relationships']['registered_from']['links']['related']['href']).path
+        registered_from_two = urlparse(res.json['data'][1]['relationships']['registered_from']['links']['related']['href']).path
 
         assert_equal(res.content_type, 'application/vnd.api+json')
 
-        assert_items_equal([branched_from_one, branched_from_two],
+        assert_items_equal([registered_from_one, registered_from_two],
                            ['/{}nodes/{}/'.format(API_BASE, self.public_project._id),
                             '/{}nodes/{}/'.format(API_BASE, self.project._id)])
 
@@ -67,9 +67,9 @@ class TestRegistrationList(ApiTestCase):
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data'][0]['attributes']['registration'], True)
-        branched_from = urlparse(res.json['data'][0]['relationships']['branched_from']['links']['related']['href']).path
+        registered_from = urlparse(res.json['data'][0]['relationships']['registered_from']['links']['related']['href']).path
 
         assert_equal(res.content_type, 'application/vnd.api+json')
 
-        assert_equal(branched_from, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
+        assert_equal(registered_from, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
 
