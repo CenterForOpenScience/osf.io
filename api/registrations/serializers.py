@@ -1,16 +1,14 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
-from api.base.serializers import JSONAPISerializer
+from api.nodes.serializers import NodeSerializer
 from api.base.serializers import IDField, JSONAPIHyperlinkedIdentityField, LinksField
 
 
-class RegistrationSerializer(JSONAPISerializer):
+class RegistrationSerializer(NodeSerializer):
 
-    id = IDField(source='_id', read_only=True)
     retracted = ser.BooleanField(source='is_retracted', read_only=True,
         help_text='Whether this registration has been retracted.')
-    public = ser.BooleanField(source='is_public', read_only=True)
     date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
 
     registered_by = JSONAPIHyperlinkedIdentityField(

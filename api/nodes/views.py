@@ -606,9 +606,20 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
         name               type               description
         ---------------------------------------------------------------------------------
-        retracted          boolean            has this registration been retracted?
+        title              string             title of the registered project or component
+        description        string             description of the registered node
+        category           string             node category, must be one of the allowed values
+        date_created       iso8601 timestamp  timestamp that the node was created
+        date_modified      iso8601 timestamp  timestamp when the node was last updated
+        tags               array of strings   list of tags that describe the registered node
+        fork               boolean            is this project a fork?
+        registration       boolean            has this project been registered?
+        collection         boolean            is this registered node a collection of other nodes?
+        dashboard          boolean            is this registered node visible on the user dashboard?
         public             boolean            has this registration been made publicly-visible?
+        retracted          boolean            has this registration been retracted?
         date_registered    iso8601 timestamp  timestamp that the registration was created
+
 
     ##Relationships
 
