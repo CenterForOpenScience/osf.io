@@ -221,7 +221,8 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
+            Q('is_folder', 'ne', True) &
+            Q('is_registration', 'eq', False)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
@@ -363,7 +364,10 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
-        return self.get_node()
+        node = self.get_node()
+        if node.is_registration:
+            raise NotFound('This is a registration.')
+        return node
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
