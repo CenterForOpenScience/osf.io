@@ -11,7 +11,7 @@
 <div class="col-md-3 col-xs-12">
     <div class="filters">
         <input type="text" class="form-control searchable" id="nameSearch" placeholder="Search by name"/>
-        <h5>Permissions
+        <h5 class="m-t-md">Permissions
                 <i class="fa fa-question-circle permission-info"
                     data-toggle="popover"
                     data-title="Permission Information"
@@ -30,7 +30,7 @@
                 <button class="filter-btn btn-default btn" id="read">Read</button>
             </div>
         </div>
-        <h5>Bibliographic Contributor
+        <h5 class="m-t-md">Bibliographic Contributor
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
                     data-title="Bibliographic Contributor Information"
@@ -59,7 +59,7 @@
             <!-- /ko -->
         </h3>
         % if 'admin' in user['permissions'] and not node['is_registration']:
-            <p>Drag and drop contributors to change listing order.</p>
+            <p class="m-b-xs">Drag and drop contributors to change listing order.</p>
         % endif
 
 
@@ -74,7 +74,7 @@
                 data: 'contrib'
                 }">
     </table>
-    <div id="noContributors" class="text-danger">
+    <div id="noContributors" class="no-items text-danger">
         No contributors found
     </div>
     <span id="adminContributorsAnchor" class="project-page anchor"></span>
@@ -103,7 +103,7 @@
                     data: 'admin'
                 }">
         </table>
-        <div id="noAdminContribs" class="text-danger">
+        <div id="noAdminContribs" class="text-danger no-items">
             No administrators from parent project found.
         </div>
     </div>
@@ -111,7 +111,7 @@
     </div>
 
     % if 'admin' in user['permissions']:
-        <h3>View-only Links
+        <h3 class="m-t-xl">View-only Links
             <a href="#addPrivateLink" data-toggle="modal" class="btn btn-success btn-sm m-l-md">
               <i class="fa fa-plus"></i> Add
             </a>
@@ -123,7 +123,7 @@
                 <thead>
                     <tr>
                         <th class="responsive-table-hide">Link Name</th>
-                        <th>Shared Components</th>
+                        <th class="shared-comp">Shared Components</th>
                         <th>Created Date</th>
                         <th>Created By</th>
                         <th class="min-width">Anonymous</th>
@@ -131,7 +131,9 @@
                     </tr>
                 </thead>
                 <tbody data-bind="template: {
-                            name: 'linkTbl'
+                            name: 'linkTbl',
+                            foreach: privateLinks,
+                            afterRender: afterRenderLink
                         }">
                 </tbody>
             </table>
@@ -142,7 +144,6 @@
 <link rel="stylesheet" href="/static/css/pages/contributor-page.css">
 
 <script id="linkTbl" type="text/html">
-    <!-- ko foreach: privateLinks -->
     <tr>
         <td>
             <span class="link-name m-b-xs" data-bind="text: name"></span>
@@ -153,7 +154,8 @@
                             data-bind="attr: {data-clipboard-text: linkUrl}" >
                         <i class="fa fa-copy"></i>
                     </button>
-                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}"  />
+                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}, click:
+                    function(data, event) {event.target.select()}, clickBubble: false"  />
                 </div>
             </div>
         </td>
@@ -192,7 +194,6 @@
             </div>
         </td>
     </tr>
-    <!-- /ko -->
 </script>
 
 <script id="contribTable" type="text/html">
@@ -212,7 +213,7 @@
                     data-html="true"
                 ></i>
             </th>
-            <th>
+            <th class="biblio-contrib">
                 Bibliographic Contributor
                 <i class="fa fa-question-circle visibility-info"
                     data-toggle="popover"
@@ -258,7 +259,7 @@
                     <span class="name-search" data-bind="text: contributor.shortname"></span>
                 </span>
                 <span data-bind="if: profileUrl">
-                    <a onclick="cancelProp(event)" class="no-sort name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
+                    <a class="no-sort name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
                 </span>
                 <span data-bind="text: permissionText()" class="permission-filter permission-search"></span>
             </div>

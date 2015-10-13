@@ -50,6 +50,12 @@ table.table.table-plain th, table.table.table-plain td {
     margin: 0 15px 0 0;
 }
 
+/* Cards
+-------------------- */
+
+.institution {
+    word-break: break-all;
+}
 
 .card-heading {
     position: relative;

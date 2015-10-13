@@ -74,6 +74,11 @@ select.input-sm {
     min-width: 111px;
 }
 
+.no-items {
+    text-align: center;
+    background-color: #eee;
+}
+
 #manageContributorsTableth:first-child(:not(.sortable)),
 #adminContributorsTable th:first-child(:not(.sortable)) {
     width: 40px;
@@ -85,12 +90,11 @@ select.input-sm {
     text-indent: 20px;
 }
 
-#manageContributorsTable th:nth-child(4),
-#adminContributorsTable th:nth-child(4) {
+th.biblio-contrib {
     width: 109px;
 }
 
-#privateLinkTable th:nth-child(2) {
+#privateLinkTable th.shared-comp {
     width: 120px;
 }
 
@@ -107,6 +111,7 @@ table.responsive-table thead th, table.responsive-table tbody td {
     padding: .8rem;
     font-size: 1.4rem;
     position: relative;
+    background-color: white;
 }
 
 table.responsive-table tbody td>.header {
@@ -132,7 +137,6 @@ table.responsive-table tbody tr td .card-header > span{
         margin: 0;
         padding: 0;
         height: 0;
-        background: transparent;
     }
 
     table.responsive-table-xxs tr:nth-child(2).contrib-placeholder td {

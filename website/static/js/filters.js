@@ -1,7 +1,32 @@
 (function($){
     $.fn.filters = function (options) {
+        /*
+            options:
+                callback:   -this is the function that should be called whenever a search/filter is applied.
+                            -takes in two parameters, filtered & empty.
+                            -filtered is a boolean that returns true if the number of items displayed is less than
+                            the number of items being searched
+                            -empty is a boolean that returns true if there are 0 items displayed after the filters are
+                            applied
+                groups:     -a dictionary of filter button groups
+                            -key: the ID for the group of filter buttons
+                            -value: a dictionary of options with the following format:
+                                - {
+                                    filter: (selector to be used for filtering),
+                                    type: (currently the options are 'text' or 'checkbox'),
+                                    buttons: {
+                                        (buttonID): (value to match) (if type is 'text' the value is the string that
+                                        should be matched.  if type is 'text' the value is the boolean that should be
+                                        matched),
+                                        ....
+                                    }
+                                }
+                inputs:     -a dictionary of the search fields
+                            -key: the ID for the search field
+                            -value: the selector that this field should search against
+         */
         var settings = $.extend({
-            items: '.items'
+            items: ['.items']
         }, options);
 
         var itemsSelector = settings.items.join();

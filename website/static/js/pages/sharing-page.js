@@ -8,7 +8,6 @@ var PrivateLinkTable = require('js/privateLinkTable');
 var ko = require('knockout');
 var rt = require('js/responsiveTable');
 require('jquery-ui');
-require('js/cards');
 require('js/filters');
 
 
@@ -80,7 +79,6 @@ if ($.inArray('admin', ctx.user.permissions) !== -1) {
     var privateLinkManager = new PrivateLinkManager('#addPrivateLink', configUrl);
     var tableUrl = nodeApiUrl + 'private_link/';
     var privateLinkTable = new PrivateLinkTable('#linkScope', tableUrl, ctx.node.isPublic);
-    $('#privateLinkTable').on('click', '.link-url', function(e) { e.target.select(); });
 }
 
 $(function() {
@@ -90,19 +88,24 @@ $(function() {
 });
 
 var checkWindowWidth = function() {
-    if ($(window).width() <= 600) {
-        $('table.responsive-table-xxs tbody tr td:first-child').attr('role','button').attr('onclick', 'toggleExpand(this.parentElement)');
+    if ($('table.responsive-table-xxs thead').is(':hidden')) {
+        $('table.responsive-table-xxs tbody tr td:first-child.expanded').siblings().children().css('display', 'block');
+        $('table.responsive-table-xxs tbody tr td:first-child').attr('role','button').off().on('click', function() {
+            toggleExpand(this.parentElement);
+        });
     }
     else {
-        $('table.responsive-table-xxs tbody tr:not(:hidden) td>div.header').css('display', '');
-        $('table.responsive-table-xxs tbody tr td:first-child').removeAttr('role').removeAttr('onclick');
+        $('table.responsive-table-xxs tbody tr:not(:hidden) td>div').css('display', '');
+        $('table.responsive-table-xxs tbody tr td:first-child').removeAttr('role');
     }
-    if ($(window).width() <= 768) {
-        $('table.responsive-table-xs tbody tr td:first-child').attr('role','button').attr('onclick', 'toggleExpand(this.parentElement)');
+    if ($('table.responsive-table-xs thead').is(':hidden')) {
+        $('table.responsive-table-xs tbody tr td:first-child').attr('role','button').off().on('click', function() {
+            toggleExpand(this.parentElement);
+        });
     }
     else {
         $('table.responsive-table-xs tbody td>div.header').css('display', '');
-        $('table.responsive-table-xs tbody tr td:first-child').removeAttr('role').removeAttr('onclick');
+        $('table.responsive-table-xs tbody tr td:first-child').removeAttr('role');
     }
 };
 
@@ -112,13 +115,16 @@ $(window).load(function() {
     if (linkTable !== undefined) {
         rt.responsiveTable(linkTable);
     }
+    $('table.responsive-table td:first-child a,button').on('click', function(e) {
+        e.stopImmediatePropagation();
+    });
 });
 
 $(window).resize(function() {
     checkWindowWidth();
 });
 
-window.toggleExpand = function(el) {
+var toggleExpand = function(el) {
     var $self = $(el.querySelectorAll('td:not(:first-child):not(.table-only)>div'));
     if ($self.is(':hidden')) {
         $(el.firstElementChild).toggleClass('expanded');
@@ -131,5 +137,9 @@ window.toggleExpand = function(el) {
             }
         });
     }
-    window.toggleIcon(el);
+    toggleIcon(el);
+};
+
+var toggleIcon = function(el) {
+    $(el.querySelector('.toggle-icon')).toggleClass('fa-angle-down fa-angle-up');
 };

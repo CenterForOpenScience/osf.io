@@ -193,10 +193,6 @@
           schoolsUrls: schoolsUrls
       });
   })();
-
-  function toggleIcon(el) {
-      jQuery(el.querySelector("i.toggle-icon")).toggleClass("fa-angle-down fa-angle-up");
-  }
 </script>
 
 </%def>

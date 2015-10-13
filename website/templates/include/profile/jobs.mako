@@ -136,14 +136,15 @@
                 <div class="col-xs-12">
                     <!-- ko if: expandable() -->
                         <div class="panel panel-default">
-                            <div class="panel-heading card-heading" data-bind="attr: {id: 'jobHeading' + $index(), href: '#jobCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false" onclick="toggleIcon(this)">
+                            <div class="panel-heading card-heading" data-bind="attr: {id: 'jobHeading' + $index(), href: '#jobCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false"
+                            onclick="jQuery(this.querySelector('.toggle-icon')).toggleClass('fa-angle-down fa-angle-up')">
                                 <div class="header-content">
-                                    <h5>{{ institution }}</h5>
+                                    <h5 class="institution">{{ institution }}</h5>
                                     <span data-bind="ifnot: startYear() === null" class="subheading">{{ startMonth }} {{startYear }} - {{ endView }}</span>
                                 </div>
                                 <span class="fa fa-angle-down toggle-icon"></span>
                             </div>
-                            <div data-bind="attr: {id: 'jobCard' + $index()}" class="panel-collapse collapse" data-bind="attr: {aria-labelledby: 'jobHeading' + $index()}">
+                            <div data-bind="attr: {id: 'jobCard' + $index(), aria-labelledby: 'jobHeading' + $index()}" class="panel-collapse collapse">
                                 <div class="panel-body">
                                     <span data-bind="if: department().length"><h5>Department:</h5> {{ department }}</span>
                                     <span data-bind="if: title().length"><h5>Title:</h5> {{ title }}</span>
