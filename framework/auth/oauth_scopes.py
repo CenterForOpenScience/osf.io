@@ -20,6 +20,9 @@ class CoreScopes(object):
     USERS_READ = 'users_read'
     USERS_WRITE = 'users_write'
 
+    USER_ADDONS_READ = 'user_addons_read'
+    USER_ADDONS_WRITE = 'user_addons_write'
+
     NODE_BASE_READ = 'nodes.base_read'
     NODE_BASE_WRITE = 'nodes.base_write'
 

@@ -258,6 +258,10 @@ class AddonUserSettingsBase(AddonSettingsBase):
         """Whether the user has added credentials for this addon."""
         return False
 
+    @property
+    def accounts(self):
+        return [self]
+
     def get_backref_key(self, schema, backref_name):
         return schema._name + '__' + backref_name
 
@@ -346,6 +350,10 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             x for x in self.owner.external_accounts
             if x.provider == self.oauth_provider.short_name
         ]
+
+    @property
+    def accounts(self):
+        return self.exteral_accounts
 
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
