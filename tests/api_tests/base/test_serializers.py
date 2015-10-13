@@ -61,21 +61,17 @@ class TestNullLinks(ApiTestCase):
 
     def test_null_links_are_omitted(self):
         ser = FakeSerializer()
-        with contextlib.nested(
-                mock.patch(
-                    'rest_framework.relations.HyperlinkedRelatedField.context',
-                    mock.Mock(return_value={
-                        'request': mock.Mock()
-                    })
-                ),
-                mock.patch(
-                    'rest_framework.relations.HyperlinkedRelatedField.get_url',
-                    mock.Mock(side_effect=mock_hyperlink)
-                ),                
-                mock.patch(
-                    'website.util.waterbutler_api_url_for',
-                    mock.Mock(side_effect=mock_wb_link)
-                )
+        with mock.patch(
+            'rest_framework.relations.HyperlinkedRelatedField.context',
+            mock.Mock(return_value={
+                'request': mock.Mock()
+            })
+        ), mock.patch(
+            'rest_framework.relations.HyperlinkedRelatedField.get_url',
+            mock.Mock(side_effect=mock_hyperlink)
+        ),  mock.patch(
+            'website.util.waterbutler_api_url_for',
+            mock.Mock(side_effect=mock_wb_link)
         ):
             model = FakeModel()
             rep = ser.to_representation(model)['data']

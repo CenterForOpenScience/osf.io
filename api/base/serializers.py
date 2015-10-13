@@ -44,12 +44,18 @@ def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
     schema.
     """
+    url = None
     if isinstance(val, Link):  # If a Link is passed, get the url value
-        return val.resolve_url(obj, **kwargs)
+        url = val.resolve_url(obj, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
-        return getattr(serializer, val)(obj)
+        url = getattr(serializer, val)(obj)
     else:
-        return val
+        url = val
+
+    if not url:
+        raise SkipField
+    else:
+        return url
 
 
 class IDField(ser.CharField):
@@ -185,8 +191,6 @@ class LinksField(ser.Field):
         for name, value in self.links.iteritems():
             try:
                 url = _url_val(value, obj=obj, serializer=self.parent)
-                if not url:
-                    raise SkipField
             except SkipField:
                 continue
             else:
@@ -247,17 +251,13 @@ class Link(object):
         for item in kwarg_values:
             if kwarg_values[item] is None:
                 raise SkipField
-        url = utils.absolute_reverse(
+        return utils.absolute_reverse(
             self.endpoint,
             args=arg_values,
             kwargs=kwarg_values,
             query_kwargs=query_kwarg_values,
             **self.reverse_kwargs
         )
-        if not url:
-            raise SkipField
-        else:
-            return url
 
 
 class WaterbutlerLink(Link):
@@ -296,11 +296,7 @@ class NodeFileHyperLink(JSONAPIHyperlinkedIdentityField):
     def get_url(self, obj, view_name, request, format):
         if self.kind and obj.kind != self.kind:
             raise SkipField
-        url = reverse(view_name, kwargs={attr_name: getattr(obj, attr) for (attr_name, attr) in self.kwargs}, request=request, format=format)
-        if not url:
-            raise SkipField
-        else:
-            return url
+        return reverse(view_name, kwargs={attr_name: getattr(obj, attr) for (attr_name, attr) in self.kwargs}, request=request, format=format)
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
