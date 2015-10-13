@@ -104,7 +104,6 @@ class InvalidQueryStringError(JSONAPIParameterException):
 
 class InvalidFilterOperator(JSONAPIParameterException):
     """Raised when client passes an invalid operator to a query param filter."""
-    default_detail = 'Invalid filter operator, must use one of: >, >=, =, <=, <.'
     status_code = http.BAD_REQUEST
 
     def __init__(self, detail=None, value=None):

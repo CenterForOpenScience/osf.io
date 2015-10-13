@@ -34,7 +34,6 @@ class FilterMixin(object):
 
     QUERY_PATTERN = re.compile(r'^filter\[(?P<field>\w+)\](\[(?P<op>\w+)\])?$')
     COMPARISON_OPERATORS = ('gt', 'gte', 'lt', 'lte')
-    COMPARABLE_FIELDS = (ser.DateField, ser.DateTimeField, ser.DecimalField, ser.IntegerField)
     MATCH_OPERATORS = ('contains', 'icontains')
     MATCHABLE_FIELDS = (ser.CharField, ser.ListField)
     DEFAULT_OPERATOR = 'eq'
@@ -43,8 +42,12 @@ class FilterMixin(object):
         ser.ListField: 'contains',
     }
 
+    NUMERIC_FIELDS = (ser.IntegerField, ser.DecimalField, ser.FloatField)
+
     TIME_FIELDS = (ser.DateTimeField, ser.DateField)
     DATETIME_PATTERN = re.compile(r'^\d{4}\-\d{2}\-\d{2}(?P<time>T\d{2}:\d{2}(:\d{2}(:\d{1,6})?)?)$')
+
+    COMPARABLE_FIELDS = NUMERIC_FIELDS + TIME_FIELDS
 
     def __init__(self, *args, **kwargs):
         super(FilterMixin, self).__init__(*args, **kwargs)
@@ -54,13 +57,62 @@ class FilterMixin(object):
     def _get_default_operator(self, field):
         return self.DEFAULT_OPERATOR_OVERRIDES.get(type(field), self.DEFAULT_OPERATOR)
 
-    def parse_query_params(self, query_params):
-        """Maps query params to a dict useable for filtering
-        :param dict query_params:
+    def _get_field_or_error(self, field_name):
+        """
+        Check that the attempted filter field is valid
+
         :raises InvalidFilterError: If the filter field is not valid
+        """
+        if field_name not in self.serializer_class._declared_fields:
+            raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
+        if field_name not in getattr(self.serializer_class, 'filterable_fields', {}):
+            raise InvalidFilterFieldError(attribute=field_name)
+        return self.serializer_class._declared_fields[field_name]
+
+    def _validate_operator(self, field, operator):
+        """
+        Check that the operator and field combination is valid
+
         :raises InvalidFilterComparisonType: If the query contains comparisons against non-date or non-numeric fields
         :raises InvalidFilterMatchType: If the query contains comparisons against non-string or non-list fields
         :raises InvalidFilterOperator: If the filter operator is not a member of self.COMPARISON_OPERATORS
+        """
+        if operator not in set(self.MATCH_OPERATORS + self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )):
+            raise InvalidFilterOperator(value=operator)
+        if operator in self.COMPARISON_OPERATORS:
+            if type(field) not in self.COMPARABLE_FIELDS:
+                raise InvalidFilterComparisonType(attribute=field.field_name)
+        if operator in self.MATCH_OPERATORS:
+            if type(field) not in self.MATCHABLE_FIELDS:
+                raise InvalidFilterMatchType(attribute=field.field_name)
+
+    def _parse_date_param(self, field, field_name, operator, value):
+        """
+        Allow for ambiguous date filters. This supports operations like findings Nodes created on a given day
+        even though Node.date_created is a specific datetime.
+
+        :return list<dict>: list of one (specific datetime) or more (date range) parsed query params
+        """
+        time_match = self.DATETIME_PATTERN.match(value)
+        if operator != 'eq' or time_match:
+            return [{
+                'op': operator,
+                'value': self.convert_value(value, field)
+            }]
+        else:  # TODO: let times be as generic as possible (i.e. whole month, whole year)
+            start = self.convert_value(value, field)
+            stop = start + datetime.timedelta(days=1)
+            return [{
+                'op': 'gte',
+                'value': start
+            }, {
+                'op': 'lt',
+                'value': stop
+            }]
+
+    def parse_query_params(self, query_params):
+        """Maps query params to a dict useable for filtering
+        :param dict query_params:
         :return dict: of the format {
             <resolved_field_name>: {
                 'op': <comparison_operator>,
@@ -68,52 +120,29 @@ class FilterMixin(object):
             }
         }
         """
-        fields = {}
+        query = {}
         for key, value in query_params.iteritems():
             match = self.QUERY_PATTERN.match(key)
             if match:
-                field_name = match.groupdict().get('field').strip()
-                if field_name not in self.serializer_class._declared_fields:
-                    raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint".format(field_name))
-                if field_name not in getattr(self.serializer_class, 'filterable_fields', {}):
-                    raise InvalidFilterFieldError(attribute=field_name)
-                field = self.serializer_class._declared_fields[field_name]
+                field_name = match.groupdict()['field'].strip()
+                field = self._get_field_or_error(field_name)
+
                 op = match.groupdict().get('op') or self._get_default_operator(field)
-                if op not in set(self.MATCH_OPERATORS + self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )):
-                    raise InvalidFilterOperator(value=op)
-                if op in self.COMPARISON_OPERATORS:
-                    if type(field) not in self.COMPARABLE_FIELDS:
-                        raise InvalidFilterComparisonType(attribute=field_name)
-                if op in self.MATCH_OPERATORS:
-                    if type(field) not in self.MATCHABLE_FIELDS:
-                        raise InvalidFilterMatchType(attribute=field_name)
+                self._validate_operator(field, op)
+
                 field_name = self.convert_key(field_name, field)
-                if field_name not in fields:
-                    fields[field_name] = []
+                if field_name not in query:
+                    query[field_name] = []
+
+                # Special case date(time)s to allow for ambiguous date matches
                 if type(field) in self.TIME_FIELDS:
-                    time_match = self.DATETIME_PATTERN.match(value)
-                    if op != 'eq' or time_match:  # comparison or explicit time
-                        fields[field_name].append({
-                            'op': op,
-                            'value': self.convert_value(value, field)
-                        })
-                    else:  # match whole day; TODO: let times be as generic as possible (i.e. whole month, whole year)
-                        start = self.convert_value(value, field)
-                        stop = start + datetime.timedelta(days=1)
-                        fields[field_name].append({
-                            'op': 'gte',
-                            'value': start
-                        })
-                        fields[field_name].append({
-                            'op': 'lt',
-                            'value': stop
-                        })
+                    query[field_name].extend(self._parse_date_param(field, field_name, op, value))
                 else:
-                    fields[field_name].append({
+                    query[field_name].append({
                         'op': op,
                         'value': self.convert_value(value, field)
                     })
-        return fields
+        return query
 
     def convert_key(self, field_name, field):
         """Used so that that queries on fields with the souce attribute set will work
@@ -138,7 +167,7 @@ class FilterMixin(object):
                     value=value,
                     field_type='bool'
                 )
-        elif field_type == ser.DateTimeField or field_type == ser.DateField:
+        elif field_type in self.TIME_FIELDS:
             try:
                 return date_parser.parse(value)
             except ValueError:
@@ -146,7 +175,7 @@ class FilterMixin(object):
                     value=value,
                     field_type='date'
                 )
-        elif field_type in (ser.DecimalField, ser.IntegerField):
+        elif field_type in self.NUMERIC_FIELDS:
             return float(value)
         else:
             return value.strip()

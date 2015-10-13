@@ -2,6 +2,8 @@
 import json
 import base64
 from urlparse import urlparse
+import datetime
+import httplib as http
 
 import mock
 from nose.tools import *  # flake8: noqa
@@ -368,7 +370,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint")
+        assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint.")
 
     def test_filter_invalid_operator(self):
         url = '/{0}nodes/?filter[date_created][foo]={1}'.format(
@@ -1465,7 +1467,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], "'invalid' is not a valid field for this endpoint")
+        assert_equal(errors[0]['detail'], "'invalid' is not a valid field for this endpoint.")
 
 
 class TestNodeContributorAdd(NodeCRUDTestCase):
