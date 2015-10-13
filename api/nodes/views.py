@@ -73,13 +73,14 @@ class WaterButlerMixin(object):
     provider_lookup_url_kwarg = 'provider'
 
     def get_file_item(self, item):
+        attrs = item['attributes']
         file_node = FileNode.resolve_class(
-            item['provider'],
-            FileNode.FOLDER if item['kind'] == 'folder'
+            attrs['provider'],
+            FileNode.FOLDER if attrs['kind'] == 'folder'
             else FileNode.FILE
-        ).get_or_create(self.get_node(check_object_permissions=False), item['path'])
+        ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
 
-        file_node.update(None, item, user=self.request.user)
+        file_node.update(None, attrs, user=self.request.user)
 
         self.check_object_permissions(self.request, file_node)
 
@@ -108,7 +109,6 @@ class WaterButlerMixin(object):
             return obj
 
         url = waterbutler_api_url_for(node._id, provider, path, meta=True)
-
         waterbutler_request = requests.get(
             url,
             cookies=self.request.COOKIES,
@@ -1340,7 +1340,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
+class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
     """Files attached to a node for a given provider. *Read-only*.
 
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
@@ -1569,7 +1569,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
 
@@ -1581,6 +1581,10 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
             raise NotFound
 
         return list(files_list.children)
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
