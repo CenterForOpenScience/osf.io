@@ -1,0 +1,71 @@
+.osf-meeting-header-img {
+    background: #67a3bf;
+    /* Old browsers */
+    background: -moz-linear-gradient(35deg, #67a3bf 0%, #166596 18%, #000000 100%);
+    /* FF3.6+ */
+    background: -webkit-gradient(linear, left bottom, right top, color-stop(0%, #67a3bf), color-stop(18%, #166596), color-stop(100%, #000000));
+    /* Chrome,Safari4+ */
+    background: -webkit-linear-gradient(35deg, #67a3bf 0%, #166596 18%, #000000 100%);
+    /* Chrome10+,Safari5.1+ */
+    background: -o-linear-gradient(35deg, #67a3bf 0%, #166596 18%, #000000 100%);
+    /* Opera 11.10+ */
+    background: -ms-linear-gradient(35deg, #67a3bf 0%, #166596 18%, #000000 100%);
+    /* IE10+ */
+    background: linear-gradient(35deg, #67a3bf 0%, #166596 18%, #000000 100%);
+    /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#67a3bf', endColorstr='#000000', GradientType=1);
+    /* IE6-9 fallback on horizontal gradient */
+    color: #fff;
+    padding-top: 40px;
+    position: relative;
+}
+
+@media screen and (max-width: 767px) {
+    .icon-bar .fa-custom-7x {
+        font-size: 40px;
+    }
+
+    .osf-meeting-header .fa-custom-8x {
+        font-size: 80px;
+    }
+}
+
+@media screen and (min-width: 768px) {
+    .icon-bar .fa-custom-7x {
+        font-size: 50px;
+    }
+
+    .osf-meeting-header .fa-custom-8x {
+        font-size: 100px;
+    }
+}
+
+.org-logo img{
+    padding: 20px 20% 0 20%;
+}
+
+.collapse .osf-meeting-collapse{
+    text-align: left;
+    background: #FFF;
+    color: black;
+}
+
+.blue-icon {
+    color: #337ab7;
+}
+
+.osf-meeting-p {
+    font-size: 15px;
+}
+.m-v-40 {
+    margin-bottom: 40px;
+    margin-top: 40px;
+}
+
+.m-b-60 {
+    margin-bottom: 60px;
+}
+
+.m-v-15-p {
+   margin:0 15%
+}
