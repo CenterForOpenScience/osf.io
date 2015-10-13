@@ -163,7 +163,7 @@ def box_oauth_finish(auth, **kwargs):
 @must_have_addon('box', 'user')
 def box_oauth_delete_user(user_addon, auth, **kwargs):
     """View for deauthorizing Box."""
-    user_addon.clear()
+    user_addon.delete()
     user_addon.save()
 
 
