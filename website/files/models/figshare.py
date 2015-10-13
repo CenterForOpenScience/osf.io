@@ -32,7 +32,10 @@ class FigshareFile(FigshareFileNode, File):
         # Draft files are not renderable
         if data['extra']['status'] == 'drafts':
             return (version, u'''
-            <style>.file-download{{display: none;}}</style>
+            <style>
+            .file-download{{display: none;}}
+            .file-share{{display: none;}}
+            </style>
             <div class="alert alert-info" role="alert">
             The file "{name}" is still a draft on figshare. <br>
             To view it  on the OSF <a href="http://figshare.com/faqs">publish</a> it on figshare.
