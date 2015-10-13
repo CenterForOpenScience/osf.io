@@ -149,8 +149,8 @@
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
-                    DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
-                    ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
+                    DOI <span data-bind="text: doi"></span> |
+                    ARK <span data-bind="text: ark"></span>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
@@ -177,17 +177,6 @@
                     <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                     </p>
                 % endif
-                    <p>
-                      <license-picker params="saveUrl: '${node['update_url']}',
-                                              saveMethod: 'PUT',
-                                              license: window.contextVars.node.license,
-                                              saveLicenseKey: 'node_license',
-                                              readonly: ${ node['is_registration'] | sjson, n}">
-                        <span id="license">License:</span>
-                        <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
-
-                      </license-picker>
-                    </p>
             </div>
         </div>
 

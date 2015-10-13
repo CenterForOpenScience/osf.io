@@ -14,7 +14,7 @@ import time
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 
-from modularodm import Q, fields
+from modularodm import Q
 from modularodm.exceptions import ValidationError
 from dateutil.parser import parse as parse_date
 
@@ -245,7 +245,6 @@ class TestProjectViews(OsfTestCase):
         assert_false(ret)
         self.project.reload()
         assert_true(self.project.is_contributor(self.user2))
-
 
     def test_can_view_nested_project_as_admin(self):
         self.parent_project = NodeFactory(
@@ -639,7 +638,6 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(data['errors']), 2)
 
-
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive')
     def test_registered_projects_contributions(self, mock_archive):
@@ -974,6 +972,22 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302)
         assert_in(self.project.web_url_for('project_statistics', _guid=True), res.location)
+
+    def test_update_node(self):
+        url = self.project.api_url_for('update_node')
+        res = self.app.put_json(url, {'title': 'newtitle'}, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(self.project.title, 'newtitle')
+
+    # Regression test
+    def test_update_node_with_tags(self):
+        self.project.add_tag('cheezebørger', auth=Auth(self.project.creator), save=True)
+        url = self.project.api_url_for('update_node')
+        res = self.app.put_json(url, {'title': 'newtitle'}, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(self.project.title, 'newtitle')
 
 
 class TestEditableChildrenViews(OsfTestCase):

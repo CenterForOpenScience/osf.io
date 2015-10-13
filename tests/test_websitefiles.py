@@ -422,10 +422,12 @@ class TestFileObj(FilesTestCase):
         mock_response = mock.Mock(status_code=200)
         mock_response.json.return_value = {
             'data': {
-                'name': 'fairly',
-                'modified': '2015',
-                'size': 0xDEADBEEF,
-                'materialized': 'ephemeral',
+                'attributes': {
+                    'name': 'fairly',
+                    'modified': '2015',
+                    'size': 0xDEADBEEF,
+                    'materialized': 'ephemeral',
+                }
             }
         }
         mock_requests.return_value = mock_response
@@ -448,10 +450,12 @@ class TestFileObj(FilesTestCase):
         mock_response = mock.Mock(status_code=200)
         mock_response.json.return_value = {
             'data': {
-                'name': 'fairly',
-                'modified': '2015',
-                'size': 0xDEADBEEF,
-                'materialized': 'ephemeral',
+                'attributes': {
+                    'name': 'fairly',
+                    'modified': '2015',
+                    'size': 0xDEADBEEF,
+                    'materialized': 'ephemeral',
+                }
             }
         }
         mock_requests.return_value = mock_response
