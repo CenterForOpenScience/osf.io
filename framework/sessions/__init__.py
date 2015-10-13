@@ -5,6 +5,7 @@ import urllib
 import urlparse
 import bson.objectid
 import httplib as http
+from datetime import datetime
 
 import itsdangerous
 
@@ -150,6 +151,8 @@ def before_request():
             session.data['auth_user_username'] = user.username
             session.data['auth_user_id'] = user._primary_key
             session.data['auth_user_fullname'] = user.fullname
+            user.date_last_login = datetime.utcnow()
+            user.save()
         else:
             # Invalid key: Not found in database
             session.data['auth_error_code'] = http.FORBIDDEN
@@ -162,6 +165,11 @@ def before_request():
         try:
             session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
             session = Session.load(session_id) or Session(_id=session_id)
+            from website.models import User
+            user = User.load(session.data.get('auth_user_id'))
+            if user:
+                user.date_last_login = datetime.utcnow()
+                user.save()
             set_session(session)
             return
         except:

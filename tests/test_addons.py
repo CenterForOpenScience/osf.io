@@ -609,7 +609,7 @@ class TestAddonFileViews(OsfTestCase):
 
         args, kwargs = mock_view_file.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[0].user, self.user)
+        assert_equals(args[0].user._id, self.user._id)
         assert_equals(args[1], self.project)
         assert_equals(args[2], file_node)
         assert_true(isinstance(args[3], file_node.touch(None).__class__))
@@ -628,7 +628,7 @@ class TestAddonFileViews(OsfTestCase):
 
         args, kwargs = mock_view_file.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[0].user, self.user)
+        assert_equals(args[0].user._id, self.user._id)
         assert_equals(args[1], self.project)
         assert_equals(args[2], file_node)
         assert_true(isinstance(args[3], file_node.touch(None).__class__))

@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime
+
 from framework.sessions import session, create_session, Session
 from modularodm import Q
 from framework import bcrypt
@@ -40,6 +42,8 @@ def authenticate(user, access_token, response):
         'auth_user_fullname': user.fullname,
         'auth_user_access_token': access_token,
     })
+    user.date_last_login = datetime.utcnow()
+    user.save()
     response = create_session(response, data=data)
     return response
 

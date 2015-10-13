@@ -38,26 +38,29 @@ class TestQueuedMail(OsfTestCase):
         return mail
 
     @mock.patch('website.mails.queued_mails.send_mail')
-    def test_no_login_callback_for_active_user(self, mock_mail):
-        mail = self.queue_mail(mail=mails.NO_LOGIN)
-        self.user.date_last_login = datetime.utcnow() + timedelta(seconds=10)
-        self.user.save()
+    def test_no_login_presend_for_active_user(self, mock_mail):
+        user = factories.AuthUserFactory()
+        mail = self.queue_mail(mail=mails.NO_LOGIN, user=user)
+        user.date_last_login = datetime.utcnow() + timedelta(seconds=10)
+        user.save()
         assert_false(mail.send_mail())
 
     @mock.patch('website.mails.queued_mails.send_mail')
-    def test_no_login_callback_for_inactive_user(self, mock_mail):
-        self.user.date_last_login = datetime.utcnow() - timedelta(weeks=10)
-        self.user.save()
-        mail = self.queue_mail(mail=mails.NO_LOGIN)
+    def test_no_login_presend_for_inactive_user(self, mock_mail):
+        user = factories.AuthUserFactory()
+        mail = self.queue_mail(mail=mails.NO_LOGIN, user=user)
+        user.date_last_login = datetime.utcnow() - timedelta(weeks=10)
+        user.save()
+        assert_true(datetime.utcnow() - timedelta(days=1) > user.date_last_login)
         assert_true(mail.send_mail())
 
     @mock.patch('website.mails.queued_mails.send_mail')
-    def test_no_addon_callback(self, mock_mail):
+    def test_no_addon_presend(self, mock_mail):
         mail = self.queue_mail(mail=mails.NO_ADDON)
         assert_true(mail.send_mail())
 
     @mock.patch('website.mails.queued_mails.send_mail')
-    def test_new_public_project_callback_for_no_project(self, mock_mail):
+    def test_new_public_project_presend_for_no_project(self, mock_mail):
         mail = self.queue_mail(
             mail=mails.NEW_PUBLIC_PROJECT,
             project_title='Oh noes',
@@ -66,7 +69,7 @@ class TestQueuedMail(OsfTestCase):
         assert_false(mail.send_mail())
 
     @mock.patch('website.mails.queued_mails.send_mail')
-    def test_new_public_project_callback_success(self, mock_mail):
+    def test_new_public_project_presend_success(self, mock_mail):
         node = factories.ProjectFactory()
         node.is_public = True
         node.save()
@@ -78,7 +81,7 @@ class TestQueuedMail(OsfTestCase):
         assert_true(mail.send_mail())
 
     @mock.patch('website.mails.queued_mails.send_mail')
-    def test_welcome_osf4m_callback(self, mock_mail):
+    def test_welcome_osf4m_presend(self, mock_mail):
         self.user.date_last_login = datetime.utcnow() - timedelta(days=13)
         self.user.save()
         mail = self.queue_mail(
