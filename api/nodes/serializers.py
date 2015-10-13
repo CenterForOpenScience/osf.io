@@ -33,7 +33,6 @@ class NodeSerializer(JSONAPISerializer):
         'title',
         'description',
         'public',
-        'registration',
         'tags',
         'category',
     ])
