@@ -20,7 +20,7 @@ def dict_error_formatting(error):
             error_description = [error_description]
 
         if error_key in top_level_error_keys:
-            formatted_error_list.append({error_key: error_description[0]})
+            formatted_error_list.extend({error_key: description} for description in error_description)
         elif error_key in resource_object_identifiers:
             formatted_error_list.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
         elif error_key == 'non_field_errors':
