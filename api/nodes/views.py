@@ -593,14 +593,44 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
 # TODO: Support creating registrations
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
-    """Registrations of the current node.
+    """Node Registrations.
 
-    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
-    created for the current node.
+    Registrations are read-only snapshots of a project. This view is a list of all the registrations of the current node.
 
-    **TODO: registrations via api are still a WIP**
+    Paginated list of registrations are ordered by their `date_modified`.  Each resource contains the full representation
+    of the registration, meaning additional requests to an individual registrations's detail view are not necessary.
 
-     """
+    ##Registration Attributes
+
+    Registrations have the "registrations" `type`.
+
+        name               type               description
+        ---------------------------------------------------------------------------------
+        retracted          boolean            has this registration been retracted?
+        public             boolean            has this registration been made publicly-visible?
+        date_registered    iso8601 timestamp  timestamp that the registration was created
+
+    ##Relationships
+
+    ###Registered from
+
+    The registration is branched from this node.
+
+    ###Registered by
+
+    The registration was initiated by this user.
+
+    ###
+    ###
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    #This request/response
+
+    """
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
