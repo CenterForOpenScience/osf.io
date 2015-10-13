@@ -59,9 +59,9 @@ CitationWidget.prototype.init = function() {
         var styleRequest = $.get(styleUrl);
         var citationRequest = $.get(ctx.node.urls.api + 'citation/');
         $.when(styleRequest, citationRequest).done(function(style, data) {
-            var citeproc = citations.makeCiteproc(style[0], data[0], 'text');
+            var citeproc = citations.makeCiteproc(style[0], data[0], 'html');
             var items = citeproc.makeBibliography()[1];
-            self.$citationElement.text(items[0]).slideDown();
+            self.$citationElement.html(items[0]).slideDown();
         }).fail(function(jqxhr, status, error) {
             $osf.growl(
                 'Citation render failed',

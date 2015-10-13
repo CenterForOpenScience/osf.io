@@ -256,11 +256,11 @@
             <div class="panel-body" style="display:none">
                 <dl id="citationList" class="citation-list">
                     <dt>APA</dt>
-                        <dd class="citation-text" data-bind="text: apa"></dd>
+                        <dd class="citation-text" data-bind="html: apa"></dd>
                     <dt>MLA</dt>
-                        <dd class="citation-text" data-bind="text: mla"></dd>
+                        <dd class="citation-text" data-bind="html: mla"></dd>
                     <dt>Chicago</dt>
-                        <dd class="citation-text" data-bind="text: chicago"></dd>
+                        <dd class="citation-text" data-bind="html: chicago"></dd>
                 </dl>
                 <p><strong>More</strong></p>
                 <div id="citationStylePanel" class="citation-picker">

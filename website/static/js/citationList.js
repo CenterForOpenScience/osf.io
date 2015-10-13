@@ -35,9 +35,9 @@ ViewModel.prototype.fetch = function() {
     ];
     var requests = [citationRequest].concat(styleRequests);
     $.when.apply(self, requests).done(function(data, apa, mla, chicago) {
-        self.apa(formatCitation(apa[0], data[0], 'text'));
-        self.mla(formatCitation(mla[0], data[0], 'text'));
-        self.chicago(formatCitation(chicago[0], data[0], 'text'));
+        self.apa(formatCitation(apa[0], data[0], 'html'));
+        self.mla(formatCitation(mla[0], data[0], 'html'));
+        self.chicago(formatCitation(chicago[0], data[0], 'html'));
     }).fail(function() {
         console.log('Could not load citations');
     });
