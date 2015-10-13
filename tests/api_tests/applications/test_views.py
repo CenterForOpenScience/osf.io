@@ -144,7 +144,7 @@ class TestApplicationDetail(ApiTestCase):
 
         self.missing_type = {
             'data': {
-                'id': self.user1_app._id,
+                'id': self.user1_app.client_id,
                 'attributes': {
                     'name': 'A shiny new application',
                     'home_url': 'http://osf.io',
@@ -167,7 +167,7 @@ class TestApplicationDetail(ApiTestCase):
 
         self.incorrect_type = {
             'data': {
-                'id': self.user1_app._id,
+                'id': self.user1_app.client_id,
                 'type': 'Wrong type.',
                 'attributes': {
                     'name': 'A shiny new application',
@@ -177,9 +177,9 @@ class TestApplicationDetail(ApiTestCase):
             }
         }
 
-        self.correct =  {
+        self.correct = {
             'data': {
-                'id': self.user1_app._id,
+                'id': self.user1_app.client_id,
                 'type': 'applications',
                 'attributes': {
                     'name': 'A shiny new application',
@@ -227,7 +227,7 @@ class TestApplicationDetail(ApiTestCase):
         res = self.app.patch_json_api(self.user1_app_url,
                              {'data': {'attributes':
                                   {'name': new_name},
-                              'id': self.user1_app._id,
+                              'id': self.user1_app.client_id,
                               'type': 'applications'
                              }}, auth=self.user1.auth, expect_errors=True)
         user1_app.reload()
@@ -248,7 +248,7 @@ class TestApplicationDetail(ApiTestCase):
         res = self.app.patch_json_api(self.user1_app_url,
                                       {'data': {
                                           'attributes': {"name": new_name},
-                                          'id': self.user1_app._id,
+                                          'id': self.user1_app.client_id,
                                           'type': 'applications'}}, auth=self.user1.auth)
         assert_equal(res.status_code, 200)
 
@@ -267,7 +267,6 @@ class TestApplicationDetail(ApiTestCase):
 
     def test_update_application(self):
         res = self.app.put_json_api(self.user1_app_url, self.correct, auth=self.user1.auth, expect_errors=True)
-        print res
         assert_equal(res.status_code, 200)
 
     def test_update_application_incorrect_type(self):
@@ -287,7 +286,7 @@ class TestApplicationDetail(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_update_application_no_attributes(self):
-        payload = {'id': self.user1_app._id, 'type': 'applications', 'name': 'The instance formerly known as Prince'}
+        payload = {'id': self.user1_app.client_id, 'type': 'applications', 'name': 'The instance formerly known as Prince'}
         res = self.app.put_json_api(self.user1_app_url, payload, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
@@ -308,7 +307,13 @@ class TestApplicationDetail(ApiTestCase):
         assert_equal(res.status_code, 400)
 
     def test_partial_update_application_no_attributes(self):
-        payload = {'data': {'id': self.user1_app._id, 'type': 'applications', 'name': 'The instance formerly known as Prince'}}
+        payload = {
+            'data':
+                {'id': self.user1_app.client_id,
+                 'type': 'applications',
+                 'name': 'The instance formerly known as Prince'
+                 }
+        }
         res = self.app.patch_json_api(self.user1_app_url, payload, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 

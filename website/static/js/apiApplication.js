@@ -46,6 +46,8 @@ var ApplicationData = oop.defclass({
             });
 
         // Other fields. Owner and client ID should never change within this view.
+        this.id = data.id;
+
         this.owner = attributes.owner;
         this.clientId = attributes.client_id;
         this.clientSecret = ko.observable(attributes.client_secret);
@@ -61,14 +63,20 @@ var ApplicationData = oop.defclass({
     },
 
     serialize: function () {
-        return { // Convert data to JSON-serializable format consistent with API
-            name: this.name(),
-            description: this.description() || '',
-            home_url: this.homeUrl(),
-            callback_url: this.callbackUrl(),
-            client_id: this.clientId,
-            client_secret: this.clientSecret(),
-            owner: this.owner
+        return { // Convert data to JSON-serializable format consistent with JSON API v1.0 spec
+            data: {
+                id: this.id,
+                type: 'applications',
+                attributes: {
+                    name: this.name(),
+                    description: this.description() || '',
+                    home_url: this.homeUrl(),
+                    callback_url: this.callbackUrl(),
+                    client_id: this.clientId,
+                    client_secret: this.clientSecret(),
+                    owner: this.owner
+                }
+            }
         };
     }
 });

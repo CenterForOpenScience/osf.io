@@ -10,9 +10,6 @@ var $osf = require('js/osfHelpers');
 require('js/project');
 
 require('js/registerNode');
-
-require('js/licensePicker');
-
 var node = window.contextVars.node;
 
 
