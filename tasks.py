@@ -283,11 +283,25 @@ def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors
 
 
 @task(aliases=['celery'])
-def celery_worker(level="debug"):
+def celery_worker(level="debug", hostname=None, beat=False):
     """Run the Celery process."""
-    # beat sets up a cron, refer to website/settings/celeryconfig
-    cmd = 'celery worker -A framework.tasks -l {0} --beat'.format(level)
-    run(bin_prefix(cmd))
+    cmd = 'celery worker -A framework.tasks -l {0}'.format(level)
+    if hostname:
+        cmd = cmd + ' --hostname={}'.format(hostname)
+    # beat sets up a cron like scheduler, refer to website/settings
+    if beat:
+        cmd = cmd + ' --beat'
+    run(bin_prefix(cmd), pty=True)
+
+
+@task(aliases=['beat'])
+def celery_beat(level="debug", schedule=None):
+    """Run the Celery process."""
+    # beat sets up a cron like scheduler, refer to website/settings
+    cmd = 'celery beat -A framework.tasks -l {0}'.format(level)
+    if schedule:
+        cmd = cmd + ' --schedule={}'.format(schedule)
+    run(bin_prefix(cmd), pty=True)
 
 
 @task
@@ -448,25 +462,34 @@ def karma(single=False, sauce=False, browsers=None):
 
 
 @task
-def wheelhouse(addons=False, release=False, dev=False):
+def wheelhouse(addons=False, release=False, dev=False, metrics=False):
+    """Install python dependencies.
+
+    Examples:
+
+        inv wheelhouse --dev
+        inv wheelhouse --addons
+        inv wheelhouse --release
+        inv wheelhouse --metrics
+    """
+    if release or addons:
+        for directory in os.listdir(settings.ADDON_PATH):
+            path = os.path.join(settings.ADDON_PATH, directory)
+            if os.path.isdir(path):
+                req_file = os.path.join(path, 'requirements.txt')
+                if os.path.exists(req_file):
+                    cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
+                    run(cmd, pty=True)
     if release:
         req_file = os.path.join(HERE, 'requirements', 'release.txt')
     elif dev:
         req_file = os.path.join(HERE, 'requirements', 'dev.txt')
+    elif metrics:
+        req_file = os.path.join(HERE, 'requirements', 'metrics.txt')
     else:
         req_file = os.path.join(HERE, 'requirements.txt')
     cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
     run(cmd, pty=True)
-
-    if not addons:
-        return
-    for directory in os.listdir(settings.ADDON_PATH):
-        path = os.path.join(settings.ADDON_PATH, directory)
-        if os.path.isdir(path):
-            req_file = os.path.join(path, 'requirements.txt')
-            if os.path.exists(req_file):
-                cmd = 'pip wheel --find-links={} -r {} --wheel-dir={}'.format(WHEELHOUSE_PATH, req_file, WHEELHOUSE_PATH)
-                run(cmd, pty=True)
 
 
 @task

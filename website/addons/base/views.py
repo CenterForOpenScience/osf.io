@@ -1,8 +1,10 @@
 import os
 import uuid
 import httplib
-import functools
+import datetime
 
+import jwe
+import jwt
 import furl
 from flask import request
 from flask import redirect
@@ -42,8 +44,10 @@ FILE_GONE_ERROR_MESSAGE = u'''
 .file-delete{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This link to the file "{file_name}" is not longer valid.
+This link to the file "{file_name}" is no longer valid.
 </div>'''
+
+WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
 
 @decorators.must_have_permission('write')
@@ -147,23 +151,7 @@ def make_auth(user):
     return {}
 
 
-def restrict_addrs(*addrs):
-    def wrapper(func):
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            remote = request.remote_addr
-            if remote not in addrs:
-                raise HTTPError(httplib.FORBIDDEN)
-            return func(*args, **kwargs)
-        return wrapped
-    return wrapper
-
-
-restrict_waterbutler = restrict_addrs(*settings.WATERBUTLER_ADDRS)
-
-
 @collect_auth
-@restrict_waterbutler
 def get_auth(auth, **kwargs):
     cas_resp = None
     if not auth.user:
@@ -181,13 +169,23 @@ def get_auth(auth, **kwargs):
             if cas_resp.authenticated:
                 auth.user = User.load(cas_resp.user)
 
-        if not auth.user:
-            auth.user = User.from_cookie(request.args.get('cookie'))
+    try:
+        data = jwt.decode(
+            jwe.decrypt(request.args.get('payload', '').encode('utf-8'), WATERBUTLER_JWE_KEY),
+            settings.WATERBUTLER_JWT_SECRET,
+            options={'require_exp': True},
+            algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+        )['data']
+    except (jwt.InvalidTokenError, KeyError):
+        raise HTTPError(httplib.FORBIDDEN)
+
+    if not auth.user:
+        auth.user = User.from_cookie(data.get('cookie', ''))
 
     try:
-        action = request.args['action']
-        node_id = request.args['nid']
-        provider_name = request.args['provider']
+        action = data['action']
+        node_id = data['nid']
+        provider_name = data['provider']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
@@ -203,20 +201,23 @@ def get_auth(auth, **kwargs):
 
     try:
         credentials = provider_settings.serialize_waterbutler_credentials()
-        settings = provider_settings.serialize_waterbutler_settings()
+        waterbutler_settings = provider_settings.serialize_waterbutler_settings()
     except exceptions.AddonError:
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
-    return {
-        'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
-        'credentials': credentials,
-        'settings': settings,
-        'callback_url': node.api_url_for(
-            ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
-            _absolute=True,
-        ),
-    }
+    return {'payload': jwe.encrypt(jwt.encode({
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+        'data': {
+            'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
+            'credentials': credentials,
+            'settings': waterbutler_settings,
+            'callback_url': node.api_url_for(
+                ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
+                _absolute=True,
+            ),
+        }
+    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
 
 
 LOG_ACTION_MAP = {
@@ -231,7 +232,6 @@ LOG_ACTION_MAP = {
 
 
 @must_be_signed
-@restrict_waterbutler
 @must_be_valid_project
 def create_waterbutler_log(payload, **kwargs):
     try:
@@ -332,6 +332,12 @@ def create_waterbutler_log(payload, **kwargs):
                 source_addon=payload['source']['addon'],
                 destination_addon=payload['destination']['addon'],
             )
+
+        if payload.get('error'):
+            # Action failed but our function succeeded
+            # Bail out to avoid file_signals
+            return {'status': 'success'}
+
     else:
         try:
             metadata = payload['metadata']
@@ -489,13 +495,14 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             'message_long': 'This file does not exist'
         })
 
+    # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':
         return make_response(('', 200, {
-            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None))
+            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier))
         }))
 
     if action == 'download':
-        return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None)))
+        return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier)))
 
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
