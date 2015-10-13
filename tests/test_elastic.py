@@ -49,6 +49,9 @@ def query_user(name):
     term = 'category:user AND "{}"'.format(name)
     return query(term)
 
+def query_file(name):
+    term = 'category:file AND "{}"'.format(name)
+    return query(term)
 
 def retry_assertion(interval=0.3
                     , retries=3):
@@ -816,8 +819,16 @@ class TestSearchMigration(SearchTestCase):
 
 class TestSearchFiles(SearchTestCase):
 
+    def setUp(self):
+        super(TestSearchFiles, self).setUp()
+        self.node = ProjectFactory(is_public=True, title='node')
+        self.osfstor = self.node.get_addon('osfstorage')
+        self.root = self.osfstor.root_node
+
     def test_search_file(self):
-        pass
+        self.root.append_file('NightMoves.wav')
+        find = query_file('NightMoves.wav')
+        assert_equal(len(find), 1)
 
     def test_upload_file(self):
         pass
