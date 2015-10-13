@@ -11,11 +11,21 @@ from api.registrations.serializers import (
     RegistrationSerializer,
     RegistrationDetailSerializer
 )
+from api.base.utils import get_object_or_error
 
 from api.nodes.views import NodeMixin, ODMFilterMixin
 from api.nodes.permissions import (
     ContributorOrPublic,
     ReadOnlyIfRegistration)
+
+
+class RegistrationMixin(NodeMixin):
+    """Mixin with convenience methods for retrieving the current registration based on the
+    current URL. By default, fetches the current node based on the registration_id kwarg.
+    """
+
+    serializer_class = RegistrationSerializer
+    node_lookup_url_kwarg = 'registration_id'
 
 
 class RegistrationList(generics.ListAPIView, ODMFilterMixin):
@@ -64,7 +74,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
-                           "type": "nodes", # required
+                           "type": "registrations", # required
                            "attributes": {
                              "title":       {title},          # required
                              "category":    {category},       # required
@@ -128,7 +138,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         return Node.find(query)
 
 
-class RegistrationDetail(generics.RetrieveAPIView, NodeMixin):
+class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
     """Details about a given node (project or component). *Writeable*.
 
     On the front end, nodes are considered 'projects' or 'components'. The difference between a project and a component
