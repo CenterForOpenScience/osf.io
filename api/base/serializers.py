@@ -88,12 +88,12 @@ class TypeField(ser.CharField):
     # Overrides CharField
     def to_internal_value(self, data):
         request_data = self.context['request'].data
-        if isinstance(request_data, list):
-            meta = self.root.child.Meta.type_
+        if isinstance(self.root, JSONAPIListSerializer):
+            type_ = self.root.child.Meta.type_
         else:
-            meta = self.root.Meta.type_
+            type_ = self.root.Meta.type_
 
-        if meta != data:
+        if type_ != data:
             raise Conflict()
 
         return super(TypeField, self).to_internal_value(data)
