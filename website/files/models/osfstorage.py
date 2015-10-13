@@ -4,7 +4,6 @@ import os
 
 from modularodm import Q
 
-from website.search import search
 from website.files import exceptions
 from website.files.models.base import File, Folder, FileNode, FileVersion
 
@@ -131,10 +130,12 @@ class OsfStorageFile(OsfStorageFileNode, File):
             return None
 
     def delete(self, user=None, parent=None):
+        from website.search import search
         search.update_file(self, delete=True)
         return super(OsfStorageFile, self).delete(user, parent)
 
     def save(self, skip_search=False):
+        from website.search import search
         ret = super(OsfStorageFile, self).save()
         if not skip_search:
             search.update_file(self)
