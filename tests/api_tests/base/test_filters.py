@@ -31,6 +31,7 @@ class FakeSerializer(ser.Serializer):
     date_field = ser.DateField()
     datetime_field = ser.DateTimeField()
     int_field = ser.IntegerField()
+    float_field = ser.FloatField()
     bool_field = ser.BooleanField(source='foobar')
 
 class FakeView(FilterMixin):
@@ -50,7 +51,7 @@ class TestFilterMixin(ApiTestCase):
             'filter[int_field]': '42',
             'filter[bool_field]': 'false',
         }
-        
+
         fields = self.view.parse_query_params(query_params)
         assert_in('string_field', fields)
         assert_equal(fields['string_field'][0]['op'], 'icontains')
@@ -194,9 +195,13 @@ class TestFilterMixin(ApiTestCase):
         assert_equal(value, parser.parse('2014-12-12'))
 
     def test_convert_value_number(self):
-        value = 9000
+        value = '9000'
         field = FakeSerializer._declared_fields['int_field']
         value = self.view.convert_value(value, field)
-        assert_true(isinstance(value, float))
         assert_equal(value, 9000)
-        
+
+        value = '42'
+        orig_type = type(value)
+        field = FakeSerializer._declared_fields['float_field']
+        value = self.view.convert_value(value, field)
+        assert_equal(value, 42.0)

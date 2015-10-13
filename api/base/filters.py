@@ -4,6 +4,8 @@ import operator
 from dateutil import parser as date_parser
 import datetime
 
+
+from django.core.exceptions import ValidationError
 from modularodm import Q
 from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
@@ -17,6 +19,9 @@ from api.base.exceptions import (
     InvalidFilterFieldError
 )
 from api.base import utils
+from api.base.serializers import JSONAPIListField
+
+from website.util import sanitize
 
 class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
@@ -49,6 +54,8 @@ class FilterMixin(object):
 
     COMPARABLE_FIELDS = NUMERIC_FIELDS + TIME_FIELDS
 
+    LIST_FIELDS = (ser.ListField, JSONAPIListField)
+
     def __init__(self, *args, **kwargs):
         super(FilterMixin, self).__init__(*args, **kwargs)
         if not self.serializer_class:
@@ -69,7 +76,7 @@ class FilterMixin(object):
             raise InvalidFilterFieldError(attribute=field_name)
         return self.serializer_class._declared_fields[field_name]
 
-    def _validate_operator(self, field, operator):
+    def _validate_operator(self, field, op):
         """
         Check that the operator and field combination is valid
 
@@ -77,16 +84,16 @@ class FilterMixin(object):
         :raises InvalidFilterMatchType: If the query contains comparisons against non-string or non-list fields
         :raises InvalidFilterOperator: If the filter operator is not a member of self.COMPARISON_OPERATORS
         """
-        if operator not in set(self.MATCH_OPERATORS + self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )):
-            raise InvalidFilterOperator(value=operator)
-        if operator in self.COMPARISON_OPERATORS:
+        if op not in set(self.MATCH_OPERATORS + self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )):
+            raise InvalidFilterOperator(value=op)
+        if op in self.COMPARISON_OPERATORS:
             if type(field) not in self.COMPARABLE_FIELDS:
                 raise InvalidFilterComparisonType(attribute=field.field_name)
-        if operator in self.MATCH_OPERATORS:
+        if op in self.MATCH_OPERATORS:
             if type(field) not in self.MATCHABLE_FIELDS:
                 raise InvalidFilterMatchType(attribute=field.field_name)
 
-    def _parse_date_param(self, field, field_name, operator, value):
+    def _parse_date_param(self, field, field_name, op, value):
         """
         Allow for ambiguous date filters. This supports operations like findings Nodes created on a given day
         even though Node.date_created is a specific datetime.
@@ -94,9 +101,9 @@ class FilterMixin(object):
         :return list<dict>: list of one (specific datetime) or more (date range) parsed query params
         """
         time_match = self.DATETIME_PATTERN.match(value)
-        if operator != 'eq' or time_match:
+        if op != 'eq' or time_match:
             return [{
-                'op': operator,
+                'op': op,
                 'value': self.convert_value(value, field)
             }]
         else:  # TODO: let times be as generic as possible (i.e. whole month, whole year)
@@ -122,6 +129,9 @@ class FilterMixin(object):
         """
         query = {}
         for key, value in query_params.iteritems():
+            key = sanitize.strip_html(key)
+            value = sanitize.strip_html(value)
+
             match = self.QUERY_PATTERN.match(key)
             if match:
                 field_name = match.groupdict()['field'].strip()
@@ -175,10 +185,15 @@ class FilterMixin(object):
                     value=value,
                     field_type='date'
                 )
-        elif field_type in self.NUMERIC_FIELDS:
-            return float(value)
+        elif field_type in self.LIST_FIELDS:
+            return value
         else:
-            return value.strip()
+            try:
+                return field.to_internal_value(value)
+            except ValidationError:
+                raise InvalidFilterValue(
+                    value=value,
+                )
 
 
 class ODMFilterMixin(FilterMixin):
@@ -301,7 +316,7 @@ class ListFilterMixin(FilterMixin):
         elif isinstance(field, ser.CharField):
             return_val = [
                 item for item in default_queryset
-                if params['value'] in getattr(item, field_name, None).lower()
+                if params['value'] in getattr(item, field_name, {}).lower()
             ]
         else:
             return_val = [
