@@ -45,7 +45,7 @@ def welcome_osf4m(email):
     """
     # In line import to prevent circular importing
     from website.files.models import OsfStorageFile
-    if email.user.date_last_login > datetime.utcnow() - timedelta(days=12):
+    if email.user.date_last_login > datetime.utcnow() - timedelta(settings.WELCOME_OSF4M_WAIT_TIME_GRACE):
         return False
     upload = OsfStorageFile.load(email.data['fid'])
     if upload:
