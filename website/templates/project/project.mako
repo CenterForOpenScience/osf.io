@@ -254,14 +254,38 @@
                 </div>
             </div>
             <div class="panel-body" style="display:none">
-                <dl id="citationList" class="citation-list">
-                    <dt>APA</dt>
-                        <dd class="citation-text" data-bind="text: apa"></dd>
-                    <dt>MLA</dt>
-                        <dd class="citation-text" data-bind="text: mla"></dd>
-                    <dt>Chicago</dt>
-                        <dd class="citation-text" data-bind="text: chicago"></dd>
-                </dl>
+                <div id="citationList">
+                    <div class="citation-list">
+                        <div class="citation-name">APA</div>
+                            <span class="citation-text" data-bind="text: apa"></span>
+                        <div class="citation-name">MLA</div>
+                            <span class="citation-text" data-bind="text: mla"></span>
+                        <div class="citation-name">Chicago</div>
+                            <span class="citation-text" data-bind="text: chicago"></span>
+                        <div data-bind="foreach: citations">
+                            <!-- ko if: view() === 'view' -->
+                                <div class="citation-name">{{name}}
+                                    <button class="btn btn-default btn-sm" data-bind="click: function() {edit($parent)}"><i class="fa fa-edit"></i> Edit</button>
+                                    <button class="btn btn-danger btn-sm" data-bind="click: function() {removeSelf($parent)}"><i class="fa fa-trash-o"></i> Remove</button>
+                                </div>
+                                <span data-bind="text: text"></span>
+                            <!-- /ko -->
+                            <!-- ko if: view() === 'edit' -->
+                                <div class="citation-name">Name</div>
+                                <input data-bind="if: name !== undefined, value: name" class="form-control"/>
+                                <div class="citation-name">Citation</div>
+                                <textarea data-bind="if: text !== undefined, value: text" class="form-control" rows="4"></textarea>
+                                <div class="m-t-md">
+                                    <button class="btn btn-success" data-bind="click: function() {save($parent)}">Save</button>
+                                    <button class="btn btn-danger" data-bind="click: function() {cancel($parent)}">Cancel</button>
+                                </div>
+                            <!-- /ko -->
+                        </div>
+                    </div>
+                    <!-- ko ifnot: editing() -->
+                        <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default m-v-md"><i class="fa fa-plus"></i> Add Alternative Citation</button>
+                    <!-- /ko -->
+                </div>
                 <p><strong>More</strong></p>
                 <div id="citationStylePanel" class="citation-picker">
                     <input id="citationStyleInput" type="hidden" />

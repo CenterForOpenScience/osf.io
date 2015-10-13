@@ -46,7 +46,7 @@ if ($comments.length) {
 
 // Initialize CitationWidget if user isn't viewing through an anonymized VOL
 if (!ctx.node.anonymous && !ctx.node.isRetracted) {
-    new CitationList('#citationList');
+    new CitationList('#citationList', [{name: 'test', text: 'test text'}], ctx.currentUser);
     new CitationWidget('#citationStyleInput', '#citationText');
 }
 $(document).ready(function () {
