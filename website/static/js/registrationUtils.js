@@ -109,7 +109,36 @@ Question.prototype.toggleUploader = function() {
     this.showUploader(!this.showUploader());
 };
 
+
 /**
+ * @class Page
+ * A single page within a draft registration
+ *
+ * @param {Object} data: serialized page from a registration schema
+ *
+ * @property {ko.observableArray[Question]} questions
+ * @property {String} title
+ * @property {String} id
+ **/
+var Page = function(schemaPage, data) {
+    var self = this;
+    self.questions = ko.observableArray([]);
+    self.title = schemaPage.title;
+    self.id = schemaPage.id;
+
+    $.each(schemaPage.questions, function(id, questionSchema) {
+        if (data[id] && data[id].value) {
+            questionSchema.value = data[id].value;
+        }
+
+        self.questions.push(
+            new Question(questionSchema, id)
+        );
+    });
+};
+
+/**
+ * @class MetaSchema
  * Model for MetaSchema instances
  *
  * @param {Object} params: instantiation values
@@ -143,13 +172,6 @@ var MetaSchema = function(params) {
     self.fulfills = params.fulfills || [];
     self.messages = params.messages || {};
 
-    $.each(self.schema.pages, function(i, page) {
-        var mapped = {};
-        $.each(page.questions, function(qid, question) {
-            mapped[qid] = new Question(question, qid);
-        });
-        self.schema.pages[i].questions = mapped;
-    });
 };
 /**
  * @returns {Question[]} a flat list of the schema's questions
@@ -231,6 +253,11 @@ var Draft = function(params, metaSchema) {
             return Math.ceil(100 * (complete / total));
         }
         return 0;
+    });
+
+    self.pages = ko.observableArray([]);
+    $.each(self.schema().pages, function(id, pageData) {
+        self.pages.push(new Page(pageData, self.schemaData));
     });
 };
 Draft.prototype.preRegisterPrompts = function(response, confirm) {
@@ -315,24 +342,13 @@ var RegistrationEditor = function(urls, editorId) {
 
     self.draft = ko.observable();
 
-    self.currentQuestion = ko.observable();
-    // When the currentQuestion changes, save when it's rate-limited value changes
-    self.currentQuestion.subscribe(function(question) {
-         question.delayedValue.subscribe(self.save.bind(self));
-    });
     self.showValidation = ko.observable(false);
 
-    self.currentPages = ko.computed(function() {
-        var draft = self.draft();
-        if (!draft) {
-            return [];
-        }
-        var schema = draft.schema();
-        if (!schema) {
-            return [];
-        }
-        return schema.pages;
+    self.pages = ko.computed(function () {
+        // empty array if self.draft is not set.
+        return self.draft() ? self.draft().pages() : [];
     });
+    self.currentPage = ko.observable();
 
     self.lastSaveTime = ko.computed(function() {
         if (!self.draft()) {
@@ -377,23 +393,8 @@ RegistrationEditor.prototype.init = function(draft) {
         schemaData = draft.schemaData || {};
     }
 
-    var questions = self.flatQuestions();
-    $.each(questions, function(i, question) {
-        var val = schemaData[question.id];
-        if (val) {
-            if (question.type === 'object') {
-                $.each(question.properties, function(prop, subQuestion) {
-                    val = schemaData[question.id][prop];
-                    if (val) {
-                        subQuestion.value(val.value);
-                    }
-                });
-            } else {
-                question.value(val.value);
-            }
-        }
-    });
-    self.currentQuestion(questions.shift());
+    // Set currentPage to the first page
+    self.currentPage(self.draft().pages()[0]);
 };
 /**
  * @returns {Question[]} flat list of the current schema's questions
@@ -455,49 +456,13 @@ RegistrationEditor.prototype.check = function() {
     }
 };
 /**
- * Load the next question into the editor, wrapping around if needed
- **/
-RegistrationEditor.prototype.nextQuestion = function() {
-    var self = this;
-
-    var currentQuestion = self.currentQuestion();
-
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q) {
-        return q.id === currentQuestion.id;
-    });
-    if (index + 1 === questions.length) {
-        self.currentQuestion(questions.shift());
-    } else {
-        self.currentQuestion(questions[index + 1]);
-    }
-};
-/**
- * Load the previous question into the editor, wrapping around if needed
- **/
-RegistrationEditor.prototype.previousQuestion = function() {
-    var self = this;
-
-    var currentQuestion = self.currentQuestion();
-
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q) {
-        return q.id === currentQuestion.id;
-    });
-    if (index - 1 < 0) {
-        self.currentQuestion(questions.pop());
-    } else {
-        self.currentQuestion(questions[index - 1]);
-    }
-};
-/**
  * Select a page, selecting the first question on that page
  **/
 RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
 
     var firstQuestion = page.questions[Object.keys(page.questions)[0]];
-    self.currentQuestion(firstQuestion);
+    //self.currentQuestion(firstQuestion);
 };
 /**
  * Update draft primary key and updated time on server response
@@ -594,21 +559,10 @@ RegistrationEditor.prototype.save = function() {
     var metaSchema = self.draft().metaSchema;
     var schema = metaSchema.schema;
     var data = {};
-    $.each(schema.pages, function(i, page) {
-        $.each(page.questions, function(qid, question) {
-            if (question.type === 'object') {
-                var value = {};
-                $.each(question.properties, function(prop, subQuestion) {
-                    value[prop] = {
-                        value: subQuestion.value(),
-                    };
-                });
-                data[qid] = value;
-            } else {
-                data[qid] = {
-                    value: question.value(),
-                };
-            }
+
+    $.each(self.pages(), function (_, page) {
+        $.each(page.questions(), function (_, question) {
+            data[question.id] = {value: question.value()};
         });
     });
 
