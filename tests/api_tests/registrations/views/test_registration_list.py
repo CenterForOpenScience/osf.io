@@ -1,15 +1,16 @@
-# -*- coding: utf-8 -*-
+
 from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
+from website.models import Node
 from api.base.settings.defaults import API_BASE
 
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory)
-
+    AuthUserFactory
+)
 
 class TestRegistrationList(ApiTestCase):
 
@@ -28,8 +29,17 @@ class TestRegistrationList(ApiTestCase):
 
         self.user_two = AuthUserFactory()
 
+    def tearDown(self):
+        super(TestRegistrationList, self).tearDown()
+        Node.remove()
+
     def test_return_public_registrations_logged_out(self):
         res = self.app.get(self.url)
+
+        self.public_project.remove()
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['attributes']['registration'], True)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['attributes']['registration'], True)
@@ -38,8 +48,6 @@ class TestRegistrationList(ApiTestCase):
 
     def test_return_registrations_logged_in_contributor(self):
         res = self.app.get(self.url, auth=self.user.auth)
-        print res
-        print[self.project._id, self.registration_project._id, self.public_project._id, self.public_registration_project._id, self.user_two]
         assert_equal(len(res.json['data']), 2)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data'][0]['attributes']['registration'], True)
