@@ -325,7 +325,7 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if isinstance(field, ser.HyperlinkedRelatedField):
+            if isinstance(field, JSONAPIHyperlinkedIdentityField):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
