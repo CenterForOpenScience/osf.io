@@ -117,9 +117,9 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user. *Writeable*.
 
-    The User Detail endpoint retrieves information about for the user whose id is the final part of the path.  If `me`
+    The User Detail endpoint retrieves information about the user whose id is the final part of the path.  If `me`
     is given as the id, the record of the currently logged-in user will be returned.  The returned information includes
-    their bibliographic information and the date they registered.
+    the user's bibliographic information and the date the user registered.
 
     ##Attributes
 

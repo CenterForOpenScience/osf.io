@@ -7,7 +7,7 @@ from factory import SubFactory, Sequence, post_generation
 from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory
 
 from website.addons.dropbox.model import (
-    DropboxUserSettings, DropboxNodeSettings, DropboxFile
+    DropboxUserSettings, DropboxNodeSettings
 )
 
 
@@ -25,15 +25,3 @@ class DropboxNodeSettingsFactory(ModularOdmFactory):
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(DropboxUserSettingsFactory)
     folder = 'Camera Uploads'
-
-
-class DropboxFileFactory(ModularOdmFactory):
-    FACTORY_FOR = DropboxFile
-
-    node = SubFactory(ProjectFactory)
-    path = 'foo.txt'
-
-    @post_generation
-    def add_dropbox_addon(self, created, extracted):
-        self.node.add_addon('dropbox', auth=Auth(user=self.node.creator))
-        self.node.save()

@@ -6,11 +6,6 @@ var bootbox = require('bootbox');
 require('bootstrap.growl');
 var History = require('exports?History!history');
 
-var siteLicenses = require('js/licenses');
-var licenses = siteLicenses.list;
-var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
-var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;
-
 var $osf = require('js/osfHelpers');
 // Enable knockout punches
 ko.punches.enableAll();
@@ -39,16 +34,6 @@ var Tag = function(tagInfo){
     self.count = tagInfo.doc_count;
 };
 
-var License = function(name, count) {
-
-    this.name = name;
-    this.count = ko.observable(count);
-    
-    this.active = ko.observable(false);
-};
-License.prototype.toggleActive = function() {
-    this.active(!this.active());
-};
 
 var User = function(result){
     var self = this;
@@ -93,52 +78,6 @@ var ViewModel = function(params) {
     self.showClose = false;
     self.searchCSS = ko.observable('active');
     self.onSearchPage = true;
-
-    self.licenses = $.map(licenses, function(license) {
-        var l = new License(license.name, 0);
-        l.active.subscribe(function() {
-            self.search();
-        });
-        return l;
-    });
-    self.licenseNames = ko.computed(function() {
-        var sortedLicenses = self.licenses() || [];
-        sortedLicenses.sort(function(a, b) {
-            if (a.count() > b.count()) {
-                return -1;
-            }
-            else if (b.count() > a.count()) {
-                return 1;
-            }
-            else {
-                if (a.name > b.name) {
-                    return -1;
-                }
-                else {
-                    return 1;
-                }
-                return a.name > b.name;
-            }
-        });
-        return $.map(sortedLicenses, function(count, name) {
-            return name;
-        });
-    });
-    self.selectedLicenses = ko.pureComputed(function() {
-        return self.licenses().filter(function(license) {
-            return license.active();
-        });
-    });
-    self.showLicenses = ko.computed(function() {
-        return ['project', 'registration', 'component'].indexOf(self.category().name) >= 0;
-    });
-    self.category.subscribe(function(value) {
-        if (['project', 'registration', 'component'].indexOf(value) < 0) {
-            $.each(self.licenses(), function(i, license) {
-                license.active(false);
-            });
-        }
-    });
 
     // Maintain compatibility with hiding search bar elsewhere on the site
     self.toggleSearch = function() {
@@ -207,43 +146,14 @@ var ViewModel = function(params) {
         };
     });
 
-    self.filters = function(){
-        var licenses = self.selectedLicenses();
-        if (licenses.length) {
-            var filters = {
-                terms: {
-                    'license.name': licenses
-                }
-            };     
-            if (licenses.filter(function(l) {
-                return l.name === DEFAULT_LICENSE.name;
-            }).length) {
-                filters = {
-                    or: [
-                        filters, 
-                        {
-                            missing: {field: 'license'}
-                        }
-                    ]
-                };
-            }
-            return filters;
-        }
-        return null;
-    };
-
-    self.fullQuery = function(filters) {
+    self.fullQuery = ko.pureComputed(function() {
         var query = {
             filtered: {
                 query: self.queryObject()
             }
         };
-        if (filters) {
-            query.filtered.filter = filters;
-        }
-
         return query;
-    };
+    });
 
     self.sortCategories = function(a, b) {
         if(a.name === 'Total') {
@@ -280,7 +190,7 @@ var ViewModel = function(params) {
     };
 
     self._makeTagString = function(tagName) {
-        return 'tags:("' + tagName.replace(/"/g, '\\\"') + '")';        
+        return 'tags:("' + tagName.replace(/"/g, '\\\"') + '")';
     };
     self.addTag = function(tagName) {
         var tagString = self._makeTagString(tagName);
@@ -290,12 +200,12 @@ var ViewModel = function(params) {
                 query += ' AND ';
             }
             query += tagString;
-            self.query(query); 
-            self.onUpdateTags();                      
-        }     
+            self.query(query);
+            self.onUpdateTags();
+        }
     };
     self.removeTag = function(tagName, _, e) {
-        e.stopPropagation();            
+        e.stopPropagation();
         var query = self.query();
         var tagRegExp = /(?:AND)?\s*tags\:\([\'\"](.+?)[\'\"]\)/g;
         var matches = query.match(tagRegExp);
@@ -303,7 +213,7 @@ var ViewModel = function(params) {
         while (matches.length) {
             var match = matches.pop();
             if ((match.match(tagName) || []).length) {
-                query = query.replace(match, '');   
+                query = query.replace(match, '');
                 dirty = true;
             }
         }
@@ -334,8 +244,8 @@ var ViewModel = function(params) {
         self.query(query);
 
         var jsonData = {
-            query: self.fullQuery(self.filters()),
-            from: self.currentIndex(), 
+            query: self.fullQuery(),
+            from: self.currentIndex(),
             size: self.resultsPerPage()
         };
         var url = self.queryUrl + self.category().url();
@@ -348,27 +258,6 @@ var ViewModel = function(params) {
             self.results.removeAll();
             self.categories.removeAll();
             self.shareCategory('');
-
-            var licenseCounts = self.licenses();
-            var noneLicense;
-            ko.utils.arrayForEach(licenseCounts, function(l) {
-                l.count(0);
-                if (l.name === DEFAULT_LICENSE.name) {
-                    noneLicense = l;
-                }
-            });
-            noneLicense.count(0);
-            var nullLicenseCount = data.aggs.total || 0;
-            if ((data.aggs || {}).licenses)  {
-                $.each(data.aggs.licenses, function(key, value) {
-                    licenseCounts.filter(function(l) {
-                        return l.name === key;
-                    })[0].count(value);
-                    nullLicenseCount -= value;
-                });
-            }            
-            noneLicense.count(noneLicense.count() + nullLicenseCount);
-            self.licenses(licenseCounts);
 
             data.results.forEach(function(result){
                 if(result.category === 'user'){

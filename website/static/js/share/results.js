@@ -156,11 +156,15 @@ var Contributor = {
                     if (givenNameLength <= 0 && familyNameLength <= 0) {
                         utils.updateFilter(vm, 'match:contributors.name:' + contributor.name, true);
                     } else {
+                        var filters = [];
                         if (givenNameLength > 0) {
-                            utils.updateFilter(vm, 'match:contributors.givenName:' + contributor.givenName, true);
+                            filters.push('match:contributors.givenName:' + contributor.givenName);
                         }
                         if (familyNameLength > 0) {
-                            utils.updateFilter(vm, 'match:contributors.familyName:' + contributor.familyName, true);
+                            filters.push('match:contributors.familyName:' + contributor.familyName);
+                        }
+                        if(filters.length>0){
+                           utils.updateFilter(vm, filters, true);
                         }
                     }
                 }

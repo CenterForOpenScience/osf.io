@@ -12,7 +12,7 @@ from website import settings
 app = Celery()
 
 # TODO: Hardcoded settings module. Should be set using framework's config handler
-app.config_from_object('website.settings.celeryconfig')
+app.config_from_object('website.settings')
 
 if settings.SENTRY_DSN:
     client = Client(settings.SENTRY_DSN)
