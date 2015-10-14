@@ -10,6 +10,7 @@ def dict_error_formatting(error):
     """
 
     formatted_error_list = []
+
     # Error objects may have the following members. Title and id removed to avoid clash with "title" and "id" field errors.
     top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
 
@@ -48,12 +49,7 @@ def json_api_exception_handler(exc, context):
         message = response.data
 
         if isinstance(exc, JSONAPIException):
-            errors.extend([
-                {
-                    'source': exc.source,
-                    'detail': exc.detail,
-                }
-            ])
+            errors.extend([{'source': exc.source, 'detail': exc.detail}])
         elif isinstance(message, dict):
             errors.extend(dict_error_formatting(message))
         else:
@@ -67,7 +63,7 @@ def json_api_exception_handler(exc, context):
 
         response.data = {'errors': errors}
 
-        # For bulk operations: If 400 error, return request data with response.
+        # For bulk operations: If 400 error, return meta information containing request data.
         if response.status_code == 400 and "non_field_errors" not in message:
             request = context['request']
             if is_bulk_request(request):
