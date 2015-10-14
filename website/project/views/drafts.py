@@ -6,7 +6,6 @@ import functools
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
-from framework import status
 from framework.mongo import database
 from framework.mongo.utils import get_or_http_error, autoload
 from framework.exceptions import HTTPError
