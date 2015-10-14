@@ -70,8 +70,7 @@ def has_anonymous_link(node, auth):
     view_only_link = auth.private_key or request.args.get('view_only', '').strip('/')
     if not view_only_link:
         return False
-    if node.is_public:
-        return False
+
     return any(
         link.anonymous
         for link in node.private_links_active
