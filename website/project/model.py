@@ -3860,11 +3860,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
         else:
             return True
 
-    def update_metadata(self, metadata, save=True):
-        # TODO(barbour-em): delete or implement in schema
-        # if self.is_pending_review or self.is_approved:
-        #    raise NodeStateError('Cannot edit while this draft is being reviewed')
-
+    def update_metadata(self, metadata):
         changes = []
         for question_id, value in metadata.iteritems():
 
@@ -3875,8 +3871,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
         self.registration_metadata.update(metadata)
 
-        if save:
-            self.save()
         project_signals.draft_edited.send(changes)
         self.after_edit(changes)
         return changes

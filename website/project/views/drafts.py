@@ -185,6 +185,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
             draft.registration_schema = meta_schema
 
     draft.update_metadata(schema_data)
+    draft.save()
     return serialize_draft_registration(draft, auth), http.OK
 
 @autoload_draft

@@ -4146,6 +4146,7 @@ class TestDraftRegistration(OsfTestCase):
                 'value': 2,
             },
         })
+        self.draft.save()
         for key in ['foo', 'c']:
             assert_in(key, changes)
 
