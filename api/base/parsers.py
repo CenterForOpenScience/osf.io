@@ -1,9 +1,9 @@
 from rest_framework.parsers import JSONParser
 from rest_framework.exceptions import ParseError
 
+from api.base.utils import is_bulk_request
 from api.base.renderers import JSONAPIRenderer
 from api.base.exceptions import JSONAPIException
-
 
 NO_ATTRIBUTES_ERROR = 'Request must include /data/attributes.'
 NO_DATA_ERROR = 'Request must include /data.'
@@ -57,7 +57,9 @@ class JSONAPIParser(JSONParser):
 
         method = parser_context['request'].method
         if data:
-            if isinstance(data, list):
+            if is_bulk_request(stream):
+                if not isinstance(data, list):
+                    raise ParseError('Expected a list of items but got type "dict".')
                 data_collection = []
                 for data_object in data:
                     parsed_data = self.flatten_data(data_object, method, is_list=True)
@@ -66,6 +68,8 @@ class JSONAPIParser(JSONParser):
                 return data_collection
 
             else:
+                if isinstance(data, list):
+                    raise ParseError('Expected a dict of items but got type "list".')
                 return self.flatten_data(data, method)
 
         else:
