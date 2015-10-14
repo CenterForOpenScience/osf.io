@@ -3,8 +3,7 @@
 """
 First run 
     rm -rf website/addons/box/views/
-
-Then change the user_settings field of BoxNodeSettings to foreign_user_settings
+to remove old .pyc files that would interfere.
 """
 import sys
 import logging
