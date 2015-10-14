@@ -495,6 +495,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+     'ESIP2016W': {
+        'name': 'Earth Science Information Partners Winter Meeting 2016',
+        'info_url': 'http://commons.esipfed.org/2016WinterMeeting',
+        'logo_url': 'http://s30.postimg.org/m2uz2g4pt/ESIP.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
