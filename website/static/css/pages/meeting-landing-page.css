@@ -20,24 +20,42 @@
     position: relative;
 }
 
-@media screen and (max-width: 767px) {
-    .icon-bar .fa-custom-7x {
-        font-size: 40px;
-    }
-
-    .osf-meeting-header .fa-custom-8x {
-        font-size: 80px;
-    }
+.fa-custom-shadow {
+    display: inline-block  ;
+    -moz-border-radius: 60px;
+    -webkit-border-radius: 60px;
+    border-radius: 60px;
+    -moz-box-shadow: 0px 0px 2px #888;
+    -webkit-box-shadow: 0px 0px 8px #337AB7;
+    box-shadow: 0px 0px 8px #337AB7;
+    width: 70px;
+    height: 70px;
+    padding-top: 10px;
 }
 
-@media screen and (min-width: 768px) {
-    .icon-bar .fa-custom-7x {
-        font-size: 50px;
-    }
+.icon-bar .fa-custom-7x {
+    font-size: 50px;
+}
 
-    .osf-meeting-header .fa-custom-8x {
-        font-size: 100px;
-    }
+.osf-meeting-header .fa-custom-8x {
+    font-size: 100px;
+}
+
+.osf-meeting-header .fa-rocket {
+    border-radius: 85px;
+    box-shadow: 0px 0px 20px #E0E7EC;
+    width: 120px;
+    height: 120px;
+    padding-top: 13px;
+    padding-right: 12px;
+}
+
+.osf-meeting-header .fa-cloud-upload {
+    border-radius: 208px;
+    box-shadow: 0px 0px 20px #E0E7EC;
+    width: 120px;
+    height: 120px;
+    padding: 6px;
 }
 
 .org-logo img{
@@ -55,7 +73,7 @@
 }
 
 .osf-meeting-p {
-    font-size: 15px;
+    font-size: 16px;
 }
 .m-v-40 {
     margin-bottom: 40px;
@@ -64,8 +82,4 @@
 
 .m-b-60 {
     margin-bottom: 60px;
-}
-
-.m-v-15-p {
-   margin:0 15%
 }

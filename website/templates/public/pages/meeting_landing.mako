@@ -23,38 +23,44 @@
                 <h3>A <strong>free poster and presentation sharing service</strong> for academic meetings and conferences.</h3>
             </div>
             <div class="row">
-                <div class="col-sm-6 text-center m-b-60" >
+                <div class="col-md-6 col-lg-5 col-xl-4 text-center m-b-lg" >
                     <h3> For Conference Organizers </h3>
-                    <i class="fa fa-rocket fa-custom-8x"></i>
-                    <div class="p-h-lg text-left">
-                        <h4 class="text-justify m-v-15-p">Reigster your conference and get an easy submission process, a permanent link to your presentations, plus analytics about who has viewed and downloaded your work.</h4></div>
-                    <div class="p-h-xl p-v-md">
+                    <i class="fa fa-rocket fa-custom-8x m-v-sm"></i>
+                    <div class="text-left">
+                        <p class="osf-meeting-p">Register your conference and get an easy submission process, a permanent link to your presentations, plus analytics about who has viewed and downloaded your work.</p>
+                    </div>
+                    <div class="p-v-md">
                         <button class="btn btn-success btn-lg" type="button" data-toggle="collapse" data-target="#osf-meeting-register" aria-expanded="false" aria-controls="collapseExample">
                             Reigster
                         </button>
                     </div>
                     <div class="collapse" id="osf-meeting-register">
-                        <div class="well m-h-lg osf-box-lt box-round text-left m-v-15-p">
-                            <p>The OSF can host posters and talks for scholarly meetings. Submitting a presentation is easy—<strong>JUST send an email to the conference address</strong>, and we'll create an OSF project for you. You'll get a permanent link to your presentation, plus analytics about who has viewed and downloaded your work.</p>
-                            <p>OSF for Meetings is a product that we offer to academic conferences at no cost. To request poster and talk hosting for a conference, <strong>email us at contact@cos.io</strong>. We'll review and add your conference within one business day.</p>
+                        <div class="m-h-lg osf-box-lt p-md text-left">
+                            <p>OSF for Meetings is a product that we offer to academic conferences at no cost. To request poster and talk hosting for a conference:</p>
+                                <p class="text-center"><strong> JUST email us at <a href="mailto:contact@cos.io">contact@cos.io</a> </strong></p>
+                             <p>We'll review and add your conference within one business day.</p>
                         </div>
                     </div>
                 </div>
-                <div class="col-sm-6 text-center m-b-lg">
+                <div class="col-md-6 col-lg-5 col-lg-offset-2 col-xl-4 col-xl-offset-4 text-center m-b-lg">
                     <h3> For Conference Participants </h3>
-                    <i class="fa fa-cloud-upload fa-custom-8x"></i>
-                    <div class="p-h-xl text-left">
-                        <h4 class="text-justify m-v-15-p">Share your posters and papers and use the Open Science Framework to upload your slides and other supporting materials.</h4></div>
-                    <div class="p-h-xl p-v-md">
+                    <i class="fa fa-cloud-upload fa-custom-8x m-v-sm"></i>
+                    <div class="text-left">
+                        <p class="osf-meeting-p">Share your posters and papers and use the Open Science Framework to upload your slides and other supporting materials.</p></div>
+                    <div class="p-v-md">
                         <button class="btn btn-success btn-lg" type="button" data-toggle="collapse" data-target="#osf-meeting-upload" aria-expanded="false" aria-controls="collapseExample">
                             Upload
                         </button>
                     </div>
                     <div class="collapse" id="osf-meeting-upload">
-                        <div class="well m-h-lg osf-box-lt box-round text-left m-v-15-p">
-                            <p>The OSF can host posters and talks for scholarly meetings. Submitting a presentation is easy—<strong>JUST send an email to the conference address</strong>, and we'll create an OSF project for you. You'll get a permanent link to your presentation, plus analytics about who has viewed and downloaded your work.</p>
-                            <p>OSF for Meetings is a product that we offer to academic conferences at no cost. To request poster and talk hosting for a conference, email us at contact@cos.io. We'll review and add your conference within one business day.</p>
+                        <div class="m-h-lg osf-box-lt p-md text-left">
+                            <p>The OSF can host posters and talks for scholarly meetings.
+                                Submitting a presentation is easy.</p>
+                            <p class="text-center"><strong> JUST send an email to the conference address.</strong></p>
+                            <p>We'll create an OSF project for you. You'll get a permanent link to your presentation,
+                                plus analytics about who has viewed and downloaded your work.</p>
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -93,16 +99,16 @@
 
         <div class="row icon-bar m-v-40">
             <div class="col-md-4 col-sm-4 text-center ">
-                <div class="osf-box-lt box-round p-v-md m-t-xl m-h-md">
-                    <i class="fa fa-eye fa-custom-7x blue-icon"></i>
+                <div class="p-v-md m-t-xl m-h-md">
+                    <i class="fa fa-eye fa-custom-7x fa-custom-shadow blue-icon"></i>
                     <h3>Discover</h3>
                     <div class="p-h-lg">
                         <p class="osf-meeting-p">Wish you had a widely-known place for people to learn from your talk and/or poster, then you have found your answer.</p></div>
                 </div>
             </div>
             <div class="col-md-4 col-sm-4 text-center">
-                <div class="osf-box-lt box-round p-v-md  m-t-xl m-h-md">
-                    <i class="fa fa-users fa-custom-7x blue-icon"></i>
+                <div class=" p-v-md  m-t-xl m-h-md">
+                    <i class="fa fa-users fa-custom-7x fa-custom-shadow  blue-icon"></i>
                     <h3>Share</h3>
                     <div class="p-h-lg">
                         <p class="osf-meeting-p">OSF has increased accessibility and collaboration for researchers like no other platform… it is truly the first of it’s kind.</p>
@@ -110,8 +116,8 @@
                 </div>
             </div>
             <div class="col-md-4 col-sm-4 text-center">
-                <div class="osf-box-lt box-round p-v-md  m-t-xl m-h-md">
-                    <i class="fa fa-thumbs-up fa-custom-7x blue-icon"></i>
+                <div class="p-v-md  m-t-xl m-h-md">
+                    <i class="fa fa-thumbs-up fa-custom-7x fa-custom-shadow blue-icon"></i>
                     <h3>Trust</h3>
                     <div class="p-h-lg">
                         <p class="osf-meeting-p">OSF for Meetings is a trusted partner for over XX academic conferences. </p>
@@ -120,8 +126,8 @@
             </div>
         </div>
 
-        <div class="row text-center">
-            <h1> Who uses OSF for Meetings?</h1>
+        <div class="row text-center m-b-md">
+            <h2> Who uses OSF for Meetings?</h2>
         </div>
         <div class="row org-logo m-b-60">
             <div class="col-sm-3 col-xs-6  text-center">
