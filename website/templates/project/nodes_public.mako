@@ -8,10 +8,11 @@
 
             <div class="modal-body">
 
-                <!-- Whom to add -->
-
                 <div data-bind="if: page() == 'warning'">
-                <span data-bind="text:message"></span>
+                    <span data-bind="text:message"></span>
+                </div>
+                <div data-bind="if: page() == 'addon'">
+                    <span data-bind="text:message"></span>
                 </div>
                 <!-- Component selection page -->
                 <div data-bind="if:page()=='which'">
@@ -56,22 +57,25 @@
                 </div><!-- end component selection page -->
 
                 <!-- Invite user page -->
-                <div data-bind='if:page() === "invite"'>
+
+                <div data-bind='if:page() === "select"'>
                     <form class='form'>
-                        <div class="form-group">
-                            <label for="inviteUserName">Full Name</label>
-                            <input type="text" class='form-control' id="inviteName"
-                                placeholder="Full name" data-bind='value: inviteName, valueUpdate: "input"'/>
-                        </div>
-                        <div class="form-group">
-                            <label for="inviteUserEmail">Email</label>
-                            <input type="email" class='form-control' id="inviteUserEmail"
-                                    placeholder="Email" data-bind='value: inviteEmail' autofocus/>
-                        </div>
-                         <div class="help-block">
-                            <p>We will notify the user that they have been added to your project.</p>
-                            <p class='text-danger' data-bind='text: inviteError'></p>
-                        </div>
+        <div class="panel panel-default">
+            <div class="panel-heading clearfix">
+                <h3 class="panel-title">Files</h3>
+                <div class="pull-right">
+                   <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
+                </div>
+            </div>
+            <div class="panel-body">
+                <div id="treeGrid">
+                    <div class="spinner-loading-wrapper">
+                        <div class="logo-spin logo-lg"></div>
+                         <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                    </div>
+                </div>
+            </div>
+        </div>
                     </form>
                 </div><!-- end invite user page -->
 
@@ -83,7 +87,15 @@
 
 
                 <span data-bind="if: page() == 'warning'">
-                    <a class="btn btn-primary" data-bind="visible:nodes().length, click:selectWhich">Next</a>
+                    <a class="btn btn-primary" data-bind="click:selectProjects">Next</a>
+                </span>
+
+                <span data-bind="if: page() == 'select'">
+                    <a class="btn btn-primary" data-bind="click:addonWarning">Next</a>
+                </span>
+
+                <span data-bind="if: page() == 'addon'">
+                <a href="#" class="btn btn-primary" data-bind="click: confirmChanges" data-dismiss="modal">Confirm</a>
                 </span>
 
 

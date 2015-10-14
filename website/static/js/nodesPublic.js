@@ -40,7 +40,8 @@ var MESSAGES = {
                         'discover material in it that should have remained private, your only option ' +
                         'will be to retract the registration.  This will eliminate the registration, ' +
                         'leaving only basic information of the project title, description, and '  +
-                        'contributors with a notice of retraction.'
+                        'contributors with a notice of retraction.',
+    addonWarning: 'The following addons will be effected by this change.  Are you sure you want to continue?'
 };
 
 
@@ -51,11 +52,35 @@ var NodesPublicViewModel = function() {
     self.pageTitle = ko.computed(function() {
         return {
             warning: 'Warning',
-            which: 'Select Components',
-            invite: 'Add Unregistered Contributor'
+            select: 'Select Components',
+            addon: 'Addons Effected'
+        }[self.page()];
+    });
+    self.message = ko.computed(function() {
+        return {
+            warning: MESSAGES.makeProjectPublicWarning,
+            select: '',
+            addon: MESSAGES.addonWarning
         }[self.page()];
     });
     self.message = ko.observable(MESSAGES.makeProjectPublicWarning);
+
+    self.selectProjects =  function() {
+        this.page('select');
+    };
+
+    self.addonWarning =  function() {
+        this.page('addon');
+    };
+
+    self.confirmChanges =  function() {
+         this.page('warning');
+    };
+
+    self.clear = function() {
+         this.page('warning');
+    };
+
 };
 
 function NodesPublic (selector, data, options) {
