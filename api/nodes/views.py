@@ -119,8 +119,6 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
             if model_cls is Node:
                 if not resource_object.can_edit(Auth(user)):
                     raise PermissionDenied
-        if not resource_object_list:
-            raise NotFound()
 
         num_items = len(resource_object_list)
         bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
