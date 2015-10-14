@@ -43,6 +43,98 @@ from framework.auth.core import User
 from website.util import waterbutler_api_url_for
 
 
+class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
+    """
+    Custom ListBulkCreateAPIView that properly formats bulk create responses
+    in accordance with the JSON API spec
+    """
+
+    # overrides ListBulkCreateAPIView
+    def create(self, request, *args, **kwargs):
+        """
+        Correctly formats both bulk and single POST response
+        """
+        response = super(ListBulkCreateJSONAPIView, self).create(request, *args, **kwargs)
+        if 'data' in response.data:
+            return response
+        return Response({'data': response.data}, status=status.HTTP_201_CREATED)
+
+    # overrides ListBulkCreateAPIView
+    def get_serializer(self, *args, **kwargs):
+        """
+        Adds many=True to serializer if bulk operation.
+        """
+
+        if "data" in kwargs:
+            data = kwargs["data"]
+
+            if isinstance(data, list):
+                kwargs['many'] = True
+
+        return super(ListBulkCreateJSONAPIView, self).get_serializer(*args, **kwargs)
+
+
+class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
+    """
+    Custom BulkUpdateAPIView that properly formats bulk update responses in accordance with
+    the JSON API spec
+    """
+    # overrides BulkUpdateAPIView
+    def bulk_update(self, request, *args, **kwargs):
+        """
+        Correctly formats bulk PUT/PATCH response
+        """
+        response = super(BulkUpdateJSONAPIView, self).bulk_update(request, *args, **kwargs)
+        return Response({'data': response.data}, status=status.HTTP_200_OK)
+
+
+class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
+    """
+    Custom BulkDestroyAPIView that handles validation and permissions for
+    bulk delete
+    """
+
+    # Overrides BulkDestroyAPIView
+    def bulk_destroy(self, request, *args, **kwargs):
+        """
+        Handles bulk destroy of resource objects.
+
+        Handles some permissions, validation, and enforces bulk limit.
+        """
+        user = self.request.user
+        resource_object_list = []
+        model_cls = kwargs['model']
+        object_type = self.serializer_class.Meta.type_
+
+        if not request.data:
+            raise ValidationError('Request must contain array of resource identifier objects.')
+
+        for item in request.data:
+            item_type = item[u'type']
+            if item_type != object_type:
+                raise Conflict()
+
+            resource_object = get_object_or_error(model_cls, item[u'id'])
+            resource_object_list.append(resource_object)
+            if model_cls is Node:
+                if not resource_object.can_edit(Auth(user)):
+                    raise PermissionDenied
+        if not resource_object_list:
+            raise NotFound()
+
+        num_items = len(resource_object_list)
+        bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
+
+        if num_items > bulk_limit:
+            raise ValidationError(
+                detail={'non_field_errors': ['Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items)]}
+            )
+
+        self.perform_bulk_destroy(resource_object_list)
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class NodeMixin(object):
     """Mixin with convenience methods for retrieving the current node based on the
     current URL. By default, fetches the current node based on the node_id kwarg.
@@ -130,7 +222,7 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin):
+class NodeList(ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -234,7 +326,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
         query = base_query & permission_query
         return query
 
-    # overrides ListBulkCreateUpdateDestroyAPIView
+    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
         if is_bulk_request(self.request):
@@ -255,21 +347,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
             query = self.get_query_from_request()
             return Node.find(query)
 
-    # overrides ListBulkCreateUpdateDestroyAPIView
-    def get_serializer(self, *args, **kwargs):
-        """
-        Adds many=True to serializer if bulk operation.
-        """
-
-        if "data" in kwargs:
-            data = kwargs["data"]
-
-            if isinstance(data, list):
-                kwargs['many'] = True
-
-        return super(NodeList, self).get_serializer(*args, **kwargs)
-
-    # overrides ListBulkCreateUpdateDestroyAPIView
+    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
     def get_serializer_class(self):
         """
         Use NodeDetailSerializer which requires 'id'
@@ -279,17 +357,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
         else:
             return NodeSerializer
 
-    # overrides ListBulkCreateUpdateDestroyView
-    def create(self, request, *args, **kwargs):
-        """
-        Correctly formats both bulk and single POST response
-        """
-        response = super(NodeList, self).create(request, *args, **kwargs)
-        if 'data' in response.data:
-            return response
-        return Response({'data': response.data}, status=status.HTTP_201_CREATED)
-
-    # overrides ListBulkCreateUpdateDestroyAPIView
+    # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         """Create a node.
 
@@ -299,50 +367,16 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
         user = self.request.user
         serializer.save(creator=user)
 
-    # overrides ListBulkCreateUpdateDestroyAPIView
-    def bulk_update(self, request, *args, **kwargs):
-        """
-        Correctly formats bulk PUT/PATCH response
-        """
-        response = super(NodeList, self).bulk_update(request, *args, **kwargs)
-        return Response({'data': response.data}, status=status.HTTP_200_OK)
-
-    # Overrides ListBulkCreateUpdateDestroyAPIView
+    # Overrides BulkDestroyJSONAPIView
     def bulk_destroy(self, request, *args, **kwargs):
         """
-        Handles bulk destroy of nodes. Handles permissions and enforces bulk limit.
+        Handles bulk destroy of nodes. Handles validation and enforces bulk limit.
         """
-        user = self.request.user
-        node_list = []
-        object_type = 'nodes'
+        kwargs['model'] = Node
 
-        if not request.data:
-            raise ValidationError('Request must contain array of resource identifier objects.')
+        return super(NodeList, self).bulk_destroy(request, *args, **kwargs)
 
-        for item in request.data:
-            item_type = item[u'type']
-            if item_type != object_type:
-                raise Conflict()
-            node = get_object_or_error(Node, item[u'id'], display_name='node')
-            node_list.append(node)
-            if not node.can_edit(Auth(user)):
-                raise PermissionDenied
-        if not node_list:
-            raise NotFound()
-
-        num_items = len(node_list)
-        bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
-
-        if num_items > bulk_limit:
-            raise ValidationError(
-                detail={'non_field_errors': ['Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items)]}
-            )
-
-        self.perform_bulk_destroy(node_list)
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    # Overrides ListBulkCreateUpdateDestroyAPIView
+    # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         user = self.request.user
         auth = Auth(user)
@@ -489,7 +523,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -576,7 +610,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
             contributors.append(contributor)
         return contributors
 
-    # overrides ListBulkCreateUpdateDestroyAPIView
+    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
 
@@ -587,21 +621,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
 
         return queryset
 
-    # overrides ListBulkCreateUpdateDestroyAPIView
-    def get_serializer(self, *args, **kwargs):
-        """
-         Adds many=True to serializer if bulk operation.
-        """
-
-        if "data" in kwargs:
-            data = kwargs["data"]
-
-            if isinstance(data, list):
-                kwargs['many'] = True
-
-        return super(NodeContributorsList, self).get_serializer(*args, **kwargs)
-
-    # overrides ListBulkCreateUpdateDestroyAPIView
+    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
         """
         Use NodeContributorDetailSerializer which requires 'id'
@@ -611,59 +631,17 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
         else:
             return NodeContributorsSerializer
 
-    # overrides ListBulkCreateUpdateDestroyView
-    def create(self, request, *args, **kwargs):
-        """
-        Correctly formats both bulk and single POST response
-        """
-        response = super(NodeContributorsList, self).create(request, *args, **kwargs)
-        if 'data' in response.data:
-            return response
-        return Response({'data': response.data}, status=status.HTTP_201_CREATED)
-
-    # overrides ListBulkCreateUpdateDestroyAPIView
-    def bulk_update(self, request, *args, **kwargs):
-        """
-        Correctly formats bulk PUT/PATCH response
-        """
-        response = super(NodeContributorsList, self).bulk_update(request, *args, **kwargs)
-        return Response({'data': response.data}, status=status.HTTP_200_OK)
-
-    # Overrides ListBulkCreateUpdateDestroyAPIView
+    # Overrides BulkDestroyJSONAPIView
     def bulk_destroy(self, request, *args, **kwargs):
         """
         Handles bulk destroy of contributors. Handles validation and enforces bulk limit.
         """
-        contrib_list = []
-        object_type = 'contributors'
 
-        if not request.data:
-            raise ValidationError('Request must contain array of resource identifier objects.')
+        kwargs['model'] = User
 
-        for item in request.data:
-            item_type = item[u'type']
-            if item_type != object_type:
-                raise Conflict()
+        return super(NodeContributorsList, self).bulk_destroy(request, *args, **kwargs)
 
-            user = get_object_or_error(User, item[u'id'], display_name='node')
-            contrib_list.append(user)
-
-        if not contrib_list:
-            raise NotFound()
-
-        num_items = len(contrib_list)
-        bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
-
-        if num_items > bulk_limit:
-            raise ValidationError(
-                detail={'non_field_errors': ['Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items)]}
-            )
-
-        self.perform_bulk_destroy(contrib_list)
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    # Overrides ListBulkCreateUpdateDestroyAPIView
+    # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         user = self.request.user
         auth = Auth(user)
@@ -823,7 +801,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(bulk_generics.ListBulkCreateAPIView, NodeMixin, ODMFilterMixin):
+class NodeChildrenList(ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -915,7 +893,7 @@ class NodeChildrenList(bulk_generics.ListBulkCreateAPIView, NodeMixin, ODMFilter
             Q('is_folder', 'ne', True)
         )
 
-    # overrides ListBulkCreateAPIView
+    # overrides ListBulkCreateJSONAPIView
     def get_queryset(self):
         node = self.get_node()
         req_query = self.get_query_from_request()
@@ -933,31 +911,7 @@ class NodeChildrenList(bulk_generics.ListBulkCreateAPIView, NodeMixin, ODMFilter
         children = [each for each in nodes if each.can_view(auth)]
         return children
 
-    # overrides ListBulkCreateAPIView
-    def get_serializer(self, *args, **kwargs):
-        """
-         Adds many=True to serializer if bulk operation.
-        """
-
-        if "data" in kwargs:
-            data = kwargs["data"]
-
-            if isinstance(data, list):
-                kwargs['many'] = True
-
-        return super(NodeChildrenList, self).get_serializer(*args, **kwargs)
-
-    # overrides ListBulkCreateAPIView
-    def create(self, request, *args, **kwargs):
-        """
-        Correctly formats both bulk and single POST response
-        """
-        response = super(NodeChildrenList, self).create(request, *args, **kwargs)
-        if 'data' in response.data:
-            return response
-        return Response({'data': response.data}, status=status.HTTP_201_CREATED)
-
-    # overrides ListBulkCreateAPIView
+    # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(creator=user, parent=self.get_node())
@@ -966,7 +920,7 @@ class NodeChildrenList(bulk_generics.ListBulkCreateAPIView, NodeMixin, ODMFilter
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
-class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
+class NodeLinksList(ListBulkCreateJSONAPIView, BulkDestroyJSONAPIView, NodeMixin):
     """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -1015,69 +969,17 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
             if not pointer.node.is_deleted
         ]
 
-    # overrides ListBulkCreateDestroyAPIView
-    def get_serializer(self, *args, **kwargs):
-        """
-        Adds many=True to serializer if bulk operation.
-        """
-
-        if "data" in kwargs:
-            data = kwargs["data"]
-
-            if isinstance(data, list):
-                kwargs['many'] = True
-
-        return super(NodeLinksList, self).get_serializer(*args, **kwargs)
-
-    # overrides ListBulkCreateDestroyView
-    def create(self, request, *args, **kwargs):
-        """
-        Correctly formats both bulk and single POST response
-        """
-        response = super(NodeLinksList, self).create(request, *args, **kwargs)
-        if 'data' in response.data:
-            return response
-        return Response({'data': response.data}, status=status.HTTP_201_CREATED)
-
-    # Overrides ListBulkCreateDestroyAPIView
+    # Overrides BulkDestroyJSONAPIView
     def bulk_destroy(self, request, *args, **kwargs):
         """
         Handles bulk destroy of node_links. Handles permissions and enforces bulk limit.
         """
-        user = self.request.user
-        pointer_list = []
-        object_type = 'node_links'
 
-        # Requires that bulk delete have request body
-        if not request.data:
-            raise ValidationError('Request must contain array of resource identifier objects.')
+        kwargs['model'] = Pointer
 
-        node = get_object_or_error(Node, kwargs['node_id'], display_name='node')
-        if not node.can_edit(Auth(user)) or node.is_registration:
-            raise PermissionDenied
+        return super(NodeLinksList, self).bulk_destroy(request, *args, **kwargs)
 
-        pointer_dict = {pointer._id: pointer for pointer in node.nodes}
-        for item in request.data:
-            item_type = item[u'type']
-            if item_type != object_type:
-                raise Conflict()
-            if item['id'] not in pointer_dict:
-                raise ValidationError('Node link does not belong to the requested node.')
-            pointer_list.append(pointer_dict[item['id']])
-
-        num_items = len(pointer_list)
-        bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
-
-        if num_items > bulk_limit:
-            raise ValidationError(
-                detail={'non_field_errors': ['Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items)]}
-            )
-
-        self.perform_bulk_destroy(pointer_list)
-
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    # Overrides ListBulkCreateDestroyAPIView
+    # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         user = self.request.user
         auth = Auth(user)
