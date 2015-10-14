@@ -312,7 +312,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
 
         id_lookup = self.child.fields['id'].source
         instance_mapping = {getattr(item, id_lookup): item for item in instance}
-        data_mapping = {item.get('_id', None): item for item in validated_data}
+        data_mapping = {item.get(id_lookup): item for item in validated_data}
 
         ret = []
 
