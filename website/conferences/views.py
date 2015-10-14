@@ -3,6 +3,7 @@
 import json
 import httplib
 import logging
+from datetime import datetime
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -86,6 +87,7 @@ def add_poster_by_email(conference, message):
                 verification_key=user.verification_key,
                 _absolute=True,
             )
+            user.date_last_login = datetime.utcnow()
             user.save()
         else:
             set_password_url = None
