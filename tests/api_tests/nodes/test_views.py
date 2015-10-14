@@ -817,7 +817,9 @@ class TestNodeBulkUpdate(ApiTestCase):
         ]}
 
         res = self.app.put_json_api(self.url, empty_payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
+
 
         url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.get(url)
@@ -1063,7 +1065,8 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
             self.public_payload['data'][0]
         ]}
         res = self.app.patch_json_api(self.url, empty_payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
 
         url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.get(url)
@@ -2332,7 +2335,8 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         }
         empty_payload = {'data': [invalid_id, self.payload_one]}
         res = self.app.put_json_api(self.public_url, empty_payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
 
         res = self.app.get(self.public_url)
         data = res.json['data']
@@ -2425,7 +2429,8 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
             'attributes': {}
         }
         res = self.app.put_json_api(self.public_url, {'data': [invalid_id]}, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
 
     def test_bulk_update_contributors_limits(self):
         contrib_update_list = {'data': [self.payload_one] * 11}
@@ -2497,7 +2502,8 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
 
         empty_payload = {'data': [invalid_id, self.payload_one]}
         res = self.app.patch_json_api(self.public_url, empty_payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
 
         res = self.app.get(self.public_url)
         data = res.json['data']
@@ -2591,7 +2597,8 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         }
 
         res = self.app.patch_json_api(self.public_url, {'data': [invalid_id]}, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to update.')
 
     def test_bulk_partial_update_contributors_limits(self):
         contrib_update_list = {'data': [self.payload_one] * 11}

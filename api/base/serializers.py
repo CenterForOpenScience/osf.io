@@ -12,7 +12,7 @@ from website.util import waterbutler_api_url_for
 
 from api.base import utils
 from api.base.settings import REST_FRAMEWORK
-from api.base.exceptions import InvalidQueryStringError, Conflict
+from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException
 
 
 class AllowMissing(ser.Field):
@@ -310,7 +310,8 @@ class JSONAPIListSerializer(ser.ListSerializer):
     # Overrides ListSerializer which doesn't support multiple update by default
     def update(self, instance, validated_data):
         if len(instance) != len(validated_data):
-            raise exceptions.NotFound()
+            raise exceptions.ValidationError({'non_field_errors': 'Could not find all objects to update.'})
+
         id_lookup = self.child.fields['id'].source
         instance_mapping = {getattr(item, id_lookup): item for item in instance}
         data_mapping = {item.get('_id', None): item for item in validated_data}
