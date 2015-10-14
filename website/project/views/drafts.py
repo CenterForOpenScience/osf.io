@@ -167,9 +167,6 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
 def update_draft_registration(auth, node, draft, *args, **kwargs):
     data = request.get_json()
 
-    # TODO(hrybacki): Move to framework.utils.rapply once @sam's PR#4027 is merged.
-    # from api.base.serializers import _rapply
-    # schema_data = _rapply(data.get('schema_data', {}), sanitize.strip_html)
     schema_data = data.get('schema_data', {})
 
     schema_name = data.get('schema_name')
