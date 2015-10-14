@@ -11,7 +11,7 @@ from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
 from api.base import utils
-from api.base.settings import REST_FRAMEWORK
+from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import InvalidQueryStringError, Conflict
 
 class AllowMissing(ser.Field):
@@ -325,7 +325,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
     # overrides ListSerializer
     def run_validation(self, data):
         meta = getattr(self, 'Meta', None)
-        bulk_limit = getattr(meta, 'bulk_limit', REST_FRAMEWORK['DEFAULT_BULK_LIMIT'])
+        bulk_limit = getattr(meta, 'bulk_limit', BULK_SETTINGS['DEFAULT_BULK_LIMIT'])
 
         num_items = len(data)
 
