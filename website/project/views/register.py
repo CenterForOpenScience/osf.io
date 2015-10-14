@@ -42,6 +42,10 @@ from .node import _view_project
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def node_register_page(auth, node, **kwargs):
+    """Display the registration metadata for a registration.
+
+    :return: serialized Node
+    """
 
     if node.is_registration:
         return serialize_node(node, auth)
