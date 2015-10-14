@@ -157,6 +157,7 @@
     % for script in tree_js:
         <script type="text/javascript" src="${script | webpack_asset}"></script>
     % endfor
+
     % if 'osf.io' in domain:
     <script>
         // IE10 Same Origin (CORS) fix
@@ -203,11 +204,14 @@
       });
       window.contextVars.file.urls.external = window.contextVars.file.extra.webView;
     </script>
+
     <link href="/static/css/pages/file-view-page.css" rel="stylesheet">
     <link href="${urls['mfr']}/static/css/mfr.css" media="all" rel="stylesheet" />
     <script src="${urls['mfr']}/static/js/mfr.js"></script>
+
     <script src="//${urls['sharejs']}/text.js"></script>
     <script src="//${urls['sharejs']}/share.js"></script>
+        
     <script src=${"/static/public/js/file-page.js" | webpack_asset}></script>
     <script src=${"/static/public/js/view-file-tree-page.js" | webpack_asset}></script>
 </%def>
