@@ -1738,7 +1738,7 @@ var FGToolbar = {
                         panelVisible.hide();
                         panelHidden.show();
                     },
-                    icon: 'fa fa-angle-up'
+                    icon: 'fa fa-angle-left'
                 }, ''));
         }
 
