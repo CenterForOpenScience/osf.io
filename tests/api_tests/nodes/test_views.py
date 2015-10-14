@@ -534,6 +534,7 @@ class TestNodeCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
+        assert_equal(res.json['errors'][0]['source'], {}, 'Source cannot be none per JSON API Spec')
 
 
 class TestNodeDetail(ApiTestCase):
