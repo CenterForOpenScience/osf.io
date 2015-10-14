@@ -132,25 +132,33 @@ $(document).ready(function() {
         var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
         var msgElm = $(this).find('.addon-settings-message');
         
-        var submit = function(){
-            $.ajax({
-            url: ctx.node.urls.api + 'settings/addons/',
-            data: JSON.stringify(formData),
-            type: 'POST',
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function() {
+        var submit = function() {
+            var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', formData);
+            return request;
+            request.done(function(){
                 msgElm.text('Settings updated').fadeIn();
                 checkedOnLoad = $('#selectAddonsForm input:checked');
                 uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
                 if($osf.isSafari()){
-                    //Safari can't update jquery style change before reloading. So delay is applied here
-                    setTimeout(function(){window.location.reload();}, 100);
+                        //Safari can't update jquery style change before reloading. So delay is applied here
+                        setTimeout(function(){window.location.reload();}, 100);
                 } else {
-                    window.location.reload();
+                        window.location.reload();
                 }
-            }
-        });
+            });
+            request.fail(function(){
+                var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
+                bootbox.alert({
+                    title: 'Request failed',
+                    message: msg,
+                    buttons:{
+                        ok:{
+                            label:'Close',
+                            className:'btn-default'
+                        }
+                    }
+                });
+            });
         };
         // unchecked warning adopted from profile-settings-addons-page.js
         if(unchecked.length > 0) {
@@ -163,7 +171,9 @@ $(document).ready(function() {
                 message: uncheckedText,
                 callback: function(result) {
                     if (result) {
-                        submit();
+                        var request = submit();
+                        request.done(successfulAddonUpdate);
+                        request.fail(failedAddonUpdate);
                     } else{
                         unchecked.each(function(i, el){ $(el).prop('checked', true); });
                     }
@@ -177,7 +187,9 @@ $(document).ready(function() {
             });
         }
         else {
-            submit();
+            var request = submit();
+            request.done(successfulAddonUpdate);
+            request.fail(failedAddonUpdate);
         }
 
         return false;
