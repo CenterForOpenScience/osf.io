@@ -188,6 +188,7 @@ class BoxUserSettings(AddonUserSettingsBase):
 
 class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
+    #foreign_user_settings = fields.ForeignField(
     user_settings = fields.ForeignField(
         'boxusersettings', backref='authorized'
     )
