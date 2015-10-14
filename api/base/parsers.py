@@ -60,10 +60,9 @@ class JSONAPIParser(JSONParser):
             if is_bulk_request(stream):
                 if not isinstance(data, list):
                     raise ParseError('Expected a list of items but got type "dict".')
+
                 data_collection = []
-                for data_object in data:
-                    parsed_data = self.flatten_data(data_object, method, is_list=True)
-                    data_collection.append(parsed_data)
+                data_collection.extend([self.flatten_data(data_object, method, is_list=True) for data_object in data])
 
                 return data_collection
 
