@@ -49,13 +49,13 @@
         <table class="table table-plain">
             % if profile.get('date_registered'):
                 <tr>
-                    <td>Member&nbsp;since</td>
+                    <td>Member&nbsp;Since</td>
                     <td>${profile['date_registered']}</td>
                 </tr>
             % endif
             % if profile.get('url') and profile.get('display_absolute_url'):
                 <tr>
-                    <td>Public&nbsp;profile</td>
+                    <td>Public&nbsp;Profile</td>
                     <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
                 </tr>
             % endif
@@ -103,7 +103,7 @@
 ##<div class="row">
 ##%if badges:
 ##    <div class="col-sm-6">
-##        <h3>Badges endorsed by this user</h3>
+##        <h3>Badges Endorsed by This User</h3>
 ##        <div class="badge-list" style="overflow-y:auto; height:250px; padding-top:10px;">
 ##            %for badge in badges:
 ##                <div class="media">
@@ -142,7 +142,7 @@
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-              <h3 class="panel-title" >Public projects</h3>
+              <h3 class="panel-title" >Public Projects</h3>
             </div>
             <div class="panel-body">
                 <div mod-meta='{
@@ -157,7 +157,7 @@
     <div class="col-sm-6">
         <div class="panel panel-default">
             <div class="panel-heading clearfix">
-                <h3 class="panel-title">Public components</h3>
+                <h3 class="panel-title">Public Components</h3>
             </div>
             <div class="panel-body">
                 <div mod-meta='{

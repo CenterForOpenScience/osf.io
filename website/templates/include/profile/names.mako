@@ -3,7 +3,7 @@
     <form role="form" data-bind="submit: submit">
 
         <div class="form-group">
-            <label>Full name (e.g. Rosalind Elsie Franklin)</label>
+            <label>Full Name (e.g. Rosalind Elsie Franklin)</label>
             <input class="form-control" data-bind="value: full" />
             <div data-bind="visible: showMessages, css:'text-danger'">
                 <p data-bind="validationMessage: full"></p>
@@ -22,17 +22,17 @@
         </div>
 
         <div class="form-group">
-            <label>Given name (e.g. Rosalind)</label>
+            <label>Given Name (e.g. Rosalind)</label>
             <input class="form-control" data-bind="value: given" />
         </div>
 
         <div class="form-group">
-            <label>Middle name(s) (e.g. Elsie)</label>
+            <label>Middle Name(s) (e.g. Elsie)</label>
             <input class="form-control" data-bind="value: middle" />
         </div>
 
         <div class="form-group">
-            <label>Family name (e.g. Franklin)</label>
+            <label>Family Name (e.g. Franklin)</label>
             <input class="form-control" data-bind="value: family" />
         </div>
 
@@ -43,12 +43,12 @@
 
         <hr />
 
-        <h4>Citation preview</h4>
+        <h4>Citation Preview</h4>
         <table class="table">
             <thead>
                 <tr>
                     <th>Style</th>
-                    <th class="overflow-block" width="30%">Citation format</th>
+                    <th class="overflow-block" width="30%">Citation Format</th>
                 </tr>
             </thead>
             <tbody>
