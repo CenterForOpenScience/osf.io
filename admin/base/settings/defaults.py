@@ -80,6 +80,7 @@ TEMPLATES = [
 
 ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'api.base.wsgi.application'
-
+ADMIN_BASE = 'admin/'
+STATIC_URL = '{}static/'.format(ADMIN_BASE)
 
 LANGUAGE_CODE = 'en-us'

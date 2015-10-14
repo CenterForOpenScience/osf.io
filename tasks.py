@@ -59,15 +59,18 @@ def server(host=None, port=5000, debug=True, live=False):
 @task
 def apiserver(port=8000, live=False):
     """Run the API server."""
-    cmd = 'python api/manage.py runserver {}'.format(port)
+    cmd = 'python manage-api.py runserver {}'.format(port)
     if live:
         cmd += ' livereload'
     run(cmd, echo=True, pty=True)
 
-
-def admin(port=8001, live=False):
+@task
+def adminserver(port=8001, live=False):
     """Run the Admin server."""
-    pass
+    cmd = 'python manage-admin.py runserver {}'.format(port)
+    if live:
+        cmd += ' livereload'
+    run(cmd, echo=True, pty=True)
 
 
 SHELL_BANNER = """
