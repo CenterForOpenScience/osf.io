@@ -11,10 +11,16 @@ from api.nodes.serializers import NodeSerializer
 
 from website.models import Comment, Node
 
+from django.http import HttpResponse
 
-class SpamList(object):
-    pass
+
+def spam_list(request):
+    return HttpResponse('This is a list of spam')
+
+
+# class SpamList(object):
+#     pass
 
 
 def spam_detail(request, spam_id):
-    render(request, None, )
+    return HttpResponse('Looking at spam {}'.format(spam_id))

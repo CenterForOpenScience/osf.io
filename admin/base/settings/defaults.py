@@ -78,7 +78,7 @@ TEMPLATES = [
     }]
 
 
-ROOT_URLCONF = 'api.base.urls'
+ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'api.base.wsgi.application'
 
 
