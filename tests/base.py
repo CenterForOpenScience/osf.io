@@ -212,10 +212,32 @@ class TestAppJSONAPI(TestApp):
 
         return wrapper
 
+    def bulk_json_api_method(method):
+        def wrapper(self, url, params=NoDefault, **kw):
+            content_type = 'application/vnd.api+json; ext=bulk'
+            if params is not NoDefault:
+                params = dumps(params, cls=self.JSONEncoder)
+            kw.update(
+                params=params,
+                content_type=content_type,
+                upload_files=None,
+            )
+            return self._gen_request(method, url, **kw)
+
+        subst = dict(lmethod=method.lower(), method=method)
+        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
+
+        return wrapper
+
     post_json_api = json_api_method('POST')
     put_json_api = json_api_method('PUT')
     patch_json_api = json_api_method('PATCH')
     delete_json_api = json_api_method('DELETE')
+
+    bulk_post_json_api = bulk_json_api_method('POST')
+    bulk_put_json_api = bulk_json_api_method('PUT')
+    bulk_patch_json_api = bulk_json_api_method('PATCH')
+    bulk_delete_json_api = bulk_json_api_method('DELETE')
 
 
 class UploadTestCase(unittest.TestCase):
