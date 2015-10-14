@@ -631,13 +631,9 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
     The registration was initiated by this user.
 
-    ###
-    ###
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
 
     #This request/response
 

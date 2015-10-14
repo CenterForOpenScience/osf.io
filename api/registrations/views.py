@@ -64,13 +64,9 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
 
     The registration was initiated by this user.
 
-    ###
-    ###
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Actions
 
     #This Request/Response
 
@@ -101,7 +97,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         query = base_query & permission_query
         return query
 
-    # overrides ListCreateAPIView
+    # overrides ListAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
         return Node.find(query)
@@ -150,8 +146,6 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
         self:  the canonical api endpoint of this registration
         html:  this registration's page on the OSF website
 
-    ##Actions
-
     #This Request/Response
 
     """
@@ -167,11 +161,11 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
 
     serializer_class = RegistrationDetailSerializer
 
-    # overrides RetrieveUpdateDestroyAPIView
+    # overrides RetrieveAPIView
     def get_object(self):
         return self.get_node()
 
-    # overrides RetrieveUpdateDestroyAPIView
+    # overrides RetrieveAPIView
     def get_serializer_context(self):
         # Serializer needs the request in order to make an update to privacy
         # TODO: The method it overrides already returns request (plus more stuff). Why does this method exist?
