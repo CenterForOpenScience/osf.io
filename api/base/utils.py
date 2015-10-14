@@ -20,6 +20,9 @@ FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
 UPDATE_METHODS = ['PUT', 'PATCH']
 
 def is_bulk_request(request):
+    """
+    Returns True if bulk request.  Can be called as early as the parser.
+    """
     content_type = request.META.get('CONTENT_TYPE')
     if content_type is None:
         content_type = request.content_type
