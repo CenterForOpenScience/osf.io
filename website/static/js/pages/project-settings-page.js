@@ -135,31 +135,32 @@ $(document).ready(function() {
         var submit = function() {
             var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', formData);
             return request;
-            request.done(function(){
-                msgElm.text('Settings updated').fadeIn();
-                checkedOnLoad = $('#selectAddonsForm input:checked');
-                uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
-                if($osf.isSafari()){
+            
+        };
+        function successfulAddonUpdate(){
+            msgElm.text('Settings updated').fadeIn();
+            checkedOnLoad = $('#selectAddonsForm input:checked');
+            uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
+            if($osf.isSafari()){
                         //Safari can't update jquery style change before reloading. So delay is applied here
                         setTimeout(function(){window.location.reload();}, 100);
-                } else {
+            } else {
                         window.location.reload();
+            }
+        }
+        function failedAddonUpdate(){
+            var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
+            bootbox.alert({
+                title: 'Request failed',
+                message: msg,
+                buttons:{
+                    ok:{
+                        label:'Close',
+                        className:'btn-default'
+                    }
                 }
             });
-            request.fail(function(){
-                var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
-                bootbox.alert({
-                    title: 'Request failed',
-                    message: msg,
-                    buttons:{
-                        ok:{
-                            label:'Close',
-                            className:'btn-default'
-                        }
-                    }
-                });
-            });
-        };
+        }
         // unchecked warning adopted from profile-settings-addons-page.js
         if(unchecked.length > 0) {
             var uncheckedText = $.map(unchecked, function(el){
