@@ -110,7 +110,7 @@ def googledrive_oauth_finish(auth, **kwargs):
 @must_be_logged_in
 @must_have_addon('googledrive', 'user')
 def googledrive_oauth_delete_user(user_addon, **kwargs):
-    user_addon.clear()
+    user_addon.delete()
     user_addon.save()
 
 
