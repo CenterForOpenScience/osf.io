@@ -37,7 +37,7 @@
           <div class="row tb-header-row">
               <i class="fa fa-file p-l-xs p-r-xs"></i>
               <div class="fangorn-toolbar-icon">
-                  <i class="fa fa-angle-right"></i>
+                  <i class="fa fa-angle-down"></i>
               </div>
           </div>
       </div>
