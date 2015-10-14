@@ -220,7 +220,7 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView, ODMFilterMixin):
+class NodeList(BulkUpdateJSONAPIView, BulkDestroyJSONAPIView, ListBulkCreateJSONAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -521,7 +521,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(BulkUpdateJSONAPIView, BulkDestroyJSONAPIView, ListBulkCreateJSONAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -918,7 +918,7 @@ class NodeChildrenList(ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
-class NodeLinksList(ListBulkCreateJSONAPIView, BulkDestroyJSONAPIView, NodeMixin):
+class NodeLinksList(BulkDestroyJSONAPIView, ListBulkCreateJSONAPIView,  NodeMixin):
     """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
