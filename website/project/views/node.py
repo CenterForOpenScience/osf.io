@@ -581,6 +581,7 @@ def update_node(auth, node, **kwargs):
         updated_fields_dict = {
             key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
             for key in updated_field_names
+            if key != 'logs'
         }
         return {
             'updated_fields': updated_fields_dict
@@ -726,7 +727,6 @@ def _view_project(node, auth, primary=False):
             'category_short': node.category,
             'node_type': node.project_or_component,
             'description': node.description or '',
-            'license': node.license,
             'url': node.url,
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,
