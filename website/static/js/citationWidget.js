@@ -32,6 +32,16 @@ function CitationWidget(inputSelector, displaySelector) {
 
 CitationWidget.prototype.init = function() {
     var self = this;
+
+    self.escapeHTML = function(s) {
+        return s.replace(/&/g, '&amp;')
+                .replace(/"/g, '&quot;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/'/g, '&#x27;')
+                .replace(/\//g, '&#x2F;');
+    };
+
     // Initialize select2 for selecting citation style
     self.$input.select2({
         allowClear: true,
@@ -59,7 +69,9 @@ CitationWidget.prototype.init = function() {
         var styleRequest = $.get(styleUrl);
         var citationRequest = $.get(ctx.node.urls.api + 'citation/');
         $.when(styleRequest, citationRequest).done(function(style, data) {
-            var citeproc = citations.makeCiteproc(style[0], data[0], 'html');
+            var escapedStyle = self.escapeHTML(style[0]);
+            var escapedData = self.escapeHTML(data[0]);
+            var citeproc = citations.makeCiteproc(escapedStyle, escapedData, 'html');
             var items = citeproc.makeBibliography()[1];
             self.$citationElement.html(items[0]).slideDown();
         }).fail(function(jqxhr, status, error) {

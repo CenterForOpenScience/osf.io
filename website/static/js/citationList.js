@@ -14,8 +14,19 @@ var STYLES = {
 
 var ctx = window.contextVars;
 
+var escapeHTML = function(s) {
+    return s.replace(/&/g, '&amp;')
+            .replace(/"/g, '&quot;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/'/g, '&#x27;')
+            .replace(/\//g, '&#x2F;');
+};
+
 var formatCitation = function(style, data, format) {
-    var citeproc = citations.makeCiteproc(style, data, format);
+    var escapedStyle = escapeHTML(style);
+    var escapedData = escapeHTML(data);
+    var citeproc = citations.makeCiteproc(escapedStyle, escapedData, format);
     return citeproc.makeBibliography()[1];
 };
 
