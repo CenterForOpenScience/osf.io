@@ -12,8 +12,7 @@ from website.util import waterbutler_api_url_for
 
 from api.base import utils
 from api.base.settings import REST_FRAMEWORK
-from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException
-
+from api.base.exceptions import InvalidQueryStringError, Conflict
 
 class AllowMissing(ser.Field):
 
@@ -67,7 +66,7 @@ class IDField(ser.CharField):
     #Overrides CharField
     def to_internal_value(self, data):
         request = self.context['request']
-        if request.method in utils.UPDATE_METHODS and not isinstance(request.data, list):
+        if request.method in utils.UPDATE_METHODS and not utils.is_bulk_request(request):
             id_field = getattr(self.root.instance, self.source, '_id')
             if id_field != data:
                 raise Conflict()
@@ -87,7 +86,6 @@ class TypeField(ser.CharField):
 
     # Overrides CharField
     def to_internal_value(self, data):
-        request_data = self.context['request'].data
         if isinstance(self.root, JSONAPIListSerializer):
             type_ = self.root.child.Meta.type_
         else:

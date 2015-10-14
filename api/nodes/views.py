@@ -13,7 +13,7 @@ from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_error
+from api.base.utils import get_object_or_error, is_bulk_request
 from api.files.serializers import FileSerializer
 from api.base.settings import REST_FRAMEWORK
 from api.users.views import UserMixin
@@ -296,7 +296,7 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
     # overrides ListBulkCreateUpdateDestroyAPIView
     def get_queryset(self):
         # For bulk requests, queryset is formed from request body.
-        if isinstance(self.request.data, list):
+        if is_bulk_request(self.request):
             query = Q('_id', 'in', [node['id'] for node in self.request.data])
 
             user = self.request.user
@@ -377,9 +377,6 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
 
         if not request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
-
-        if not isinstance(request.data, list):
-            raise ValidationError('Expected type "list".')
 
         for item in request.data:
             item_type = item[u'type']
@@ -705,7 +702,7 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
         queryset = self.get_queryset_from_request()
 
         # If bulk request, queryset only contains contributors in request
-        if isinstance(self.request.data, list):
+        if is_bulk_request(self.request):
             contrib_ids = [item['id'] for item in self.request.data]
             queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
 
@@ -763,9 +760,6 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
 
         if not request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
-
-        if not isinstance(request.data, list):
-            raise ValidationError('Expected type "list".')
 
         for item in request.data:
             item_type = item[u'type']
@@ -1236,9 +1230,6 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
         # Requires that bulk delete have request body
         if not request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
-
-        if not isinstance(request.data, list):
-            raise ValidationError('Expected type "list".')
 
         node = get_object_or_error(Node, kwargs['node_id'], display_name='node')
         if not node.can_edit(Auth(user)) or node.is_registration:

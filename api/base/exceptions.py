@@ -3,6 +3,7 @@ import httplib as http
 from rest_framework import status
 from rest_framework.exceptions import APIException, ParseError
 
+
 def dict_error_formatting(error):
     """
     Formats all dictionary error messages for both single and bulk requests
@@ -37,6 +38,8 @@ def json_api_exception_handler(exc, context):
 
     # Import inside method to avoid errors when the OSF is loaded without Django
     from rest_framework.views import exception_handler
+    from utils import is_bulk_request
+
     response = exception_handler(exc, context)
 
     errors = []
@@ -66,10 +69,10 @@ def json_api_exception_handler(exc, context):
 
         # For bulk operations: If 400 error, return request data with response.
         if response.status_code == 400 and "non_field_errors" not in message:
-            request_data = context['request'].data
-            if isinstance(request_data, list):
+            request = context['request']
+            if is_bulk_request(request):
                 formatted_request_data = []
-                for data in request_data:
+                for data in request.data:
                     formatted = {'type': data.pop('type')}
                     id = data.pop('id')
                     if id is not None:
