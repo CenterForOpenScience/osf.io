@@ -25,6 +25,8 @@ class Conference(StoredObject):
     public_projects = fields.BooleanField(required=False, default=True)
     poster = fields.BooleanField(default=True)
     talk = fields.BooleanField(default=True)
+    custom_poster_name = fields.StringField(default='poster')
+    custom_talk_name = fields.StringField(default='talk')
 
     @classmethod
     def get_by_endpoint(cls, endpoint, active=True):
@@ -35,7 +37,6 @@ class Conference(StoredObject):
             return Conference.find_one(query)
         except ModularOdmException:
             raise ConferenceError('Endpoint {0} not found'.format(endpoint))
-
 
 class MailRecord(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
