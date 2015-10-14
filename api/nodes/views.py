@@ -194,65 +194,6 @@ class NodeList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, ODMFilterMixin)
     return a 201 response with the representation of the new node in the body.  For the new node's canonical URL, see
     the `links.self` field of the response.
 
-    ###Adding Multiple Nodes
-        Method:        POST
-        URL:           links.self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [{
-                           "type": "nodes", # required
-                           "attributes": {
-                             "title":       {title},         # required
-                             "category":    {category},      # required
-                             "description": {description},   # optional
-                             "tags":        [{tag1}, {tag2}] # optional
-                           }
-                         }]
-                       }
-        Success:       201 CREATED + node representations
-
-    To create multiple new nodes, issue a POST request to this endpoint. The request must contain an **array** of
-    node objects with `type`, `title`, and `category` as required fields. The request will either completely succeed or
-    fail.
-
-    ###Updating Multiple Nodes
-        Method:        PUT / PATCH
-        URL:           links.self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [{
-                           "type": "nodes", # required
-                           "id": {node_id}, # required
-                           "attributes": {
-                             "title":       {title},         # required
-                             "category":    {category},      # required
-                             "description": {description},   # optional
-                             "tags":        [{tag1}, {tag2}] # optional
-                           }
-                         }]
-                       }
-        Success:       200 OK + node representations
-
-    To update multiple nodes, issue a PUT or PATCH request against this endpoint. The request must include an **array**
-    of node objects. `id` and `type` are always required. The title and category fields are mandatory if you PUT and
-    optional if you PATCH. The tags parameter must be an array of strings.  The request will either completely succeed
-    or fail.
-
-    ###Deleting Multiple Nodes
-        Method:   DELETE
-        URL:      links.self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [{
-                           "type": "nodes", # required
-                           "id": {node_id}, # required
-                         }]
-                       }
-        Success:  204 No Content
-
-    To delete multiple nodes, issue a DELETE request against this endpoint.  The body of the request must include an
-    **array** of node identifier objects containing `id` and `type`. The request will either completely succeed or fail.
-
     ##Query Params
 
     + `page=<Int>` -- page number of results to view, default 1
@@ -598,68 +539,6 @@ class NodeContributorsList(bulk_generics.ListBulkCreateUpdateDestroyAPIView, Lis
     ignored.  If the request is successful the API will return a 201 response with the representation of the new node
     contributor in the body.  For the new node contributor's canonical URL, see the `links.self` field of the response.
 
-    ###Adding Multiple Contributors
-
-        Method:        POST
-        URL:           links.self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [{
-                           "id": {user_id},        # required
-                           "type": "contributors", # required
-                           "attributes": {
-                             "bibliographic": true|false,            # optional
-                             "permission":    "read"|"write"|"admin" # optional
-                           }
-                         }]
-                       }
-        Success:       201 CREATED + node contributor representations
-
-    To add multiple contributors to a node, issue a POST request to this endpoint. The request must include an **array**
-    of contributor objects, each  containing at least an `id` and `type` member.  Default field values are the same as
-    when adding a single contributor.  The request will either completely succeed or fail.
-
-    ###Updating Multiple Contributors
-
-        Method:        PUT / PATCH
-        URL:           links.self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [{
-                           "type": "contributors",        # required
-                           "id":   {contributor_user_id}, # required
-                           "attributes": {
-                             "bibliographic": true|false,            # optional
-                             "permission":     "read"|"write"|"admin" # optional
-                           }
-                         }]
-                       }
-        Success:       200 OK + node representations
-
-    To update multiple contributors' bibliographic preferences or access permissions for a node, issue a PUT / PATCH
-    request to this endpoint.  The request must include an **array** of contributor objects, each  containing at least an
-    `id` and `type` member.   If the given user is not already in the contributor list, a 404 Not Found error will be
-    returned. A node must always have at least one admin, and any attempt to downgrade the permissions of a sole admin
-    will result in a 400 Bad Request error. The request will either completely succeed or fail.
-
-    ###Deleting Multiple Contributors
-
-        Method:        DELETE
-        URL:           links.self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [{
-                           "type": "contributors",        # required
-                           "id":   {contributor_user_id}, # required
-                         }]
-                       }
-        Success:       204 No Content
-
-    To remove multiple contributors from a node, issue a DELETE request to this endpoint.  The request must
-    include an **array** of contributor identifier objects, described by the `type` and the `contributor_user_id`. The
-    request will either completely succeed or fail.
-
-
     ##Query Params
 
     + `page=<Int>` -- page number of results to view, default 1
@@ -1001,29 +880,6 @@ class NodeChildrenList(bulk_generics.ListBulkCreateAPIView, NodeMixin, ODMFilter
     node creation is successful the API will return a 201 response with the representation of the new node in the body.
     For the new node's canonical URL, see the `links.self` field of the response.
 
-
-    ###Create Multiple Child Nodes
-
-        Method:        POST
-        URL:           links.self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [{
-                           "type": "nodes", # required
-                           "attributes": {
-                             "title":       {title},         # required
-                             "category":    {category},      # required
-                             "description": {description},   # optional
-                             "tags":        [{tag1}, {tag2}] # optional
-                           }
-                         }]
-                       }
-        Success:       201 CREATED + node representations
-
-    To create multiple children of the current node, issue a POST request to this endpoint.  The request must contain
-    an **array** of node objects with `type`, `category`, and `title` as required fields.  The request will either
-    completely succeed or fail.
-
     ##Query Params
 
     + `page=<Int>` -- page number of results to view, default 1
@@ -1131,41 +987,6 @@ class NodeLinksList(bulk_generics.ListBulkCreateDestroyAPIView, NodeMixin):
     ##Actions
 
     ###Create
-
-    ###Add Multiple Node Links
-
-        Method:        POST
-        URL:           links.self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [{
-                           "type": "node_links", # required
-                           "attributes": {
-                             "target_node_id": {target_node_id}, # required
-                           }
-                         }]
-                       }
-        Success:       201 CREATED + node representations
-
-    To add multiple node links (pointers to other nodes), issue a POST request to this endpoint.  The request must
-    include an **array** of node_link objects.  The `type` and `target_node_id` fields are mandatory. The request will
-    either completely succeed or fail.
-
-    ###Delete Multiple Node-Links
-
-        Method:        DELETE
-        URL:           links.self
-        Query Params:  <none>
-        Body (JSON):   {
-                         "data": [{
-                           "id":  {node_link_id}, # required
-                           "type": "node_links", # required
-                         }]
-                       }
-        Success:       204 No Content
-
-    To delete multiple node links, issue a DELETE request to this endpoint.  The request must include an **array** of
-    node link identifier objects(`id` and `type` pairs).   The request will either completely succeed or fail.
 
     ##Query Params
 
