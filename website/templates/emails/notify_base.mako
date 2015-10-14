@@ -1,3 +1,6 @@
+<%!
+    import website.settings
+%>
 <!doctype html>
 <html class="no-js" lang="">
 <head>
@@ -43,7 +46,7 @@
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                            <p class="small text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or <a href="https://osf.io/settings/notifications/">user settings</a>.</p>
+                            <p class="small text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or <a href=${website.settings.DOMAIN+"settings"}>user settings</a>.</p>
                         </td>
                     </tr>
                 </tbody>
