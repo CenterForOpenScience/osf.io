@@ -27,7 +27,11 @@ var FileBrowser = {
         self.args = $.extend({}, defaults, args);
         self.data = m.prop([]);
 
-        m.request({method: 'GET', url: args.url}).then(self.data).then(function(){ console.log(self.data()); self.renderCollections(); });
+        m.request({method: 'GET', url: args.data.apiURL}).then(self.data, function(){
+            //TODO: Add Raven error
+            console.log("Error receiving node tree list");
+        }).then(function(){ console.log(self.data()); self.renderCollections(); });
+
         self.breadcrumbs = [
             { label : 'First', href : '/first'},
             { label : 'Second', href : '/second'},
@@ -41,9 +45,13 @@ var FileBrowser = {
         ];
 
         self.renderCollections = function _renderDo(){
-            self.data().data.map(function(item){
-                console.log(item.category);
-            });
+
+            if (self.data().data){
+                self.data().data.map(function(item){
+                    console.log(item.category);
+                });
+            }
+
         };
     },
     view : function (ctrl) {

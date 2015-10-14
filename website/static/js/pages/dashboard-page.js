@@ -27,8 +27,6 @@ request.fail(function(xhr, textStatus, error) {
 });
 
 var nodesListUrl = '/api/v1/dashboard/get_nodes/';
-var treeListUrl = '/api/v1/dashboard/';
-m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, { url : treeListUrl } ));
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
@@ -62,12 +60,8 @@ $(document).ready(function() {
         url:  '/api/v1/dashboard/'
     });
     request.done(function(data) {
-        //var po = new ProjectOrganizer({
-        //    placement : 'dashboard',
-        //    divID: 'project-grid',
-        //    filesData: data.data,
-        //    multiselect : true
-        //});
+        console.log(data);
+        m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, { data : data.data[0]} ));
 
         ensureUserTimezone(data.timezone, data.locale, data.id);
     });
