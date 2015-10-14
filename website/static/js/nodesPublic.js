@@ -13,6 +13,9 @@ var $osf = require('./osfHelpers');
 var Paginator = require('./paginator');
 var osfHelpers = require('js/osfHelpers');
 
+var ProjectSettings = require('js/projectSettings.js');
+
+var ctx = window.contextVars;
 
 var NODE_OFFSET = 25;
 
@@ -44,6 +47,27 @@ var MESSAGES = {
     addonWarning: 'The following addons will be effected by this change.  Are you sure you want to continue?'
 };
 
+// Initialize treebeard grid for notifications
+var ProjectNotifications = require('js/nodePrivacySettingsTreebeard.js');
+var $notificationsMsg = $('#configureNotificationsMessage');
+var notificationsURL = ctx.node.urls.api  + 'subscriptions/';
+// Need check because notifications settings don't exist on registration's settings page
+if ($('#grid').length) {
+    $.ajax({
+        url: notificationsURL,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        new ProjectNotifications(response);
+    }).fail(function(xhr, status, error) {
+        $notificationsMsg.addClass('text-danger');
+        $notificationsMsg.text('Could not retrieve notification settings.');
+        Raven.captureMessage('Could not GET notification settings.', {
+            url: notificationsURL, status: status, error: error
+        });
+    });
+}
+
 
 
 var NodesPublicViewModel = function() {
@@ -52,7 +76,7 @@ var NodesPublicViewModel = function() {
     self.pageTitle = ko.computed(function() {
         return {
             warning: 'Warning',
-            select: 'Select Components',
+            select: 'Change Privacy Settings',
             addon: 'Addons Effected'
         }[self.page()];
     });

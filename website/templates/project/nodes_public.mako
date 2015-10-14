@@ -60,23 +60,27 @@
 
                 <div data-bind='if:page() === "select"'>
                     <form class='form'>
-        <div class="panel panel-default">
-            <div class="panel-heading clearfix">
-                <h3 class="panel-title">Files</h3>
-                <div class="pull-right">
-                   <a href="${node['url']}files/"> <i class="fa fa-external-link"></i> </a>
-                </div>
-            </div>
-            <div class="panel-body">
-                <div id="treeGrid">
-                    <div class="spinner-loading-wrapper">
-                        <div class="logo-spin logo-lg"></div>
-                         <p class="m-t-sm fg-load-message"> Loading files...  </p>
+                <div class="panel panel-default">
+                    <span id="configureNotificationsAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Change Privacy Settings</h3>
                     </div>
-                </div>
-            </div>
-        </div>
+                    <div class="help-block" style="padding-left: 15px">
+                        <p class="text-info">Check projects or components to make them public, uncheck to make them private.</p>
+                    </div>
+                    <form id="notificationSettings" class="osf-treebeard-minimal">
+                        <div id="grid">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
+                            </div>
+                        </div>
+                        <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                        </div>
                     </form>
+                </div>
+                   </form>
                 </div><!-- end invite user page -->
 
             </div><!-- end modal-body -->
@@ -104,3 +108,15 @@
     </div><!-- end modal-dialog -->
 </div><!-- end modal -->
 
+<%def name="javascript()">
+    <% import website %>
+    ${parent.javascript()}
+    <script type="text/javascript">
+        window.contextVars = $.extend({}, window.contextVars, {'mailingList': ${website.settings.MAILCHIMP_GENERAL_LIST | sjson, n }});
+    </script>
+</%def>
+
+<%def name="javascript_bottom()">
+    ${parent.javascript_bottom()}
+    <script src="${"/static/public/js/notifications-config-page.js" | webpack_asset}"></script>
+</%def>
