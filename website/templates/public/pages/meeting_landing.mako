@@ -100,7 +100,7 @@
         <div class="row icon-bar m-v-40">
             <div class="col-md-4 col-sm-4 text-center ">
                 <div class="p-v-md m-t-xl m-h-md">
-                    <i class="fa fa-eye fa-custom-7x fa-custom-shadow blue-icon"></i>
+                    <i class="fa fa-eye fa-custom-7x icon-circle blue-icon"></i>
                     <h3>Discover</h3>
                     <div class="p-h-lg">
                         <p class="osf-meeting-p">Wish you had a widely-known place for people to learn from your talk and/or poster, then you have found your answer.</p></div>
@@ -108,7 +108,7 @@
             </div>
             <div class="col-md-4 col-sm-4 text-center">
                 <div class=" p-v-md  m-t-xl m-h-md">
-                    <i class="fa fa-users fa-custom-7x fa-custom-shadow  blue-icon"></i>
+                    <i class="fa fa-users fa-custom-7x icon-circle  blue-icon"></i>
                     <h3>Share</h3>
                     <div class="p-h-lg">
                         <p class="osf-meeting-p">OSF has increased accessibility and collaboration for researchers like no other platform… it is truly the first of it’s kind.</p>
@@ -117,7 +117,7 @@
             </div>
             <div class="col-md-4 col-sm-4 text-center">
                 <div class="p-v-md  m-t-xl m-h-md">
-                    <i class="fa fa-thumbs-up fa-custom-7x fa-custom-shadow blue-icon"></i>
+                    <i class="fa fa-thumbs-up fa-custom-7x icon-circle blue-icon"></i>
                     <h3>Trust</h3>
                     <div class="p-h-lg">
                         <p class="osf-meeting-p">OSF for Meetings is a trusted partner for over XX academic conferences. </p>

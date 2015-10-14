@@ -20,17 +20,15 @@
     position: relative;
 }
 
-.fa-custom-shadow {
+.icon-circle {
     display: inline-block  ;
     -moz-border-radius: 60px;
     -webkit-border-radius: 60px;
     border-radius: 60px;
-    -moz-box-shadow: 0px 0px 2px #888;
-    -webkit-box-shadow: 0px 0px 8px #337AB7;
-    box-shadow: 0px 0px 8px #337AB7;
-    width: 70px;
-    height: 70px;
-    padding-top: 10px;
+    width: 100px;
+    height: 100px;
+    padding-top: 24px;
+    border: 3px solid #C6E3FC;
 }
 
 .icon-bar .fa-custom-7x {
