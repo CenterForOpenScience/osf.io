@@ -76,7 +76,7 @@ def queue_mail(to_addr, mail, send_at, user, **context):
     :param send_at: datetime object of when to send mail
     :param user: user object attached to mail
     :param context: IMPORTANT kwargs to be attached to template.
-                    Sending mail will fail if wrong all kwargs are
+                    Sending mail will fail if needed for template kwargs are
                     not parameters.
     :return: the QueuedMail object created
     """

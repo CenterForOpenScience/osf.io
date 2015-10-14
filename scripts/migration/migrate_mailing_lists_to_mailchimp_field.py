@@ -1,3 +1,7 @@
+"""
+Used to transfer over subscriptions current users might have from their mailing_list field (which is to be deprecated),
+to the new mailchimp_mailing_lists field. After that is done, to clean-up, remove mailing_lists as a User field.
+"""
 import logging
 import sys
 
