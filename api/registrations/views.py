@@ -31,8 +31,8 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
     has access.
 
-    Paginated list of registrations are ordered by their `date_modified`.  Each resource contains the full representation of the
-    registration, meaning additional requests to an individual registrations's detail view are not necessary.
+    Each resource contains the full representation of the registration, meaning additional requests to an individual
+    registrations's detail view are not necessary.
 
     ##Registration Attributes
 
@@ -81,7 +81,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
 
     serializer_class = RegistrationSerializer
 
-    ordering = ('-date_modified', )  # default ordering
+    # ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -100,7 +100,9 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
     # overrides ListAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
-        return Node.find(query)
+        registrations = Node.find(query)
+        non_retracted_registrations = [reg for reg in registrations if not reg.is_retracted]
+        return non_retracted_registrations
 
 
 class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
@@ -108,8 +110,8 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
 
     Registrations are read-only snapshots of a project. This view shows details about the given registration.
 
-    Paginated list of registrations ordered by their `date_modified`.  Each resource contains the full representation of the
-    registration, meaning additional requests to an individual registrations's detail view are not necessary.
+    Each resource contains the full representation of the registration, meaning additional requests to an individual
+    registrations's detail view are not necessary.
 
     ##Registration Attributes
 

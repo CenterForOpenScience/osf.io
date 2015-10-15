@@ -12,6 +12,7 @@ from tests.factories import (
     AuthUserFactory
 )
 
+
 class TestRegistrationList(ApiTestCase):
 
     def setUp(self):
@@ -33,10 +34,18 @@ class TestRegistrationList(ApiTestCase):
         super(TestRegistrationList, self).tearDown()
         Node.remove()
 
+    def test_omit_retracted_registration(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        registration.retract_registration(self.user)
+        retraction = registration.retraction
+        token = retraction.approval_state.values()[0]['approval_token']
+        retraction.approve_retraction(self.user, token)
+        registration.save()
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
+
     def test_return_public_registrations_logged_out(self):
         res = self.app.get(self.url)
-
-        self.public_project.remove()
         assert_equal(len(res.json['data']), 1)
         assert_equal(res.status_code, 200)
         assert_equal(res.status_code, 200)
