@@ -482,7 +482,7 @@ MEETING_DATA = {
         'active': True,
         'admins': [],
         'public_projects': True,
-        'poster': True,
+        'poster': False,
         'talk': True,
     },
         'SWPA2016': {
