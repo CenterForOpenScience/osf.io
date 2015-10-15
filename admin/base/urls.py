@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.conf.urls import include, url, patterns
 from settings import ADMIN_BASE
 
