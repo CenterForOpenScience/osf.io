@@ -19,7 +19,7 @@ from api.nodes.permissions import (
 
 class RegistrationMixin(NodeMixin):
     """Mixin with convenience methods for retrieving the current registration based on the
-    current URL. By default, fetches the current node based on the registration_id kwarg.
+    current URL. By default, fetches the current registration based on the registration_id kwarg.
     """
 
     serializer_class = RegistrationSerializer

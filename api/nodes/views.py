@@ -21,8 +21,7 @@ from api.nodes.serializers import (
     NodeContributorsSerializer,
     NodeContributorDetailSerializer
 )
-
-
+from api.registrations.serializers import RegistrationSerializer
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
@@ -362,8 +361,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
-        node = self.get_node()
-        return node
+        return self.get_node()
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
@@ -643,7 +641,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
-    serializer_class = NodeSerializer
+    serializer_class = RegistrationSerializer
 
     # overrides ListAPIView
     # TODO: Filter out retractions by default

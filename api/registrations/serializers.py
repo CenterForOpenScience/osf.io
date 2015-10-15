@@ -33,7 +33,7 @@ class RegistrationSerializer(NodeSerializer):
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_url'})
 
     def get_registration_url(self, obj):
-        return absolute_reverse('registrations:registration-detail', kwargs={'registration_id':obj._id})
+        return absolute_reverse('registrations:registration-detail', kwargs={'registration_id': obj._id})
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
