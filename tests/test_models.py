@@ -77,16 +77,28 @@ class TestUserValidation(OsfTestCase):
         with assert_raises(ValidationValueError):
             self.user.save()
 
-    def test_validate_social_personal_empty(self):
-        self.user.social = {'personal': ''}
+    def test_validate_social_profile_websites_empty(self):
+        self.user.social = {'profileWebsites': []}
         self.user.save()
+        assert_equal(self.user.social['profileWebsites'], [])
 
     def test_validate_social_valid(self):
-        self.user.social = {'personal': 'http://cos.io/'}
+        self.user.social = {'profileWebsites': ['http://cos.io/']}
         self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://cos.io/'])
 
-    def test_validate_social_personal_invalid(self):
-        self.user.social = {'personal': 'help computer'}
+    def test_validate_multiple_profile_websites_valid(self):
+        self.user.social = {'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com']}
+        self.user.save()
+        assert_equal(self.user.social['profileWebsites'], ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'])
+
+    def test_validate_social_profile_websites_invalid(self):
+        self.user.social = {'profileWebsites': ['help computer']}
+        with assert_raises(ValidationError):
+            self.user.save()
+
+    def test_validate_multiple_profile_social_profile_websites_invalid(self):
+        self.user.social = {'profileWebsites': ['http://cos.io/', 'help computer', 'http://dinosaurs.com']}
         with assert_raises(ValidationError):
             self.user.save()
 
@@ -94,21 +106,34 @@ class TestUserValidation(OsfTestCase):
         assert_equal(self.user.social_links, {})
         assert_equal(len(self.user.social_links), 0)
 
-    def test_personal_site_unchanged(self):
-        self.user.social = {'personal': 'http://cos.io/'}
+    def test_profile_website_unchanged(self):
+        self.user.social = {'profileWebsites': ['http://cos.io/']}
         self.user.save()
-        assert_equal(self.user.social_links['personal'], 'http://cos.io/')
+        assert_equal(self.user.social_links['profileWebsites'], ['http://cos.io/'])
         assert_equal(len(self.user.social_links), 1)
 
     def test_various_social_handles(self):
         self.user.social = {
-            'personal': 'http://cos.io/',
+            'profileWebsites': ['http://cos.io/'],
             'twitter': 'OSFramework',
             'github': 'CenterForOpenScience'
         }
         self.user.save()
         assert_equal(self.user.social_links, {
-            'personal': 'http://cos.io/',
+            'profileWebsites': ['http://cos.io/'],
+            'twitter': 'http://twitter.com/OSFramework',
+            'github': 'http://github.com/CenterForOpenScience'
+        })
+
+    def test_multiple_profile_websites(self):
+        self.user.social = {
+            'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
+            'twitter': 'OSFramework',
+            'github': 'CenterForOpenScience'
+        }
+        self.user.save()
+        assert_equal(self.user.social_links, {
+            'profileWebsites': ['http://cos.io/', 'http://thebuckstopshere.com', 'http://dinosaurs.com'],
             'twitter': 'http://twitter.com/OSFramework',
             'github': 'http://github.com/CenterForOpenScience'
         })
@@ -1886,13 +1911,16 @@ class TestNodeUpdate(OsfTestCase):
     def setUp(self):
         super(TestNodeUpdate, self).setUp()
         self.user = UserFactory()
-        self.node = ProjectFactory(creator=self.user, is_public=False)
+        self.node = ProjectFactory(creator=self.user, category='project', is_public=False)
 
     def test_update_title(self):
         # Creator (admin) can update
         new_title = fake.catch_phrase()
-        self.node.update({'title': new_title}, auth=Auth(self.user))
+        self.node.update({'title': new_title}, auth=Auth(self.user), save=True)
         assert_equal(self.node.title, new_title)
+
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, NodeLog.EDITED_TITLE)
 
         # Write contrib can update
         new_title2 = fake.catch_phrase()
@@ -1901,6 +1929,61 @@ class TestNodeUpdate(OsfTestCase):
         self.node.save()
         self.node.update({'title': new_title2}, auth=Auth(write_contrib))
         assert_equal(self.node.title, new_title2)
+
+    def test_update_description(self):
+        new_title = fake.bs()
+
+        self.node.update({'title': new_title}, auth=Auth(self.user))
+        assert_equal(self.node.title, new_title)
+
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, NodeLog.EDITED_TITLE)
+
+    def test_update_title_and_category(self):
+        new_title = fake.bs()
+
+        new_category = 'data'
+
+        self.node.update({'title': new_title, 'category': new_category}, auth=Auth(self.user), save=True)
+        assert_equal(self.node.title, new_title)
+        assert_equal(self.node.category, 'data')
+
+        penultimate_log, last_log = self.node.logs[-2], self.node.logs[-1]
+        assert_equal(penultimate_log.action, NodeLog.EDITED_TITLE)
+        assert_equal(last_log.action, NodeLog.UPDATED_FIELDS)
+
+    def test_update_is_public(self):
+        self.node.update({'is_public': True}, auth=Auth(self.user), save=True)
+        assert_true(self.node.is_public)
+
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, NodeLog.MADE_PUBLIC)
+
+        self.node.update({'is_public': False}, auth=Auth(self.user), save=True)
+        last_log = self.node.logs[-1]
+        assert_equal(last_log.action, NodeLog.MADE_PRIVATE)
+
+    def test_updating_title_twice_with_same_title(self):
+        original_n_logs = len(self.node.logs)
+        new_title = fake.bs()
+        self.node.update({'title': new_title}, auth=Auth(self.user), save=True)
+        assert_equal(len(self.node.logs), original_n_logs + 1)  # sanity check
+
+        # Call update with same title
+        self.node.update({'title': new_title}, auth=Auth(self.user), save=True)
+        # A new log is not created
+        assert_equal(len(self.node.logs), original_n_logs + 1)
+
+    def test_updating_description_twice_with_same_content(self):
+        original_n_logs = len(self.node.logs)
+        new_desc = fake.bs()
+        self.node.update({'description': new_desc}, auth=Auth(self.user), save=True)
+        assert_equal(len(self.node.logs), original_n_logs + 1)  # sanity check
+
+        # Call update with same description
+        self.node.update({'description': new_desc}, auth=Auth(self.user), save=True)
+        # A new log is not created
+        assert_equal(len(self.node.logs), original_n_logs + 1)
 
     # TODO: test permissions, non-writable fields
 
@@ -2702,7 +2785,7 @@ class TestProject(OsfTestCase):
     def test_is_registration_of(self):
         project = ProjectFactory()
         with mock_archive(project) as reg1:
-            with mock_archive(reg1) as reg2: 
+            with mock_archive(reg1) as reg2:
                 assert_true(reg1.is_registration_of(project))
                 assert_true(reg2.is_registration_of(project))
 
@@ -2732,16 +2815,6 @@ class TestProject(OsfTestCase):
     def test_is_registration_of_no_registered_from(self):
         project = ProjectFactory()
         assert_false(project.is_registration_of(self.project))
-
-    def test_registration_preserves_license(self):
-        license = {
-            'name': 'A License',
-            'text': 'Blah blah blah'
-        }
-        self.project.node_license = license
-        self.project.save()
-        with mock_archive(self.project, autocomplete=True) as registration:        
-            assert_equal(registration.node_license, license)
 
     def test_is_contributor_unregistered(self):
         unreg = UnregUserFactory()
@@ -3291,16 +3364,6 @@ class TestForkNode(OsfTestCase):
         # Forker has admin permissions
         assert_equal(len(fork.contributors), 1)
         assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
-
-    def test_fork_preserves_license(self):
-        license = {
-            'name': 'A License',
-            'text': 'Blah blah blah'
-        }
-        self.project.node_license = license
-        self.project.save()
-        fork = self.project.fork_node(self.auth)
-        assert_equal(fork.node_license, license)
 
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)

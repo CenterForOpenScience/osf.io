@@ -9,8 +9,6 @@ var $osf = require('js/osfHelpers');
 // pages
 require('js/project');
 
-require('js/licensePicker');
-
 var node = window.contextVars.node;
 
 new pointers.PointerDisplay('#showLinks');
