@@ -13,6 +13,7 @@ urlpatterns = [
         include(patterns('',
                          url(r'^$', views.root),
                          url(r'^applications/', include('api.applications.urls', namespace='applications')),
+                         url(r'^tokens/', include('api.tokens.urls', namespace='tokens')),
                          url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
                          url(r'^users/', include('api.users.urls', namespace='users')),
                          url(r'^files/', include('api.files.urls', namespace='files')),
