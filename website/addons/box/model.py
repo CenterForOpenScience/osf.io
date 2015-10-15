@@ -129,6 +129,15 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_id = str(folder_id)
         self._update_folder_data()
         self.save()
+
+        if not self.complete:
+            self.user_settings.grant_oauth_access(
+                node=self.owner,
+                external_account=self.external_account,
+                metadata={'folder': self.folder_id}
+            )
+            self.user_settings.save()
+
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)
