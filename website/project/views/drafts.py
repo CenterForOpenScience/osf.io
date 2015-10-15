@@ -31,6 +31,11 @@ autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'dra
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def submit_draft_for_review(auth, node, draft, *args, **kwargs):
+    """Submit for approvals and/or notifications
+
+    :return: serialized registration
+    :rtype: dict
+    """
     # TODO(samchrisinger) check that old approval is None or complete
     approval = DraftRegistrationApproval(
         initiated_by=auth.user,
@@ -49,6 +54,11 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def draft_before_register_page(auth, node, draft, *args, **kwargs):
+    """Allow the user to select an embargo period and confirm registration
+
+    :return: serialized Node + DraftRegistration
+    :rtype: dict
+    """
     ret = serialize_node(node, auth, primary=True)
 
     ret['draft'] = serialize_draft_registration(draft, auth)
@@ -59,6 +69,12 @@ def draft_before_register_page(auth, node, draft, *args, **kwargs):
 @must_be_valid_project
 @http_error_if_disk_saving_mode
 def register_draft_registration(auth, node, draft, *args, **kwargs):
+    """Initiate a registration from a draft registration
+
+
+    :return: success message; url to registrations page
+    :rtype: dict
+    """
 
     data = request.get_json()
     register = draft.register(auth)
@@ -91,11 +107,21 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def get_draft_registration(auth, node, draft, *args, **kwargs):
+    """Return a single draft registration
+
+    :return: serialized draft registration
+    :rtype: dict
+    """
     return serialize_draft_registration(draft, auth), http.OK
 
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def get_draft_registrations(auth, node, *args, **kwargs):
+    """List draft registrations for a node
+
+    :return: serialized draft registrations
+    :rtype: dict
+    """
 
     count = request.args.get('count', 100)
     drafts = node.draft_registrations.find(
@@ -108,6 +134,11 @@ def get_draft_registrations(auth, node, *args, **kwargs):
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def create_draft_registration(auth, node, *args, **kwargs):
+    """Create a new draft registration and return it
+
+    :return: serialized draft registration
+    :rtype: dict
+    """
 
     data = request.get_json()
 
@@ -131,6 +162,12 @@ def create_draft_registration(auth, node, *args, **kwargs):
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def new_draft_registration(auth, node, *args, **kwargs):
+    """Create a new draft registration for the node
+
+    :return: Redirect to the new draft's edit page
+    :rtype: flask.redirect
+    :raises: HTTPError
+    """
 
     data = request.values
 
@@ -146,6 +183,8 @@ def new_draft_registration(auth, node, *args, **kwargs):
 
     schema_version = data.get('schema_version', 1)
 
+    # can return 404 if the schema does not exist
+    # can return 400 if the schema is in the DB twice (should never happen)
     meta_schema = get_schema_or_fail(
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', int(schema_version))
@@ -157,6 +196,11 @@ def new_draft_registration(auth, node, *args, **kwargs):
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def edit_draft_registration_page(auth, node, draft, **kwargs):
+    """Draft registration editor
+
+    :return: serialized DraftRegistration
+    :rtype: dict
+    """
     ret = project_utils.serialize_node(node, auth, primary=True)
     ret['draft'] = serialize_draft_registration(draft, auth)
     return ret
@@ -165,6 +209,12 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def update_draft_registration(auth, node, draft, *args, **kwargs):
+    """Update an existing draft registration
+
+    :return: serialized draft registration
+    :rtype: dict
+    :raises: HTTPError
+    """
     data = request.get_json()
 
     schema_data = data.get('schema_data', {})
@@ -188,10 +238,20 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
 @must_have_permission(ADMIN)
 @must_be_valid_project
 def delete_draft_registration(auth, node, draft, *args, **kwargs):
+    """Permanently delete a draft registration
+
+    :return: None
+    :rtype: NoneType
+    """
     DraftRegistration.remove_one(draft)
     return None, http.NO_CONTENT
 
 def get_metaschemas(*args, **kwargs):
+    """List metaschemas with which a draft registration may be created
+
+    :return: list a serialized metaschemas
+    :rtype: dict
+    """
 
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
