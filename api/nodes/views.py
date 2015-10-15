@@ -94,6 +94,11 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
     bulk delete
     """
 
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
     # Overrides BulkDestroyAPIView
     def bulk_destroy(self, request, *args, **kwargs):
         """
