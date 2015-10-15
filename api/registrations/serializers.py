@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
+from api.base.utils import absolute_reverse
 from api.nodes.serializers import NodeSerializer
 from api.base.serializers import IDField, JSONAPIHyperlinkedIdentityField, LinksField
 
@@ -29,7 +30,16 @@ class RegistrationSerializer(NodeSerializer):
 
     # TODO: Override create?
 
-    links = LinksField({'html': 'get_absolute_url'})
+    links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_url'})
+
+    def get_registration_url(self, obj):
+        view = self.context.get('view')
+        if not view:
+            view = self.context['request'].parser_context['view']
+        from api.nodes.views import NodeRegistrationsList, NodeDetail
+        if isinstance(view, (NodeRegistrationsList, NodeDetail)):
+            return absolute_reverse('nodes:node-detail', kwargs={'node_id': obj._id})
+        return absolute_reverse('registrations:registration-detail', kwargs={'registration_id':obj._id})
 
     def get_absolute_url(self, obj):
         return obj.absolute_url

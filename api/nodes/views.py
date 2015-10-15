@@ -22,7 +22,7 @@ from api.nodes.serializers import (
     NodeContributorDetailSerializer
 )
 
-from api.registrations.serializers import RegistrationSerializer
+from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 
 from api.nodes.permissions import (
     AdminOrPublic,
@@ -360,13 +360,16 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
+    def get_serializer_class(self):
+        if self.get_object().is_registration:
+            return RegistrationSerializer
+        return NodeDetailSerializer
+
     serializer_class = NodeDetailSerializer
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
         node = self.get_node()
-        if node.is_registration:
-            raise NotFound('This is a registration.')
         return node
 
     # overrides RetrieveUpdateDestroyAPIView
