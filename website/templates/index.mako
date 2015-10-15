@@ -285,7 +285,7 @@
           <div class="col-md-8">
             <h2><strong>Free and open source.</strong></h2>
             <h4>The OSF is a public good built to support your research.</h4>
-            <a href="#" class="btn btn-info btn-lg">Get Started</a>
+            <a href="#" class="btn btn-info btn-lg">Get started</a>
           </div>
           <div class="col-md-4 hidden-xs hidden-sm">
             <div id="logo">
