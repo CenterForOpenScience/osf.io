@@ -591,8 +591,8 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
     Registrations are read-only snapshots of a project. This view is a list of all the registrations of the current node.
 
-    Paginated list of registrations are ordered by their `date_modified`.  Each resource contains the full representation
-    of the registration, meaning additional requests to an individual registrations's detail view are not necessary.
+    Each resource contains the full representation of the registration, meaning additional requests to an individual
+    registrations's detail view are not necessary.
 
     ##Registration Attributes
 
@@ -652,9 +652,8 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
             auth = Auth(None)
         else:
             auth = Auth(user)
-        registrations = [node for node in nodes if node.can_view(auth)]
-        non_retracted_registrations = [reg for reg in registrations if not reg.is_retracted]
-        return non_retracted_registrations
+        registrations = [node for node in nodes if node.can_view(auth) and not node.is_retracted]
+        return registrations
 
 
 class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):

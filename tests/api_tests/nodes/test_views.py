@@ -130,6 +130,16 @@ class TestNodeFiltering(ApiTestCase):
         super(TestNodeFiltering, self).tearDown()
         Node.remove()
 
+    def test_filtering_registrations(self):
+        url = '/{}nodes/?filter[registration]=true'.format(API_BASE)
+        registration = RegistrationFactory(creator=self.user_one)
+        res = self.app.get(url, auth=self.user_one.auth, expect_errors=True)
+        node_json = res.json['data']
+
+        ids = [each['id'] for each in node_json]
+        assert_not_in(self.project_one._id, ids)
+        assert_in(registration._id, ids)
+
     def test_filtering_by_category(self):
         project = ProjectFactory(creator=self.user_one, category='hypothesis')
         project2 = ProjectFactory(creator=self.user_one, category='procedure')
