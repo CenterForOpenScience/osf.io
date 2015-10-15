@@ -11,12 +11,6 @@ import httpretty
 
 from framework.auth.core import Auth
 
-from website.addons.github import model
-from website.models import Node, NodeLog
-from website.views import find_dashboard
-from website.util import permissions, waterbutler_api_url_for
-from website.util.sanitize import strip_html
-from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase, fake
 from tests.factories import (
     DashboardFactory,
@@ -29,6 +23,14 @@ from tests.factories import (
 )
 from tests.utils import assert_logs, assert_not_logs
 
+from website.addons.github import model
+from website.models import Node, NodeLog
+from website.views import find_dashboard
+from website.util import permissions, waterbutler_api_url_for
+from website.util.sanitize import strip_html
+
+from api.base.settings.defaults import API_BASE
+from api.base.filters import FilterMixin
 
 class TestWelcomeToApi(ApiTestCase):
     def setUp(self):
@@ -382,7 +384,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "Value 'foo' is not a supported filter operator; use one of eq, lt, lte, gt, gte."
+            "Value 'foo' is not a supported filter operator; use one of ('gt', 'gte', 'lt', 'lte', 'eq')."
         )
 
     def test_filter_by_not_comparable_field(self):
@@ -474,7 +476,7 @@ class TestNodeFiltering(ApiTestCase):
             API_BASE,
             datetime.datetime.isoformat(self.third_date),
             datetime.datetime.isoformat(self.first_date)
-        )    
+        )
         res = self.app.get(url)
         ids = [item['id'] for item in res.json['data']]
         assert_not_in(self.project_one._id, ids)

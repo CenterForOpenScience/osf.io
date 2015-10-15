@@ -198,4 +198,4 @@ SWAGGER_SETTINGS = {
     'doc_expansion': 'list',
 }
 
-DEBUG_TRANSACTIONS = False
+DEBUG_TRANSACTIONS = DEBUG

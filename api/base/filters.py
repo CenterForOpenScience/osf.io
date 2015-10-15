@@ -4,7 +4,6 @@ import operator
 from dateutil import parser as date_parser
 import datetime
 
-
 from django.core.exceptions import ValidationError
 from modularodm import Q
 from rest_framework.filters import OrderingFilter
@@ -19,9 +18,7 @@ from api.base.exceptions import (
     InvalidFilterFieldError
 )
 from api.base import utils
-from api.base.serializers import JSONAPIListField
 
-from website.util import sanitize
 
 class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
@@ -38,9 +35,10 @@ class FilterMixin(object):
     """ View mixin with helper functions for filtering. """
 
     QUERY_PATTERN = re.compile(r'^filter\[(?P<field>\w+)\](\[(?P<op>\w+)\])?$')
-    COMPARISON_OPERATORS = ('gt', 'gte', 'lt', 'lte')
+
     MATCH_OPERATORS = ('contains', 'icontains')
     MATCHABLE_FIELDS = (ser.CharField, ser.ListField)
+
     DEFAULT_OPERATOR = 'eq'
     DEFAULT_OPERATOR_OVERRIDES = {
         ser.CharField: 'icontains',
@@ -49,20 +47,35 @@ class FilterMixin(object):
 
     NUMERIC_FIELDS = (ser.IntegerField, ser.DecimalField, ser.FloatField)
 
-    TIME_FIELDS = (ser.DateTimeField, ser.DateField)
+    DATE_FIELDS = (ser.DateTimeField, ser.DateField)
     DATETIME_PATTERN = re.compile(r'^\d{4}\-\d{2}\-\d{2}(?P<time>T\d{2}:\d{2}(:\d{2}(:\d{1,6})?)?)$')
 
-    COMPARABLE_FIELDS = NUMERIC_FIELDS + TIME_FIELDS
+    COMPARISON_OPERATORS = ('gt', 'gte', 'lt', 'lte')
+    COMPARABLE_FIELDS = NUMERIC_FIELDS + DATE_FIELDS
 
-    LIST_FIELDS = (ser.ListField, JSONAPIListField)
+    LIST_FIELDS = (ser.ListField, )
 
     def __init__(self, *args, **kwargs):
         super(FilterMixin, self).__init__(*args, **kwargs)
         if not self.serializer_class:
             raise NotImplementedError()
 
-    def _get_default_operator(self, field):
-        return self.DEFAULT_OPERATOR_OVERRIDES.get(type(field), self.DEFAULT_OPERATOR)
+    @staticmethod
+    def _isinstance_any(instance, bases):
+        return any([isinstance(instance, base) for base in bases])
+
+    @staticmethod
+    def _get_default_operator(field):
+        return FilterMixin.DEFAULT_OPERATOR_OVERRIDES.get(type(field), FilterMixin.DEFAULT_OPERATOR)
+
+    @staticmethod
+    def _get_valid_operators(field):
+        if FilterMixin._isinstance_any(field, FilterMixin.COMPARABLE_FIELDS):
+            return FilterMixin.COMPARISON_OPERATORS + (FilterMixin.DEFAULT_OPERATOR, )
+        elif FilterMixin._isinstance_any(field, FilterMixin.MATCHABLE_FIELDS):
+            return FilterMixin.MATCH_OPERATORS + (FilterMixin.DEFAULT_OPERATOR, )
+        else:
+            return None
 
     def _get_field_or_error(self, field_name):
         """
@@ -72,7 +85,7 @@ class FilterMixin(object):
         """
         if field_name not in self.serializer_class._declared_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
-        if field_name not in getattr(self.serializer_class, 'filterable_fields', {}):
+        if field_name not in getattr(self.serializer_class, 'filterable_fields', set()):
             raise InvalidFilterFieldError(attribute=field_name)
         return self.serializer_class._declared_fields[field_name]
 
@@ -85,12 +98,13 @@ class FilterMixin(object):
         :raises InvalidFilterOperator: If the filter operator is not a member of self.COMPARISON_OPERATORS
         """
         if op not in set(self.MATCH_OPERATORS + self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )):
-            raise InvalidFilterOperator(value=op)
+            valid_operators = self._get_valid_operators(field)
+            raise InvalidFilterOperator(value=op, valid_operators=valid_operators)
         if op in self.COMPARISON_OPERATORS:
-            if type(field) not in self.COMPARABLE_FIELDS:
+            if not self._isinstance_any(field, self.COMPARABLE_FIELDS):
                 raise InvalidFilterComparisonType(attribute=field.field_name)
         if op in self.MATCH_OPERATORS:
-            if type(field) not in self.MATCHABLE_FIELDS:
+            if not self._isinstance_any(field, self.MATCHABLE_FIELDS):
                 raise InvalidFilterMatchType(attribute=field.field_name)
 
     def _parse_date_param(self, field, field_name, op, value):
@@ -129,9 +143,6 @@ class FilterMixin(object):
         """
         query = {}
         for key, value in query_params.iteritems():
-            key = sanitize.strip_html(key)
-            value = sanitize.strip_html(value)
-
             match = self.QUERY_PATTERN.match(key)
             if match:
                 field_name = match.groupdict()['field'].strip()
@@ -145,7 +156,7 @@ class FilterMixin(object):
                     query[field_name] = []
 
                 # Special case date(time)s to allow for ambiguous date matches
-                if type(field) in self.TIME_FIELDS:
+                if type(field) in self.DATE_FIELDS:
                     query[field_name].extend(self._parse_date_param(field, field_name, op, value))
                 else:
                     query[field_name].append({
@@ -166,8 +177,7 @@ class FilterMixin(object):
         :param basestring value: value to be resolved
         :param rest_framework.fields.Field field: Field instance
         """
-        field_type = type(field)
-        if field_type == ser.BooleanField:
+        if isinstance(field, ser.BooleanField):
             if utils.is_truthy(value):
                 return True
             elif utils.is_falsy(value):
@@ -177,7 +187,7 @@ class FilterMixin(object):
                     value=value,
                     field_type='bool'
                 )
-        elif field_type in self.TIME_FIELDS:
+        elif any([isinstance(field, date_field) for date_field in self.DATE_FIELDS]):
             try:
                 return date_parser.parse(value)
             except ValueError:
@@ -185,7 +195,7 @@ class FilterMixin(object):
                     value=value,
                     field_type='date'
                 )
-        elif field_type in self.LIST_FIELDS:
+        elif any([isinstance(field, list_field) for list_field in self.LIST_FIELDS]):
             return value
         else:
             try:

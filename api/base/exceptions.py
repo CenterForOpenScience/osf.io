@@ -3,6 +3,8 @@ import httplib as http
 from rest_framework import status
 from rest_framework.exceptions import APIException
 
+from website.util import sanitize
+
 def json_api_exception_handler(exc, context):
     """ Custom exception handler that returns errors object as an array """
 
@@ -19,10 +21,16 @@ def json_api_exception_handler(exc, context):
         message = response.data
 
         if isinstance(exc, JSONAPIException):
+            # TODO: We're now stripping html from exception detail to protect
+            # against script injection attacks when returning raw user input into
+            # error messages. We should consider doing this for all exceptions.
+            #
+            # Fortunately, Django's templating language strips markup bu default,
+            # but if our frontend changes we may lose that protection.
             errors.extend([
                 {
                     'source': exc.source,
-                    'detail': exc.detail,
+                    'detail': sanitize.strip_html(exc.detail),
                 }
             ])
         elif isinstance(message, dict):
@@ -106,9 +114,13 @@ class InvalidFilterOperator(JSONAPIParameterException):
     """Raised when client passes an invalid operator to a query param filter."""
     status_code = http.BAD_REQUEST
 
-    def __init__(self, detail=None, value=None):
+    def __init__(self, detail=None, value=None, valid_operators=None):
         if value and not detail:
-            detail = "Value '{0}' is not a supported filter operator; use one of eq, lt, lte, gt, gte.".format(value)
+            valid_operators = valid_operators or ['eq', 'lt', 'lte', 'gt', 'gte', 'contains', 'icontains']
+            detail = "Value '{0}' is not a supported filter operator; use one of {1}.".format(
+                value,
+                valid_operators
+            )
         super(InvalidFilterOperator, self).__init__(detail=detail, parameter='filter')
 
 
@@ -118,11 +130,13 @@ class InvalidFilterValue(JSONAPIParameterException):
     status_code = http.BAD_REQUEST
 
     def __init__(self, detail=None, value=None, field_type=None):
-        if value and not detail:
-            detail = "Value '{0}' is not valid for a filter on type {1}.".format(
-                value,
-                field_type
-            )
+        if not detail:
+            detail = "Value '{0}' is not valid".format(value)
+            if field_type:
+                detail += " for a filter on type {0}".format(
+                    field_type
+                )
+            detail += "."
         super(InvalidFilterValue, self).__init__(detail=detail, parameter='filter')
 
 
@@ -147,7 +161,7 @@ class InvalidFilterMatchType(JSONAPIAttributeException):
     status_code = http.BAD_REQUEST
 
 
-class InvalidFilterFieldError(JSONAPIAttributeException):
+class InvalidFilterFieldError(JSONAPIParameterException):
     """Raised when client tries to filter on a field that is not supported"""
     default_detail = "Query contained one or more filters for invalid fields."
     status_code = http.BAD_REQUEST

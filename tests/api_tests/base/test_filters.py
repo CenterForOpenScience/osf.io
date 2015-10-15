@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+import re
 from dateutil import parser
 
 from nose.tools import *  # flake8: noqa
@@ -112,7 +113,7 @@ class TestFilterMixin(ApiTestCase):
             else:
                 self.fail()        
 
-    def test_parse_query_params_comparabile_field(self):
+    def test_parse_query_params_comparable_field(self):
         query_params = {
             'filter[int_field][gt]': 42,
             'fitler[int_field][lte]': 9000
@@ -168,6 +169,26 @@ class TestFilterMixin(ApiTestCase):
         }
         with assert_raises(InvalidFilterOperator):
             self.view.parse_query_params(query_params)
+
+    def test_InvalidFilterOperator_parameterizes_valid_operators(self):
+        query_params = {
+            'filter[int_field][bar]': 42
+        }
+        try:
+            self.view.parse_query_params(query_params)
+        except InvalidFilterOperator as err:
+            ops = re.search(r'\((?P<ops>.+)\)\.$', err.detail).groupdict()['ops']
+            assert_equal(ops, "'gt', 'gte', 'lt', 'lte', 'eq'")
+
+        query_params = {
+            'filter[string_field][bar]': 'foo'
+        }
+        try:
+            self.view.parse_query_params(query_params)
+        except InvalidFilterOperator as err:
+            ops = re.search(r'\((?P<ops>.+)\)\.$', err.detail).groupdict()['ops']
+            assert_equal(ops, "'contains', 'icontains', 'eq'")
+
 
     def test_parse_query_params_supports_multiple_filters(self):
         query_params = {
