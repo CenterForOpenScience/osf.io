@@ -3260,7 +3260,7 @@ class Sanction(StoredObject):
             return True
         return False
 
-    def remove_authorizer(self, user):
+    def remove_authorizer(self, user, save=False):
         """Remove a user as an authorizer
 
         :param User user:
@@ -3270,7 +3270,8 @@ class Sanction(StoredObject):
             return False
 
         del self.approval_state[user._id]
-        self.save()
+        if save:
+            self.save()
         return True
 
     def _on_approve(self, user, token):

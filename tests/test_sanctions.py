@@ -83,12 +83,14 @@ class TestSanction(SanctionsTestCase):
 
     def test_remove_authorizer(self):
         removed = self.sanction.remove_authorizer(self.user)
+        self.sanction.save()
         assert_true(removed)
         assert_not_in(self.user._id, self.sanction.approval_state.keys())
 
     def test_remove_authorizer_not_added(self):
         not_added = factories.UserFactory()
         removed = self.sanction.remove_authorizer(not_added)
+        self.sanction.save()
         assert_false(removed)
         assert_not_in(not_added, self.sanction.approval_state.keys())
 
