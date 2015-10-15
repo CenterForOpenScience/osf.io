@@ -1,7 +1,7 @@
 <%inherit file="base.mako"/>
 <%def name="title()">Reset Password</%def>
 <%def name="content()">
-<h1 class="page-header text-center">Reset Password</h1>
+<h1 class="page-header text-center">Reset password</h1>
 <div class="row">
     <div class="col-md-6 col-md-offset-3">
         <div mod-meta='{
