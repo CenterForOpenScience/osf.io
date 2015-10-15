@@ -1,4 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
+from rest_framework.exceptions import NotFound
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -80,8 +81,6 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = RegistrationSerializer
-
-    # ordering = ('-date_modified', )  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
@@ -165,7 +164,10 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        return self.get_node()
+        registration = self.get_node()
+        if not registration.is_registration:
+            raise NotFound('This is not a registration.')
+        return registration
 
     # overrides RetrieveAPIView
     def get_serializer_context(self):
