@@ -415,6 +415,48 @@ def oauth_application_detail(auth, **kwargs):
     return {"app_list_url": '',
             "app_detail_url": app_detail_url}
 
+@dev_only
+@must_be_logged_in
+def personal_access_token_list(auth, **kwargs):
+    """Return token creation page with list of known tokens. API is responsible for tying list to current user."""
+    # TODO: Remove dev_only restriction when APIv2 is released into production
+    token_list_url = api_v2_url("tokens/")
+    return {
+        "token_list_url": token_list_url
+    }
+
+@dev_only
+@must_be_logged_in
+def personal_access_token_register(auth, **kwargs):
+    """Register an API personal token: blank form view"""
+    # TODO: Remove dev_only restriction when APIv2 is released into production
+    token_list_url = api_v2_url("tokens/")  # POST request to this url
+    return {"app_list_url": token_list_url,
+            "app_detail_url": ''}
+
+@dev_only
+@must_be_logged_in
+def personal_access_token_detail(auth, **kwargs):
+    """Show detail for a single OAuth personal token"""
+    # TODO: Remove dev_only restriction when APIv2 is released into production
+    _id = kwargs.get('_id')
+
+    # The ID must be an active and existing record, and the logged-in user must have permission to view it.
+    try:
+        #
+        record = ApiOAuth2Application.find_one(Q('id', 'eq', _id))
+    except NoResultsFound:
+        raise HTTPError(http.NOT_FOUND)
+    if record.owner != auth.user:
+        raise HTTPError(http.FORBIDDEN)
+    if record.is_active is False:
+        raise HTTPError(http.GONE)
+
+    token_detail_url = api_v2_url("tokens/{}/".format(_id))  # Send request to this URL
+    return {"token_list_url": '',
+            "token_detail_url": token_detail_url}
+
+
 def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
     the URLs for each of the JS modules to be included on the user addons config page.

@@ -6,6 +6,8 @@ from framework.auth.core import User
 from framework.guid.model import Guid, BlacklistGuid
 from framework.sessions.model import Session
 
+from api.tokens.models import ApiOAuth2PersonalToken
+
 from website.project.model import (
     Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
@@ -26,7 +28,7 @@ from website.archiver.model import ArchiveJob, ArchiveTarget
 
 # All models
 MODELS = (
-    User, ApiOAuth2Application, Node,
+    User, ApiOAuth2Application, ApiOAuth2PersonalToken, Node,
     NodeLog, StoredFileNode, TrashedFileNode, FileVersion,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,

@@ -580,6 +580,28 @@ def make_url_map(app):
             OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
         ),
 
+        Rule(
+            '/settings/tokens/',
+            'get',
+            profile_views.personal_access_token_list,
+            OsfWebRenderer('profile/personal_tokens_list.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/create',
+            'get',
+            profile_views.personal_access_token_register,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/<token_name>',
+            'get',
+            profile_views.personal_access_token_detail,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
+
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
