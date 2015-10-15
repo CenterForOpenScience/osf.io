@@ -3923,7 +3923,7 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                 if question_id == qid:
                     return question
 
-    def register(self, auth):
+    def register(self, auth, save=False):
 
         node = self.branched_from
 
@@ -3932,5 +3932,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
             self.registration_schema, auth, self.registration_metadata
         )
         self.registered_node = register
-        self.save()
+        if save:
+            self.save()
         return register

@@ -78,6 +78,7 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
 
     data = request.get_json()
     register = draft.register(auth)
+    draft.save()
 
     if data.get('registrationChoice', 'immediate') == 'embargo':
         # Initiate embargo
