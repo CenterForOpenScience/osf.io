@@ -14,19 +14,8 @@ var STYLES = {
 
 var ctx = window.contextVars;
 
-var escapeHTML = function(s) {
-    return s.replace(/&/g, '&amp;')
-            .replace(/"/g, '&quot;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/'/g, '&#x27;')
-            .replace(/\//g, '&#x2F;');
-};
-
 var formatCitation = function(style, data, format) {
-    var escapedStyle = escapeHTML(style);
-    var escapedData = escapeHTML(data);
-    var citeproc = citations.makeCiteproc(escapedStyle, escapedData, format);
+    var citeproc = citations.makeCiteproc(style, data, format);
     return citeproc.makeBibliography()[1];
 };
 
@@ -46,9 +35,9 @@ ViewModel.prototype.fetch = function() {
     ];
     var requests = [citationRequest].concat(styleRequests);
     $.when.apply(self, requests).done(function(data, apa, mla, chicago) {
-        self.apa(formatCitation(apa[0], data[0], 'html'));
-        self.mla(formatCitation(mla[0], data[0], 'html'));
-        self.chicago(formatCitation(chicago[0], data[0], 'html'));
+        self.apa(formatCitation(apa[0], data[0], 'text'));
+        self.mla(formatCitation(mla[0], data[0], 'text'));
+        self.chicago(formatCitation(chicago[0], data[0], 'text'));
     }).fail(function() {
         console.log('Could not load citations');
     });
