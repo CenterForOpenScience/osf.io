@@ -152,6 +152,7 @@ STATICFILES_DIRS = (
 # TODO: Revisit methods for excluding private routes from swagger docs
 SWAGGER_SETTINGS = {
     'api_path': '/',
+    'enabled_methods': ['get', 'head', 'options'],
     'doc_expansion': 'list',
     'info': {
         'description':
