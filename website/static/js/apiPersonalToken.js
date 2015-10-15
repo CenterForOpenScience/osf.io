@@ -117,8 +117,8 @@ var TokenDataClient = oop.defclass({
         var url = tokenData.apiDetailUrl;
         return this._sendData(tokenData, url, 'PATCH');
     },
-    deleteOne: function (appData) {
-        var url = appData.apiDetailUrl;
+    deleteOne: function (tokenData) {
+        var url = tokenData.apiDetailUrl;
         return $osf.ajaxJSON('DELETE', url, {isCors: true});
     },
     unserialize: function (apiData) {
@@ -148,7 +148,7 @@ var TokensListViewModel = oop.defclass({
         // Set up data storage
         this.tokenData = ko.observableArray();
         this.sortedByName = ko.pureComputed(function () {
-            return this.appData().sort(function (a,b) {
+            return this.tokenData().sort(function (a,b) {
                 var an = a.name().toLowerCase();
                 var bn = b.name().toLowerCase();
                 return an === bn ? 0 : (an < bn ? -1 : 1);
@@ -184,7 +184,7 @@ var TokensListViewModel = oop.defclass({
                 if (confirmed) {
                     var request = this.client.deleteOne(tokenData);
                     request.done(function () {
-                            this.appData.destroy(tokenData);
+                            this.tokenData.destroy(tokenData);
                             var tokenName = $osf.htmlEscape(tokenData.name());
                             $osf.growl('Deletion', '"' + tokenName + '" has been deactivated', 'success');
                     }.bind(this));
@@ -337,13 +337,13 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
         }
     },
     deleteToken: function () {
-        var appData = this.appData();
+        var tokenData = this.tokenData();
         bootbox.confirm({
             title: 'Deactivate application?',
             message: language.apiOauth2Token.deactivateConfirm,
             callback: function (confirmed) {
                 if (confirmed) {
-                    var request = this.client.deleteOne(appData );
+                    var request = this.client.deleteOne(tokenData );
                     request.done(function () {
                         this.allowExit(true);
                         // Don't let user go back to a deleted application page
