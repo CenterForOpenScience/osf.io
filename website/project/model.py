@@ -26,6 +26,7 @@ from api.base.utils import absolute_reverse
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
+from framework.mongo import validators
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
 from framework.auth import signals as auth_signals
@@ -3166,8 +3167,16 @@ class Sanction(StoredObject):
     APPROVED = 'approved'
     # Rejected by at least one person
     REJECTED = 'rejected'
-    # One of 'unapproved', 'active', 'cancelled', or 'completed
-    state = fields.StringField(default=UNAPPROVED)
+
+    state = fields.StringField(
+        default=UNAPPROVED,
+        validate=validators.choice_in((
+            'unapproved',
+            'active',
+            'cancelled',
+            'completed',
+        ))
+    )
 
     DISPLAY_NAME = 'Sanction'
     # SHORT_NAME must correspond with the associated foreign field to query against,
