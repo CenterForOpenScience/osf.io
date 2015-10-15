@@ -22,7 +22,6 @@ from api.nodes.serializers import (
     NodeContributorDetailSerializer
 )
 
-from api.registrations.serializers import RegistrationSerializer, RegistrationDetailSerializer
 
 from api.nodes.permissions import (
     AdminOrPublic,
@@ -221,8 +220,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True) &
-            Q('is_registration', 'eq', False)
+            Q('is_folder', 'ne', True)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
@@ -359,11 +357,6 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-
-    def get_serializer_class(self):
-        if self.get_object().is_registration:
-            return RegistrationSerializer
-        return NodeDetailSerializer
 
     serializer_class = NodeDetailSerializer
 
@@ -650,7 +643,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
-    serializer_class = RegistrationSerializer
+    serializer_class = NodeSerializer
 
     # overrides ListAPIView
     # TODO: Filter out retractions by default
