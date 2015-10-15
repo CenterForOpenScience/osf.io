@@ -95,22 +95,3 @@ class ExternalAccountSerializer(JSONAPISerializer):
         type_ = 'external_accounts'
 
     id = IDField(source='_id')
-
-
-class UserAddonSerializer(JSONAPISerializer):
-
-    class Meta:
-        type_ = 'addons'
-
-    id = IDField(source='_id')
-
-    short_name = ser.SerializerMethodField()
-    full_name = ser.SerializerMethodField()
-    accounts = ExternalAccountSerializer(many=True, read_only=True)
-    #  TODO: roles
-
-    def get_short_name(self, instance):
-        return instance.config.short_name
-
-    def get_full_name(self, instance):
-        return instance.config.full_name

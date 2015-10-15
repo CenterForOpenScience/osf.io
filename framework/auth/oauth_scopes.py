@@ -20,8 +20,8 @@ class CoreScopes(object):
     USERS_READ = 'users_read'
     USERS_WRITE = 'users_write'
 
-    USER_ADDONS_READ = 'user_addons_read'
-    USER_ADDONS_WRITE = 'user_addons_write'
+    USER_ADDONS_READ = 'users.addons_read'
+    USER_ADDONS_WRITE = 'users.addons_write'
 
     NODE_BASE_READ = 'nodes.base_read'
     NODE_BASE_WRITE = 'nodes.base_write'
@@ -40,6 +40,12 @@ class CoreScopes(object):
 
     NODE_REGISTRATIONS_READ = 'nodes.registrations_read'
     NODE_REGISTRATIONS_WRITE = 'nodes.registrations_write'
+
+    NODE_ADDONS_READ = 'nodes.addons_read'
+    NODE_ADDONS_WRITE = 'node.addons_write'
+
+    EXTERNAL_ACCOUNTS_READ = 'external_accounts_read'
+    EXTERNAL_ACCOUNTS_WRITE = 'external_accounts_write'
 
     APPLICATIONS_READ = 'applications_read'
     APPLICATIONS_WRITE = 'applications_write'

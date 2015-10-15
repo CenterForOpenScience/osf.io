@@ -14,8 +14,9 @@ from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
+from api.user_addons.serializers import UserAddonSerializer
 
-from .serializers import UserSerializer, UserDetailSerializer, UserAddonSerializer
+from .serializers import UserSerializer, UserDetailSerializer
 from .permissions import ReadOnlyOrCurrentUser
 
 
@@ -289,7 +290,7 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
         return nodes
 
 
-class UserAddons(generics.ListAPIView, UserMixin):
+class UserAddonList(generics.ListAPIView, UserMixin):
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,

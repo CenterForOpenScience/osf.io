@@ -86,6 +86,10 @@ class ExternalAccount(StoredObject):
         return '<ExternalAccount: {}/{}>'.format(self.provider,
                                                  self.provider_id)
 
+    @property
+    def pk(self):
+        return self._id
+
 
 class ExternalProviderMeta(abc.ABCMeta):
     """Keeps track of subclasses of the ``ExternalProvider`` object"""

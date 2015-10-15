@@ -364,3 +364,15 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
+
+
+class NodeAddonSerializer(JSONAPISerializer):
+
+    class Meta:
+        type_ = 'node_addons'
+
+    id = IDField(source='_id')
+    provider = ser.SerializerMethodField()
+
+    def get_provider(self, instance):
+        return instance.config.short_name

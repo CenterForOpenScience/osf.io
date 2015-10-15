@@ -30,6 +30,7 @@ from api.nodes.permissions import (
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
 )
+from api.node_addons.serializers import NodeAddonSerializer
 from api.base.exceptions import ServiceUnavailableError
 
 from website.exceptions import NodeStateError
@@ -400,6 +401,8 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         ---------------------------------------------------------------------------------
         bibliographic  boolean  Whether the user will be included in citations for this node or not
         permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
+
+    All other attributes are inherited from the User object.
 
     ##Links
 
@@ -1331,3 +1334,43 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
             if addon.config.has_hgrid_files
             and addon.complete
         ]
+
+
+class NodeAddonDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_ADDONS_READ]
+    required_write_scopes = [CoreScopes.NODE_ADDONS_WRITE]
+
+    serializer_class = NodeAddonSerializer
+
+    lookup_field = 'addon_short_name'
+
+    def get_object(self):
+        node = self.get_node()
+        current_user = self.request.user
+        auth = Auth(current_user)
+        return node.get_or_add_addon(self.kwargs['addon_short_name'], auth=auth)
+
+    def perform_update(self, serializer):
+        pass
+
+class NodeAddonList(generics.ListAPIView, NodeMixin):
+
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.NODE_ADDONS_READ]
+    required_write_scopes = [CoreScopes.NODE_ADDONS_WRITE]
+
+    serializer_class = NodeAddonSerializer
+
+    def get_queryset(self):
+        node = self.get_node()
+        return node.get_addons()
