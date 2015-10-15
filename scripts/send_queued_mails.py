@@ -24,11 +24,20 @@ def main(dry_run=True):
 
     emails_to_be_sent = pop_and_verify_mails_for_each_user(user_queue)
 
+    logger.info('Emails being sent at {0}'.format(datetime.utcnow().isoformat()))
+
     for mail in emails_to_be_sent:
-        logger.warn('Email of type {0} sent to {1}'.format(mail.email_type, mail.to_addr))
         if not dry_run:
             with TokuTransaction():
-                mail.send_mail()
+                try:
+                    sent_ = mail.send_mail()
+                    message = 'Email of type {0} sent to {1}'.format(mail.email_type, mail.to_addr) if sent_ else \
+                        'Email of type {0} failed to be sent to {1}'.format(mail.email_type, mail.to_addr)
+                    logger.info(message)
+                except Exception as error:
+                    logger.error('Email of type {0} to be sent to {1} caused an ERROR'.format(mail.email_type, mail.to_addr))
+                    logger.exception(error)
+                    pass
 
 def find_queued_mails_ready_to_be_sent():
     return mails.QueuedMail.find(
