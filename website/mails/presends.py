@@ -50,8 +50,7 @@ def welcome_osf4m(email):
             return False
     upload = OsfStorageFileNode.load(email.data['fid'])
     if upload:
-        child = upload.children[0] if upload.children else None
-        email.data['downloads'] = child.get_download_count() if child else 0
+        email.data['downloads'] = upload.get_download_count()
     else:
         email.data['downloads'] = 0
     email.save()
