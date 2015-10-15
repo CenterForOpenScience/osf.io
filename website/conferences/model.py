@@ -49,6 +49,7 @@ class Conference(StoredObject):
         except ModularOdmException:
             raise ConferenceError('Endpoint {0} not found'.format(endpoint))
 
+
 class MailRecord(StoredObject):
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
     data = fields.DictionaryField()
