@@ -44,13 +44,14 @@ def welcome_osf4m(email):
     :return: boolean based on whether the email should be sent
     """
     # In line import to prevent circular importing
-    from website.files.models import OsfStorageFile
+    from website.files.models import OsfStorageFileNode
     if email.user.date_last_login:
         if email.user.date_last_login > datetime.utcnow() - settings.WELCOME_OSF4M_WAIT_TIME_GRACE:
             return False
-    upload = OsfStorageFile.load(email.data['fid'])
+    upload = OsfStorageFileNode.load(email.data['fid'])
     if upload:
-        email.data['downloads'] = upload.get_download_count()
+        child = upload.children[0] if upload.children else None
+        email.data['downloads'] = child.get_download_count() if child else 0
     else:
         email.data['downloads'] = 0
     email.save()
