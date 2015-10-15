@@ -46,7 +46,8 @@ def queue_first_public_project_email(user, node, meeting_creation):
 @conference_signals.osf4m_user_created.connect
 def queue_osf4m_welcome_email(user, conference, node):
     """Queue an email once a new user is created for OSF for Meetings"""
-    root_id = (node.get_addon('osfstorage')).root_node._id
+    root = (node.get_addon('osfstorage')).root_node
+    fid = root.children[0]._id if root.children else None
     mails.queue_mail(
         to_addr=user.username,
         mail=mails.WELCOME_OSF4M,
@@ -54,5 +55,5 @@ def queue_osf4m_welcome_email(user, conference, node):
         user=user,
         conference=conference.name,
         fullname=user.fullname,
-        fid=root_id
+        fid=fid
     )
