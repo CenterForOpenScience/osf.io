@@ -415,7 +415,7 @@ describe('osfHelpers', () => {
             assert.calledOnce(bootboxStub);
         });
     });
-    
+
     describe('iterObject', () => {
         var get = function(obj, key) {
             return obj[key];
@@ -433,6 +433,7 @@ describe('osfHelpers', () => {
                 var item = iterable[i];
                 assert.include(keys, item.key);
                 assert.include(values, item.value);
+                assert.equal(item.value, get(obj, keys[i]));
             }
         });
     });
