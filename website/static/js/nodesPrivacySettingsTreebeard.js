@@ -77,14 +77,15 @@ function displayParentNotificationType(item){
 }
 
 
-function ProjectNotifications(data) {
+function NodesPrivacyTreebeard(data) {
 
+    debugger;
     //  Treebeard version
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         divID: 'grid',
         filesData: data,
         naturalScrollLimit : 0,
-        resolveRows: function notificationResolveRows(item){
+        resolveRows: function nodesPrivacyResolveRows(item){
             var columns = [];
             var iconcss = '';
             // check if should not get icon
@@ -213,4 +214,4 @@ function ProjectNotifications(data) {
     expandOnLoad.call(grid.tbController);
 }
 
-module.exports = ProjectNotifications;
+module.exports = NodesPrivacyTreebeard;

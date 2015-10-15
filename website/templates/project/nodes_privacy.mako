@@ -1,4 +1,4 @@
-<div id="nodesPublic" class="modal fade">
+<div id="nodesPrivacy" class="modal fade">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
@@ -68,7 +68,7 @@
                     <div class="help-block" style="padding-left: 15px">
                         <p class="text-info">Check projects or components to make them public, uncheck to make them private.</p>
                     </div>
-                    <form id="notificationSettings" class="osf-treebeard-minimal">
+                    <form class="osf-treebeard-minimal">
                         <div id="grid">
                             <div class="spinner-loading-wrapper">
                                 <div class="logo-spin logo-lg"></div>

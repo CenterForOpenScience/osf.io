@@ -48,7 +48,7 @@ var MESSAGES = {
 };
 
 // Initialize treebeard grid for notifications
-var ProjectNotifications = require('js/nodePrivacySettingsTreebeard.js');
+var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
 var notificationsURL = ctx.node.urls.api  + 'subscriptions/';
 // Need check because notifications settings don't exist on registration's settings page
@@ -58,7 +58,7 @@ if ($('#grid').length) {
         type: 'GET',
         dataType: 'json'
     }).done(function(response) {
-        new ProjectNotifications(response);
+        new NodesPrivacyTreebeard(response);
     }).fail(function(xhr, status, error) {
         $notificationsMsg.addClass('text-danger');
         $notificationsMsg.text('Could not retrieve notification settings.');
@@ -70,7 +70,7 @@ if ($('#grid').length) {
 
 
 
-var NodesPublicViewModel = function() {
+var NodesPrivacyViewModel = function() {
     var self = this;
     self.page = ko.observable('warning');
     self.pageTitle = ko.computed(function() {
@@ -107,21 +107,21 @@ var NodesPublicViewModel = function() {
 
 };
 
-function NodesPublic (selector, data, options) {
+function NodesPrivacy (selector, data, options) {
     var self = this;
     self.selector = selector;
     self.$element = $(self.selector);
     self.data = data;
-    self.viewModel = new NodesPublicViewModel(self.data);
+    self.viewModel = new NodesPrivacyViewModel(self.data);
     self.init();
 }
 
-NodesPublic.prototype.init = function() {
+NodesPrivacy.prototype.init = function() {
     var self = this;
     osfHelpers.applyBindings(self.viewModel, this.selector);
 };
 
 module.exports = {
-    _ProjectViewModel: NodesPublicViewModel,
-    NodesPublic: NodesPublic
+    _ProjectViewModel: NodesPrivacyViewModel,
+    NodesPrivacy: NodesPrivacy
 };

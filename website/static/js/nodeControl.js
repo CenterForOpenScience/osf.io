@@ -9,7 +9,7 @@ var $osf = require('js/osfHelpers');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-var NodesPublic = require('js/nodesPublic');
+var nodesPrivacy = require('js/nodesPrivacy');
 require('bootstrap-editable');
 require('knockout.punches');
 ko.punches.enableAll();
