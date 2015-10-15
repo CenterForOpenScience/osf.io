@@ -25,8 +25,18 @@ class Conference(StoredObject):
     public_projects = fields.BooleanField(required=False, default=True)
     poster = fields.BooleanField(default=True)
     talk = fields.BooleanField(default=True)
-    custom_poster_name = fields.StringField(default='poster')
-    custom_talk_name = fields.StringField(default='talk')
+    field_names = fields.DictionaryField(default=lambda:
+    {
+        'poster': 'poster',
+        'talk': 'talk',
+        'posters': 'posters',
+        'talks': 'talks',
+        'Posters & Talks':'Posters & Talks',
+        'poster or talk': 'poster or talk',
+        'Subject': 'Presentation title',
+        'Message body': 'Presentation abstract (if any)',
+        'Attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)'
+    })
 
     @classmethod
     def get_by_endpoint(cls, endpoint, active=True):
