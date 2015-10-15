@@ -33,12 +33,6 @@ class RegistrationSerializer(NodeSerializer):
     links = LinksField({'self': 'get_registration_url', 'html': 'get_absolute_url'})
 
     def get_registration_url(self, obj):
-        view = self.context.get('view')
-        if not view:
-            view = self.context['request'].parser_context['view']
-        from api.nodes.views import NodeRegistrationsList, NodeDetail
-        if isinstance(view, (NodeRegistrationsList, NodeDetail)):
-            return absolute_reverse('nodes:node-detail', kwargs={'node_id': obj._id})
         return absolute_reverse('registrations:registration-detail', kwargs={'registration_id':obj._id})
 
     def get_absolute_url(self, obj):
