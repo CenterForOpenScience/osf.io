@@ -24,7 +24,7 @@ def main(dry_run=True):
 
     emails_to_be_sent = pop_and_verify_mails_for_each_user(user_queue)
 
-    logger.warn('Emails being sent at {0}:{1}:{2}:{3}'.format(datetime.utcnow().year, datetime.utcnow().month, datetime.utcnow().day, datetime.utcnow().minute))
+    logger.info('Emails being sent at {0}'.format(datetime.utcnow().isoformat()))
 
     for mail in emails_to_be_sent:
         if not dry_run:
@@ -33,7 +33,7 @@ def main(dry_run=True):
                     sent_ = mail.send_mail()
                     message = 'Email of type {0} sent to {1}'.format(mail.email_type, mail.to_addr) if sent_ else \
                         'Email of type {0} failed to be sent to {1}'.format(mail.email_type, mail.to_addr)
-                    logger.warn(message)
+                    logger.info(message)
                 except Exception as error:
                     logger.error('Email of type {0} to be sent to {1} caused an ERROR'.format(mail.email_type, mail.to_addr))
                     logger.exception(error)
