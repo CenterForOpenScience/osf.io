@@ -2121,6 +2121,7 @@ class TestNodeRegistrationList(ApiTestCase):
         assert_equal(res.json['data'][0]['attributes']['registration'], True)
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
+        assert_equal(res.json['data'][0]['type'], 'registrations')
 
     def test_return_public_registrations_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
@@ -2129,6 +2130,7 @@ class TestNodeRegistrationList(ApiTestCase):
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
         assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data'][0]['type'], 'registrations')
 
     def test_return_private_registrations_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -2142,11 +2144,25 @@ class TestNodeRegistrationList(ApiTestCase):
         url = res.json['data'][0]['relationships']['registered_from']['links']['related']['href']
         assert_equal(urlparse(url).path, '/{}nodes/{}/'.format(API_BASE, self.project._id))
         assert_equal(res.content_type, 'application/vnd.api+json')
+        assert_equal(res.json['data'][0]['type'], 'registrations')
 
     def test_return_private_registrations_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
+
+    def test_omit_retracted_registration(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
+        registration.retract_registration(self.user)
+        retraction = registration.retraction
+        token = retraction.approval_state.values()[0]['approval_token']
+        retraction.approve_retraction(self.user, token)
+        registration.save()
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+
 
 
 class TestNodeChildrenList(ApiTestCase):

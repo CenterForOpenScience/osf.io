@@ -653,7 +653,8 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         else:
             auth = Auth(user)
         registrations = [node for node in nodes if node.can_view(auth)]
-        return registrations
+        non_retracted_registrations = [reg for reg in registrations if not reg.is_retracted]
+        return non_retracted_registrations
 
 
 class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
