@@ -155,3 +155,5 @@ def s3_delete_node_settings(auth, node_addon, **kwargs):
 @must_have_addon('s3', 'user')
 def s3_delete_user_settings(user_addon, auth, **kwargs):
     user_addon.revoke_auth(auth=auth, save=True)
+    user_addon.delete()
+    user_addon.save()

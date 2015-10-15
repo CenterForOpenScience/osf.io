@@ -172,9 +172,6 @@ class BoxUserSettings(AddonUserSettingsBase):
             node_settings.deauthorize(Auth(self.owner))
             node_settings.save()
 
-    def _clear(self):
-        self.clear()
-
     def get_credentialsv2(self):
         if not self.has_auth:
             return None
@@ -260,9 +257,6 @@ class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     def delete(self, save=True):
         self.deauthorize(add_log=False)
         super(BoxNodeSettings, self).delete(save)
-
-    def authorize(self, user_addon, **kwargs):
-        self.set_user_auth(user_addon)
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
