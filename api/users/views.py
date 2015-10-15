@@ -77,14 +77,21 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
 
     ##Query Params
 
-    + `page=<Int>` -- page number of results to view, default 1
-
-    + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
-
     Users may be filtered by their `id`, `full_name`, `given_name`, `middle_names`, or `family_name`.
 
     #This Request/Response
 
+    ---
+    GET:
+        parameters:
+            - name: page
+              description: page number of results to view, default 1
+              type: integer
+              paramType: query
+            - name: filter[<fieldname>]
+              description: field and value to filter the search results on
+              type: string
+              paramType: query
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
