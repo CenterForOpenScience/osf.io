@@ -918,7 +918,7 @@ class NodeChildrenList(ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
-class NodeLinksList(BulkDestroyJSONAPIView, ListBulkCreateJSONAPIView,  NodeMixin):
+class NodeLinksList(BulkDestroyJSONAPIView, ListBulkCreateJSONAPIView, NodeMixin):
     """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
