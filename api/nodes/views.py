@@ -20,7 +20,8 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
-    NodeContributorDetailSerializer
+    NodeContributorDetailSerializer,
+    NodeContributorsCreateSerializer
 )
 from api.nodes.permissions import (
     AdminOrPublic,
@@ -60,6 +61,7 @@ class NodeMixin(object):
         if check_object_permissions:
             self.check_object_permissions(self.request, node)
         return node
+
 
 class WaterButlerMixin(object):
 
@@ -399,12 +401,15 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         bibliographic  boolean  Whether the user will be included in citations for this node or not
         permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
 
-    All other attributes are inherited from the User object.
-
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
+    ##Relationships
+
+    ###User
+
+    This endpoint shows the contributor user detail.
     ##Actions
 
     ###Adding Contributors
@@ -412,23 +417,33 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         Method:        POST
         URL:           links.self
         Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "contributors",        # required
-                           "id":   {contributor_user_id}, # required
-                           "attributes": {
-                             "bibliographic": true|false,            # optional
-                             "permission":    "read"|"write"|"admin" # optional
-                           }
-                         }
-                       }
+        Body (JSON): {
+                      "data": {
+                        "type": "contributors",     # required
+                        "attributes": {
+                          "bibliographic": true|false,            # optional
+                          "permission": "read"|"write"|"admin"    # optional
+                        },
+                        "relationships": {
+                          "users": {
+                            "data": {
+                              "type": "users",                 # required
+                              "id":   "{contributor_user_id}", # required
+                            }
+                        }
+                    }
+                }
+            }
         Success:       201 CREATED + node contributor representation
 
-    Contributors can be added to nodes are by issuing a POST request to this endpoint.  The `id` attribute is mandatory and
-    must be a valid user id.  `bibliographic` is a boolean and defaults to `true`.  `permission` must be a [valid OSF
-    permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`. All other fields not listed above will be
-    ignored.  If the request is successful the API will return a 201 response with the respresentation of the new node
-    contributor in the body.  For the new node contributor's canonical URL, see the `links.self` field of the response.
+    Contributors can be added to nodes by issuing a POST request to this endpoint.  This effectively creates a relationship
+    between the node and the user.  Besides the top-level type, there are optional "attributes" which describe the
+    relationship between the node and the user. `bibliographic` is a boolean and defaults to `true`.  `permission` must
+    be a [valid OSF permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`.  The contributor must be
+    described as a relationship object with a "data" member, containing the user `type` and user `id`.  The id must be a
+    valid user id.  All other fields not listed above will be ignored.  If the request is successful the API will return
+    a 201 response with the representation of the new node contributor in the body.  For the new node contributor's
+    canonical URL, see the `links.self` field of the response.
 
     ##Query Params
 
@@ -467,6 +482,12 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
             contributors.append(contributor)
         return contributors
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return NodeContributorsCreateSerializer
+        else:
+            return NodeContributorsSerializer
+
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
@@ -492,18 +513,17 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         bibliographic  boolean  Whether the user will be included in citations for this node or not
         permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
 
-    All other attributes are inherited from the User object.
-
     ##Relationships
 
-    ###Nodes
+    ###User
 
-    This endpoint shows the list of all nodes the user contributes to.
+    This endpoint shows the contributor user detail.
 
     ##Links
 
-        self:  the canonical api endpoint of this node
-        html:  this node's page on the OSF website
+        self:  the relationship url for this node contributor
+        html:  this user's page on the OSF website
+        profile_image: this user's gravatar
 
     ##Actions
 
@@ -517,7 +537,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
                            "type": "contributors",        # required
                            "id":   {contributor_user_id}, # required
                            "attributes": {
-                             "bibiliographic": true|false,            # optional
+                             "bibliographic": true|false,            # optional
                              "permission":     "read"|"write"|"admin" # optional
                            }
                          }
@@ -743,19 +763,45 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
 
-    **TODO: this is placeholder documentation pending finish**
-
     ##Node Link Attributes
+    `type` is "node_links"
 
-    **TODO: import from NodeLinksDetail**
+        None
 
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
+    ##Relationships
+
+    ### Target Node
+
+    This endpoint shows the target node detail.
+
     ##Actions
 
-    ###Create
+    ###Adding Node Links
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON): {
+                       "data": {
+                          "type": "node_links",     # required
+                          "relationships": {
+                            "nodes": {
+                              "data": {
+                                "type": "nodes",                 # required
+                                "id": "{target_node_id}",        # required
+                              }
+                            }
+                          }
+                       }
+                    }
+        Success:       201 CREATED + node link representation
+
+    To add a node link (a pointer to another node), issue a POST request to this endpoint.  This effectively creates a
+    relationship between the node and the target node.  The target node must be described as a relationship object with
+    a "data" member, containing the `type` nodes and the target node `id`.
 
     ##Query Params
 
@@ -791,19 +837,36 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
 
-    **TODO: this is placeholder documentation pending finish**
-
     ##Attributes
+    `type` is "node_links"
 
-        name           type               description
-        ---------------------------------------------------------------------------------
-        $name          $type              $descr
-
-    ##Relationships
+        None
 
     ##Links
 
+        self:  the relationship url for this node link
+        html:  this node's page on the OSF website
+        profile_image: this contributor's gravatar
+
+    ##Relationships
+
+    ###Target node
+
+    This endpoint shows the target node detail.
+
+
+
     ##Actions
+
+    ###Remove Node Link
+
+        Method:        DELETE
+        URL:           links.self
+        Query Params:  <none>
+        Success:       204 No Content
+
+    To remove a node link from a node, issue a DELETE request to the `self` link.  This request will remove the
+    relationship between the node and the target node, not the nodes themselves.
 
     ##Query Params
 

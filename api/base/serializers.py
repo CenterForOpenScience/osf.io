@@ -69,6 +69,7 @@ class IDField(ser.CharField):
 
 
 class TypeField(ser.CharField):
+
     def __init__(self, **kwargs):
         kwargs['write_only'] = True
         kwargs['required'] = True
@@ -77,6 +78,18 @@ class TypeField(ser.CharField):
     def to_internal_value(self, data):
         if self.root.Meta.type_ != data:
             raise Conflict()
+        return super(TypeField, self).to_internal_value(data)
+
+
+class TargetTypeField(TypeField):
+    """
+    Enforces that the related resource has the correct type
+    """
+
+    def to_internal_value(self, data):
+        if self.root.Meta.target_type_ != data:
+            raise Conflict()
+        # Super call intentional to prevent target_type_ being checked against type_
         return super(TypeField, self).to_internal_value(data)
 
 
@@ -362,6 +375,7 @@ class JSONAPISerializer(ser.Serializer):
             self._validated_data = _rapply(self.validated_data, strip_html)
 
         self._validated_data.pop('type', None)
+        self._validated_data.pop('target_type', None)
 
         update_methods = ['PUT', 'PATCH']
         if self.context['request'].method in update_methods:
