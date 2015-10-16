@@ -408,15 +408,15 @@ function _poMultiselect(event, tree) {
     var tb = this;
     filterRowsNotInParent.call(tb, tb.multiselected());
     var scrollToItem = false;
-    if (tb.toolbarMode() === 'search') {
-        _dismissToolbar.call(tb);
-        scrollToItem = true;
-        // recursively open parents of the selected item but do not lazyload;
-        Fangorn.Utils.openParentFolders.call(tb, tree);
-    }
+    //if (tb.toolbarMode() === 'search') {
+    //    _dismissToolbar.call(tb);
+    //    scrollToItem = true;
+    //    // recursively open parents of the selected item but do not lazyload;
+    //    Fangorn.Utils.openParentFolders.call(tb, tree);
+    //}
     if (tb.multiselected().length === 1) {
         // temporarily remove classes until mithril redraws raws with another hover.
-        tb.inputValue(tb.multiselected()[0].data.name);
+        //tb.inputValue(tb.multiselected()[0].data.name);
         tb.select('#tb-tbody').removeClass('unselectable');
         if (scrollToItem) {
             Fangorn.Utils.scrollToFile.call(tb, tb.multiselected()[0].id);
@@ -1406,11 +1406,12 @@ var tbOptions = {
     resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
     },
-    toolbarComponent : POToolbar,
+    //toolbarComponent : POToolbar,
     naturalScrollLimit : 0,
     removeIcon : function(){
         return m.trust('&times;');
     },
+    headerTemplate : function(){ return ''; }
 };
 
 
