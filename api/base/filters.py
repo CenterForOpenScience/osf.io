@@ -323,11 +323,6 @@ class ListFilterMixin(FilterMixin):
                 item for item in default_queryset
                 if self.FILTERS[params['op']](self.get_serializer_method(field_name)(item), params['value'])
             ]
-        elif isinstance(field, ser.BooleanField):
-            return_val = [
-                item for item in default_queryset
-                if self.FILTERS[params['op']](getattr(item, field_name, None), params['value'])
-            ]
         elif isinstance(field, ser.CharField):
             return_val = [
                 item for item in default_queryset
