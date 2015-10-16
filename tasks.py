@@ -433,7 +433,7 @@ def test_addons():
 
 
 @task
-def test(all=False, syntax=False, skip_api=False):
+def test(all=False, syntax=False, skipapi=False):
     """
     Run unit tests: OSF (always), plus addons and syntax checks (optional)
     """
@@ -443,7 +443,7 @@ def test(all=False, syntax=False, skip_api=False):
 
     test_osf()
 
-    if not skip_api:
+    if not skipapi:
         test_api()
 
     if all:
