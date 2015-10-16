@@ -556,5 +556,10 @@ class DraftRegistrationFactory(ModularOdmFactory):
         initiator = branched_from.creator
         registration_schema = registration_schema or MetaSchema.find()[0]
         registration_metadata = registration_metadata or {}
-        draft = branched_from.create_draft_registration(initiator, registration_schema, registration_metadata, save=True)
+        draft = branched_from.create_draft_registration(
+            user=initiator,
+            schema=registration_schema,
+            data=registration_metadata,
+            save=True,
+        )
         return draft

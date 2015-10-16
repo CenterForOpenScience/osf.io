@@ -1891,7 +1891,11 @@ class TestNode(OsfTestCase):
         user = proj.creator
         schema = MetaSchema.find()[0]
         data = {'some': 'data'}
-        draft = proj.create_draft_registration(user, schema, data)
+        draft = proj.create_draft_registration(
+            user=user,
+            schema=schema,
+            data=data,
+        )
         assert_equal(user, draft.initiator)
         assert_equal(schema, draft.registration_schema)
         assert_equal(data, draft.registration_metadata)
@@ -1902,7 +1906,11 @@ class TestNode(OsfTestCase):
         user = proj.creator
         schema = MetaSchema.find()[0]
         data = {'some': 'data'}
-        draft = proj.create_draft_registration(user, schema, data)
+        draft = proj.create_draft_registration(
+            user=user,
+            schema=schema,
+            data=data,
+        )
         assert_equal(proj.draft_registrations[0], draft)
 
 

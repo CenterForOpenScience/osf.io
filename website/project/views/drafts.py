@@ -154,7 +154,12 @@ def create_draft_registration(auth, node, *args, **kwargs):
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', schema_version)
     )
-    draft = node.create_draft_registration(auth.user, meta_schema, schema_data, save=True)
+    draft = node.create_draft_registration(
+        user=auth.user,
+        schema=meta_schema,
+        data=schema_data,
+        save=True,
+    )
     return serialize_draft_registration(draft, auth), http.CREATED
 
 @must_have_permission(ADMIN)
@@ -187,7 +192,12 @@ def new_draft_registration(auth, node, *args, **kwargs):
         Q('name', 'eq', schema_name) &
         Q('schema_version', 'eq', int(schema_version))
     )
-    draft = node.create_draft_registration(auth.user, meta_schema, {}, save=True)
+    draft = node.create_draft_registration(
+        user=auth.user,
+        schema=meta_schema,
+        data={},
+        save=True,
+    )
     return redirect(node.web_url_for('edit_draft_registration_page', draft_id=draft._id))
 
 @autoload_draft

@@ -104,7 +104,7 @@
                      <a class="btn btn-success" data-bind="attr.href: urls.register_page,
                                                            tooltip: {
                                                              placement: 'top',
-                                                             title: isApproved ? 'Finialize this draft' : 'This draft must be approved before it can be registered'
+                                                             title: isApproved ? 'Finalize this draft' : 'This draft must be approved before it can be registered'
                                                            },
                                                            css: {'disabled': !isApproved}">Register</a>
                   </div>
