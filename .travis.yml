@@ -18,7 +18,7 @@ env:
     - PROJECT_DIR="$PWD"
     - WHEELHOUSE="$HOME/.cache/wheelhouse"
     - TOKU_HUGE_PAGES_OK=1
-    - TOKUMX_ARCHIVE=tokumx-2.0.0-linux-x86_64-main.tar.gz"
+    - TOKUMX_ARCHIVE="tokumx-2.0.0-linux-x86_64-main.tar.gz"
     - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
   matrix:
     - TEST_BUILD="osf"
@@ -86,7 +86,7 @@ install:
 before_script:
     - flake8 .
     - jshint website/static/js
-    
+
 # Run Python tests (core and addon) and JS tests
 script:
     - "invoke test_travis_$TEST_BUILD"
