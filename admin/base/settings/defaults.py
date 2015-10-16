@@ -36,6 +36,7 @@ INSTALLED_APPS = (
     # 3rd party
     'corsheaders',
     'raven.contrib.django.raven_compat',
+    'webpack_loader',
 )
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
@@ -75,7 +76,15 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        }
     }]
 
 
@@ -84,4 +93,15 @@ WSGI_APPLICATION = 'api.base.wsgi.application'
 ADMIN_BASE = 'admin/'
 STATIC_URL = '{}static/'.format(ADMIN_BASE)
 
+STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static_root')
+
+STATICFILES_DIRS = (
+    os.path.join(BASE_DIR, 'static'),
+)
+
 LANGUAGE_CODE = 'en-us'
+
+WEBPACK_LOADER = {
+    'BUNDLE_DIR_NAME': osf_settings.STATIC_FOLDER,
+    'STATS_FILE': os.path.join(osf_settings.APP_PATH, 'webpack-stats.json'),
+}
