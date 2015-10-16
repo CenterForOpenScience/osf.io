@@ -3847,16 +3847,6 @@ class DraftRegistration(AddonModelMixin, StoredObject):
     registration_schema = fields.ForeignField('metaschema')
     registered_node = fields.ForeignField('node')
 
-    # TODO (samchrisinger): It would be better to run Archiver tasks when a new
-    # DraftRegistration gets created. Files could be copied to a DraftRegistration
-    # rather than a Node, which would be much much cleaner in the event of a
-    # failure during archival.
-    # Additionally, future registration schemas will require users to select files
-    # that fulfill a certain requirement. Right now we will have to restrict those
-    # choices to OsfStorage files, but this is a non-issue if the third-party files
-    # have already been archived.
-    # storage = fields.ForeignField('osfstoragenodesettings')
-
     approval = fields.ForeignField('draftregistrationapproval', default=None)
 
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
