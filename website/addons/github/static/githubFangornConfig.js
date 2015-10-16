@@ -285,6 +285,7 @@ function gotoFile (item) {
         window.open(fileurl, '_self');
     }
 }
+/*
 function _fangornGithubTitle(item, col)  {
     var tb = this;
     if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
@@ -308,7 +309,41 @@ function _fangornGithubTitle(item, col)  {
         }
     }
 }
+*/
 
+
+function _fangornGithubTitle(item, col)  {
+    var tb = this;
+    if (item.data.isAddonRoot && item.connected === false) { // as opposed to undefined, avoids unnecessary setting of this value
+        return Fangorn.Utils.connectCheckTemplate.call(this, item);
+    }
+    
+    if (item.data.addonFullname) {
+        var urlParams = $osf.urlParams();
+        
+        if (!item.data.branch) {
+            if (urlParams.branch && urlParams.branch != item.data.branch) {
+                item.data.branch = urlParams.branch;
+            }
+        }
+        var branch = item.data.branch || item.data.defaultBranch;
+        
+        return m('span',[
+            m('github-name', item.data.name + ' (' + branch + ')')
+        ]);
+    } else {
+        if (item.kind === 'file' && item.data.permissions.view) {
+            return m('span',[
+                m('github-name.fg-file-links', {
+                    onclick: function() {
+                        gotoFile.call(tb, item);
+                    }
+                }, item.data.name)]);
+        } else {
+            return m('span', item.data.name);
+        }
+    }
+}
 
 function _fangornColumns (item) {
     var tb = this;
