@@ -6,6 +6,7 @@
 var Treebeard = require('treebeard');   // Uses treebeard, installed as plugin
 var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
+var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
 
 
 /**
@@ -24,13 +25,7 @@ var defaults = {
 var FileBrowser = {
     controller : function (args) {
         var self = this;
-        self.args = $.extend({}, defaults, args);
         self.data = m.prop([]);
-
-        m.request({method: 'GET', url: args.data.apiURL}).then(self.data, function(){
-            //TODO: Add Raven error
-            console.log("Error receiving node tree list");
-        }).then(function(){ console.log(self.data()); self.renderCollections(); });
 
         self.breadcrumbs = [
             { label : 'First', href : '/first'},
@@ -53,15 +48,22 @@ var FileBrowser = {
             }
 
         };
+        self.poOptions = {
+            placement : 'dashboard',
+            divID: 'projectOrganizer',
+            filesData: args.data,
+            multiselect : true
+        };
+
     },
     view : function (ctrl) {
         return m('', [
-            m.component(Breadcrumbs, ctrl.breadcrumbs),
+            m.component(Breadcrumbs, { data : ctrl.breadcrumbs } ),
             m('.fb-sidebar', [
                 m.component(Collections, {list : ctrl.collections, selected : 1 } ),
                 m.component(Filters)
             ]),
-            m('.fb-main', m.component(ProjectOrganizer)),
+            m('.fb-main', m.component(ProjectOrganizer, { options : ctrl.poOptions })),
             m('.fb-infobar', m.component(Information))
         ]);
     }
@@ -78,6 +80,7 @@ var Collections  = {
     },
     view : function (ctrl) {
         var selectedCSS;
+        debugger;
         return m('.fb-collections', m('ul', [
             ctrl.list.map(function(item, index, array){
                 selectedCSS = item.id === ctrl.selected ? '.active' : '';
@@ -98,9 +101,11 @@ var Collections  = {
  */
 var Breadcrumbs = {
     controller : function (data) {
-        this.data = data || [];
+        this.data = data ? data.data : [];
     },
     view : function (ctrl) {
+        debugger;
+
         return m('.fb-breadcrumbs', m('ul', [
             ctrl.data.map(function(item, index, array){
                 if(index === array.length-1){
@@ -125,6 +130,8 @@ var Filters = {
 
     },
     view : function (ctrl) {
+        debugger;
+
         return m('.fb-filters', 'Filters');
     }
 };
@@ -134,14 +141,6 @@ var Filters = {
  * Project Organizer Module.
  * @constructor
  */
-var ProjectOrganizer = {
-    controller : function (args) {
-
-    },
-    view : function (ctrl) {
-        return m('.fb-project-organizer', 'Project Organizer');
-    }
-};
 
 
 /**
@@ -153,6 +152,8 @@ var Information = {
 
     },
     view : function (ctrl) {
+        debugger;
+
         return m('.fb-information', 'Information');
     }
 };

@@ -1413,30 +1413,18 @@ var tbOptions = {
     },
 };
 
-/**
- * Initialize Project organizer in the fashion of Fangorn. Prepeares an option object within ProjectOrganizer
- * @param options Treebeard type options to be extended with Treebeard default options.
- * @constructor
- */
-function ProjectOrganizer(options) {
-    this.options = $.extend({}, tbOptions, options);
-    this.grid = null; // Set by _initGrid
-    this.init();
-}
-/**
- * Project organizer prototype object with init functions set to Treebeard.
- * @type {{constructor: ProjectOrganizer, init: Function, _initGrid: Function}}
- */
-ProjectOrganizer.prototype = {
-    constructor: ProjectOrganizer,
-    init: function () {
-        this._initGrid();
+
+var ProjectOrganizer = {
+    controller : function (args) {
+        this.poOptions = $.extend(tbOptions, args.options);
+        this.tb = new Treebeard(this.poOptions, true);
     },
-    _initGrid: function () {
-        this.grid = new Treebeard(this.options);
-        return this.grid;
+    view : function (ctrl) {
+        debugger;
+        return m('.fb-project-organizer#projectOrganizer', ctrl.tb);
     }
 };
+
 
 module.exports = {
     ProjectOrganizer: ProjectOrganizer,

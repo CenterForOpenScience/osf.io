@@ -56,22 +56,29 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
 $(document).ready(function() {
     $('#projectOrganizerScope').tooltip({selector: '[data-toggle=tooltip]'});
 
-    var request = $.ajax({
-        url:  '/api/v1/dashboard/'
-    });
-    request.done(function(data) {
-        console.log(data);
-        m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, { data : data.data[0]} ));
+    var Fetch = {
+        controller : function(){
+            this.data = m.prop('');
+            m.request({method: 'GET', url: '/api/v1/dashboard/'}).then(this.data);
+        },
+        view : function (ctrl){
+            if (ctrl.data()){
+                return m('', m.component(FileBrowser, { data : ctrl.data().data }));
+            }
+            return m('');
+        }
+    };
+    m.mount(document.getElementById('fileBrowser'), Fetch );
 
-        ensureUserTimezone(data.timezone, data.locale, data.id);
-    });
-    request.fail(function(xhr, textStatus, error) {
-        Raven.captureMessage('Failed to populate user dashboard', {
-            url: url,
-            textStatus: textStatus,
-            error: error
-        });
-    });
+    //    ensureUserTimezone(result.timezone, result.locale, result.id);
+    //
+    //request.fail(function(xhr, textStatus, error) {
+    //    Raven.captureMessage('Failed to populate user dashboard', {
+    //        url: url,
+    //        textStatus: textStatus,
+    //        error: error
+    //    });
+    //});
 
 });
 
