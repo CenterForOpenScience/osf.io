@@ -16,13 +16,16 @@ class ApiOAuth2PersonalToken(StoredObject):
                              default=lambda: str(ObjectId()))
 
     token_id = fields.StringField(default=lambda: uuid.uuid4().hex,  # Not *guaranteed* unique, but very unlikely
-                               unique=True,
-                               index=True)
+                               unique=True)
 
-    user_id = fields.StringField(required=True, index=True)
+    owner = fields.ForeignField('User',
+                                backref='created',
+                                index=True,
+                                required=True)
+
     name = fields.StringField(required=True, index=True)
 
-    scopes = fields.StringField(list=True, default=lambda: list())
+    scopes = fields.StringField(list=True, required=True)
 
     date_last_used = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
                                         editable=False)

@@ -9,7 +9,7 @@ from rest_framework import permissions as drf_permissions
 from modularodm import Q
 
 from framework.auth import cas
-from framework.auth.oauth_scopes import CoreScopes
+from framework.auth.oauth_scopes import ComposedScopes
 
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
@@ -29,8 +29,8 @@ class TokenList(generics.ListCreateAPIView, ODMFilterMixin):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.APPLICATIONS_READ]
-    required_write_scopes = [CoreScopes.APPLICATIONS_WRITE]
+    required_read_scopes = [ComposedScopes.FULL_READ]
+    required_write_scopes = [ComposedScopes.FULL_WRITE]
 
     serializer_class = ApiOAuth2PersonalTokenSerializer
 
@@ -40,7 +40,7 @@ class TokenList(generics.ListCreateAPIView, ODMFilterMixin):
 
         user_id = self.request.user._id
         return (
-            Q('user_id', 'eq', user_id) &
+            Q('owner', 'eq', user_id) &
             Q('is_active', 'eq', True)
         )
 
@@ -51,7 +51,7 @@ class TokenList(generics.ListCreateAPIView, ODMFilterMixin):
 
     def perform_create(self, serializer):
         """Add user to the created object"""
-        serializer.validated_data['user_id'] = self.request.user
+        serializer.validated_data['owner'] = self.request.user
         serializer.save()
 
 
@@ -67,8 +67,8 @@ class TokenDetail(generics.RetrieveUpdateDestroyAPIView):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.APPLICATIONS_READ]
-    required_write_scopes = [CoreScopes.APPLICATIONS_WRITE]
+    required_read_scopes = [ComposedScopes.FULL_READ]
+    required_write_scopes = [ComposedScopes.FULL_WRITE]
 
     serializer_class = ApiOAuth2PersonalTokenSerializer
 
@@ -76,8 +76,9 @@ class TokenDetail(generics.RetrieveUpdateDestroyAPIView):
 
     # overrides RetrieveAPIView
     def get_object(self):
+        import ipdb; ipdb.set_trace()
         obj = get_object_or_error(ApiOAuth2PersonalToken,
-                                  Q('token_id', 'eq', self.kwargs['token_id']) &
+                                  Q('_id', 'eq', self.kwargs['_id']) &
                                   Q('is_active', 'eq', True))
 
         self.check_object_permissions(self.request, obj)
@@ -93,7 +94,6 @@ class TokenDetail(generics.RetrieveUpdateDestroyAPIView):
             raise APIException("Could not revoke  tokens; please try again later")
 
     def perform_update(self, serializer):
-        """Necessary to prevent user_id field from being blanked on updates"""
-        serializer.validated_data['user_id'] = self.request.user
-        # TODO: Write code to transfer ownership
+        """Necessary to prevent owner field from being blanked on updates"""
+        serializer.validated_data['owner'] = self.request.user
         serializer.save(owner=self.request.user)

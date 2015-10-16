@@ -32,17 +32,6 @@
                        data-bind="tooltip: {title:'The client secret is known only to you and the OSF. Do not display or expose this information.',
                                             placement: 'bottom'}"></i>
                 </p>
-                <p>
-                   <span class="text-muted"
-                         data-bind="html:  $root.showSecret() ? clientSecret : '&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;'"></span>
-                    <a class="btn btn-default btn-xs m-l-sm " data-bind="click: $root.toggleDisplay.bind($root)">
-                        <span data-bind="visible: $root.showSecret()"><i class="fa fa-eye-slash"></i> Hide</span>
-                        <span data-bind="visible: !$root.showSecret()"><i class="fa fa-eye"></i> Show</span>
-                    </a>
-                </p>
-                <p data-bind="visible: !$root.isCreateView()">
-                    <a data-bind="click: $root.deleteToken.bind($root)" class="text-danger">Deactivate token</a>
-                </p>
             </div>
             <div id="token-fields">
                 <form novalidate role="form" data-bind="submit: $root.submit.bind($root), validationOptions: {insertMessages: false, messagesOnModified: false}">
@@ -56,9 +45,10 @@
                         <label>Scopes</label> <i class="fa fa-info-circle text-muted"
                        data-bind="tooltip: {title:'Scopes limit access for personal access tokens.',
                                             placement: 'bottom'}"></i>
-                        <input type="checkbox" class="form-control" data-bind="value: fullRead">Full Read</input>
-                        <input type="checkbox" class="form-control" data-bind="value: fullWrite">Full Write</input>
-                        <p data-bind="validationMessage: callbackUrl, visible: $root.showMessages()" class="text-danger"></p>
+
+                        <input type="checkbox" id="scopeFullRead" value="fullRead" class="form-control" data-bind="checked: scopes"><label for="scopeFullRead">Full Read</label>
+                        <input type="checkbox" id="scopeFullWrite" value="fullWrite" class="form-control" data-bind="checked: scopes"><label for="scopeFullWrite">Full Write</label>
+                        <p data-bind="validationMessage: scopes, visible: $root.showMessages()" class="text-danger"></p>
                     </div>
 
                     <!-- Flashed Messages -->
@@ -85,7 +75,7 @@
 <script type="text/javascript">
     window.contextVars = window.contextVars || {};
     window.contextVars.urls = {
-        webListUrl: ${ web_url_for('personal_token_list') | sjson, n },
+        webListUrl: ${ web_url_for('personal_access_token_list') | sjson, n },
         apiListUrl: ${ token_list_url | sjson, n },
         apiDetailUrl: ${ token_detail_url | sjson, n }
     };

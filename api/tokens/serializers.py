@@ -8,15 +8,24 @@ from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeFie
 class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     """Serialize data about a registered personal access token"""
 
-    id = IDField(source='token_id', read_only=True, help_text='The token for this application (automatically generated)')
+    id = IDField(source='_id', read_only=True, help_text='The object ID for this token (automatically generated)')
     type = TypeField()
-    name = ser.CharField(help_text='A short, descriptive name for this application',
+
+    name = ser.CharField(help_text='A short, descriptive name for this token',
                          required=True)
-    user_id = ser.CharField(help_text='The id of the user who owns this application',
-                          read_only=True,  # Don't let user register an application in someone else's name
+
+    owner = ser.CharField(help_text='The user who owns this token',
+                          read_only=True,  # Don't let user register a token in someone else's name
                           source='owner._id')
 
-    date_last_used = ser.DateTimeField(help_text='The date this application was generated (automatically filled in)',
+    scopes = ser.ListField(help_text='Governs permissions associated with this token',
+                           required=True,
+                           child=ser.CharField())
+
+    _id = IDField(help_text='The object ID for this application (automatically generated)',
+                  read_only=True)
+
+    date_last_used = ser.DateTimeField(help_text='The date this token was generated (automatically filled in)',
                                      read_only=True)
 
     class Meta:

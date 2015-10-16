@@ -431,8 +431,8 @@ def personal_access_token_register(auth, **kwargs):
     """Register an API personal token: blank form view"""
     # TODO: Remove dev_only restriction when APIv2 is released into production
     token_list_url = api_v2_url("tokens/")  # POST request to this url
-    return {"app_list_url": token_list_url,
-            "app_detail_url": ''}
+    return {"token_list_url": token_list_url,
+            "token_detail_url": ''}
 
 @dev_only
 @must_be_logged_in
