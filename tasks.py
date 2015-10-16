@@ -412,9 +412,15 @@ def test_module(module=None, verbosity=2):
 
 
 @task
-def test_osf():
+def test_osf(osf=False, api=False):
     """Run the OSF test suite."""
-    test_module(module="tests/")
+    if api:
+        test_module(module="api_tests/")
+    elif osf:
+        test_module(module="tests/")
+    else:
+        test_module(module="tests/")
+        test_module(module="api_tests/")
 
 
 @task
@@ -429,7 +435,7 @@ def test_addons():
 
 
 @task
-def test(all=False, syntax=False):
+def test(all=False, syntax=False, osf=False, api=False):
     """
     Run unit tests: OSF (always), plus addons and syntax checks (optional)
     """
@@ -437,9 +443,9 @@ def test(all=False, syntax=False):
         flake()
         jshint()
 
-    test_osf()
+    test_osf(osf, api)
 
-    if all:
+    if all and not api:
         test_addons()
         karma(single=True, browsers='PhantomJS')
 
