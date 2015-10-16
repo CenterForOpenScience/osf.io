@@ -212,7 +212,7 @@ class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     def fetch_folder_name(self):
         self._update_folder_data()
-        return self.folder_name
+        return self.folder_name.replace('All Files', '/ (Full Box)')
 
     def fetch_full_folder_path(self):
         self._update_folder_data()
@@ -232,7 +232,7 @@ class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             self.folder_name = self._folder_data['name']
             self.folder_path = '/'.join(
                 [x['name'] for x in self._folder_data['path_collection']['entries']]
-                + [self.fetch_folder_name()]
+                + [self._folder_data['name']]
             )
             self.save()
 
@@ -240,6 +240,15 @@ class BoxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         self.folder_id = str(folder_id)
         self._update_folder_data()
         self.save()
+
+        if not self.complete:
+            self.user_settings.grant_oauth_access(
+                node=self.owner,
+                external_account=self.external_account,
+                metadata={'folder': self.folder_id}
+            )
+            self.user_settings.save()
+
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)
