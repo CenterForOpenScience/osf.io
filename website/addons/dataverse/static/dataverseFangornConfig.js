@@ -65,12 +65,12 @@ var _dataverseItemButtons = {
                         m('p.m-md', 'Your content has been published.')
                     ];
                     var modalActions = [
-                        m('button.btn.btn-default', {
+                        m('button.btn.btn-primary', {
                             'onclick': function () {
                                 tb.modal.dismiss();
                             }
                         }, 'Got it')
-                        
+
                     ];
                     tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Already published.'));
                     item.data.dataverseIsPublished = true;
