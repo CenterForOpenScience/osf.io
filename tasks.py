@@ -450,6 +450,8 @@ def test(all=False, syntax=False):
 
 @task
 def test_travis_osf():
+    flake()
+    jshint()
     test_osf()
 
 @task
