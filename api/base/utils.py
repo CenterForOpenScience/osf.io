@@ -23,9 +23,7 @@ def is_bulk_request(request):
     """
     Returns True if bulk request.  Can be called as early as the parser.
     """
-    content_type = request.META.get('CONTENT_TYPE')
-    if content_type is None:
-        content_type = request.content_type
+    content_type = request.content_type
     return 'ext=bulk' in content_type
 
 def is_truthy(value):

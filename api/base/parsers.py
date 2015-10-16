@@ -57,7 +57,7 @@ class JSONAPIParser(JSONParser):
 
         method = parser_context['request'].method
         if data:
-            if is_bulk_request(stream):
+            if is_bulk_request(parser_context['request']):
                 if not isinstance(data, list):
                     raise ParseError('Expected a list of items but got type "dict".')
 
