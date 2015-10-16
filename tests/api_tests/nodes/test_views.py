@@ -3119,9 +3119,13 @@ class TestDeleteNodeLink(ApiTestCase):
     def test_delete_node_link_no_permissions_for_target_node(self):
         pointer_project = ProjectFactory(creator=self.user_two, is_public=False)
         pointer = self.public_project.add_pointer(pointer_project, auth=Auth(self.user), save=True)
+        assert_in(pointer, self.public_project.nodes)
         url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, pointer._id)
         res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 204)
+
+        self.public_project.reload()
+        assert_not_in(pointer, self.public_project.nodes)
 
     def test_cannot_delete_if_registration(self):
         registration = RegistrationFactory(project=self.public_project)
