@@ -55,30 +55,24 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
 
 $(document).ready(function() {
     $('#projectOrganizerScope').tooltip({selector: '[data-toggle=tooltip]'});
+    var request = $.ajax({
+        url:  'http://localhost:8000/v2/users/me/nodes',
+        crossOrigin: true,
+        xhrFields: { withCredentials: true}
+    });
+    request.done(function(result) {
+        console.log(result);
 
-    var Fetch = {
-        controller : function(){
-            this.data = m.prop('');
-            m.request({method: 'GET', url: '/api/v1/dashboard/'}).then(this.data);
-        },
-        view : function (ctrl){
-            if (ctrl.data()){
-                return m('', m.component(FileBrowser, { data : ctrl.data().data }));
-            }
-            return m('');
-        }
-    };
-    m.mount(document.getElementById('fileBrowser'), Fetch );
-
-    //    ensureUserTimezone(result.timezone, result.locale, result.id);
-    //
-    //request.fail(function(xhr, textStatus, error) {
-    //    Raven.captureMessage('Failed to populate user dashboard', {
-    //        url: url,
-    //        textStatus: textStatus,
-    //        error: error
-    //    });
-    //});
+        m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, { data : result.data} ));
+        //ensureUserTimezone(result.timezone, result.locale, result.id);
+    });
+    request.fail(function(xhr, textStatus, error) {
+        Raven.captureMessage('Failed to populate user dashboard', {
+            url: url,
+            textStatus: textStatus,
+            error: error
+        });
+    });
 
 });
 
