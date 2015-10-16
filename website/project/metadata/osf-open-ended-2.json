@@ -6,13 +6,13 @@
         "id": "page1",
         "title": "Summary",
         "questions": [{
-                "title": "Summary",
-                "nav": "Summary",
-                "type": "string",
-                "format": "textarea",
-                "description": "Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations.",
-                "required": true
-            }
-        ]
+            "qid": "q1",
+            "title": "Summary",
+            "nav": "Summary",
+            "type": "string",
+            "format": "textarea",
+            "description": "Provide a narrative summary of what is contained in this registration, or how it differs from prior registrations.",
+            "required": true
+        }]
     }]
 }

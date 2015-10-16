@@ -22,6 +22,7 @@
         "id": "page1",
         "title": "Study Information",
         "questions": [{
+            "qid": "q1",
             "nav": "Title",
             "type": "string",
             "format": "text",
@@ -29,6 +30,7 @@
             "description": "Provide the working title of your study. It is helpful if this is the same title that you submit for publication of your final manuscript, but it is not a requirement.",
             "help": "Effect of sugar on brownie tastiness. \n How responses will be evaluated: The title should be a specific and informative description of a project. Vague titles such as 'Fruit fly preregistration plan' are not appropriate."
         },{
+            "qid": "q2",
             "nav": "Authors",
             "type": "string",
             "format": "text",
@@ -36,6 +38,7 @@
             "description": "The first author of the pre-registered study is the recipient of the award money and must also be the first author of the published manuscript. Additional authors may be added or removed at any time.",
             "help": "Jimmy Stewart, Ava Gardner, Bob Hope, Greta Garbo"
         },{
+            "qid": "q3",
             "nav": "Research Questions",
             "type": "string",
             "format": "textarea",
@@ -43,6 +46,7 @@
             "description": "Please list each research question included in this study.",
             "help": "Though there is strong evidence to suggest that sugar affects taste preferences, the effect has never been demonstrated in brownies. Therefore, we will measure taste preference for four different levels of sugar concentration in a standard brownie recipe to determine if the effect exists in this pastry. \n How responses will be evaluated: The type of submissions for this question will vary widely by discipline, and we cannot determine if the question is worth asking. However, questions that are excessively vague so as to make understanding later sections difficult are not appropriate. For some studies, the research questions and hypotheses are extremely similar, so overlap between this and the subsequent question is expected."
         },{
+            "qid": "q4",
             "nav": "Hypotheses",
             "type": "string",
             "format": "textarea",
@@ -55,6 +59,7 @@
         "title": "Sampling Plan",
         "type": "object",
         "questions": [{
+            "qid": "q5",
             "nav": "Existing Data",
             "type": "object",
             "title": "Existing Data",
@@ -75,6 +80,7 @@
                     }
             }
         },{
+            "qid": "q5",
             "nav": "Explanation",
             "type": "string",
             "format": "textarea",
@@ -82,6 +88,7 @@
             "description": "If you indicate that you will be using some data that already exist in this study, please describe the steps you have taken to assure that you are unaware of any patterns or summary statistics in the data. This may include an explanation of how access to the data has been limited, who has observed the data, or how you have avoided observing any analysis of the specific data you will use in your study. The purpose of this question is to assure that the line between confirmatory and exploratory analysis is clear.",
             "help": " An appropriate instance of using existing data would be collecting a sample size much larger than is required for the study, using a small portion of it to conduct exploratory analysis, and then registering one particular analysis that showed promising results. After registration, conduct the specified analysis on that part of the dataset that had not been investigated by the researcher up to that point. \n How responses will be evaluated: Both confirmatory (hypothesis testing) and exploratory (hypothesis generating) analysis contribute to scientific progress, and do so best when it is clear which is which.  The Preregistration Challenge stimulates experience with preregistration of analysis plans for hypothesis testing, and transparency about the distinction between confirmatory and exploratory analysis. Research plans using existing data present unique challenges for hypothesis testing because observation of data can influence subsequent analysis plans of the same data. This can produce a gray area between confirmatory and exploratory analysis. Research plans using existing data may not be eligible for the Challenge. Determination of eligibility is based on evidence that the diagnosticity of the confirmatory analysis plans is retained despite the fact that the data exist."
         },{
+            "qid": "q7",
             "nav": "Data collection procedures",
             "type": "object",
             "title": "Data collection procedures",
@@ -100,6 +107,7 @@
                 }
             }
         },{
+            "qid": "q8",
             "nav": "Sample size",
             "type": "string",
             "format": "textarea",
@@ -107,6 +115,7 @@
             "description": "Describe the sample size of your study. How many units will be analyzed in the study? This could be the number of people, birds, classrooms, plots, interactions, or countries included. If the units are not individuals, then describe the size requirements for each unit. If you are using a clustered or multilevel design, how many units are you collecting at each level of the analysis?",
             "help": "Our target sample size is 280 participants. We will attempt to recruit up to 320, assuming that not all will complete the total task. \n How responses will be evaluated: For some studies, this will simply be the number of samples or the number of clusters. For others, this could be an expected range, minimum, or maximum number."
         },{
+            "qid": "q9",
             "nav": "Sample size rationale",
             "type": "string",
             "format": "textarea",
@@ -114,6 +123,7 @@
             "description": "This could include a power analysis or an arbitrary constraint such as time, money, or personnel.",
             "help": "We used the software program G*Power to conduct a power analysis. Our goal was to obtain .95 power to detect a medium effect size of .25 at the standard .05 alpha error probability. \n How responses will be evaluated: This gives you an opportunity to specifically state how the sample size will be determined. A wide range of possible answers is acceptable; remember that transparency is more important than principled justifications. If you state any reason for a sample size upfront, it is better than stating no reason and leaving the reader to “fill in the blanks.” Acceptable rationales include: a power analysis, an arbitrary number of subjects, or a number based on time or monetary constraints."
         },{
+            "qid": "q10",
             "nav": "Stopping rule",
             "title": "Stopping rule",
             "type": "string",
@@ -126,6 +136,7 @@
         "title": "Variables",
         "type": "object",
         "questions": [{
+            "qid": "q11",
             "nav": "Manipulated",
             "type": "string",
             "format": "textarea",
@@ -133,6 +144,7 @@
             "description": "Describe all variables you plan to manipulate and the levels or treatment arms of each variable. For observational studies and meta-analyses, simply state that this is not applicable.",
             "help": "We manipulated the percentage of sugar by mass added to brownies. . The four levels of this categorical variable are: 15%, 20%, 25%, or 40% cane sugar by mass. \n How responses will be evaluated: For any experimental manipulation, you should give a precise definition of each manipulated variable. This must include a precise description of the levels at which each variable will be set, or a specific definition for each categorical treatment. For example, “loud or quiet,” should instead give either a precise decibel level or a means of recreating each level. 'Presence/absence' or 'positive/negative' is an acceptable description if the variable is precisely described."
         },{
+            "qid": "q12",
             "nav": "Measured",
             "type": "string",
             "format": "textarea",
@@ -140,6 +152,7 @@
             "description": "Describe each variable that you will measure. This will include outcome measures, as well as any predictors or covariates that you will measure. You do not need to include any variables that you plan on collecting if they are not going to be included in the confirmatory analyses of this study.",
             "help": "The single outcome variable will be the perceived tastiness of the single brownie each participant will eat. We will measure this by asking participants ‘How much did you enjoy eating the brownie’ (on a scale of 1-7, 1 being ‘not at all’, 7 being ‘a great deal’) and ‘How good did the brownie taste’ (on a scale of 1-7, 1 being ‘very bad’, 7 being ‘very good’). \n How responses will be evaluated: Observational studies and meta-analyses will include only measured variables. As with the previous questions, the answers here must be precise. For example, 'intelligence,' 'accuracy,' 'aggression,' and 'color' are too vague. Acceptable alternatives could be  'IQ as measured by Wechsler Adult Intelligence Scale' 'percent correct,' 'number of threat displays,' and 'percent reflectance at 400 nm.' "
         },{
+            "qid": "q13",
             "nav": "Indices",
             "type": "string",
             "format": "textarea",
@@ -152,6 +165,7 @@
         "title": "Design Plan",
         "type": "object",
         "questions": [{
+            "qid": "q14",
             "nav": "Study type",
             "type": "object",
             "title": "Please check one of the following statements",
@@ -171,6 +185,7 @@
                 }
             }
         }, {
+            "qid": "q15",
             "nav": "Blinding",
             "type": "object",
             "title": "Please check one of the following statements",
@@ -190,6 +205,7 @@
                 }
             }
         },{
+            "qid": "q16",
             "nav": "Study design",
             "type": "object",
             "title": "Study design",
@@ -208,6 +224,7 @@
                 }
             }
         },{
+            "qid": "q17",
             "nav": "Randomization",
             "type": "object",
             "title": "Randomization",
@@ -221,6 +238,7 @@
         "title": "Analysis Plan",
         "type": "object",
         "questions": [{
+            "qid": "q18",
             "nav": "Title",
             "title": "Analysis plan title",
             "description": "To help you keep track of multiple analyses, you may label each for your reference.",
@@ -228,6 +246,7 @@
             "type": "string",
             "format": "textarea"
         }, {
+            "qid": "q19",
             "nav": "Statistical models",
             "type": "object",
             "title": "Statistical models",
@@ -246,6 +265,7 @@
                 }
             }
         }, {
+            "qid": "q20",
             "nav": "Transformations",
             "title": "Transformations",
             "description": "If you plan on transforming, centering, recoding the data, or will require a coding scheme for categorical variables, please describe that process.",
@@ -253,6 +273,7 @@
             "type": "string",
             "format": "textarea"
         }, {
+            "qid": "q21",
             "nav": "Follow-up analyses",
             "title": "Follow-up analyses",
             "description": "If not specified previously, will you be conducting any confirmatory analyses to follow up on effects in your statistical model, such as subgroup analyses, pairwise or complex contrasts, or follow-up tests from interactions. Remember that any analyses not specified in this research plan must be noted as exploratory. ",
@@ -260,6 +281,7 @@
             "type": "string",
             "format": "textarea"
         }, {
+            "qid": "q22",
             "nav": "Inference criteria",
             "title": "Inference criteria",
             "description": "What criteria will you use to make inferences? Please describe the information you’ll use (e.g. p-values, bayes factors, specific model fit indices), as well as cut-off criterion, where appropriate. Will you be using one or two tailed tests for each of your analyses? If you are comparing multiple conditions or testing multiple hypotheses, will you account for this? ",
@@ -267,6 +289,7 @@
             "type": "string",
             "format": "textarea"
         }, {
+            "qid": "q23",
             "nav": "Data exclusion",
             "title": "Data exclusion",
             "description": "How will you determine what data or samples (if any) to exclude from your analyses? How will outliers be handled?",
@@ -274,6 +297,7 @@
             "type": "string",
             "format": "textarea"
         }, {
+            "qid": "q24",
             "nav": "Missing data",
             "title": "Missing data",
             "description": "How will you deal with incomplete or missing data?",
@@ -281,6 +305,7 @@
             "type": "string",
             "format": "textarea"
         }, {
+            "qid": "q25",
             "nav": "Assumptions (Optional)",
             "title": "Assumptions (Optional)",
             "description": "If you are planning on testing the assumptions of the statistical tests included in your analysis plan, which assumptions will you test, how will you test them, what criteria will you use to make decisions based on that test, and what alternative statistical tests will you use? This may be an item where a decision tree could be helpful to plan and communicate the possibilities.",
@@ -294,6 +319,7 @@
         "title": "Scripts",
         "type": "object",
         "questions": [{
+            "qid": "q26",
             "nav": "Script",
             "title": "(Optional) Upload an analysis script with clear comments.",
             "type": "osf-upload",
@@ -306,6 +332,7 @@
         "title": "Other",
         "type": "object",
         "questions":[{
+            "qid": "q27",
             "nav": "Other",
             "title": "Other",
             "description": "If there is any additional information that you feel needs to be included in your preregistration, please enter it here.",

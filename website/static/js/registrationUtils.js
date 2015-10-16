@@ -260,15 +260,11 @@ var MetaSchema = function(params) {
     self.fulfills = params.fulfills || [];
     self.messages = params.messages || {};
 
-    var count = 0;
     $.each(self.schema.pages, function(i, page) {
         var mapped = {};
         $.each(page.questions, function(qid, question) {
-            // This is necessary now since page.questions is a list
-            // This is used to create more unique keys
-            var questionId = 'q' + count;
+            var questionId = question.qid;
             mapped[questionId]  = new Question(question, questionId);
-            count++;
         });
         self.schema.pages[i].questions = mapped;
     });
