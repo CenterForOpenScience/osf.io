@@ -40,14 +40,13 @@ var FileBrowser = {
         ];
 
         self.renderCollections = function _renderDo(){
-
             if (self.data().data){
                 self.data().data.map(function(item){
                     console.log(item.category);
                 });
             }
-
         };
+
         self.poOptions = {
             placement : 'dashboard',
             divID: 'projectOrganizer',
@@ -80,7 +79,6 @@ var Collections  = {
     },
     view : function (ctrl) {
         var selectedCSS;
-        debugger;
         return m('.fb-collections', m('ul', [
             ctrl.list.map(function(item, index, array){
                 selectedCSS = item.id === ctrl.selected ? '.active' : '';
@@ -104,8 +102,6 @@ var Breadcrumbs = {
         this.data = data ? data.data : [];
     },
     view : function (ctrl) {
-        debugger;
-
         return m('.fb-breadcrumbs', m('ul', [
             ctrl.data.map(function(item, index, array){
                 if(index === array.length-1){
@@ -130,8 +126,6 @@ var Filters = {
 
     },
     view : function (ctrl) {
-        debugger;
-
         return m('.fb-filters', 'Filters');
     }
 };
@@ -152,8 +146,6 @@ var Information = {
 
     },
     view : function (ctrl) {
-        debugger;
-
         return m('.fb-information', 'Information');
     }
 };

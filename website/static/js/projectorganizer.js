@@ -1420,7 +1420,6 @@ var ProjectOrganizer = {
         this.tb = new Treebeard(this.poOptions, true);
     },
     view : function (ctrl) {
-        debugger;
         return m('.fb-project-organizer#projectOrganizer', ctrl.tb);
     }
 };
