@@ -416,6 +416,10 @@ def test_osf():
     """Run the OSF test suite."""
     test_module(module="tests/")
 
+@task
+def test_api():
+    """Run the API test suite."""
+    test_module(module="api_tests/")
 
 @task
 def test_addons():
@@ -438,11 +442,23 @@ def test(all=False, syntax=False):
         jshint()
 
     test_osf()
+    test_api()
 
     if all:
         test_addons()
         karma(single=True, browsers='PhantomJS')
 
+@task
+def test_travis_osf():
+    flake()
+    jshint()
+    test_osf()
+
+@task
+def test_travis_else():
+    test_addons()
+    test_api()
+    karma(single=True, browsers='PhantomJS')
 
 @task
 def karma(single=False, sauce=False, browsers=None):
