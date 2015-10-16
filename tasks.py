@@ -877,6 +877,26 @@ def webpack(clean=False, watch=False, dev=False):
 
 
 @task()
+def webpack_admin(clean=False, watch=False):
+    """Build static assets with webpack."""
+    build_js_config_files()
+    if clean:
+        clean_assets()
+    webpack_bin = os.path.join(HERE, 'node_modules', 'webpack', 'bin', 'webpack.js')
+    args = [webpack_bin]
+    if settings.DEBUG_MODE:
+        args += ['--colors']
+    else:
+        args += ['--progress']
+    if watch:
+        args += ['--watch']
+    config_file = 'webpack.admin.config.js'
+    args += ['--config {0}'.format(config_file)]
+    command = ' '.join(args)
+    run(command, echo=True)
+
+
+@task()
 def build_js_config_files():
     from website import settings
     from website.app import build_js_config_files as _build_js_config_files
