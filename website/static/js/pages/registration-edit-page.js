@@ -11,7 +11,7 @@ var RegistrationEditor = registrationUtils.RegistrationEditor;
 var ctx = window.contextVars;
 var node = window.contextVars.node;
 
-$(document).ready(function() {
+$(function() {
 
     var draftEditor = new RegistrationEditor({
         schemas: '/api/v1/project/schema/',
@@ -21,7 +21,7 @@ $(document).ready(function() {
         get: node.urls.api + 'draft/{draft_pk}/'
     }, 'registrationEditor');
 
-    var draft = new registrationUtils.Draft(window.contextVars.draft);
+    var draft = new registrationUtils.Draft(ctx.draft);
     draftEditor.init(draft);
     $osf.applyBindings(draftEditor, '#draftRegistrationScope');
 });

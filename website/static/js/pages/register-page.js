@@ -12,7 +12,7 @@ var ctx = window.contextVars;
 
 require('pikaday-css');
 
-$(document).ready(function() {
+$(function() {
     // if registering draft
     if (ctx.draft) {
         var ViewModel = function() {
@@ -24,7 +24,7 @@ $(document).ready(function() {
             self.focusOnPicker = ko.observable(false);
 
             self.continueText = ko.observable('');
-            self.canSubmit = ko.computed(function() {
+            self.canSubmit = ko.pureComputed(function() {
                 return /^\s*register\s*$/gi.test(self.continueText());
             });
         };

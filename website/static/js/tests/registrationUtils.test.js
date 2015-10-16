@@ -23,7 +23,7 @@ var Draft = registrationUtils.Draft;
 var RegistrationEditor = registrationUtils.RegistrationEditor;
 var RegistrationManager = registrationUtils.RegistrationManager;
 
-var mkMetaSchema = function() {
+var makeMetaSchema = function() {
     var questions = {};
     var qid;
     [1, 1, 1].map(function() {
@@ -133,7 +133,7 @@ describe('MetaSchema', () => {
     describe('#constructor', () => {
         it('loads optional instantion data and maps question data to Question instances', () => {
 
-            var ctx = mkMetaSchema();
+            var ctx = makeMetaSchema();
             var qid = ctx[0];
             var params = ctx[1];
             var ms = ctx[2];
@@ -146,7 +146,7 @@ describe('MetaSchema', () => {
     });
     describe('#flatQuestions', () => {
         it('creates a flat array of the schema questions', () => {
-            var ctx = mkMetaSchema();
+            var ctx = makeMetaSchema();
             var qid = ctx[0];
             var params = ctx[1];
             var ms = ctx[2];
@@ -163,7 +163,7 @@ describe('MetaSchema', () => {
 });
 
 describe('Draft', () => {
-    var ms = mkMetaSchema()[2];
+    var ms = makeMetaSchema()[2];
     
     var beforeRegisterUrl = faker.internet.ip();
     var registerUrl = faker.internet.ip();
@@ -193,7 +193,7 @@ describe('Draft', () => {
             assert.equal(draft.updated.toString(), params.updated.toString());
         });
         it('calculates a percent completion based on the passed registration_metadata', () => {
-            var ms = mkMetaSchema()[2];
+            var ms = makeMetaSchema()[2];
 
             var data = {};
             var questions = ms.flatQuestions();
@@ -324,7 +324,7 @@ describe('Draft', () => {
 });
 
 describe('RegistrationEditor', () => {
-    var ms = mkMetaSchema()[2];
+    var ms = makeMetaSchema()[2];
     var questions = ms.flatQuestions();
 
     var metaData = {};

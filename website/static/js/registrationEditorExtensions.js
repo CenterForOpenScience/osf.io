@@ -1,6 +1,4 @@
 var $ = require('jquery');
-var URI = require('URIjs');
-var moment = require('moment');
 var ko = require('knockout');
 var m = require('mithril');
 
