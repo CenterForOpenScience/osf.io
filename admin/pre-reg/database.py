@@ -12,10 +12,11 @@ from website import settings as osf_settings
 
 import utils
 
+# [lauren] I think this is done in manage-admin.py now
 init_addons(osf_settings, routes=False)
 do_set_backends(osf_settings)
 
-# TODO[lauren]: change once users have osf id associated with them
+# TODO[lauren]: remove once all auth is taken out of project
 adminUser = User.load('dsmpw')
 
 
