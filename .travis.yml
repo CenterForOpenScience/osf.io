@@ -83,6 +83,10 @@ install:
     - pip install uritemplate.py==0.3.0
     - travis_retry invoke assets --dev
 
+before_script:
+    - flake8 .
+    - jshint website/static/js
+    
 # Run Python tests (core and addon) and JS tests
 script:
     - "invoke test_travis_$TEST_BUILD"

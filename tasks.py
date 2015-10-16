@@ -451,12 +451,10 @@ def test(all=False, syntax=False):
 @task
 def test_travis_osf():
     test_osf()
-    test_addons()
 
 @task
 def test_travis_else():
-    flake()
-    jshint()
+    test_addons()
     test_api()
     karma(single=True, browsers='PhantomJS')
 
