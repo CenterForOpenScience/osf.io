@@ -2810,11 +2810,16 @@ def prepare_mock_wb_response(
         data = [dict(default_file, **each) for each in files]
     else:
         data = [default_file]
+
+    jsonapi_data = []
+    for datum in data:
+        jsonapi_data.append({'attributes': datum})
+
     if not folder:
-        data = data[0]
+        jsonapi_data = jsonapi_data[0]
 
     body = json.dumps({
-        u'data': data
+        u'data': jsonapi_data
     })
     httpretty.register_uri(
         method,

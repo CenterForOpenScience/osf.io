@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
-import httplib
+import time
 import logging
+from datetime import datetime
 
-from framework.exceptions import HTTPError
+from box import refresh_v2_token
 
 from website.util import rubeus
+
+from website.addons.box import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -73,16 +77,20 @@ class BoxNodeLogger(object):
             self.node.save()
 
 
-def handle_box_error(error, msg):
-    if (error is 'invalid_request' or 'unsupported_response_type'):
-        raise HTTPError(httplib.BAD_REQUEST)
-    if (error is 'access_denied'):
-        raise HTTPError(httplib.FORBIDDEN)
-    if (error is 'server_error'):
-        raise HTTPError(httplib.INTERNAL_SERVER_ERROR)
-    if (error is 'temporarily_unavailable'):
-        raise HTTPError(httplib.SERVICE_UNAVAILABLE)
-    raise HTTPError(httplib.INTERNAL_SERVER_ERROR)
+def refresh_oauth_key(external_account, force=False):
+    """If necessary, refreshes the oauth key associated with
+    the external account.
+    """
+    if external_account.expires_at is None and not force:
+        return
+
+    if force or (external_account.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME:
+        key = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, external_account.refresh_token)
+
+        external_account.oauth_key = key['access_token']
+        external_account.refresh_token = key['refresh_token']
+        external_account.expires_at = datetime.utcfromtimestamp(time.time() + key['expires_in'])
+        external_account.save()
 
 
 def box_addon_folder(node_settings, auth, **kwargs):
