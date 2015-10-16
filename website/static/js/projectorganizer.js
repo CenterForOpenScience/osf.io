@@ -1419,7 +1419,14 @@ var tbOptions = {
 var ProjectOrganizer = {
     controller : function (args) {
         //this.selected = args.selected;
-        this.poOptions = $.extend({ updateSelected : args.updateSelected }, tbOptions, args.options);
+        this.poOptions = $.extend(
+            {
+                updateSelected : args.updateSelected,
+                updateBreadcrumbs : args.updateBreadcrumbs
+            },
+            tbOptions,
+            args.options
+        );
         this.tb = new Treebeard(this.poOptions, true);
     },
     view : function (ctrl) {
