@@ -82,12 +82,12 @@ install:
     - travis_retry invoke assets --dev
 
 before_script:
-    - flake8 .
-    - jshint website/static/js
+    #- flake8 .
+    #- jshint website/static/js
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - "bundle exec invoke test --all $TEST_BUILD"
+    - "invoke test --all $TEST_BUILD"
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
