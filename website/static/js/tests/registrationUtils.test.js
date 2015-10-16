@@ -24,15 +24,16 @@ var RegistrationEditor = registrationUtils.RegistrationEditor;
 var RegistrationManager = registrationUtils.RegistrationManager;
 
 var mkMetaSchema = function() {
-    var questions = {};
+    var questions = [];
     var qid;
-    [1, 1, 1].map(function() {
-        qid = faker.internet.ip();
-        questions[qid] = {
+    for ( var i = 0; i < 3; i++ ) {
+        qid = 'q' + i;
+        questions.push({
+            qid: qid,
             type: 'string',
             format: 'text'
-        };
-    });
+        });
+    }
 
     var params = {
         schema_name: 'My Schema',
@@ -358,7 +359,7 @@ describe('MetaSchema', () => {
             assert.equal(ms.version, params.schema_version);
             assert.equal(ms.schema.pages[0].id, params.schema.pages[0].id);
 
-            assert.isDefined(ms.schema.pages[2].questions[qid].value);
+            assert.isDefined(ms.schema.pages[2].questions.q0.value);
         });
     });
     describe('#flatQuestions', () => {
@@ -381,7 +382,7 @@ describe('MetaSchema', () => {
 
 describe('Draft', () => {
     var ms = mkMetaSchema()[2];
-    
+
     var beforeRegisterUrl = faker.internet.ip();
     var registerUrl = faker.internet.ip();
     var params = {
@@ -522,20 +523,20 @@ describe('Draft', () => {
         });
         it('POSTS the data passed into beforeRegister, and redirects on a success response', (done) => {
             server.respondWith(
-                beforeRegisterUrl, 
+                beforeRegisterUrl,
                 '{}'
             );
             var data = {some: 'data'};
-            draft.beforeRegister(data).always(() => {                
+            draft.beforeRegister(data).always(() => {
                 assert.isTrue(
-                    postJSONStub.calledOnce && 
+                    postJSONStub.calledOnce &&
                     postJSONStub.calledWith(
                         registerUrl,
                         data
                     )
                 );
                 done();
-            });            
+            });
         });
     });
 });

@@ -263,7 +263,8 @@ var MetaSchema = function(params) {
     $.each(self.schema.pages, function(i, page) {
         var mapped = {};
         $.each(page.questions, function(qid, question) {
-            mapped[qid] = new Question(question, qid);
+            var questionId = question.qid;
+            mapped[questionId]  = new Question(question, questionId);
         });
         self.schema.pages[i].questions = mapped;
     });
@@ -339,7 +340,7 @@ var Draft = function(params, metaSchema) {
             $.each(schema.pages, function(i, page) {
                 $.each(page.questions, function(qid, question) {
                     var q = self.schemaData[qid];
-                    if (q && (q.value || '').trim()) {
+                    if (q && (q.value || '').trim() !== '') {
                         complete++;
                     }
                     total++;

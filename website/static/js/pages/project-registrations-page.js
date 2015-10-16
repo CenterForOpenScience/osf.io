@@ -20,8 +20,8 @@ $(document).ready(function() {
 
     var draftManager = new RegistrationManager(node, '#draftRegistrationScope', {
         list: node.urls.api + 'draft/',
-        // TODO: uncomment when we support draft submission for review
-        //submit: node.urls.api + 'draft/{draft_pk}/submit/',
+        submit: node.urls.api + 'draft/{draft_pk}/submit/',
+        get: node.urls.api + 'draft/{draft_pk}/',
         delete: node.urls.api + 'draft/{draft_pk}/',
         schemas: '/api/v1/project/schema/',
         edit: node.urls.web + 'draft/{draft_pk}/'
@@ -30,6 +30,6 @@ $(document).ready(function() {
 
     $('#registerNode').click(function(event) {
         event.preventDefault();
-        draftManager.beforeCreateDraft();        
+        draftManager.beforeCreateDraft();
     });
 });
