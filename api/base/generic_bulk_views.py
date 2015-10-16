@@ -13,7 +13,6 @@ from api.base.exceptions import Conflict
 from website.project.model import Node
 
 
-
 class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
     """
     Custom ListBulkCreateAPIView that properly formats bulk create responses
