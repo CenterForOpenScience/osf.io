@@ -384,7 +384,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "Value 'foo' is not a supported filter operator; use one of ('gt', 'gte', 'lt', 'lte', 'eq')."
+            "Value 'foo' is not a supported filter operator; use one of gt, gte, lt, lte, eq."
         )
 
     def test_filter_by_not_comparable_field(self):
@@ -396,7 +396,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "Comparison operators are only supported for dates and numbers."
+            "Field 'title' does not suport comparison operators in a filter."
         )
 
     def test_filter_by_registration_invalid_bool(self):

@@ -64,9 +64,8 @@ class FilterMixin(object):
     def _isinstance_any(instance, bases):
         return any([isinstance(instance, base) for base in bases])
 
-    @staticmethod
-    def _get_default_operator(field):
-        return FilterMixin.DEFAULT_OPERATOR_OVERRIDES.get(type(field), FilterMixin.DEFAULT_OPERATOR)
+    def _get_default_operator(self, field):
+        return self.DEFAULT_OPERATOR_OVERRIDES.get(type(field), self.DEFAULT_OPERATOR)
 
     @staticmethod
     def _get_valid_operators(field):
@@ -89,7 +88,7 @@ class FilterMixin(object):
             raise InvalidFilterFieldError(attribute=field_name)
         return self.serializer_class._declared_fields[field_name]
 
-    def _validate_operator(self, field, op):
+    def _validate_operator(self, field, field_name, op):
         """
         Check that the operator and field combination is valid
 
@@ -102,10 +101,16 @@ class FilterMixin(object):
             raise InvalidFilterOperator(value=op, valid_operators=valid_operators)
         if op in self.COMPARISON_OPERATORS:
             if not self._isinstance_any(field, self.COMPARABLE_FIELDS):
-                raise InvalidFilterComparisonType(attribute=field.field_name)
+                raise InvalidFilterComparisonType(
+                    parameter="filter",
+                    detail="Field '{0}' does not suport comparison operators in a filter.".format(field_name)
+                )
         if op in self.MATCH_OPERATORS:
             if not self._isinstance_any(field, self.MATCHABLE_FIELDS):
-                raise InvalidFilterMatchType(attribute=field.field_name)
+                raise InvalidFilterMatchType(
+                    parameter="filter",
+                    detail="Field '{0}' does not support match operators in a filter.".format(field_name)
+                )
 
     def _parse_date_param(self, field, field_name, op, value):
         """
@@ -149,7 +154,7 @@ class FilterMixin(object):
                 field = self._get_field_or_error(field_name)
 
                 op = match.groupdict().get('op') or self._get_default_operator(field)
-                self._validate_operator(field, op)
+                self._validate_operator(field, field_name, op)
 
                 field_name = self.convert_key(field_name, field)
                 if field_name not in query:
