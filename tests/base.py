@@ -293,7 +293,7 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
     teardown methods to be called correctly.
     """
     def setUp(self):
-        super(ApiAppTestCase, self).setUp()
+        super(ApiTestCase, self).setUp()
         settings.USE_EMAIL = False
         
 
