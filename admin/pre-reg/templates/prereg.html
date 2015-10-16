@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load render_bundle from webpack_loader %}
+
+{% block content %}
+{% render_bundle 'vendor' %}
+<script>
+   var prereg_user = {{ user_info|safe }};
+   var prereg_reviewers = {{ reviewers|safe }};
+</script>
+<h2>Pre-Registration Prize Admin View - Overview</h2>
+<div class="container-fluid" id="prereg-row">
+    <div class="row row-title">
+        <div class="col-lg-1 row-title text-center"><a id="title" data-bind="click: setSort">Submission Title</a></div>
+        <div class="col-lg-1 row-title text-center"><a id="initiator.fullname" data-bind="click: setSort">Name</a></div>
+        <div class="col-lg-2 row-title text-center"><a id="initiator.emails" data-bind="click: setSort">Email</a></div>
+        <div class="col-lg-1 row-title text-center"><a id="initiated" data-bind="click: setSort">Begun</a></div>
+        <div class="col-lg-1 row-title text-center"><a id="updated" data-bind="click: setSort">Submitted</a></div>
+        <div class="col-lg-2 row-title text-center"><a id="proofOfPub.proofOfPub()" data-bind="click: setSort">Proof of Publication</a></div>
+        <div class="col-lg-1 row-title text-center"><a id="paymenSent.paymentSent()" data-bind="click: setSort">Payment Sent</a></div>
+        <div class="col-lg-1 row-title text-center"><a id="notes.notes()" data-bind="click: setSort">Notes</a></div>
+        <div class="col-lg-1 row-title text-center"><a id="status" data-bind="click: setSort">Status</a></div>
+        <div class="col-lg-1 row-title text-center"><a id="assignee.assignee()" data-bind="click: setSort">Assignee</a></div>
+    </div>
+    <div id="overview">
+        <div class="row scripted">
+            <span data-bind="foreach: sortedDrafts">
+            	{% include "prereg/prereg_rows.html" %}
+            </span>
+        </div>
+    </div>
+</div>
+
+{% render_bundle 'prereg-admin-page' %}
+{% endblock %}
