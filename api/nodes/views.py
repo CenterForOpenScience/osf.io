@@ -49,6 +49,11 @@ class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
     in accordance with the JSON API spec
     """
 
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
     # overrides ListBulkCreateAPIView
     def create(self, request, *args, **kwargs):
         """
@@ -79,6 +84,11 @@ class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
     Custom BulkUpdateAPIView that properly formats bulk update responses in accordance with
     the JSON API spec
     """
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        base_permissions.TokenHasScope,
+    )
+
     # overrides BulkUpdateAPIView
     def bulk_update(self, request, *args, **kwargs):
         """
