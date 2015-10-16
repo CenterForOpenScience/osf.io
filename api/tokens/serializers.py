@@ -22,8 +22,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
                            required=True,
                            child=ser.CharField())
 
-    _id = IDField(help_text='The object ID for this application (automatically generated)',
-                  read_only=True)
+    token_id = ser.CharField(read_only=True, allow_blank=True)
 
     date_last_used = ser.DateTimeField(help_text='The date this token was generated (automatically filled in)',
                                      read_only=True)
@@ -32,7 +31,24 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         type_ = 'tokens'
 
     links = LinksField({
+        'html': 'absolute_url'
     })
+
+    def absolute_url(self, obj):
+        return obj.absolute_url
+
+    def to_representation(self, obj, envelope='data'):
+        data = super(ApiOAuth2PersonalTokenSerializer, self).to_representation(obj, envelope)
+        # Make sure users only see token_id on create
+        if not self.context['request'].method == 'POST':
+            try:
+                if data.get('data').get('attributes').get('token_id'):
+                    data['data']['attributes'].pop('token_id')
+                if data.get('attributes').get('token_id'):
+                    data['data']['attributes'].pop('token_id')
+            except AttributeError:
+                pass
+        return data
 
     def create(self, validated_data):
         instance = ApiOAuth2PersonalToken(**validated_data)
@@ -42,6 +58,9 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         assert isinstance(instance, ApiOAuth2PersonalToken), 'instance must be an ApiOAuth2PersonalToken'
         for attr, value in validated_data.iteritems():
-            setattr(instance, attr, value)
+            if attr == 'token_id':
+                continue
+            else:
+                setattr(instance, attr, value)
         instance.save()
         return instance

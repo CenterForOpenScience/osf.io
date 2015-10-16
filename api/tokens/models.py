@@ -1,7 +1,9 @@
 import uuid
 import datetime
+import urlparse
 
 from modularodm import fields
+from website import settings
 
 from framework.mongo import ObjectId, StoredObject
 
@@ -31,3 +33,11 @@ class ApiOAuth2PersonalToken(StoredObject):
                                         editable=False)
 
     is_active = fields.BooleanField(default=True, index=True)  # TODO: Add mechanism to deactivate a scope?
+
+    @property
+    def url(self):
+        return '/settings/tokens/{}/'.format(self._id)
+
+    @property
+    def absolute_url(self):
+        return urlparse.urljoin(settings.DOMAIN, self.url)

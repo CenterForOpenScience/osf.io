@@ -43,7 +43,7 @@
                                     <p>Last Used: <span class="text-muted" data-bind="text: lastUsed"></span></p>
                                 </td>
                                 <td>
-                                    <a href="#" data-bind="click: $root.deletePersonalToken.bind($root)"><i class="fa fa-times text-danger pull-right"></i></a>
+                                    <a href="#" data-bind="click: $root.deleteToken.bind($root)"><i class="fa fa-times text-danger pull-right"></i></a>
                                 </td>
                             </tr>
                         </tbody>

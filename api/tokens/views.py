@@ -76,7 +76,6 @@ class TokenDetail(generics.RetrieveUpdateDestroyAPIView):
 
     # overrides RetrieveAPIView
     def get_object(self):
-        import ipdb; ipdb.set_trace()
         obj = get_object_or_error(ApiOAuth2PersonalToken,
                                   Q('_id', 'eq', self.kwargs['_id']) &
                                   Q('is_active', 'eq', True))

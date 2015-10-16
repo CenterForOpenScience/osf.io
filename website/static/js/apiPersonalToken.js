@@ -37,6 +37,8 @@ var TokenData = oop.defclass({
         // Other fields. Owner and client ID should never change within this view.
         this.id = data.id;
 
+        this.lastUsed = data.attributes.date_last_used;
+
         this.owner = attributes.user_id;
         this.webDetailUrl = data.links ? data.links.html : undefined;
         this.apiDetailUrl = data.links ? data.links.self : undefined;

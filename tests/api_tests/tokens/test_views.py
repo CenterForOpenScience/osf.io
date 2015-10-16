@@ -77,9 +77,13 @@ class TestTokenList(ApiTestCase):
 
         assert_equal(res.json['data']['attributes']['owner'], self.user1._id)
         # Some fields aren't writable; make sure user can't set these
-        import ipdb; ipdb.set_trace()
         assert_not_equal(res.json['data']['attributes']['token_id'],
                          self.sample_data['data']['attributes']['token_id'])
+
+    def test_create_returns_token_id(self):
+        res = self.app.post_json_api(self.user1_list_url, self.sample_data, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 201)
+        assert_true(res.json['data']['attributes'].has_key('token_id'))
 
     def test_field_content_is_sanitized_upon_submission(self):
         bad_text = "<a href='http://sanitized.name'>User_text</a>"
@@ -120,30 +124,8 @@ class TestTokenDetail(ApiTestCase):
         self.user1_token = ApiOAuth2PersonalTokenFactory(owner=self.user1)
         self.user1_token_url = _get_token_detail_route(self.user1_token)
 
-        self.missing_id = {
-            'data': {
-                'type': 'tokens',
-                'attributes': {
-                    'name': 'A shiny updated token',
-                    'scopes': ['osf.full_write'],
-                }
-            }
-        }
-
         self.missing_type = {
             'data': {
-                'id': self.user1_token._id,
-                'attributes': {
-                    'name': 'A shiny updated token',
-                    'scopes': ['osf.full_write'],
-                }
-            }
-        }
-
-        self.incorrect_id = {
-            'data': {
-                'id': '12345',
-                'type': 'tokens',
                 'attributes': {
                     'name': 'A shiny updated token',
                     'scopes': ['osf.full_write'],
@@ -153,7 +135,6 @@ class TestTokenDetail(ApiTestCase):
 
         self.incorrect_type = {
             'data': {
-                'id': self.user1_token._id,
                 'type': 'Wrong type.',
                 'attributes': {
                     'name': 'A shiny updated token',
@@ -164,7 +145,6 @@ class TestTokenDetail(ApiTestCase):
 
         self.correct = {
             'data': {
-                'id': self.user1_token._id,
                 'type': 'tokens',
                 'attributes': {
                     'name': 'A shiny updated token',
@@ -176,7 +156,7 @@ class TestTokenDetail(ApiTestCase):
     def test_owner_can_view(self):
         res = self.app.get(self.user1_token_url, auth=self.user1.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['_id'], self.user1_token._id)
+        assert_equal(res.json['data']['id'], self.user1_token._id)
 
     def test_non_owner_cant_view(self):
         res = self.app.get(self.user1_token_url, auth=self.user2.auth, expect_errors=True)
@@ -217,12 +197,12 @@ class TestTokenDetail(ApiTestCase):
         user1_token.reload()
         assert_equal(res.status_code, 200)
 
-        assert_dict_contains_subset({'_id': user1_token._id,
-                                     'owner': user1_token.owner._id,
+        assert_dict_contains_subset({'owner': user1_token.owner._id,
                                      'name': new_name,
                                      'scopes': user1_token.scopes,
                                      },
                                     res.json['data']['attributes'])
+        assert_equal(res.json['data']['id'], user1_token._id)
 
     def test_updating_an_instance_does_not_change_the_number_of_instances(self):
         new_name = "The token formerly known as Prince"
@@ -246,6 +226,16 @@ class TestTokenDetail(ApiTestCase):
         # self.user1_token.reload()
         # assert_false(self.user1_token.is_active)
 
+    def test_read_does_not_return_token_id(self):
+        res = self.app.get(self.user1_token_url, auth=self.user1.auth)
+        assert_equal(res.status_code, 200)
+        assert_false(res.json['data']['attributes'].has_key('token_id'))
+
+    def test_update_token_does_not_return_token_id(self):
+        res = self.app.put_json_api(self.user1_token_url, self.correct, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_false(res.json['data']['attributes'].has_key('token_id'))
+
     def test_update_token(self):
         res = self.app.put_json_api(self.user1_token_url, self.correct, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
@@ -254,16 +244,8 @@ class TestTokenDetail(ApiTestCase):
         res = self.app.put_json_api(self.user1_token_url, self.incorrect_type, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
-    def test_update_token_incorrect_id(self):
-        res = self.app.put_json_api(self.user1_token_url, self.incorrect_id, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 409)
-
     def test_update_token_no_type(self):
         res = self.app.put_json_api(self.user1_token_url, self.missing_type, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-    def test_update_token_no_id(self):
-        res = self.app.put_json_api(self.user1_token_url, self.missing_id, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_update_token_no_attributes(self):
@@ -275,17 +257,8 @@ class TestTokenDetail(ApiTestCase):
         res = self.app.patch_json_api(self.user1_token_url, self.incorrect_type, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
 
-    def test_partial_update_token_incorrect_id(self):
-        res = self.app.patch_json_api(self.user1_token_url, self.incorrect_id, auth=self.user1.auth, expect_errors=True)
-        import ipdb; ipdb.set_trace()
-        assert_equal(res.status_code, 409)
-
     def test_partial_update_token_no_type(self):
         res = self.app.patch_json_api(self.user1_token_url, self.missing_type, auth=self.user1.auth, expect_errors=True)
-        assert_equal(res.status_code, 400)
-
-    def test_partial_update_token_no_id(self):
-        res = self.app.patch_json_api(self.user1_token_url, self.missing_id, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
     def test_partial_update_token_no_attributes(self):
