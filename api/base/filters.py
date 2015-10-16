@@ -67,12 +67,11 @@ class FilterMixin(object):
     def _get_default_operator(self, field):
         return self.DEFAULT_OPERATOR_OVERRIDES.get(type(field), self.DEFAULT_OPERATOR)
 
-    @staticmethod
-    def _get_valid_operators(field):
-        if FilterMixin._isinstance_any(field, FilterMixin.COMPARABLE_FIELDS):
-            return FilterMixin.COMPARISON_OPERATORS + (FilterMixin.DEFAULT_OPERATOR, )
-        elif FilterMixin._isinstance_any(field, FilterMixin.MATCHABLE_FIELDS):
-            return FilterMixin.MATCH_OPERATORS + (FilterMixin.DEFAULT_OPERATOR, )
+    def _get_valid_operators(self, field):
+        if self._isinstance_any(field, self.COMPARABLE_FIELDS):
+            return self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )
+        elif self._isinstance_any(field, self.MATCHABLE_FIELDS):
+            return self.MATCH_OPERATORS + (self.DEFAULT_OPERATOR, )
         else:
             return None
 
