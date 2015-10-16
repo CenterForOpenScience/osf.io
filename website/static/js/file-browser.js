@@ -145,13 +145,21 @@ var Filters = {
  */
 var Information = {
     view : function (ctrl, args) {
-        return m('.fb-information', [ 'Information',
-            m('span', args.selected().map(function(item){
-                    return m('', item.data.name);
-                })
-
-        )
-        ]);
+        var template = '';
+        if (args.selected().length === 1) {
+            var item = args.selected()[0];
+            if (item.data.isDashboard) {
+                template = m('h4', 'This is the dashboard!');
+            } else {
+                template = m('h4', item.data.name);
+            }
+        }
+        if (args.selected().length > 1) {
+            template = m('', [ 'There are multiple items: ', args.selected().map(function(item){
+                    return m('p', item.data.name);
+                })]);
+        }
+        return m('.fb-information', template);
     }
 };
 
