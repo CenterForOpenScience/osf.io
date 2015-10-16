@@ -224,4 +224,3 @@ class TestNodeLinkCreate(ApiTestCase):
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
-

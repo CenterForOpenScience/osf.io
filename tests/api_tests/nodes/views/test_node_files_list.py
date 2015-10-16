@@ -1,21 +1,19 @@
-# -*- coding: utf-8 -*-
-import mock
-import base64
+import json
+
 from nose.tools import *  # flake8: noqa
 import httpretty
-
 
 from framework.auth.core import Auth
 
 from website.addons.github import model
+from website.models import Node
+from website.util import waterbutler_api_url_for
 from api.base.settings.defaults import API_BASE
-
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory
 )
-
 
 def prepare_mock_wb_response(
         node=None,
@@ -57,11 +55,16 @@ def prepare_mock_wb_response(
         data = [dict(default_file, **each) for each in files]
     else:
         data = [default_file]
+
+    jsonapi_data = []
+    for datum in data:
+        jsonapi_data.append({'attributes': datum})
+
     if not folder:
-        data = data[0]
+        jsonapi_data = jsonapi_data[0]
 
     body = json.dumps({
-        u'data': data
+        u'data': jsonapi_data
     })
     httpretty.register_uri(
         method,
@@ -70,7 +73,6 @@ def prepare_mock_wb_response(
         status=status_code,
         content_type='application/json'
     )
-
 
 class TestNodeFilesList(ApiTestCase):
 
@@ -292,3 +294,7 @@ class TestNodeFilesListFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
         assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
+
+
+
+

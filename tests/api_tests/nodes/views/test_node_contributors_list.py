@@ -2,13 +2,19 @@
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
+from website.models import NodeLog
+
+from framework.auth.core import Auth
 
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    UserFactory
 )
 
+from tests.utils import assert_logs
+from website.util import permissions
 
 class NodeCRUDTestCase(ApiTestCase):
 
@@ -444,3 +450,4 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
         self.private_project.reload()
         assert_not_in(self.user_two, self.private_project.contributors)
+
