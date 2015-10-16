@@ -433,7 +433,7 @@ def test_addons():
 
 
 @task
-def test(all=False, syntax=False, skipapi=False):
+def test(all=False, syntax=False):
     """
     Run unit tests: OSF (always), plus addons and syntax checks (optional)
     """
@@ -442,14 +442,23 @@ def test(all=False, syntax=False, skipapi=False):
         jshint()
 
     test_osf()
-
-    if not skipapi:
-        test_api()
+    test_api()
 
     if all:
         test_addons()
         karma(single=True, browsers='PhantomJS')
 
+@task
+def test_travis_osf():
+    test_osf()
+    test_addons()
+
+@task
+def test_travis_else():
+    flake()
+    jshint()
+    test_api()
+    karma(single=True, browsers='PhantomJS')
 
 @task
 def karma(single=False, sauce=False, browsers=None):
