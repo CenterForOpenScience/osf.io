@@ -26,6 +26,11 @@ var FileBrowser = {
     controller : function (args) {
         var self = this;
         self.data = m.prop([]);
+        self.selected = m.prop([]);
+        self.updateSelected = function(selectedList){
+            self.selected(selectedList);
+            console.log(self.selected());
+        }.bind(self);
 
         self.breadcrumbs = [
             { label : 'First', href : '/first'},
@@ -62,8 +67,8 @@ var FileBrowser = {
                 m.component(Collections, {list : ctrl.collections, selected : 1 } ),
                 m.component(Filters)
             ]),
-            m('.fb-main', m.component(ProjectOrganizer, { options : ctrl.poOptions })),
-            m('.fb-infobar', m.component(Information))
+            m('.fb-main', m.component(ProjectOrganizer, { options : ctrl.poOptions, updateSelected : ctrl.updateSelected})),
+            m('.fb-infobar', m.component(Information, { selected : ctrl.selected }))
         ]);
     }
 };
@@ -122,9 +127,6 @@ var Breadcrumbs = {
  * @constructor
  */
 var Filters = {
-    controller : function (args) {
-
-    },
     view : function (ctrl) {
         return m('.fb-filters', 'Filters');
     }
@@ -142,11 +144,14 @@ var Filters = {
  * @constructor
  */
 var Information = {
-    controller : function (args) {
+    view : function (ctrl, args) {
+        return m('.fb-information', [ 'Information',
+            m('span', args.selected().map(function(item){
+                    return m('', item.data.name);
+                })
 
-    },
-    view : function (ctrl) {
-        return m('.fb-information', 'Information');
+        )
+        ]);
     }
 };
 

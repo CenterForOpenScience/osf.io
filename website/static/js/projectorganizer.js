@@ -414,6 +414,7 @@ function _poMultiselect(event, tree) {
     //    // recursively open parents of the selected item but do not lazyload;
     //    Fangorn.Utils.openParentFolders.call(tb, tree);
     //}
+    tb.options.updateSelected(tb.multiselected());
     if (tb.multiselected().length === 1) {
         // temporarily remove classes until mithril redraws raws with another hover.
         //tb.inputValue(tb.multiselected()[0].data.name);
@@ -1417,7 +1418,8 @@ var tbOptions = {
 
 var ProjectOrganizer = {
     controller : function (args) {
-        this.poOptions = $.extend(tbOptions, args.options);
+        //this.selected = args.selected;
+        this.poOptions = $.extend({ updateSelected : args.updateSelected }, tbOptions, args.options);
         this.tb = new Treebeard(this.poOptions, true);
     },
     view : function (ctrl) {
