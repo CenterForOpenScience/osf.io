@@ -1,7 +1,7 @@
 var SUPPORT_EMAIL = 'support@osf.io';
-var SUPPORT_EMAIL_MAILTO = '<a href="mailto:' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL +'</a>';
+var SUPPORT_LINK = '<a href="mailto:' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL +'</a>';
 
-var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + SUPPORT_EMAIL_MAILTO + ' if the problem persists.';
+var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + SUPPORT_LINK + ' if the problem persists.';
 
 module.exports = {
     // TODO
@@ -13,15 +13,15 @@ module.exports = {
         invalidEmbargoMessage: 'Please choose a date more than two days, but less than four years, from today.',
         registerConfirm: 'Are you sure you want to register this project?',
         registerSkipAddons: 'If you choose to continue with the registration at this time we will exclude the contents of any addons that are not copyable. These files will not appear in the final registration.',
-        registerFail: 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_EMAIL_MAILTO,
-        submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_EMAIL_MAILTO,
+        registerFail: 'There was a problem completing your registration right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_LINK,
+        submitForReviewFail: 'There was a problem submitting this draft for review right now. Please try again later. If this should not have occurred and the issue persists, please report it to ' + SUPPORT_LINK,
         beforeEditIsApproved: 'This draft registration is currently approved. Please note that if you make any changes (excluding comments) this approval status will be revoked and you will need to submit for approval again.',
         beforeEditIsPendingReview: 'This draft registration is currently pending review. Please note that if you make any changes (excluding comments) this request will be cancelled and you will need to submit for approval again.'
     },
     Addons: {
         dataverse: {
             userSettingsError: 'Could not retrieve settings. Please refresh the page or ' +
-                'contact ' + SUPPORT_EMAIL_MAILTO + ' if the problem persists.',
+                'contact ' + SUPPORT_LINK + ' if the problem persists.',
             confirmUserDeauth: 'Are you sure you want to unlink your Dataverse ' +
                 'Account? This will revoke access to Dataverse for all ' +
                 'projects you have authorized.',
@@ -82,10 +82,10 @@ module.exports = {
     apiOauth2Application: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
         deactivateConfirm: 'Are you sure you want to deactivate this application for all users and revoke all access tokens? This cannot be reversed.',
-        deactivateError: 'Could not deactivate application. Please wait a few minutes and try again, or contact ' + SUPPORT_EMAIL_MAILTO + ' if the problem persists.',
+        deactivateError: 'Could not deactivate application. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         dataFetchError: 'Data not loaded. ' + REFRESH_OR_SUPPORT,
         dataListFetchError: 'Could not load list of developer applications at this time. ' + REFRESH_OR_SUPPORT,
-        dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_EMAIL_MAILTO + ' if the problem persists.',
+        dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         creationSuccess: 'Successfully registered new application',
         dataUpdated: 'Application data updated'
     }
