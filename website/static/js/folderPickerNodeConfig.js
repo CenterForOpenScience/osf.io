@@ -184,6 +184,7 @@ var FolderPickerViewModel = oop.defclass({
             var userIsOwner = self.userIsOwner();
             var selected = self.selected();
             var name = selected.name || 'None';
+            name = name.replace('All Files', 'Full ' + addonName);
             return userIsOwner ? name : '';
         });
 

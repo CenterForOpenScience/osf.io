@@ -72,7 +72,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                             self.changeMessage(self.messages.connectAccountSuccess(), 'text-success', 3000);
                         }
                         catch(err){
-                            self.changeMessage(self.messages.connectAccountDenied(), 'text-failure', 6000);
+                            self.changeMessage(self.messages.connectAccountDenied(), 'text-danger', 6000);
                         }
                     });
                 };
