@@ -1167,11 +1167,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         if key == 'category':
                             self.delete_search_entry()
                         ###############
-                        values[key] = {
-                            'old': getattr(self, key),
-                            'new': value,
-                        }
-                        setattr(self, key, value)
+                        old_value = getattr(self, key)
+                        if old_value != value:
+                            values[key] = {
+                                'old': old_value,
+                                'new': value,
+                            }
+                            setattr(self, key, value)
                     except AttributeError:
                         raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
                     except warnings.Warning:

@@ -1086,6 +1086,24 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
+    def test_multiple_patch_requests_with_same_category_generates_one_log(self):
+        self.private_project.category = 'project'
+        self.private_project.save()
+        new_category = 'data'
+        payload = make_node_payload(self.private_project, attributes={'category': new_category})
+        original_n_logs = len(self.private_project.logs)
+
+        res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
+        self.private_project.reload()
+        assert_equal(self.private_project.category, new_category)
+        assert_equal(len(self.private_project.logs), original_n_logs + 1)  # sanity check
+
+        res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
+        self.private_project.reload()
+        assert_equal(self.private_project.category, new_category)
+        self.private_project.reload()
+        assert_equal(len(self.private_project.logs), original_n_logs + 1)
+
     def test_partial_update_invalid_id(self):
         res = self.app.patch_json_api(self.public_url, {
                 'data': {
