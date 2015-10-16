@@ -8,7 +8,7 @@ from rest_framework.status import is_server_error
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
-from api.base.generic_bulk_views import ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
+from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error, is_bulk_request
@@ -128,7 +128,7 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(BulkUpdateJSONAPIView, BulkDestroyJSONAPIView, ListBulkCreateJSONAPIView, ODMFilterMixin):
+class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -429,7 +429,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(BulkUpdateJSONAPIView, BulkDestroyJSONAPIView, ListBulkCreateJSONAPIView, ListFilterMixin, NodeMixin):
+class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, NodeMixin):
     """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
@@ -707,7 +707,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
+class NodeChildrenList(bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -826,7 +826,7 @@ class NodeChildrenList(ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
-class NodeLinksList(BulkDestroyJSONAPIView, ListBulkCreateJSONAPIView, NodeMixin):
+class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
