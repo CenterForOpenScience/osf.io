@@ -256,13 +256,12 @@ ko.bindingHandlers.listing = {
         else {
             keys = data;
         }
-        var index = 1;
-        var list = ko.utils.arrayMap(keys, function(key) {
+        var list = ko.utils.arrayMap(keys, function(key, index) {
             var ret;
-            if (index === 1){
+            if (index === 0){
                 ret = '';
             }
-            else if (index === 2){
+            else if (index === 1){
                 if (valueUnwrapped.length === 2) {
                     ret = ' and ';
                 }
@@ -274,7 +273,6 @@ ko.bindingHandlers.listing = {
                 ret = ', and ';
             }
             ret += map(key, data[key]);
-            index++;
             return ret;
         }).join('');
         $(element).text(list);
