@@ -10,6 +10,11 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
 
+# from the OSF settings
+BUILT_TEMPLATES = osf_settings.BUILT_TEMPLATES
+CORE_TEMPLATES = osf_settings.CORE_TEMPLATES
+ADDONS_REQUESTED = osf_settings.ADDONS_REQUESTED
+ADDON_PATH = osf_settings.ADDON_PATH
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = osf_settings.SECRET_KEY
 
@@ -100,6 +105,6 @@ STATICFILES_DIRS = (
 LANGUAGE_CODE = 'en-us'
 
 WEBPACK_LOADER = {
-    'BUNDLE_DIR_NAME': osf_settings.STATIC_FOLDER,
-    'STATS_FILE': os.path.join(osf_settings.APP_PATH, 'webpack-stats.json'),
+    'BUNDLE_DIR_NAME': 'public/js/',
+    'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
 }
