@@ -25,18 +25,54 @@ var defaults = {
 var FileBrowser = {
     controller : function (args) {
         var self = this;
-        self.data = m.prop([]);
+        var data = args.data;
+        // Reorganize data
+        var root = {id:0, children: [], data : {} };
+        var node_list = { 0 : root};
+
+        for (var i = 0; i < data.length; i++) {
+            var n = data[i];
+            var parentLink = n.relationships.parent.links.self.href;
+            var node = {
+                id : n.id,
+                data : n
+            };
+            if(!node_list[n.id]){
+                node_list[n.id] = { id: n.id, data : n, children : [] };
+            } else {
+                node_list[n.id].id = n.id;
+                node_list[n.id].data = n;
+            }
+            if(parentLink && !n.attributes.registration) {
+                var parentID = parentLink.split('/')[5];
+                if(!node_list[parentID]){
+                    node_list[parentID] = { children : [] };
+                }
+                node_list[parentID].children.push(node_list[n.id]);
+
+            } else {
+                node_list[0].children.push(node_list[n.id]);
+            }
+        }
+        console.log(root, node_list);
+
+        // For information panel
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){
             self.selected(selectedList);
             console.log(self.selected());
         }.bind(self);
 
+        // For breadcrumbs
         self.breadcrumbs = [
             { label : 'First', href : '/first'},
             { label : 'Second', href : '/second'},
             { label : 'Third', href : '/third'}
         ];
+        self.updateBreadcrumbs = function(){
+
+        }.bind(self);
+
         self.collections = [
             { id:1, label : 'Dashboard', href : '#'},
             { id:2, label : 'All My Registrations', href : '#'},
@@ -67,7 +103,7 @@ var FileBrowser = {
                 m.component(Collections, {list : ctrl.collections, selected : 1 } ),
                 m.component(Filters)
             ]),
-            m('.fb-main', m.component(ProjectOrganizer, { options : ctrl.poOptions, updateSelected : ctrl.updateSelected})),
+            m('.fb-main', m.component(ProjectOrganizer, { options : ctrl.poOptions, updateSelected : ctrl.updateSelected, updateBreadcrumbs : ctrl.updateBreadcrumbs})),
             m('.fb-infobar', m.component(Information, { selected : ctrl.selected }))
         ]);
     }
@@ -131,13 +167,6 @@ var Filters = {
         return m('.fb-filters', 'Filters');
     }
 };
-
-
-/**
- * Project Organizer Module.
- * @constructor
- */
-
 
 /**
  * Information Module.
