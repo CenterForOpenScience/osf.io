@@ -652,7 +652,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
             auth = Auth(None)
         else:
             auth = Auth(user)
-        registrations = [node for node in nodes if node.can_view(auth) and not node.is_retracted]
+        registrations = [node for node in nodes if node.can_view(auth)]
         return registrations
 
 

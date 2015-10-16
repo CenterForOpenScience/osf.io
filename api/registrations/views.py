@@ -99,9 +99,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
     # overrides ListAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
-        registrations = Node.find(query)
-        non_retracted_registrations = [reg for reg in registrations if not reg.is_retracted]
-        return non_retracted_registrations
+        return Node.find(query)
 
 
 class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):

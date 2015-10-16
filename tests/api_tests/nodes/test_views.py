@@ -2161,19 +2161,6 @@ class TestNodeRegistrationList(ApiTestCase):
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
 
-    def test_omit_retracted_registration(self):
-        registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 2)
-        registration.retract_registration(self.user)
-        retraction = registration.retraction
-        token = retraction.approval_state.values()[0]['approval_token']
-        retraction.approve_retraction(self.user, token)
-        registration.save()
-        res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 1)
-
-
 
 class TestNodeChildrenList(ApiTestCase):
     def setUp(self):
