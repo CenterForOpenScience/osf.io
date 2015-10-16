@@ -19,9 +19,7 @@
 .fb-main {
     width: 55%;
     float: left;
-    background-color: antiquewhite;
-    height: 500px;
-    padding: 10px;
+    padding: 0;
 }
 
 .fb-infobar {
