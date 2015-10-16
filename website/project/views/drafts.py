@@ -36,7 +36,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     :return: serialized registration
     :rtype: dict
     """
-    # TODO(samchrisinger) check that old approval is None or complete
+    # TODO(lyndsysimon): Is this view is called for all schemas?
     approval = DraftRegistrationApproval(
         initiated_by=auth.user,
         end_date=None,
@@ -148,9 +148,6 @@ def create_draft_registration(auth, node, *args, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     schema_version = data.get('schema_version', 1)
-    # TODO(hrybacki): Move to framework.utils.rapply once @sam's PR#4027 is merged.
-    #from api.base.serializers import _rapply
-    # schema_data = _rapply(data.get('schema_data', {}), sanitize.strip_html)
     schema_data = data.get('schema_data', {})
 
     meta_schema = get_schema_or_fail(
