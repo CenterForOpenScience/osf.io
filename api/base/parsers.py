@@ -24,7 +24,7 @@ class JSONAPIParser(JSONParser):
         Validates that formatting of relationships dictionary is correct.
         """
         if not isinstance(relationships, dict):
-                raise ParseError()
+            raise ParseError()
         related_resource = relationships.keys()[0]
         if not isinstance(relationships[related_resource], dict) or related_resource == 'data':
             raise ParseError()
