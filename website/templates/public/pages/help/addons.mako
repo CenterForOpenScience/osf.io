@@ -11,13 +11,14 @@
         <div class="col-md-12">
             <h3 class="text-center m-t-xl f-w-lg">Storage options</h3>
         </div>
-        <%include file="/public/pages/help/addons/dropbox.mako"/>
-        <%include file="/public/pages/help/addons/github.mako"/>
         <%include file="/public/pages/help/addons/amazons3.mako"/>
-        <%include file="/public/pages/help/addons/figshare.mako"/>
-        <%include file="/public/pages/help/addons/dataverse.mako"/>
         <%include file="/public/pages/help/addons/box.mako"/>
-        <%include file="/public/pages/help/addons/drive.mako"/>
+        <%include file="/public/pages/help/addons/dataverse.mako"/>
+        <%include file="/public/pages/help/addons/dropbox.mako"/>
+        <%include file="/public/pages/help/addons/figshare.mako"/>
+        <%include file="/public/pages/help/addons/googledrive.mako"/>
+        <%include file="/public/pages/help/addons/github.mako"/>
+        <%include file="/public/pages/help/addons/sharelatex.mako"/>
 
         <div class="col-md-12">
             <h3 class= "text-center m-t-xl f-w-lg">Citation managers</h3>
