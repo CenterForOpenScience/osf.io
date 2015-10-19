@@ -94,7 +94,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
     """
 
     def __init__(self, view_name=None, **kwargs):
-        self.meta = kwargs.pop('meta', None)
+        self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedIdentityField, self).__init__(view_name=view_name, **kwargs)
 
@@ -122,7 +122,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
 
         meta = {}
-        for key in self.meta or {}:
+        for key in self.meta:
             if key == 'count' or key == 'unread_comments_count':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
                 if utils.is_truthy(show_related_counts):
