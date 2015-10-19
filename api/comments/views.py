@@ -56,7 +56,7 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        self.check_object_permissions(self.request, self.get_comment())
+        self.get_comment(check_permissions=True)
         serializer.save()
 
 
@@ -120,12 +120,12 @@ class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
         comment = self.get_comment()
         reports = comment.reports
         user_id = self.request.user._id
-        report_id = self.kwargs['user_id']
+        reporter_id = self.kwargs['user_id']
 
-        if report_id != user_id:
+        if reporter_id != user_id:
             raise PermissionDenied("Not authorized to comment on this project.")
 
-        if report_id in reports:
+        if reporter_id in reports:
             return CommentReport(user_id, reports[user_id]['category'], reports[user_id]['text'])
         else:
             raise Gone(detail='The requested comment report is no longer available.')
