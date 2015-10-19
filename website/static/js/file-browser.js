@@ -27,16 +27,20 @@ var FileBrowser = {
         var self = this;
         var data = args.data;
         // Reorganize data
-        var root = {id:0, children: [], data : {} };
+        var root = {id:0, children: [], data : {}, kind : 'folder' };
         var node_list = { 0 : root};
 
         // Generate tree list from flat data
         for (var i = 0; i < data.length; i++) {
             var n = data[i];
+            if (n.attributes.registration) {
+                continue;
+            }
             var parentLink = n.relationships.parent.links.self.href;
             var node = {
                 id : n.id,
-                data : n
+                data : n,
+                kind : 'node'
             };
             if(!node_list[n.id]){
                 node_list[n.id] = { id: n.id, node : n, children : [] };
@@ -44,12 +48,13 @@ var FileBrowser = {
                 node_list[n.id].id = n.id;
                 node_list[n.id].node = n;
             }
-            if(parentLink && !n.attributes.registration) {
+            if(parentLink) {
                 var parentID = parentLink.split('/')[5];
                 if(!node_list[parentID]){
                     node_list[parentID] = { children : [] };
                 }
                 node_list[parentID].children.push(node_list[n.id]);
+                node_list[parentID].kind = 'folder';
 
             } else {
                 node_list[0].children.push(node_list[n.id]);
