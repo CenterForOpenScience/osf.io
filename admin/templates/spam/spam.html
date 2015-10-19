@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}List of Spam{% endblock title %}
+{# stylesheets #}
+{% block content %}
+    {{ block.super }}
+    <h2>List of Spam</h2>
+    <table>
+    {% for comment in comments %}
+    <tr>
+        <td>
+            {{ comment }}
+        </td>
+    </tr>
+    {% endfor %}
+    </table>
+{% endblock content %}
