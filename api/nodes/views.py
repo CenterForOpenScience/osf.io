@@ -61,6 +61,7 @@ class NodeMixin(object):
             self.check_object_permissions(self.request, node)
         return node
 
+
 class WaterButlerMixin(object):
 
     path_lookup_url_kwarg = 'path'
