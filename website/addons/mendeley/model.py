@@ -75,7 +75,7 @@ class Mendeley(ExternalProvider):
 
         #Check if Mendeley can be accessed
         try:
-            self._client.folders()
+            self._client.folders.list()
         except MendeleyApiException, error:
             if error.status == 403:
                 raise HTTPError(403, data=dict(
