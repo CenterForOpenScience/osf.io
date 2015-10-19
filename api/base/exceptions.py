@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.exceptions import APIException, ParseError
 
 
-def dict_error_formatting(error):
+def dict_error_formatting(error, index=None):
     """
     Formats all dictionary error messages for both single and bulk requests
     """
@@ -17,6 +17,12 @@ def dict_error_formatting(error):
     # Resource objects must contain at least 'id' and 'type'
     resource_object_identifiers = ['type', 'id']
 
+    if index is None:
+        index = ''
+    else:
+        index = str(index) + '/'
+
+
     for error_key, error_description in error.iteritems():
         if isinstance(error_description, basestring):
             error_description = [error_description]
@@ -24,11 +30,11 @@ def dict_error_formatting(error):
         if error_key in top_level_error_keys:
             formatted_error_list.extend({error_key: description} for description in error_description)
         elif error_key in resource_object_identifiers:
-            formatted_error_list.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
+            formatted_error_list.extend([{'source': {'pointer': '/data/{}'.format(index) + error_key}, 'detail': reason} for reason in error_description])
         elif error_key == 'non_field_errors':
             formatted_error_list.extend([{'detail': description for description in error_description}])
         else:
-            formatted_error_list.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason} for reason in error_description])
+            formatted_error_list.extend([{'source': {'pointer': '/data/{}attributes/'.format(index) + error_key}, 'detail': reason} for reason in error_description])
 
     return formatted_error_list
 
@@ -51,32 +57,19 @@ def json_api_exception_handler(exc, context):
         if isinstance(exc, JSONAPIException):
             errors.extend([{'source': exc.source, 'detail': exc.detail}])
         elif isinstance(message, dict):
-            errors.extend(dict_error_formatting(message))
+            errors.extend(dict_error_formatting(message, None))
         else:
             if isinstance(message, basestring):
                 message = [message]
+            index = 0
             for error in message:
                 if isinstance(error, dict):
-                    errors.extend(dict_error_formatting(error))
+                    errors.extend(dict_error_formatting(error, index))
                 else:
                     errors.append({'detail': error})
+                index += 1
 
         response.data = {'errors': errors}
-
-        # For bulk operations: If 400 error, return meta information containing request data.
-        if response.status_code == 400 and "non_field_errors" not in message:
-            request = context['request']
-            if is_bulk_request(request):
-                formatted_request_data = []
-                for data in request.data:
-                    formatted = {'type': data.pop('type')}
-                    id = data.pop('id')
-                    if id is not None:
-                        formatted['id'] = id
-                    formatted['attributes'] = data
-                    formatted_request_data.append(formatted)
-
-                response.data['meta'] = {'request_data': formatted_request_data}
 
     return response
 

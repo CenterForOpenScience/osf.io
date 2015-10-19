@@ -591,10 +591,9 @@ class TestNodeBulkCreate(ApiTestCase):
         assert_equal(len(res.json['errors']), 2)
         errors = res.json['errors']
         assert_items_equal([errors[0]['source'], errors[1]['source']],
-                           [{'pointer': '/data/attributes/title'}, {'pointer': '/data/attributes/title'}])
+                           [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
         assert_items_equal([errors[0]['detail'], errors[1]['detail']],
                            ["This field may not be blank.", "This field may not be blank."])
-        assert_equal(res.json['meta']['request_data'], [self.empty_project]*2)
 
     def test_bulk_create_limits(self):
         node_create_list = {'data': [self.public_project] * 11}
@@ -608,7 +607,7 @@ class TestNodeBulkCreate(ApiTestCase):
         payload = {'data': [{"attributes": {'category': self.category, 'title': self.title}}]}
         res = self.app.bulk_post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
 
         res = self.app.get(self.url, auth=self.user_one.auth)
         assert_equal(len(res.json['data']), 0)
@@ -636,7 +635,7 @@ class TestNodeBulkCreate(ApiTestCase):
         res = self.app.bulk_post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
 
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes/title')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/attributes/title')
 
         res = self.app.get(self.url, auth=self.user_one.auth)
         assert_equal(len(res.json['data']), 0)
@@ -914,17 +913,16 @@ class TestNodeBulkUpdate(ApiTestCase):
         assert_equal(len(res.json['errors']), 2)
         errors = res.json['errors']
         assert_items_equal([errors[0]['source'], errors[1]['source']],
-                           [{'pointer': '/data/attributes/title'}] * 2)
+                           [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
         assert_items_equal([errors[0]['detail'], errors[1]['detail']],
                            ['This field may not be blank.'] * 2)
-        assert_equal(res.json['meta']['request_data'], self.empty_payload['data'])
 
     def test_bulk_update_id_not_supplied(self):
         res = self.app.bulk_put_json_api(self.url, {'data': [self.public_payload['data'][1], {'type': 'nodes', 'attributes':
             {'title': self.new_title, 'category': self.new_category}}]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/id')
         assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
 
         url = '/{}nodes/{}/'.format(API_BASE, self.public_project_two._id)
@@ -937,7 +935,7 @@ class TestNodeBulkUpdate(ApiTestCase):
             {'title': self.new_title, 'category': self.new_category}}]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/type')
         assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
 
         url = '/{}nodes/{}/'.format(API_BASE, self.public_project_two._id)
@@ -1159,7 +1157,7 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         assert_equal(len(res.json['errors']), 2)
         errors = res.json['errors']
         assert_items_equal([errors[0]['source'], errors[1]['source']],
-                           [{'pointer': '/data/attributes/title'}]*2)
+                           [{'pointer': '/data/0/attributes/title'}, {'pointer': '/data/1/attributes/title'}])
         assert_items_equal([errors[0]['detail'], errors[1]['detail']],
                            ['This field may not be blank.']*2)
 
@@ -2256,7 +2254,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         payload = {'data': [{'id': self.user_two._id, 'attributes': {}}]}
         res = self.app.bulk_post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
 
     def test_node_contributor_bulk_create_incorrect_type(self):
         payload = {'data': [{
@@ -2402,14 +2400,14 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         res = self.app.bulk_put_json_api(self.public_url, {'data': [{'type': 'contributors', 'attributes': {}}]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/id')
         assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
 
     def test_bulk_update_contributors_type_not_supplied(self):
         res = self.app.bulk_put_json_api(self.public_url, {'data': [{'id': self.user_two._id, 'attributes': {}}]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
         assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
 
     def test_bulk_update_contributors_wrong_type(self):
@@ -2569,14 +2567,14 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         res = self.app.bulk_patch_json_api(self.public_url, {'data': [{'type': 'contributors', 'attributes': {}}]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/id')
         assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
 
     def test_bulk_partial_update_contributors_type_not_supplied(self):
         res = self.app.bulk_patch_json_api(self.public_url, {'data': [{'id': self.user_two._id, 'attributes': {}}]}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
         assert_equal(res.json['errors'][0]['detail'], "This field may not be null.")
 
     def test_bulk_partial_update_contributors_wrong_type(self):
@@ -4004,7 +4002,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         res = self.app.bulk_post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/type')
 
         self.project.reload()
         assert_equal(len(self.project.nodes), 0)
@@ -4584,7 +4582,7 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         res = self.app.bulk_post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/0/type')
 
     def test_bulk_creates_node_pointer_incorrect_type(self):
         payload = {'data': [{'type': 'Wrong type.', 'attributes': {'target_node_id': self.user_two_project._id}}]}
