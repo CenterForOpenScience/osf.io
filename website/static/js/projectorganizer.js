@@ -107,13 +107,14 @@ function _poTitleColumn(item) {
     var preventSelect = function(e){
         e.stopImmediatePropagation();
     };
-    //var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : ''; -- REMOVE
-    if(item.data.archiving) {
-        return  m('span', {'class': 'registration-archiving'}, item.data.name + ' [Archiving]');
-    } else if(item.data.links.html){
-        return m('a.fg-file-links', { 'class' : css, href : item.data.links.html, onclick : preventSelect}, item.data.title);
+    var node = item.data.data;
+    var css = ''; // Keep for future expandability -- Remove: item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
+    if (item.data.archiving) {
+        return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
+    } else if(node.links.html){
+        return m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title);
     } else {
-        return  m('span', { 'class' : css}, item.data.title);
+        return  m('span', { 'class' : css}, node.attributes.title);
     }
 }
 
