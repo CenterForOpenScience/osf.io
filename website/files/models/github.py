@@ -17,4 +17,4 @@ class GithubFile(GithubFileNode, File):
 
     def touch(self, auth_header, revision=None, ref=None, branch=None, **kwargs):
         revision = revision or ref or branch
-        return super(GithubFileNode, self).touch(auth_header, revision=revision, **kwargs)
+        return super(GithubFile, self).touch(auth_header, revision=revision, **kwargs)
