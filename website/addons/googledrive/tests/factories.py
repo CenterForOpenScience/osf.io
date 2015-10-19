@@ -15,7 +15,6 @@ from website.addons.googledrive.model import (
     GoogleDriveUserSettings,
     GoogleDriveNodeSettings,
     GoogleDriveOAuthSettings,
-    GoogleDriveGuidFile,
 )
 
 
@@ -44,15 +43,3 @@ class GoogleDriveNodeSettingsFactory(ModularOdmFactory):
     user_settings = SubFactory(GoogleDriveUserSettingsFactory)
     folder_id = '12345'
     folder_path = 'Drive/Camera Uploads'
-
-
-class GoogleDriveFileFactory(ModularOdmFactory):
-    FACTORY_FOR = GoogleDriveGuidFile
-
-    node = SubFactory(ProjectFactory)
-    path = 'foo.txt'
-
-    @post_generation
-    def add_googledrive_addon(self, created, extracted):
-        self.node.add_addon('googledrive', auth=Auth(user=self.node.creator))
-        self.node.save()

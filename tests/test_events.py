@@ -201,7 +201,6 @@ class TestFileAdded(OsfTestCase):
         assert_equal('{}_file_updated'.format(wb_path), self.event.event_type)
         assert_equal('added file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
         assert_equal('added file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
-        print self.event.text_message
 
     @mock.patch('website.notifications.emails.notify')
     def test_file_added(self, mock_notify):
@@ -227,10 +226,16 @@ class TestFileRemoved(OsfTestCase):
             self.user2, self.project, 'file_removed', payload=file_deleted_payload
         )
 
-    def test_info_formed_correct(self):
+    def test_info_formed_correct_file(self):
         assert_equal('file_updated', self.event.event_type)
         assert_equal('removed file "<b>{}</b>".'.format(materialized.lstrip('/')), self.event.html_message)
         assert_equal('removed file "{}".'.format(materialized.lstrip('/')), self.event.text_message)
+
+    def test_info_formed_correct_folder(self):
+        assert_equal('file_updated', self.event.event_type)
+        self.event.payload['metadata']['materialized'] += u'/'
+        assert_equal(u'removed folder "<b>{}/</b>".'.format(materialized.lstrip('/')), self.event.html_message)
+        assert_equal(u'removed folder "{}/".'.format(materialized.lstrip('/')), self.event.text_message)
 
     @mock.patch('website.notifications.emails.notify')
     def test_file_removed(self, mock_notify):

@@ -132,3 +132,12 @@ def deep_get(obj, key):
         return deep_get(soft_get(obj, keychain.pop(0)), '.'.join(keychain))
     else:
         return soft_get(obj, key)
+
+def add_dev_only_items(items, dev_only_items):
+    """Add some items to a dictionary if in ``DEV_MODE``.
+    """
+    items = items.copy()
+    if website_settings.DEV_MODE:
+        items.update(dev_only_items)
+    return items
+

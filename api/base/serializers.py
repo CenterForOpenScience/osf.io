@@ -63,7 +63,8 @@ class IDField(ser.CharField):
     def to_internal_value(self, data):
         update_methods = ['PUT', 'PATCH']
         if self.context['request'].method in update_methods:
-            if self.root.instance._id != data:
+            id_field = getattr(self.root.instance, self.source, '_id')
+            if id_field != data:
                 raise Conflict()
         return super(IDField, self).to_internal_value(data)
 
@@ -80,6 +81,14 @@ class TypeField(ser.CharField):
         return super(TypeField, self).to_internal_value(data)
 
 
+class JSONAPIListField(ser.ListField):
+    def to_internal_value(self, data):
+        if not isinstance(data, list):
+            self.fail('not_a_list', input_type=type(data).__name__)
+
+        return super(JSONAPIListField, self).to_internal_value(data)
+
+
 class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
     """
     HyperlinkedIdentityField that returns a nested dict with url,
@@ -93,11 +102,9 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
     """
 
     def __init__(self, view_name=None, **kwargs):
-        kwargs['read_only'] = True
-        kwargs['source'] = '*'
         self.meta = kwargs.pop('meta', None)
         self.link_type = kwargs.pop('link_type', 'url')
-        super(ser.HyperlinkedIdentityField, self).__init__(view_name, **kwargs)
+        super(JSONAPIHyperlinkedIdentityField, self).__init__(view_name=view_name, **kwargs)
 
     # overrides HyperlinkedIdentityField
     def get_url(self, obj, view_name, request, format):
@@ -109,12 +116,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         if utils.deep_get(obj, self.lookup_field) is None:
             return None
 
-        head, tail = os.path.split(self.lookup_field.replace('.', '/'))
-        if head and tail:
-            obj = utils.deep_get(obj, head.replace('/', '.'))
-            self.lookup_field = tail
-
-        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+        return super(JSONAPIHyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
 
     # overrides HyperlinkedIdentityField
     def to_representation(self, value):
