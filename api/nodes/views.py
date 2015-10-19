@@ -213,6 +213,7 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    model_class = Node
 
     serializer_class = NodeSerializer
 
@@ -272,15 +273,6 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
         # On creation, make sure that current user is the creator
         user = self.request.user
         serializer.save(creator=user)
-
-    # Overrides BulkDestroyJSONAPIView
-    def bulk_destroy(self, request, *args, **kwargs):
-        """
-        Handles bulk destroy of nodes. Handles validation and enforces bulk limit.
-        """
-        kwargs['model'] = Node
-
-        return super(NodeList, self).bulk_destroy(request, *args, **kwargs)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -502,6 +494,7 @@ class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDest
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+    model_class = User
 
     serializer_class = NodeContributorsSerializer
 
@@ -536,16 +529,6 @@ class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDest
             return NodeContributorDetailSerializer
         else:
             return NodeContributorsSerializer
-
-    # Overrides BulkDestroyJSONAPIView
-    def bulk_destroy(self, request, *args, **kwargs):
-        """
-        Handles bulk destroy of contributors. Handles validation and enforces bulk limit.
-        """
-
-        kwargs['model'] = User
-
-        return super(NodeContributorsList, self).bulk_destroy(request, *args, **kwargs)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
@@ -865,6 +848,7 @@ class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreate
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
+    model_class = Pointer
 
     serializer_class = NodeLinksSerializer
 
@@ -874,16 +858,6 @@ class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreate
             self.get_node().nodes_pointer
             if not pointer.node.is_deleted
         ]
-
-    # Overrides BulkDestroyJSONAPIView
-    def bulk_destroy(self, request, *args, **kwargs):
-        """
-        Handles bulk destroy of node_links. Handles permissions and enforces bulk limit.
-        """
-
-        kwargs['model'] = Pointer
-
-        return super(NodeLinksList, self).bulk_destroy(request, *args, **kwargs)
 
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):

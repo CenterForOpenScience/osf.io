@@ -22,7 +22,6 @@ def dict_error_formatting(error, index=None):
     else:
         index = str(index) + '/'
 
-
     for error_key, error_description in error.iteritems():
         if isinstance(error_description, basestring):
             error_description = [error_description]
@@ -45,7 +44,6 @@ def json_api_exception_handler(exc, context):
 
     # Import inside method to avoid errors when the OSF is loaded without Django
     from rest_framework.views import exception_handler
-    from utils import is_bulk_request
 
     response = exception_handler(exc, context)
 

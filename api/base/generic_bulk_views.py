@@ -11,8 +11,6 @@ from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.utils import is_bulk_request
 
-from website.project.model import Node
-
 
 class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
     """
@@ -79,7 +77,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
 
         user = self.request.user
         resource_object_list = []
-        model_cls = kwargs['model']
+        model_cls = request.parser_context['view'].model_class
         object_type = self.serializer_class.Meta.type_
 
         if not request.data:
