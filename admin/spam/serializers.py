@@ -3,5 +3,5 @@ from modularodm import Q
 
 
 def serialize_comments():
-    query = Q('reports', 'size gte', '1')
+    query = Q('reports', 'ne', {})
     return [c.content for c in Comment.find(query)]
