@@ -5,11 +5,12 @@
         <br>
         Hello ${fullname},
         <br><br>
-        Thanks for adding your presentation from ${conference} to the conference’s <a href="${osf_url}">Open Science Framework</a>(OSF) page! Sharing virtually is an easy way to increase the impact of your research.
+        Thanks for adding your presentation from ${conference} to the conference’s <a href="${osf_url}">Open Science Framework</a> (OSF) page! Sharing virtually is an easy way to increase the impact of your research.
         <br>
         %if downloads > 4:
         Your project files have been downloaded ${downloads} times!
         %endif
+        <br>
         Have you considered adding your manuscript, data, or other research materials to the project? Adding these materials means:
         <ul>
             <li>When someone finds your poster or talk, they can see and cite the accompanying data</li>
