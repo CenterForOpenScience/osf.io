@@ -43,7 +43,7 @@ class JSONAPIBaseView(generics.GenericAPIView):
         view kwarg to prevent this).
         """
         context = super(JSONAPIBaseView, self).get_serializer_context()
-        if self.kwargs.get('no_embeds', False):
+        if self.kwargs.get('no_embeds'):
             return context
         embeds = self.request.query_params.getlist('embed')
         embeds_partials = {}
