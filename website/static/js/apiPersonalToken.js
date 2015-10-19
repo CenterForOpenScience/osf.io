@@ -34,10 +34,11 @@ var TokenData = oop.defclass({
         this.scopes = ko.observableArray(attributes.scopes)
             .extend({required: true});
 
+        this.token_id = ko.observable(attributes.token_id);
+
         // Other fields. Owner and client ID should never change within this view.
         this.id = data.id;
-
-        this.lastUsed = data.attributes.date_last_used;
+        this.lastUsed = attributes.date_last_used;
 
         this.owner = attributes.user_id;
         this.webDetailUrl = data.links ? data.links.html : undefined;
@@ -72,7 +73,7 @@ var TokenData = oop.defclass({
 var TokenDataClient = oop.defclass({
     /*
      * Create the client for server operations on TokenData objects.
-     * @param {Object} apiListUrl: The api URL for application listing/creation
+     * @param {Object} apiListUrl: The api URL for token listing/creation
      */
     constructor: function (apiListUrl) {
         this.apiListUrl = apiListUrl;
@@ -168,10 +169,10 @@ var TokensListViewModel = oop.defclass({
 
         request.fail(function(xhr, status, error) {
             $osf.growl('Error',
-                language.apiOauth2Token.dataListFetchError, // TODO
+                language.apiOauth2Token.dataListFetchError,
                 'danger');
 
-            Raven.captureMessage('Error fetching list of registered applications', {
+            Raven.captureMessage('Error fetching list of registered personal access tokens', {
                 url: this.apiListUrl,
                 status: status,
                 error: error
@@ -181,7 +182,7 @@ var TokensListViewModel = oop.defclass({
     deleteToken: function (tokenData) {
         bootbox.confirm({
             title: 'Deactivate personal access token?',
-            message: language.apiOauth2Token.deactivateConfirm, // TODO
+            message: language.apiOauth2Token.deactivateConfirm,
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(tokenData);
@@ -192,7 +193,7 @@ var TokensListViewModel = oop.defclass({
                     }.bind(this));
                     request.fail(function () {
                             $osf.growl('Error',
-                                       language.apiOauth2Token.deactivateError, // TODO
+                                       language.apiOauth2Token.deactivateError,
                                        'danger');
                     }.bind(this));
                 }
@@ -230,8 +231,8 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
         this.webListUrl = urls.webListUrl;
         this.client = new TokenDataClient(urls.apiListUrl);
 
-        // Toggle hiding client secret (in detail view)
-        this.showSecret = ko.observable(false);
+        // Toggle hiding token id (in detail view)
+        this.showToken = ko.observable(false);
         // Toggle display of validation messages
         this.showMessages = ko.observable(false);
 
@@ -257,10 +258,10 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             }.bind(this));
             request.fail(function(xhr, status, error) {
                 $osf.growl('Error',
-                             language.apiOauth2Token.dataFetchError, // TODO
+                             language.apiOauth2Token.dataFetchError,
                             'danger');
 
-                Raven.captureMessage('Error fetching application data', {
+                Raven.captureMessage('Error fetching token data', {
                     url: this.apiDetailUrl(),
                     status: status,
                     error: error
@@ -272,7 +273,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
         if (!this.dirty()){
             // No data needs to be sent to the server, but give the illusion that form was submitted
             this.changeMessage(
-                language.apiOauth2Token.dataUpdated, // TODO
+                language.apiOauth2Token.dataUpdated,
                 'text-success',
                 5000);
             return;
@@ -306,7 +307,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
         request.done(function (dataObj) {
             this.tokenData(dataObj);
             this.originalValues(dataObj.serialize());
-            // TODO: Show client_id now, never again
+            this.showToken(true);
             this.changeMessage(language.apiOauth2Token.creationSuccess, 'text-success', 5000);
             this.apiDetailUrl(dataObj.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
             historyjs.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
@@ -314,10 +315,10 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
 
         request.fail(function (xhr, status, error) {
             $osf.growl('Error',
-                       language.apiOauth2Token.dataSendError, // TODO
+                       language.apiOauth2Token.dataSendError,
                        'danger');
 
-            Raven.captureMessage('Error registering new OAuth2 application', {
+            Raven.captureMessage('Error registering new OAuth2 personal access token', {
                 url: this.apiDetailUrl,
                 status: status,
                 error: error
@@ -341,14 +342,14 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
     deleteToken: function () {
         var tokenData = this.tokenData();
         bootbox.confirm({
-            title: 'Deactivate application?',
+            title: 'Deactivate token?',
             message: language.apiOauth2Token.deactivateConfirm,
             callback: function (confirmed) {
                 if (confirmed) {
                     var request = this.client.deleteOne(tokenData );
                     request.done(function () {
                         this.allowExit(true);
-                        // Don't let user go back to a deleted application page
+                        // Don't let user go back to a deleted token page
                         historyjs.replaceState({}, '', this.webListUrl);
                         this.visitList();
                     }.bind(this));

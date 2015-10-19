@@ -20,10 +20,13 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
+from api.tokens.models import ApiOAuth2PersonalToken
+
 from website import mails
 from website import mailchimp_utils
 from website import settings
 from website.models import ApiOAuth2Application, User
+from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.project.decorators import dev_only
 from website.util import api_v2_url, web_url_for, paths
@@ -432,7 +435,8 @@ def personal_access_token_register(auth, **kwargs):
     # TODO: Remove dev_only restriction when APIv2 is released into production
     token_list_url = api_v2_url("tokens/")  # POST request to this url
     return {"token_list_url": token_list_url,
-            "token_detail_url": ''}
+            "token_detail_url": '',
+            "scope_options": get_available_scopes()}
 
 @dev_only
 @must_be_logged_in
@@ -444,7 +448,7 @@ def personal_access_token_detail(auth, **kwargs):
     # The ID must be an active and existing record, and the logged-in user must have permission to view it.
     try:
         #
-        record = ApiOAuth2Application.find_one(Q('id', 'eq', _id))
+        record = ApiOAuth2PersonalToken.find_one(Q('_id', 'eq', _id))
     except NoResultsFound:
         raise HTTPError(http.NOT_FOUND)
     if record.owner != auth.user:
@@ -454,7 +458,8 @@ def personal_access_token_detail(auth, **kwargs):
 
     token_detail_url = api_v2_url("tokens/{}/".format(_id))  # Send request to this URL
     return {"token_list_url": '',
-            "token_detail_url": token_detail_url}
+            "token_detail_url": token_detail_url,
+            "scope_options": get_available_scopes()}
 
 
 def collect_user_config_js(addon_configs):

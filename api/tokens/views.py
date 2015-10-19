@@ -59,7 +59,7 @@ class TokenDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     Get information about a specific personal access token that the user has registered
 
-    Should not return information if the application belongs to a different user
+    Should not return information if the token belongs to a different user
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
@@ -90,7 +90,7 @@ class TokenDetail(generics.RetrieveUpdateDestroyAPIView):
         try:
             obj.deactivate(save=True)
         except cas.CasHTTPError:
-            raise APIException("Could not revoke  tokens; please try again later")
+            raise APIException("Could not revoke tokens; please try again later")
 
     def perform_update(self, serializer):
         """Necessary to prevent owner field from being blanked on updates"""

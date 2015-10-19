@@ -588,14 +588,14 @@ def make_url_map(app):
         ),
 
         Rule(
-            '/settings/tokens/create',
+            '/settings/tokens/create/',
             'get',
             profile_views.personal_access_token_register,
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
         ),
 
         Rule(
-            '/settings/tokens/<token_name>',
+            '/settings/tokens/<_id>/',
             'get',
             profile_views.personal_access_token_detail,
             OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)

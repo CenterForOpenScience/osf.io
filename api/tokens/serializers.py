@@ -48,6 +48,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
                     data['data']['attributes'].pop('token_id')
             except AttributeError:
                 pass
+
         return data
 
     def create(self, validated_data):

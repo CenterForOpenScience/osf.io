@@ -20,18 +20,11 @@
 
         <div data-bind="with: tokenData()">
             <div id="token-keys" class="border-box text-right"
-                 data-bind="visible: !$root.isCreateView()">
-                <p><strong>Token Name</strong>
-                   <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title: 'What this token is for.',
-                                                                      placement: 'bottom'}"></i>
-                </p>
-                <p><span class="text-muted" data-bind="text: name"></span></p>
-
-                <p><strong class="m-b-sm">Scopes</strong>
-                    <i class="fa fa-info-circle text-muted"
-                       data-bind="tooltip: {title:'The client secret is known only to you and the OSF. Do not display or expose this information.',
+                 data-bind="visible: $root.showToken()">
+                <label>Token ID</label><i class="fa fa-info-circle text-muted"
+                       data-bind="tooltip: {title:'ID used to authenticate with this token. This will be shown only once.',
                                             placement: 'bottom'}"></i>
-                </p>
+                <span data-bind="text: token_id"></span>
             </div>
             <div id="token-fields">
                 <form novalidate role="form" data-bind="submit: $root.submit.bind($root), validationOptions: {insertMessages: false, messagesOnModified: false}">
@@ -45,9 +38,13 @@
                         <label>Scopes</label> <i class="fa fa-info-circle text-muted"
                        data-bind="tooltip: {title:'Scopes limit access for personal access tokens.',
                                             placement: 'bottom'}"></i>
+                        
+                         % if scope_options:
+                            % for scope in scope_options:
+                                <input type="checkbox" id="${scope[0]}" value="${scope[0]}" class="form-control" data-bind="checked: scopes"><label for="${scope[0]}">${scope[0]} </label><i class="fa fa-info-circle text-muted" data-bind="tooltip: {title: '${scope[1]}', placement: 'bottom'}"></i>
+                            % endfor
+                         % endif
 
-                        <input type="checkbox" id="scopeFullRead" value="fullRead" class="form-control" data-bind="checked: scopes"><label for="scopeFullRead">Full Read</label>
-                        <input type="checkbox" id="scopeFullWrite" value="fullWrite" class="form-control" data-bind="checked: scopes"><label for="scopeFullWrite">Full Write</label>
                         <p data-bind="validationMessage: scopes, visible: $root.showMessages()" class="text-danger"></p>
                     </div>
 
