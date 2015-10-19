@@ -7,7 +7,7 @@ from .utils import absolute_reverse
 
 @api_view(('GET',))
 def root(request, format=None):
-    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, and files
+    """Welcome to the V2 Open Science Framework API. With this API you can access users, projects, components, logs, and files
     from the [Open Science Framework](https://osf.io/). The Open Science Framework (OSF) is a free, open-source service
     maintained by the [Center for Open Science](http://cos.io/).
 
@@ -266,6 +266,7 @@ def root(request, format=None):
         'links': {
             'nodes': absolute_reverse('nodes:node-list'),
             'users': absolute_reverse('users:user-list'),
+            'logs': absolute_reverse('logs:log-list'),
         }
     })
 
