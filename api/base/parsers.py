@@ -1,3 +1,4 @@
+import collections
 from rest_framework.parsers import JSONParser
 from rest_framework.exceptions import ParseError
 
@@ -67,8 +68,8 @@ class JSONAPIParser(JSONParser):
                 return data_collection
 
             else:
-                if isinstance(data, list):
-                    raise ParseError('Expected a dict of items but got type "list".')
+                if not isinstance(data, collections.Mapping):
+                    raise ParseError('Expected a dictionary of items.')
                 return self.flatten_data(data, method)
 
         else:
