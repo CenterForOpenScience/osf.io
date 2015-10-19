@@ -2786,7 +2786,7 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
     def test_bulk_delete_contributors_no_payload(self):
         res = self.app.bulk_delete_json_api(self.public_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        
+
 
 class TestNodeContributorAdd(NodeCRUDTestCase):
 
@@ -4509,8 +4509,14 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         res = self.app.bulk_post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.public_pointer_project._id)
-        assert_equal(res.json['data'][1]['attributes']['target_node_id'], self.public_pointer_project_two._id)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
+
+        expected_path = node_url_for(self.public_pointer_project_two._id)
+        actual_path = urlparse(res_json[1]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_bulk_creates_private_node_pointers_logged_out(self):
         res = self.app.bulk_post_json_api(self.private_url, self.private_payload, expect_errors=True)
@@ -4525,8 +4531,14 @@ class TestNodeLinksBulkCreate(ApiTestCase):
     def test_bulk_creates_private_node_pointer_logged_in_contributor(self):
         res = self.app.bulk_post_json_api(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.private_pointer_project._id)
-        assert_equal(res.json['data'][1]['attributes']['target_node_id'], self.private_pointer_project_two._id)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.private_pointer_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
+
+        expected_path = node_url_for(self.private_pointer_project_two._id)
+        actual_path = urlparse(res_json[1]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_bulk_creates_private_node_pointers_logged_in_non_contributor(self):
@@ -4547,10 +4559,16 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         res = self.app.bulk_post_json_api(self.private_url, self.user_two_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.user_two_project._id)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.user_two_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
         res = self.app.get(self.private_url, auth=self.user.auth)
-        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.user_two_project._id)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.user_two_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_bulk_creates_pointers_non_contributing_node_to_fake_node(self):
         fake_payload = {'data': [{'type': 'node_links', 'attributes': {'target_node_id': 'fdxlq'}}]}
@@ -4584,7 +4602,10 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         res = self.app.bulk_post_json_api(self.public_url, point_to_itself_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.public_project._id)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.public_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_bulk_creates_node_pointer_to_itself_unauthorized(self):
         point_to_itself_payload = {'data': [{'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}]}
@@ -4599,8 +4620,14 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         res = self.app.bulk_post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data'][0]['attributes']['target_node_id'], self.public_pointer_project._id)
-        assert_equal(res.json['data'][1]['attributes']['target_node_id'], self.public_pointer_project_two._id)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
+
+        expected_path = node_url_for(self.public_pointer_project_two._id)
+        actual_path = urlparse(res_json[1]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
         res = self.app.bulk_post_json_api(self.public_url, self.public_payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
