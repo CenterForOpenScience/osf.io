@@ -228,8 +228,6 @@ var FileViewPage = {
 
         self.mfrIframeParent = $('#mfrIframeParent');
 
-        $.fn.editable.defaults.mode = 'inline';
-
         if(self.canEdit) {
             var $fileName = $('#fileName');
             var conflict = 'warn';
@@ -244,12 +242,13 @@ var FileViewPage = {
             from.data.path = self.file.path;
             $fileName.editable({
                 type: 'text',
+                mode: 'inline',
                 send: 'always',
                 url: waterbutler.moveUrl(),
                 ajaxOptions:{
                     beforeSend: $osf.setXHRAuthorization,
                     headers: {
-                        'Content-Type': 'Application/json'
+                        'Content-Type': 'application/json'
                     },
                 },
                 params: function(params) {
