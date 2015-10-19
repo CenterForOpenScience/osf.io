@@ -7,6 +7,6 @@ urlpatterns = [
     url(ROUTE_BASE + '$', views.UserAddonDetail.as_view(), name='user-addon-detail'),
     url(ROUTE_BASE + 'external_accounts/$', views.UserAddonAccountList.as_view(), name='user-addon-external-accounts'),
     url(ROUTE_BASE + 'external_accounts/(?P<external_account_id>\w+)/$', views.UserAddonAccountDetail.as_view(), name='user-addon-external-account-detail'),
-    url(ROUTE_BASE + 'nodes/$', views.UserAddonNodeList.as_view(), name='user-addon-nodes'),
-    url(ROUTE_BASE + 'nodes/(?P<node_id>\w+)/$', views.UserAddonNodeDetail.as_view(), name='user-addon-node-detail'),
+    url(ROUTE_BASE + 'linked_nodes/$', views.UserAddonNodeAddonList.as_view(), name='user-addon-node-addons'),
+    url(ROUTE_BASE + 'linked_nodes/(?P<node_addon_id>\w+)/$', views.UserAddonNodeAddonDetail.as_view(), name='user-addon-node-addon-detail'),
 ]

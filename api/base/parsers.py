@@ -37,8 +37,8 @@ class JSONAPIParser(JSONParser):
         if not target_type:
             raise JSONAPIException(source={'pointer': '/relationships/<related_resource_name>/data/type'}, detail=NO_TYPE_ERROR)
 
-        id = data.get('id')
-        return {'id': id, 'target_type': target_type}
+        target_id = data.get('id')
+        return {'target_id': target_id, 'target_type': target_type}
 
     def parse(self, stream, media_type=None, parser_context=None):
         """
@@ -53,7 +53,7 @@ class JSONAPIParser(JSONParser):
             relationships = data.get('relationships')
 
             path = stream.path
-            related_resources = ['contributors', 'node_links']
+            related_resources = ['contributors', 'node_links', 'external_accounts']
 
             # Request must include "relationships" or "attributes"
             if stream.method == 'POST' and (related_resources[0] in path or related_resources[1] in path):

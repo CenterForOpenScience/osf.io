@@ -17,6 +17,8 @@ class NodeAddonDetail(generics.RetrieveAPIView):
 
     serializer_class = NodeAddonSerializer
 
+    lookup_field = 'node_addon_id'
+
     def get_queryset(self):
         pass
 

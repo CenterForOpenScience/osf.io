@@ -67,6 +67,11 @@ class IDField(ser.CharField):
                 raise Conflict()
         return super(IDField, self).to_internal_value(data)
 
+class TargetIDField(IDField):
+
+    def to_internal_value(self, data):
+        # TODO: validate?
+        return super(IDField, self).to_internal_value(data)
 
 class TypeField(ser.CharField):
 

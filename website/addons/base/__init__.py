@@ -263,6 +263,10 @@ class AddonUserSettingsBase(AddonSettingsBase):
         return False
 
     @property
+    def owner_id(self):
+        return self.owner._id if self.owner else None
+
+    @property
     def accounts(self):
         return [self]
 
@@ -286,6 +290,9 @@ class AddonUserSettingsBase(AddonSettingsBase):
             for node_addon in getattr(self, nodes_backref)
             if node_addon.owner and not node_addon.owner.is_deleted
         ]
+
+    def get_attached_nodes(self, *args):
+        return self.nodes_authorized
 
     def _clear(self):
         raise NotImplementedError()
@@ -529,6 +536,10 @@ class AddonNodeSettingsBase(AddonSettingsBase):
     def has_auth(self):
         """Whether the node has added credentials for this addon."""
         return False
+
+    @property
+    def owner_id(self):
+        return self.owner._id if self.owner else None
 
     def deauthorize(self, auth=None, add_log=True):
         raise NotImplementedError()
@@ -827,7 +838,6 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     def authorize(self, external_account, auth, add_log=True):
         self.set_auth(external_account, auth.user)
-        raise NotImplementedError('Subclasses should handle logging after authorization.')
 
     def clear_auth(self):
         """Disconnect the node settings from the user settings.

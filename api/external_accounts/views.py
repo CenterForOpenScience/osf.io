@@ -4,7 +4,6 @@ from rest_framework import permissions as drf_permissions
 from framework.auth.oauth_scopes import CoreScopes
 
 from api.base import permissions as base_permissions
-from api.nodes.serializers import NodeSerializer
 from api.external_accounts.serializers import ExternalAccountSerializer
 
 from website.addons.base import AddonOAuthUserSettingsBase

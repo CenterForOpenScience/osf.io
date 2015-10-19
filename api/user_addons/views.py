@@ -5,13 +5,16 @@ from rest_framework.exceptions import NotFound, PermissionDenied
 from framework.auth import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
-from api.base.utils import get_object_or_error
+from website.addons.base import AddonOAuthUserSettingsBase, AddonNodeSettingsBase
+from website import settings as website_settings
+
 from api.base import permissions as base_permissions
 from api.external_accounts.serializers import ExternalAccountSerializer
-from api.user_addons.serializers import UserAddonSerializer, UserAddonNodeSerializer
-
-from website.models import Node
-from website.addons.base import AddonOAuthUserSettingsBase
+from api.user_addons.serializers import (
+    UserAddonSerializer,
+    UserAddonLinkedNodeSerializer,
+    UserAddonLinkedNodeCreateSerializer
+)
 
 
 class UserAddonMixin(object):
@@ -111,50 +114,65 @@ class UserAddonAccountDetail(generics.RetrieveDestroyAPIView, ExternalAccountMix
             raise NotFound()
 
 
-class UserAddonNodeList(generics.ListCreateAPIView, ExternalAccountMixin):
+class UserAddonNodeAddonList(generics.ListCreateAPIView, ExternalAccountMixin):
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
-
-    serializer_class = UserAddonNodeSerializer
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.NODE_ADDONS_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_ADDONS_WRITE]
 
     lookup_field = 'external_account_id'
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return UserAddonLinkedNodeCreateSerializer
+        else:
+            return UserAddonLinkedNodeSerializer
 
     # overrides ListAPIView
     def get_queryset(self):
         user_addon = self.get_user_addon()
-        return user_addon.nodes_authorized
+        provider = user_addon.config.short_name
+        return [
+            node.get_addon(provider)
+            for node in user_addon.nodes_authorized
+        ]
 
 
-class UserAddonNodeDetail(generics.RetrieveDestroyAPIView, UserAddonMixin):
+class UserAddonNodeAddonDetail(generics.RetrieveDestroyAPIView, UserAddonMixin):
 
     permission_classes = (
         drf_permissions.IsAuthenticated,
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.USER_ADDONS_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE, CoreScopes.USER_ADDONS_WRITE]
+    required_read_scopes = [CoreScopes.NODE_BASE_READ, CoreScopes.NODE_ADDONS_READ]
+    required_write_scopes = [CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_ADDONS_WRITE]
 
-    serializer_class = UserAddonNodeSerializer
+    serializer_class = UserAddonLinkedNodeSerializer
 
-    lookup_field = 'node_id'
+    lookup_field = 'node_addon_id'
 
-    def _get_node(self):
-        node_id = self.kwargs[self.lookup_field]
+    def _get_node_addon_model(self, provider):
+        models = website_settings.ADDONS_AVAILABLE_DICT[provider].models
+        model = None
+        for model in models:
+            if isinstance(model, AddonNodeSettingsBase):
+                break
+        return model
+
+    def _get_node_addon(self):
+        node_addon_id = self.kwargs[self.lookup_field]
         user_addon = self.get_user_addon()
-        nodes_authorized = user_addon.nodes_authorized
-        for node in nodes_authorized:
-            if node_id == node.pk:
-                return node
-        raise NotFound()
+        provider = user_addon.config.short_name
+        node_addon_model = self._get_node_addon_model(provider)
+        node_addon = node_addon_model.load(node_addon_id)
+        return node_addon
 
     def get_object(self):
-        return self._get_node()
+        return self._get_node_addon()
 
     def permform_destroy(self, node):
         current_user = self.request.user
