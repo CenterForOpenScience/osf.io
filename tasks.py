@@ -459,7 +459,7 @@ def test_travis_osf():
 
 @task
 def test_almost_osf():
-    modules = ['test/' + file_ for file_ in os.listdir('tests/') if file_ != ('test_views.py' or 'test_models.py')]
+    modules = ['tests/' + file_ for file_ in os.listdir('tests/') if file_ != ('test_views.py' or 'test_models.py')]
     test_module(module=modules)
 
 @task
