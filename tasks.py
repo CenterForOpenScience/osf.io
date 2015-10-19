@@ -450,12 +450,18 @@ def test(all=False, syntax=False):
 
 @task
 def test_travis_osf():
+    """
+    Run half of the tests to help travis go faster
+    """
     flake()
     jshint()
     test_osf()
 
 @task
 def test_travis_else():
+    """
+    Run other half of the tests to help travis go faster
+    """
     test_addons()
     test_api()
     karma(single=True, browsers='PhantomJS')
