@@ -3,7 +3,8 @@ from rest_framework import serializers as ser
 from framework.guid.model import Guid
 from framework.auth.core import Auth
 from website.project.model import Node, Comment
-from rest_framework.exceptions import ValidationError, PermissionDenied
+from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
+from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse
 from api.base.serializers import (JSONAPISerializer,
                                   JSONAPIHyperlinkedRelatedField,
@@ -89,10 +90,14 @@ class CommentSerializer(JSONAPISerializer):
     def get_target_type(self, obj):
         target_id = obj._id
         target = Guid.load(target_id).referent
+        if not target:
+            raise NotFound('Comment target not found.')
         if isinstance(target, Node):
             return 'node'
         elif isinstance(target, Comment):
             return 'comment'
+        else:
+            raise InvalidModelValueError('Invalid comment target.')
 
 
 class CommentDetailSerializer(CommentSerializer):
