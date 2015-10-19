@@ -27,8 +27,8 @@
     border-radius: 60px;
     width: 100px;
     height: 100px;
-    padding-top: 24px;
-    border: 3px solid #C6E3FC;
+    padding-top: 20px;
+    border: 3px solid #D3E1EE;
 }
 
 .icon-bar .fa-custom-7x {
@@ -39,21 +39,25 @@
     font-size: 100px;
 }
 
-.osf-meeting-header .fa-rocket {
+.osf-meeting-header .fa-users {
     border-radius: 85px;
     box-shadow: 0px 0px 20px #E0E7EC;
-    width: 120px;
-    height: 120px;
-    padding-top: 13px;
-    padding-right: 12px;
+    width: 140px;
+    height: 140px;
+    padding-top: 23px;
 }
 
 .osf-meeting-header .fa-cloud-upload {
     border-radius: 208px;
     box-shadow: 0px 0px 20px #E0E7EC;
-    width: 120px;
-    height: 120px;
-    padding: 6px;
+    width: 140px;
+    height: 140px;
+    padding: 14px;
+}
+
+.osf-meeting-header h1 {
+    font-size: 3.5em;
+    margin-bottom: -15px;
 }
 
 .org-logo img{
@@ -73,11 +77,29 @@
 .osf-meeting-p {
     font-size: 16px;
 }
+
 .m-v-40 {
     margin-bottom: 40px;
     margin-top: 40px;
 }
 
-.m-b-60 {
-    margin-bottom: 60px;
+.m-b-40 {
+    margin-bottom: 40px;
 }
+
+
+.network-img {
+    background: url("/static/img/meeting-page/network-web.png") repeat;
+    background-size: contain;
+    height: 1000px;
+    margin-bottom: -1000px;
+    opacity: 0.35;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=25)";
+}
+
+.grey-background {
+    background-color: #F6EEEE;
+    z-index: 2;
+    position: relative;
+}
+
