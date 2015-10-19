@@ -62,6 +62,8 @@
                                 data-bind="click: $root.cancelChange.bind($root)">Cancel</button>
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: $root.isCreateView()">Create</button>
+                        <button type="button" class="btn btn-danger"
+                                data-bind="visible: !$root.isCreateView(), click: $root.deleteToken.bind($root)">Delete</button>
                         <button type="submit" class="btn btn-success"
                                 data-bind="visible: !$root.isCreateView()">Save</button>
                     </div>
