@@ -19,12 +19,12 @@ $(document).ready(function() {
     });
 
     var draftManager = new RegistrationManager(node, '#draftRegistrationScope', {
-        list: node.urls.api + 'draft/',
+        list: node.urls.api + 'drafts/',
         // TODO: uncomment when we support draft submission for review
         //submit: node.urls.api + 'draft/{draft_pk}/submit/',
-        delete: node.urls.api + 'draft/{draft_pk}/',
-        schemas: '/api/v1/project/schema/',
-        edit: node.urls.web + 'draft/{draft_pk}/'
+        delete: node.urls.api + 'drafts/{draft_pk}/',
+        schemas: '/api/v1/project/drafts/schemas/',
+        edit: node.urls.web + 'drafts/{draft_pk}/'
     });
     draftManager.init();
 

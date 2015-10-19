@@ -865,16 +865,16 @@ def make_url_map(app):
             OsfWebRenderer('project/draft_registration.mako', trust=False)),
         Rule(
             [
-                '/project/<pid>/draft/<draft_id>/',
-                '/project/<pid>/node/<nid>/draft/<draft_id>/',
+                '/project/<pid>/drafts/<draft_id>/',
+                '/project/<pid>/node/<nid>/drafts/<draft_id>/',
             ],
             'get',
             project_views.drafts.edit_draft_registration_page,
             OsfWebRenderer('project/edit_draft_registration.mako', trust=False)),
         Rule(
             [
-                '/project/<pid>/draft/<draft_id>/register/',
-                '/project/<pid>/node/<nid>/draft/<draft_id>/register/',
+                '/project/<pid>/drafts/<draft_id>/register/',
+                '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
             ],
             'get',
             project_views.drafts.draft_before_register_page,
@@ -1144,27 +1144,27 @@ def make_url_map(app):
 
         # Draft Registrations
         Rule([
-            '/project/<pid>/draft/',
+            '/project/<pid>/drafts/',
         ], 'get', project_views.drafts.get_draft_registrations, json_renderer),
         Rule([
-            '/project/<pid>/draft/<draft_id>/',
+            '/project/<pid>/drafts/<draft_id>/',
         ], 'get', project_views.drafts.get_draft_registration, json_renderer),
         Rule([
-            '/project/<pid>/draft/',
+            '/project/<pid>/drafts/',
         ], 'post', project_views.drafts.create_draft_registration, json_renderer),
         Rule([
-            '/project/<pid>/draft/<draft_id>/',
+            '/project/<pid>/drafts/<draft_id>/',
         ], 'put', project_views.drafts.update_draft_registration, json_renderer),
         Rule([
-            '/project/<pid>/draft/<draft_id>/',
+            '/project/<pid>/drafts/<draft_id>/',
         ], 'delete', project_views.drafts.delete_draft_registration, json_renderer),
         Rule([
-            '/project/<pid>/draft/<draft_id>/submit/',
+            '/project/<pid>/drafts/<draft_id>/submit/',
         ], 'post', project_views.drafts.submit_draft_for_review, json_renderer),
 
         # Meta Schemas
         Rule([
-            '/project/schema/',
+            '/project/drafts/schemas/',
         ], 'get', project_views.drafts.get_metaschemas, json_renderer),
 
         Rule('/log/<log_id>/', 'get', project_views.log.get_log, json_renderer),
@@ -1319,8 +1319,8 @@ def make_url_map(app):
             '/project/<pid>/node/<nid>/beforeregister',
         ], 'get', project_views.register.project_before_register, json_renderer),
         Rule([
-            '/project/<pid>/draft/<draft_id>/register/',
-            '/project/<pid>/node/<nid>/draft/<draft_id>/register/',
+            '/project/<pid>/drafts/<draft_id>/register/',
+            '/project/<pid>/node/<nid>/drafts/<draft_id>/register/',
         ], 'post', project_views.drafts.register_draft_registration, json_renderer),
         Rule([
             '/project/<pid>/register/<template>/',
