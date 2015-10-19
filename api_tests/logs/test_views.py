@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import datetime
 import httplib as http
 
 from nose.tools import *  # noqa
