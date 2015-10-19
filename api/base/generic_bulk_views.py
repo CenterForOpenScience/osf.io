@@ -92,7 +92,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
 
             resource_object = get_object_or_error(model_cls, item[u'id'])
             resource_object_list.append(resource_object)
-            if model_cls is Node:
+            if 'node_id' not in kwargs:
                 if not resource_object.can_edit(Auth(user)):
                     raise PermissionDenied
 
