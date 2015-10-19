@@ -22,7 +22,8 @@ env:
     - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
   matrix:
     - TEST_BUILD="almost_osf"
-    - TEST_BUILD="views_and_models"
+    - TEST_BUILD="models"
+    - TEST_BUILD="views"
     - TEST_BUILD="api"
     - TEST_BUILD="addons"
     - TEST_BUILD="else"
