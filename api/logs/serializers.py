@@ -6,7 +6,7 @@ from api.base.serializers import (
 
 class NodeLogSerializer(JSONAPISerializer):
 
-    filterable_fields = frozenset(['action'])
+    filterable_fields = frozenset(['action', 'date'])
 
     id = ser.CharField(read_only=True, source='_id')
     date = ser.DateTimeField(read_only=True)
