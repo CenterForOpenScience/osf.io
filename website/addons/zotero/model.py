@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from modularodm import fields
-from pyzotero import zotero
+from pyzotero import zotero, zotero_errors
+
+from framework.exceptions import HTTPError
 
 from website.addons.base import AddonOAuthNodeSettingsBase
 from website.addons.base import AddonOAuthUserSettingsBase
@@ -45,11 +47,25 @@ class Zotero(ExternalProvider):
         """An API session with Zotero"""
         if not self._client:
             self._client = zotero.Zotero(self.account.provider_id, 'user', self.account.oauth_key)
+
+        # Check if Zotero can be accessed with current credentials
+        try:
+            self._client.collections()
+        except zotero_errors.UserNotAuthorised:
+            raise HTTPError(403, data=dict(
+                message_short='Authorization Error',
+                message_long='Could not retrieve Zotero settings at this time. The credentials associated with this '
+                             'Zotero account may no longer be valid. Try disconnecting and reconnecting the Zotero'
+                             ' account on your account settings page.'
+            ))
+
         return self._client
 
     def citation_lists(self, extract_folder):
         """List of CitationList objects, derived from Zotero collections"""
+
         client = self.client
+
 
         # Note: Pagination is the only way to ensure all of the collections
         #       are retrieved. 100 is the limit per request. This applies

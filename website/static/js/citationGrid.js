@@ -6,6 +6,7 @@ var Raven = require('raven-js');
 var Treebeard = require('treebeard');
 var citations = require('js/citations');
 var clipboard = require('js/clipboard');
+var $osf = require('js/osfHelpers');
 
 var apaStyle = require('raw!styles/apa.csl');
 
@@ -286,6 +287,10 @@ CitationGrid.prototype.initTreebeard = function() {
                 return self.resolveRowAux.call(self, arguments);
             },
             ondataloaderror: function(err) {
+                if(err.status == 403){
+                    var resp = JSON.parse(err.response);
+                    $osf.growl(resp.message_short, resp.message_long);
+                }
                 $(self.gridSelector).html(errorPage);
             }
         },
