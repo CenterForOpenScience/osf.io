@@ -107,13 +107,13 @@ function _poTitleColumn(item) {
     var preventSelect = function(e){
         e.stopImmediatePropagation();
     };
-    var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
+    //var css = item.data.isSmartFolder ? 'project-smart-folder smart-folder' : ''; -- REMOVE
     if(item.data.archiving) {
         return  m('span', {'class': 'registration-archiving'}, item.data.name + ' [Archiving]');
-    } else if(item.data.urls.fetch){
-        return m('a.fg-file-links', { 'class' : css, href : item.data.urls.fetch, onclick : preventSelect}, item.data.name);
+    } else if(item.data.links.html){
+        return m('a.fg-file-links', { 'class' : css, href : item.data.links.html, onclick : preventSelect}, item.data.title);
     } else {
-        return  m('span', { 'class' : css}, item.data.name);
+        return  m('span', { 'class' : css}, item.data.title);
     }
 }
 

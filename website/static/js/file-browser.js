@@ -30,6 +30,7 @@ var FileBrowser = {
         var root = {id:0, children: [], data : {} };
         var node_list = { 0 : root};
 
+        // Generate tree list from flat data
         for (var i = 0; i < data.length; i++) {
             var n = data[i];
             var parentLink = n.relationships.parent.links.self.href;
@@ -91,7 +92,7 @@ var FileBrowser = {
         self.poOptions = {
             placement : 'dashboard',
             divID: 'projectOrganizer',
-            filesData: args.data,
+            filesData: root.children,
             multiselect : true
         };
 
