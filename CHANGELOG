@@ -2,6 +2,22 @@
 Changelog
 *********
 
+0.53.0 (2015-10-08)
+===================
+
+- Use JWTs for authenticating with Waterbutler and MFR.
+
+0.52.0 (2015-10-07)
+===================
+
+- Add Share button on file detail pages with UI for embedding rendered files.
+- User profiles can have multiple personal websites.
+- Update Add contributor UI to show current contributors in search.
+- APIv2: Lots of documentation updates.
+- APIv2: Fix bug that caused a 500 when updating a user's name.
+- APIv2: Fix bug that caused an invalid log when updating a Node's title or description.
+- Dev: Remove dead file GUID code left over from 0.50.0.
+
 0.51.0 (2015-09-24)
 ===================
 

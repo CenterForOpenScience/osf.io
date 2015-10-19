@@ -87,28 +87,6 @@ def requires_search(func):
 
 
 @requires_search
-def get_aggregations(query, doc_type):
-    query['aggregations'] = {
-        'licenses': {
-            'terms': {
-                'field': 'license.name'
-            }
-        }
-    }
-
-    res = es.search(index=INDEX, doc_type=doc_type, search_type='count', body=query)
-    ret = {
-        doc_type: {
-            item['key']: item['doc_count']
-            for item in agg['buckets']
-        }
-        for doc_type, agg in res['aggregations'].iteritems()
-    }
-    ret['total'] = res['hits']['total']
-    return ret
-
-
-@requires_search
 def get_counts(count_query, clean=True):
     count_query['aggregations'] = {
         'counts': {
@@ -155,24 +133,16 @@ def search(query, index=None, doc_type='_all'):
     """
     index = index or INDEX
     tag_query = copy.deepcopy(query)
-    aggs_query = copy.deepcopy(query)
     count_query = copy.deepcopy(query)
 
     for key in ['from', 'size', 'sort']:
         try:
             del tag_query[key]
-            del aggs_query[key]
             del count_query[key]
         except KeyError:
             pass
 
     tags = get_tags(tag_query, index)
-    try:
-        del aggs_query['query']['filtered']['filter']
-        del count_query['query']['filtered']['filter']
-    except KeyError:
-        pass
-    aggregations = get_aggregations(aggs_query, doc_type=doc_type)
     counts = get_counts(count_query, index)
 
     # Run the real query and get the results
@@ -182,7 +152,6 @@ def search(query, index=None, doc_type='_all'):
     return_value = {
         'results': format_results(results),
         'counts': counts,
-        'aggs': aggregations,
         'tags': tags,
         'typeAliases': ALIASES
     }
@@ -223,7 +192,6 @@ def format_result(result, parent_id=None):
         'date_created': result.get('date_created'),
         'date_registered': result.get('registered_date'),
         'n_wikis': len(result['wikis']),
-        'license': result.get('license'),
     }
 
     return formatted_result
@@ -312,7 +280,6 @@ def update_node(node, index=None, bulk=False):
             'wikis': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
-            'license': node.license,
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         if not node.is_retracted:
@@ -437,11 +404,6 @@ def create_index(index=None):
         mapping = {
             'properties': {
                 'tags': NOT_ANALYZED_PROPERTY,
-                'license': {
-                    'properties': {
-                        'name': NOT_ANALYZED_PROPERTY,
-                    }
-                }
             }
         }
         if type_ in project_like_types:
