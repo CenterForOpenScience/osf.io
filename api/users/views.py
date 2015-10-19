@@ -12,6 +12,7 @@ from website.models import User, Node
 
 from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
+from api.base.views import JSONAPIBaseView
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
 
@@ -44,7 +45,7 @@ class UserMixin(object):
         return obj
 
 
-class UserList(generics.ListAPIView, ODMFilterMixin):
+class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
     """List of users registered on the OSF. *Read-only*.
 
     Paginated list of users ordered by the date they registered.  Each resource contains the full representation of the
@@ -113,7 +114,7 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
         return User.find(query)
 
 
-class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
+class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     """Details about a specific user. *Writeable*.
 
     The User Detail endpoint retrieves information about the user whose id is the final part of the path.  If `me`
@@ -206,7 +207,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
         return {'request': self.request}
 
 
-class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
+class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin):
     """List of nodes that the user contributes to. *Read-only*.
 
     Paginated list of nodes that the user contributes to.  Each resource contains the full representation of the node,
