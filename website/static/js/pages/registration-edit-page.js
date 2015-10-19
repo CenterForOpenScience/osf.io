@@ -14,11 +14,11 @@ var node = window.contextVars.node;
 $(function() {
 
     var draftEditor = new RegistrationEditor({
-        schemas: '/api/v1/project/schema/',
-        create: node.urls.api + 'draft/',
-        submit: node.urls.api + 'draft/{draft_pk}/submit/',
-        update: node.urls.api + 'draft/{draft_pk}/',
-        get: node.urls.api + 'draft/{draft_pk}/'
+        schemas: '/api/v1/project/schemas/',
+        create: node.urls.api + 'drafts/',
+        submit: node.urls.api + 'drafts/{draft_pk}/submit/',
+        update: node.urls.api + 'drafts/{draft_pk}/',
+        get: node.urls.api + 'drafts/{draft_pk}/'
     }, 'registrationEditor');
 
     var draft = new registrationUtils.Draft(ctx.draft);

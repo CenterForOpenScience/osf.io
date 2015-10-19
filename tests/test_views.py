@@ -4848,11 +4848,11 @@ class TestDraftRegistrationViews(OsfTestCase):
         assert_equal(1, DraftRegistration.find().count())
 
     def test_get_metaschemas(self):
-        url = '/api/v1/project/schema/'
+        url = '/api/v1/project/drafts/schemas/'
         res = self.app.get(url).json
         schema_names = database['metaschema'].distinct('name')
         assert_equal(len(res['meta_schemas']), len(schema_names))
-        url = '/api/v1/project/schema/?include=all'
+        url = '/api/v1/project/drafts/schemas/?include=all'
 
         res = self.app.get(url)
         assert_equal(res.status_code, http.OK)
