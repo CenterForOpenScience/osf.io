@@ -458,12 +458,30 @@ def test_travis_osf():
     test_osf()
 
 @task
-def test_travis_else():
+def test_almost_osf():
+    modules = ['tests/' + file_ for file_ in os.listdir('tests/') if file_ != ('test_views.py' or 'test_models.py')]
+    test_module(module=modules)
+
+@task
+def test_views():
+    jshint()
+    flake()
+    test_module(module="tests/test_views.py")
+    test_addons()
+
+@task
+def test_models():
+    test_api()
+    test_module(module="tests/test_models.py")
+    karma(single=True, browsers='PhantomJS')
+
+@task
+def test_else():
     """
     Run other half of the tests to help travis go faster
     """
-    test_addons()
-    test_api()
+    jshint()
+    flake()
     karma(single=True, browsers='PhantomJS')
 
 @task

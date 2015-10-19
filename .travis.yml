@@ -21,8 +21,9 @@ env:
     - TOKUMX_ARCHIVE="tokumx-2.0.0-linux-x86_64-main.tar.gz"
     - ELASTICSEARCH_ARCHIVE="elasticsearch-1.5.0.tar.gz"
   matrix:
-    - TEST_BUILD="osf"
-    - TEST_BUILD="else"
+    - TEST_BUILD="almost_osf"
+    - TEST_BUILD="models"
+    - TEST_BUILD="views"
 
 before_install:
     # cache directories
@@ -85,7 +86,7 @@ install:
 
 # Run Python tests (core and addon) and JS tests
 script:
-    - "invoke test_travis_$TEST_BUILD"
+    - "invoke test_$TEST_BUILD"
 
 before_cache:
   - rm -Rf $HOME/.cache/pip/http
