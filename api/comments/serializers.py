@@ -13,7 +13,7 @@ from api.base.serializers import (JSONAPISerializer,
                                   IDField, TypeField, LinksField)
 
 
-class CommentReport():
+class CommentReport(object):
     def __init__(self, user_id, category, text):
         self._id = user_id
         self.category = category
