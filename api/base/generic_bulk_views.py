@@ -9,6 +9,7 @@ from framework.auth.core import Auth
 from api.base.utils import get_object_or_error
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict
+from api.base.utils import is_bulk_request
 
 from website.project.model import Node
 
@@ -35,11 +36,8 @@ class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
         Adds many=True to serializer if bulk operation.
         """
 
-        if "data" in kwargs:
-            data = kwargs["data"]
-
-            if isinstance(data, list):
-                kwargs['many'] = True
+        if is_bulk_request(self.request):
+            kwargs['many'] = True
 
         return super(ListBulkCreateJSONAPIView, self).get_serializer(*args, **kwargs)
 
