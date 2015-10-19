@@ -39,10 +39,10 @@ var FileBrowser = {
                 data : n
             };
             if(!node_list[n.id]){
-                node_list[n.id] = { id: n.id, data : n, children : [] };
+                node_list[n.id] = { id: n.id, node : n, children : [] };
             } else {
                 node_list[n.id].id = n.id;
-                node_list[n.id].data = n;
+                node_list[n.id].node = n;
             }
             if(parentLink && !n.attributes.registration) {
                 var parentID = parentLink.split('/')[5];

@@ -107,7 +107,7 @@ function _poTitleColumn(item) {
     var preventSelect = function(e){
         e.stopImmediatePropagation();
     };
-    var node = item.data.data;
+    var node = item.data.node;
     var css = ''; // Keep for future expandability -- Remove: item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     if (item.data.archiving) {
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
@@ -232,14 +232,18 @@ function _poContributors(item) {
 function _poModified(item) {
     var personString = '';
     var dateString = '';
-    if (item.data.modifiedDelta === 0) {
-        return m('span');
-    }
-    dateString = moment.utc(item.data.dateModified).fromNow();
-    if (item.data.modifiedBy !== '') {
-        personString = ', by ' + item.data.modifiedBy.toString();
-    }
-    return m('span', dateString + personString);
+    var node = item.data.node;
+    // REMOVE
+    //if (item.data.modifiedDelta === 0) {
+    //    return m('span');
+    //}
+    dateString = moment.utc(node.attributes.date_modified).fromNow();
+    // REMOVE
+    //if (item.data.modifiedBy !== '') {
+    //    personString = ', by ' + item.data.modifiedBy.toString();
+    //}
+    //return m('span', dateString + personString);
+    return m('span', dateString);
 }
 
 /**
