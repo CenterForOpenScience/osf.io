@@ -66,7 +66,6 @@ class Zotero(ExternalProvider):
 
         client = self.client
 
-
         # Note: Pagination is the only way to ensure all of the collections
         #       are retrieved. 100 is the limit per request. This applies
         #       to Mendeley too, though that limit is 500.
