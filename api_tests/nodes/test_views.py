@@ -2656,6 +2656,8 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
 
+node_url_for = lambda n_id: '/{}nodes/{}/'.format(API_BASE, n_id)
+
 
 class TestNodeLinksList(ApiTestCase):
 
@@ -2680,8 +2682,9 @@ class TestNodeLinksList(ApiTestCase):
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        url = res.json['data'][0]['relationships']['target_node']['links']['related']['href']
-        assert_in('/{}nodes/{}/'.format(API_BASE, self.public_pointer_project._id), url)
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_return_public_node_pointers_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user_two.auth)
@@ -2689,8 +2692,9 @@ class TestNodeLinksList(ApiTestCase):
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        url = res_json[0]['relationships']['target_node']['links']['related']['href']
-        assert_in('/{}nodes/{}/'.format(API_BASE, self.public_pointer_project._id), url)
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_return_private_node_pointers_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -2703,8 +2707,9 @@ class TestNodeLinksList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res_json), 1)
-        url = res_json[0]['relationships']['target_node']['links']['related']['href']
-        assert_in('/{}nodes/{}/'.format(API_BASE, self.pointer_project._id), url)
+        expected_path = node_url_for(self.pointer_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_return_private_node_pointers_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
@@ -3100,8 +3105,10 @@ class TestNodeLinkCreate(ApiTestCase):
         res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        url = res.json['data']['relationships']['target_node']['links']['related']['href']
-        assert_in('/{}nodes/{}/'.format(API_BASE, self.public_pointer_project._id), url)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_creates_private_node_pointer_logged_out(self):
         res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
@@ -3111,8 +3118,10 @@ class TestNodeLinkCreate(ApiTestCase):
     def test_creates_private_node_pointer_logged_in_contributor(self):
         res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        url = res.json['data']['relationships']['target_node']['links']['related']['href']
-        assert_in('/{}nodes/{}/'.format(API_BASE, self.pointer_project._id), url)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_creates_private_node_pointer_logged_in_non_contributor(self):
@@ -3130,8 +3139,10 @@ class TestNodeLinkCreate(ApiTestCase):
         res = self.app.post_json_api(self.private_url, self.user_two_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        url = res.json['data']['relationships']['target_node']['links']['related']['href']
-        assert_in('/{}nodes/{}/'.format(API_BASE, self.user_two_project._id), url)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.user_two_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_create_pointer_non_contributing_node_to_fake_node(self):
         res = self.app.post_json_api(self.private_url, self.fake_payload, auth=self.user_two.auth, expect_errors=True)
@@ -3155,10 +3166,12 @@ class TestNodeLinkCreate(ApiTestCase):
     @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
     def test_create_node_pointer_to_itself(self):
         res = self.app.post_json_api(self.public_url, self.point_to_itself_payload, auth=self.user.auth)
+        res_json = res.json['data']
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        url = res.json['data']['relationships']['target_node']['links']['related']['href']
-        assert_in('/{}nodes/{}/'.format(API_BASE, self.public_project._id), url)
+        expected_path = node_url_for(self.public_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_create_node_pointer_to_itself_unauthorized(self):
         res = self.app.post_json_api(self.public_url, self.point_to_itself_payload, auth=self.user_two.auth, expect_errors=True)
@@ -3170,8 +3183,10 @@ class TestNodeLinkCreate(ApiTestCase):
         res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        url = res.json['data']['relationships']['target_node']['links']['related']['href']
-        assert_in('/{}nodes/{}/'.format(API_BASE, self.public_pointer_project._id), url)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
         res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -3538,16 +3553,19 @@ class TestNodeLinkDetail(ApiTestCase):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        url = res.json['data']['relationships']['target_node']['links']['related']['href']
-        assert_in('/{}nodes/{}/'.format(API_BASE, self.public_pointer_project._id), url)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_returns_public_node_pointer_detail_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        url = res.json['data']['relationships']['target_node']['links']['related']['href']
-        assert_in('/{}nodes/{}/'.format(API_BASE, self.public_pointer_project._id), url)
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_returns_private_node_pointer_detail_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -3559,8 +3577,9 @@ class TestNodeLinkDetail(ApiTestCase):
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        url = res.json['data']['relationships']['target_node']['links']['related']['href']
-        assert_in('/{}nodes/{}/'.format(API_BASE, self.pointer_project._id), url)
+        expected_path = node_url_for(self.pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
@@ -3596,9 +3615,13 @@ class TestDeleteNodeLink(ApiTestCase):
     def test_delete_node_link_no_permissions_for_target_node(self):
         pointer_project = ProjectFactory(creator=self.user_two, is_public=False)
         pointer = self.public_project.add_pointer(pointer_project, auth=Auth(self.user), save=True)
+        assert_in(pointer, self.public_project.nodes)
         url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, pointer._id)
         res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 204)
+
+        self.public_project.reload()
+        assert_not_in(pointer, self.public_project.nodes)
 
     def test_cannot_delete_if_registration(self):
         registration = RegistrationFactory(project=self.public_project)
