@@ -151,7 +151,7 @@ class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
     def __init__(self, view_name=None, **kwargs):
         self.meta = kwargs.pop('meta', None)
         self.link_type = kwargs.pop('link_type', 'url')
-        super(JSONAPIHyperlinkedRelatedField, self).__init__(view_name, **kwargs)
+        super(JSONAPIHyperlinkedRelatedField, self).__init__(view_name=view_name, **kwargs)
 
     def to_representation(self, value):
         """
@@ -402,8 +402,7 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if (isinstance(field, JSONAPIHyperlinkedIdentityField) or isinstance(field, JSONAPIHyperlinkedRelatedField)
-                    or isinstance(field, JSONAPIHyperlinkedGuidRelatedField)):
+            if isinstance(field, (JSONAPIHyperlinkedIdentityField, JSONAPIHyperlinkedRelatedField, JSONAPIHyperlinkedGuidRelatedField)):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
