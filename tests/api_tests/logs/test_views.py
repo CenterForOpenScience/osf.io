@@ -14,6 +14,7 @@ from framework.auth.core import Auth
 
 from website.models import NodeLog, Node
 from website.util import permissions as osf_permissions
+from website.project import new_dashboard
 
 from api.base.settings.defaults import API_BASE
 
@@ -113,3 +114,11 @@ class TestLogNodeList(LogsTestCase):
     def test_log_nodes_invalid_log_gets_404(self):
         res = self.app.get(self.url + '/abcdef/nodes/', expect_errors=True)
         assert_equal(res.status_code, http.NOT_FOUND)
+
+    def test_folder_node_logs_not_included(self):
+        user = self.node.creator
+        dash = new_dashboard(user)
+        dash_logs = [l._id for l in dash.logs]
+        res = self.app.get(self.url, auth=self.user)
+        for log in res.json['data']:
+            assert_not_in(log['id'], dash_logs)

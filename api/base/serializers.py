@@ -126,7 +126,10 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
+        try:
+            url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
+        except SkipField:
+            url = None  # TODO: remove/fix this when we merge https://github.com/CenterForOpenScience/osf.io/pull/4356
 
         meta = {}
         for key in self.meta or {}:
