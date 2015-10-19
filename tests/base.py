@@ -182,7 +182,24 @@ class ApiAppTestCase(unittest.TestCase):
         self.app = TestAppJSONAPI(django_app)
 
 
-class TestAppJSONAPI(TestApp):
+class JSONAPIWrapper():
+    def make_wrapper(self, url, method, content_type, params=NoDefault, **kw):
+        if params is not NoDefault:
+            params = dumps(params, cls=self.JSONEncoder)
+        kw.update(
+            params=params,
+            content_type=content_type,
+            upload_files=None,
+        )
+        wrapper = self._gen_request(method, url, **kw)
+
+        subst = dict(lmethod=method.lower(), method=method)
+        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
+
+        return wrapper
+
+
+class TestAppJSONAPI(TestApp, JSONAPIWrapper):
     """
     Extends TestApp to add json_api_methods(post, put, patch, and delete)
     which put content_type 'application/vnd.api+json' in header. Adheres to
@@ -198,35 +215,13 @@ class TestAppJSONAPI(TestApp):
 
         def wrapper(self, url, params=NoDefault, **kw):
             content_type = 'application/vnd.api+json'
-            if params is not NoDefault:
-                params = dumps(params, cls=self.JSONEncoder)
-            kw.update(
-                params=params,
-                content_type=content_type,
-                upload_files=None,
-            )
-            return self._gen_request(method, url, **kw)
-
-        subst = dict(lmethod=method.lower(), method=method)
-        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
-
+            return JSONAPIWrapper.make_wrapper(self, url, method, content_type , params, **kw)
         return wrapper
 
     def bulk_json_api_method(method):
         def wrapper(self, url, params=NoDefault, **kw):
             content_type = 'application/vnd.api+json; ext=bulk'
-            if params is not NoDefault:
-                params = dumps(params, cls=self.JSONEncoder)
-            kw.update(
-                params=params,
-                content_type=content_type,
-                upload_files=None,
-            )
-            return self._gen_request(method, url, **kw)
-
-        subst = dict(lmethod=method.lower(), method=method)
-        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
-
+            return JSONAPIWrapper.make_wrapper(self, url, method, content_type , params, **kw)
         return wrapper
 
     post_json_api = json_api_method('POST')
