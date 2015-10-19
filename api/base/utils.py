@@ -104,35 +104,6 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
     url.args.update(query)
     return url.url
 
-
-def soft_get(something, key):
-    """
-    Gently try to get key from something. Because we could all use a little softness ...
-    """
-    if not something:
-        return None
-    elif isinstance(something, collections.Mapping):
-        return something.get(key)
-    else:
-        return getattr(something, key, None)
-
-def deep_get(obj, key):
-    """
-    Using a dot-seperated key deeply fetch dict or class attributes
-    E.g.:
-
-    deep_get({
-        'user': {
-            'name': 'Miles Teg'
-        }
-    }, 'user.name')  # == 'Miles Teg'
-    """
-    if '.' in key:
-        keychain = key.split('.')
-        return deep_get(soft_get(obj, keychain.pop(0)), '.'.join(keychain))
-    else:
-        return soft_get(obj, key)
-
 def add_dev_only_items(items, dev_only_items):
     """Add some items to a dictionary if in ``DEV_MODE``.
     """
@@ -140,4 +111,3 @@ def add_dev_only_items(items, dev_only_items):
     if website_settings.DEV_MODE:
         items.update(dev_only_items)
     return items
-

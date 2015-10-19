@@ -1,5 +1,4 @@
 import re
-import os
 import collections
 
 from rest_framework.reverse import reverse
@@ -8,7 +7,7 @@ from rest_framework import serializers as ser
 
 from website import settings
 from website.util.sanitize import strip_html
-from website.util import waterbutler_api_url_for
+from website.util import waterbutler_api_url_for, deep_get
 
 from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict
@@ -113,10 +112,11 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
 
         Returns None if lookup value is None
         """
-        if utils.deep_get(obj, self.lookup_field) is None:
-            return None
-
-        return super(JSONAPIHyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+        attr = deep_get(obj, self.lookup_field)
+        if attr is None:
+            raise SkipField()
+        kwargs = {self.lookup_url_kwarg: attr}
+        return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
 
     # overrides HyperlinkedIdentityField
     def to_representation(self, value):
