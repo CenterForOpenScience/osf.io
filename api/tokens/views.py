@@ -15,8 +15,9 @@ from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
 from api.base import permissions as base_permissions
 from api.tokens.permissions import OwnerOnly
-from api.tokens.models import ApiOAuth2PersonalToken
 from api.tokens.serializers import ApiOAuth2PersonalTokenSerializer
+
+from website.models import ApiOAuth2PersonalToken
 
 
 class TokenList(generics.ListCreateAPIView, ODMFilterMixin):

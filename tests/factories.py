@@ -23,8 +23,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
-from api.tokens.models import ApiOAuth2PersonalToken
-from website.oauth.models import ApiOAuth2Application, ExternalAccount, ExternalProvider
+from website.oauth.models import ApiOAuth2Application, ExternalAccount, ExternalProvider, ApiOAuth2PersonalToken
 from website.project.model import (
     Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig
 )

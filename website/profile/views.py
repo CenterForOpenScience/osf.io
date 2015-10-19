@@ -20,12 +20,10 @@ from framework.exceptions import HTTPError, PermissionsError
 from framework.flask import redirect  # VOL-aware redirect
 from framework.status import push_status_message
 
-from api.tokens.models import ApiOAuth2PersonalToken
-
 from website import mails
 from website import mailchimp_utils
 from website import settings
-from website.models import ApiOAuth2Application, User
+from website.models import ApiOAuth2Application, User, ApiOAuth2PersonalToken
 from website.oauth.utils import get_available_scopes
 from website.profile import utils as profile_utils
 from website.project.decorators import dev_only

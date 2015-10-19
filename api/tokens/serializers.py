@@ -24,7 +24,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
 
     token_id = ser.CharField(read_only=True, allow_blank=True)
 
-    date_last_used = ser.DateTimeField(help_text='The date this token was generated (automatically filled in)',
+    date_last_used = ser.DateTimeField(help_text='The date this token was last used (automatically filled in)',
                                      read_only=True)
 
     class Meta:
@@ -43,8 +43,6 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         if not self.context['request'].method == 'POST':
             try:
                 if data.get('data').get('attributes').get('token_id'):
-                    data['data']['attributes'].pop('token_id')
-                if data.get('attributes').get('token_id'):
                     data['data']['attributes'].pop('token_id')
             except AttributeError:
                 pass

@@ -6,8 +6,6 @@ from framework.auth.core import User
 from framework.guid.model import Guid, BlacklistGuid
 from framework.sessions.model import Session
 
-from api.tokens.models import ApiOAuth2PersonalToken
-
 from website.project.model import (
     Node, NodeLog,
     Tag, WatchConfig, MetaSchema, Pointer,
@@ -15,7 +13,7 @@ from website.project.model import (
     Retraction, Embargo, RegistrationApproval,
     Sanction
 )
-from website.oauth.models import ApiOAuth2Application, ExternalAccount
+from website.oauth.models import ApiOAuth2Application, ExternalAccount, ApiOAuth2PersonalToken
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
 from website.files.models.base import FileVersion

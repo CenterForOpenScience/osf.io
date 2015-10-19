@@ -1,6 +1,6 @@
 from rest_framework import permissions
 
-from api.tokens.models import ApiOAuth2PersonalToken
+from website.models import ApiOAuth2PersonalToken
 
 
 class OwnerOnly(permissions.BasePermission):

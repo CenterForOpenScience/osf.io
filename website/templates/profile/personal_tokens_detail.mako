@@ -2,7 +2,7 @@
 <%def name="title()">Personal Token Detail</%def>
 <%def name="content()">
 
-    <h2 class="page-header">Personal Token Detail</h2>
+    <h2 class="page-header">Settings</h2>
 
 
 <div id="personalTokenDetailPage" class="row">
