@@ -599,6 +599,7 @@ class TestNodeBulkCreate(ApiTestCase):
         node_create_list = {'data': [self.public_project] * 11}
         res = self.app.bulk_post_json_api(self.url, node_create_list, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
         res = self.app.get(self.url, auth=self.user_one.auth)
         assert_equal(len(res.json['data']), 0)
@@ -957,6 +958,7 @@ class TestNodeBulkUpdate(ApiTestCase):
         node_update_list = {'data': [self.public_payload['data'][0]] * 11}
         res = self.app.bulk_put_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_update_no_title_or_category(self):
         new_payload = {'id': self.public_project._id, 'type': 'nodes', 'attributes': {}}
@@ -1171,6 +1173,7 @@ class TestNodeBulkPartialUpdate(ApiTestCase):
         node_update_list = {'data': [self.public_payload['data'][0]] * 11 }
         res = self.app.bulk_patch_json_api(self.url, node_update_list, auth=self.user.auth, expect_errors=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
 
 class TestNodeBulkDelete(ApiTestCase):
@@ -1292,6 +1295,7 @@ class TestNodeBulkDelete(ApiTestCase):
         res = self.app.bulk_delete_json_api(self.url, new_payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_delete_not_found(self):
         new_payload = {'data': [self.public_payload['data'][0], {'id': '12345', 'type': 'nodes'}]}
@@ -2249,6 +2253,7 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         node_contrib_create_list = {'data': [self.payload_one] * 11}
         res = self.app.bulk_post_json_api(self.public_url, node_contrib_create_list, auth=self.user.auth, expect_errors=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_node_contributor_bulk_create_no_type(self):
         payload = {'data': [{'id': self.user_two._id, 'attributes': {}}]}
@@ -2433,6 +2438,7 @@ class TestNodeContributorBulkUpdate(NodeCRUDTestCase):
         contrib_update_list = {'data': [self.payload_one] * 11}
         res = self.app.bulk_put_json_api(self.public_url, contrib_update_list, auth=self.user.auth, expect_errors=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_update_contributors_invalid_permissions(self):
         res = self.app.bulk_put_json_api(self.public_url, {'data': [self.payload_two, {'id': self.user_two._id, 'type': 'contributors', 'attributes': {'permission': 'super-user'}}]},
@@ -2601,6 +2607,7 @@ class TestNodeContributorBulkPartialUpdate(NodeCRUDTestCase):
         contrib_update_list = {'data': [self.payload_one] * 11}
         res = self.app.bulk_patch_json_api(self.public_url, contrib_update_list, auth=self.user.auth, expect_errors=True)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_partial_update_invalid_permissions(self):
         res = self.app.bulk_patch_json_api(self.public_url, {'data': [self.payload_two, {'id': self.user_two._id, 'type': 'contributors', 'attributes': {'permission': 'super-user'}}]},
@@ -2770,6 +2777,7 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         res = self.app.bulk_delete_json_api(self.public_url, new_payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_delete_contributors_no_payload(self):
         res = self.app.bulk_delete_json_api(self.public_url, auth=self.user.auth, expect_errors=True)
@@ -3879,6 +3887,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         res = self.app.bulk_post_json_api(self.url, {'data': [self.child] * 11}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_creates_children_logged_out_user(self):
         res = self.app.bulk_post_json_api(self.url, {'data': [self.child, self.child_two]}, expect_errors=True)
@@ -4444,6 +4453,7 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         res = self.app.bulk_post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
         res = self.app.get(self.public_url)
         assert_equal(res.json['data'], [])
@@ -5083,6 +5093,7 @@ class TestBulkDeleteNodeLinks(ApiTestCase):
         res = self.app.bulk_delete_json_api(self.public_url, {'data': [self.public_payload['data'][0]] * 11}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_delete_dict_inside_data(self):
         res = self.app.bulk_delete_json_api(self.public_url, {'data': {'id': self.public_project._id, 'type': 'node_links'}}, auth=self.user.auth, expect_errors=True)

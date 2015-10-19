@@ -8,7 +8,7 @@ from framework.auth.core import Auth
 
 from api.base.utils import get_object_or_error
 from api.base.settings import BULK_SETTINGS
-from api.base.exceptions import Conflict
+from api.base.exceptions import Conflict, JSONAPIException
 from api.base.utils import is_bulk_request
 
 from website.project.model import Node
@@ -93,9 +93,8 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
 
         if num_items > bulk_limit:
-            raise ValidationError(
-                detail={'non_field_errors': ['Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items)]}
-            )
+            raise JSONAPIException(source={'pointer': '/data'},
+                                   detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items))
 
         self.perform_bulk_destroy(resource_object_list)
 

@@ -12,7 +12,7 @@ from website.util import waterbutler_api_url_for
 
 from api.base import utils
 from api.base.settings import BULK_SETTINGS
-from api.base.exceptions import InvalidQueryStringError, Conflict
+from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIException
 
 
 class AllowMissing(ser.Field):
@@ -331,9 +331,8 @@ class JSONAPIListSerializer(ser.ListSerializer):
         num_items = len(data)
 
         if num_items > bulk_limit:
-            raise exceptions.ValidationError(
-                detail={'non_field_errors': ['Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items)]}
-            )
+            raise JSONAPIException(source={'pointer': '/data'},
+                                   detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items))
 
         return super(JSONAPIListSerializer, self).run_validation(data)
 
