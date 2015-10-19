@@ -192,8 +192,9 @@ var errorDefaultLong = 'OSF was unable to resolve your request. If this issue pe
     'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.';
 
 var handleHTTPError = function(error){
+    var response;
     try{
-        var response = JSON.parse(error.response);
+        response = JSON.parse(error.response);
     } catch (e){
         response = '';
     }
