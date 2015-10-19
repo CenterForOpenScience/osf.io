@@ -105,5 +105,6 @@ class TestJSONAPIBaseView(ApiTestCase):
     @mock.patch('api.base.serializers.JSONAPISerializer.to_representation', autospec=True)    
     def test_request_added_to_serializer_context(self, mock_to_representation):
         self.app.get(self.url, auth=self.user.auth)
+        assert_in('request', mock_to_representation.call_args[0][0].context)
 
 
