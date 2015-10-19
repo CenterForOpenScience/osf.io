@@ -70,6 +70,13 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
 
         Handles some permissions, validation, and enforces bulk limit.
         """
+        num_items = len(request.data)
+        bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
+
+        if num_items > bulk_limit:
+            raise JSONAPIException(source={'pointer': '/data'},
+                                   detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items))
+
         user = self.request.user
         resource_object_list = []
         model_cls = kwargs['model']
@@ -88,13 +95,6 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
             if model_cls is Node:
                 if not resource_object.can_edit(Auth(user)):
                     raise PermissionDenied
-
-        num_items = len(resource_object_list)
-        bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
-
-        if num_items > bulk_limit:
-            raise JSONAPIException(source={'pointer': '/data'},
-                                   detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items))
 
         self.perform_bulk_destroy(resource_object_list)
 
