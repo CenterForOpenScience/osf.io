@@ -464,11 +464,16 @@ def test_almost_osf():
 
 @task
 def test_views():
+    jshint()
+    flake()
     test_module(module="tests/test_views.py")
+    test_addons()
 
 @task
 def test_models():
+    test_api()
     test_module(module="tests/test_models.py")
+    karma(single=True, browsers='PhantomJS')
 
 @task
 def test_else():

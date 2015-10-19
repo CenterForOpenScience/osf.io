@@ -24,9 +24,6 @@ env:
     - TEST_BUILD="almost_osf"
     - TEST_BUILD="models"
     - TEST_BUILD="views"
-    - TEST_BUILD="api"
-    - TEST_BUILD="addons"
-    - TEST_BUILD="else"
 
 before_install:
     # cache directories
