@@ -63,17 +63,10 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     });
                 },
                 ondataloaderror: function(err){
-                    if(err.status == 403) {
-                        var resp = JSON.parse(err.response);
-                        $osf.growl(resp.message_short, resp.message_long);
-                        self.loading(false);
-                        self.destroyPicker();
-                        $(self.folderpickerSelector).html(errorpage);
-                    } else {
-                        $osf.handleJSONError(err.response);
-                        self.destroyPicker();
-
-                    }
+                    $osf.handleHTTPError(err);
+                    self.destroyPicker();
+                    self.loading(false);
+                    $(self.folderpickerSelector).html(errorpage);
                 }.bind(this),
                 resolveLazyloadUrl: function(item) {
                     return this.urls().folders + item.data.id + '/?view=folders';
