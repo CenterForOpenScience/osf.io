@@ -23,7 +23,7 @@
             </div>
         </div>
         <div class="col-sm-8 col-md-9" role="main" class="m-t-lg">
-            <h1 class="page-header">Public activity</h1>
+            <h1 class="page-header">Public Activity</h1>
             <section id='newPublicProjects'>
                 <h3 class='anchor'>Newest public projects</h3>
                 <div class='project-list'>
