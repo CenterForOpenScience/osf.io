@@ -7,9 +7,9 @@ from rest_framework import serializers as ser
 
 from framework.guid.model import Guid
 from website import settings
+from website.project.model import Node, Comment
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
-from website.project.model import Node, Comment
 
 from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict
