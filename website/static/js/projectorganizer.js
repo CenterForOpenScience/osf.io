@@ -109,7 +109,7 @@ function _poTitleColumn(item) {
     };
     var node = item.data.node;
     var css = ''; // Keep for future expandability -- Remove: item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
-    if (item.data.archiving) {
+    if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if(node.links.html){
         return m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title);
@@ -128,10 +128,11 @@ function _poTitleColumn(item) {
  */
 function _gotoEvent(event, item) {
     var tb = this;
+    var node = item.data.node;
     if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-        window.open(item.data.urls.fetch, '_blank');
+        window.open(node.urls.html, '_blank');
     } else {
-        window.open(item.data.urls.fetch, '_self');
+        window.open(node.urls.html, '_self');
     }
 }
 
