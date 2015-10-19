@@ -320,13 +320,15 @@ function _poColumnTitles() {
  * @returns {boolean}
  * @private
  */
-function _poToggleCheck(item) {
-    if (item.data.permissions.view) {
-        return true;
-    }
-    item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
-    return false;
-}
+// TODO: Check about permissions in item data
+//function _poToggleCheck(item) {
+//    var node = item.data.node;
+//    if (item.data.permissions.view) {
+//        return true;
+//    }
+//    item.notify.update('Not allowed: Private folder', 'warning', 1, undefined);
+//    return false;
+//}
 
 /**
  * Returns custom folder toggle icons for OSF
@@ -355,10 +357,11 @@ function _poResolveToggle(item) {
  * @returns {String|Boolean} Returns the fetch URL in string or false if there is no url.
  * @private
  */
-function _poResolveLazyLoad(item) {
-
-    return '/api/v1/dashboard/' + item.data.node_id;
-}
+// REMOVE
+//function _poResolveLazyLoad(item) {
+//    var node = item.data.node;
+//    return '/api/v1/dashboard/' + node.id;
+//}
 
 /**
  * Hook to run after lazyloading has successfully loaded
@@ -1314,6 +1317,41 @@ var POToolbar = {
     }
 };
 
+function _poIconView(item) {
+    var componentIcons = iconmap.componentIcons;
+    var projectIcons = iconmap.projectIcons;
+    var node = item.data.node;
+    function returnView(type, category) {
+        var iconType = projectIcons[type];
+        if (type === 'component' || type === 'registeredComponent') {
+                iconType = componentIcons[category];
+        } else if (type === 'project' || type === 'registeredProject') {
+            iconType = projectIcons[category];
+        }
+        if (type === 'registeredComponent' || type === 'registeredProject') {
+            iconType += ' po-icon-registered';
+        } else {
+            iconType += ' po-icon';
+        }
+        var template = m('span', { 'class' : iconType});
+        return template;
+    }
+    if ((node.attributes.category === 'pointer' && item.parent().data.node.attributes.nodeType !== 'folder') || (item.data.isPointer && !item.parent().data.isFolder)) {
+        return returnView('link');
+    }
+    if (node.attributes.category === 'project') {
+        if (node.attributes.registration) {
+            return returnView('registeredProject', node.attributes.category);
+        } else {
+            return returnView('project', node.attributes.category);
+        }
+    }
+
+    if (item.data.nodeType === 'pointer') {
+        return returnView('link');
+    }
+    return null;
+}
 
 function _deleteFolder(item) {
     var tb = this;
@@ -1361,7 +1399,7 @@ var tbOptions = {
     moveClass : 'po-draggable',
     hoverClass : 'fangorn-hover',
     hoverClassMultiselect : 'fangorn-selected',
-    togglecheck : _poToggleCheck,
+    //togglecheck : _poToggleCheck,
     sortButtonSelector : {
         up : 'i.fa.fa-chevron-up',
         down : 'i.fa.fa-chevron-down'
@@ -1406,9 +1444,9 @@ var tbOptions = {
         _cleanupMithril();
     },
     onmultiselect : _poMultiselect,
-    resolveIcon : Fangorn.Utils.resolveIconView,
+    resolveIcon : _poIconView,
     resolveToggle : _poResolveToggle,
-    resolveLazyloadUrl : _poResolveLazyLoad,
+    //resolveLazyloadUrl : _poResolveLazyLoad,
     lazyLoadOnLoad : expandStateLoad,
     resolveRefreshIcon : function () {
         return m('i.fa.fa-refresh.fa-spin');
