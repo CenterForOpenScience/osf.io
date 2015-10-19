@@ -94,7 +94,7 @@ class TestOAuthScopedAccess(ApiTestCase):
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
         payload = {u'suffix': u'VIII'}
 
-        res = self.app.patch(url, params=payload,
+        res = self.app.patch_json_api(url, params=payload,
                              auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 403)
 
@@ -109,12 +109,12 @@ class TestOAuthScopedAccess(ApiTestCase):
     def test_user_write_scope_can_write_user_view(self, mock_user_info):
         mock_user_info.return_value = self._scoped_response(['osf.users.all_write'])
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
-        payload = {u'suffix': u'VIII'}
+        payload = {'data': {'type': 'users', 'id': self.user._id, 'attributes': {u'suffix': u'VIII'}}}
 
-        res = self.app.patch(url, params=payload,
+        res = self.app.patch_json_api(url, params=payload,
                              auth='some_valid_token', auth_type='jwt', expect_errors=True)
         assert_equal(res.status_code, 200)
-        assert_dict_contains_subset(payload,
+        assert_dict_contains_subset(payload['data']['attributes'],
                                     res.json['data']['attributes'])
 
     @mock.patch('framework.auth.cas.CasClient.profile')

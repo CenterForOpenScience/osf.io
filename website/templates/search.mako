@@ -199,7 +199,7 @@
       <!-- ko if: parent_url -->
       <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
         <!-- /ko -->
-        <!-- ko if: !parent_url -->        
+        <!-- ko if: !parent_url -->
         <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{title }}</a></h4>
         <!-- /ko -->
 

@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
-import httplib
+import time
 import logging
+from datetime import datetime
 
-from framework.exceptions import HTTPError
+from box import refresh_v2_token
 
 from website.util import rubeus
+
+from website.addons.box import settings
+
 
 logger = logging.getLogger(__name__)
 
@@ -16,22 +20,18 @@ class BoxNodeLogger(object):
 
         from website.project.model import NodeLog
 
-        file_obj = BoxFile(path='foo/bar.txt')
-        file_obj.save()
         node = ...
         auth = ...
-        nodelogger = BoxNodeLogger(node, auth, file_obj)
+        nodelogger = BoxNodeLogger(node, auth)
         nodelogger.log(NodeLog.FILE_REMOVED, save=True)
 
 
     :param Node node: The node to add logs to
     :param Auth auth: Authorization of the person who did the action.
-    :param BoxFile file_obj: File object for file-related logs.
     """
-    def __init__(self, node, auth, file_obj=None, path=None):
+    def __init__(self, node, auth, path=None):
         self.node = node
         self.auth = auth
-        self.file_obj = file_obj
         self.path = path
 
     def log(self, action, extra=None, save=False):
@@ -53,18 +53,17 @@ class BoxNodeLogger(object):
             'folder': self.node.get_addon('box', deleted=True).folder_path
         }
         # If logging a file-related action, add the file's view and download URLs
-        if self.file_obj or self.path:
-            path = self.file_obj.path if self.file_obj else self.path
+        if self.path:
             params.update({
                 'urls': {
-                    'view': self.node.web_url_for('addon_view_or_download_file', path=path, provider='box'),
+                    'view': self.node.web_url_for('addon_view_or_download_file', path=self.path, provider='box'),
                     'download': self.node.web_url_for(
                         'addon_view_or_download_file',
-                        path=path,
+                        path=self.path,
                         provider='box'
                     )
                 },
-                'path': path,
+                'path': self.path,
             })
         if extra:
             params.update(extra)
@@ -78,16 +77,20 @@ class BoxNodeLogger(object):
             self.node.save()
 
 
-def handle_box_error(error, msg):
-    if (error is 'invalid_request' or 'unsupported_response_type'):
-        raise HTTPError(httplib.BAD_REQUEST)
-    if (error is 'access_denied'):
-        raise HTTPError(httplib.FORBIDDEN)
-    if (error is 'server_error'):
-        raise HTTPError(httplib.INTERNAL_SERVER_ERROR)
-    if (error is 'temporarily_unavailable'):
-        raise HTTPError(httplib.SERVICE_UNAVAILABLE)
-    raise HTTPError(httplib.INTERNAL_SERVER_ERROR)
+def refresh_oauth_key(external_account, force=False):
+    """If necessary, refreshes the oauth key associated with
+    the external account.
+    """
+    if external_account.expires_at is None and not force:
+        return
+
+    if force or (external_account.expires_at - datetime.utcnow()).total_seconds() < settings.REFRESH_TIME:
+        key = refresh_v2_token(settings.BOX_KEY, settings.BOX_SECRET, external_account.refresh_token)
+
+        external_account.oauth_key = key['access_token']
+        external_account.refresh_token = key['refresh_token']
+        external_account.expires_at = datetime.utcfromtimestamp(time.time() + key['expires_in'])
+        external_account.save()
 
 
 def box_addon_folder(node_settings, auth, **kwargs):

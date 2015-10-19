@@ -151,8 +151,22 @@ var Contributor = {
             m('a', {
                 href: '#',
                 onclick: function() {
-                    utils.updateFilter(vm, 'match:contributors.familyName:' + contributor.familyName, true);
-                    utils.updateFilter(vm, 'match:contributors.givenName:' + contributor.givenName, true);
+                    var givenNameLength = contributor.givenName ? contributor.givenName.length : 0;
+                    var familyNameLength = contributor.familyName ? contributor.familyName.length : 0;
+                    if (givenNameLength <= 0 && familyNameLength <= 0) {
+                        utils.updateFilter(vm, 'match:contributors.name:' + contributor.name, true);
+                    } else {
+                        var filters = [];
+                        if (givenNameLength > 0) {
+                            filters.push('match:contributors.givenName:' + contributor.givenName);
+                        }
+                        if (familyNameLength > 0) {
+                            filters.push('match:contributors.familyName:' + contributor.familyName);
+                        }
+                        if(filters.length>0){
+                           utils.updateFilter(vm, filters, true);
+                        }
+                    }
                 }
             }, contributor.name)
         ]);
