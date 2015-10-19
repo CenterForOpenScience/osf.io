@@ -167,6 +167,7 @@ class NodeDetailSerializer(NodeSerializer):
     """
     id = IDField(source='_id', required=True)
 
+
 class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
@@ -295,23 +296,31 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    target_node_id = ser.CharField(source='node._id', help_text='The ID of the node that this Node Link points to')
+    target_node_id = ser.CharField(write_only=True, source='node._id', help_text='The ID of the node that this Node Link points to')
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
     # include this field in the future.
     # title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
     #                                                                      'points to')
 
+    target_node = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='pk', link_type='related',
+                                              lookup_url_kwarg='node_id')
     class Meta:
         type_ = 'node_links'
 
     links = LinksField({
-        'html': 'get_absolute_url',
+        'self': 'get_absolute_url'
     })
 
     def get_absolute_url(self, obj):
-        pointer_node = Node.load(obj.node._id)
-        return pointer_node.absolute_url
+        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        return absolute_reverse(
+            'nodes:node-pointer-detail',
+            kwargs={
+                'node_id': node_id,
+                'node_link_id': obj._id
+            }
+        )
 
     def create(self, validated_data):
         request = self.context['request']
