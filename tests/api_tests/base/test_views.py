@@ -26,6 +26,14 @@ from website.settings import DEBUG_MODE
 
 from framework.auth.oauth_scopes import CoreScopes
 
+import importlib
+URLS_MODULES = [importlib.import_module('api.{}.urls'.format(name)) for loader, name, _ in pkgutil.iter_modules(['api']) if name != 'base']
+VIEW_CLASSES = []
+for mod in URLS_MODULES:
+    urlpatterns = mod.urlpatterns
+    for patt in urlpatterns:
+        VIEW_CLASSES.append(patt.callback.cls)
+
 class TestApiBaseViews(ApiTestCase):
 
     def test_root_returns_200(self):
@@ -44,34 +52,30 @@ class TestApiBaseViews(ApiTestCase):
             res = self.app.get(url, expect_errors=True)
             errors = res.json['errors']
             assert(isinstance(errors, list))
-            assert_equal(errors[0], {'detail': 'Not found.'})        
+            assert_equal(errors[0], {'detail': 'Not found.'})
 
     def test_view_classes_have_minimal_set_of_permissions_classes(self):
         base_permissions = [            
             TokenHasScope,
             (IsAuthenticated, IsAuthenticatedOrReadOnly)
         ]
-        view_modules = [name for _, name, _ in pkgutil.iter_modules(['api'])]
-        for module in view_modules:
-            if module == 'base':
-                continue  # We don't need to check base urls
-            urls = getattr(api, module).urls
-            for patt in urls.urlpatterns:
-                if not patt.callback:
-                    import ipdb; ipdb.set_trace()
-                view = patt.callback.cls
-                for cls in base_permissions:
-                    if isinstance(cls, tuple):
-                        has_cls = any([c in view.permission_classes for c in cls])
-                        assert_true(has_cls, "{0} lacks the appropriate permission classes".format(name))
-                    else:
-                        assert_in(cls, view.permission_classes, "{0} lacks the appropriate permission classes".format(name))
-                for key in ['read', 'write']:
-                    scopes = getattr(view, 'required_{}_scopes'.format(key), None)
-                    assert_true(bool(scopes))
-                    for scope in scopes:
-                        assert_is_not_none(scope)
+        for view in VIEW_CLASSES:
+            for cls in base_permissions:
+                if isinstance(cls, tuple):
+                    has_cls = any([c in view.permission_classes for c in cls])
+                    assert_true(has_cls, "{0} lacks the appropriate permission classes".format(name))
+                else:
+                    assert_in(cls, view.permission_classes, "{0} lacks the appropriate permission classes".format(name))
+            for key in ['read', 'write']:
+                scopes = getattr(view, 'required_{}_scopes'.format(key), None)
+                assert_true(bool(scopes))
+                for scope in scopes:
+                    assert_is_not_none(scope)
 
+    def test_view_classes_support_embeds(self):
+        for view in VIEW_CLASSES:
+            assert_true(hasattr(view, '_get_embed_partial'))
+            
     @mock.patch('framework.auth.core.User.is_confirmed', mock.PropertyMock(return_value=False))
     def test_unconfirmed_user_gets_error(self):
 

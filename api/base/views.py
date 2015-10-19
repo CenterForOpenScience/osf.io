@@ -9,8 +9,6 @@ from .utils import absolute_reverse
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
-    permissions_exempt = True
-
     def _get_embed_partial(self, field_name, field):
         """Create a partial function to fetch the values of an embedded field. A basic
         example is to include a Node's children in a single response.
@@ -223,6 +221,28 @@ def root(request, format=None):
         }
 
     If there are no related entities, `href` will be null.
+
+    + `embeds`
+
+    All related resources that appear in the `relationships` attribute are embeddable, meaning that
+    by adding a query paramater like:
+
+        /nodes/?embed=contributors
+
+    it is possible to fetch a Node and its contributors in a single request. The embedded results will have the following
+    structure:
+
+        {relationship_name}: {full_embedded_response}
+
+    Where `full_embedded_response` means the full API response resulting from a GET request to the `href` link of the
+    corresponding related resource. This means if there are no errors in processing the embedded request the response will have
+    the format:
+
+        data: {response}
+
+    And if there are errors processing the embedded request the response will have the format:
+
+        errors: {errors}
 
     + `links`
 
