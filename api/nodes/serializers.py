@@ -92,6 +92,13 @@ class NodeSerializer(JSONAPISerializer):
         lookup_url_kwarg='node_id'
     )
 
+    logs = JSONAPIHyperlinkedIdentityField(
+        view_name='nodes:node-logs',
+        lookup_field='pk',
+        lookup_url_kwarg='node_id',
+        link_type='related'
+    )
+
     class Meta:
         type_ = 'nodes'
 
