@@ -6,7 +6,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from framework.auth.core import Auth
 
-from api.base.utils import get_object_or_error
+from website.project.model import Q
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException
 from api.base.utils import is_bulk_request
@@ -76,21 +76,25 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
                                    detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items))
 
         user = self.request.user
-        resource_object_list = []
         model_cls = request.parser_context['view'].model_class
         object_type = self.serializer_class.Meta.type_
 
         if not request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
 
+        requested_ids = [data['id'] for data in request.data]
+        resource_object_list = model_cls.find(Q('_id', 'in', requested_ids))
+
+        if len(resource_object_list) != len(request.data):
+            raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
+
         for item in request.data:
             item_type = item[u'type']
             if item_type != object_type:
                 raise Conflict()
 
-            resource_object = get_object_or_error(model_cls, item[u'id'])
-            resource_object_list.append(resource_object)
-            if 'node_id' not in kwargs:
+        if 'node_id' not in kwargs:
+            for resource_object in resource_object_list:
                 if not resource_object.can_edit(Auth(user)):
                     raise PermissionDenied
 

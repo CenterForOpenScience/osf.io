@@ -183,7 +183,14 @@ class ApiAppTestCase(unittest.TestCase):
 
 
 class JSONAPIWrapper():
+    """
+    Creates wrapper with stated content_type.
+    """
     def make_wrapper(self, url, method, content_type, params=NoDefault, **kw):
+        """
+        Helper method for generating wrapper method.
+        """
+
         if params is not NoDefault:
             params = dumps(params, cls=self.JSONEncoder)
         kw.update(

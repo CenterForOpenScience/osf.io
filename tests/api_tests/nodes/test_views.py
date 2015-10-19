@@ -1297,10 +1297,11 @@ class TestNodeBulkDelete(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
-    def test_bulk_delete_not_found(self):
+    def test_bulk_delete_invalid_payload_one_not_found(self):
         new_payload = {'data': [self.public_payload['data'][0], {'id': '12345', 'type': 'nodes'}]}
         res = self.app.bulk_delete_json_api(self.url, new_payload, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to delete.')
 
         res = self.app.get(self.project_one_url, auth=self.user_one.auth)
         assert_equal(res.status_code, 200)
@@ -2661,7 +2662,8 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
     def test_bulk_delete_invalid_id(self):
         res = self.app.bulk_delete_json_api(self.public_url, {'data': [{'id': '12345', 'type':'contributors'}]}, auth=self.user.auth,
                                        expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to delete.')
 
     def test_bulk_delete_non_contributor(self):
         res = self.app.bulk_delete_json_api(self.public_url, {'data': [{'id': self.user_four._id, 'type':'contributors'}]}, auth=self.user.auth,
@@ -2673,7 +2675,8 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
                                                                   {'id': self.user._id, 'type': 'contributors'}]},
                                        auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Must have at least one visible contributor')
+        assert_in(res.json['errors'][0]['detail'], ['Must have at least one registered admin contributor',
+                                                    'Must have at least one visible contributor'])
         self.public_project.reload()
         assert_equal(len(self.public_project.contributors), 3)
 
@@ -2767,7 +2770,8 @@ class TestNodeContributorBulkDelete(NodeCRUDTestCase):
         new_payload = {'data': [self.payload_one, invalid_id]}
 
         res = self.app.bulk_delete_json_api(self.public_url, new_payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Could not find all objects to delete.')
 
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 3)
@@ -5110,13 +5114,6 @@ class TestBulkDeleteNodeLinks(ApiTestCase):
         assert_equal(res.json['errors'][0]['source']['pointer'], "/data/type")
 
     def test_bulk_delete_pointers_incorrect_type(self):
-        payload = {'data': [
-            {'id': self.public_pointer._id, 'type': 'node_links'},
-            {'id': self.public_pointer_two._id, 'type': 'node_links'}
-        ]}
-        res = self.app.bulk_delete_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 204)
-
         payload = {'data': [
             {'id': self.public_pointer._id, 'type': 'Incorrect type.'},
             {'id': self.public_pointer_two._id, 'type': 'Incorrect type.'}
