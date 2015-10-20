@@ -148,7 +148,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                         parameter='related_counts'
                     )
         # JSON-API requires that the self link is just a URL
-        if self.link_type in ('self', 'href'):
+        if self.link_type == 'self':
             return {'links': {self.link_type: url}}
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
