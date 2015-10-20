@@ -488,6 +488,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
                 node_addon.clear_auth()
 
 class AddonNodeSettingsBase(AddonSettingsBase):
+
     owner = fields.ForeignField('node', backref='addons')
 
     _meta = {
@@ -764,6 +765,19 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     oauth_provider = None
 
     @property
+    def folder_id(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_id' property."
+        )
+
+    @property
+    def complete(self):
+        return bool(self.has_auth and self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account,
+        ))
+
+    @property
     def has_auth(self):
         """Instance has an external account and *active* permission to use it"""
         if not (self.user_settings and self.external_account):
@@ -773,6 +787,15 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             node=self.owner,
             external_account=self.external_account
         )
+
+    def clear_settings(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'clear_settings' method."
+        )
+
+    def _update_folder_data(self):
+        # TODO(samchrisinger)
+        pass
 
     def set_auth(self, external_account, user):
         """Connect the node addon to a user's external account.
@@ -898,6 +921,16 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     # backwards compatibility
     before_register = before_register_message
+
+    def serialize_waterbutler_credentials(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must implement a 'serialize_waterbutler_credentials' method."
+        )
+
+    def serialize_waterbutler_settings(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must implement a 'serialize_waterbutler_settings' method."
+        )
 
 
 # TODO: No more magicks

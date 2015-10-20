@@ -14,8 +14,7 @@ def get_client(user):
     user_settings = user.get_addon('dropbox')
     if not user_settings:
         raise AddonError('User does not have the Dropbox addon enabled.')
-    return DropboxClient(user_settings.access_token)
-
+    return DropboxClient(user_settings.external_accounts[0].oauth_key)
 
 def get_client_from_user_settings(settings_obj):
     """Same as get client, except its argument is a DropboxUserSettingsObject."""

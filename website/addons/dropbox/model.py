@@ -2,83 +2,128 @@
 import os
 import logging
 
+from flask import request
 from modularodm import fields
+from dropbox.client import DropboxOAuth2Flow, DropboxClient
 
 from framework.auth import Auth
-from website.addons.base import exceptions
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
-from website.addons.base import StorageAddonBase
+from framework.sessions import session
 
+from website.util import web_url_for
+from website.addons.base import exceptions
+from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettingsBase
+from website.addons.base import StorageAddonBase
+from website.oauth.models import ExternalProvider
+
+from website.addons.dropbox import settings
+from website.addons.dropbox.serializer import DropboxSerializer
 from website.addons.dropbox.utils import DropboxNodeLogger
 
 logger = logging.getLogger(__name__)
 
 
-class DropboxUserSettings(AddonUserSettingsBase):
-    """Stores user-specific dropbox information, including the Oauth access
+class DropboxProvider(ExternalProvider):
+
+    name = 'DropBox'
+    short_name = 'dropbox'
+
+    client_id = settings.DROPBOX_KEY
+    client_secret = settings.DROPBOX_SECRET
+
+    # Explicitly override auth_url_base as None -- BoxOAuth2Flow handles this for us
+    auth_url_base = None
+    callback_url = None
+    handle_callback = None
+
+    @property
+    def oauth_flow(self):
+        if self.short_name not in session.data['oauth_states']:
+            session.data['oauth_states'][self.short_name] = {
+                'state': None
+            }
+        return DropboxOAuth2Flow(
+            self.client_id,
+            self.client_secret,
+            redirect_uri=web_url_for(
+                'oauth_callback',
+                service_name=self.short_name,
+                _absolute=True
+            ),
+            session=session.data['oauth_states'][self.short_name], csrf_token_session_key='state'
+        )
+
+    @property
+    def auth_url(self):
+        return self.oauth_flow.start()
+
+    # Overrides ExternalProvider
+    def auth_callback(self, user):
+        access_token, dropbox_user_id, url_state = self.oauth_flow.finish(request.values)
+        self.client = DropboxClient(access_token)
+
+        info = self.client.account_info()
+        return self._set_external_account(
+            user,
+            {
+                'key': access_token,
+                'provider_id': info['uid'],
+                'display_name': info['display_name'],
+            }
+        )
+
+
+class DropboxUserSettings(AddonOAuthUserSettingsBase):
+    """Stores user-specific dropbox information.
     token.
     """
 
-    dropbox_id = fields.StringField(required=False)
-    access_token = fields.StringField(required=False)
-    dropbox_info = fields.DictionaryField(required=False)
+    oauth_provider = DropboxProvider
+    serializer = DropboxSerializer
 
-    # TODO(sloria): The `user` param in unnecessary for AddonUserSettings
-    def to_json(self, user=None):
-        """Return a dictionary representation of the user settings.
-        The dictionary keys and values will be available as variables in
-        dropbox_user_settings.mako.
-        """
-        output = super(DropboxUserSettings, self).to_json(self.owner)
-        output['has_auth'] = self.has_auth
-        return output
+class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
-    @property
-    def has_auth(self):
-        return bool(self.access_token)
+    oauth_provider = DropboxProvider
+    serializer = DropboxSerializer
 
-    def delete(self, save=True):
-        self.clear()
-        super(DropboxUserSettings, self).delete(save)
-
-    def clear(self):
-        """Clear settings and deauthorize any associated nodes."""
-        self.dropbox_id = None
-        self.access_token = None
-        for node_settings in self.dropboxnodesettings__authorized:
-            node_settings.deauthorize(Auth(self.owner))
-            node_settings.save()
-        return self
-
-    def __repr__(self):
-        return u'<DropboxUserSettings(user={self.owner.username!r})>'.format(self=self)
-
-class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
-    user_settings = fields.ForeignField(
+    foreign_user_settings = fields.ForeignField(
         'dropboxusersettings', backref='authorized'
     )
-
     folder = fields.StringField(default=None)
 
     #: Information saved at the time of registration
     #: Note: This is unused right now
     registration_data = fields.DictionaryField()
 
+    _folder_data = None
+
+    _api = None
+
+    @property
+    def api(self):
+        """authenticated ExternalProvider instance"""
+        if self._api is None:
+            self._api = DropboxProvider(self.external_account)
+        return self._api
+
     @property
     def folder_name(self):
         return os.path.split(self.folder)[1]
+
+    @property
+    def folder_id(self):
+        return self.folder
+
     @property
     def display_name(self):
         return '{0}: {1}'.format(self.config.full_name, self.folder)
 
     @property
-    def complete(self):
-        return self.has_auth and self.folder is not None
-
-    @property
     def has_auth(self):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
+
+    def clear_settings(self):
+        self.folder = None
 
     def set_folder(self, folder, auth):
         self.folder = folder
@@ -116,7 +161,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
             raise exceptions.AddonError('Addon is not authorized')
-        return {'token': self.user_settings.access_token}
+        return {'token': self.external_account.oauth_key}
 
     def serialize_waterbutler_settings(self):
         if not self.folder:

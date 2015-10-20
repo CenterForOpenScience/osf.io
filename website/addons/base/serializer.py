@@ -56,6 +56,30 @@ class AddonSerializer(object):
 
 
 class OAuthAddonSerializer(AddonSerializer):
+
+    @property
+    def credentials_owner(self):
+        return self.user_settings.owner
+
+    @property
+    def user_is_owner(self):
+        if self.user_settings is None or self.node_settings is None:
+            return False
+
+        user_accounts = self.user_settings.external_accounts
+        return bool(
+            (
+                self.node_settings.has_auth and
+                (self.node_settings.external_account in user_accounts)
+            ) or len(user_accounts)
+        )
+
+    @property
+    def serialized_urls(self):
+        ret = self.addon_serialized_urls
+        ret.update({'settings': web_url_for('user_addons')})
+        return ret
+
     @property
     def serialized_accounts(self):
         return [

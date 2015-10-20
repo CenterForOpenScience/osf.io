@@ -9,42 +9,15 @@ auth_routes = {
     'rules': [
 
         Rule(
-            '/settings/dropbox/',
+            '/settings/dropbox/accounts/',
             'get',
             views.auth.dropbox_user_config_get,
             json_renderer,
         ),
-
-        ##### OAuth #####
-        Rule(
-            '/settings/dropbox/oauth/',
-            'get',
-            views.auth.dropbox_oauth_start,  # Use same view func as node oauth start
-            json_renderer,
-            endpoint_suffix='_user'          # but add a suffix for url_for
-        ),
-
-        Rule(
-            '/addons/dropbox/oauth/finish/',
-            'get',
-            views.auth.dropbox_oauth_finish,
-            json_renderer,
-        ),
-
         Rule(
             '/settings/dropbox/oauth/',
             'delete',
             views.auth.dropbox_oauth_delete_user,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/dropbox/oauth/',
-                '/project/<pid>/node/<nid>/dropbox/oauth/',
-            ],
-            'get',
-            views.auth.dropbox_oauth_start,
             json_renderer,
         ),
     ],
@@ -87,12 +60,19 @@ api_routes = {
             json_renderer
         ),
 
-
         Rule(
             ['/project/<pid>/dropbox/config/share/',
             '/project/<pid>/node/<nid>/dropbox/config/share/'],
             'get',
             views.config.dropbox_get_share_emails,
+            json_renderer
+        ),
+
+        Rule(
+            ['/project/<pid>/dropbox/folders/',
+            '/project/<pid>/node/<nid>/dropbox/folders/'],
+            'get',
+            views.config.dropbox_get_folders,
             json_renderer
         ),
 

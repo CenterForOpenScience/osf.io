@@ -184,3 +184,14 @@ def dropbox_get_share_emails(auth, user_addon, node_addon, **kwargs):
         'url': utils.get_share_folder_uri(node_addon.folder)
     }
     return {'result': result}
+
+@must_have_permission('write')
+@must_have_addon('dropbox', 'user')
+@must_have_addon('dropbox', 'node')
+def dropbox_get_folders(auth, node_addon, user_addon, **kwargs):
+    """Get a list of Dropbox folders for a user/node pair
+    """
+    client = get_client_from_user_settings(user_addon)
+    return {
+        'folders': get_folders(client)
+    }
