@@ -28,8 +28,8 @@ class TestTokenList(ApiTestCase):
         self.user1 = AuthUserFactory()
         self.user2 = AuthUserFactory()
 
-        self.user1_tokens = [ApiOAuth2PersonalTokenFactory(owner=self.user1) for i in xrange(3)]
-        self.user2_tokens = [ApiOAuth2PersonalTokenFactory(owner=self.user2) for i in xrange(2)]
+        self.user1_tokens = [ApiOAuth2PersonalTokenFactory(owner=self.user1, user_id=self.user1._id) for i in xrange(3)]
+        self.user2_tokens = [ApiOAuth2PersonalTokenFactory(owner=self.user2, user_id=self.user2._id) for i in xrange(2)]
 
         self.user1_list_url = _get_token_list_url()
         self.user2_list_url = _get_token_list_url()
@@ -56,19 +56,19 @@ class TestTokenList(ApiTestCase):
         assert_equal(len(res.json['data']),
                      len(self.user2_tokens))
 
-    # @mock.patch('framework.auth.cas.CasClient.revoke_personal_tokens')
-    # def test_deleting_token_should_hide_it_from_api_list(self, mock_method):
-        # mock_method.return_value(True)
-        # api_token = self.user1_tokens[0]
-        # url = _get_token_detail_route(api_token)
-# 
-        # res = self.app.delete(url, auth=self.user1.auth)
-        # assert_equal(res.status_code, 204)
-# 
-        # res = self.app.get(self.user1_list_url, auth=self.user1.auth)
-        # assert_equal(res.status_code, 200)
-        # assert_equal(len(res.json['data']),
-                     # len(self.user1_tokens) - 1)
+    @mock.patch('framework.auth.cas.CasClient.revoke_personal_token')
+    def test_deleting_token_should_hide_it_from_api_list(self, mock_method):
+        mock_method.return_value(True)
+        api_token = self.user1_tokens[0]
+        url = _get_token_detail_route(api_token)
+
+        res = self.app.delete(url, auth=self.user1.auth)
+        assert_equal(res.status_code, 204)
+
+        res = self.app.get(self.user1_list_url, auth=self.user1.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']),
+                     len(self.user1_tokens) - 1)
 
     def test_created_tokens_are_tied_to_request_user_with_data_specified(self):
         res = self.app.post_json_api(self.user1_list_url, self.sample_data, auth=self.user1.auth, expect_errors=True)
@@ -120,7 +120,7 @@ class TestTokenDetail(ApiTestCase):
         self.user1 = AuthUserFactory()
         self.user2 = AuthUserFactory()
 
-        self.user1_token = ApiOAuth2PersonalTokenFactory(owner=self.user1)
+        self.user1_token = ApiOAuth2PersonalTokenFactory(owner=self.user1, user_id=self.user1._id)
         self.user1_token_url = _get_token_detail_route(self.user1_token)
 
         self.missing_type = {
@@ -165,11 +165,11 @@ class TestTokenDetail(ApiTestCase):
         res = self.app.get(self.user1_token_url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    # @mock.patch('framework.auth.cas.CasClient.revoke_personal_tokens')
-    # def test_owner_can_delete(self, mock_method):
-        # mock_method.return_value(True)
-        # res = self.app.delete(self.user1_token_url, auth=self.user1.auth)
-        # assert_equal(res.status_code, 204)
+    @mock.patch('framework.auth.cas.CasClient.revoke_personal_token')
+    def test_owner_can_delete(self, mock_method):
+        mock_method.return_value(True)
+        res = self.app.delete(self.user1_token_url, auth=self.user1.auth)
+        assert_equal(res.status_code, 204)
 
     def test_non_owner_cant_delete(self):
         res = self.app.delete(self.user1_token_url,
@@ -177,12 +177,12 @@ class TestTokenDetail(ApiTestCase):
                               expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    # @mock.patch('framework.auth.cas.CasClient.revoke_personal_tokens')
-    # def test_deleting_tokens_makes_api_view_inaccessible(self, mock_method):
-        # mock_method.return_value(True)
-        # res = self.app.delete(self.user1_token_url, auth=self.user1.auth)
-        # res = self.app.get(self.user1_token_url, auth=self.user1.auth, expect_errors=True)
-        # assert_equal(res.status_code, 404)
+    @mock.patch('framework.auth.cas.CasClient.revoke_personal_token')
+    def test_deleting_tokens_makes_api_view_inaccessible(self, mock_method):
+        mock_method.return_value(True)
+        res = self.app.delete(self.user1_token_url, auth=self.user1.auth)
+        res = self.app.get(self.user1_token_url, auth=self.user1.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
     def test_updating_one_field_should_not_blank_others_on_patch_update(self):
         user1_token = self.user1_token
@@ -218,12 +218,12 @@ class TestTokenDetail(ApiTestCase):
         assert_equal(len(res.json['data']),
                      1)
 
-    # @mock.patch('framework.auth.cas.CasClient.revoke_personal_tokens')
-    # def test_deleting_token_flags_instance_inactive(self, mock_method):
-        # mock_method.return_value(True)
-        # res = self.app.delete(self.user1_token_url, auth=self.user1.auth)
-        # self.user1_token.reload()
-        # assert_false(self.user1_token.is_active)
+    @mock.patch('framework.auth.cas.CasClient.revoke_personal_token')
+    def test_deleting_token_flags_instance_inactive(self, mock_method):
+        mock_method.return_value(True)
+        res = self.app.delete(self.user1_token_url, auth=self.user1.auth)
+        self.user1_token.reload()
+        assert_false(self.user1_token.is_active)
 
     def test_read_does_not_return_token_id(self):
         res = self.app.get(self.user1_token_url, auth=self.user1.auth)

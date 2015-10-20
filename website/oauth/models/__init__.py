@@ -461,6 +461,8 @@ class ApiOAuth2PersonalToken(StoredObject):
                                 index=True,
                                 required=True)
 
+    user_id = fields.StringField(default=owner)
+
     name = fields.StringField(required=True, index=True)
 
     scopes = fields.StringField(list=True, required=True)
@@ -468,7 +470,7 @@ class ApiOAuth2PersonalToken(StoredObject):
     date_last_used = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
                                         editable=False)
 
-    is_active = fields.BooleanField(default=True, index=True)  # TODO: Add mechanism to deactivate a scope?
+    is_active = fields.BooleanField(default=True, index=True)
 
     def deactivate(self, save=False):
         """
@@ -476,6 +478,10 @@ class ApiOAuth2PersonalToken(StoredObject):
 
         Does not delete the database record, but hides this instance from API
         """
+        client = cas.get_client()
+        # Will raise a CasHttpError if deletion fails, which will also stop setting of active=False.
+        resp = client.revoke_personal_token(self.token_id)  # noqa
+
         self.is_active = False
 
         if save:
