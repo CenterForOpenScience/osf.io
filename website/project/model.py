@@ -175,6 +175,11 @@ class Comment(GuidStoredObject):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
+    def return_content(self, auth):
+        if auth and self.is_deleted and self.user._id != auth.user._id:
+            return 'Comment deleted.'
+        return self.content
+
     @classmethod
     def create(cls, auth, **kwargs):
         comment = cls(**kwargs)

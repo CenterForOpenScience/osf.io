@@ -5,6 +5,7 @@ from rest_framework.reverse import reverse
 from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
 
+from framework.auth.core import Auth
 from framework.guid.model import Guid
 from website import settings
 from website.project.model import Node, Comment
@@ -79,6 +80,30 @@ class TypeField(ser.CharField):
         if self.root.Meta.type_ != data:
             raise Conflict()
         return super(TypeField, self).to_internal_value(data)
+
+
+class AuthorizedCharField(ser.CharField):
+    """
+    Passes auth of the logged-in user to the object's method
+    defined as the field source.
+
+    Example:
+        content = AuthorizedCharField(source='return_content')
+    """
+
+    def __init__(self, **kwargs):
+        super(AuthorizedCharField, self).__init__(**kwargs)
+
+    def get_attribute(self, obj):
+        user = self.context['request'].user
+        auth = Auth(user)
+        field_source_method = getattr(obj, self.source)
+        return field_source_method(auth=auth)
+
+    def to_internal_value(self, data):
+        if self.root.Meta.type_ != data:
+            raise Conflict()
+        return super(AuthorizedCharField, self).to_internal_value(data)
 
 
 class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):

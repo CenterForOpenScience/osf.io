@@ -10,7 +10,8 @@ from api.base.serializers import (JSONAPISerializer,
                                   JSONAPIHyperlinkedRelatedField,
                                   JSONAPIHyperlinkedGuidRelatedField,
                                   JSONAPIHyperlinkedIdentityField,
-                                  IDField, TypeField, LinksField)
+                                  IDField, TypeField, LinksField,
+                                  AuthorizedCharField)
 
 
 class CommentReport(object):
@@ -28,7 +29,7 @@ class CommentSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = ser.CharField()
+    content = AuthorizedCharField(source='return_content')
 
     user = JSONAPIHyperlinkedRelatedField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id', link_type='related', read_only=True)
     node = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk', lookup_url_kwarg='node_id', link_type='related', read_only=True)
