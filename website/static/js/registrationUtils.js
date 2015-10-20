@@ -301,7 +301,7 @@ Draft.prototype.beforeRegister = function(data) {
         }
     }).always($osf.unblock);
 };
-Draft.prototype.onRegisterFail = bootbox.alert.bind(null, {
+Draft.prototype.onRegisterFail = bootbox.dialog.bind(null, {
     title: 'Registration failed',
     message: language.registerFail
 });
@@ -309,7 +309,6 @@ Draft.prototype.register = function(data) {
     var self = this;
 
     $osf.block();
-
     $osf.postJSON(self.urls.register, data)
         .done(function(response) {
             if (response.status === 'initiated') {
@@ -317,7 +316,7 @@ Draft.prototype.register = function(data) {
             } else if (response.status === 'error') {
                 self.onRegisterFail();
             }
-        }).always($osf.unblock).fail(self.onRegisterFail);
+    }).always($osf.unblock).fail(self.onRegisterFail);
 };
 
 
@@ -461,10 +460,10 @@ RegistrationEditor.prototype.check = function() {
 RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
 
-    var firstQuestion = page.questions[Object.keys(page.questions)[0]];
-    //self.currentQuestion(firstQuestion);
+    // var firstQuestion = page.questions[Object.keys(page.questions)[0]];
+    self.currentPage(page);
 };
-/**
+/** 
  * Update draft primary key and updated time on server response
  **/
 RegistrationEditor.prototype.updateData = function(response) {
