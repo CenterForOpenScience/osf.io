@@ -14,73 +14,17 @@
                 <div data-bind="if: page() == 'addon'">
                     <span data-bind="text:message"></span>
                 </div>
-                <!-- Component selection page -->
-                <div data-bind="if:page()=='which'">
-
-                    <div>
-                        Adding contributor(s)
-                        <span data-bind="text:addingSummary()"></span>
-                        to component
-                        <span data-bind="text:title"></span>.
-                    </div>
-
-                    <hr />
-
-                    <div style="margin-bottom:10px;">
-                        Select any other components to which you would like to apply these settings.
-                    </div>
-
-                    <div class="row">
-
-                        <div class="col-md-6">
-                            <input type="checkbox" checked disabled />
-                            <span data-bind="text:title"></span> (current component)
-                            <div data-bind="foreach:nodes">
-                                <div data-bind="style:{marginLeft: margin}">
-                                    <input type="checkbox" data-bind="checked:$parent.nodesToChange, value:id" />
-                                    <span data-bind="text:title"></span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div>
-                                <a data-bind="click:selectNodes, css:{disabled:cantSelectNodes()}">Select all</a>
-                            </div>
-                            <div>
-                                <a data-bind="click:deselectNodes, css:{disabled:cantDeselectNodes()}">De-select all</a>
-                            </div>
-                        </div>
-
-                    </div>
-
-                </div><!-- end component selection page -->
-
                 <!-- Invite user page -->
 
-                <div data-bind='if:page() === "select"'>
-                    <form class='form'>
-                <div class="panel panel-default">
-                    <span id="configureNotificationsAnchor" class="anchor"></span>
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Change Privacy Settings</h3>
-                    </div>
-                    <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">Check projects or components to make them public, uncheck to make them private.</p>
-                    </div>
-                    <form class="osf-treebeard-minimal">
+                <div data-bind='visible:page() === "select"'>
+                    <div class="osf-treebeard">
                         <div id="grid">
                             <div class="spinner-loading-wrapper">
                                 <div class="logo-spin logo-lg"></div>
                                 <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
                             </div>
                         </div>
-                        <div class="help-block" style="padding-left: 15px">
-                            <p id="configureNotificationsMessage"></p>
-                        </div>
-                    </form>
-                </div>
-                   </form>
+                    </div>
                 </div><!-- end invite user page -->
 
             </div><!-- end modal-body -->

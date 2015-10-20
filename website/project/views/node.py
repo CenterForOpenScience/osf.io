@@ -42,6 +42,7 @@ from website.project import new_folder
 from website.util.sanitize import strip_html
 from website.util import rapply
 
+
 r_strip_html = lambda collection: rapply(collection, strip_html)
 
 logger = logging.getLogger(__name__)
@@ -1007,6 +1008,64 @@ def get_children(auth, node, **kwargs):
             if not each.is_deleted
         ]
     return _render_nodes(nodes, auth)
+
+
+def format_data(user, node_ids):
+    """ Format subscriptions data for project settings page
+    :param user: modular odm User object
+    :param node_ids: list of parent project ids
+    :return: treebeard-formatted data
+    """
+    items = []
+    for node_id in node_ids:
+        node = Node.load(node_id)
+        assert node, '{} is not a valid Node.'.format(node_id)
+
+        can_read = node.has_permission(user, 'read')
+        can_read_children = node.has_permission_on_children(user, 'read')
+
+        if not can_read and not can_read_children:
+            continue
+
+        children = []
+        # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
+        # user is contributor on a component of the project/node
+
+        children.extend(format_data(
+            user,
+            [
+                n._id
+                for n in node.nodes
+                if n.primary and
+                not n.is_deleted
+            ]
+        ))
+
+        item = {
+            'node': {
+                'id': node_id,
+                'url': node.url if can_read else '',
+                'title': node.title if can_read else 'Private Project',
+            },
+            'children': children,
+            'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
+            'nodeType': node.project_or_component,
+            'category': node.category,
+            'permissions': {
+                'view': can_read,
+            },
+        }
+
+        items.append(item)
+
+    return items
+
+
+@must_be_logged_in
+@must_be_valid_project
+def get_node_tree(auth, **kwargs):
+    node = kwargs.get('node') or kwargs['project']
+    return format_data(auth.user, [node._id])
 
 
 @must_be_contributor_or_public

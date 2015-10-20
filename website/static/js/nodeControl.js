@@ -102,23 +102,23 @@ function setPermissions(permissions, nodeType) {
     //    });
     //};
     //
-    if (permissions === PUBLIC) {
-        $.getJSON(
-            window.nodeApiUrl + 'permissions/beforepublic/',
-            {},
-            function(data) {
-                var alerts = '';
-                var addonMessages = data.prompts;
-                    for(var i=0; i<addonMessages.length; i++) {
-                        alerts += '<div class="alert alert-warning">' +
-                                    addonMessages[i] + '</div>';
-                    }
-                confirmModal(alerts + message);
-            }
-        );
-    } else {
-        confirmModal(message);
-    }
+    //if (permissions === PUBLIC) {
+    //    $.getJSON(
+    //        window.nodeApiUrl + 'permissions/beforepublic/',
+    //        {},
+    //        function(data) {
+    //            var alerts = '';
+    //            var addonMessages = data.prompts;
+    //                for(var i=0; i<addonMessages.length; i++) {
+    //                    alerts += '<div class="alert alert-warning">' +
+    //                                addonMessages[i] + '</div>';
+    //                }
+    //            confirmModal(alerts + message);
+    //        }
+    //    );
+    //} else {
+    //    confirmModal(message);
+    //}
 }
 
 /**
@@ -126,6 +126,7 @@ function setPermissions(permissions, nodeType) {
  * @param {Object} data The parsed project data returned from the project's API url.
  */
 var ProjectViewModel = function(data) {
+    debugger;
     var self = this;
     self._id = data.node.id;
     self.apiUrl = data.node.api_url;

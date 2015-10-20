@@ -1440,6 +1440,16 @@ def make_url_map(app):
         ),
 
         Rule(
+            [
+                '/project/<pid>/get_node_tree/',
+                '/project/<pid>/node/<nid>/get_node_tree/'
+            ],
+            'get',
+            project_views.node.get_node_tree,
+            json_renderer,
+        ),
+
+        Rule(
             '/subscriptions/',
             'post',
             notification_views.configure_subscription,

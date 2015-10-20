@@ -13,7 +13,9 @@ var $osf = require('./osfHelpers');
 var Paginator = require('./paginator');
 var osfHelpers = require('js/osfHelpers');
 
-var ProjectSettings = require('js/projectSettings.js');
+var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard.js');
+
+
 
 var ctx = window.contextVars;
 
@@ -48,30 +50,27 @@ var MESSAGES = {
 };
 
 // Initialize treebeard grid for notifications
-var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard.js');
 var $notificationsMsg = $('#configureNotificationsMessage');
-var notificationsURL = ctx.node.urls.api  + 'subscriptions/';
-// Need check because notifications settings don't exist on registration's settings page
-if ($('#grid').length) {
-    $.ajax({
-        url: notificationsURL,
-        type: 'GET',
-        dataType: 'json'
-    }).done(function(response) {
-        new NodesPrivacyTreebeard(response);
-    }).fail(function(xhr, status, error) {
-        $notificationsMsg.addClass('text-danger');
-        $notificationsMsg.text('Could not retrieve notification settings.');
-        Raven.captureMessage('Could not GET notification settings.', {
-            url: notificationsURL, status: status, error: error
-        });
-    });
-}
+var privacy_url = ctx.node.urls.api  + 'get_node_tree/';
 
+$.ajax({
+    url: privacy_url,
+    type: 'GET',
+    dataType: 'json'
+}).done(function(response) {
+    new NodesPrivacyTreebeard(response);
+}).fail(function(xhr, status, error) {
+    $notificationsMsg.addClass('text-danger');
+    $notificationsMsg.text('Could not retrieve project settings.');
+    Raven.captureMessage('Could not GET project settings.', {
+        url: privacy_url, status: status, error: error
+    });
+});
 
 
 var NodesPrivacyViewModel = function() {
     var self = this;
+
     self.page = ko.observable('warning');
     self.pageTitle = ko.computed(function() {
         return {
@@ -114,11 +113,14 @@ function NodesPrivacy (selector, data, options) {
     self.data = data;
     self.viewModel = new NodesPrivacyViewModel(self.data);
     self.init();
+
+
 }
 
 NodesPrivacy.prototype.init = function() {
     var self = this;
     osfHelpers.applyBindings(self.viewModel, this.selector);
+
 };
 
 module.exports = {
