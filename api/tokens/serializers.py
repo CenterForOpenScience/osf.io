@@ -22,14 +22,13 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
                             read_only=True,
                             source='owner._id')
 
-    scopes = ser.ListField(help_text='Governs permissions associated with this token',
-                           required=True,
-                           child=ser.CharField())
+    scopes = ser.CharField(help_text='Governs permissions associated with this token',
+                           required=True)
 
     token_id = ser.CharField(read_only=True, allow_blank=True)
 
     date_last_used = ser.DateTimeField(help_text='The date this token was last used (automatically filled in)',
-                                     read_only=True)
+                                       read_only=True)
 
     class Meta:
         type_ = 'tokens'

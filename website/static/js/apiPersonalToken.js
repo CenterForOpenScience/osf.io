@@ -33,7 +33,7 @@ var TokenData = oop.defclass({
         this.name = ko.observable(attributes.name)
             .extend({required: true, maxLength:200});
 
-        this.scopes = ko.observableArray(attributes.scopes)
+        this.scopes = ko.observableArray(attributes.scopes ? attributes.scopes.split(' ') : undefined)
             .extend({required: true});
 
         this.token_id = ko.observable(attributes.token_id);
@@ -61,7 +61,7 @@ var TokenData = oop.defclass({
                 type: 'tokens',
                 attributes: {
                     name: this.name(),
-                    scopes: this.scopes() || [],
+                    scopes: this.scopes().toString().replace(',', ' ') || [],
                     user_id: this.owner
                 }
             }

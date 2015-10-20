@@ -465,7 +465,7 @@ class ApiOAuth2PersonalToken(StoredObject):
 
     name = fields.StringField(required=True, index=True)
 
-    scopes = fields.StringField(list=True, required=True)
+    scopes = fields.StringField(required=True)
 
     date_last_used = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
                                         editable=False)
