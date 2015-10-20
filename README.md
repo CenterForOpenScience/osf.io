@@ -78,7 +78,7 @@ This will make your browser automatically refresh whenever a code change is made
 
 Some functionality depends on additional services that will not be started using the sequence above.
 For most development tasks, it is sufficient to run the OSF without these services, except as noted below.
-Some additional installation may be needed to use these features (where noted), in which case updates will also need 
+Some additional installation will be needed to use these features (where noted), in which case updates will also need 
 to be installed separately.
 
 #### Authentication
@@ -140,11 +140,10 @@ The following packages must be installed before running the automatic setup scri
 ##### El Capitan and newer
 If you are using Mac OS X >= 10.11 (El Capitan), you will also 
 [need](http://lists.apple.com/archives/macnetworkprog/2015/Jun/msg00025.html) to install OpenSSL headers 
-and set some configuration:
-```
+and [set](http://cryptography.readthedocs.org/en/latest/installation/#building-cryptography-on-os-x) some configuration:
+```bash 
 brew install openssl
-env LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
-pip install cryptography
+env LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" pip install cryptography
 ```
 
 ### Quickstart
@@ -154,7 +153,7 @@ These instructions should work on Mac OSX >= 10.7
 
 - Clone the OSF repository to your computer. Change to that folder before running the commands below.
 - Create and activate your virtualenv.
-```
+```bash
 virtualenv env
 source env/bin/activate
 ```
