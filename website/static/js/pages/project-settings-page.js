@@ -73,7 +73,8 @@ $(document).ready(function() {
             currentDescription: ctx.node.description,
             category: ctx.node.category,
             categoryOptions: categoryOptions,
-            updateUrl: ctx.node.urls.update,
+            node_id: ctx.node.id,
+            updateUrl:  $osf.apiV2Url('nodes/' + ctx.node.id + '/'),
             disabled: disableCategory
         });
         ko.applyBindings(projectSettingsVM, $('#projectSettings')[0]);

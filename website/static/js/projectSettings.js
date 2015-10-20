@@ -33,8 +33,10 @@ var ProjectSettings = oop.extend(
 
             self.categoryOptions = params.categoryOptions;
             self.categoryPlaceholder = params.category;
-            self.updateUrl = params.updateUrl;
             self.selectedCategory = ko.observable(params.category);
+
+            self.updateUrl = params.updateUrl;
+            self.node_id = params.node_id;
         },
         /*error handler*/
         updateError: function(xhr, status, error) {
@@ -49,21 +51,30 @@ var ProjectSettings = oop.extend(
         /*update handler*/
         updateAll: function() {
             var self = this;
-            return $osf.putJSON(self.updateUrl, {
-                    category: self.selectedCategory(),
-                    title: self.title(),
-                    description: self.description()
-                })
-                .then(function(response) {
-                    self.categoryPlaceholder = self.selectedCategory();
-                    self.titlePlaceholder = self.title();
-                    self.descriptionPlaceholder = self.description();
-                    return response.updated_fields.category;
-                })
-                .done(function() {
-                    self.changeMessage(language.updateSuccessMessage, 'text-success');
-                })
-                .fail(self.updateError.bind(self));
+            return $osf.ajaxJSON('put', self.updateUrl,
+            {
+            data: {
+                data: {
+                    type: 'nodes',
+                    id:   self.node_id,
+                    attributes: {
+                        title: self.title(),
+                        category: self.selectedCategory(),
+                        description: self.description(),
+                    }
+                }
+            },
+            isCors: true
+            })
+            .then(function() {
+                self.categoryPlaceholder = self.selectedCategory();
+                self.titlePlaceholder = self.title();
+                self.descriptionPlaceholder = self.description();
+            })
+            .done(function() {
+                self.changeMessage(language.updateSuccessMessage, 'text-success');
+            })
+            .fail(self.updateError.bind(self));
         },
         /*cancel handler*/
         cancelAll: function() {
