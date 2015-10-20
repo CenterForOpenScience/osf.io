@@ -131,7 +131,7 @@ def dropbox_oauth_delete_user(user_addon, auth, **kwargs):
             pass
         else:
             raise HTTPError(http.BAD_REQUEST)
-    user_addon.clear()
+    user_addon.delete()
     user_addon.save()
 
     return None
