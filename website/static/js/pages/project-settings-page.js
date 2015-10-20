@@ -138,26 +138,26 @@ $(document).ready(function() {
             return request;
             
         };
-        function successfulAddonUpdate(){
+        function successfulAddonUpdate() {
             msgElm.text('Settings updated').fadeIn();
             checkedOnLoad = $('#selectAddonsForm input:checked');
             uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
-            if($osf.isSafari()){
+            if($osf.isSafari()) {
                         //Safari can't update jquery style change before reloading. So delay is applied here
                         setTimeout(function(){window.location.reload();}, 100);
             } else {
                         window.location.reload();
             }
         }
-        function failedAddonUpdate(){
+        function failedAddonUpdate() {
             var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
             bootbox.alert({
                 title: 'Request failed',
                 message: msg,
-                buttons:{
-                    ok:{
-                        label:'Close',
-                        className:'btn-default'
+                buttons: {
+                    ok: {
+                        label: 'Close',
+                        className: 'btn-default'
                     }
                 }
             });
@@ -195,7 +195,7 @@ $(document).ready(function() {
             request.fail(failedAddonUpdate);
         }
         // no changes to the state of the addons
-        else{
+        else {
             msgElm.text('Settings updated').fadeIn();
             msgElm.fadeOut(800);
         }
