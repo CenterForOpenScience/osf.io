@@ -126,7 +126,7 @@ class ConferenceMessage(object):
 
     @cached_property
     def route(self):
-        match = re.search(re.compile(BASE_REGEX.format(self.find_allowed_types), re.IGNORECASE | re.VERBOSE), self.form['recipient'])
+        match = re.search(re.compile(BASE_REGEX.format(self.find_allowed_types if self.find_allowed_types else 'poster|talk'), re.IGNORECASE | re.VERBOSE), self.form['recipient'])
         if not match:
             raise ConferenceError('Invalid recipient: '.format(self.form['recipient']))
         data = match.groupdict()
