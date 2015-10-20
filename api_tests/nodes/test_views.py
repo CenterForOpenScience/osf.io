@@ -1407,6 +1407,16 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
             }
         }
 
+    def test_add_node_contributors_relationships_is_a_list(self):
+        data = {
+            'data': {
+                'type': 'contributors',
+                'relationships': [{'contributor_id': self.user_three._id}]
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+
 
     def test_contributor_create_invalid_data(self):
         res = self.app.post_json_api(self.public_url, "Incorrect data", auth=self.user_three.auth, expect_errors=True)
@@ -2956,6 +2966,15 @@ class TestNodeLinkCreate(ApiTestCase):
             }
         }
 
+    def test_add_node_link_relationships_is_a_list(self):
+        data = {
+            'data': {
+                'type': 'node_links',
+                'relationships': [{'target_node_id': self.public_pointer_project._id}]
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
 
     def test_create_node_link_invalid_data(self):
         res = self.app.post_json_api(self.public_url, "Incorrect data", auth=self.user.auth, expect_errors=True)
@@ -3886,7 +3905,6 @@ class TestExceptionFormatting(ApiTestCase):
                 }
             }
         }}, auth=self.user.auth, expect_errors=True)
-        print res
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert(self.public_project._id in res.json['errors'][0]['detail'])
