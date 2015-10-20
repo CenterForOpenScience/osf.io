@@ -105,8 +105,12 @@ var FileViewPage = {
                 self.request_done = true;
                 self.file.checkoutUser = resp.data.relationships.checkout.links.related.href ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
                 if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
-                    m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m.trust('<strong>File is checked-out.</strong> This file has been checked-out by a <a href="/' +
-                        self.file.checkoutUser +'"> collaborator</a>. It needs to be checked back in before any changes can be made. </div>')));
+                    m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
+                        m('strong', 'File is checked-out.'),
+                        'This file has been checked-out by a',
+                        m('a[href="' + self.file.checkoutUser + '"]', 'collaborator'),
+                        '. It beeds to be checked back in before any changes can be made.'
+                    ])));
                 }
             }).fail(function(resp) {
                 $osf.growl('Error', 'Unable to get check-out status of this file.');

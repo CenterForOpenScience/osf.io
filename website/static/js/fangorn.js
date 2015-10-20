@@ -1020,6 +1020,34 @@ function _removeEvent (event, items, col) {
     }
 }
 
+function doCheckout(item, checker, error_message) {
+    $.ajax({
+        method: 'put',
+        url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
+        beforeSend: $osf.setXHRAuthorization,
+        contentType: 'application/json',
+        dataType: 'json',
+        data: JSON.stringify({
+            data: {
+                id: item.data.path.replace('/', ''),
+                type: 'files',
+                attributes: {
+                    checkout: checker
+                }
+            }
+        })
+    }).done(function(resp) {
+        if (error_message) {
+            window.location.reload();
+        }
+    }).fail(function(resp) {
+        if (error_message) {
+            $osf.growl('Error', 'Unable to check-out file.');
+        }
+    });
+}
+
+
 /**
  * Resolves lazy load url for fetching children
  * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
@@ -1539,26 +1567,7 @@ var FGItemButtons = {
                                         ]), m('', [
                                             m('a.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                                             m('a.btn.btn-warning', {onclick: function() {
-                                                $.ajax({
-                                                    method: 'put',
-                                                    url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
-                                                    beforeSend: $osf.setXHRAuthorization,
-                                                    contentType: 'application/json',
-                                                    dataType: 'json',
-                                                    data: JSON.stringify({
-                                                        data: {
-                                                            id: item.data.path.replace('/', ''),
-                                                            type: 'files',
-                                                            attributes: {
-                                                                checkout: window.contextVars.currentUser.id
-                                                            }
-                                                        }
-                                                    })
-                                                }).done(function(resp) {
-                                                    window.location.reload();
-                                                }).fail(function(resp) {
-                                                    $osf.growl('Error', 'Unable to check-out file.');
-                                                });
+                                                doCheckout(item, window.contextVars.currentUser.id, true);
                                             }}, 'Check-out file')
                                         ]), m('h3.break-word.modal-title', 'Confirm file check-out?'));
                                     },
@@ -1569,26 +1578,7 @@ var FGItemButtons = {
                             rowButtons.push(
                                 m.component(FGButton, {
                                     onclick: function(event) {
-                                        $.ajax({
-                                            method: 'put',
-                                            url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
-                                            beforeSend: $osf.setXHRAuthorization,
-                                            contentType: 'application/json',
-                                            dataType: 'json',
-                                            data: JSON.stringify({
-                                                data: {
-                                                    id: item.data.path.replace('/', ''),
-                                                    type: 'files',
-                                                    attributes: {
-                                                        checkout: null
-                                                    }
-                                                }
-                                            })
-                                        }).done(function(resp) {
-                                            window.location.reload();
-                                        }).fail(function(resp) {
-                                            $osf.growl('Error', 'Unable to check-in file.');
-                                        });
+                                        doCheckout(item, null, true);
                                     },
                                     icon: 'fa fa-sign-in',
                                     className : 'text-warning'
@@ -1821,22 +1811,7 @@ var FGToolbar = {
                     m.component(FGButton, {
                         onclick: function() {
                             items.forEach(function(each) {
-                                $.ajax({
-                                    method: 'put',
-                                    url: window.contextVars.apiV2Prefix + 'files' + each.data.path + '/',
-                                    beforeSend: $osf.setXHRAuthorization,
-                                    contentType: 'application/json',
-                                    dataType: 'json',
-                                    data: JSON.stringify({
-                                        data: {
-                                            id: each.data.path.replace('/', ''),
-                                            type: 'files',
-                                            attributes: {
-                                                checkout: window.contextVars.currentUser.id
-                                            }
-                                        }
-                                    })
-                                });
+                                doCheckout(each, window.contextVars.currentUser.id, false)
                             });
                             window.location.reload();
                         },
@@ -1851,22 +1826,7 @@ var FGToolbar = {
                         onclick: function() {
                             for (var i = 0, len = items.length; i < len; i++) {
                                 var each = items[i];
-                                $.ajax({
-                                    method: 'put',
-                                    url: window.contextVars.apiV2Prefix + 'files' + each.data.path + '/',
-                                    beforeSend: $osf.setXHRAuthorization,
-                                    contentType: 'application/json',
-                                    dataType: 'json',
-                                    data: JSON.stringify({
-                                        data: {
-                                            id: each.data.path.replace('/', ''),
-                                            type: 'files',
-                                            attributes: {
-                                                checkout: null
-                                            }
-                                        }
-                                    })
-                                });
+                                doCheckout(each, null, false)
                             }
                             window.location.reload();
                         },
