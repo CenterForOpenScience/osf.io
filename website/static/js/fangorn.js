@@ -1811,7 +1811,7 @@ var FGToolbar = {
                     m.component(FGButton, {
                         onclick: function() {
                             items.forEach(function(each) {
-                                doCheckout(each, window.contextVars.currentUser.id, false)
+                                doCheckout(each, window.contextVars.currentUser.id, false);
                             });
                             window.location.reload();
                         },
@@ -1826,7 +1826,7 @@ var FGToolbar = {
                         onclick: function() {
                             for (var i = 0, len = items.length; i < len; i++) {
                                 var each = items[i];
-                                doCheckout(each, null, false)
+                                doCheckout(each, null, false);
                             }
                             window.location.reload();
                         },
