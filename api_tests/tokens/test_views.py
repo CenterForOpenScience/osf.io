@@ -198,7 +198,7 @@ class TestTokenDetail(ApiTestCase):
 
         assert_dict_contains_subset({'owner': user1_token.owner._id,
                                      'name': new_name,
-                                     'scopes': user1_token.scopes,
+                                     'scopes': '{}'.format(user1_token.scopes),
                                      },
                                     res.json['data']['attributes'])
         assert_equal(res.json['data']['id'], user1_token._id)
