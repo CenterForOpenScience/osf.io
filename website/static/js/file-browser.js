@@ -27,8 +27,7 @@ var FileBrowser = {
         var self = this;
         var data = args.data;
         // Reorganize data
-        var root = {id:0, children: [], data : {}, kind : 'folder' };
-        var node_list = { 0 : root};
+        var root = {id:0, children: [], kind : 'folder' };
 
         // Generate tree list from flat data
         for (var i = 0; i < data.length; i++) {
@@ -39,34 +38,42 @@ var FileBrowser = {
             var parentLink = n.relationships.parent.links.self.href;
             var node = {
                 id : n.id,
-                data : n,
-                kind : 'node'
+                node : n,
+                kind : 'node',
+                hasChildren : false
             };
-            if(!node_list[n.id]){
-                node_list[n.id] = { id: n.id, node : n, children : [] };
-            } else {
-                node_list[n.id].id = n.id;
-                node_list[n.id].node = n;
-            }
-            if(parentLink) {
-                var parentID = parentLink.split('/')[5];
-                if(!node_list[parentID]){
-                    node_list[parentID] = { children : [] };
-                }
-                node_list[parentID].children.push(node_list[n.id]);
-                node_list[parentID].kind = 'folder';
+            if(!parentLink) {
 
-            } else {
-                node_list[0].children.push(node_list[n.id]);
+                root.children.push(node);
+
             }
         }
-        console.log(root, node_list);
+        console.log(root);
 
         // For information panel
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){
             self.selected(selectedList);
             console.log(self.selected());
+        }.bind(self);
+
+
+        self.activeCollection = m.prop(1);
+        self.updateCollection = function(coll) {
+            self.activeCollection(coll.id);
+            console.log(self.activeCollection());
+            self.updateList(coll.url);
+        };
+
+        self.activeUser = m.prop(1);
+        self.updateUserFilter = function(user) {
+            self.activeUser(user.id);
+            var url  = 'v2/users/' + user.userID;
+            self.updateList(url);
+        };
+
+        self.updateList = function(url){
+            console.log(url);
         }.bind(self);
 
         // For breadcrumbs
@@ -80,19 +87,18 @@ var FileBrowser = {
         }.bind(self);
 
         self.collections = [
-            { id:1, label : 'Dashboard', href : '#'},
-            { id:2, label : 'All My Registrations', href : '#'},
-            { id:3, label : 'All My Projects', href : '#'},
-            { id:4, label : 'Another Collection', href : '#'}
+            { id:1, label : 'All My Projects', url : 'v2/users/me/nodes'},
+            { id:2, label : 'All My Registrations', url : '#'},
+            { id:3, label : 'Another Collection', url : '#'}
         ];
 
-        self.renderCollections = function _renderDo(){
-            if (self.data().data){
-                self.data().data.map(function(item){
-                    console.log(item.category);
-                });
-            }
-        };
+        self.nameFilters = [
+            { label : 'Caner Uguz', userID : '8q36f'}
+        ];
+
+        self.tagFilters = [
+            { tag : 'something'}
+        ];
 
         self.poOptions = {
             placement : 'dashboard',
@@ -106,8 +112,8 @@ var FileBrowser = {
         return m('', [
             m.component(Breadcrumbs, { data : ctrl.breadcrumbs } ),
             m('.fb-sidebar', [
-                m.component(Collections, {list : ctrl.collections, selected : 1 } ),
-                m.component(Filters)
+                m.component(Collections, {list : ctrl.collections, activeCollection : ctrl.activeCollection, updateCollection : ctrl.updateCollection } ),
+                m.component(Filters, { activeUser : ctrl.activeUser, updateUser : ctrl.updateUserFilter, nameFilters : ctrl.nameFilters, tagFilters : ctrl.tagFilters })
             ]),
             m('.fb-main', m.component(ProjectOrganizer, { options : ctrl.poOptions, updateSelected : ctrl.updateSelected, updateBreadcrumbs : ctrl.updateBreadcrumbs})),
             m('.fb-infobar', m.component(Information, { selected : ctrl.selected }))
@@ -120,20 +126,19 @@ var FileBrowser = {
  * @constructor
  */
 var Collections  = {
-    controller : function (data) {
-        this.list = data.list|| [];
-        this.selected = data.selected;
+    controller : function (args) {
+        var self = this;
+        self.updateCollection = function(){
+           args.updateCollection(this);
+        };
     },
-    view : function (ctrl) {
+    view : function (ctrl, args) {
         var selectedCSS;
         return m('.fb-collections', m('ul', [
-            ctrl.list.map(function(item, index, array){
-                selectedCSS = item.id === ctrl.selected ? '.active' : '';
-                if (index === array.length-1){
-                    return m('li' + selectedCSS,  item.label);
-                }
+            args.list.map(function(item, index, array){
+                selectedCSS = item.id === args.activeCollection() ? '.active' : '';
                 return m('li' + selectedCSS,
-                    m('a', { href : item.href},  item.label)
+                    m('a', { href : '#', onclick : ctrl.updateCollection.bind(item) },  item.label)
                 );
             })
         ]));
@@ -169,8 +174,29 @@ var Breadcrumbs = {
  * @constructor
  */
 var Filters = {
-    view : function (ctrl) {
-        return m('.fb-filters', 'Filters');
+    controller : function (args) {
+        var self = this;
+        self.updateUser = function(){
+            args.updateUser(this);
+        };
+    },
+    view : function (ctrl, args) {
+        var selectedCSS;
+        return m('.fb-filters.m-t-lg',
+            [
+                m('h4', 'Filters'),
+                m('', 'Contributors'),
+                m('ul', [
+                    args.nameFilters.map(function(item){
+                        selectedCSS = item.id === args.activeUser() ? '.active' : '';
+                        return m('li' + selectedCSS,
+                            m('a', { href : '#', onclick : ctrl.updateUser.bind(item)}, item.label)
+                        );
+                    })
+                ])
+
+            ]
+        );
     }
 };
 
