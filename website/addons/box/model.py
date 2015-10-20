@@ -100,7 +100,7 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def fetch_folder_name(self):
         self._update_folder_data()
-        return self.folder_name
+        return self.folder_name.replace('All Files', '/ (Full Box)')
 
     def fetch_full_folder_path(self):
         self._update_folder_data()
@@ -121,7 +121,7 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             self.folder_name = self._folder_data['name']
             self.folder_path = '/'.join(
                 [x['name'] for x in self._folder_data['path_collection']['entries']]
-                + [self.fetch_folder_name()]
+                + [self._folder_data['name']]
             )
             self.save()
 
