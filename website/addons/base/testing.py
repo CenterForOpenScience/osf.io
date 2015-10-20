@@ -380,11 +380,11 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
         assert_equal(last_log.user, user_settings.owner)
 
     def test_serialize_credentials(self):
-        self.user_settings.access_token = 'key-11'
+        self.user_settings.external_accounts[0].oauth_key = 'key-11'
         self.user_settings.save()
         credentials = self.node_settings.serialize_waterbutler_credentials()
 
-        expected = {'token': self.node_settings.user_settings.access_token}
+        expected = {'token': self.node_settings.external_account.oauth_key}
         assert_equal(credentials, expected)
 
     def test_serialize_credentials_not_authorized(self):
