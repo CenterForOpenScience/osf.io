@@ -379,6 +379,15 @@ class TestMessage(ContextTestCase):
             msg = message.ConferenceMessage()
             assert_equal(msg.conference_name, 'chocolate')
             assert_equal(msg.conference_category, 'data')
+        conf.__class__.remove_one(conf)
+
+    def test_alternate_route_invalid(self):
+        recipient = '{0}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
+        with self.make_context(data={'recipient': recipient}):
+            self.app.app.preprocess_request()
+            msg = message.ConferenceMessage()
+            with assert_raises(message.ConferenceError):
+                msg.route
 
     def test_attachments_count_zero(self):
         with self.make_context(data={'attachment-count': '0'}):
