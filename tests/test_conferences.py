@@ -493,7 +493,8 @@ class TestConferenceModel(OsfTestCase):
             ConferenceFactory(endpoint='spsp2014', name=None).save()
 
     def test_default_field_names(self):
-        conf = ConferenceFactory(endpoint='cookie', name='Cookies Conference').save()
+        conf = ConferenceFactory(endpoint='cookie', name='Cookies Conference')
+        conf.save()
         assert_equal(conf.field_names['poster'], 'poster')
         assert_equal(conf.field_names['Subject'], 'Presentation title')
 
