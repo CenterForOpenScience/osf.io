@@ -275,7 +275,7 @@ class NodeLog(StoredObject):
 
     was_connected_to = fields.ForeignField('node', list=True)
 
-    user = fields.ForeignField('user', backref='created')
+    user = fields.ForeignField('user')
     foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'

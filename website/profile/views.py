@@ -25,7 +25,6 @@ from website import mailchimp_utils
 from website import settings
 from website.models import ApiOAuth2Application, User
 from website.profile import utils as profile_utils
-from website.project.decorators import dev_only
 from website.util import api_v2_url, web_url_for, paths
 from website.util.sanitize import escape_html
 from website.util.sanitize import strip_html
@@ -374,30 +373,24 @@ def user_notifications(auth, **kwargs):
         'mailing_lists': auth.user.mailing_lists
     }
 
-@dev_only
 @must_be_logged_in
 def oauth_application_list(auth, **kwargs):
     """Return app creation page with list of known apps. API is responsible for tying list to current user."""
-    # TODO: Remove dev_only restriction when APIv2 is released into production
     app_list_url = api_v2_url("applications/")
     return {
         "app_list_url": app_list_url
     }
 
-@dev_only
 @must_be_logged_in
 def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
-    # TODO: Remove dev_only restriction when APIv2 is released into production
     app_list_url = api_v2_url("applications/")  # POST request to this url
     return {"app_list_url": app_list_url,
             "app_detail_url": ''}
 
-@dev_only
 @must_be_logged_in
 def oauth_application_detail(auth, **kwargs):
     """Show detail for a single OAuth application"""
-    # TODO: Remove dev_only restriction when APIv2 is released into production
     client_id = kwargs.get('client_id')
 
     # The client ID must be an active and existing record, and the logged-in user must have permission to view it.
