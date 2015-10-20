@@ -14,7 +14,6 @@ from framework.auth.oauth_scopes import ComposedScopes
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
 from api.base import permissions as base_permissions
-from api.tokens.permissions import OwnerOnly
 from api.tokens.serializers import ApiOAuth2PersonalTokenSerializer
 
 from website.models import ApiOAuth2PersonalToken
@@ -26,7 +25,7 @@ class TokenList(generics.ListCreateAPIView, ODMFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        OwnerOnly,
+        base_permissions.OwnerOnly,
         base_permissions.TokenHasScope,
     )
 
@@ -64,7 +63,7 @@ class TokenDetail(generics.RetrieveUpdateDestroyAPIView):
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        OwnerOnly,
+        base_permissions.OwnerOnly,
         base_permissions.TokenHasScope,
     )
 
