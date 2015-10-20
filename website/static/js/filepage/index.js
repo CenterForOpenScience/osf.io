@@ -94,19 +94,19 @@ var FileViewPage = {
         self.file = self.context.file;
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
-        self.file.checkout_user = null;
+        self.file.checkoutUser = null;
         self.request_done = false;
-        self.isCheckout_user = function() {
+        self.isCheckoutUser = function() {
             $.ajax({
                 method: 'get',
                 url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
                 self.request_done = true;
-                self.file.checkout_user = resp.data.relationships.checkout.links.related.href ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
-                if ((self.file.checkout_user) && (self.file.checkout_user !== self.context.currentUser.id)) {
+                self.file.checkoutUser = resp.data.relationships.checkout.links.related.href ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
+                if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m.trust('<strong>File is checked-out.</strong> This file has been checked-out by a <a href="/' +
-                        self.file.checkout_user +'"> collaborator</a>. It needs to be checked back in before any changes can be made. </div>')));
+                        self.file.checkoutUser +'"> collaborator</a>. It needs to be checked back in before any changes can be made. </div>')));
                 }
             }).fail(function(resp) {
                 $osf.growl('Error', 'Unable to get check-out status of this file.');
@@ -114,11 +114,11 @@ var FileViewPage = {
         };
         if (self.file.provider === 'osfstorage'){
             self.canEdit = function() {
-                return ((!self.file.checkout_user) || (self.file.checkout_user === self.context.currentUser.id)) ? self.context.currentUser.canEdit : false;
+                return ((!self.file.checkoutUser) || (self.file.checkoutUser === self.context.currentUser.id)) ? self.context.currentUser.canEdit : false;
             };
-            self.isCheckout_user();
+            self.isCheckoutUser();
         } else {
-            self.request_done = true;
+            self.requestDone = true;
             self.canEdit = function() {
                 return self.context.currentUser.canEdit;
             };
@@ -410,16 +410,16 @@ var FileViewPage = {
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             // Special case whether or not to show the delete button for published Dataverse files
-            (ctrl.canEdit() && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkout_user) && ctrl.request_done && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
+            (ctrl.canEdit() && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
-            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.request_done && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force Check-in')
             ]) : '',
-            ctrl.canEdit() && (!ctrl.file.checkout_user) && ctrl.request_done && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
+            ctrl.canEdit() && (!ctrl.file.checkoutUser) && ctrl.requestDone && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check-out')
             ]) : '',
-            (ctrl.canEdit() && (ctrl.file.checkout_user === ctrl.context.currentUser.id) && ctrl.request_done) ? m('.btn-group.m-l-xs.m-t-xs', [
+            (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) && ctrl.requestDone) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check-in')
             ]) : '',
             window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [

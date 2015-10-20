@@ -1537,8 +1537,8 @@ var FGItemButtons = {
                                                 'other contributors cannot edit, delete or upload new versions of this file ' +
                                                 'as long as it is checked-out. You can check it back in at anytime.')
                                         ]), m('', [
-                                            m('span.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
-                                            m('span.btn.btn-warning', {onclick: function() {
+                                            m('a.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
+                                            m('a.btn.btn-warning', {onclick: function() {
                                                 $.ajax({
                                                     method: 'put',
                                                     url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
