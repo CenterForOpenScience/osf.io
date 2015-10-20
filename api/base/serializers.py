@@ -85,13 +85,14 @@ class TargetTypeField(ser.CharField):
     """
     Enforces that the related resource has the correct type
     """
-    def __init__(self, **kwargs):
+    def __init__(self, target_type, **kwargs):
         kwargs['write_only'] = True
         kwargs['required'] = True
+        self.target_type = target_type
         super(TargetTypeField, self).__init__(**kwargs)
 
     def to_internal_value(self, data):
-        if self.root.Meta.target_type_ != data:
+        if self.target_type != data:
             raise Conflict()
         return super(TargetTypeField, self).to_internal_value(data)
 

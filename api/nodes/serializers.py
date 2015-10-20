@@ -201,7 +201,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
 
     class Meta:
         type_ = 'contributors'
-        target_type_ = 'users'
 
     def absolute_url(self, obj):
         return obj.absolute_url
@@ -237,7 +236,7 @@ class NodeContributorsCreateSerializer(NodeContributorsSerializer):
     """
     Overrides NodeContributorsSerializer to add target_type field
     """
-    target_type = TargetTypeField()
+    target_type = TargetTypeField(target_type='users')
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
@@ -294,7 +293,7 @@ class NodeLinksSerializer(JSONAPISerializer):
 
     id = IDField(source='_id')
     type = TypeField()
-    target_type = TargetTypeField()
+    target_type = TargetTypeField(target_type='nodes')
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
     # include this field in the future.
@@ -305,7 +304,6 @@ class NodeLinksSerializer(JSONAPISerializer):
                                               lookup_url_kwarg='node_id')
     class Meta:
         type_ = 'node_links'
-        target_type_ = 'nodes'
 
     links = LinksField({
         'self': 'get_absolute_url'
