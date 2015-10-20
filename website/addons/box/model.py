@@ -151,6 +151,11 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         nodelogger = BoxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
         nodelogger.log(action="node_authorized", save=True)
 
+    def authorize(self, external_account, auth):
+        super(BoxNodeSettings, self).authorize(external_account, auth)
+        nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
+        nodelogger.log(action="node_authorized", save=True)
+
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
         node = self.owner

@@ -204,6 +204,10 @@ class AddonSettingsBase(StoredObject):
         'abstract': True,
     }
 
+    @property
+    def pk(self):
+        return self._id
+
     def delete(self, save=True):
         self.deleted = True
         self.on_delete()
@@ -258,6 +262,14 @@ class AddonUserSettingsBase(AddonSettingsBase):
         """Whether the user has added credentials for this addon."""
         return False
 
+    @property
+    def owner_id(self):
+        return self.owner._id if self.owner else None
+
+    @property
+    def accounts(self):
+        return [self]
+
     def get_backref_key(self, schema, backref_name):
         return schema._name + '__' + backref_name
 
@@ -278,6 +290,21 @@ class AddonUserSettingsBase(AddonSettingsBase):
             for node_addon in getattr(self, nodes_backref)
             if node_addon.owner and not node_addon.owner.is_deleted
         ]
+
+    def get_attached_nodes(self, *args):
+        return self.nodes_authorized
+
+    def _clear(self):
+        raise NotImplementedError()
+
+    def remove_account(self, external_account, auth, save=False):
+        if self.pk == external_account.pk:
+            self._clear()
+        else:
+            self.revoke_oauth_access(external_account)
+        # TODO: logging?
+        if save:
+            self.save()
 
     @property
     def can_be_merged(self):
@@ -346,6 +373,10 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             x for x in self.owner.external_accounts
             if x.provider == self.oauth_provider.short_name
         ]
+
+    @property
+    def accounts(self):
+        return self.exteral_accounts
 
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
@@ -505,6 +536,16 @@ class AddonNodeSettingsBase(AddonSettingsBase):
     def has_auth(self):
         """Whether the node has added credentials for this addon."""
         return False
+
+    @property
+    def owner_id(self):
+        return self.owner._id if self.owner else None
+
+    def deauthorize(self, auth=None, add_log=True):
+        raise NotImplementedError()
+
+    def authorize(self, user_addon, auth=None, add_log=True):
+        raise NotImplementedError()
 
     def to_json(self, user):
         ret = super(AddonNodeSettingsBase, self).to_json(user)
@@ -794,6 +835,9 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         self.external_account = external_account
 
         self.save()
+
+    def authorize(self, external_account, auth, add_log=True):
+        self.set_auth(external_account, auth.user)
 
     def clear_auth(self):
         """Disconnect the node settings from the user settings.

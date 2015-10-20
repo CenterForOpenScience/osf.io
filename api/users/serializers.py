@@ -87,3 +87,11 @@ class UserDetailSerializer(UserSerializer):
     Overrides UserSerializer to make id required.
     """
     id = IDField(source='_id', required=True)
+
+
+class ExternalAccountSerializer(JSONAPISerializer):
+
+    class Meta:
+        type_ = 'external_accounts'
+
+    id = IDField(source='_id')

@@ -14,6 +14,7 @@ from api.base import permissions as base_permissions
 from api.base.utils import get_object_or_error
 from api.base.filters import ODMFilterMixin
 from api.nodes.serializers import NodeSerializer
+from api.user_addons.serializers import UserAddonSerializer
 
 from .serializers import UserSerializer, UserDetailSerializer
 from .permissions import ReadOnlyOrCurrentUser
@@ -287,3 +288,20 @@ class UserNodes(generics.ListAPIView, UserMixin, ODMFilterMixin):
         raw_nodes = Node.find(self.get_default_odm_query() & query)
         nodes = [each for each in raw_nodes if each.is_public or each.can_view(auth)]
         return nodes
+
+
+class UserAddonList(generics.ListAPIView, UserMixin):
+    permission_classes = (
+        drf_permissions.IsAuthenticated,
+        base_permissions.TokenHasScope,
+    )
+
+    required_read_scopes = [CoreScopes.USER_ADDONS_READ]
+    required_write_scopes = [CoreScopes.USER_ADDONS_WRITE]
+
+    serializer_class = UserAddonSerializer
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        current_user = self.request.user
+        return current_user.get_addons()
