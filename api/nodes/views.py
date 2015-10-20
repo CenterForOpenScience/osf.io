@@ -1276,7 +1276,7 @@ class NodeLogList(generics.ListAPIView, NodeMixin):
 
     <!--- Copied Description from LogList -->
 
-    Paginated list of logs ordered by their `date`.
+    Paginated list of Logs ordered by their `date`. This includes the Logs of the specified Node as well as the logs of that Node's children that the current user has access to.
 
     On the front end, logs show record and show actions done on the OSF. The complete list of loggable actions (in the format {identifier}: {description}) is as follows:
 
@@ -1391,5 +1391,5 @@ class NodeLogList(generics.ListAPIView, NodeMixin):
     )
 
     def get_queryset(self):
-        query = Q('__backrefs.logged.node.logs', 'q', self.get_node()._id)
-        return NodeLog.find(query).sort('_id')
+        auth = Auth(self.request.user)
+        return self.get_node().get_aggregate_logs_queryset(auth).sort('-date')

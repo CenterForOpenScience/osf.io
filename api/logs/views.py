@@ -126,7 +126,10 @@ class LogList(generics.ListAPIView, ODMFilterMixin):
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
-        allowed_node_ids = Node.find(Q('is_public', 'eq', True)).get_keys()
+        allowed_node_ids = Node.find(
+            Q('is_public', 'eq', True) &
+            Q('is_folder', 'eq', False)
+        ).get_keys()
         user = self.request.user
         if not user.is_anonymous():
             allowed_node_ids = [n._id for n in get_visible_nodes_for_user(user)]

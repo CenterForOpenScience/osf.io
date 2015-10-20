@@ -81,6 +81,14 @@ class TestLogList(LogsTestCase):
         for log in child_logs:
             assert_in(log._id, returned_log_ids)
 
+    def test_folder_node_logs_not_included(self):
+        user = self.node.creator
+        dash = new_dashboard(user)
+        dash_logs = [l._id for l in dash.logs]
+        res = self.app.get(self.url, auth=self.user)
+        for log in res.json['data']:
+            assert_not_in(log['id'], dash_logs)
+
 
 class TestLogNodeList(LogsTestCase):
 
@@ -113,11 +121,3 @@ class TestLogNodeList(LogsTestCase):
     def test_log_nodes_invalid_log_gets_404(self):
         res = self.app.get(self.url + '/abcdef/nodes/', expect_errors=True)
         assert_equal(res.status_code, http.NOT_FOUND)
-
-    def test_folder_node_logs_not_included(self):
-        user = self.node.creator
-        dash = new_dashboard(user)
-        dash_logs = [l._id for l in dash.logs]
-        res = self.app.get(self.url, auth=self.user)
-        for log in res.json['data']:
-            assert_not_in(log['id'], dash_logs)

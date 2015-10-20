@@ -3410,6 +3410,14 @@ class TestNodeLogList(ApiTestCase):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.json['data'][-1]['attributes']['action'], 'pointer_created')
 
+    def test_child_node_logs_included(self):
+        ProjectFactory(parent=self.public_project, is_public=True)
+        ProjectFactory(parent=self.public_project, is_public=True)
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        logs = res.json['data']
+        assert_equal(len(logs), 3)
+
+
 class TestExceptionFormatting(ApiTestCase):
     def setUp(self):
 
