@@ -57,7 +57,7 @@ class TestApiBaseSerializers(ApiTestCase):
 
 class TestJSONAPIHyperlinkedIdentityField(DbTestCase):
 
-    # We need to a Serializer to test the JSONHyperlinkedIdentity field (needs context)
+    # We need a Serializer to test the JSONHyperlinkedIdentity field (needs context)
     class BasicNodeSerializer(JSONAPISerializer):
         parent = JSONAPIHyperlinkedIdentityField(
             view_name='nodes:node-detail',
