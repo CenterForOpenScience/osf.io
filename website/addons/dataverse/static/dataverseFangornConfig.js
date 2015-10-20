@@ -72,7 +72,7 @@ var _dataverseItemButtons = {
                         }, 'Got it')
 
                     ];
-                    tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Already published.'));
+                    tb.modal.update(modalContent, modalActions, m('h3.break-word.modal-title', 'Successfully published'));
                     item.data.dataverseIsPublished = true;
                     item.data.hasPublishedFiles = item.children.length > 0;
                     item.data.version = item.data.hasPublishedFiles ? 'latest-published' : 'latest';
