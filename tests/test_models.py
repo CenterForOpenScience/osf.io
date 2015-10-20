@@ -1941,6 +1941,24 @@ class TestNodeUpdate(OsfTestCase):
         # A new log is not created
         assert_equal(len(self.node.logs), original_n_logs + 1)
 
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4664
+    def test_updating_category_twice_with_same_content_generates_one_log(self):
+        self.node.category = 'project'
+        self.node.save()
+        original_n_logs = len(self.node.logs)
+        new_category = 'data'
+
+        self.node.update({'category': new_category}, auth=Auth(self.user), save=True)
+        assert_equal(len(self.node.logs), original_n_logs + 1)  # sanity check
+        assert_equal(self.node.category, new_category)
+
+        # Call update with same category
+        self.node.update({'category': new_category}, auth=Auth(self.user), save=True)
+
+        # Only one new log is created
+        assert_equal(len(self.node.logs), original_n_logs + 1)
+        assert_equal(self.node.category, new_category)
+
     # TODO: test permissions, non-writable fields
 
 

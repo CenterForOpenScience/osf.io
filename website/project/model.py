@@ -275,7 +275,7 @@ class NodeLog(StoredObject):
 
     was_connected_to = fields.ForeignField('node', list=True)
 
-    user = fields.ForeignField('user', backref='created')
+    user = fields.ForeignField('user')
     foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
@@ -1167,11 +1167,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         if key == 'category':
                             self.delete_search_entry()
                         ###############
-                        values[key] = {
-                            'old': getattr(self, key),
-                            'new': value,
-                        }
-                        setattr(self, key, value)
+                        old_value = getattr(self, key)
+                        if old_value != value:
+                            values[key] = {
+                                'old': old_value,
+                                'new': value,
+                            }
+                            setattr(self, key, value)
                     except AttributeError:
                         raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
                     except warnings.Warning:
