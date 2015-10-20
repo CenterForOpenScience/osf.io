@@ -30,7 +30,7 @@
     width: 20%;
 }
 
-.fb-breadcrumbs ul, .fb-collections ul {
+.fb-breadcrumbs ul, .fb-collections ul, .fb-filters ul {
     padding: 0;
     list-style: none;
 }
@@ -46,11 +46,11 @@
     color: #999999;
 }
 
-.fb-collections ul li {
+.fb-collections ul li , .fb-filters ul li {
     padding: 3px 0;
 }
 
-.fb-collections ul li.active {
+.fb-collections ul li.active, .fb-filters ul li.active {
     background-color: #ccc;
 }
 
