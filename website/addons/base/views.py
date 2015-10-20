@@ -3,6 +3,7 @@ import uuid
 import httplib
 import datetime
 
+import jwe
 import jwt
 import furl
 from flask import request
@@ -45,6 +46,8 @@ FILE_GONE_ERROR_MESSAGE = u'''
 <div class="alert alert-info" role="alert">
 This link to the file "{file_name}" is no longer valid.
 </div>'''
+
+WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
 
 @decorators.must_have_permission('write')
@@ -168,7 +171,7 @@ def get_auth(auth, **kwargs):
 
     try:
         data = jwt.decode(
-            request.args.get('payload', ''),
+            jwe.decrypt(request.args.get('payload', '').encode('utf-8'), WATERBUTLER_JWE_KEY),
             settings.WATERBUTLER_JWT_SECRET,
             options={'require_exp': True},
             algorithm=settings.WATERBUTLER_JWT_ALGORITHM
@@ -203,7 +206,7 @@ def get_auth(auth, **kwargs):
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
-    return jwt.encode({
+    return {'payload': jwe.encrypt(jwt.encode({
         'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
         'data': {
             'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
@@ -214,7 +217,7 @@ def get_auth(auth, **kwargs):
                 _absolute=True,
             ),
         }
-    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)
+    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
 
 
 LOG_ACTION_MAP = {

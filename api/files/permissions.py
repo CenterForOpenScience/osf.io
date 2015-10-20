@@ -8,6 +8,7 @@ class CheckedOutOrAdmin(permissions.BasePermission):
         assert isinstance(obj, FileNode), 'obj must be a FileNode, got {}'.format(obj)
         if request.method in permissions.SAFE_METHODS:
             return True
+
         auth = get_user_auth(request)
         # Limited to osfstorage for the moment
         if obj.provider != 'osfstorage':
