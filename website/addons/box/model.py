@@ -91,13 +91,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
-    @property
-    def complete(self):
-        return bool(self.has_auth and self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-        ))
-
     def fetch_folder_name(self):
         self._update_folder_data()
         return self.folder_name.replace('All Files', '/ (Full Box)')
@@ -141,6 +134,11 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         # Add log to node
         nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)
+
+    def clear_settings(self):
+        self.folder_id = None
+        self.folder_name = None
+        self.folder_path = None
 
     def set_user_auth(self, user_settings):
         """Import a user's Box authentication and create a NodeLog.

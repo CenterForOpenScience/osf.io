@@ -4,18 +4,13 @@ import mock
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
-from framework.auth import Auth
-
-from factory import SubFactory, post_generation, Sequence
+from factory import SubFactory, Sequence
 from tests.factories import ModularOdmFactory, UserFactory, ProjectFactory, ExternalAccountFactory
 
 from website.addons.box.model import (
     BoxUserSettings,
     BoxNodeSettings
 )
-
-# TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
-
 
 class BoxAccountFactory(ExternalAccountFactory):
     provider = 'box'
