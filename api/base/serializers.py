@@ -81,16 +81,19 @@ class TypeField(ser.CharField):
         return super(TypeField, self).to_internal_value(data)
 
 
-class TargetTypeField(TypeField):
+class TargetTypeField(ser.CharField):
     """
     Enforces that the related resource has the correct type
     """
+    def __init__(self, **kwargs):
+        kwargs['write_only'] = True
+        kwargs['required'] = True
+        super(TargetTypeField, self).__init__(**kwargs)
 
     def to_internal_value(self, data):
         if self.root.Meta.target_type_ != data:
             raise Conflict()
-        # Super call intentional to prevent target_type_ being checked against type_
-        return super(TypeField, self).to_internal_value(data)
+        return super(TargetTypeField, self).to_internal_value(data)
 
 
 class JSONAPIListField(ser.ListField):
