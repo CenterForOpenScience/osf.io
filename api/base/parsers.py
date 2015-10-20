@@ -31,11 +31,11 @@ class JSONAPIParser(JSONParser):
         data = relationships[related_resource].get('data')
 
         if not data:
-            raise JSONAPIException(source={'pointer': '/relationships/<related_resource_name>/data'}, detail=NO_DATA_ERROR)
+            raise JSONAPIException(source={'pointer': 'data/relationships/<related_resource_name>/data'}, detail=NO_DATA_ERROR)
 
         target_type = data.get('type')
         if not target_type:
-            raise JSONAPIException(source={'pointer': '/relationships/<related_resource_name>/data/type'}, detail=NO_TYPE_ERROR)
+            raise JSONAPIException(source={'pointer': 'data/relationships/<related_resource_name>/data/type'}, detail=NO_TYPE_ERROR)
 
         id = data.get('id')
         return {'id': id, 'target_type': target_type}
