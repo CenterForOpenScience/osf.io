@@ -59,20 +59,17 @@ module.exports = {
                 'This will revoke access to S3 for all projects you have ' +
                 'associated with this account.',
         },
-        box: {
-            // Shown on clicking "Delete Access Token" for dropbox
-            confirmDeauth: 'Are you sure you want to disconnect the Box account? ' +
-                'This will revoke access to Box for all projects you have ' +
-                'associated with this account.',
-            deauthError: 'Could not disconnect the Box account at this time',
-        },
         googledrive: {
           // Shown on clicking "Delete Access Token" for googledrive
             confirmDeauth: 'Are you sure you want to disconnect the Google Drive account? ' +
                 'This will revoke access to Google Drive for all projects you have ' +
                 'associated with this account.',
             deauthError: 'Could not disconnect the Google Drive account at this time',
-        }
+        },
+        rename: {
+            generalError: 'Error in renaming file. If error persists please contact ' +
+                SUPPORT_LINK,
+        },
     },
     apiOauth2Application: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
