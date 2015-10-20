@@ -154,6 +154,7 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.patch_json_api(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_true(res.json['data']['attributes']['deleted'])
+        assert_equal(res.json['data']['attributes']['content'], comment.content)
 
         res = self.app.patch_json_api(url, payload, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -181,6 +182,7 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.patch_json_api(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_false(res.json['data']['attributes']['deleted'])
+        assert_equal(res.json['data']['attributes']['content'], comment.content)
 
         res = self.app.patch_json_api(url, payload, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -206,6 +208,7 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.patch_json_api(url, payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_true(res.json['data']['attributes']['deleted'])
+        assert_equal(res.json['data']['attributes']['content'], comment.content)
 
         res = self.app.patch_json_api(url, payload, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -234,9 +237,60 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.patch_json_api(url, payload, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         assert_true(res.json['data']['attributes']['deleted'])
+        assert_equal(res.json['data']['attributes']['content'], comment.content)
 
         res = self.app.patch_json_api(url, payload, expect_errors=True)
         assert_equal(res.status_code, 401)
+
+    def test_private_node_only_logged_in_commenter_can_view_deleted_comment(self):
+        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'deleted': True
+                }
+            }
+        }
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        res = self.app.patch_json_api(url, payload, auth=self.user.auth)
+        assert_true(res.json['data']['attributes']['deleted'])
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['content'], comment.content)
+
+        res = self.app.get(url, auth=self.contributor.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
+
+    def test_public_node_only_logged_in_commenter_can_view_deleted_comment(self):
+        comment = CommentFactory(node=self.public_project, target=self.public_project, user=self.user)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'deleted': True
+                }
+            }
+        }
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        res = self.app.patch_json_api(url, payload, auth=self.user.auth)
+        assert_true(res.json['data']['attributes']['deleted'])
+
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['content'], comment.content)
+
+        res = self.app.get(url, auth=self.contributor.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
+
+        res = self.app.get(url, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
 
 
 class TestCommentRepliesList(ApiTestCase):
