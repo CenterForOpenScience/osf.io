@@ -2,7 +2,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_bulk import generics as bulk_generics
-from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError, ParseError
 
 from framework.auth.core import Auth
 
@@ -23,6 +23,10 @@ class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
         """
         Correctly formats both bulk and single POST response
         """
+        if is_bulk_request(request):
+            if not request.data:
+                raise ValidationError('Request must contain array of resource identifier objects.')
+
         response = super(ListBulkCreateJSONAPIView, self).create(request, *args, **kwargs)
         if 'data' in response.data:
             return response
@@ -51,6 +55,9 @@ class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
         """
         Correctly formats bulk PUT/PATCH response
         """
+        if not request.data:
+            raise ValidationError('Request must contain array of resource identifier objects.')
+
         response = super(BulkUpdateJSONAPIView, self).bulk_update(request, *args, **kwargs)
         return Response({'data': response.data}, status=status.HTTP_200_OK)
 
