@@ -172,10 +172,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
     filterable_fields = frozenset([
-        'full_name',
-        'given_name',
-        'middle_names',
-        'family_name',
         'id',
         'bibliographic',
         'permissions'

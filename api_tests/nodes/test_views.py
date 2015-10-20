@@ -1307,6 +1307,14 @@ class TestNodeContributorFiltering(ApiTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
 
+    def test_filtering_full_name_field(self):
+        url = '/{}nodes/{}/contributors/?filter[full_name]=Freddie'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')
+
     def test_filtering_node_with_only_bibliographic_contributors(self):
 
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
