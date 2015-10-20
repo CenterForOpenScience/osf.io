@@ -10,6 +10,6 @@ def get_service(name):
     return PROVIDER_LOOKUP[name]()
 
 def get_available_scopes():
-    scopes = [(scope_key, public_scopes[scope_key].description) for scope_key in public_scopes if public_scopes[scope_key].is_public]
-    scopes.sort()
-    return scopes
+    return sorted([(name, data.description)
+                   for name, data in public_scopes.iteritems()
+                   if data.is_public is True])
