@@ -52,11 +52,8 @@ class JSONAPIParser(JSONParser):
         if data:
             relationships = data.get('relationships')
 
-            path = stream.path
-            related_resources = ['contributors', 'node_links']
-
             # Request must include "relationships" or "attributes"
-            if stream.method == 'POST' and (related_resources[0] in path or related_resources[1] in path):
+            if parser_context.get('is_relationship'):
                 if not relationships:
                     raise JSONAPIException(source={'pointer': '/data/relationships'}, detail=NO_RELATIONSHIPS_ERROR)
             else:

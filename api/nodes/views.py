@@ -492,6 +492,18 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     def get_queryset(self):
         return self.get_queryset_from_request()
 
+    # overrides ListCreateAPIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        return {
+            'is_relationship': True,
+            'view': self,
+            'args': getattr(self, 'args', ()),
+            'kwargs': getattr(self, 'kwargs', {})
+        }
+
 
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
     """Detail of a contributor for a node. *Writeable*.
@@ -829,6 +841,18 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
             self.get_node().nodes_pointer
             if not pointer.node.is_deleted
         ]
+
+    # overrides ListCreateAPIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        return {
+            'is_relationship': True,
+            'view': self,
+            'args': getattr(self, 'args', ()),
+            'kwargs': getattr(self, 'kwargs', {})
+        }
 
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
