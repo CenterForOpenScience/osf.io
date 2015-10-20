@@ -24,10 +24,10 @@
         </p>
         <ul>
             % if meeting['poster']:
-                <li>For ${meeting['field_names']['posters']}, email <a href="mailto:${ label }-poster@osf.io">${ label }-poster@osf.io</a></li>
+                <li>For ${meeting['field_names']['posters']}, email <a href="mailto:${ label }-${meeting['field_names']['poster']}@osf.io">${ label }-${meeting['field_names']['poster']}@osf.io</a></li>
             % endif
             % if meeting['talk']:
-                <li>For ${meeting['field_names']['talks']}, email <a href="mailto:${ label }-talk@osf.io">${ label }-talk@osf.io</a></li>
+                <li>For ${meeting['field_names']['talks']}, email <a href="mailto:${ label }-${meeting['field_names']['talk']}@osf.io">${ label }-${meeting['field_names']['talk']}@osf.io</a></li>
             % endif
         </ul>
         <p>The format of the email should be as follows:</p>
