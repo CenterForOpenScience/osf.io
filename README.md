@@ -60,7 +60,8 @@ then you can start a working local API server with the sequence delineated under
 invoke apiserver
 ```
 
-Browse to `localhost:8000/v2/` in your browser to go to the root of the browse-able API.
+Browse to `localhost:8000/v2/` in your browser to go to the root of the browse-able API. If the page looks strange, 
+run `python manage.py collectstatic` to ensure that CSS files are deposited in the correct location.
 
 
 ### Livereload support
@@ -77,24 +78,12 @@ This will make your browser automatically refresh whenever a code change is made
 
 Some functionality depends on additional services that will not be started using the sequence above.
 For most development tasks, it is sufficient to run the OSF without these services, except as noted below.
-No additional installation is needed to use these features.
+Some additional installation may be needed to use these features (where noted), in which case updates will also need 
+to be installed separately.
 
-
-#### Downloading citation styles
-
-To download citation styles, run:
-
-```bash
-$ invoke update_citation_styles
-```
-
-#### Sharejs
-
-ShareJS is used for collaborative editing features, such as the OSF wiki. To run a local ShareJS server:
-
-```bash
-$ invoke sharejs
-```
+#### Authentication
+An authentication server (either CAS or FakeCAS) must be available in order to log in to the OSF while running locally. 
+This must be installed separately from the OSF. See [running the OSF](#running-the-osf) for details.
 
 #### Waterbutler
 
@@ -105,7 +94,27 @@ installed. Consult the Waterbutler
 
 #### Modular File Renderer
 
-The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult the MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install and run the MFR.
+The Modular File Renderer (MFR) is used to render uploaded files to HTML via an iFrame so that they can be 
+viewed directly on the OSF. Files will not be rendered if the MFR is not running. Consult the 
+MFR [repository] (https://github.com/CenterForOpenScience/modular-file-renderer) for information on how to install 
+and run the MFR.
+
+#### Sharejs
+
+ShareJS is used for collaborative editing features, such as the OSF wiki. It will be installed by the OSF installer 
+script, but must be run separately. To run a local ShareJS server:
+
+```bash
+$ invoke sharejs
+```
+
+#### Downloading citation styles
+
+To download citation styles, run:
+
+```bash
+$ invoke update_citation_styles
+```
 
 ## Installation
 
@@ -128,6 +137,15 @@ The following packages must be installed before running the automatic setup scri
     - pip
     - virtualenv (`pip install virtualenv`)
 
+##### El Capitan and newer
+If you are using Mac OS X >= 10.11 (El Capitan), you will also 
+[need](http://lists.apple.com/archives/macnetworkprog/2015/Jun/msg00025.html) to install OpenSSL headers 
+and set some configuration:
+```
+brew install openssl
+env LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
+pip install cryptography
+```
 
 ### Quickstart
 
@@ -182,8 +200,8 @@ Then reboot.
 
 #### Additional things to install
 
-The automated installer does not install Waterbutler, which may be needed to run some OSF features locally.
-Consult the [Waterbutler repository](https://github.com/CenterForOpenScience/waterbutler) for setup instructions.
+The automated installer does not install CAS, Waterbutler, or MFR, which may be needed to run some OSF features locally.
+Consult the [optional extras](#optional-extras) section for more details.
 
 ### Manual installation
 [At present](CONTRIBUTING.md), there is no complete automated install process for other platforms.
@@ -446,7 +464,7 @@ Sent emails will show up in your server logs.
 $ invoke mailserver -p 1025
 ```
 
-### Building assets with webpack
+### Building front-end assets with webpack
 
 Use the following command to update your requirements and build the asset bundles:
 
@@ -454,7 +472,8 @@ Use the following command to update your requirements and build the asset bundle
 $ inv assets -dw
 ```
 
-The -w option puts you in "watch": assets will be built when a file changes.
+The -w option puts you in "watch" mode: the script will continue running so that assets will be 
+built when a file changes.
 
 
 ### Getting application credentials

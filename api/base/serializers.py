@@ -80,6 +80,14 @@ class TypeField(ser.CharField):
         return super(TypeField, self).to_internal_value(data)
 
 
+class JSONAPIListField(ser.ListField):
+    def to_internal_value(self, data):
+        if not isinstance(data, list):
+            self.fail('not_a_list', input_type=type(data).__name__)
+
+        return super(JSONAPIListField, self).to_internal_value(data)
+
+
 class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
     """
     HyperlinkedIdentityField that returns a nested dict with url,

@@ -485,6 +485,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+        'SWPA2016': {
+        'name': 'Southwestern Psychological Association Convention 2016',
+        'info_url': 'https://www.swpsych.org/conv_dates.php',
+        'logo_url': 'http://s28.postimg.org/xbwyqqvx9/SWPAlogo4.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 

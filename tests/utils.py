@@ -7,6 +7,7 @@ from django.http import HttpRequest
 
 from framework.auth import Auth
 
+from django.http import HttpRequest
 from website.archiver import listeners as archiver_listeners
 from website.archiver import ARCHIVER_SUCCESS
 
