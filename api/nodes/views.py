@@ -1271,7 +1271,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         ]
 
 
-class NodeLogList(generics.ListAPIView, NodeMixin):
+class NodeLogList(generics.ListAPIView, NodeMixin, ODMFilterMixin):
     """List of Logs associated with a given Node. *Read-only*.
 
     <!--- Copied Description from LogList -->
