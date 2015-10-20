@@ -130,6 +130,7 @@ $(document).ready(function() {
         });
 
         var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
+        var checked = uncheckedOnLoad.filter('#selectAddonsForm input:checked');
         var msgElm = $(this).find('.addon-settings-message');
         
         var submit = function() {
@@ -161,7 +162,7 @@ $(document).ready(function() {
                 }
             });
         }
-        // unchecked warning adopted from profile-settings-addons-page.js
+        // some addons disabled (unchecked warning adopted from profile-settings-addons-page.js)
         if(unchecked.length > 0) {
             var uncheckedText = $.map(unchecked, function(el){
                 return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
@@ -179,18 +180,24 @@ $(document).ready(function() {
                         unchecked.each(function(i, el){ $(el).prop('checked', true); });
                     }
                 },
-                buttons:{
-                    confirm:{
-                        label:'Remove',
-                        className:'btn-danger'
+                buttons: {
+                    confirm: {
+                        label: 'Remove',
+                        className: 'btn-danger'
                     }
                 }
             });
         }
-        else {
+        //no addons disabled but some addons enabled
+        else if(checked.length>0) {
             var request = submit();
             request.done(successfulAddonUpdate);
             request.fail(failedAddonUpdate);
+        }
+        // no changes to the state of the addons
+        else{
+            msgElm.text('Settings updated').fadeIn();
+            msgElm.fadeOut(800);
         }
 
         return false;
