@@ -20,9 +20,9 @@ class LogList(generics.ListAPIView, ODMFilterMixin):
 
     On the front end, logs show record and show actions done on the OSF. The complete list of loggable actions (in the format {identifier}: {description}) is as follows:
 
-    * 'node_created': A Node is created
-    * 'node_forked': A Node is forked
-    * 'node_removed': A Node is deleted
+    * 'project_created': A Node is created
+    * 'project_registered': A Node is registered
+    * 'project_deleted': A Node is deleted
     * 'created_from': A Node is created using an existing Node as a template
     * 'pointer_created': A Pointer is created
     * 'pointer_forked': A Pointer is forked
@@ -76,9 +76,9 @@ class LogList(generics.ListAPIView, ODMFilterMixin):
     * 'registration_approved': A proposed Registration is approved
     * 'registration_cancelled': A proposed Registration is cancelled
     ---
-    * 'project_created': A Node is created (_deprecated_)
-    * 'project_registered': A Node is registered (_deprecated_)
-    * 'project_deleted': A Node is deleted (_deprecated_)
+    * 'node_created': A Node is created (_deprecated_)
+    * 'node_forked': A Node is forked (_deprecated_)
+    * 'node_removed': A Node is dele (_deprecated_)
 
    ##Log Attributes
 
