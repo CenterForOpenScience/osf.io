@@ -2,7 +2,7 @@
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework_bulk import generics as bulk_generics
-from rest_framework.exceptions import PermissionDenied, ValidationError, ParseError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 
 from framework.auth.core import Auth
 
