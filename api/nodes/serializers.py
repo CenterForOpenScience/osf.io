@@ -10,9 +10,8 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
-from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField,
-    TargetTypeField, JSONAPIListField)
+    TargetTypeField, JSONAPIListField, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly)
 from api.base.exceptions import InvalidModelValueError
 
 
