@@ -1955,7 +1955,7 @@ class TestNodeUpdate(OsfTestCase):
         # Call update with same category
         self.node.update({'category': new_category}, auth=Auth(self.user), save=True)
 
-        # A new log is not created
+        # Only one new log is created
         assert_equal(len(self.node.logs), original_n_logs + 1)
         assert_equal(self.node.category, new_category)
 

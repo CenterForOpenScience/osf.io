@@ -1094,6 +1094,7 @@ class TestNodeUpdate(NodeCRUDTestCase):
         original_n_logs = len(self.private_project.logs)
 
         res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
         self.private_project.reload()
         assert_equal(self.private_project.category, new_category)
         assert_equal(len(self.private_project.logs), original_n_logs + 1)  # sanity check
@@ -1101,7 +1102,6 @@ class TestNodeUpdate(NodeCRUDTestCase):
         res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
         self.private_project.reload()
         assert_equal(self.private_project.category, new_category)
-        self.private_project.reload()
         assert_equal(len(self.private_project.logs), original_n_logs + 1)
 
     def test_partial_update_invalid_id(self):
