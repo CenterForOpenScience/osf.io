@@ -6,12 +6,37 @@
     {{ block.super }}
     <h2>List of Spam</h2>
     <table>
+    <thead>
+        <tr>
+            <th>Category</th>
+            <th>Comment id</th>
+            <th>Content</th>
+            <th>Author</th>
+            <th># of Reports</th>
+        </tr>
+    </thead>
+    <tbody>
     {% for comment in comments %}
     <tr>
         <td>
-            {{ comment }}
+            {{ comment.category }}
+        </td>
+        <td>
+            {{ comment.id }}
+        </td>
+        <td>
+            {{ comment.content }}
+        </td>
+        <td>
+            <a href={{ comment.author.absolute_url }}>
+                {{ comment.author.fullname }}
+            </a>
+        </td>
+        <td>
+            {{ comment.number_of_reports }}
         </td>
     </tr>
     {% endfor %}
+    </tbody>
     </table>
 {% endblock content %}
