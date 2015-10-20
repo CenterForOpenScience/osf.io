@@ -22,6 +22,7 @@ import os
 import logging
 
 from mako.lookup import TemplateLookup, Template
+
 from framework.email import tasks
 from website import settings
 
@@ -86,6 +87,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
     .. note:
          Uses celery if available
     """
+
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or tasks.send_email
     subject = mail.subject(**context)

@@ -3,6 +3,7 @@
 import json
 import httplib
 import logging
+from datetime import datetime
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -19,7 +20,7 @@ from website.mails import send_mail
 from website.files.models import StoredFileNode
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 
-from website.conferences import utils
+from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
 from website.conferences.model import Conference
 
@@ -80,17 +81,22 @@ def add_poster_by_email(conference, message):
         )
         if user_created:
             created.append(user)
+            user.system_tags.append('osf4m')
             set_password_url = web_url_for(
                 'reset_password',
                 verification_key=user.verification_key,
                 _absolute=True,
             )
+            user.date_last_login = datetime.utcnow()
+            user.save()
         else:
             set_password_url = None
 
         node, node_created = utils.get_or_create_node(message.subject, user)
         if node_created:
             created.append(node)
+            node.system_tags.append('osf4m')
+            node.save()
 
         utils.provision_node(conference, message, node, user)
         utils.record_message(message, created)
@@ -124,6 +130,8 @@ def add_poster_by_email(conference, message):
         presentation_type=message.conference_category.lower(),
         is_spam=message.is_spam,
     )
+    if node_created and user_created:
+        signals.osf4m_user_created.send(user, conference=conference, node=node)
 
 
 def _render_conference_node(node, idx, conf):

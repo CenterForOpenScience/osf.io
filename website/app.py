@@ -23,6 +23,7 @@ from website.addons.base import init_addon
 from website.project.model import ensure_schemas, Node
 # This import is necessary to set up the archiver signal listeners
 from website.archiver import listeners  # noqa
+from website.mails import listeners  # noqa
 
 
 def build_js_config_files(settings):

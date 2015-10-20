@@ -942,7 +942,7 @@ class TestMergingUsers(OsfTestCase):
         assert_in('joseph123@hotmail.com', self.master.emails)
 
     def test_send_user_merged_signal(self):
-        self.dupe.mailing_lists['foo'] = True
+        self.dupe.mailchimp_mailing_lists['foo'] = True
         self.dupe.save()
 
         with capture_signals() as mock_signals:
@@ -953,7 +953,7 @@ class TestMergingUsers(OsfTestCase):
     def test_merged_user_unsubscribed_from_mailing_lists(self, mock_get_mailchimp_api):
         list_name = 'foo'
         username = self.dupe.username
-        self.dupe.mailing_lists[list_name] = True
+        self.dupe.mailchimp_mailing_lists[list_name] = True
         self.dupe.save()
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
@@ -962,7 +962,7 @@ class TestMergingUsers(OsfTestCase):
         self._merge_dupe()
         handlers.celery_teardown_request()
         mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username})
-        assert_false(self.dupe.mailing_lists[list_name])
+        assert_false(self.dupe.mailchimp_mailing_lists[list_name])
 
     def test_inherits_projects_contributed_by_dupe(self):
         project = ProjectFactory()
@@ -2853,6 +2853,24 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
+
+    @mock.patch('website.project.model.mails.queue_mail')
+    def test_set_privacy_sends_mail_default(self, mock_queue):
+        self.project.set_privacy('private', auth=self.auth)
+        self.project.set_privacy('public', auth=self.auth)
+        assert_true(mock_queue.called_once())
+
+    @mock.patch('website.project.model.mails.queue_mail')
+    def test_set_privacy_sends_mail(self, mock_queue):
+        self.project.set_privacy('private', auth=self.auth)
+        self.project.set_privacy('public', auth=self.auth, meeting_creation=False)
+        assert_true(mock_queue.called_once())
+
+    @mock.patch('website.project.model.mails.queue_mail')
+    def test_set_privacy_skips_mail(self, mock_queue):
+        self.project.set_privacy('private', auth=self.auth)
+        self.project.set_privacy('public', auth=self.auth, meeting_creation=True)
+        assert_false(mock_queue.called)
 
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self):
         registration = RegistrationFactory(project=self.project)
