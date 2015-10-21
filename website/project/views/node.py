@@ -1046,6 +1046,7 @@ def format_data(user, node_ids):
                 'id': node_id,
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
+                'is_public': node.is_public
             },
             'children': children,
             'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
@@ -1053,7 +1054,7 @@ def format_data(user, node_ids):
             'category': node.category,
             'permissions': {
                 'view': can_read,
-            },
+            }
         }
 
         items.append(item)

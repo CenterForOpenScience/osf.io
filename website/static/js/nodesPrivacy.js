@@ -49,28 +49,27 @@ var MESSAGES = {
     addonWarning: 'The following addons will be effected by this change.  Are you sure you want to continue?'
 };
 
-// Initialize treebeard grid for notifications
-var $notificationsMsg = $('#configureNotificationsMessage');
-var privacy_url = ctx.node.urls.api  + 'get_node_tree/';
-
-$.ajax({
-    url: privacy_url,
-    type: 'GET',
-    dataType: 'json'
-}).done(function(response) {
-    new NodesPrivacyTreebeard(response);
-}).fail(function(xhr, status, error) {
-    $notificationsMsg.addClass('text-danger');
-    $notificationsMsg.text('Could not retrieve project settings.');
-    Raven.captureMessage('Could not GET project settings.', {
-        url: privacy_url, status: status, error: error
-    });
-});
-
 
 var NodesPrivacyViewModel = function() {
     var self = this;
+    // Initialize treebeard grid for privacySettings
+    var $notificationsMsg = $('#configureNotificationsMessage');
+    var treebeardUrl = ctx.node.urls.api  + 'get_node_tree/';
 
+
+    $.ajax({
+        url: treebeardUrl,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        new NodesPrivacyTreebeard(response);
+    }).fail(function(xhr, status, error) {
+        $notificationsMsg.addClass('text-danger');
+        $notificationsMsg.text('Could not retrieve project settings.');
+        Raven.captureMessage('Could not GET project settings.', {
+            url: treebeardUrl, status: status, error: error
+        });
+    });
     self.page = ko.observable('warning');
     self.pageTitle = ko.computed(function() {
         return {

@@ -42,7 +42,6 @@ function openAncestors (tb, item) {
 
 function NodesPrivacyTreebeard(data) {
 
-    //  Treebeard version
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         divID: 'grid',
         filesData: data,
@@ -71,17 +70,19 @@ function NodesPrivacyTreebeard(data) {
                     data : 'action',
                     sortInclude : false,
                     filter : false,
-                    colWidth: '10%',
                     custom : function () {
                         var that = this;
-                        return m('input[type=checkbox]');
+                        return m('input[type=checkbox]', {onclick : function() {
+                            item.data.is_public = true;
+                            that.updateFolder(item, data);
+                        },
+                            checked: item.data.node.is_public});
                     }
                 },
                 {
                     data: 'project',  // Data field name
                     folderIcons: true,
                     filter: true,
-                    colWidth: '90%',
                     sortInclude: false,
                     hideColumnTitles: false,
                     custom: function () {

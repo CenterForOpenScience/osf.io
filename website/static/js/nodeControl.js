@@ -126,7 +126,6 @@ function setPermissions(permissions, nodeType) {
  * @param {Object} data The parsed project data returned from the project's API url.
  */
 var ProjectViewModel = function(data) {
-    debugger;
     var self = this;
     self._id = data.node.id;
     self.apiUrl = data.node.api_url;
