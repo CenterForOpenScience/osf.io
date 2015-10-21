@@ -27,15 +27,15 @@ class Conference(StoredObject):
     talk = fields.BooleanField(default=True)
     field_names = fields.DictionaryField(
         default=lambda: {
-            'poster': 'poster',
-            'talk': 'talk',
-            'posters': 'posters',
-            'talks': 'talks',
-            'Posters & Talks': 'Posters & Talks',
-            'poster or talk': 'poster or talk',
-            'Subject': 'Presentation title',
-            'Message body': 'Presentation abstract (if any)',
-            'Attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)'
+            'submission1': 'poster',
+            'submission2': 'talk',
+            'submission1_plural': 'posters',
+            'submission2_plural': 'talks',
+            'meeting_title_type': 'Posters & Talks',
+            'add_submission': 'poster or talk',
+            'mail_subject': 'Presentation title',
+            'mail_message_body': 'Presentation abstract (if any)',
+            'mail_attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)'
         }
     )
 

@@ -495,6 +495,27 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'psichi2015': {
+        'name': 'PsiChi',
+        'info_url': 'psichi.org',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+        'field_names': {
+            'submission1': 'measure',
+            'submission2': 'material',
+            'submission1_plural': 'measures/scales',
+            'submission2_plural': 'study materials',
+            'meeting_title_type': 'Repository',
+            'add_submission': 'materials',
+            'mail_subject': 'Title',
+            'mail_message_body': 'Measure or material short description',
+            'mail_attachment': 'Your measure/scale or material file(s)'
+        }
+    }
 }
 
 

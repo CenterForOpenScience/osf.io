@@ -369,7 +369,7 @@ class TestMessage(ContextTestCase):
             assert_equal(msg.conference_category, 'talk')
 
     def test_alternate_route_valid(self):
-        conf = ConferenceFactory(endpoint='chocolate', active=True)
+        conf = ConferenceFactory.build(endpoint='chocolate', active=True)
         conf.name = 'Chocolate Conference'
         conf.field_names['talk'] = 'data'
         conf.save()
@@ -378,7 +378,7 @@ class TestMessage(ContextTestCase):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
             assert_equal(msg.conference_name, 'chocolate')
-            assert_equal(msg.conference_category, 'data')
+            assert_equal(msg.conference_category, 'data')''
         conf.__class__.remove_one(conf)
 
     def test_alternate_route_invalid(self):
