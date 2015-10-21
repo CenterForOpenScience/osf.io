@@ -1,7 +1,7 @@
+from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
-
 from tests.base import ApiTestCase
 from tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, RegistrationFactory
 
@@ -89,6 +89,44 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.get(self.registration_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(self.registration_comment._id, res.json['data']['id'])
+
+    def test_comment_has_user_link(self):
+        self._set_up_public_project_with_comment()
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['user']['links']['related']['href']
+        expected_url = '/{}users/{}/'.format(API_BASE, self.user._id)
+        assert_equal(urlparse(url).path, expected_url)
+
+    def test_comment_has_node_link(self):
+        self._set_up_public_project_with_comment()
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['node']['links']['related']['href']
+        expected_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        assert_equal(urlparse(url).path, expected_url)
+
+    def test_comment_has_target_link_with_correct_type(self):
+        self._set_up_public_project_with_comment()
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['target']['links']['related']['href']
+        expected_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        target_type = res.json['data']['relationships']['target']['links']['related']['meta']['type']
+        expected_type = 'node'
+        assert_equal(urlparse(url).path, expected_url)
+        assert_equal(target_type, expected_type)
+
+    def test_comment_has_replies_link(self):
+        self._set_up_public_project_with_comment()
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['replies']['links']['self']['href']
+        expected_url = '/{}comments/{}/replies/'.format(API_BASE, self.public_comment)
+        assert_equal(urlparse(url).path, expected_url)
+
+    def test_comment_has_reports_link(self):
+        self._set_up_public_project_with_comment()
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['reports']['links']['related']['href']
+        expected_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment)
+        assert_equal(urlparse(url).path, expected_url)
 
     def test_private_node_only_logged_in_contributor_commenter_can_update_comment(self):
         self._set_up_private_project_with_comment()
