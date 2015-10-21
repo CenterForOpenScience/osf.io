@@ -6,7 +6,7 @@ import requests
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
 
-from framework.auth import Auth
+from framework.auth import Auth, signals
 from framework.auth.core import get_user
 
 from website import util
@@ -42,6 +42,7 @@ def get_or_create_user(fullname, address, is_spam):
         if is_spam:
             user.system_tags.append('is_spam')
         user.save()
+        signals.user_confirmed.send(user)
         return user, True
 
 
@@ -76,7 +77,7 @@ def provision_node(conference, message, node, user):
     node.add_contributors(prepare_contributors(conference.admins), log=False)
 
     if not message.is_spam and conference.public_projects:
-        node.set_privacy('public', auth=auth)
+        node.set_privacy('public', meeting_creation=True, auth=auth)
 
     node.add_tag(message.conference_name, auth=auth)
     node.add_tag(message.conference_category, auth=auth)
