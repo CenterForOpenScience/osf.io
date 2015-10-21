@@ -1,22 +1,19 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Registrations</%def>
-
+<div id="registrationsListScope">
 <ul id="registrationsTabs" class="nav nav-tabs" role="tablist">
   <li role="presentation" class="active">
     <a id="registrationsControl" aria-controls="registrations" href="#registrations">Registrations</a>
   </li>
   % if 'admin' in user['permissions']:
-  <li role="presentation">
-    <a id="draftsControl" aria-controls="drafts" href="#drafts">Draft Registrations</a>
+  <li role="presentation" data-bind="visible: hasDrafts">
+      <a id="draftsControl" aria-controls="drafts" href="#drafts">Draft Registrations</a>
   </li>
   % endif
 </ul>
 <div class="tab-content registrations-view">
   <div role="tabpanel" class="tab-pane active" id="registrations">
-    <div class="row" style="min-height: 150px">
-      <div class="col-md-9">
-        <h2> Registrations </h2>
-      </div>
+    <div class="row" style="min-height: 150px; padding-top:20px;">
       <div class="col-md-9">
         % if node["registration_count"]:
         <div mod-meta='{
@@ -46,26 +43,20 @@
         To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a>
         %endif
       </div>
+
+        % if 'admin' in user['permissions'] and not disk_saving_mode:
+            <div class="col-md-3">
+        <a data-bind="css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
+          New Registration
+        </a>
+            </div>
+        % endif
     </div>
   </div>
   <div role="tabpanel" class="tab-pane" id="drafts">
-    <div id="draftRegistrationScope" class="row" style="min-height: 150px">
+    <div class="row" style="min-height: 150px;padding-top:20px;">
       <div data-bind="visible: !preview()">
         <div class="col-md-9">
-          <h2> Draft Registrations </h2>
-        </div>
-        <div class="col-md-9">
-          <div>
-            % if 'admin' in user['permissions'] and not disk_saving_mode:
-            <a data-bind="css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
-              <i class="fa fa-plus"></i>
-              New Draft Registration
-            </a>
-            % else:
-              Only project administrators can create, edit, or submit new draft registrations.
-            % endif
-          </div>
-          <br />
           <div class="scripted" data-bind="foreach: drafts">
             <li class="project list-group-item list-group-item-node">
               <h4 data-bind="text: schema().title" ></h4>
@@ -178,7 +169,7 @@
     </div>
   </div>
 </div>
-
+</div>
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
 

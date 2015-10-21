@@ -618,6 +618,9 @@ var RegistrationManager = function(node, draftsSelector, urls) {
     // TODO: convert existing registration UI to frontend impl.
     // self.registrations = ko.observable([]);
     self.drafts = ko.observableArray();
+    self.hasDrafts = ko.pureComputed(function() {
+        return self.drafts().length > 0;
+    });
 
     self.loading = ko.observable(true);
 

@@ -18,7 +18,7 @@ $(document).ready(function() {
         $(this).tab('show');
     });
 
-    var draftManager = new RegistrationManager(node, '#draftRegistrationScope', {
+    var draftManager = new RegistrationManager(node, '#registrationsListScope', {
         list: node.urls.api + 'drafts/',
         // TODO: uncomment when we support draft submission for review
         //submit: node.urls.api + 'draft/{draft_pk}/submit/',
@@ -30,6 +30,7 @@ $(document).ready(function() {
 
     $('#registerNode').click(function(event) {
         event.preventDefault();
-        draftManager.beforeCreateDraft();        
+        draftManager.beforeCreateDraft();
+        $("#draftsControl").click();
     });
 });
