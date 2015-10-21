@@ -2,11 +2,9 @@
 <%def name="title()">Edit ${node['title']} registration</%def>
 
 <div id="draftRegistrationScope" class="scripted">
-  <div class="row">
-    <h3>
-      <div class="row">
+    <div class="row">
         <div class="col-md-9">
-          Edit draft registration
+          <h3>Register</h3>
         </div>
         <div class="col-md-3" data-bind="with: draft">
           <span class="btn-group" data-bind="if: requiresApproval">
@@ -22,8 +20,7 @@
             </a>
           </span>
         </div>
-      </div>
-    </h3>
+    </div>
     <hr />
     <div class="row">
       <div class="col-md-12">
@@ -64,7 +61,6 @@
         </div>
       </div>
     </div>
-  </div>
 </div>
 
 <%def name="javascript_bottom()">

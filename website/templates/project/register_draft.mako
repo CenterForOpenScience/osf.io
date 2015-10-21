@@ -2,10 +2,14 @@
 
 <%def name="title()">Register ${node['title']}</%def>
 
-<%def name="content()">
-    <div class="col-md-12" id="draftRegistrationScope">
-        <h2>Previewing Draft Registration of ${node['title']}:</h2>
-        <br/>
+<div id="draftRegistrationScope">
+    <div class="row">
+        <div class="col-md-12">
+            <h3>Register</h3>
+        </div>
+    </div>
+    <hr>
+    <div class="row">
         <div class="span8 col-lg-12 columns twelve large-12" style="padding-left: 30px">
             <div data-bind="foreach: {data: draft.pages, as: 'page'}">
                 <h3 data-bind="attr.id: page.id, text: page.title"></h3>
@@ -17,7 +21,8 @@
                 </div>
             </div>
         </div>
-
+    </div>
+    <div class="row-md-12">
         <a type="button" class="btn btn-default pull-left" href="${draft['urls']['edit']}">Continue editing</a>
 
 ## TODO(lyndsysimon): Factor these buttons out when prereg is merged in.
@@ -29,9 +34,10 @@
             <button id="register-submit" type="button" class="btn btn-primary pull-right" data-bind="click: registerDraft">Register</button>
 ## TODO(lyndsysimon): This button is not applicable until prereg is merged in.
 ##             <button id="register-submit" type="button" class="btn btn-primary pull-right" data-bind="click: submitForReview, visible: draft.requiresApproval"">Submit for review</button>
-</%def>
 
+    </div>
 <%def name="javascript_bottom()">
+    ${parent.javascript_bottom()}
 
     <script type="text/javascript">
     window.contextVars = window.contextVars || {};
