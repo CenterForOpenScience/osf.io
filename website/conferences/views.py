@@ -228,7 +228,8 @@ def conference_view(**kwargs):
             continue
         meetings.append({
             'name': conf.name,
-            'active': conf.active,
+            'location': conf.location,
+            'conference_date': conf.conference_date,
             'url': web_url_for('conference_results', meeting=conf.endpoint),
             'count': num_submissions,
         })

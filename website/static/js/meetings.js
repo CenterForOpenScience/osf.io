@@ -21,16 +21,22 @@ function Meetings(data) {
                     sort : true
                 },
                 {
-                     title: 'Submissions',
-                     width : '25%',
-                     sortType : 'number',
+                     title: 'Conference Location',
+                     width : '20%',
+                     sortType : 'text',
                      sort : true
                 },
                 {
-                    title: 'Accepting Submissions',
-                    width: '25%',
+                    title: 'Conference Date',
+                    width: '20%',
                     sortType: 'text',
                     sort: true
+                },
+                {
+                     title: 'Submissions',
+                     width : '10%',
+                     sortType : 'number',
+                     sort : true
                 }
             ];
         },
@@ -43,13 +49,20 @@ function Meetings(data) {
 
                 },
                 {
-                    data: 'count',
-                    sortInclude: true
+                    data: 'location',
+                    sortInclude : true,
+                    custom : function() {
+                        console.log(item.data.location);
+                        return item.data.location; }
                 },
                 {
-                    data: 'active', // Data field name
-                    sortInclude: true,
-                    custom: function() { return item.data.active ? 'Yes' : 'No'; }
+                    data: 'conference_date', // Data field name
+                    sortInclude : true,
+                    custom: function() {  return item.data.end_date; }
+                },
+                {
+                    data: 'count',
+                    sortInclude: true
                 }
             ];
         },
