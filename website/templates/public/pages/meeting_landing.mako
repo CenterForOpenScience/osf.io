@@ -138,16 +138,16 @@
         </div>
         <div class="row org-logo m-b-lg">
             <div class="col-sm-3 col-xs-6  text-center">
-                <a href="http://www.psychologicalscience.org/"><img src="/static/img/meeting-page/APS.jpg" class="img-responsive"></a>
+                <a href="http://www.psychologicalscience.org/"><img src="/static/img/meeting-page/APS.jpg" alt="APS" class="img-responsive"></a>
             </div>
             <div class="col-sm-3 col-xs-6 text-center">
-                <a href="http://www.bitss.org/"><img src="/static/img/meeting-page/BITSS.png" class="img-responsive"></a>
+                <a href="http://www.bitss.org/"><img src="/static/img/meeting-page/BITSS.png" alt="BITSS" class="img-responsive"></a>
             </div>
             <div class="col-sm-3 col-xs-6 text-center">
-                <a href="http://www.nrao.edu/"><img src="/static/img/meeting-page/NRAO.jpg" class="img-responsive"></a>
+                <a href="http://www.nrao.edu/"><img src="/static/img/meeting-page/NRAO.jpg" alt="NRAO" class="img-responsive"></a>
             </div>
             <div class="col-sm-3 col-xs-6 text-center">
-                <a href="http://www.spsp.org/"><img src="/static/img/meeting-page/SPSP.jpg" class="img-responsive"></a>
+                <a href="http://www.spsp.org/"><img src="/static/img/meeting-page/SPSP.jpg" alt="SPSP" class="img-responsive"></a>
             </div>
         </div>
     </div>
