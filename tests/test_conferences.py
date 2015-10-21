@@ -378,7 +378,7 @@ class TestMessage(ContextTestCase):
             self.app.app.preprocess_request()
             msg = message.ConferenceMessage()
             assert_equal(msg.conference_name, 'chocolate')
-            assert_equal(msg.conference_category, 'data')''
+            assert_equal(msg.conference_category, 'data')
         conf.__class__.remove_one(conf)
 
     def test_alternate_route_invalid(self):
