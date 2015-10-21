@@ -482,13 +482,23 @@ MEETING_DATA = {
         'active': True,
         'admins': [],
         'public_projects': True,
-        'poster': True,
+        'poster': False,
         'talk': True,
     },
         'SWPA2016': {
         'name': 'Southwestern Psychological Association Convention 2016',
         'info_url': 'https://www.swpsych.org/conv_dates.php',
         'logo_url': 'http://s28.postimg.org/xbwyqqvx9/SWPAlogo4.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'ESIP2016W': {
+        'name': 'Earth Science Information Partners Winter Meeting 2016',
+        'info_url': 'http://commons.esipfed.org/2016WinterMeeting',
+        'logo_url': 'http://s30.postimg.org/m2uz2g4pt/ESIP.png',
         'active': True,
         'admins': [],
         'public_projects': True,
@@ -515,7 +525,7 @@ MEETING_DATA = {
             'mail_message_body': 'Measure or material short description',
             'mail_attachment': 'Your measure/scale or material file(s)'
         }
-    }
+    },
 }
 
 
