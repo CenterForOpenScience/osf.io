@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from rest_framework import permissions
+from rest_framework.exceptions import NotFound
 
 from website.models import Node, Pointer, User, Comment
 from website.util import permissions as osf_permissions
@@ -68,22 +69,27 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
 class ContributorOrPublicForComments(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
+        assert isinstance(obj, (Node, Comment, CommentReport)), 'obj must be a Node, Comment or CommentReport, got {}'.format(obj)
         auth = get_user_auth(request)
         if isinstance(obj, CommentReport):
             comment_id = request.parser_context['kwargs']['comment_id']
             comment = Comment.load(comment_id)
-            obj = comment.node
-        if isinstance(obj, Comment):
+            if not comment:
+                raise NotFound
+            node = comment.node
+        elif isinstance(obj, Comment):
             comment = obj
-            obj = obj.node
-        assert isinstance(obj, (Node, Pointer)), 'obj must be a Node or Pointer, got {}'.format(obj)
+            node = obj.node
+        elif isinstance(obj, Node):
+            node = obj
+
         if request.method in permissions.SAFE_METHODS:
-            return obj.is_public or obj.can_view(auth)
+            return node.is_public or node.can_view(auth)
         else:
             if view.get_view_name() == 'Comment Detail':
                 return comment.user._id == auth.user._id
             else:
-                return obj.can_comment(auth)
+                return node.can_comment(auth)
 
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
