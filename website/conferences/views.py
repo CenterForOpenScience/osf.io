@@ -215,9 +215,13 @@ def conference_view(**kwargs):
     meetings = []
     submissions = []
     for conf in Conference.find():
+        # For efficiency, we filter by tag first, then node
+        # instead of doing a single Node query
         projects = set()
         for tag in Tag.find(Q('_id', 'iexact', conf.endpoint)):
             for node in tag.node__tagged:
+                if not node:
+                    continue
                 if not node.is_public or node.is_deleted:
                     continue
                 projects.add(node)
@@ -225,7 +229,7 @@ def conference_view(**kwargs):
         for idx, node in enumerate(projects):
             submissions.append(_render_conference_node(node, idx, conf))
         num_submissions = len(projects)
-        if num_submissions < settings.CONFERNCE_MIN_COUNT:
+        if num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
         meetings.append({
             'name': conf.name,
