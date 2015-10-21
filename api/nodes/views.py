@@ -125,7 +125,7 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(generics.ListCreateAPIView, ListFilterMixin):
+class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -1271,7 +1271,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         ]
 
 
-class NodeLogList(generics.ListAPIView, NodeMixin, ODMFilterMixin):
+class NodeLogList(generics.ListAPIView, NodeMixin, ListFilterMixin):
     """List of Logs associated with a given Node. *Read-only*.
 
     <!--- Copied Description from LogList -->
@@ -1384,12 +1384,17 @@ class NodeLogList(generics.ListAPIView, NodeMixin, ODMFilterMixin):
 
     log_lookup_url_kwarg = 'node_id'
 
+    ordering = ('date', )
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
         base_permissions.TokenHasScope,
     )
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         auth = Auth(self.request.user)
-        return self.get_node().get_aggregate_logs_queryset(auth).sort('-date')
+        return self.get_node().get_aggregate_logs_queryset(auth)
+
+    def get_queryset(self):
+        return self.get_queryset_from_request()
