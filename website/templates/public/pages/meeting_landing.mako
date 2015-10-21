@@ -26,7 +26,7 @@
             </div>
             <div class="row">
                 <div class="col-md-6 col-lg-5 col-xl-4 text-center m-b-lg" >
-                    <i class="fa fa-users fa-custom-8x m-v-sm"></i>
+                    <i class="fa fa-users m-v-sm"></i>
                     <h3 class="f-w-xl"> For Conference Organizers </h3>
                     <div class="text-left">
                         <p class="osf-meeting-p">Register your event to broaden its impact.  Events get a dedicated page, an easy submission process, and persistent links.</p>
@@ -45,7 +45,7 @@
                     </div>
                 </div>
                 <div class="col-md-6 col-lg-5 col-lg-offset-2 col-xl-4 col-xl-offset-4 text-center m-b-lg">
-                    <i class="fa fa-cloud-upload fa-custom-8x m-v-sm"></i>
+                    <i class="fa fa-cloud-upload m-v-sm"></i>
                     <h3 class="f-w-xl"> For Conference Participants </h3>
                     <div class="text-left">
                         <p class="osf-meeting-p">Share your posters and presentations along with any supporting data and materials. Get persistent links and usage analytics.</p></div>

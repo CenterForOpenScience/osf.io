@@ -35,8 +35,14 @@
     font-size: 50px;
 }
 
-.osf-meeting-header .fa-custom-8x {
+.osf-meeting-header .fa-users {
+    font-size: 85px;
+    padding-top: 25px;
+}
+
+.osf-meeting-header .fa-cloud-upload {
     font-size: 100px;
+    padding-top: 25px;
 }
 
 .osf-meeting-header .fa-users, .fa-cloud-upload {
@@ -44,7 +50,6 @@
     box-shadow: 0px 0px 10px #E0E7EC;
     width: 140px;
     height: 140px;
-    padding-top: 18px;
 }
 
 .osf-meeting-header h1 {
@@ -80,7 +85,7 @@
 }
 
 .grey-background {
-    background-color: white;
+    background-color: #FFFFFF;
     z-index: 2;
     position: relative;
 }
