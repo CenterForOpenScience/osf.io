@@ -174,7 +174,7 @@ class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
 
     """
     def __init__(self, view_name=None, **kwargs):
-        self.meta = kwargs.pop('meta', None)
+        self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedRelatedField, self).__init__(view_name=view_name, **kwargs)
 
@@ -186,13 +186,8 @@ class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
         the link is represented as a links object with 'href' and 'meta' members.
         """
         url = super(JSONAPIHyperlinkedRelatedField, self).to_representation(value)
-
-        meta = {}
-        for key in self.meta or {}:
-            meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
-        self.meta = meta
-
-        return {'links': {self.link_type: {'href': url, 'meta': self.meta}}}
+        meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
+        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
 class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
@@ -238,10 +233,7 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
         """
         self.get_view_name(value._id)
         url = Link(self.view_name, kwargs={self.lookup_url_kwarg: '<_id>'}).resolve_url(value)
-
-        meta = {}
-        for key in self.meta or {}:
-            meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+        meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
 
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
