@@ -17,7 +17,6 @@ def serialize_comment(comment):
         'node': comment.node,
     }
     comment.update(
-        number_of_reports=len(comment['reports']),
         category=comment['reports'][0]['category'],
     )
     return comment
