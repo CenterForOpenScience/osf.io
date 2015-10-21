@@ -495,8 +495,8 @@ class TestConferenceModel(OsfTestCase):
     def test_default_field_names(self):
         conf = ConferenceFactory(endpoint='cookie', name='Cookies Conference')
         conf.save()
-        assert_equal(conf.field_names['poster'], 'poster')
-        assert_equal(conf.field_names['Subject'], 'Presentation title')
+        assert_equal(conf.field_names['submission1'], 'poster')
+        assert_equal(conf.field_names['mail_subject'], 'Presentation title')
 
 class TestConferenceIntegration(ContextTestCase):
 
