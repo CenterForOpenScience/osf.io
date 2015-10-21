@@ -44,11 +44,10 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         data = super(ApiOAuth2PersonalTokenSerializer, self).to_representation(obj, envelope)
         # Make sure users only see token_id on create
         if not self.context['request'].method == 'POST':
-            try:
-                if data.get('data').get('attributes').get('token_id'):
-                    data['data']['attributes'].pop('token_id')
-            except AttributeError:
-                pass
+            if data.get('data'):
+                data['data']['attributes'].pop('token_id')
+            else:
+                data['attributes'].pop('token_id')
 
         return data
 
