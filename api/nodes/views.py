@@ -839,7 +839,7 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
             if not pointer.node.is_deleted
         ]
 
-  # overrides ListCreateAPIView
+    # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
         """
         Tells parser that we are creating a relationship
