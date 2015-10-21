@@ -1386,6 +1386,8 @@ function _deleteFolder(item) {
  * For documentation visit: https://github.com/caneruguz/treebeard/wiki
  */
 var tbOptions = {
+    placement : 'dashboard',
+    divID: 'projectOrganizer',
     rowHeight : 35,         // user can override or get from .tb-row height
     showTotal : 15,         // Actually this is calculated with div height, not needed. NEEDS CHECKING
     paginate : false,       // Whether the applet starts with pagination or not.
@@ -1398,6 +1400,7 @@ var tbOptions = {
     allowMove : true,       // Turn moving on or off.
     moveClass : 'po-draggable',
     hoverClass : 'fangorn-hover',
+    multiselect : true,
     hoverClassMultiselect : 'fangorn-selected',
     //togglecheck : _poToggleCheck,
     sortButtonSelector : {
@@ -1462,19 +1465,19 @@ var tbOptions = {
 
 var ProjectOrganizer = {
     controller : function (args) {
-        //this.selected = args.selected;
-        this.poOptions = $.extend(
+
+    },
+    view : function (ctrl, args) {
+        var poOptions = $.extend(
             {
                 updateSelected : args.updateSelected,
-                updateBreadcrumbs : args.updateBreadcrumbs
+                updateBreadcrumbs : args.updateBreadcrumbs,
+                filesData: args.filesData()
             },
-            tbOptions,
-            args.options
+            tbOptions
         );
-        this.tb = new Treebeard(this.poOptions, true);
-    },
-    view : function (ctrl) {
-        return m('.fb-project-organizer#projectOrganizer', ctrl.tb);
+        var tb = new Treebeard(poOptions, true);
+        return m('.fb-project-organizer#projectOrganizer', tb);
     }
 };
 

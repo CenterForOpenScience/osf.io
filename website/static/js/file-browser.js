@@ -73,7 +73,8 @@ var FileBrowser = {
         };
 
         self.updateList = function(url){
-            console.log(url);
+            self.filesData(url);
+            console.log(self.filesData());
         }.bind(self);
 
         // For breadcrumbs
@@ -100,12 +101,7 @@ var FileBrowser = {
             { tag : 'something'}
         ];
 
-        self.poOptions = {
-            placement : 'dashboard',
-            divID: 'projectOrganizer',
-            filesData: root.children,
-            multiselect : true
-        };
+        self.filesData = m.prop(root.children);
 
     },
     view : function (ctrl) {
@@ -115,7 +111,7 @@ var FileBrowser = {
                 m.component(Collections, {list : ctrl.collections, activeCollection : ctrl.activeCollection, updateCollection : ctrl.updateCollection } ),
                 m.component(Filters, { activeUser : ctrl.activeUser, updateUser : ctrl.updateUserFilter, nameFilters : ctrl.nameFilters, tagFilters : ctrl.tagFilters })
             ]),
-            m('.fb-main', m.component(ProjectOrganizer, { options : ctrl.poOptions, updateSelected : ctrl.updateSelected, updateBreadcrumbs : ctrl.updateBreadcrumbs})),
+            m('.fb-main', m.component(ProjectOrganizer, { filesData : ctrl.filesData, updateSelected : ctrl.updateSelected, updateBreadcrumbs : ctrl.updateBreadcrumbs})),
             m('.fb-infobar', m.component(Information, { selected : ctrl.selected }))
         ]);
     }
