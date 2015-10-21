@@ -765,7 +765,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     oauth_provider = None
 
     @property
-    def folder_id(self):
+    def provider_id(self):
         raise NotImplementedError(
             "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_id' property."
         )

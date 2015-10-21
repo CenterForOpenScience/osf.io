@@ -277,13 +277,13 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
         node_settings.save()
         assert_true(node_settings.user_settings)
         assert_equal(node_settings.user_settings.owner, self.user)
-        assert_true(hasattr(node_settings, 'folder_id'))
+        assert_true(hasattr(node_settings, 'provider_id'))
         assert_true(hasattr(node_settings, 'user_settings'))
 
     def test_folder_defaults_to_none(self):
         node_settings = self.NodeSettingsClass(user_settings=self.user_settings)
         node_settings.save()
-        assert_is_none(node_settings.folder_id)
+        assert_is_none(node_settings.provider_id)
 
     def test_has_auth(self):
         self.user.external_accounts = []
@@ -314,7 +314,7 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
         node_settings.save()
 
         node_settings.clear_settings()
-        assert_is_none(node_settings.folder_id)
+        assert_is_none(node_settings.provider_id)
 
     def test_to_json(self):
         settings = self.node_settings
@@ -324,22 +324,22 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
 
     def test_delete(self):
         assert_true(self.node_settings.user_settings)
-        assert_true(self.node_settings.folder_id)
+        assert_true(self.node_settings.provider_id)
         old_logs = self.node.logs
         self.node_settings.delete()
         self.node_settings.save()
         assert_is(self.node_settings.user_settings, None)
-        assert_is(self.node_settings.folder_id, None)
+        assert_is(self.node_settings.provider_id, None)
         assert_true(self.node_settings.deleted)
         assert_equal(self.node.logs, old_logs)
 
     def test_deauthorize(self):
         assert_true(self.node_settings.user_settings)
-        assert_true(self.node_settings.folder_id)
+        assert_true(self.node_settings.provider_id)
         self.node_settings.deauthorize(auth=Auth(self.user))
         self.node_settings.save()
         assert_is(self.node_settings.user_settings, None)
-        assert_is(self.node_settings.folder_id, None)
+        assert_is(self.node_settings.provider_id, None)
 
         last_log = self.node.logs[-1]
         assert_equal(last_log.action, '{0}_node_deauthorized'.format(self.short_name))
@@ -353,7 +353,7 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
         self.node_settings.set_folder(folder_id, auth=Auth(self.user))
         self.node_settings.save()
         # Folder was set
-        assert_equal(self.node_settings.folder_id, folder_id)
+        assert_equal(self.node_settings.provider_id, folder_id)
         # Log was saved
         last_log = self.node.logs[-1]
         assert_equal(last_log.action, '{0}_folder_selected'.format(self.short_name))
@@ -395,7 +395,7 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
 
     def test_serialize_settings(self):
         settings = self.node_settings.serialize_waterbutler_settings()
-        expected = {'folder': self.node_settings.folder_id}
+        expected = {'folder': self.node_settings.provider_id}
         assert_equal(settings, expected)
 
     def test_serialize_settings_not_configured(self):
@@ -474,4 +474,4 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
         # Ensure that changes to node settings have been saved
         self.node_settings.reload()
         assert_is_none(self.node_settings.user_settings)
-        assert_is_none(self.node_settings.folder_id)
+        assert_is_none(self.node_settings.provider_id)

@@ -110,7 +110,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return os.path.split(self.folder)[1]
 
     @property
-    def folder_id(self):
+    def provider_id(self):
         return self.folder
 
     @property
