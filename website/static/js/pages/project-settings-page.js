@@ -136,10 +136,14 @@ $(document).ready(function() {
         var submit = function() {
             var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', formData);
             return request;
-            
         };
-        function successfulAddonUpdate() {
+
+        function successMessage() {
             msgElm.text('Settings updated').fadeIn();
+            msgElm.fadeOut(3000);
+        }
+        function successfulAddonUpdate() {
+            successMessage();
             checkedOnLoad = $('#selectAddonsForm input:checked');
             uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
             if($osf.isSafari()) {
@@ -196,8 +200,7 @@ $(document).ready(function() {
         }
         // no changes to the state of the addons
         else {
-            msgElm.text('Settings updated').fadeIn();
-            msgElm.fadeOut(800);
+            successMessage();
         }
 
         return false;
