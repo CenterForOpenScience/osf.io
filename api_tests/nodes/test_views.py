@@ -3893,6 +3893,7 @@ class TestExceptionFormatting(ApiTestCase):
         }, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
+        assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/id'})
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
 
@@ -3912,6 +3913,7 @@ class TestExceptionFormatting(ApiTestCase):
             }
         }, auth=self.user.auth)
         assert_equal(res.status_code, 201)
+
         res = self.app.post_json_api(url, {'data': {
             'type': 'node_links',
             'relationships': {
@@ -3925,4 +3927,5 @@ class TestExceptionFormatting(ApiTestCase):
         }}, auth=self.user.auth, expect_errors=True)
         errors = res.json['errors']
         assert(isinstance(errors, list))
+        assert_equal(res.status_code, 400)
         assert(self.public_project._id in res.json['errors'][0]['detail'])
