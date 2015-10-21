@@ -371,7 +371,7 @@ class TestMessage(ContextTestCase):
     def test_alternate_route_valid(self):
         conf = ConferenceFactory.build(endpoint='chocolate', active=True)
         conf.name = 'Chocolate Conference'
-        conf.field_names['talk'] = 'data'
+        conf.field_names['submission2'] = 'data'
         conf.save()
         recipient = '{0}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
         with self.make_context(data={'recipient': recipient}):
