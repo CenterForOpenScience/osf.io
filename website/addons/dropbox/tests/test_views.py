@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """Views tests for the Dropbox addon."""
-import os
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
@@ -9,96 +8,37 @@ import httplib
 from framework.auth import Auth
 from website.util import api_url_for, web_url_for
 from dropbox.rest import ErrorResponse
-from dropbox.client import DropboxOAuth2Flow
 
 from urllib3.exceptions import MaxRetryError
 
-from tests.base import OsfTestCase, assert_is_redirect
-from tests.factories import AuthUserFactory, ProjectFactory
+from tests.factories import AuthUserFactory
 
+from website.addons.base.testing import OAuthAddonAuthViewsTestCase
 from website.addons.dropbox.tests.utils import (
-    DropboxAddonTestCase, mock_responses, MockDropbox, patch_client
+    DropboxAddonTestCaseMixin,
+    DropboxAddonTestCase,
+    mock_responses,
+    MockDropbox,
+    patch_client
 )
-from website.addons.dropbox.views.config import serialize_settings
+from website.addons.dropbox.serializer import DropboxSerializer
 from website.addons.dropbox.views.hgrid import dropbox_addon_folder
 from website.addons.dropbox import utils
+from website.addons.dropbox.model import DropboxProvider
 
 mock_client = MockDropbox()
 
+class TestAuthViews(DropboxAddonTestCaseMixin, OAuthAddonAuthViewsTestCase):
 
-class TestAuthViews(OsfTestCase):
+    Provider = DropboxProvider
 
-    def setUp(self):
-        super(TestAuthViews, self).setUp()
-        self.user = AuthUserFactory()
-        # Log user in
-        self.app.authenticate(*self.user.auth)
-
-    def test_dropbox_oauth_start(self):
-        url = api_url_for('dropbox_oauth_start_user')
-        res = self.app.get(url)
-        assert_is_redirect(res)
-        assert_in('&force_reapprove=true', res.location)
-
-    @mock.patch('website.addons.dropbox.views.auth.DropboxOAuth2Flow.finish')
-    @mock.patch('website.addons.dropbox.views.auth.get_client_from_user_settings')
-    def test_dropbox_oauth_finish(self, mock_get, mock_finish):
-        mock_client = mock.MagicMock()
-        mock_client.account_info.return_value = {'display_name': 'Mr. Drop Box'}
-        mock_get.return_value = mock_client
-        mock_finish.return_value = ('mytoken123', 'mydropboxid', 'done')
-        url = api_url_for('dropbox_oauth_finish')
-        res = self.app.get(url)
-        assert_is_redirect(res)
-
-    @mock.patch('website.addons.dropbox.views.auth.session')
-    @mock.patch('website.addons.dropbox.views.auth.DropboxOAuth2Flow.finish')
-    def test_dropbox_oauth_finish_cancelled(self, mock_finish, mock_session):
-        node = ProjectFactory(creator=self.user)
-        mock_session.data = {'dropbox_auth_nid': node._id}
-        mock_response = mock.Mock()
-        mock_response.status = 404
-        mock_finish.side_effect = DropboxOAuth2Flow.NotApprovedException
-        settings = self.user.get_addon('dropbox')
-        url = api_url_for('dropbox_oauth_finish')
-        res = self.app.get(url)
-
-        assert_is_redirect(res)
-        assert_in(node._id, res.headers["location"])
-        assert_false(settings)
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.disable_access_token')
-    def test_dropbox_oauth_delete_user(self, mock_disable_access_token):
-        self.user.add_addon('dropbox')
-        settings = self.user.get_addon('dropbox')
-        settings.access_token = '12345abc'
-        settings.save()
-        assert_true(settings.has_auth)
-        self.user.save()
-        url = api_url_for('dropbox_oauth_delete_user')
-        self.app.delete(url)
-        settings.reload()
-        assert_false(settings.has_auth)
-
-    @mock.patch('website.addons.dropbox.client.DropboxClient.disable_access_token')
-    def test_dropbox_oauth_delete_user_with_invalid_credentials(self, mock_disable_access_token):
-        self.user.add_addon('dropbox')
-        settings = self.user.get_addon('dropbox')
-        settings.access_token = '12345abc'
-        settings.save()
-        assert_true(settings.has_auth)
-
-        mock_response = mock.Mock()
-        mock_response.status = 401
-        mock_disable_access_token.side_effect = ErrorResponse(mock_response, "The given OAuth 2 access token doesn't exist or has expired.")
-
-        self.user.save()
-        url = api_url_for('dropbox_oauth_delete_user')
-        self.app.delete(url)
-        settings.reload()
-        assert_false(settings.has_auth)
-
-
+    @mock.patch(
+        'website.addons.dropbox.model.DropboxProvider.auth_url',
+        mock.PropertyMock(return_value='http://api.foo.com')
+    )
+    def test_oauth_start(self):
+        super(TestAuthViews, self).test_oauth_start()
+        
 class TestConfigViews(DropboxAddonTestCase):
 
     @mock.patch('website.addons.dropbox.client.DropboxClient.account_info')
@@ -145,7 +85,7 @@ class TestConfigViews(DropboxAddonTestCase):
         assert_equal(urls['create'], api_url_for('dropbox_oauth_start_user'))
 
     def test_serialize_settings_helper_returns_correct_urls(self):
-        result = serialize_settings(self.node_settings, self.user, client=mock_client)
+        result = DropboxSerializer().serialize_settings(self.node_settings, self.user)
         urls = result['urls']
 
         assert_equal(urls['config'], self.project.api_url_for('dropbox_config_put'))
@@ -362,7 +302,8 @@ class TestFilebrowserViews(DropboxAddonTestCase):
     def test_dropbox_addon_folder_if_folder_is_none(self):
         # Something is returned on normal circumstances
         root = dropbox_addon_folder(
-            node_settings=self.node_settings, auth=self.user.auth)
+            node_settings=self.node_settings, auth=self.user.auth
+        )
         assert_true(root)
 
         # Nothing is returned when there is no folder linked

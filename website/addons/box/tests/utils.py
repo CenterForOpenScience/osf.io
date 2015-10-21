@@ -6,7 +6,7 @@ from modularodm import storage
 
 from framework.mongo import set_up_storage
 
-from website.addons.base.testing import AddonTestCase
+from website.addons.base.testing import OAuthAddonTestCase
 from website.addons.box import MODELS
 from website.addons.box.tests.factories import BoxAccountFactory
 
@@ -14,19 +14,14 @@ from website.addons.box.tests.factories import BoxAccountFactory
 def init_storage():
     set_up_storage(MODELS, storage_class=storage.MongoStorage)
 
-
-class BoxAddonTestCase(AddonTestCase):
+class BoxAddonTestCaseMixin(object):
 
     ADDON_SHORT_NAME = 'box'
+    ExternalAccountFactory = BoxAccountFactory
 
-    def set_user_settings(self, settings):
-        external_account = BoxAccountFactory()
-        settings.owner.external_accounts.append(external_account)
-        settings.owner.save()
 
-    def set_node_settings(self, settings):
-        settings.folder_id = '1234567890'
-
+class BoxAddonTestCase(BoxAddonTestCaseMixin, OAuthAddonTestCase):
+    pass
 
 mock_responses = {
     'folder': {

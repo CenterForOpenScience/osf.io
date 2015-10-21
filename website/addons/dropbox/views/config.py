@@ -1,4 +1,3 @@
-
 """Views fo the node settings page."""
 # -*- coding: utf-8 -*-
 import httplib as http
@@ -17,16 +16,16 @@ from website.util import web_url_for
 
 from website.addons.dropbox import utils
 from website.addons.dropbox.client import get_client_from_user_settings
-from dropbox.rest import ErrorResponse
-
+from website.addons.dropbox.serializer import DropboxSerializer
 
 @collect_auth
 @must_be_valid_project
 @must_have_addon('dropbox', 'node')
 def dropbox_config_get(node_addon, auth, **kwargs):
     """API that returns the serialized node settings."""
-    return {'result': serialize_settings(node_addon, auth.user)}
-
+    return {
+        'result': DropboxSerializer().serialize_settings(node_addon, auth.user)
+    }
 
 def serialize_folder(metadata):
     """Serializes metadata to a dict with the display name and path
@@ -41,7 +40,6 @@ def serialize_folder(metadata):
         'name': name,
         'path': metadata['path']
     }
-
 
 def get_folders(client):
     """Gets a list of folders in a user's Dropbox, including the root.
@@ -71,53 +69,6 @@ def serialize_urls(node_settings):
         'settings': web_url_for('user_addons')
     }
     return urls
-
-
-def serialize_settings(node_settings, current_user, client=None):
-    """View helper that returns a dictionary representation of a
-    DropboxNodeSettings record. Provides the return value for the
-    dropbox config endpoints.
-    """
-    user_settings = node_settings.user_settings
-    user_is_owner = user_settings is not None and (
-        user_settings.owner._primary_key == current_user._primary_key
-    )
-    current_user_settings = current_user.get_addon('dropbox')
-    valid_credentials = True
-
-    if user_settings:
-        try:
-            client = client or get_client_from_user_settings(user_settings)
-            client.account_info()
-        except ErrorResponse as error:
-            if error.status == 401:
-                valid_credentials = False
-            else:
-                raise HTTPError(http.BAD_REQUEST)
-    result = {
-        'nodeHasAuth': node_settings.has_auth,
-        'userIsOwner': user_is_owner,
-        'userHasAuth': current_user_settings is not None and current_user_settings.has_auth,
-        'validCredentials': valid_credentials,
-        'urls': serialize_urls(node_settings),
-    }
-
-    if node_settings.has_auth:
-        # Add owner's profile URL
-        result['urls']['owner'] = web_url_for('profile_view_id',
-            uid=user_settings.owner._primary_key)
-        result['ownerName'] = user_settings.owner.fullname
-        # Show available folders
-        path = node_settings.folder
-        if path is None:
-            result['folder'] = {'name': None, 'path': None}
-        else:
-            result['folder'] = {
-                'name': path if path != '/' else '/ (Full Dropbox)',
-                'path': path
-            }
-    return result
-
 
 @must_have_permission('write')
 @must_not_be_registration
@@ -152,7 +103,7 @@ def dropbox_import_user_auth(auth, node_addon, user_addon, **kwargs):
     node_addon.set_user_auth(user_addon)
     node_addon.save()
     return {
-        'result': serialize_settings(node_addon, user),
+        'result': DropboxSerializer().serialize_social(node_addon, user),
         'message': 'Successfully imported access token from profile.',
     }
 

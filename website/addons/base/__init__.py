@@ -347,6 +347,11 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             if x.provider == self.oauth_provider.short_name
         ]
 
+    def delete(self):
+        for account in self.external_accounts:
+            self.revoke_oauth_access(account, save=False)
+        super(AddonOAuthUserSettingsBase, self).delete()
+
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
         # ensure the user owns the external_account
@@ -369,7 +374,7 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         self.save()
 
-    def revoke_oauth_access(self, external_account):
+    def revoke_oauth_access(self, external_account, save=True):
         """Revoke all access to an ``ExternalAccount``.
 
         TODO: This should accept node and metadata params in the future, to
@@ -378,8 +383,8 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         """
         for key in self.oauth_grants:
             self.oauth_grants[key].pop(external_account._id, None)
-
-        self.save()
+        if save:
+            self.save()
 
     def verify_oauth_access(self, node, external_account, metadata=None):
         """Verify that access has been previously granted.

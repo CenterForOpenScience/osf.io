@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 import abc
+import httplib as http
 
+import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
 
 from website import settings
 from website.addons.base import exceptions
+from website.util import api_url_for, web_url_for
 
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory, UserFactory
@@ -97,6 +100,68 @@ class AddonTestCase(OsfTestCase):
         self.create_user_settings()
         self.create_node_settings()
 
+class OAuthAddonTestCase(AddonTestCase):
+
+    @property
+    def ExternalAccountFactory(self):
+        raise NotImplementedError()
+
+    def set_user_settings(self, settings):
+        self.external_account = self.ExternalAccountFactory()
+        self.external_account.save()
+        self.user.external_accounts.append(self.external_account)
+        self.user.save()
+
+    def set_node_settings(self, settings):
+        self.user_settings.grant_oauth_access(self.project, self.external_account)
+
+class OAuthAddonAuthViewsTestCase(OAuthAddonTestCase):
+
+    @property
+    def Provider(self):
+        raise NotImplementedError()
+
+    def test_oauth_start(self):
+        url = api_url_for(
+            'oauth_connect',
+            service_name=self.ADDON_SHORT_NAME
+        )
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.FOUND)
+        assert_equal(res.location, self.Provider.auth_url)
+
+    def test_oauth_finish(self):
+        url = web_url_for(
+            'oauth_callback',
+            service_name=self.ADDON_SHORT_NAME
+        )
+        with mock.patch.object(self.Provider, 'auth_callback') as mock_callback:
+            mock_callback.return_value = True
+            res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+        name, args, kwargs = mock_callback.mock_calls[0]
+        assert_equal(kwargs['user']._id, self.user._id)
+
+    def test_delete_external_account(self):
+        url = api_url_for(
+            'oauth_disconnect',
+            external_account_id=self.external_account._id
+        )
+        res = self.app.delete(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.OK)
+        self.user.reload()
+        for account in self.user.external_accounts:
+            assert_not_equal(account._id, self.external_account._id)
+        assert_false(self.user.external_accounts)
+
+    def test_delete_external_account_not_owner(self):
+        other_user = AuthUserFactory()
+        url = api_url_for(
+            'oauth_disconnect',
+            external_account_id=self.external_account._id
+        )
+        res = self.app.delete(url, auth=other_user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
 class OAuthAddonTestSuiteBase(object):
 

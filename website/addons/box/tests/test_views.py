@@ -13,14 +13,19 @@ from box.client import BoxClientException
 from tests.factories import AuthUserFactory
 
 from website.addons.box.tests.utils import (
-    BoxAddonTestCase, MockBox, patch_client
+    BoxAddonTestCaseMixin,
+    BoxAddonTestCase,
+    MockBox,
+    patch_client
 )
-from website.addons.box.tests.factories import BoxAccountFactory
 from website.addons.box.utils import box_addon_folder
 from website.addons.box.serializer import BoxSerializer
+from website.addons.base.testing import OAuthAddonAuthViewsTestCase
 
 mock_client = MockBox()
 
+class TestAuthViews(BoxAddonTestCaseMixin, OAuthAddonAuthViewsTestCase):
+    pass
 
 class TestConfigViews(BoxAddonTestCase):
 
