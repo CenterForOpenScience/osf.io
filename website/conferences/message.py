@@ -165,6 +165,6 @@ class ConferenceMessage(object):
     def find_allowed_types(self):
         from .model import Conference
         all_confs = list(Conference.find())
-        allowed_types = [conf.field_names['talk'] for conf in all_confs] + [conf.field_names['poster'] for conf in all_confs]
+        allowed_types = [conf.field_names['submission1'] for conf in all_confs] + [conf.field_names['submission2'] for conf in all_confs]
         regex_types_allowed = '|'.join(set(allowed_types))
         return regex_types_allowed
