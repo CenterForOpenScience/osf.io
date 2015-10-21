@@ -497,12 +497,9 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         """
         Tells parser that we are creating a relationship
         """
-        return {
-            'is_relationship': True,
-            'view': self,
-            'args': getattr(self, 'args', ()),
-            'kwargs': getattr(self, 'kwargs', {})
-        }
+        res = super(NodeContributorsList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
 
 
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
@@ -842,17 +839,14 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
             if not pointer.node.is_deleted
         ]
 
-    # overrides ListCreateAPIView
+  # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
         """
         Tells parser that we are creating a relationship
         """
-        return {
-            'is_relationship': True,
-            'view': self,
-            'args': getattr(self, 'args', ()),
-            'kwargs': getattr(self, 'kwargs', {})
-        }
+        res = super(NodeLinksList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
 
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
