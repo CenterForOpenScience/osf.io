@@ -115,8 +115,6 @@ class AuthorizedCharField(ser.CharField):
         return field_source_method(auth=auth)
 
     def to_internal_value(self, data):
-        if self.root.Meta.type_ != data:
-            raise Conflict()
         return super(AuthorizedCharField, self).to_internal_value(data)
 
 

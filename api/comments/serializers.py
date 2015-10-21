@@ -63,12 +63,13 @@ class CommentSerializer(JSONAPISerializer):
         validated_data['user'] = user
         validated_data['node'] = node
         validated_data['target'] = target
+        validated_data['content'] = validated_data.pop('return_content')
         now = datetime.utcnow()
         validated_data['date_created'] = now
         validated_data['date_modified'] = now
 
         if node.can_comment(Auth(user)):
-            comment = Comment(**validated_data)
+            comment = Comment.create(auth=Auth(user), **validated_data)
             comment.save()
         else:
             raise PermissionDenied("Not authorized to comment on this project.")
@@ -79,8 +80,8 @@ class CommentSerializer(JSONAPISerializer):
         assert isinstance(comment, Comment), 'comment must be a Comment'
         auth = Auth(self.context['request'].user)
         if validated_data:
-            if validated_data.get('content', None):
-                comment.edit(validated_data['content'], auth=auth, save=True)
+            if validated_data.get('return_content', None):
+                comment.edit(validated_data['return_content'], auth=auth, save=True)
             is_deleted = validated_data.get('is_deleted', None)
             if is_deleted:
                 comment.delete(auth, save=True)
