@@ -348,6 +348,9 @@ var RegistrationEditor = function(urls, editorId) {
         return self.draft() ? self.draft().pages() : [];
     });
     self.currentPage = ko.observable();
+    self.onLastPage = ko.pureComputed(function() {
+        return self.currentPage() === self.pages()[self.pages().length - 1];
+    });
 
     self.lastSaveTime = ko.computed(function() {
         if (!self.draft()) {
@@ -461,6 +464,17 @@ RegistrationEditor.prototype.selectPage = function(page) {
     // var firstQuestion = page.questions[Object.keys(page.questions)[0]];
     self.currentPage(page);
 };
+
+RegistrationEditor.prototype.nextPage = function () {
+    var self = this;
+    if (self.onLastPage() || self.pages().length < 2) {
+        return;
+    }
+
+    self.currentPage(self.pages()[ self.pages().indexOf(self.currentPage()) + 1 ]);
+    window.scrollTo(0,0);
+};
+
 /** 
  * Update draft primary key and updated time on server response
  **/

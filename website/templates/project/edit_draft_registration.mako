@@ -48,13 +48,17 @@
                 </p>
                 <button data-bind="click: save" type="button" class="btn btn-primary">Save
                 </button>
-                <span data-bind="tooltip: {
+                    <!-- ko if: onLastPage -->
+                    <a data-bind="css: {'disabled': !canRegister()},
+                                click: $root.check,
+                                tooltip: {
                                    title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
-                                 }">
-                  <a data-bind="css: {'disabled': !canRegister()},
-                                click: $root.check" type="button" class="pull-right btn btn-success">Preview for submission
-                  </a>
-                </span>
+                                 }" type="button" class="pull-right btn btn-success">Preview for submission
+                    </a>
+                  <!-- /ko -->
+                  <!-- ko ifnot: onLastPage -->
+                    <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
+                  <!-- /ko -->
               </div>
             </div>
           </div>
