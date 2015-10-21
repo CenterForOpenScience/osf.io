@@ -13,10 +13,10 @@ from framework.analytics import get_basic_counters
 
 from website import settings
 from website.app import init_app
-from website.models import User, Node, PrivateLink
+from website.files.models import OsfStorageFile
+from website.files.models import TrashedFileNode
+from website.models import User, Node, PrivateLink, NodeLog
 from website.addons.dropbox.model import DropboxUserSettings
-from website.addons.osfstorage.model import OsfStorageFileNode
-from website.addons.osfstorage.model import OsfStorageTrashedFileNode
 
 from scripts.analytics import profile, tabulate_emails, tabulate_logs
 
@@ -77,8 +77,10 @@ def count_user_nodes(users=None):
 
 def count_user_logs(user, query=None):
     if query:
-        return len(user.nodelog__created.find(query))
-    return len(user.nodelog__created)
+        query &= Q('user', 'eq', user._id)
+    else:
+        query = Q('user', 'eq', user._id)
+    return NodeLog.find(query).count()
 
 
 def count_users_logs(users=None, query=None):
@@ -98,7 +100,7 @@ def count_at_least(counts, at_least):
 
 def count_file_downloads():
     downloads_unique, downloads_total = 0, 0
-    for record in OsfStorageFileNode.find():
+    for record in OsfStorageFile.find():
         page = ':'.join(['download', record.node._id, record._id])
         unique, total = get_basic_counters(page)
         downloads_unique += unique or 0
@@ -182,16 +184,15 @@ def get_number_downloads_unique_and_total():
     projects = get_projects()
 
     for project in projects:
-        addon = project.get_addon('osfstorage')
 
-        for filenode in OsfStorageFileNode.find(Q('node_settings', 'eq', addon) & Q('kind', 'eq', 'file')):
+        for filenode in OsfStorageFile.find(Q('node', 'eq', project)):
             for idx, version in enumerate(filenode.versions):
                 page = ':'.join(['download', project._id, filenode._id, str(idx)])
                 unique, total = get_basic_counters(page)
                 number_downloads_unique += unique or 0
                 number_downloads_total += total or 0
 
-        for filenode in OsfStorageTrashedFileNode.find(Q('node_settings', 'eq', addon) & Q('kind', 'eq', 'file')):
+        for filenode in TrashedFileNode.find(Q('provider', 'eq', 'osfstorage') & Q('node', 'eq', project) & Q('is_file', 'eq', True)):
             for idx, version in enumerate(filenode.versions):
                 page = ':'.join(['download', project._id, filenode._id, str(idx)])
                 unique, total = get_basic_counters(page)

@@ -22,6 +22,6 @@ urlpatterns = [
 if settings.DEV_MODE:
     urlpatterns.extend([
         url(r'^(?P<node_id>\w+)/node_links/$', views.NodeLinksList.as_view(), name='node-pointers'),
-        url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)', views.NodeLinksDetail.as_view(), name='node-pointer-detail'),
+        url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', views.NodeLinksDetail.as_view(), name='node-pointer-detail'),
         url(r'^(?P<node_id>\w+)/registrations/$', views.NodeRegistrationsList.as_view(), name='node-registrations'),
     ])

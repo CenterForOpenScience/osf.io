@@ -22,6 +22,7 @@ import os
 import logging
 
 from mako.lookup import TemplateLookup, Template
+
 from framework.email import tasks
 from website import settings
 
@@ -86,6 +87,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
     .. note:
          Uses celery if available
     """
+
     from_addr = from_addr or settings.FROM_EMAIL
     mailer = mailer or tasks.send_email
     subject = mail.subject(**context)
@@ -108,14 +110,15 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         mail_server=mail_server
     )
 
-    if settings.USE_CELERY:
-        return mailer.apply_async(kwargs=kwargs, link=callback)
-    else:
-        ret = mailer(**kwargs)
-        if callback:
-            callback()
+    if settings.USE_EMAIL:
+        if settings.USE_CELERY:
+            return mailer.apply_async(kwargs=kwargs, link=callback)
+        else:
+            ret = mailer(**kwargs)
+            if callback:
+                callback()
 
-        return ret
+            return ret
 
 # Predefined Emails
 

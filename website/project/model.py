@@ -293,7 +293,7 @@ class NodeLog(StoredObject):
 
     was_connected_to = fields.ForeignField('node', list=True)
 
-    user = fields.ForeignField('user', backref='created')
+    user = fields.ForeignField('user')
     foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
@@ -590,7 +590,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'is_deleted',
         'wiki_pages_current',
         'is_retracted',
-        'node_license',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -615,7 +614,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'description',
         'category',
         'is_public',
-        'node_license',
     ]
 
     # Named constants
@@ -650,6 +648,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user', backref='registered')
+
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
     registration_approval = fields.ForeignField('registrationapproval')
@@ -662,16 +661,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     title = fields.StringField(validate=validate_title)
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
-
-    # Representation of a nodes's license
-    # {
-    #  'id':  <id>,
-    #  'name': <name>,
-    #  'text': <license text>,
-    #  'year' (optional): <year>,
-    #  'copyrightHolders' (optional): <copyright_holders>
-    # }
-    node_license = fields.DictionaryField(default=dict)
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -743,16 +732,26 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         return self._id
 
     @property
-    def license(self):
-        node_license = self.node_license
-        if not node_license and self.parent_node:
-            return self.parent_node.license
-        return node_license
-
-    @property
     def category_display(self):
         """The human-readable representation of this node's category."""
         return self.CATEGORY_MAP[self.category]
+
+    # We need the following 2 properties in order to serialize related links in NodeRegistrationSerializer
+    @property
+    def registered_user_id(self):
+        """The ID of the user who registered this node if this is a registration, else None.
+        """
+        if self.registered_user:
+            return self.registered_user._id
+        return None
+
+    @property
+    def registered_from_id(self):
+        """The ID of the user who registered this node if this is a registration, else None.
+        """
+        if self.registered_from:
+            return self.registered_from._id
+        return None
 
     @property
     def sanction(self):
@@ -1186,11 +1185,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         if key == 'category':
                             self.delete_search_entry()
                         ###############
-                        values[key] = {
-                            'old': getattr(self, key),
-                            'new': value,
-                        }
-                        setattr(self, key, value)
+                        old_value = getattr(self, key)
+                        if old_value != value:
+                            values[key] = {
+                                'old': old_value,
+                                'new': value,
+                            }
+                            setattr(self, key, value)
                     except AttributeError:
                         raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
                     except warnings.Warning:
@@ -1276,14 +1277,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             need_update = False
         if need_update:
             self.update_search()
-
-        if 'node_license' in saved_fields:
-            children = [c for c in self.get_descendants_recursive(
-                include=lambda n: n.node_license == {}
-            )]
-            # this returns generator, that would get unspooled anyways
-            if children:
-                Node.bulk_update_search(children)
 
         # This method checks what has changed.
         if settings.PIWIK_HOST and update_piwik:
@@ -1871,7 +1864,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
-        forked.node_license = original.license
 
         # Forks default to private status
         forked.is_public = False
@@ -1958,7 +1950,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
-        registered.node_license = original.license
 
         registered.save()
 
@@ -2189,6 +2180,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def parent_id(self):
         if self.node__parent:
             return self.node__parent[0]._primary_key
+        return None
+
+    @property
+    def forked_from_id(self):
+        if self.forked_from:
+            return self.forked_from._id
         return None
 
     @property
@@ -2665,12 +2662,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.save()
         return contributor
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True):
-        """Set the permissions for this node.
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
+        """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
+            public projects.
 
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
+        :param bool meeting_creation: Whther this was creayed due to a meetings email.
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
@@ -2709,6 +2708,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if save:
             self.save()
+        if auth and permissions == 'public':
+            project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
         return True
 
     def admin_public_wiki(self, user):

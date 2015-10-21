@@ -79,7 +79,8 @@ class IDField(ser.CharField):
     def to_internal_value(self, data):
         update_methods = ['PUT', 'PATCH']
         if self.context['request'].method in update_methods:
-            if self.root.instance._id != data:
+            id_field = getattr(self.root.instance, self.source, '_id')
+            if id_field != data:
                 raise Conflict()
         return super(IDField, self).to_internal_value(data)
 
@@ -94,6 +95,14 @@ class TypeField(ser.CharField):
         if self.root.Meta.type_ != data:
             raise Conflict()
         return super(TypeField, self).to_internal_value(data)
+
+
+class JSONAPIListField(ser.ListField):
+    def to_internal_value(self, data):
+        if not isinstance(data, list):
+            self.fail('not_a_list', input_type=type(data).__name__)
+
+        return super(JSONAPIListField, self).to_internal_value(data)
 
 
 class AuthorizedCharField(ser.CharField):
@@ -171,6 +180,9 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                         detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
                         parameter='related_counts'
                     )
+            else:
+                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 

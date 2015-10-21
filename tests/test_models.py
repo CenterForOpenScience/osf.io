@@ -942,7 +942,7 @@ class TestMergingUsers(OsfTestCase):
         assert_in('joseph123@hotmail.com', self.master.emails)
 
     def test_send_user_merged_signal(self):
-        self.dupe.mailing_lists['foo'] = True
+        self.dupe.mailchimp_mailing_lists['foo'] = True
         self.dupe.save()
 
         with capture_signals() as mock_signals:
@@ -953,7 +953,7 @@ class TestMergingUsers(OsfTestCase):
     def test_merged_user_unsubscribed_from_mailing_lists(self, mock_get_mailchimp_api):
         list_name = 'foo'
         username = self.dupe.username
-        self.dupe.mailing_lists[list_name] = True
+        self.dupe.mailchimp_mailing_lists[list_name] = True
         self.dupe.save()
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
@@ -962,7 +962,7 @@ class TestMergingUsers(OsfTestCase):
         self._merge_dupe()
         handlers.celery_teardown_request()
         mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username})
-        assert_false(self.dupe.mailing_lists[list_name])
+        assert_false(self.dupe.mailchimp_mailing_lists[list_name])
 
     def test_inherits_projects_contributed_by_dupe(self):
         project = ProjectFactory()
@@ -1941,6 +1941,24 @@ class TestNodeUpdate(OsfTestCase):
         # A new log is not created
         assert_equal(len(self.node.logs), original_n_logs + 1)
 
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4664
+    def test_updating_category_twice_with_same_content_generates_one_log(self):
+        self.node.category = 'project'
+        self.node.save()
+        original_n_logs = len(self.node.logs)
+        new_category = 'data'
+
+        self.node.update({'category': new_category}, auth=Auth(self.user), save=True)
+        assert_equal(len(self.node.logs), original_n_logs + 1)  # sanity check
+        assert_equal(self.node.category, new_category)
+
+        # Call update with same category
+        self.node.update({'category': new_category}, auth=Auth(self.user), save=True)
+
+        # Only one new log is created
+        assert_equal(len(self.node.logs), original_n_logs + 1)
+        assert_equal(self.node.category, new_category)
+
     # TODO: test permissions, non-writable fields
 
 
@@ -2772,16 +2790,6 @@ class TestProject(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.is_registration_of(self.project))
 
-    def test_registration_preserves_license(self):
-        license = {
-            'name': 'A License',
-            'text': 'Blah blah blah'
-        }
-        self.project.node_license = license
-        self.project.save()
-        with mock_archive(self.project, autocomplete=True) as registration:
-            assert_equal(registration.node_license, license)
-
     def test_is_contributor_unregistered(self):
         unreg = UnregUserFactory()
         self.project.add_unregistered_contributor(
@@ -2845,6 +2853,24 @@ class TestProject(OsfTestCase):
         self.project.save()
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
+
+    @mock.patch('website.project.model.mails.queue_mail')
+    def test_set_privacy_sends_mail_default(self, mock_queue):
+        self.project.set_privacy('private', auth=self.auth)
+        self.project.set_privacy('public', auth=self.auth)
+        assert_true(mock_queue.called_once())
+
+    @mock.patch('website.project.model.mails.queue_mail')
+    def test_set_privacy_sends_mail(self, mock_queue):
+        self.project.set_privacy('private', auth=self.auth)
+        self.project.set_privacy('public', auth=self.auth, meeting_creation=False)
+        assert_true(mock_queue.called_once())
+
+    @mock.patch('website.project.model.mails.queue_mail')
+    def test_set_privacy_skips_mail(self, mock_queue):
+        self.project.set_privacy('private', auth=self.auth)
+        self.project.set_privacy('public', auth=self.auth, meeting_creation=True)
+        assert_false(mock_queue.called)
 
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self):
         registration = RegistrationFactory(project=self.project)
@@ -3330,16 +3356,6 @@ class TestForkNode(OsfTestCase):
         # Forker has admin permissions
         assert_equal(len(fork.contributors), 1)
         assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
-
-    def test_fork_preserves_license(self):
-        license = {
-            'name': 'A License',
-            'text': 'Blah blah blah'
-        }
-        self.project.node_license = license
-        self.project.save()
-        fork = self.project.fork_node(self.auth)
-        assert_equal(fork.node_license, license)
 
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)

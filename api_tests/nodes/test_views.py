@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
-import mock
+import json
 import base64
 from urlparse import urlparse
+
+import mock
 from nose.tools import *  # flake8: noqa
+import httpretty
 
 from framework.auth.core import Auth
 
 from website.addons.github import model
 from website.models import Node, NodeLog
 from website.views import find_dashboard
-from website.util import permissions
+from website.util import permissions, waterbutler_api_url_for
 from website.util.sanitize import strip_html
-
 from api.base.settings.defaults import API_BASE
-
 from tests.base import ApiTestCase, fake
 from tests.factories import (
     DashboardFactory,
@@ -534,6 +535,7 @@ class TestNodeCreate(ApiTestCase):
         res = self.app.post_json_api(self.url, project, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Title cannot exceed 200 characters.')
+        assert_not_equal(res.json['errors'][0]['source'], None)
 
 
 class TestNodeDetail(ApiTestCase):
@@ -588,7 +590,7 @@ class TestNodeDetail(ApiTestCase):
     def test_top_level_project_has_no_parent(self):
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['relationships']['parent']['links']['self']['href'], None)
+        assert_equal(res.json['data']['relationships']['parent']['links']['related']['href'], None)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_child_project_has_parent(self):
@@ -596,7 +598,7 @@ class TestNodeDetail(ApiTestCase):
         public_component_url = '/{}nodes/{}/'.format(API_BASE, public_component._id)
         res = self.app.get(public_component_url)
         assert_equal(res.status_code, 200)
-        url = res.json['data']['relationships']['parent']['links']['self']['href']
+        url = res.json['data']['relationships']['parent']['links']['related']['href']
         assert_equal(urlparse(url).path, self.public_url)
 
     def test_node_has_children_link(self):
@@ -1104,6 +1106,24 @@ class TestNodeUpdate(NodeCRUDTestCase):
         }, auth=self.user_two.auth,expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
+
+    def test_multiple_patch_requests_with_same_category_generates_one_log(self):
+        self.private_project.category = 'project'
+        self.private_project.save()
+        new_category = 'data'
+        payload = make_node_payload(self.private_project, attributes={'category': new_category})
+        original_n_logs = len(self.private_project.logs)
+
+        res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.private_project.reload()
+        assert_equal(self.private_project.category, new_category)
+        assert_equal(len(self.private_project.logs), original_n_logs + 1)  # sanity check
+
+        res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
+        self.private_project.reload()
+        assert_equal(self.private_project.category, new_category)
+        assert_equal(len(self.private_project.logs), original_n_logs + 1)
 
     def test_partial_update_invalid_id(self):
         res = self.app.patch_json_api(self.public_url, {
@@ -2444,6 +2464,8 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
 
+node_url_for = lambda n_id: '/{}nodes/{}/'.format(API_BASE, n_id)
+
 
 class TestNodeLinksList(ApiTestCase):
 
@@ -2467,8 +2489,10 @@ class TestNodeLinksList(ApiTestCase):
         res_json = res.json['data']
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
-        assert_in(res_json[0]['attributes']['target_node_id'], self.public_pointer_project._id)
         assert_equal(res.content_type, 'application/vnd.api+json')
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_return_public_node_pointers_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user_two.auth)
@@ -2476,7 +2500,9 @@ class TestNodeLinksList(ApiTestCase):
         assert_equal(len(res_json), 1)
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_in(res_json[0]['attributes']['target_node_id'], self.public_pointer_project._id)
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_return_private_node_pointers_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -2489,7 +2515,9 @@ class TestNodeLinksList(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(len(res_json), 1)
-        assert_in(res_json[0]['attributes']['target_node_id'], self.pointer_project._id)
+        expected_path = node_url_for(self.pointer_project._id)
+        actual_path = urlparse(res_json[0]['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_return_private_node_pointers_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
@@ -2623,6 +2651,26 @@ class TestNodeTags(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(res.json['data']['attributes']['tags']), 0)
 
+    def test_tags_post_object_instead_of_list(self):
+        url = '/{}nodes/'.format(API_BASE)
+        payload = {'data': {
+            'type': 'nodes',
+            'attributes': {
+                'title': 'new title',
+                'category': 'project',
+                'tags': {'foo': 'bar'}
+            }
+        }}
+        res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
+    def test_tags_patch_object_instead_of_list(self):
+        self.one_new_tag_json['data']['attributes']['tags'] = {'foo': 'bar'}
+        res = self.app.patch_json_api(self.public_url, self.one_new_tag_json, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Expected a list of items but got type "dict".')
+
 
 class TestNodeLinkCreate(ApiTestCase):
 
@@ -2676,7 +2724,10 @@ class TestNodeLinkCreate(ApiTestCase):
         res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['target_node_id'], self.public_pointer_project._id)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_creates_private_node_pointer_logged_out(self):
         res = self.app.post_json_api(self.private_url, self.private_payload, expect_errors=True)
@@ -2686,7 +2737,10 @@ class TestNodeLinkCreate(ApiTestCase):
     def test_creates_private_node_pointer_logged_in_contributor(self):
         res = self.app.post_json_api(self.private_url, self.private_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['target_node_id'], self.pointer_project._id)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
         assert_equal(res.content_type, 'application/vnd.api+json')
 
     def test_creates_private_node_pointer_logged_in_non_contributor(self):
@@ -2704,7 +2758,10 @@ class TestNodeLinkCreate(ApiTestCase):
         res = self.app.post_json_api(self.private_url, self.user_two_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['target_node_id'], self.user_two_project._id)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.user_two_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_create_pointer_non_contributing_node_to_fake_node(self):
         res = self.app.post_json_api(self.private_url, self.fake_payload, auth=self.user_two.auth, expect_errors=True)
@@ -2728,9 +2785,12 @@ class TestNodeLinkCreate(ApiTestCase):
     @assert_logs(NodeLog.POINTER_CREATED, 'public_project')
     def test_create_node_pointer_to_itself(self):
         res = self.app.post_json_api(self.public_url, self.point_to_itself_payload, auth=self.user.auth)
+        res_json = res.json['data']
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['target_node_id'], self.public_project._id)
+        expected_path = node_url_for(self.public_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_create_node_pointer_to_itself_unauthorized(self):
         res = self.app.post_json_api(self.public_url, self.point_to_itself_payload, auth=self.user_two.auth, expect_errors=True)
@@ -2742,7 +2802,10 @@ class TestNodeLinkCreate(ApiTestCase):
         res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res.json['data']['attributes']['target_node_id'], self.public_pointer_project._id)
+        res_json = res.json['data']
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
         res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
@@ -2769,6 +2832,64 @@ class TestNodeLinkCreate(ApiTestCase):
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
+def prepare_mock_wb_response(
+        node=None,
+        provider='github',
+        files=None,
+        folder=True,
+        path='/',
+        method=httpretty.GET,
+        status_code=200
+    ):
+    """Prepare a mock Waterbutler response with httpretty.
+
+    :param Node node: Target node.
+    :param str provider: Addon provider
+    :param list files: Optional list of files. You can specify partial data; missing values
+        will have defaults.
+    :param folder: True if mocking out a folder response, False if a file response.
+    :param path: Waterbutler path, passed to waterbutler_api_url_for.
+    :param str method: HTTP method.
+    :param int status_code: HTTP status.
+    """
+    node = node
+    files = files or []
+    wb_url = waterbutler_api_url_for(node._id, provider=provider, path=path, meta=True)
+
+    default_file = {
+        u'contentType': None,
+        u'extra': {u'downloads': 0, u'version': 1},
+        u'kind': u'file',
+        u'modified': None,
+        u'name': u'NewFile',
+        u'path': u'/NewFile',
+        u'provider': provider,
+        u'size': None,
+        u'materialized': '/',
+    }
+
+    if len(files):
+        data = [dict(default_file, **each) for each in files]
+    else:
+        data = [default_file]
+
+    jsonapi_data = []
+    for datum in data:
+        jsonapi_data.append({'attributes': datum})
+
+    if not folder:
+        jsonapi_data = jsonapi_data[0]
+
+    body = json.dumps({
+        u'data': jsonapi_data
+    })
+    httpretty.register_uri(
+        method,
+        wb_url,
+        body=body,
+        status=status_code,
+        content_type='application/json'
+    )
 
 class TestNodeFilesList(ApiTestCase):
 
@@ -2782,6 +2903,15 @@ class TestNodeFilesList(ApiTestCase):
 
         self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_url = '/{}nodes/{}/files/'.format(API_BASE, self.public_project._id)
+        httpretty.enable()
+
+    def tearDown(self):
+        super(TestNodeFilesList, self).tearDown()
+        httpretty.disable()
+        httpretty.reset()
+
+    def _prepare_mock_wb_response(self, node=None, **kwargs):
+        prepare_mock_wb_response(node=node or self.project, **kwargs)
 
     def test_returns_public_files_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)
@@ -2854,115 +2984,33 @@ class TestNodeFilesList(ApiTestCase):
         assert_in('github', providers)
         assert_in('osfstorage', providers)
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_returns_node_files_list(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 200
-        mock_res.json.return_value = {
-            u'data': [{
-                u'contentType': None,
-                u'extra': {u'downloads': 0, u'version': 1},
-                u'kind': u'file',
-                u'modified': None,
-                u'name': u'NewFile',
-                u'path': u'/',
-                u'provider': u'github',
-                u'size': None,
-                u'materialized': '/',
-            }]
-        }
-        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
-        mock_waterbutler_request.return_value = mock_res
-
+    def test_returns_node_files_list(self):
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}])
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
-        res = self.app.get(url, auth=self.user.auth, headers={
-            'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
-        })
+        res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.json['data'][0]['attributes']['name'], 'NewFile')
         assert_equal(res.json['data'][0]['attributes']['provider'], 'github')
-        mock_waterbutler_request.assert_called_once_with(
-            'http://localhost:7777/v1/resources/{}/providers/github/?meta=True'.format(self.project._id),
-            cookies={'foo':'bar'},
-            headers={'Authorization': auth_header}
-        )
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_returns_node_file(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 200
-        mock_res.json.return_value = {
-            u'data': {
-                u'contentType': None,
-                u'extra': {u'downloads': 0, u'version': 1},
-                u'kind': u'file',
-                u'modified': None,
-                u'name': u'NewFile',
-                u'path': u'/NewFile',
-                u'provider': u'github',
-                u'size': None,
-                u'materialized': '/',
-            }
-        }
-        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
-        mock_waterbutler_request.return_value = mock_res
-
+    def test_returns_node_file(self):
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], folder=False, path='/file')
         url = '/{}nodes/{}/files/github/file'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
         })
+        assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['name'], 'NewFile')
         assert_equal(res.json['data']['attributes']['provider'], 'github')
-        mock_waterbutler_request.assert_called_once_with(
-            'http://localhost:7777/v1/resources/{}/providers/github/file?meta=True'.format(self.project._id),
-            cookies={'foo':'bar'},
-            headers={'Authorization': auth_header}
-        )
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_notfound_node_file_returns_folder(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 200
-        mock_res.json.return_value = {
-            u'data': [{
-                u'contentType': None,
-                u'extra': {u'downloads': 0, u'version': 1},
-                u'kind': u'file',
-                u'modified': None,
-                u'name': u'NewFile',
-                u'path': u'/NewFile',
-                u'provider': u'github',
-                u'size': None,
-                u'materialized': '/',
-            }]
-        }
-        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
-        mock_waterbutler_request.return_value = mock_res
-
+    def test_notfound_node_file_returns_folder(self):
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], path='/file')
         url = '/{}nodes/{}/files/github/file'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
         })
         assert_equal(res.status_code, 404)
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_notfound_node_folder_returns_file(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 200
-        mock_res.json.return_value = {
-            u'data': {
-                u'contentType': None,
-                u'extra': {u'downloads': 0, u'version': 1},
-                u'kind': u'file',
-                u'modified': None,
-                u'name': u'NewFile',
-                u'path': u'/NewFile',
-                u'provider': u'github',
-                u'size': None,
-                u'materialized': '/',
-            }
-        }
-        auth_header = 'Basic {}'.format(base64.b64encode(':'.join(self.user.auth)))
-        mock_waterbutler_request.return_value = mock_res
+    def test_notfound_node_folder_returns_file(self):
+        self._prepare_mock_wb_response(provider='github', files=[{'name': 'NewFile'}], folder=False, path='/')
 
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
@@ -2970,57 +3018,50 @@ class TestNodeFilesList(ApiTestCase):
         })
         assert_equal(res.status_code, 404)
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_waterbutler_server_error_returns_503(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 500
-        mock_waterbutler_request.return_value = mock_res
+    def test_waterbutler_server_error_returns_503(self):
+        self._prepare_mock_wb_response(status_code=500)
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
             'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
         })
         assert_equal(res.status_code, 503)
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_waterbutler_invalid_data_returns_503(self, mock_waterbutler_request):
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 400
-        mock_res.json.return_value = {}  # no data
-        mock_waterbutler_request.return_value = mock_res
+    def test_waterbutler_invalid_data_returns_503(self):
+        wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
+        httpretty.register_uri(
+            httpretty.GET,
+            wb_url,
+            body=json.dumps({}),
+            status=400
+        )
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True, headers={
-            'COOKIE': 'foo=bar;'  # Webtests doesnt support cookies?
-        })
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 503)
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_handles_unauthenticated_waterbutler_request(self, mock_waterbutler_request):
+    def test_handles_unauthenticated_waterbutler_request(self):
+        self._prepare_mock_wb_response(status_code=401)
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 401
-        mock_waterbutler_request.return_value = mock_res
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
-    @mock.patch('api.nodes.views.requests.get')
-    def test_handles_notfound_waterbutler_request(self, mock_waterbutler_request):
-        url = '/{}nodes/{}/files/gilkjadsflhub/'.format(API_BASE, self.project._id)
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 404
-        mock_waterbutler_request.return_value = mock_res
+    def test_handles_notfound_waterbutler_request(self):
+        invalid_provider = 'gilkjadsflhub'
+        self._prepare_mock_wb_response(status_code=404, provider=invalid_provider)
+        url = '/{}nodes/{}/files/{}/'.format(API_BASE, self.project._id, invalid_provider)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
         assert_in('detail', res.json['errors'][0])
 
-
-    @mock.patch('api.nodes.views.requests.get')
-    def test_handles_bad_waterbutler_request(self, mock_waterbutler_request):
+    def test_handles_bad_waterbutler_request(self):
+        wb_url = waterbutler_api_url_for(self.project._id, provider='github', path='/', meta=True)
+        httpretty.register_uri(
+            httpretty.GET,
+            wb_url,
+            body=json.dumps({}),
+            status=418
+        )
         url = '/{}nodes/{}/files/github/'.format(API_BASE, self.project._id)
-        mock_res = mock.MagicMock()
-        mock_res.status_code = 418
-        mock_res.json.return_value = {}
-        mock_waterbutler_request.return_value = mock_res
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 503)
         assert_in('detail', res.json['errors'][0])
@@ -3029,6 +3070,47 @@ class TestNodeFilesList(ApiTestCase):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert 'relationships' in res.json['data'][0]
+
+
+class TestNodeFilesListFiltering(ApiTestCase):
+
+    def setUp(self):
+        super(TestNodeFilesListFiltering, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        httpretty.enable()
+        # Prep HTTP mocks
+        prepare_mock_wb_response(
+            node=self.project,
+            provider='github',
+            files=[
+                {'name': 'abc', 'path': '/abc/', 'materialized': '/abc/', 'kind': 'folder'},
+                {'name': 'xyz', 'path': '/xyz', 'materialized': '/xyz', 'kind': 'file'},
+            ]
+        )
+
+    def tearDown(self):
+        super(TestNodeFilesListFiltering, self).tearDown()
+        httpretty.disable()
+        httpretty.reset()
+
+    def test_node_files_are_filterable_by_name(self):
+        url = '/{}nodes/{}/files/github/?filter[name]=xyz'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)  # filters out 'abc'
+        assert_equal(res.json['data'][0]['attributes']['name'], 'xyz')
+
+    def test_node_files_are_filterable_by_path(self):
+        url = '/{}nodes/{}/files/github/?filter[path]=abc'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
+        assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
+
+    def test_node_files_are_filterable_by_kind(self):
+        url = '/{}nodes/{}/files/github/?filter[kind]=folder'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)  # filters out 'xyz'
+        assert_equal(res.json['data'][0]['attributes']['name'], 'abc')
 
 
 class TestNodeLinkDetail(ApiTestCase):
@@ -3055,14 +3137,18 @@ class TestNodeLinkDetail(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
         res_json = res.json['data']
-        assert_equal(res_json['attributes']['target_node_id'], self.public_pointer_project._id)
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_returns_public_node_pointer_detail_logged_in(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res_json['attributes']['target_node_id'], self.public_pointer_project._id)
+        expected_path = node_url_for(self.public_pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_returns_private_node_pointer_detail_logged_out(self):
         res = self.app.get(self.private_url, expect_errors=True)
@@ -3074,12 +3160,20 @@ class TestNodeLinkDetail(ApiTestCase):
         res_json = res.json['data']
         assert_equal(res.status_code, 200)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        assert_equal(res_json['attributes']['target_node_id'], self.pointer_project._id)
+        expected_path = node_url_for(self.pointer_project._id)
+        actual_path = urlparse(res_json['relationships']['target_node']['links']['related']['href']).path
+        assert_equal(expected_path, actual_path)
 
     def test_returns_private_node_pointer_detail_logged_in_non_contributor(self):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
+
+    def test_self_link_points_to_node_link_detail_url(self):
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        url = res.json['data']['links']['self']
+        assert_in(self.public_url, url)
 
 
 class TestDeleteNodeLink(ApiTestCase):
@@ -3090,7 +3184,7 @@ class TestDeleteNodeLink(ApiTestCase):
         self.project = ProjectFactory(creator=self.user, is_public=False)
         self.pointer_project = ProjectFactory(creator=self.user, is_public=True)
         self.pointer = self.project.add_pointer(self.pointer_project, auth=Auth(self.user), save=True)
-        self.private_url = '/{}nodes/{}/node_links/{}'.format(API_BASE, self.project._id, self.pointer._id)
+        self.private_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.project._id, self.pointer._id)
 
         self.user_two = AuthUserFactory()
 
@@ -3099,7 +3193,18 @@ class TestDeleteNodeLink(ApiTestCase):
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
                                                               auth=Auth(self.user),
                                                               save=True)
-        self.public_url = '/{}nodes/{}/node_links/{}'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+        self.public_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+
+    def test_delete_node_link_no_permissions_for_target_node(self):
+        pointer_project = ProjectFactory(creator=self.user_two, is_public=False)
+        pointer = self.public_project.add_pointer(pointer_project, auth=Auth(self.user), save=True)
+        assert_in(pointer, self.public_project.nodes)
+        url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, pointer._id)
+        res = self.app.delete_json_api(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 204)
+
+        self.public_project.reload()
+        assert_not_in(pointer, self.public_project.nodes)
 
     def test_cannot_delete_if_registration(self):
         registration = RegistrationFactory(project=self.public_project)
@@ -3112,7 +3217,7 @@ class TestDeleteNodeLink(ApiTestCase):
         assert_equal(res.status_code, 200)
         pointer_id = res.json['data'][0]['id']
 
-        url = '/{}nodes/{}/node_links/{}'.format(
+        url = '/{}nodes/{}/node_links/{}/'.format(
             API_BASE,
             registration._id,
             pointer_id,
@@ -3184,7 +3289,7 @@ class TestDeleteNodeLink(ApiTestCase):
         project = ProjectFactory(creator=self.user)
         # The node link belongs to a different project
         res = self.app.delete(
-            '/{}nodes/{}/node_links/{}'.format(API_BASE, project._id, self.public_pointer._id),
+            '/{}nodes/{}/node_links/{}/'.format(API_BASE, project._id, self.public_pointer._id),
             auth=self.user.auth,
             expect_errors=True
         )
@@ -3285,7 +3390,7 @@ class TestExceptionFormatting(ApiTestCase):
         errors = res.json['errors']
         assert(isinstance(errors, list))
         assert_equal(errors[0], {'detail': 'Not found.'})
-    
+
     def test_forbidden_formatting(self):
         res = self.app.get(self.private_url, auth=self.non_contrib.auth, expect_errors=True)
         errors = res.json['errors']
