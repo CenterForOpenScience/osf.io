@@ -49,13 +49,13 @@
         <table class="table table-plain">
             % if profile.get('date_registered'):
                 <tr>
-                    <td>Member&nbsp;since</td>
+                    <td>Member&nbsp;Since</td>
                     <td>${profile['date_registered']}</td>
                 </tr>
             % endif
             % if profile.get('url') and profile.get('display_absolute_url'):
                 <tr>
-                    <td>Public&nbsp;profile</td>
+                    <td>Public&nbsp;Profile</td>
                     <td><a href="${profile['url']}">${profile['display_absolute_url']}</a></td>
                 </tr>
             % endif

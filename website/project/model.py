@@ -1167,11 +1167,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         if key == 'category':
                             self.delete_search_entry()
                         ###############
-                        values[key] = {
-                            'old': getattr(self, key),
-                            'new': value,
-                        }
-                        setattr(self, key, value)
+                        old_value = getattr(self, key)
+                        if old_value != value:
+                            values[key] = {
+                                'old': old_value,
+                                'new': value,
+                            }
+                            setattr(self, key, value)
                     except AttributeError:
                         raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
                     except warnings.Warning:
@@ -2642,12 +2644,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.save()
         return contributor
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True):
-        """Set the permissions for this node.
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
+        """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
+            public projects.
 
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
+        :param bool meeting_creation: Whther this was creayed due to a meetings email.
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
@@ -2686,6 +2690,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if save:
             self.save()
+        if auth and permissions == 'public':
+            project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
         return True
 
     def admin_public_wiki(self, user):
