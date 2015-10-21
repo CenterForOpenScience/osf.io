@@ -678,6 +678,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
 
+    alternativeCitations = fields.ForeignField('alternativecitation', list=True)
+
     _meta = {
         'optimistic': True,
     }
@@ -3722,3 +3724,15 @@ class RegistrationApproval(EmailApprovableSanction):
             },
             auth=Auth(user),
         )
+
+class AlternativeCitation(StoredObject):
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    name = fields.StringField(required=True)
+    text = fields.StringField(required=True)
+
+    def to_json(self):
+        return {
+            "id": self._id,
+            "name": self.name,
+            "text": self.text
+        }

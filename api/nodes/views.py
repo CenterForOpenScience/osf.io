@@ -1268,3 +1268,47 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
             if addon.config.has_hgrid_files
             and addon.complete
         ]
+
+class NodeAlternativeCitationsList(generics.ListAPIView, NodeMixin):
+    """List of alternative citations for a project.
+
+    ##Actions
+
+    ###Create Alternative Citation
+
+        Method:         PUT
+        URL:            ??
+        Query Params:   ??
+        Body  (??):     ??
+        Success:        201 Created + new citation representation
+
+    ###Update Alternative Citation
+
+        Method:         PUT
+        URL:            ??
+        Query Params:   ??
+        Body  (??):     ??
+        Success:        201 OK + updated citation representation
+
+    ###Delete Alternative Citation
+
+        Method:         DELETE
+        URL:            ??
+        Query Params:   ??
+        Body  (??):     ??
+        Success:        204 No content
+    """
+
+    # permission_classes = ( ?? )
+    #
+    # required_read_scopes = ??
+    # required_write_scopes = ??
+    #
+    # serializer_class = NodeAlternativeCitationSerializer
+
+    def get_queryset(self):
+        return [
+            citation.to_json()
+            for citation
+            in self.get_node().alternativeCitations
+        ]

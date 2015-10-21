@@ -47,20 +47,27 @@ var ViewModel = function(citations, user) {
 var AlternativeModel = function(citation, view) {
     var self = this;
 
-    if (citation !== undefined) {
-        self.name = ko.observable(citation.name);
-        self.text = ko.observable(citation.text);
-        self.view = ko.observable(view);
-        self.originalValues = {
-            name: citation.name,
-            text: citation.text
-        };
-    }
-    else {
-        self.view = ko.observable('edit');
-        self.name = ko.observable();
-        self.text = ko.observable();
-    }
+    self.init = function() {
+        if (citation !== undefined) {
+            $.extend(self, citation);
+            self.name = ko.observable(citation.name);
+            self.text = ko.observable(citation.text);
+            self.id = citation.id;
+            self.view = ko.observable(view);
+            self.originalValues = {
+                name: citation.name,
+                text: citation.text
+            };
+        }
+        else {
+            self.name = ko.observable();
+            self.text = ko.observable();
+            self.view = ko.observable();
+            self.edit();
+        }
+
+        self.messages = ko.observableArray([]);
+    };
 
     self.removeSelf = function(parent) {
         if (self.originalValues !== undefined) {
@@ -68,7 +75,20 @@ var AlternativeModel = function(citation, view) {
                 title: 'Delete citation?',
                 message: ('Are you sure you want to remove this citation (<strong>' + self.name() + '</strong>)?'),
                 callback: function () {
-                    console.log('removed');
+                    $osf.postJSON(ctx.node.urls.api + 'remove_citation/',
+                        {'id': self.id},
+                        function() {
+                            var index = parent.citations.indexOf(self);
+                            parent.citations.splice(index, 1);
+                            if (parent.editing()) {
+                                parent.editing(false);
+                            }
+                        },
+                        function() {
+                            $osf.growl('Error:',
+                                'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: support@cos.io">support@cos.io</a>', 'danger'
+                            );
+                        });
                 },
                 buttons:{
                     confirm:{
@@ -78,45 +98,85 @@ var AlternativeModel = function(citation, view) {
                 }
             });
         }
-        var index = parent.citations.indexOf(self);
-        parent.citations.splice(index, 1);
-        if (parent.editing()) {
-            parent.editing(false);
-        }
     };
 
     self.cancel = function(parent) {
         if (self.originalValues === undefined) {
-            self.removeSelf(parent);
+            var index = parent.citations.indexOf(self);
+            parent.citations.splice(index, 1);
         }
         else {
             self.name(self.originalValues.name);
             self.text(self.originalValues.text);
-            parent.editing(false);
             self.view('view');
         }
+        parent.editing(false);
+        self.messages([]);
     };
 
     self.save = function(parent) {
-        if (self.originalValues !== undefined) {
-            self.originalValues.name = self.name();
-            self.originalValues.text = self.text();
+        self.messages([]);
+        if (self.name() === undefined || self.name().length === 0) {
+            self.messages.push('\'Name\' is required');
         }
-        else {
-            self.originalValues = {
-                name: self.name(),
-                text: self.text()
-            };
+        if (self.text() === undefined || self.text().length === 0) {
+            self.messages.push('\'Citation\' is required');
         }
-
-        parent.editing(false);
-        self.view('view');
+        for (var i = 0, citation; citation = parent.citations()[i]; i++) {
+            if (citation !== self) {
+                if (citation.name() === self.name()) {
+                    self.messages.push('There is already an alternative citation named \'' + self.name() + '\'');
+                }
+                if (citation.text() === self.text()) {
+                    self.messages.push('Citation matches \'' + citation.name() + '\'');
+                }
+            }
+        }
+        if (self.messages().length === 0) {
+            $osf.postJSON(ctx.node.urls.api + 'edit_citation/',
+                {'name': self.name(), 'text': self.text(), 'id': self.id},
+                function(data) {
+                    parent.editing(false);
+                    self.view('view');
+                    if (data !== null) {
+                        self.id = data;
+                    }
+                    if (self.originalValues !== undefined) {
+                        self.originalValues.name = self.name();
+                        self.originalValues.text = self.text();
+                    }
+                    else {
+                        self.originalValues = {
+                            name: self.name(),
+                            text: self.text()
+                        };
+                    }
+                },
+                function(data) {
+                    if (data.status === 400) {
+                        if (data.responseJSON.nameExists === true) {
+                            self.messages.push('There is already an alternative citation named \'' + self.name() + '\'');
+                        }
+                        if (data.responseJSON.matchingCitations.length > 0) {
+                            self.messages.push('Citation matches \'' + data.responseJSON.matchingCitations.join('\', \'') + '\'');
+                        }
+                    }
+                    else {
+                        $osf.growl('Error:',
+                            'An unexpected error has occurred.  Please try again later.  If problem persists contact <a href="mailto: support@cos.io">support@cos.io</a>', 'danger'
+                        );
+                    }
+                });
+        }
     };
 
     self.edit = function(parent) {
-        parent.editing(true);
+        if (parent !== undefined) {
+            parent.editing(true);
+        }
         self.view('edit');
     };
+    self.init();
 };
 
 ViewModel.prototype.fetch = function() {

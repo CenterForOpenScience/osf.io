@@ -32,7 +32,7 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
+from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title, AlternativeCitation
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
@@ -777,6 +777,7 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
+            'alternative_citations': [citation.to_json() for citation in node.alternativeCitations]
         },
         'parent_node': {
             'exists': parent is not None,
@@ -815,7 +816,7 @@ def _view_project(node, auth, primary=False):
         'addon_widgets': widgets,
         'addon_widget_js': js,
         'addon_widget_css': css,
-        'node_categories': Node.CATEGORY_MAP,
+        'node_categories': Node.CATEGORY_MAP
     }
     return data
 
@@ -1378,6 +1379,7 @@ def abbrev_authors(node):
 
 def serialize_pointer(pointer, auth):
     node = get_pointer_parent(pointer)
+
     if node.can_view(auth):
         return {
             'id': node._id,
@@ -1401,3 +1403,39 @@ def get_pointed(auth, node, **kwargs):
         for each in node.pointed
         if not get_pointer_parent(each).is_folder
     ]}
+
+
+## Alternative Citations
+@must_have_permission(ADMIN)
+def edit_citation(auth, node, **kwargs):
+    response_dict = {}
+    name_exists = node.alternativeCitations.find(Q('name', 'eq', request.json.get('name'))
+                                                 & Q('_id', 'ne', request.json.get('id'))).count() > 0
+    response_dict['nameExists'] = name_exists
+    matching_citations = node.alternativeCitations.find(Q('text', 'eq', request.json.get('text'))
+                                                        & Q('_id', 'ne', request.json.get('id')))
+    response_dict['matchingCitations'] = [str(citation.name) for citation in matching_citations]
+    if name_exists or matching_citations.count() > 0:
+        return response_dict, 400, None
+    if request.json.get('id') is not None:
+        query_set = node.alternativeCitations.find(Q('_id', 'eq', request.json.get('id')))
+        assert query_set.count() is 1
+        assert request.json.get('name') != u'test'
+        citation = query_set[0]
+        citation.text = request.json.get('text')
+        citation.name = request.json.get('name')
+        citation.save()
+    else:
+        citation = AlternativeCitation(text=request.json.get('text'), name=request.json.get('name'))
+        citation.save()
+        node.alternativeCitations.append(citation)
+        node.save()
+        return citation._id
+
+@must_have_permission(ADMIN)
+def remove_citation(auth, node, **kwargs):
+    query_set = node.alternativeCitations.find(Q('_id', 'eq', str(request.json.get('id'))))
+    assert query_set.count() is 1
+    citation = query_set[0]
+    node.alternativeCitations.remove(citation)
+    node.save()

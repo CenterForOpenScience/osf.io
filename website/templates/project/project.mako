@@ -254,37 +254,46 @@
                 </div>
             </div>
             <div class="panel-body" style="display:none">
-                <div id="citationList">
+                <div id="citationList" class="m-b-md">
                     <div class="citation-list">
                         <div class="citation-name">APA</div>
                             <span class="citation-text" data-bind="text: apa"></span>
-                        <div class="citation-name">MLA</div>
+                        <div class="citation-name m-t-md">MLA</div>
                             <span class="citation-text" data-bind="text: mla"></span>
-                        <div class="citation-name">Chicago</div>
+                        <div class="citation-name m-t-md">Chicago</div>
                             <span class="citation-text" data-bind="text: chicago"></span>
                         <div data-bind="foreach: citations">
                             <!-- ko if: view() === 'view' -->
-                                <div class="citation-name">{{name}}
-                                    <button class="btn btn-default btn-sm" data-bind="click: function() {edit($parent)}"><i class="fa fa-edit"></i> Edit</button>
-                                    <button class="btn btn-danger btn-sm" data-bind="click: function() {removeSelf($parent)}"><i class="fa fa-trash-o"></i> Remove</button>
+                                <div class="citation-name m-t-md">{{name}}
+                                    % if 'admin' in user['permissions'] and not node['is_registration']:
+                                        <!-- ko ifnot: $parent.editing() -->
+                                            <button class="btn btn-default btn-sm" data-bind="click: function() {edit($parent)}"><i class="fa fa-edit"></i> Edit</button>
+                                            <button class="btn btn-danger btn-sm" data-bind="click: function() {removeSelf($parent)}"><i class="fa fa-trash-o"></i> Remove</button>
+                                        <!-- /ko -->
+                                    % endif
                                 </div>
                                 <span data-bind="text: text"></span>
                             <!-- /ko -->
                             <!-- ko if: view() === 'edit' -->
-                                <div class="citation-name">Name</div>
+                                <div class="citation-name m-t-md">Name</div>
                                 <input data-bind="if: name !== undefined, value: name" class="form-control"/>
-                                <div class="citation-name">Citation</div>
+                                <div class="citation-name m-t-sm">Citation</div>
                                 <textarea data-bind="if: text !== undefined, value: text" class="form-control" rows="4"></textarea>
+                                <div class="m-t-sm" data-bind="foreach: {data: messages, as: 'message'}">
+                                    <p class="text-danger" data-bind="text: message"></p>
+                                </div>
                                 <div class="m-t-md">
-                                    <button class="btn btn-success" data-bind="click: function() {save($parent)}">Save</button>
                                     <button class="btn btn-danger" data-bind="click: function() {cancel($parent)}">Cancel</button>
+                                    <button class="btn btn-success" data-bind="click: function() {save($parent)}">Save</button>
                                 </div>
                             <!-- /ko -->
                         </div>
                     </div>
-                    <!-- ko ifnot: editing() -->
-                        <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default m-v-md"><i class="fa fa-plus"></i> Add Alternative Citation</button>
-                    <!-- /ko -->
+                    % if 'admin' in user['permissions'] and not node['is_registration']:
+                        <!-- ko ifnot: editing() -->
+                            <button data-bind="ifnot: editing(), click: addAlternative" class="btn btn-default m-t-md"><i class="fa fa-plus"></i> Add Alternative Citation</button>
+                        <!-- /ko -->
+                    % endif
                 </div>
                 <p><strong>More</strong></p>
                 <div id="citationStylePanel" class="citation-picker">
@@ -387,7 +396,8 @@ ${parent.javascript_bottom()}
         node: {
             hasChildren: ${ node['has_children'] | sjson, n },
             isRegistration: ${ node['is_registration'] | sjson, n },
-            tags: ${ node['tags'] | sjson, n }
+            tags: ${ node['tags'] | sjson, n },
+            alternativeCitations: ${ node['alternative_citations'] | sjson, n}
         }
     });
 </script>
