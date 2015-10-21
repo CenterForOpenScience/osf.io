@@ -207,7 +207,7 @@ def update_user(auth):
                             new_address=username)
 
             # Remove old primary email from subscribed mailing lists
-            for list_name, subscription in user.mailing_lists.iteritems():
+            for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
                 if subscription:
                     mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
             user.username = username
@@ -230,7 +230,7 @@ def update_user(auth):
 
     # Update subscribed mailing lists with new primary email
     # TODO: move to user.save()
-    for list_name, subscription in user.mailing_lists.iteritems():
+    for list_name, subscription in user.mailchimp_mailing_lists.iteritems():
         if subscription:
             mailchimp_utils.subscribe_mailchimp(list_name, user._id)
 
@@ -371,7 +371,7 @@ def user_addons(auth, **kwargs):
 def user_notifications(auth, **kwargs):
     """Get subscribe data from user"""
     return {
-        'mailing_lists': auth.user.mailing_lists
+        'mailing_lists': dict(auth.user.mailchimp_mailing_lists.items() + auth.user.osf_mailing_lists.items())
     }
 
 @must_be_logged_in
@@ -482,18 +482,25 @@ def user_choose_mailing_lists(auth, **kwargs):
     json_data = escape_html(request.get_json())
     if json_data:
         for list_name, subscribe in json_data.items():
-            update_subscription(user, list_name, subscribe)
+            # TO DO: change this to take in any potential non-mailchimp, something like try: update_subscription(), except IndexNotFound: update_mailchimp_subscription()
+            if list_name == settings.OSF_HELP_LIST:
+                update_osf_help_mails_subscription(user=user, subscribe=subscribe)
+            else:
+                update_mailchimp_subscription(user, list_name, subscribe)
     else:
         raise HTTPError(http.BAD_REQUEST, data=dict(
             message_long="Must provide a dictionary of the format {'mailing list name': Boolean}")
         )
 
     user.save()
-    return {'message': 'Successfully updated mailing lists', 'result': user.mailing_lists}, 200
+    all_mailing_lists = {}
+    all_mailing_lists.update(user.mailchimp_mailing_lists)
+    all_mailing_lists.update(user.osf_mailing_lists)
+    return {'message': 'Successfully updated mailing lists', 'result': all_mailing_lists}, 200
 
 
 @user_merged.connect
-def update_subscription(user, list_name, subscription):
+def update_mailchimp_subscription(user, list_name, subscription):
     """ Update mailing list subscription in mailchimp.
 
     :param obj user: current user
@@ -536,11 +543,11 @@ def sync_data_from_mailchimp(**kwargs):
             raise HTTPError(404, data=dict(message_short='User not found',
                                         message_long='A user with this username does not exist'))
         if action == 'unsubscribe':
-            user.mailing_lists[list_name] = False
+            user.mailchimp_mailing_lists[list_name] = False
             user.save()
 
         elif action == 'subscribe':
-            user.mailing_lists[list_name] = True
+            user.mailchimp_mailing_lists[list_name] = True
             user.save()
 
     else:
@@ -555,6 +562,10 @@ def impute_names(**kwargs):
     name = request.args.get('name', '')
     return auth_utils.impute_names(name)
 
+
+def update_osf_help_mails_subscription(user, subscribe):
+    user.osf_mailing_lists[settings.OSF_HELP_LIST] = subscribe
+    user.save()
 
 @must_be_logged_in
 def serialize_names(**kwargs):

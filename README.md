@@ -51,22 +51,22 @@ In order to log in on your local server, you will also need to run the authentic
 - For daily use, run fakeCAS. See [CenterForOpenScience/fakeCAS](https://github.com/CenterForOpenScience/fakeCAS) for information on how to set up this service.
 - For developing authentication-related features, run CAS. See [CenterForOpenScience/docker-library/cas](https://github.com/CenterForOpenScience/docker-library/tree/master/cas) for information on how to set up this service.
 
-## Running the API Server
+### Running the API Server
 
 If you have already installed all of the required services and Python packages, and activated your virtual environment,
-then you can start a working local API server with the sequence delineated under [Running the OSF] (#running-the-osf) and:
+then you can start a working local API server with the sequence delineated under [running the OSF] (#running-the-osf) and:
 
 ```bash
 invoke apiserver
 ```
 
-Browse to `localhost:8000/v2/` in your browser to go to the root of the browse-able API. If the page looks strange, 
+Browse to `localhost:8000/v2/` in your browser to go to the root of the browsable API. If the page looks strange, 
 run `python manage.py collectstatic` to ensure that CSS files are deposited in the correct location.
 
 
 ### Livereload support
 
-You can run the app server in livereload mode with:
+You can run the OSF server in livereload mode with:
 
 ```bash
 $ invoke server --live
@@ -77,8 +77,8 @@ This will make your browser automatically refresh whenever a code change is made
 ### Optional extras
 
 Some functionality depends on additional services that will not be started using the sequence above.
-For most development tasks, it is sufficient to run the OSF without these services, except as noted below.
-Some additional installation may be needed to use these features (where noted), in which case updates will also need 
+For many development tasks, it is sufficient to run the OSF without these services, except as noted below.
+Some additional installation will be needed to use these features (where noted), in which case updates will also need 
 to be installed separately.
 
 #### Authentication
@@ -120,7 +120,8 @@ $ invoke update_citation_styles
 
 These instructions assume a working knowledge of package managers and the command line.
 For a detailed step-by-step walkthrough suitable for new programmers, consult the
-[COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html).
+[COS Development Docs](http://cosdev.readthedocs.org/en/latest/osf/setup.html). See [optional extras](#optional-extras) 
+for information about services not included in the automated install process below.
 
 ### Pre-requisites
 
@@ -140,11 +141,10 @@ The following packages must be installed before running the automatic setup scri
 ##### El Capitan and newer
 If you are using Mac OS X >= 10.11 (El Capitan), you will also 
 [need](http://lists.apple.com/archives/macnetworkprog/2015/Jun/msg00025.html) to install OpenSSL headers 
-and set some configuration:
-```
+and [set](http://cryptography.readthedocs.org/en/latest/installation/#building-cryptography-on-os-x) some configuration:
+```bash 
 brew install openssl
-env LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" 
-pip install cryptography
+env LDFLAGS="-L$(brew --prefix openssl)/lib" CFLAGS="-I$(brew --prefix openssl)/include" pip install cryptography
 ```
 
 ### Quickstart
@@ -154,7 +154,7 @@ These instructions should work on Mac OSX >= 10.7
 
 - Clone the OSF repository to your computer. Change to that folder before running the commands below.
 - Create and activate your virtualenv.
-```
+```bash
 virtualenv env
 source env/bin/activate
 ```
@@ -480,5 +480,3 @@ built when a file changes.
 
 Many addons require application credentials (typically an app key and secret) to be able to authenticate through the
 OSF. These credentials go in each addon's `local.py` settings file (e.g. `website/addons/dropbox/settings/local.py`).
-
-For local development, the COS provides [test app credentials](https://osf.io/m2hig/wiki/home/) for a number of services.
