@@ -96,7 +96,19 @@ function ViewModel(url) {
             return;
         }
 
+        if ( !self.useCustomHost() && !self.apiToken() ){
+            self.changeMessage("Please enter an API token.", 'text-danger');
+            return;
+        }
+        else{
+            if (!self.customHost() || !self.apiToken()) {
+                self.changeMessage("Please enter a Dataverse host and an API token.", 'text-danger');
+                return;
+            }
+        }
+
         var url = self.urls().create;
+
         return osfHelpers.postJSON(
             url,
             ko.toJS({
