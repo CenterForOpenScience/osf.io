@@ -1,8 +1,9 @@
 import re
 import collections
 
-from rest_framework.reverse import reverse
 from rest_framework.fields import SkipField
+from rest_framework.exceptions import NotFound
+from rest_framework.reverse import reverse
 from rest_framework import serializers as ser
 
 from framework.auth.core import Auth
@@ -13,7 +14,20 @@ from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
 from api.base import utils
-from api.base.exceptions import InvalidQueryStringError, Conflict
+from api.base.exceptions import InvalidQueryStringError, Conflict, InvalidModelValueError
+
+GUID_VIEWS = {
+            'node': {
+                'view_name': 'nodes:node-detail',
+                'lookup_field': 'pk',
+                'lookup_url_kwarg': 'node_id'
+            },
+            'comment': {
+                'view_name': 'comments:comment-detail',
+                'lookup_field': 'pk',
+                'lookup_url_kwarg': 'comment_id'
+            },
+        }
 
 
 class AllowMissing(ser.Field):
@@ -191,27 +205,25 @@ class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
 
 
 class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
+    """
+    Field that returns a nested dict with the url (constructed based
+    on the object's type), optional meta information, and link_type.
+
+    Example:
+
+        target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
+
+    """
     def __init__(self, **kwargs):
         self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
 
-    def get_view_name(self, guid):
-        GUID_VIEWS = {
-            'node': {
-                'view_name': 'nodes:node-detail',
-                'lookup_field': 'pk',
-                'lookup_url_kwarg': 'node_id'
-            },
-            'comment': {
-                'view_name': 'comments:comment-detail',
-                'lookup_field': 'pk',
-                'lookup_url_kwarg': 'comment_id'
-            },
-        }
-
+    def get_guid_views(self, guid):
         # get target type from guid
         guid_object = Guid.load(guid).referent
+        if not guid_object:
+            raise NotFound
 
         if isinstance(guid_object, Node):
             self.link_type = 'related'
@@ -221,8 +233,10 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
             self.link_type = 'self'
             guid_views = GUID_VIEWS['comment']
 
-        self.view_name = guid_views['view_name']
-        self.lookup_url_kwarg = guid_views['lookup_url_kwarg']
+        else:
+            raise InvalidModelValueError('Invalid comment target.')
+
+        return guid_views
 
     def to_representation(self, value):
         """
@@ -231,8 +245,11 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        self.get_view_name(value._id)
-        url = Link(self.view_name, kwargs={self.lookup_url_kwarg: '<_id>'}).resolve_url(value)
+        guid_views = self.get_guid_views(value._id)
+        view_name = guid_views['view_name']
+        lookup_url_kwarg = guid_views['lookup_url_kwarg']
+
+        url = Link(view_name, kwargs={lookup_url_kwarg: '<_id>'}).resolve_url(value)
         meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
 
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
