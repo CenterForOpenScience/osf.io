@@ -1090,6 +1090,24 @@ class TestNodeUpdate(NodeCRUDTestCase):
         assert_equal(res.status_code, 403)
         assert_in('detail', res.json['errors'][0])
 
+    def test_multiple_patch_requests_with_same_category_generates_one_log(self):
+        self.private_project.category = 'project'
+        self.private_project.save()
+        new_category = 'data'
+        payload = make_node_payload(self.private_project, attributes={'category': new_category})
+        original_n_logs = len(self.private_project.logs)
+
+        res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        self.private_project.reload()
+        assert_equal(self.private_project.category, new_category)
+        assert_equal(len(self.private_project.logs), original_n_logs + 1)  # sanity check
+
+        res = self.app.patch_json_api(self.private_url, payload, auth=self.user.auth)
+        self.private_project.reload()
+        assert_equal(self.private_project.category, new_category)
+        assert_equal(len(self.private_project.logs), original_n_logs + 1)
+
     def test_partial_update_invalid_id(self):
         res = self.app.patch_json_api(self.public_url, {
                 'data': {
@@ -3340,7 +3358,7 @@ class TestNodeLogList(ApiTestCase):
         self.public_project.add_tag("Jeff Spies", auth=user_auth)
         assert_equal("tag_added", self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.json['data'][-1]['attributes']['action'], 'tag_added')
+        assert_equal(res.json['data'][0]['attributes']['action'], 'tag_added')
         assert_equal("Jeff Spies", self.public_project.logs[-1].params['tag'])
 
     def test_remove_tag(self):
@@ -3350,7 +3368,7 @@ class TestNodeLogList(ApiTestCase):
         self.public_project.remove_tag("Jeff Spies", auth=self.user_auth)
         assert_equal("tag_removed", self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user)
-        assert_equal(res.json['data'][-1]['attributes']['action'], 'tag_removed')
+        assert_equal(res.json['data'][0]['attributes']['action'], 'tag_removed')
         assert_equal("Jeff Spies", self.public_project.logs[-1].params['tag'])
 
     def test_project_created(self):
@@ -3382,19 +3400,20 @@ class TestNodeLogList(ApiTestCase):
         self.public_project.remove_contributor(self.contrib, auth=self.user_auth)
         assert_equal('contributor_removed', self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.json['data'][-1]['attributes']['action'], 'contributor_removed')
+        assert_equal(res.json['data'][0]['attributes']['action'], 'contributor_removed')
 
     def test_add_addon(self):
         self.public_project.add_addon('github', auth=self.user_auth)
         assert_equal('addon_added', self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.json['data'][-1]['attributes']['action'], 'addon_added')
+        assert_equal(res.json['data'][0]['attributes']['action'], 'addon_added')
 
     def test_project_add_contributor(self):
         self.public_project.add_contributor(self.contrib, auth=self.user_auth)
         assert_equal('contributor_added', self.public_project.logs[-1].action)
+        self.public_project.save()
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.json['data'][-1]['attributes']['action'], 'contributor_added')
+        assert_equal(res.json['data'][0]['attributes']['action'], 'contributor_added')
 
     def test_remove_addon(self):
         self.public_project.add_addon('github', auth=self.user_auth)
@@ -3402,13 +3421,13 @@ class TestNodeLogList(ApiTestCase):
         self.public_project.delete_addon('github', auth=self.user_auth)
         assert_equal('addon_removed', self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.json['data'][-1]['attributes']['action'], 'addon_removed')
+        assert_equal(res.json['data'][0]['attributes']['action'], 'addon_removed')
 
     def test_add_pointer(self):
         self.public_project.add_pointer(self.pointer, auth=Auth(self.user), save=True)
         assert_equal('pointer_created', self.public_project.logs[-1].action)
         res = self.app.get(self.public_url, auth=self.user.auth)
-        assert_equal(res.json['data'][-1]['attributes']['action'], 'pointer_created')
+        assert_equal(res.json['data'][0]['attributes']['action'], 'pointer_created')
 
     def test_child_node_logs_included(self):
         ProjectFactory(parent=self.public_project, is_public=True)

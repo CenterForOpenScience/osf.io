@@ -125,7 +125,7 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
+class NodeList(generics.ListCreateAPIView, ListFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
