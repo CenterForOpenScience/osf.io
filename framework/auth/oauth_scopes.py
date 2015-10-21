@@ -41,6 +41,9 @@ class CoreScopes(object):
     NODE_COMMENTS_READ = 'comments_read'
     NODE_COMMENTS_WRITE = 'comments_write'
 
+    COMMENT_REPORTS_READ = 'comment_reports_read'
+    COMMENT_REPORTS_WRITE = 'comment_reports_write'
+
     APPLICATIONS_READ = 'applications_read'
     APPLICATIONS_WRITE = 'applications_write'
 
@@ -57,6 +60,10 @@ class ComposedScopes(object):
     # Applications collection
     APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ,)
     APPLICATIONS_WRITE = APPLICATIONS_READ + (CoreScopes.APPLICATIONS_WRITE,)
+
+    # Comment reports collection
+    COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
+    COMMENT_REPORTS_WRITE = COMMENT_REPORTS_READ + (CoreScopes.COMMENT_REPORTS_WRITE,)
 
     # Nodes collection.
     # Base node data includes node metadata, links, and children.
@@ -83,7 +90,7 @@ class ComposedScopes(object):
     FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
-    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE
+    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + COMMENT_REPORTS_WRITE
 
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
