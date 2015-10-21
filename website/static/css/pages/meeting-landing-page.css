@@ -39,20 +39,12 @@
     font-size: 100px;
 }
 
-.osf-meeting-header .fa-users {
+.osf-meeting-header .fa-users, .fa-cloud-upload {
     border-radius: 85px;
-    box-shadow: 0px 0px 20px #E0E7EC;
+    box-shadow: 0px 0px 10px #E0E7EC;
     width: 140px;
     height: 140px;
-    padding-top: 23px;
-}
-
-.osf-meeting-header .fa-cloud-upload {
-    border-radius: 208px;
-    box-shadow: 0px 0px 20px #E0E7EC;
-    width: 140px;
-    height: 140px;
-    padding: 14px;
+    padding-top: 18px;
 }
 
 .osf-meeting-header h1 {
@@ -77,16 +69,6 @@
 .osf-meeting-p {
     font-size: 16px;
 }
-
-.m-v-40 {
-    margin-bottom: 40px;
-    margin-top: 40px;
-}
-
-.m-b-40 {
-    margin-bottom: 40px;
-}
-
 
 .network-img {
     background: url("/static/img/meeting-page/network-web.png") repeat;

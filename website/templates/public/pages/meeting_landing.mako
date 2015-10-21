@@ -20,12 +20,12 @@
         <div class="osf-meeting-header">
             <div class="container ">
                 <div class="network-img"> </div>
-            <div class="text-center m-b-40">
+            <div class="text-center m-b-lg">
                 <h1>OSF for Meetings</h1>
                 <h3>A <strong>free poster and presentation sharing service</strong> for academic meetings and conferences</h3>
             </div>
             <div class="row">
-                <div class="col-md-6 col-lg-5 col-xl-4 text-center m-b-40" >
+                <div class="col-md-6 col-lg-5 col-xl-4 text-center m-b-lg" >
                     <i class="fa fa-users fa-custom-8x m-v-sm"></i>
                     <h3 class="f-w-xl"> For Conference Organizers </h3>
                     <div class="text-left">
@@ -44,7 +44,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 col-lg-5 col-lg-offset-2 col-xl-4 col-xl-offset-4 text-center m-b-40">
+                <div class="col-md-6 col-lg-5 col-lg-offset-2 col-xl-4 col-xl-offset-4 text-center m-b-lg">
                     <i class="fa fa-cloud-upload fa-custom-8x m-v-sm"></i>
                     <h3 class="f-w-xl"> For Conference Participants </h3>
                     <div class="text-left">
@@ -75,7 +75,7 @@
     </div>
 
     <div class="container grey-background">
-        <div class="row m-v-40">
+        <div class="row m-v-lg">
             <div class="col-md-12">
                 <div role="tabpanel">
                     <!-- Nav tabs -->
@@ -104,7 +104,7 @@
             </div>
         </div>
 
-        <div class="row icon-bar m-v-40">
+        <div class="row icon-bar m-v-lg">
             <div class="col-md-4 col-sm-4 text-center ">
                 <div class="p-v-md m-t-xl m-h-md">
                     <i class="fa fa-eye fa-custom-7x icon-circle blue-icon"></i>
@@ -136,7 +136,7 @@
         <div class="row text-center m-b-md">
             <h2> Who uses OSF for Meetings?</h2>
         </div>
-        <div class="row org-logo m-b-40">
+        <div class="row org-logo m-b-lg">
             <div class="col-sm-3 col-xs-6  text-center">
                 <a href="http://www.psychologicalscience.org/"><img src="/static/img/meeting-page/APS.jpg" class="img-responsive"></a>
             </div>
