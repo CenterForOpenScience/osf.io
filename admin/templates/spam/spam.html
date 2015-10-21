@@ -33,8 +33,12 @@
             </a>
         </td>
         <td>
-            {{ comment.number_of_reports }}
+            {{ comment.reports|length }}
         </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td>No more Spam!</td>
     </tr>
     {% endfor %}
     </tbody>
