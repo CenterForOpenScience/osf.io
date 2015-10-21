@@ -13,7 +13,7 @@ from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 
 from website import settings
-from website.models import Node
+from website.models import Node, Tag
 from website.util import web_url_for
 from website.mails import send_mail
 from website.files.models import StoredFileNode
@@ -215,15 +215,16 @@ def conference_view(**kwargs):
     meetings = []
     submissions = []
     for conf in Conference.find():
-        query = (
-            Q('tags', 'iexact', conf.endpoint)
-            & Q('is_public', 'eq', True)
-            & Q('is_deleted', 'eq', False)
-        )
-        projects = Node.find(query)
+        projects = set()
+        for tag in Tag.find(Q('_id', 'iexact', conf.endpoint)):
+            for node in tag.node__tagged:
+                if not node.is_public or node.is_deleted:
+                    continue
+                projects.add(node)
+
         for idx, node in enumerate(projects):
             submissions.append(_render_conference_node(node, idx, conf))
-        num_submissions = projects.count()
+        num_submissions = len(projects)
         if num_submissions < settings.CONFERNCE_MIN_COUNT:
             continue
         meetings.append({
