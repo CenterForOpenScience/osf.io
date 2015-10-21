@@ -356,8 +356,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
         self.forceSubmit(true);
         bootbox.confirm({
             title: 'Save changes?',
-            message: 'Are you sure you want to save these changes? If you are removing a contributor with checked-out' +
-                ' files in this project, those files will be automatically checked-in.',
+            message: 'Are you sure you want to save these changes?',
             callback: function(result) {
                 if (result) {
                     $osf.postJSON(

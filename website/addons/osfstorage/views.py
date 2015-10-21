@@ -96,7 +96,9 @@ def osfstorage_move_hook(source, destination, name=None, **kwargs):
     try:
         return source.move_under(destination, name=name).serialize(), httplib.OK
     except exceptions.FileNodeorChildCheckedOutError:
-        raise HTTPError(httplib.METHOD_NOT_ALLOWED)
+        raise HTTPError(httplib.METHOD_NOT_ALLOWED, data={
+            'message_long': 'Cannot move file as it is checked out.'
+        })
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
@@ -177,7 +179,9 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
                 version_id = version._id
                 archive_exists = version.archive is not None
             else:
-                raise HTTPError(httplib.UNAUTHORIZED)
+                raise HTTPError(httplib.FORBIDDEN, data={
+                    'message_long': 'File cannot be updated due to checkout status.'
+                })
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
     else:
