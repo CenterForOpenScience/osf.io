@@ -4,14 +4,6 @@
 .markdown-it-view {
     padding: 10px;
 }
-.linenum {
-  counter-reset: line;
-}
-.linenum p:before {
-      counter-increment: line;
-      content: counter(line) ' ';
-      display: inline-block;
-}
 .wiki-compare-view {
     white-space: pre-wrap;
     padding: 10px;
