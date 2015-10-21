@@ -409,6 +409,7 @@ class TestCommentRepliesCreate(ApiTestCase):
     def test_create_reply_invalid_data(self):
         res = self.app.post_json_api(self.private_url, "Invalid data", auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Malformed request.')
 
     def test_create_reply_incorrect_type(self):
         payload = {
@@ -647,18 +648,19 @@ class TestCommentReportsView(ApiTestCase):
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_report_comment_invalid_spam_category(self):
+        category = 'Not a valid category'
         payload = {
             'data': {
                 'type': 'comment_reports',
                 'attributes': {
-                    'category': 'Not a valid category',
+                    'category': category,
                     'message': 'delicious spam'
                 }
             }
         }
-
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], '\"' + category + '\"' + ' is not a valid choice.')
 
     def test_report_comment_allow_blank_message(self):
         comment = CommentFactory(node=self.private_project, user=self.contributor)
@@ -696,6 +698,7 @@ class TestCommentReportsView(ApiTestCase):
     def test_user_cannot_report_own_comment(self):
         res = self.app.post_json_api(self.private_url, self.payload, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'You cannot report your own comment.')
 
     def test_user_cannot_report_comment_twice(self):
         # User reports a comment
@@ -707,6 +710,7 @@ class TestCommentReportsView(ApiTestCase):
         # User cannot report the comment again
         res = self.app.post_json_api(url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Comment already reported.')
 
     def test_public_node_logged_out_user_cannot_report_comment(self):
         res = self.app.post_json_api(self.public_url, self.payload, expect_errors=True)
