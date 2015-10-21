@@ -589,12 +589,9 @@ class TestCommentReportsView(ApiTestCase):
         assert_not_in(self.contributor._id, report_ids)
 
     def test_public_node_non_contributor_does_not_see_report(self):
-        res = self.app.get(self.public_url, auth=self.non_contributor.auth)
-        assert_equal(res.status_code, 200)
-        report_json = res.json['data']
-        report_ids = [report['id'] for report in report_json]
-        assert_equal(len(report_json), 0)
-        assert_not_in(self.contributor._id, report_ids)
+        res = self.app.get(self.public_url, auth=self.non_contributor.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(res.json['errors'][0]['detail'], 'You do not have permission to perform this action.')
 
     def test_public_node_logged_out_user_cannot_view_reports(self):
         res = self.app.get(self.public_url, expect_errors=True)

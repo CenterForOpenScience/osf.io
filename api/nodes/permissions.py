@@ -83,10 +83,13 @@ class ContributorOrPublicForComments(permissions.BasePermission):
         elif isinstance(obj, Node):
             node = obj
 
-        if request.method in permissions.SAFE_METHODS:
+        view_name = view.get_view_name()
+        is_report_view = (view_name == 'Comment Reports List' or view_name == 'Comment Report Detail')
+
+        if not is_report_view and request.method in permissions.SAFE_METHODS:
             return node.is_public or node.can_view(auth)
         else:
-            if view.get_view_name() == 'Comment Detail':
+            if view_name == 'Comment Detail':
                 return comment.user._id == auth.user._id
             else:
                 return node.can_comment(auth)
