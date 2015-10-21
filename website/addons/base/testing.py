@@ -27,7 +27,7 @@ class AddonTestCase(OsfTestCase):
     This will give you:
 
         - self.user: A User with the addon enabled
-        - self.node: A project created by self.user and has the addon enabled
+        - self.project: A project created by self.user and has the addon enabled
         - self.user_settings: AddonUserSettings object for the addon
         - self.node_settings: AddonNodeSettings object for the addon
 
@@ -74,8 +74,8 @@ class AddonTestCase(OsfTestCase):
         """
         if 'node' not in self.OWNERS:
             return
-        self.node.add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
-        self.node_settings = self.node.get_addon(self.ADDON_SHORT_NAME)
+        self.project.add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
+        self.node_settings = self.project.get_addon(self.ADDON_SHORT_NAME)
         # User has imported their addon settings to this node
         if self.NODE_USER_FIELD:
             setattr(self.node_settings, self.NODE_USER_FIELD, self.user_settings)
@@ -91,8 +91,8 @@ class AddonTestCase(OsfTestCase):
             raise ValueError('Must define ADDON_SHORT_NAME in the test class.')
         self.user.save()
 
-        self.node = self.create_project()
-        self.node.save()
+        self.project = self.create_project()
+        self.project.save()
 
         self.create_user_settings()
         self.create_node_settings()
