@@ -18,7 +18,8 @@ $(function() {
         create: node.urls.api + 'drafts/',
         submit: node.urls.api + 'drafts/{draft_pk}/submit/',
         update: node.urls.api + 'drafts/{draft_pk}/',
-        get: node.urls.api + 'drafts/{draft_pk}/'
+        get: node.urls.api + 'drafts/{draft_pk}/',
+        draftRegistrations: node.urls.web + 'registrations/#drafts'
     }, 'registrationEditor');
 
     var draft = new registrationUtils.Draft(ctx.draft);

@@ -586,7 +586,7 @@ RegistrationEditor.prototype.save = function() {
             schema_data: data
         });
     }
-    return true;
+    window.location = self.urls.draftRegistrations;
 };
 
 /**
