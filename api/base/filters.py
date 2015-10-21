@@ -3,12 +3,26 @@ import functools
 import operator
 
 from modularodm import Q
+from modularodm.query.queryset import BaseQuerySet
 from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
 
 from api.base.exceptions import InvalidFilterError
 from api.base import utils
 
+def get_multisort_fn(fields):
+    fields = list(fields)
+    def sort_fn(a, b):
+        while fields:
+            field = fields.pop(0)
+            a_field = getattr(a, field)
+            b_field = getattr(b, field)
+            if a_field > b_field:
+                return 1
+            elif a_field < b_field:
+                return -1
+        return 0
+    return sort_fn
 
 class ODMOrderingFilter(OrderingFilter):
     """Adaptation of rest_framework.filters.OrderingFilter to work with modular-odm."""
@@ -17,7 +31,10 @@ class ODMOrderingFilter(OrderingFilter):
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
         if ordering:
-            return queryset.sort(*ordering)
+            if isinstance(queryset, BaseQuerySet):
+                return queryset.sort(*ordering)
+            else:
+                return sorted(queryset, cmp=get_multisort_fn(ordering))
         return queryset
 
 query_pattern = re.compile(r'filter\[\s*(?P<field>\S*)\s*\]\s*')
@@ -171,7 +188,11 @@ class ListFilterMixin(FilterMixin):
         if fields_dict:
             for field_name, value in fields_dict.items():
                 if self.is_filterable_field(key=field_name):
-                    queryset = queryset.intersection(set(self.get_filtered_queryset(field_name, value, default_queryset)))
+                    filtered_queryset = set(self.get_filtered_queryset(field_name, value, default_queryset))
+                    queryset = [
+                        result for result in queryset
+                        if result in filtered_queryset
+                    ]
                 else:
                     raise InvalidFilterError
         return list(queryset)
