@@ -141,6 +141,9 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                         detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
                         parameter='related_counts'
                     )
+            else:
+                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
