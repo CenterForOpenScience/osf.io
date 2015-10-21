@@ -83,7 +83,7 @@ module.exports = {
         dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         creationSuccess: 'Successfully registered new application',
         dataUpdated: 'Application data updated',
-        resetSecretConfirm: 'Are you sure you want to reset this secret key? This will invalidate the application using it and revoke all access tokens. This cannot be reversed.',
+        resetSecretConfirm: 'Are you sure you want to reset the client secret? This cannot be reversed. Your application will be unusable until it is updated with the new client secret, and all users must reauthorize access. Previously issued access tokens will no longer work.',
         resetSecretError: 'Could not reset client secret. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + 'if the problem persists.',
     }
 };

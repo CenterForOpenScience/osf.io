@@ -41,7 +41,7 @@
                     </a>
                     <a class="btn btn-danger btn-xs m-l-sm" data-bind="click: $root.resetSecret.bind($root)">Reset Secret</a>
                     <i class="fa fa-info-circle text-muted"
-                        data-bind="tooltip: {title:'Resetting the client secret will invalidate any applictions using this secret, and any keys validated by this secret.',
+                        data-bind="tooltip: {title:'Resetting the client secret will render your application unusable until it is updated with the new client secret, and all users must reauthorize access. Previously issued access tokens will no longer work.',
                                              placement: 'bottom'}"></i>
                 </p>
                 <p data-bind="visible: !$root.isCreateView()">
