@@ -260,7 +260,7 @@ class TestUploadFileHook(HookTestCase):
         file.save()
         res = self.send_upload_hook(root, self.make_payload(name=name), expect_errors=True)
 
-        assert_equal(res.status_code, 401)
+        assert_equal(res.status_code, 403)
 
     def test_update_nested_child(self):
         name = 'ლ(ಠ益ಠლ).unicode'
