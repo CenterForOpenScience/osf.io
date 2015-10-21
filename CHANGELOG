@@ -2,6 +2,23 @@
 Changelog
 *********
 
+0.54.0 (unreleased)
+===================
+
+- Add engagement emails.
+- Multiple box accounts can be associated with a user account.
+- Files can be renamed from file detail pages
+- Dev: Improve speed of Travis builds.
+- APIv2: JSON API compliance fixes.
+
+Migrations
+----------
+
+* scripts.migrate_date_last_login_for_current_users
+* scripts.migrate_mailing_lists_to_mailchimp_field
+* scripts.box.migrate_to_external_account
+* scripts.box.connect_external_account
+
 0.53.4 (2015-10-20)
 ===================
 
