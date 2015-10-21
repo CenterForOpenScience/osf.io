@@ -85,10 +85,10 @@ class TargetTypeField(ser.CharField):
     """
     Enforces that the related resource has the correct type
     """
-    def __init__(self, target_type, **kwargs):
+    def __init__(self, **kwargs):
         kwargs['write_only'] = True
         kwargs['required'] = True
-        self.target_type = target_type
+        self.target_type = kwargs.pop('target_type')
         super(TargetTypeField, self).__init__(**kwargs)
 
     def to_internal_value(self, data):
