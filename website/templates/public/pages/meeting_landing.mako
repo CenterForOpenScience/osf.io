@@ -19,11 +19,11 @@
     <div class="osf-meeting-header-img">
         <div class="osf-meeting-header">
             <div class="container ">
-                <div class="network-img"> </div>
             <div class="text-center m-b-lg">
                 <h1>OSF for Meetings</h1>
                 <h3>A <strong>free poster and presentation sharing service</strong> for academic meetings and conferences</h3>
             </div>
+                <div class="network-img"> </div>
             <div class="row">
                 <div class="col-md-6 col-lg-5 col-xl-4 text-center m-b-lg" >
                     <i class="fa fa-users m-v-sm"></i>
