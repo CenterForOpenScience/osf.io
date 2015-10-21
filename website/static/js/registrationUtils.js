@@ -428,31 +428,29 @@ RegistrationEditor.prototype.context = function(data) {
 RegistrationEditor.prototype.check = function() {
     var self = this;
 
-    var proceed = true;
-    $.each(self.flatQuestions(), function(i, question) {
-        if (question.required) {
-            var valid = question.value.isValid();
-            proceed = proceed && valid;
-        }
-    });
-    if (!proceed) {
-
-        bootbox.dialog({
-            title: 'Registration Not Complete',
-            message: 'There are errors in your registration. Please double check it and submit again.',
-            buttons: {
-                success: {
-                    label: 'Ok',
-                    className: 'btn-success',
-                    callback: function() {
-                        self.showValidation(true);
+    ko.utils.arrayMap(self.draft().pages(), function(page) {
+        ko.utils.arrayMap(page.questions(), function(question) {
+            if (question.required && !question.value.isValid()) {
+                // Validation for a question failed
+                bootbox.dialog({
+                    title: 'Registration Not Complete',
+                    message: 'There are errors in your registration. Please double check it and submit again.',
+                    buttons: {
+                        success: {
+                            label: 'Ok',
+                            className: 'btn-success',
+                            callback: function() {
+                                self.showValidation(true);
+                            }
+                        }
                     }
-                }
+                });
+                return;
             }
+            // Validation passed for all applicable questions
+            window.location = self.draft().urls.register_page;
         });
-    } else {
-        window.location = self.draft().urls.register_page;
-    }
+    });
 };
 /**
  * Select a page, selecting the first question on that page
