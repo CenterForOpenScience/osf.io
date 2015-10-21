@@ -13,9 +13,9 @@ class TestCommentDetailView(ApiTestCase):
         self.contributor = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
 
-        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
         self.private_project.add_contributor(self.contributor, save=True)
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
         self.public_project.add_contributor(self.contributor, save=True)
         self.registration = RegistrationFactory(creator=self.user)
 
@@ -114,9 +114,7 @@ class TestCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_non_contributor_commenter_can_update_comment(self):
-        project = ProjectFactory(is_public=True)
-        project.comment_level = 'public'
-        project.save()
+        project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory(node=project, target=project, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = {
@@ -166,7 +164,7 @@ class TestCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_private_node_only_logged_in_contributor_commenter_can_undelete_comment(self):
-        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
+        comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.user)
         comment.is_deleted = True
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
@@ -220,9 +218,7 @@ class TestCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_non_contributor_commenter_can_delete_comment(self):
-        project = ProjectFactory(is_public=True)
-        project.comment_level = 'public'
-        project.save()
+        project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory(node=project, target=project, user=self.non_contributor)
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         payload = {
@@ -381,12 +377,10 @@ class TestCommentRepliesCreate(ApiTestCase):
         self.read_only_contributor = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
 
-        self.private_project = ProjectFactory(is_public=False, creator=self.user)
-        self.private_project.add_contributor(self.read_only_contributor, permissions=['read'])
-        self.private_project.save()
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
-        self.public_project.add_contributor(self.read_only_contributor, permissions=['read'])
-        self.public_project.save()
+        self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
+        self.private_project.add_contributor(self.read_only_contributor, permissions=['read'], save=True)
+        self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
+        self.public_project.add_contributor(self.read_only_contributor, permissions=['read'], save=True)
         self.registration = RegistrationFactory(creator=self.user)
 
         self.comment = CommentFactory(node=self.private_project, user=self.user)
@@ -471,22 +465,18 @@ class TestCommentRepliesCreate(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_private_node_with_public_comment_level_non_contributor_cannot_reply(self):
-        project = ProjectFactory(is_public=False)
+        project = ProjectFactory(is_public=False, comment_level='public')
         comment = CommentFactory(node=project, user=self.user)
         reply = CommentFactory(node=project, target=comment, user=self.user)
-        project.comment_level = 'public'
-        project.save()
         url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
 
         res = self.app.post_json_api(url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_public_node_any_logged_in_user_can_reply(self):
-        project = ProjectFactory(is_public=True)
+        project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory(node=project, user=self.user)
         reply = CommentFactory(node=project, target=comment, user=self.user)
-        project.comment_level = 'public'
-        project.save()
         url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
 
         res = self.app.post_json_api(url, self.payload, auth=self.user.auth)
@@ -520,17 +510,17 @@ class TestCommentReportsView(ApiTestCase):
         self.contributor = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
 
-        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
 
-        self.comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.contributor)
+        self.comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.contributor)
         self.comment.reports = self.comment.reports or {}
         self.comment.reports[self.user._id] = {'category': 'spam', 'text': 'This is spam'}
         self.comment.save()
 
-        self.public_comment = CommentFactory(node=self.public_project, target=self.public_project, user=self.contributor)
+        self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_project, user=self.contributor)
         self.public_comment.reports = self.comment.reports or {}
         self.public_comment.reports[self.user._id] = {'category': 'spam', 'text': 'This is spam'}
         self.public_comment.save()
@@ -598,11 +588,8 @@ class TestCommentReportsView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_non_contributor_reporter_can_view_report(self):
-        project = ProjectFactory(is_public=True)
-        project.comment_level = 'public'
-        project.save()
-
-        comment = CommentFactory(node=project, user=project.creator)
+        project = ProjectFactory(is_public=True, comment_level='public')
+        comment = CommentFactory.build(node=project, user=project.creator)
         comment.reports = comment.reports or {}
         comment.reports[self.non_contributor._id] = {'category': 'spam', 'text': 'This is spam.'}
         comment.save()
@@ -730,9 +717,7 @@ class TestCommentReportsView(ApiTestCase):
             comment (comment_level == 'public), non-contributors
             can also report comments.
         """
-        project = ProjectFactory(is_public=True)
-        project.comment_level = 'public'
-        project.save()
+        project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory(node=project, user=project.creator)
         url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
 
@@ -749,16 +734,16 @@ class TestReportDetailView(ApiTestCase):
         self.contributor = AuthUserFactory()
         self.non_contributor = AuthUserFactory()
 
-        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_project = ProjectFactory.build(is_public=False, creator=self.user)
         self.private_project.add_contributor(contributor=self.contributor, save=True)
-        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_project = ProjectFactory.build(is_public=True, creator=self.user)
         self.public_project.add_contributor(contributor=self.contributor, save=True)
 
-        self.comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.contributor)
+        self.comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.contributor)
         self.comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
         self.comment.save()
 
-        self.public_comment = CommentFactory(node=self.public_project, target=self.public_project, user=self.contributor)
+        self.public_comment = CommentFactory.build(node=self.public_project, target=self.public_project, user=self.contributor)
         self.public_comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
         self.public_comment.save()
 
@@ -812,10 +797,8 @@ class TestReportDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_logged_in_non_contributor_reporter_can_view_report_detail(self):
-        project = ProjectFactory(is_public=True)
-        project.comment_level = 'public'
-        project.save()
-        comment = CommentFactory(node=project, user=project.creator)
+        project = ProjectFactory(is_public=True, comment_level='public')
+        comment = CommentFactory.build(node=project, user=project.creator)
         comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.non_contributor._id)
@@ -860,10 +843,8 @@ class TestReportDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_logged_in_non_contributor_reporter_can_update_report_detail(self):
-        project = ProjectFactory(is_public=True)
-        project.comment_level = 'public'
-        project.save()
-        comment = CommentFactory(node=project, user=project.creator)
+        project = ProjectFactory(is_public=True, comment_level='public')
+        comment = CommentFactory.build(node=project, user=project.creator)
         comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.non_contributor._id)
@@ -882,7 +863,7 @@ class TestReportDetailView(ApiTestCase):
         assert_equal(res.json['data']['attributes']['message'], payload['data']['attributes']['message'])
 
     def test_private_node_reporting_contributor_can_delete_report_detail(self):
-        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.contributor)
+        comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.contributor)
         comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.user._id)
@@ -902,7 +883,7 @@ class TestReportDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_reporting_contributor_can_delete_detail(self):
-        comment = CommentFactory(node=self.public_project, target=self.private_project, user=self.contributor)
+        comment = CommentFactory.build(node=self.public_project, target=self.private_project, user=self.contributor)
         comment.reports = {self.user._id: {'category': 'spam', 'text': 'This is spam'}}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.user._id)
@@ -923,10 +904,8 @@ class TestReportDetailView(ApiTestCase):
         assert_equal(res.status_code, 401)
 
     def test_public_node_logged_in_non_contributor_reporter_can_delete_report_detail(self):
-        project = ProjectFactory(is_public=True)
-        project.comment_level = 'public'
-        project.save()
-        comment = CommentFactory(node=project, user=project.creator)
+        project = ProjectFactory(is_public=True, comment_level='public')
+        comment = CommentFactory.build(node=project, user=project.creator)
         comment.reports = {self.non_contributor._id: {'category': 'spam', 'text': 'This is spam'}}
         comment.save()
         url = '/{}comments/{}/reports/{}/'.format(API_BASE, comment._id, self.non_contributor._id)
