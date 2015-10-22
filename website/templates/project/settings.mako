@@ -101,7 +101,7 @@
                             <button data-bind="click: updateAll"
                             class="btn btn-success">Save changes</button>
                             <br>
-                            <span data-bind="css: messageClass, html: message"></span>
+                            <span data-bind="css: messageClass, text: message"></span>
 
                     % if 'admin' in user['permissions']:
                         <hr />

@@ -7,7 +7,7 @@ var ko = require('knockout');
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var ChangeMessageMixin = require('js/changeMessage');
-var language = require('js/osfLanguage').ProjectSettings;
+var language = require('js/osfLanguage').projectSettings;
 
 var ProjectSettings = oop.extend(
     ChangeMessageMixin,
