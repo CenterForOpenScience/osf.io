@@ -46,15 +46,6 @@ class GoogleAuthClient(BaseClient):
             throws=HTTPError(401)
         ).json()
 
-    def revoke(self, token):
-        return self._make_request(
-            'GET',
-            self._build_url(settings.OAUTH_BASE_URL, 'revoke'),
-            params={'token': token},
-            expects=(200, 400, ),
-            throws=HTTPError(401)
-        )
-
 
 class GoogleDriveClient(BaseClient):
 
