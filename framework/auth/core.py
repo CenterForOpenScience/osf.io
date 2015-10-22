@@ -1228,7 +1228,7 @@ class User(GuidStoredObject, AddonModelMixin):
             user_settings.save()
 
         # Disconnect signal to prevent emails being sent about being a new contributor when merging users
-        # be sure to reconnect it at the end of this code block.
+        # be sure to reconnect it at the end of this code block. Import done here to prevent circular import error.
         from website.project.signals import contributor_added
         from website.project.views.contributor import notify_added_contributor
         contributor_added.disconnect(notify_added_contributor)
