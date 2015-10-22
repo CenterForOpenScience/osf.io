@@ -39,7 +39,7 @@ class RegistrationSerializer(NodeSerializer):
         return obj.absolute_url
 
     def update(self, *args, **kwargs):
-        raise exceptions.ValidationError('Registrations cannot be modified.')
+        raise exceptions.APIException('Registrations cannot be modified.')
 
     class Meta:
         type_ = 'registrations'
