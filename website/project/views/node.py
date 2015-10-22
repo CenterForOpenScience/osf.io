@@ -727,6 +727,7 @@ def _view_project(node, auth, primary=False):
             'category_short': node.category,
             'node_type': node.project_or_component,
             'description': node.description or '',
+            'license': node.license,
             'url': node.url,
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,
