@@ -25,30 +25,17 @@ var defaults = {
 var FileBrowser = {
     controller : function (args) {
         var self = this;
-        var data = args.data;
-        // Reorganize data
-        var root = {id:0, children: [], kind : 'folder' };
+        self.url = 'http://localhost:8000/v2/users/me/nodes';
+        self.data = [];
 
-        // Generate tree list from flat data
-        for (var i = 0; i < data.length; i++) {
-            var n = data[i];
-            if (n.attributes.registration) {
-                continue;
-            }
-            var parentLink = n.relationships.parent.links.self.href;
-            var node = {
-                id : n.id,
-                node : n,
-                kind : 'node',
-                hasChildren : false
-            };
-            if(!parentLink) {
 
-                root.children.push(node);
+        // Get Data
+        // url:  '',
+        //    crossOrigin: true,
+        //    xhrFields: { withCredentials: true}
+        //
 
-            }
-        }
-        console.log(root);
+
 
         // For information panel
         self.selected = m.prop([]);
@@ -101,7 +88,7 @@ var FileBrowser = {
             { tag : 'something'}
         ];
 
-        self.filesData = m.prop(root.children);
+        self.filesData = m.prop('http://localhost:8000/v2/users/me/nodes');
 
     },
     view : function (ctrl) {

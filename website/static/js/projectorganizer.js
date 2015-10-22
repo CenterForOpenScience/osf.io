@@ -1459,7 +1459,18 @@ var tbOptions = {
     removeIcon : function(){
         return m.trust('&times;');
     },
-    headerTemplate : function(){ return ''; }
+    headerTemplate : function(){ return ''; },
+    xhrconfig : function(xhr) {
+        xhr.withCredentials = true;
+    },
+    lazyLoadPreprocess : function(value){
+        var tb = this;
+        value.data.map(function(item){
+            item.kind = 'folder';
+            item.uid = item.id;
+        });
+        return value.data;
+    }
 };
 
 
