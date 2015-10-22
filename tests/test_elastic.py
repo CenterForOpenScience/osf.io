@@ -776,8 +776,8 @@ class TestSearchFiles(SearchTestCase):
     def setUp(self):
         super(TestSearchFiles, self).setUp()
         self.node = ProjectFactory(is_public=True, title='Otis')
-        self.osfstor = self.node.get_addon('osfstorage')
-        self.root = self.osfstor.get_root()
+        self.osf_storage = self.node.get_addon('osfstorage')
+        self.root = self.osf_storager.get_root()
 
     def test_search_file(self):
         self.root.append_file('Shake.wav')
@@ -838,8 +838,8 @@ class TestSearchFiles(SearchTestCase):
 
     def test_delete_node(self):
         node = ProjectFactory(is_public=True, title='The Soul Album')
-        osfstor = node.get_addon('osfstorage')
-        root = osfstor.get_root()
+        osf_storage = node.get_addon('osfstorage')
+        root = osf_storage.get_root()
         root.append_file('The Dock of the Bay.mp3')
         find = query_file('The Dock of the Bay.mp3')['results']
         assert_equal(len(find), 1)

@@ -19,6 +19,7 @@ $(function() {
                     '/tags/' + tag + '/';
             var request = $osf.postJSON(url);
             request.fail(function (xhr, textStatus, error) {
+                $osf.growl('Error', 'Could not add tag.');
                 Raven.captureMessage('Failed to add tag', {
                     tag: tag, url: url, textStatus: textStatus, error: error
                 });
@@ -34,6 +35,7 @@ $(function() {
                 dataType: 'JSON',
             });
             request.fail(function (xhr, textStatus, error) {
+                $osf.growl('Error', 'Could not add tag.');
                 Raven.captureMessage('Failed to remove tag', {
                     tag: tag, url: url, textStatus: textStatus, error: error
                 });
