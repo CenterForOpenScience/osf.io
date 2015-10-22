@@ -185,7 +185,7 @@ var FolderPickerViewModel = oop.defclass({
         self.selectedFolderName = ko.pureComputed(function() {
             var userIsOwner = self.userIsOwner();
             var selected = self.selected();
-            var name = selected.name || 'None';
+            var name = decodeURIComponent(selected.name) || 'None';
             return userIsOwner ? name : '';
         });
 
