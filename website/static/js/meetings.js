@@ -16,27 +16,27 @@ function Meetings(data) {
              return [
                 {
                     title: 'Name',
-                    width: '50%',
+                    width: '45%',
                     sortType : 'text',
                     sort : true
                 },
                 {
-                     title: 'Conference Location',
+                     title: 'Submissions',
+                     width : '15%',
+                     sortType : 'number',
+                     sort : true
+                },
+                {
+                     title: 'Location',
                      width : '20%',
                      sortType : 'text',
                      sort : true
                 },
                 {
-                    title: 'Conference Date',
+                    title: 'Date',
                     width: '20%',
                     sortType: 'text',
                     sort: true
-                },
-                {
-                     title: 'Submissions',
-                     width : '10%',
-                     sortType : 'number',
-                     sort : true
                 }
             ];
         },
@@ -49,6 +49,13 @@ function Meetings(data) {
 
                 },
                 {
+                    data: 'count',
+                    sortInclude: true,
+                    custom: function(){
+                        return m('span.text-center', item.data.count );
+                    }
+                },
+                {
                     data: 'location',
                     sortInclude : true,
                     custom : function() {
@@ -58,11 +65,21 @@ function Meetings(data) {
                 {
                     data: 'conference_date', // Data field name
                     sortInclude : true,
-                    custom: function() {  return item.data.end_date; }
-                },
-                {
-                    data: 'count',
-                    sortInclude: true
+                    custom: function() {
+                        if (item.data.start_date === null && item.data.end_date === null){
+                            return;
+                        }
+                        if (item.data.start_date === null) {
+                            return item.data.start_date;
+                        }
+                        if (item.data.end_date === null) {
+                            return item.data.end_date;
+                        }
+                        if (item.data.end_date === item.data.start_date) {
+                            return item.data.end_date;
+                        }
+                        return item.data.start_date + " ~ " + item.data.end_date;
+                    }
                 }
             ];
         },

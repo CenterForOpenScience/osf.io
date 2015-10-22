@@ -5,7 +5,6 @@ from modularodm import fields, Q
 from modularodm.exceptions import ModularOdmException
 
 from framework.mongo import StoredObject
-
 from website.conferences.exceptions import ConferenceError
 
 
