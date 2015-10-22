@@ -194,7 +194,7 @@ class User(GuidStoredObject, AddonModelMixin):
     #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
-        'orcid': u'http://orcid.com/{}',
+        'orcid': u'http://orcid.org/{}',
         'github': u'http://github.com/{}',
         'scholar': u'http://scholar.google.com/citation?user={}',
         'twitter': u'http://twitter.com/{}',
