@@ -275,7 +275,7 @@ class NodeLog(StoredObject):
 
     was_connected_to = fields.ForeignField('node', list=True)
 
-    user = fields.ForeignField('user')
+    user = fields.ForeignField('user', index=True)
     foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
@@ -3215,6 +3215,7 @@ class Sanction(StoredObject):
 
     def _on_approve(self, user, token):
         if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
+            self.state = Sanction.APPROVED
             self._on_complete(user)
 
     def _on_reject(self, user, token):
