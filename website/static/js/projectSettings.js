@@ -51,30 +51,16 @@ var ProjectSettings = oop.extend(
         /*update handler*/
         updateAll: function() {
             var self = this;
-            return $osf.ajaxJSON('put', self.updateUrl,
-            {
-            data: {
-                data: {
-                    type: 'nodes',
-                    id:   self.node_id,
-                    attributes: {
-                        title: self.title(),
-                        category: self.selectedCategory(),
-                        description: self.description(),
-                    }
-                }
-            },
-            isCors: true
-            })
-            .then(function() {
-                self.categoryPlaceholder = self.selectedCategory();
-                self.titlePlaceholder = self.title();
-                self.descriptionPlaceholder = self.description();
-            })
-            .done(function() {
-                self.changeMessage(language.updateSuccessMessage, 'text-success');
-            })
-            .fail(self.updateError.bind(self));
+            var requestPayload = self.serialize();
+            var request = $osf.ajaxJSON('put', self.updateUrl, requestPayload);
+            request.done(function(response) {
+                self.selectedCategory(response.data.attributes.category);
+                self.title(response.data.attributes.title);
+                self.description(response.data.attributes.description);
+                self.changeMessage(language.updateSuccessMessage, 'text-success')
+            });
+            request.fail(self.updateError.bind(self));
+            return request;
         },
         /*cancel handler*/
         cancelAll: function() {
@@ -83,6 +69,23 @@ var ProjectSettings = oop.extend(
             self.title(self.titlePlaceholder);
             self.description(self.descriptionPlaceholder);
             self.resetMessage();
+        },
+        serialize: function() {
+            var self = this;
+            return {
+                data: {
+                    data: {
+                        type: 'nodes',
+                        id:   self.node_id,
+                        attributes: {
+                            title: self.title(),
+                            category: self.selectedCategory(),
+                            description: self.description(),
+                        }
+                    }
+                },
+                isCors: true
+            }
         }
     });
 
@@ -114,6 +117,25 @@ request.fail(function(xhr, textStatus, err) {
         err: err,
     });
 });
+
+
+// function serialize() {
+//     var self = this;
+//     return {
+//         data: {
+//             data: {
+//                 type: 'nodes',
+//                 id:   'id',
+//                 attributes: {
+//                     title: self.title(),
+//                     category: self.selectedCategory(),
+//                     description: self.description(),
+//                 }
+//             }
+//         },
+//         isCors: true
+//     }
+// };
 
 /**
  * Pulls a random name from the scientist list to use as confirmation string
