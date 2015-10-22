@@ -448,6 +448,9 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in the query will cause the match to fail
     regardless.
 
+    + `profile_image_size=<Int>` -- Modifies `links.profile_image_url` of the user entities so that it points to
+    the user's profile image scaled to the given size in pixels.  If left blank, the size depends on the image provider.
+
     #This Request/Response
     """
     permission_classes = (
@@ -508,8 +511,9 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     ##Links
 
-        self:  the canonical api endpoint of this node
-        html:  this node's page on the OSF website
+        self:               the canonical api endpoint of this contributor
+        html:               the contributing user's page on the OSF website
+        profile_image_url:  a url to the contributing user's profile image
 
     ##Actions
 
@@ -548,7 +552,8 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     ##Query Params
 
-    *None*.
+    + `profile_image_size=<Int>` -- Modifies `links.profile_image_url` so that it points the image scaled to the given
+    size in pixels.  If left blank, the size depends on the image provider.
 
     #This Request/Response
 
