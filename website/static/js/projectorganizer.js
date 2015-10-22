@@ -107,7 +107,7 @@ function _poTitleColumn(item) {
     var preventSelect = function(e){
         e.stopImmediatePropagation();
     };
-    var node = item.data.node;
+    var node = item.data; // Where actual data of the node is
     var css = ''; // Keep for future expandability -- Remove: item.data.isSmartFolder ? 'project-smart-folder smart-folder' : '';
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
