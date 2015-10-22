@@ -91,9 +91,11 @@ class CommentSerializer(JSONAPISerializer):
 
     def get_target_type(self, obj):
         target_id = obj._id
-        target = Guid.load(target_id).referent
-        if not target:
+        guid_object = Guid.load(target_id)
+        if not guid_object:
             raise NotFound('Comment target not found.')
+        target = guid_object.referent
+
         if isinstance(target, Node):
             return 'node'
         elif isinstance(target, Comment):

@@ -232,15 +232,16 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field, HyperlinkedFieldMixin):
 
     def get_guid_views(self, guid):
         # get target type from guid
-        guid_object = Guid.load(guid).referent
+        guid_object = Guid.load(guid)
         if not guid_object:
             raise NotFound
+        guid_referent = guid_object.referent
 
-        if isinstance(guid_object, Node):
+        if isinstance(guid_referent, Node):
             self.link_type = 'related'
             guid_views = GUID_VIEWS['node']
 
-        elif isinstance(guid_object, Comment):
+        elif isinstance(guid_referent, Comment):
             self.link_type = 'self'
             guid_views = GUID_VIEWS['comment']
 
