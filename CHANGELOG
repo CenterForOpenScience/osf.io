@@ -6,8 +6,7 @@ Changelog
 ===================
 
 - Add engagement emails.
-- Multiple box accounts can be associated with a user account.
-- Files can be renamed from file detail pages
+- Multiple Box.com accounts can be associated with a user account.
 - Dev: Improve speed of Travis builds.
 - APIv2: JSON API compliance fixes.
 
