@@ -35,7 +35,7 @@ $(function() {
                 dataType: 'JSON',
             });
             request.fail(function (xhr, textStatus, error) {
-                $osf.growl('Error', 'Could not add tag.');
+                $osf.growl('Error', 'Could not remove tag.');
                 Raven.captureMessage('Failed to remove tag', {
                     tag: tag, url: url, textStatus: textStatus, error: error
                 });
