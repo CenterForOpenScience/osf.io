@@ -28,6 +28,8 @@ class TestRegistrationDetail(ApiTestCase):
         self.private_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration._id)
 
     def test_return_public_registration_details_logged_out(self):
+        self.public_project.save()
+        print self.public_project.registrations[0]
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         data = res.json['data']

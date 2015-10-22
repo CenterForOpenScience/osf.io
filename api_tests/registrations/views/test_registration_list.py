@@ -21,7 +21,6 @@ class TestRegistrationList(ApiTestCase):
 
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.registration_project = RegistrationFactory(creator=self.user, project=self.project)
-        self.project.save()
         self.url = '/{}registrations/'.format(API_BASE)
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
