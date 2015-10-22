@@ -971,7 +971,7 @@ class TestMoveSubscription(OsfTestCase):
 class TestSendEmails(OsfTestCase):
     def setUp(self):
         super(TestSendEmails, self).setUp()
-        self.user = factories.UserFactory()
+        self.user = factories.AuthUserFactory()
         self.project = factories.ProjectFactory()
         self.project_subscription = factories.NotificationSubscriptionFactory(
             _id=self.project._id + '_' + 'comments',
