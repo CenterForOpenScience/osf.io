@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 import mock
-import time
-import datetime
 
 from nose.tools import *  # noqa
 from framework.auth import Auth
 from website.util import api_url_for, web_url_for
-from tests.base import OsfTestCase, assert_is_redirect
-from tests.factories import AuthUserFactory, ProjectFactory, ExternalAccountFactory
+from tests.base import OsfTestCase
+from tests.factories import AuthUserFactory, ProjectFactory
 
 from website.addons.googledrive.client import GoogleDriveClient
 from website.addons.googledrive.tests.utils import mock_folders as sample_folder_data
@@ -47,13 +45,11 @@ class TestGoogleDriveConfigViews(OsfTestCase):
         assert_equal(len(res.json['accounts']), 2)
 
     def test_googledrive_config_get_return_correct_urls(self):
-        # self.node_settings.set_auth(external_account=self.account, user=self.user)
         url = self.project.api_url_for('googledrive_config_get')
         res = self.app.get(url)
         result = res.json['result']
         assert_equal(result['urls']['accounts'],  self.project.api_url_for('list_googledrive_user_accounts'))
-        assert_equal(result['urls']['auth'], api_url_for('oauth_connect',
-                                                                    service_name='googledrive'))
+        assert_equal(result['urls']['auth'], api_url_for('oauth_connect', service_name='googledrive'))
         assert_equal(result['urls']['config'],  self.project.api_url_for('googledrive_config_put'))
         assert_equal(result['urls']['deauthorize'],  self.project.api_url_for('googledrive_remove_user_auth'))
         assert_equal(result['urls']['files'],  self.project.web_url_for('collect_file_trees'))
