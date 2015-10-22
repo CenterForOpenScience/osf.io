@@ -167,8 +167,3 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
             raise NotFound('This is not a registration.')
         return registration
 
-    # overrides RetrieveAPIView
-    def get_serializer_context(self):
-        # Serializer needs the request in order to make an update to privacy
-        # TODO: The method it overrides already returns request (plus more stuff). Why does this method exist?
-        return {'request': self.request}
