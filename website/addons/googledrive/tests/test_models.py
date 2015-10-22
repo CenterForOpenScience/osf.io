@@ -14,10 +14,6 @@ from website.addons.base import exceptions
 
 from website.addons.googledrive import model
 from website.addons.googledrive.client import GoogleAuthClient
-from website.addons.googledrive.tests.factories import (
-    GoogleDriveNodeSettingsFactory,
-    GoogleDriveUserSettingsFactory,
-)
 
 class TestGoogleDriveProvider(OsfTestCase):
     def setUp(self):
