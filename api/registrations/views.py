@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import ValidationError
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -164,6 +164,6 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
     def get_object(self):
         registration = self.get_node()
         if not registration.is_registration:
-            raise NotFound('This is not a registration.')
+            raise ValidationError('This is not a registration.')
         return registration
 

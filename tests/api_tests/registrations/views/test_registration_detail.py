@@ -66,5 +66,5 @@ class TestRegistrationDetail(ApiTestCase):
     def test_do_not_return_node_detail(self):
         url = '/{}registrations/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "This is not a registration.")
