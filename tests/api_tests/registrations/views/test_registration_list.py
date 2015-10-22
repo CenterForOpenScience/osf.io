@@ -66,4 +66,3 @@ class TestRegistrationList(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
 
         assert_equal(registered_from, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
-
