@@ -91,7 +91,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
 
         query = base_query & permission_query
         return query
