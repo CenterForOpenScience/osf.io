@@ -204,6 +204,7 @@ function triggerClickOnItem(item, force) {
  * @returns {Object} A Mithril virtual DOM template object
  * @private
  */
+// TODO : May need refactor based on the api data
 function _poContributors(item) {
     if (!item.data.contributors) {
         return '';
@@ -1463,6 +1464,11 @@ var tbOptions = {
         value.data.map(function(item){
             item.kind = 'folder';
             item.uid = item.id;
+            // TODO: Dummy data, remove this when api is ready
+            item.contributors = [{
+                id: '8q36f',
+                name : 'Dummy User'
+            }];
         });
         return value.data;
     }
