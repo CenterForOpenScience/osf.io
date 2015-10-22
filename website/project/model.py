@@ -3215,7 +3215,6 @@ class Sanction(StoredObject):
 
     def _on_approve(self, user, token):
         if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
-            self.state = Sanction.APPROVED
             self._on_complete(user)
 
     def _on_reject(self, user, token):
@@ -3695,6 +3694,7 @@ class RegistrationApproval(EmailApprovableSanction):
         src.save()
 
     def _on_complete(self, user):
+        self.state = Sanction.APPROVED
         register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
         auth = Auth(self.initiated_by)
