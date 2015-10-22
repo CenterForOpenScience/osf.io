@@ -11,7 +11,7 @@ urlpatterns = [
     ### API ###
     url(base_pattern,
         include(patterns('',
-                         url(r'^$', views.root),
+                         url(r'^$', views.root, name='root'),
                          url(r'^applications/', include('api.applications.urls', namespace='applications')),
                          url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
                          url(r'^registrations/', include('api.registrations.urls', namespace='registrations')),
