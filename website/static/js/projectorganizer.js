@@ -233,7 +233,7 @@ function _poContributors(item) {
 function _poModified(item) {
     var personString = '';
     var dateString = '';
-    var node = item.data.node;
+    var node = item.data;
     // REMOVE
     //if (item.data.modifiedDelta === 0) {
     //    return m('span');
@@ -1320,7 +1320,7 @@ var POToolbar = {
 function _poIconView(item) {
     var componentIcons = iconmap.componentIcons;
     var projectIcons = iconmap.projectIcons;
-    var node = item.data.node;
+    var node = item.data;
     function returnView(type, category) {
         var iconType = projectIcons[type];
         if (type === 'component' || type === 'registeredComponent') {
@@ -1336,9 +1336,6 @@ function _poIconView(item) {
         var template = m('span', { 'class' : iconType});
         return template;
     }
-    if ((node.attributes.category === 'pointer' && item.parent().data.node.attributes.nodeType !== 'folder') || (item.data.isPointer && !item.parent().data.isFolder)) {
-        return returnView('link');
-    }
     if (node.attributes.category === 'project') {
         if (node.attributes.registration) {
             return returnView('registeredProject', node.attributes.category);
@@ -1347,9 +1344,6 @@ function _poIconView(item) {
         }
     }
 
-    if (item.data.nodeType === 'pointer') {
-        return returnView('link');
-    }
     return null;
 }
 
