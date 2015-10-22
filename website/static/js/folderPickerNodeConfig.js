@@ -179,13 +179,13 @@ var FolderPickerViewModel = oop.defclass({
         self.folderName = ko.pureComputed(function() {
             var nodeHasAuth = self.nodeHasAuth();
             var folder = self.folder();
-            return (nodeHasAuth && folder && folder.name) ? folder.name.trim() : '';
+            return (nodeHasAuth && folder && folder.name) ? decodeURIComponent(folder.name.trim()) : '';
         });
 
         self.selectedFolderName = ko.pureComputed(function() {
             var userIsOwner = self.userIsOwner();
             var selected = self.selected();
-            var name = decodeURIComponent(selected.name) || 'None';
+            var name = selected.name ? decodeURIComponent(selected.name) : 'None';
             name = name.replace('All Files', 'Full ' + addonName);
             return userIsOwner ? name : '';
         });
