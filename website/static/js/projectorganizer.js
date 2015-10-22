@@ -128,7 +128,7 @@ function _poTitleColumn(item) {
  */
 function _gotoEvent(event, item) {
     var tb = this;
-    var node = item.data.node;
+    var node = item.data;
     if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
         window.open(node.urls.html, '_blank');
     } else {
