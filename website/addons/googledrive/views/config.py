@@ -50,14 +50,6 @@ def googledrive_config_put(node_addon, auth, **kwargs):
         'message': 'Successfully updated settings.',
     }
 
-@must_be_logged_in
-def googledrive_user_config_get(auth, **kwargs):
-    """View for getting a JSON representation of the logged-in user's
-    Google Drive user settings.
-    """
-    user_settings = auth.user.get_addon('googledrive')
-    return GoogleDriveSerializer(user_settings=user_settings).serialized_user_settings
-
 
 @must_have_permission(permissions.WRITE)
 @must_have_addon('googledrive', 'node')
@@ -68,7 +60,7 @@ def googledrive_import_user_auth(auth, node_addon, **kwargs):
     external_account_id = request.get_json().get('external_account_id')
     external_account = ExternalAccount.load(external_account_id)
     if external_account not in user.external_accounts:
-            raise HTTPError(http.FORBIDDEN)
+        raise HTTPError(http.FORBIDDEN)
 
     try:
         node_addon.set_auth(external_account, user)
