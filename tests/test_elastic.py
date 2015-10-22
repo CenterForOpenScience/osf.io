@@ -777,7 +777,7 @@ class TestSearchFiles(SearchTestCase):
         super(TestSearchFiles, self).setUp()
         self.node = ProjectFactory(is_public=True, title='Otis')
         self.osf_storage = self.node.get_addon('osfstorage')
-        self.root = self.osf_storager.get_root()
+        self.root = self.osf_storage.get_root()
 
     def test_search_file(self):
         self.root.append_file('Shake.wav')
