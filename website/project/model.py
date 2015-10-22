@@ -3185,6 +3185,7 @@ class Sanction(StoredObject):
 
     def _on_approve(self, user, token):
         if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
+            self.state = Sanction.APPROVED
             self._on_complete(user)
 
     def _on_reject(self, user, token):

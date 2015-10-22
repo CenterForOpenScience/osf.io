@@ -256,7 +256,8 @@ class TestRegistrationApproval(OsfTestCase):
         assert_false(self.registration.is_registration_approved)
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-4940
-    def test_on_complete_sets_state_to_approved(self):
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_on_complete_sets_state_to_approved(self, enqueue_task):
         assert_true(self.registration.registration_approval.pending_approval)  # sanity check
         self.registration.registration_approval._on_complete(None)
         assert_false(self.registration.registration_approval.pending_approval)
