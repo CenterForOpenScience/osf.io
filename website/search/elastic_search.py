@@ -28,6 +28,7 @@ from website.search import exceptions
 from website.search.util import build_query
 from website.util import sanitize
 from website.views import validate_page_num
+from website.project.licenses import serialize_node_license_record
 
 logger = logging.getLogger(__name__)
 
@@ -312,7 +313,7 @@ def update_node(node, index=None, bulk=False):
             'wikis': {},
             'parent_id': parent_id,
             'date_created': node.date_created,
-            'license': node.license,
+            'license': serialize_node_license_record(node.license),
             'boost': int(not node.is_registration) + 1,  # This is for making registered projects less relevant
         }
         if not node.is_retracted:

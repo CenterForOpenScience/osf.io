@@ -24,6 +24,8 @@ from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
 from framework import status
+
+
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.addons import AddonModelMixin
@@ -54,6 +56,7 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.licenses import NodeLicense, NodeLicenseRecord
 from website.project import signals as project_signals
 
 logger = logging.getLogger(__name__)
@@ -316,6 +319,7 @@ class NodeLog(StoredObject):
 
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
+    CHANGED_LICENSE = 'license_changed'
 
     UPDATED_FIELDS = 'updated_fields'
 
@@ -654,7 +658,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     #  'year' (optional): <year>,
     #  'copyrightHolders' (optional): <copyright_holders>
     # }
-    node_license = fields.DictionaryField(default=dict)
+    node_license = fields.ForeignField('nodelicenserecord')
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -1147,6 +1151,36 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         return self.is_contributor(auth.user)
 
+    def set_node_license(self, data, auth, save=True):
+        try:
+            node_license = NodeLicense.find_one(
+                Q('id', 'eq', data.get('id')) &
+                Q('name', 'eq', data.get('name'))
+            )
+        except NoResultsFound:
+            raise NodeStateError("Trying to update a Node with an invalid license.")
+        record = self.node_license
+        if record is None:
+            record = NodeLicenseRecord(
+                node_license=node_license
+            )
+        record.node_license = node_license
+        record.year = data.get('year')
+        record.copyright_holders = data.get('copyright_holders')
+        record.save()
+        self.add_log(
+            action=NodeLog.CHANGED_LICENSE,
+            params={
+                'parent_node': self.parent_id,
+                'node': self._primary_key,
+                'new_license': node_license.name
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
 
@@ -1174,6 +1208,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     log=True,
                     save=False
                 )
+            elif key == 'node_license':
+                self.set_node_license(value, auth, save=False)
             else:
                 with warnings.catch_warnings():
                     try:
@@ -1873,7 +1909,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
-        forked.node_license = original.license
+        forked.node_license = original.license.copy()
 
         # Forks default to private status
         forked.is_public = False
@@ -1960,7 +1996,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
-        registered.node_license = original.license
+        registered.node_license = original.license.copy()
 
         registered.save()
 
