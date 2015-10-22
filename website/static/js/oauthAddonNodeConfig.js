@@ -38,7 +38,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return (userHasAuth && selected) ? selected.type : '';
         });
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
-            return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
+            return 'Successfully linked "' + $osf.htmlEscape(self.options.decodeFolder(self.folder().name)) + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
         var defaults = {
@@ -77,6 +77,9 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     });
                 };
                 window.open(self.urls().auth);
+            },
+            decodeFolder: function(folder_name) {
+                return folder_name;
             }
         };
         // Overrides
