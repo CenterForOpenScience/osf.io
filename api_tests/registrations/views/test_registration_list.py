@@ -25,8 +25,6 @@ class TestRegistrationList(ApiTestCase):
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project)
-        self.public_project.save()
-
         self.user_two = AuthUserFactory()
 
     def tearDown(self):

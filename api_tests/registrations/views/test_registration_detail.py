@@ -22,14 +22,10 @@ class TestRegistrationDetail(ApiTestCase):
         self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
         self.public_registration = RegistrationFactory(project=self.public_project, creator=self.user)
         self.private_registration = RegistrationFactory(project=self.private_project, creator=self.user)
-        self.public_project.save()
-        self.private_project.save()
         self.public_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration._id)
         self.private_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration._id)
 
     def test_return_public_registration_details_logged_out(self):
-        self.public_project.save()
-        print self.public_project.registrations[0]
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         data = res.json['data']
