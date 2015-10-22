@@ -192,7 +192,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     }, {
         'profile_image': 'profile_image_url',
     }))
-    user = JSONAPIHyperlinkedIdentityField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id',
+    users = JSONAPIHyperlinkedIdentityField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')
 
     def profile_image_url(self, user):
