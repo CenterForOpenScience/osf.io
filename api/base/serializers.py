@@ -127,7 +127,13 @@ class AuthorizedCharField(ser.CharField):
         return super(AuthorizedCharField, self).to_internal_value(data)
 
 
-class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
+class HyperlinkedFieldMixin(object):
+
+    def format_json_response(self, link_type, url, meta):
+        return {'links': {link_type: {'href': url, 'meta': meta}}}
+
+
+class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField, HyperlinkedFieldMixin):
     """
     HyperlinkedIdentityField that returns a nested dict with url,
     optional meta information, and link_type.
@@ -183,10 +189,10 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
             else:
                 meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
 
-        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
+        return self.format_json_response(link_type=self.link_type, url=url, meta=meta)
 
 
-class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
+class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField, HyperlinkedFieldMixin):
     """
     HyperlinkedRelated field that returns a nested dict with url,
     optional meta information, and link_type.
@@ -211,10 +217,10 @@ class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
         """
         url = super(JSONAPIHyperlinkedRelatedField, self).to_representation(value)
         meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
-        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
+        return self.format_json_response(link_type=self.link_type, url=url, meta=meta)
 
 
-class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
+class JSONAPIHyperlinkedGuidRelatedField(ser.Field, HyperlinkedFieldMixin):
     """
     Field that returns a nested dict with the url (constructed based
     on the object's type), optional meta information, and link_type.
@@ -262,7 +268,7 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
         url = Link(view_name, kwargs={lookup_url_kwarg: '<_id>'}).resolve_url(value)
         meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
 
-        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
+        return self.format_json_response(link_type=self.link_type, url=url, meta=meta)
 
 
 class LinksField(ser.Field):
@@ -446,7 +452,7 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if isinstance(field, (JSONAPIHyperlinkedIdentityField, JSONAPIHyperlinkedRelatedField, JSONAPIHyperlinkedGuidRelatedField)):
+            if isinstance(field, HyperlinkedFieldMixin):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
