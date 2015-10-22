@@ -17,17 +17,17 @@ from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict, InvalidModelValueError
 
 GUID_VIEWS = {
-            'node': {
-                'view_name': 'nodes:node-detail',
-                'lookup_field': 'pk',
-                'lookup_url_kwarg': 'node_id'
-            },
-            'comment': {
-                'view_name': 'comments:comment-detail',
-                'lookup_field': 'pk',
-                'lookup_url_kwarg': 'comment_id'
-            },
-        }
+    'node': {
+        'view_name': 'nodes:node-detail',
+        'lookup_field': 'pk',
+        'lookup_url_kwarg': 'node_id'
+    },
+    'comment': {
+        'view_name': 'comments:comment-detail',
+        'lookup_field': 'pk',
+        'lookup_url_kwarg': 'comment_id'
+    },
+}
 
 
 class AllowMissing(ser.Field):
