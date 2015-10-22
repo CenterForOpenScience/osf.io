@@ -122,6 +122,7 @@ class AuthorizedCharField(ser.CharField):
 
 
 class HyperlinkedFieldMixin(object):
+    """ Mixin to ensure correct formatting of JSON API relationship fields. """
 
     def format_json_response(self, link_type, url, meta):
         return {'links': {link_type: {'href': url, 'meta': meta}}}
