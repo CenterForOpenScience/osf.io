@@ -77,8 +77,8 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationSerializer
 
@@ -155,8 +155,8 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationDetailSerializer
 
