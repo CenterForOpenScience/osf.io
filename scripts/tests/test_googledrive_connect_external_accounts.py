@@ -12,7 +12,7 @@ from website.addons.googledrive.tests.factories import GoogleDriveAccountFactory
 
 
 class TestGoogleDrivePostMergeMigration(OsfTestCase):
-    # Note: GoogleDriveUserSettings.user_settings has to be changed to foreign_user_settings (model and mongo). See migration instructions
+    # Note: GoogleDriveUserSettings.user_settings has to be changed to foreign_user_settings (model and mongo). See migration instructions at https://github.com/CenterForOpenScience/osf.io/pull/4396
 
     def test_migration(self):
         GoogleDriveUserSettings.remove()

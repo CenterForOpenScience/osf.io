@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-First, do pre-merge migration
+First, do pre-merge migration (found at https://github.com/CenterForOpenScience/osf.io/pull/4396 )
 
 Then, merge and change the user_settings field of GoogleDriveNodeSettings to foreign_user_settings
 """
