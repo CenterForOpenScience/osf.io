@@ -98,7 +98,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
                 message: 'Future years are not allowed'
             }
         });
-        self.copyrightHolders = ko.observable(license.copyrightHolders || '').extend({
+        self.copyrightHolders = ko.observable(license.copyright_holders.join(', ') || '').extend({
             required: true
         });
         self.dirty = ko.computed(function() {
@@ -196,11 +196,15 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
 
         var payload = {};
         var selectedLicense = self.selectedLicense();
-        selectedLicense.year = self.year();
-        selectedLicense.copyrightHolders = self.copyrightHolders();
+        var year = self.year();
+        var copyrightHolders = $.map(self.copyrightHolders().split(','), $.trim);
 
-        payload[self.saveLicenseKey] = selectedLicense;
-        delete payload[self.saveLicenseKey].properties;
+        payload[self.saveLicenseKey] = {
+            id: selectedLicense.id,
+            name: selectedLicense.name,
+            copyright_holders: copyrightHolders,
+            year: year
+        };
         var save = function() {
             return $.ajax({
                 url: self.saveUrl,

@@ -1,23 +1,19 @@
 var $ = require('jquery');
 
-var licenses = require('list-of-licenses');
+var licenses = require('json!list-of-licenses');
+var DEFAULT_LICENSE, OTHER_LICENSE;
 var list = $.map(licenses, function(value, key) {
     value.id = key;
+
+    if (value.id === 'NONE'){
+        DEFAULT_LICENSE = value;
+    }
+    if (value.id === 'OTHER'){
+        OTHER_LICENSE = value;
+    }
+
     return value;
 });
-
-var DEFAULT_LICENSE = {
-    id: 'NONE',
-    name: 'No license',
-    text: 'Copyright {{year}} {{copyrightHolders}}',
-    properties: ['year', 'copyrightHolders']
-};
-var OTHER_LICENSE = {
-    id: 'OTHER',
-    name: 'License - Other'
-};
-list.unshift(DEFAULT_LICENSE);
-list.push(OTHER_LICENSE);
 
 var licenseGroups = [
     DEFAULT_LICENSE,

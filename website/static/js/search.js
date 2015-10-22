@@ -350,15 +350,17 @@ var ViewModel = function(params) {
             self.results.removeAll();
             self.categories.removeAll();
             self.shareCategory('');
-
-            var licenseCounts = self.licenses();
+            
+            // Deep copy license list
+            var licenseCounts = self.licenses().slice();
             var noneLicense;
-            ko.utils.arrayForEach(licenseCounts, function(l) {
+            for(var i = 0; i < licenseCounts.length; i++) {
+                var l = licenseCounts[i];
                 l.count(0);
                 if (l.name === DEFAULT_LICENSE.name) {
                     noneLicense = l;
                 }
-            });
+            }
             noneLicense.count(0);
             var nullLicenseCount = data.aggs.total || 0;
             if ((data.aggs || {}).licenses)  {
