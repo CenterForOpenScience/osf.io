@@ -275,8 +275,7 @@ class TestGoogleDriveNodeSettings(OsfTestCase):
 
         log = self.node.logs[-1]
         assert_equal(log.action, 'googledrive_folder_selected')
-        assert_equal(log.params['folder_id'], folder['id'])
-        assert_equal(log.params['folder_name'], folder['path'])
+        assert_equal(log.params['folder'], folder['path'])
 
     def test_has_auth_false(self):
         external_account = ExternalAccountFactory()
