@@ -166,4 +166,3 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
         if not registration.is_registration:
             raise ValidationError('This is not a registration.')
         return registration
-
