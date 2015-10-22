@@ -17,6 +17,7 @@ import datetime
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
 from mock import patch, Mock
+from modularodm import Q
 
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
@@ -30,6 +31,7 @@ from website.project.model import (
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.archiver import ARCHIVER_SUCCESS
+from website.project.licenses import NodeLicense, NodeLicenseRecord
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -533,3 +535,13 @@ class ArchiveTargetFactory(ModularOdmFactory):
 
 class ArchiveJobFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveJob
+
+class NodeLicenseRecordFactory(ModularOdmFactory):
+    FACTORY_FOR = NodeLicenseRecord
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        kwargs['node_license'] = kwargs.get('node_license') or NodeLicense.find_one(
+            Q('name', 'eq', 'No license')
+        )
+        return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)

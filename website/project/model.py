@@ -56,7 +56,10 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
-from website.project.licenses import NodeLicense, NodeLicenseRecord
+from website.project.licenses import (
+    NodeLicense,
+    NodeLicenseRecord,
+)
 from website.project import signals as project_signals
 
 logger = logging.getLogger(__name__)
@@ -650,14 +653,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
 
-    # Representation of a nodes's license
-    # {
-    #  'id':  <id>,
-    #  'name': <name>,
-    #  'text': <license text>,
-    #  'year' (optional): <year>,
-    #  'copyrightHolders' (optional): <copyright_holders>
-    # }
     node_license = fields.ForeignField('nodelicenserecord')
 
     # One of 'public', 'private'
@@ -1168,6 +1163,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         record.year = data.get('year')
         record.copyright_holders = data.get('copyright_holders')
         record.save()
+        self.node_license = record
         self.add_log(
             action=NodeLog.CHANGED_LICENSE,
             params={
@@ -1317,7 +1313,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         if 'node_license' in saved_fields:
             children = [c for c in self.get_descendants_recursive(
-                include=lambda n: n.node_license == {}
+                include=lambda n: n.node_license is None
             )]
             # this returns generator, that would get unspooled anyways
             if children:
@@ -1909,7 +1905,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
-        forked.node_license = original.license.copy()
+        forked.node_license = original.license.copy() if original.license else None
 
         # Forks default to private status
         forked.is_public = False
@@ -1996,7 +1992,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
-        registered.node_license = original.license.copy()
+        registered.node_license = original.license.copy() if original.license else None
 
         registered.save()
 

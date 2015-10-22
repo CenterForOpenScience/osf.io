@@ -3,9 +3,11 @@ import time
 import unittest
 import logging
 import functools
+from copy import deepcopy
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
+from modularodm import Q
 
 from framework.auth.core import Auth
 from website import settings
@@ -14,13 +16,15 @@ from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
 from website.models import Retraction
+from website.project.licenses import ensure_licenses, NodeLicense
 
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
 from tests.factories import (
     UserFactory, ProjectFactory, NodeFactory,
     UnregUserFactory, UnconfirmedUserFactory,
-    RegistrationFactory
+    RegistrationFactory,
+    NodeLicenseRecordFactory
 )
 
 TEST_INDEX = 'test'
@@ -49,18 +53,18 @@ def query_user(name):
     term = 'category:user AND "{}"'.format(name)
     return query(term)
 
-
-def retry_assertion(interval=0.3
-                    , retries=3):
+def retry_assertion(interval=0.3, retries=3):
     def test_wrapper(func):
+        t_interval = deepcopy(interval)
+        t_retries = deepcopy(retries)
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             try:
                 func(*args, **kwargs)
             except AssertionError as e:
                 if retries:
-                    time.sleep(interval)
-                    retry_assertion(interval=interval, retries=retries - 1)(func)(*args, **kwargs)
+                    time.sleep(t_interval)
+                    retry_assertion(interval=t_interval, retries=t_retries - 1)(func)(*args, **kwargs)
                 else:
                     raise e
         return wrapped
@@ -212,11 +216,8 @@ class TestNodeSearch(SearchTestCase):
         self.public_child = ProjectFactory(parent=self.node, is_public=True, title='public_child')
         self.private_child = ProjectFactory(parent=self.node, title='private_child')
         self.public_subchild = ProjectFactory(parent=self.private_child, is_public=True)
-        
-        self.node.node_license = {
-            'name': 'A License',
-            'text': 'A good license'
-        }
+        ensure_licenses()
+        self.node.node_license = NodeLicenseRecordFactory()
         self.node.save()
 
         self.query = 'category:project & category:component'
@@ -226,31 +227,29 @@ class TestNodeSearch(SearchTestCase):
         docs = query(self.query)['results']
         node = [d for d in docs if d['title'] == self.node.title][0]
         assert_in('license', node)
-        assert_equal(node['license'], self.node.node_license)
+        assert_equal(node['license']['id'], self.node.node_license.id)
 
-    @retry_assertion()
+    @retry_assertion(retries=10)
     def test_node_license_propogates_to_children(self):
         docs = query(self.query)['results']
         child = [d for d in docs if d['title'] == self.public_child.title][0]        
         assert_in('license', child)
-        assert_equal(child['license'], self.node.node_license)
+        assert_equal(child['license'].get('id'), self.node.node_license.id)
         child = [d for d in docs if d['title'] == self.public_subchild.title][0]        
         assert_in('license', child)
-        assert_equal(child['license'], self.node.node_license)
+        assert_equal(child['license'].get('id'), self.node.node_license.id)
 
-    @retry_assertion()
+    @retry_assertion(retries=10)
     def test_node_license_updates_correctly(self):
-
-        new_license = {
-            'name': 'A Name',
-            'text': 'A not so good license'
-        }
+        other_license = NodeLicense.find_one(
+            Q('name', 'eq', 'MIT License')
+        )
+        new_license = NodeLicenseRecordFactory(node_license=other_license)
         self.node.node_license = new_license
         self.node.save()
-
         docs = query(self.query)['results']
         for doc in docs:
-            assert_equal(doc['license'], new_license)
+            assert_equal(doc['license'].get('id'), new_license.id)
 
 @requires_search
 class TestRegistrationRetractions(SearchTestCase):

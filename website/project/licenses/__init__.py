@@ -14,6 +14,21 @@ from framework.mongo import (
 
 from website import settings
 
+def _serialize(fields, instance):
+    return {
+        field: getattr(instance, field)
+        for field in fields
+    }
+
+serialize_node_license = functools.partial(_serialize, ('id', 'name', 'text'))
+
+def serialize_node_license_record(node_license_record):
+    if node_license_record is None:
+        return {}
+    ret = serialize_node_license(node_license_record.node_license)
+    ret.update(_serialize(('year', 'copyright_holders'), node_license_record))
+    return ret
+
 
 @mongo_utils.unique_on(['id', 'name', '_id'])
 class NodeLicense(StoredObject):
@@ -34,6 +49,21 @@ class NodeLicenseRecord(StoredObject):
     year = fields.StringField()
     copyright_holders = fields.StringField(list=True)
 
+    @property
+    def name(self):
+        return self.node_license.name if self.node_license else None
+
+    @property
+    def text(self):
+        return self.node_license.text if self.node_license else None
+
+    @property
+    def id(self):
+        return self.node_license.id if self.node_license else None
+
+    def to_json(self):
+        return serialize_node_license_record(self)
+
     def copy(self):
         copied = NodeLicenseRecord(
             node_license=self.node_license,
@@ -42,21 +72,6 @@ class NodeLicenseRecord(StoredObject):
         )
         copied.save()
         return copied
-
-def _serialize(fields, instance):
-    return {
-        field: getattr(instance, field)
-        for field in fields
-    }
-
-serialize_node_license = functools.partial(_serialize, ('id', 'name', 'text'))
-
-def serialize_node_license_record(node_license_record):
-    ret = serialize_node_license(node_license_record.node_license)
-    ret.update(_serialize(node_license_record, ('year', 'copyright_holders')))
-
-model = NodeLicense
-serializer = serialize_node_license_record
 
 
 def ensure_licenses():

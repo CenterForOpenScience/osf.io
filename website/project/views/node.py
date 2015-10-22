@@ -39,6 +39,7 @@ from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
 from website.project import new_folder
+from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
 
@@ -577,20 +578,21 @@ def update_node(auth, node, **kwargs):
     data = r_strip_html(request.get_json())
     try:
         updated_field_names = node.update(data, auth=auth)
-        # Need to cast tags to a string to make them JSON-serialiable
-        updated_fields_dict = {
-            key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
-            for key in updated_field_names
-            if key != 'logs'
-        }
-        return {
-            'updated_fields': updated_fields_dict
-        }
     except NodeUpdateError as e:
         raise HTTPError(400, data=dict(
             message_short="Failed to update attribute '{0}'".format(e.key),
             message_long=e.reason
         ))
+    # Need to cast tags to a string to make them JSON-serialiable
+    updated_fields_dict = {
+        key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
+        for key in updated_field_names
+        if key != 'logs'
+    }
+    return {
+        'updated_fields': updated_fields_dict
+    }
+
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -727,7 +729,7 @@ def _view_project(node, auth, primary=False):
             'category_short': node.category,
             'node_type': node.project_or_component,
             'description': node.description or '',
-            'license': node.license,
+            'license': serialize_node_license_record(node.license),
             'url': node.url,
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,
