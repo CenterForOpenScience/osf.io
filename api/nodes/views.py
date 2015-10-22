@@ -407,7 +407,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     ##Relationships
 
-    ###User
+    ###Users
 
     This endpoint shows the contributor user detail.
     ##Actions
@@ -428,7 +428,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
                           "users": {
                             "data": {
                               "type": "users",                 # required
-                              "id":   "{contributor_user_id}", # required
+                              "id":   "{user_id}", # required
                             }
                         }
                     }
@@ -524,7 +524,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     ##Relationships
 
-    ###User
+    ###Users
 
     This endpoint shows the contributor user detail.
 
@@ -544,7 +544,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         Body (JSON):   {
                          "data": {
                            "type": "contributors",        # required
-                           "id":   {contributor_user_id}, # required
+                           "id":   {contributor_id}, # required
                            "attributes": {
                              "bibliographic": true|false,            # optional
                              "permission":     "read"|"write"|"admin" # optional
@@ -871,8 +871,6 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     ###Target node
 
     This endpoint shows the target node detail.
-
-
 
     ##Actions
 
