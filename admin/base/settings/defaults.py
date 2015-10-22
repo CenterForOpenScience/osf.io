@@ -34,7 +34,6 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
 
     # 3rd party
-    'corsheaders',
     'raven.contrib.django.raven_compat',
 )
 
@@ -60,7 +59,6 @@ MIDDLEWARE_CLASSES = (
     'api.base.middleware.TokuTransactionsMiddleware',
 
     # 'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     # 'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -80,7 +78,7 @@ TEMPLATES = [
 
 
 ROOT_URLCONF = 'admin.base.urls'
-WSGI_APPLICATION = 'api.base.wsgi.application'
+WSGI_APPLICATION = 'admin.base.wsgi.application'
 ADMIN_BASE = 'admin/'
 STATIC_URL = '{}static/'.format(ADMIN_BASE)
 
