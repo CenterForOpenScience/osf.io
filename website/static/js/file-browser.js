@@ -192,11 +192,11 @@ var Information = {
         var template = '';
         if (args.selected().length === 1) {
             var item = args.selected()[0];
-            template = m('h4', item.data.node.attributes.title);
+            template = m('h4', item.data.attributes.title);
         }
         if (args.selected().length > 1) {
             template = m('', [ 'There are multiple items: ', args.selected().map(function(item){
-                    return m('p', item.data.node.attributes.title);
+                    return m('p', item.data.attributes.title);
                 })]);
         }
         return m('.fb-information', template);
