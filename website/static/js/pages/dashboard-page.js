@@ -63,6 +63,7 @@ $(document).ready(function() {
     //request.done(function(result) {
 
         m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser));
+        // TODO: new data does not have timezone information
         //ensureUserTimezone(result.timezone, result.locale, result.id);
     //});
     //request.fail(function(xhr, textStatus, error) {

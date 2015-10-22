@@ -167,35 +167,36 @@ function triggerClickOnItem(item, force) {
  * @param {Object} item Node data
  * @param {Function} callback
  */
-function saveExpandState(item, callback) {
-    var collapseUrl,
-        postAction,
-        expandUrl;
-    if (!item.apiURL) {
-        return;
-    }
-    if (item.expand) {
-        // turn to false
-        collapseUrl = item.apiURL + 'collapse/';
-        postAction = $osf.postJSON(collapseUrl, {});
-        postAction.done(function () {
-            item.expand = false;
-            if (callback !== undefined) {
-                callback();
-            }
-        }).fail($osf.handleJSONError);
-    } else {
-        // turn to true
-        expandUrl = item.apiURL + 'expand/';
-        postAction = $osf.postJSON(expandUrl, {});
-        postAction.done(function () {
-            item.expand = true;
-            if (callback !== undefined) {
-                callback();
-            }
-        }).fail($osf.handleJSONError);
-    }
-}
+// TODO: Are we going to save the expand state?
+//function saveExpandState(item, callback) {
+//    var collapseUrl,
+//        postAction,
+//        expandUrl;
+//    if (!item.apiURL) {
+//        return;
+//    }
+//    if (item.expand) {
+//        // turn to false
+//        collapseUrl = item.apiURL + 'collapse/';
+//        postAction = $osf.postJSON(collapseUrl, {});
+//        postAction.done(function () {
+//            item.expand = false;
+//            if (callback !== undefined) {
+//                callback();
+//            }
+//        }).fail($osf.handleJSONError);
+//    } else {
+//        // turn to true
+//        expandUrl = item.apiURL + 'expand/';
+//        postAction = $osf.postJSON(expandUrl, {});
+//        postAction.done(function () {
+//            item.expand = true;
+//            if (callback !== undefined) {
+//                callback();
+//            }
+//        }).fail($osf.handleJSONError);
+//    }
+//}
 
 /**
  * Contributors have first person's name and then number of contributors. This function returns the proper html
@@ -747,13 +748,13 @@ function dropLogic(event, items, folder) {
                                     tb.updateFolder(null, folder);
                                 } else {
                                     // if item is closed folder save expand state to be open
-                                    if(!folder.data.expand){
-                                        saveExpandState(folder.data, function(){
-                                            tb.updateFolder(null, outerFolder);
-                                        });
-                                    } else {
+                                    //if(!folder.data.expand){
+                                    //    saveExpandState(folder.data, function(){
+                                    //        tb.updateFolder(null, outerFolder);
+                                    //    });
+                                    //} else {
                                         tb.updateFolder(null, outerFolder);
-                                    }
+                                    //}
                                 }
                             } else {
                                 tb.updateFolder(null, folder);
@@ -825,14 +826,14 @@ function _addFolderEvent() {
             title: val
         };
     theItem.expand = false;
-    saveExpandState(theItem, function () {
+    //saveExpandState(theItem, function () {
         var putAction = $osf.putJSON(url, postData);
         putAction.done(function () {
             tb.updateFolder(null, item);
             triggerClickOnItem.call(tb, item);
         }).fail($osf.handleJSONError);
 
-    });
+    //});
     tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
 }
 
@@ -971,7 +972,7 @@ function addProjectEvent() {
             toNodeID: theItem.node_id
         });
     theItem.expand = false;
-    saveExpandState(theItem, function () {
+    //saveExpandState(theItem, function () {
         var postAction = $.ajax({
             type: 'POST',
             url: url,
@@ -982,7 +983,7 @@ function addProjectEvent() {
         postAction.done(function () {
             tb.updateFolder(null, item);
         });
-    });
+    //});
     triggerClickOnItem.call(tb, item);
     tb.toolbarMode(Fangorn.Components.toolbarModes.DEFAULT);
     tb.select('.tb-header-row .twitter-typeahead').remove();
@@ -1428,9 +1429,9 @@ var tbOptions = {
         return true;
     },
     ontogglefolder : function (item, event) {
-        if (event) {
-            saveExpandState(item.data);
-        }
+        //if (event) {
+        //    saveExpandState(item.data);
+        //}
         if (!item.open) {
             item.load = false;
         }
