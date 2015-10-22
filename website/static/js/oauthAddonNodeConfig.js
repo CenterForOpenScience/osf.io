@@ -125,7 +125,12 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                         }
                     ),
                     value: self.accounts()[0].id,
-                    callback: (self.connectExistingAccount.bind(self))
+                    callback: (self.connectExistingAccount.bind(self)),
+                    buttons: {
+                        confirm:{
+                            label:'Import',
+                        }
+                    }
                 });
             } else {
                 bootbox.confirm({
@@ -134,6 +139,11 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     callback: function(confirmed) {
                         if (confirmed) {
                             self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                        }
+                    },
+                    buttons: {
+                        confirm: {
+                            label:'Import',
                         }
                     }
                 });
