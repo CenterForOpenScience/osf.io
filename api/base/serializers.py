@@ -114,17 +114,11 @@ class AuthorizedCharField(ser.CharField):
         content = AuthorizedCharField(source='return_content')
     """
 
-    def __init__(self, **kwargs):
-        super(AuthorizedCharField, self).__init__(**kwargs)
-
     def get_attribute(self, obj):
         user = self.context['request'].user
         auth = Auth(user)
         field_source_method = getattr(obj, self.source)
         return field_source_method(auth=auth)
-
-    def to_internal_value(self, data):
-        return super(AuthorizedCharField, self).to_internal_value(data)
 
 
 class HyperlinkedFieldMixin(object):
