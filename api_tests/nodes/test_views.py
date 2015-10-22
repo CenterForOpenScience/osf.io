@@ -1434,7 +1434,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
     def test_contributor_create_invalid_data(self):
         res = self.app.post_json_api(self.public_url, "Incorrect data", auth=self.user_three.auth, expect_errors=True)
@@ -2993,6 +2993,7 @@ class TestNodeLinkCreate(ApiTestCase):
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
 
     def test_create_node_link_invalid_data(self):
         res = self.app.post_json_api(self.public_url, "Incorrect data", auth=self.user.auth, expect_errors=True)
