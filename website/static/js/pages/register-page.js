@@ -56,7 +56,6 @@ $(function() {
 
             var draft = self.draft;
             var metaSchema = draft.metaSchema;
-            // debugger;
             var messages = metaSchema.messages;
             var beforeSubmitForApprovalMessage = messages.beforeSubmitForApproval || '';
             var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';

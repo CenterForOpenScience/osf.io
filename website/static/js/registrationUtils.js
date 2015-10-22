@@ -12,6 +12,7 @@ var $osf = require('js/osfHelpers');
 var language = require('js/osfLanguage').registrations;
 
 var editorExtensions = require('js/registrationEditorExtensions');
+var registrationEmbargo = require('js/registrationEmbargo');
 
 /**
  * @class Question
@@ -265,7 +266,9 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     bootbox.confirm({
         size: 'large',
         title: language.registerConfirm,
-        message: $osf.joinPrompts(response.prompts),
+        message: function() {
+            ko.renderTemplate('preRegistrationTemplate', registrationEmbargo.ViewModel, {}, this);
+        },
         callback: function(result) {
             if (result) {
                 confirm();

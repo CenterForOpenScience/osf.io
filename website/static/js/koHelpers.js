@@ -2,6 +2,7 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
+var pikaday = require('pikaday');
 require('knockout.validation');
 
 var iconmap = require('js/iconmap');
@@ -342,6 +343,24 @@ ko.bindingHandlers.getIcon = {
     }
 };
 
+/**
+ * Creates a pikaday date picker in place. Takes in a function
+ * that verifies the selected date is valid
+ * Example:
+ * <input type="text" data-bind="datePicker: dateIsValid">
+ */
+ko.bindingHandlers.datePicker = {
+    init: function(elem, validTest){
+        var picker = new pikaday({
+            bound: true,
+            field: elem,
+            onSelect: function(){
+                pikaday(picker.toString());
+                validTest();
+            }
+        });
+    }
+};
 
 // Expose public utilities
 module.exports = {
