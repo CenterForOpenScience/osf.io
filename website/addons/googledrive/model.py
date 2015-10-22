@@ -161,8 +161,7 @@ class GoogleDriveNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             params={
                 'project': self.owner.parent_id,
                 'node': self.owner._id,
-                'folder_id': self.folder_id,
-                'folder_name': self.folder_name,
+                'folder': self.folder_name,
             },
             auth=auth,
         )
