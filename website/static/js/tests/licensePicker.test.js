@@ -4,7 +4,7 @@ var assert = require('chai').assert;
 var utils = require('tests/utils');
 var faker = require('faker');
 
-var licenses = require('list-of-licenses');
+var licenses = require('json!list-of-licenses');
 var $ = require('jquery');
 var bootbox = require('bootbox');
 
@@ -14,6 +14,8 @@ var saveUrl = faker.internet.ip();
 var saveMethod = 'POST';
 var saveLicenseKey = 'node_license';
 var license = licenses.MIT;
+// proxy attribute to match server data
+license.copyright_holders = [];
 
 describe('LicensePicker', () => {
 
@@ -78,7 +80,13 @@ describe('LicensePicker', () => {
             lp.selectedLicenseId('MIT');
 
             var payload = {};
-            payload[saveLicenseKey] = lp.selectedLicense();
+            var selectedLicense = lp.selectedLicense();
+            payload[saveLicenseKey] = {
+                id: selectedLicense.id,
+                name: selectedLicense.name,
+                copyright_holders: $.map(lp.copyrightHolders().split(','), $.trim),
+                year: lp.year()
+            };
             lp.save().always(function() {
                 var args = {
                     url: saveUrl,
