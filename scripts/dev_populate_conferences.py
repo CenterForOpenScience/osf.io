@@ -285,8 +285,8 @@ MEETING_DATA = {
         'name': 'L. Starling Reid Undergraduate Psychology Conference 2015',
         'info_url': 'http://avillage.web.virginia.edu/Psych/Conference',
         'location': 'Charlottesville, VA',
-        'start_date': 'Apr 02 2015',
-        'end_date': 'Apr 02 2015',
+        'start_date': 'Apr 17 2015',
+        'end_date': 'Apr 17 2015',
         'logo_url': None,
         'active': True,
         'admins': [],
@@ -625,7 +625,6 @@ def clear_up_conf():
     print 'Clear all the existing conferences'
     confs = Conference.find()
     for conf in confs:
-        print conf.to_storage()
         conf.remove()
         conf.save()
 

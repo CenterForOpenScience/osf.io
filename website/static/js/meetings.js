@@ -35,7 +35,7 @@ function Meetings(data) {
                 {
                     title: 'Date',
                     width: '20%',
-                    sortType: 'text',
+                    sortType: 'date',
                     sort: true
                 }
             ];
@@ -63,7 +63,7 @@ function Meetings(data) {
                         return item.data.location; }
                 },
                 {
-                    data: 'conference_date', // Data field name
+                    data: 'start_date', // Data field name
                     sortInclude : true,
                     custom: function() {
                         if (item.data.start_date === null && item.data.end_date === null){
