@@ -154,10 +154,6 @@ class CollectionList(generics.ListCreateAPIView, ODMFilterMixin):
 class CollectionDetail(generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
     """Details about Organizer Collections. *Writeable*.
 
-    Paginated list of Project Organizer Collections ordered by their `date_modified`.
-    Each resource contains the full representation of the project organizer collection, meaning additional
-    requests to an individual Organizer Collection's detail view are not necessary.
-
     The Project Organizer is a tool to allow the user to make Collections of projects, components, and registrations
     for whatever purpose the user might want to organize them. They make node_links to any Node that a user has
     read access to. Collections through this API do not nest. Currently Collections are private to any individual user,
@@ -204,9 +200,9 @@ class CollectionDetail(generics.RetrieveUpdateDestroyAPIView, CollectionMixin):
         Success:       200 OK + node representation
 
     To update an Organizer Collection, issue either a PUT or a PATCH request against the `links.self` URL.
-    The `title` and `category` fields are mandatory if you PUT and optional if you PATCH.  The `tags` parameter must be an array of strings.
-    Non-string values will be accepted and stringified, but we make no promises about the stringification output.  So
-    don't do that.
+    The `title` field is mandatory if you PUT and optional if you PATCH, though there's no reason to PATCH if you aren't
+    changing the name. Non-string values will be accepted and stringified, but we make no promises about the
+    stringification output.  So don't do that.
 
     ###Delete
 
