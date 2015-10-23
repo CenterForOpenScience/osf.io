@@ -306,7 +306,7 @@ class NodeLinksList(generics.ListCreateAPIView, CollectionMixin):
         return [
             pointer for pointer in
             self.get_node().nodes_pointer
-            if not pointer.node.is_deleted
+            if not pointer.node.is_deleted and not pointer.node.is_folder
         ]
 
 
