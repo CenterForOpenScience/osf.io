@@ -11,7 +11,7 @@ from framework.auth.core import User
 from website import settings
 from website.app import init_app
 from website.conferences.model import Conference
-
+from datetime import datetime
 
 def main():
     init_app(set_backends=True, routes=False)
@@ -642,7 +642,6 @@ MEETING_DATA = {
     },
 }
 
-
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
         meeting = meeting.strip()
@@ -654,6 +653,14 @@ def populate_conferences():
                 admin_objs.append(user)
             except ModularOdmException:
                 raise RuntimeError('Username {0!r} is not registered.'.format(email))
+
+        # Convert string into datetime object
+        date_format = '%b %d %Y'
+        if attrs['end_date']:
+            attrs['end_date'] = datetime.strptime(attrs['end_date'], date_format)
+        if attrs['start_date']:
+            attrs['start_date'] = datetime.strptime(attrs['start_date'], date_format)
+
         conf = Conference(
             endpoint=meeting, admins=admin_objs, **attrs
         )

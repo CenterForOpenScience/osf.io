@@ -78,7 +78,7 @@ function Meetings(data) {
                         if (item.data.end_date === item.data.start_date) {
                             return item.data.end_date;
                         }
-                        return item.data.start_date + " ~ " + item.data.end_date;
+                        return item.data.start_date + ' ~ ' + item.data.end_date;
                     }
                 }
             ];

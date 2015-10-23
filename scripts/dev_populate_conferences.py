@@ -632,6 +632,7 @@ def populate_conferences():
     clear_up_conf()
     date_format = '%b %d %Y'
     for meeting, attrs in MEETING_DATA.iteritems():
+        # Convert string into datetime object
         if attrs['end_date']:
             attrs['end_date'] = datetime.strptime(attrs['end_date'], date_format)
         if attrs['start_date']:
