@@ -33,6 +33,7 @@ var FileBrowser = {
             { id:3, label : 'Nodes', path : 'users/me/nodes/', pathOptions : {}}
         ];
         self.filesData = m.prop($osf.apiV2Url(self.collections[0].path, self.collections[0].pathOptions));
+
         self.breadcrumbs = m.prop([
             { label : 'All My Projects', path : 'users/me/nodes/', pathOptions : { query : { 'filter[registration]' : 'false' }}}
         ]);
@@ -43,8 +44,15 @@ var FileBrowser = {
             { tag : 'something'}
         ];
 
+        self.updateFilesData = function(value) {
+            if (value !== self.filesData()) {
+                self.filesData(value);
+                self.isLoadedUrl = false; // check if in fact changed
+                self.updateList();
+            }
+        };
 
-        // For information panel
+        // INFORMATION PANEL
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){
             self.selected(selectedList);
@@ -52,18 +60,17 @@ var FileBrowser = {
         }.bind(self);
 
 
-        // COLLECTIONS
+        // COLLECTIONS PANEL
         self.activeCollection = m.prop(1);
         self.updateCollection = function(coll) {
             self.activeCollection(coll.id);
             console.log(self.activeCollection());
             coll.url = $osf.apiV2Url(coll.path, coll.pathOptions);
-            self.filesData(coll.url);
-            self.updateList();
-            m.redraw(true);
+            self.updateFilesData(coll.url);
         };
 
 
+        // USER FILTER
         self.activeUser = m.prop(1);
         self.updateUserFilter = function(user) {
             self.activeUser(user.id);
@@ -71,14 +78,16 @@ var FileBrowser = {
             self.updateList(url);
         };
 
+        // Refresh the Grid
         self.updateList = function(element, isInit, context){
-            //if(!self.isLoadedUrl) {
-            //    m.mount(document.getElementById('pOrganizer'), m.component( ProjectOrganizer, { filesData : self.filesData, updateSelected : self.updateSelected, updateBreadcrumbs : self.updateBreadcrumbs}));
-            //    self.isLoadedUrl = true;
-            //}
+            if(!self.isLoadedUrl) {
+                var el = element || document.getElementById('pOrganizer');
+                m.mount(el, m.component( ProjectOrganizer, { filesData : self.filesData, updateSelected : self.updateSelected, updateBreadcrumbs : self.updateBreadcrumbs}));
+                self.isLoadedUrl = true;
+            }
         }.bind(self);
 
-        // For breadcrumbs
+        // BREADCRUMBS
         self.updateBreadcrumbs = function(){
 
         }.bind(self);
@@ -91,7 +100,7 @@ var FileBrowser = {
                 m.component(Collections, {list : ctrl.collections, activeCollection : ctrl.activeCollection, updateCollection : ctrl.updateCollection } ),
                 m.component(Filters, { activeUser : ctrl.activeUser, updateUser : ctrl.updateUserFilter, nameFilters : ctrl.nameFilters, tagFilters : ctrl.tagFilters })
             ]),
-            m('.fb-main', m('#pOrganizer', m.component( ProjectOrganizer, { filesData : ctrl.filesData, updateSelected : ctrl.updateSelected, updateBreadcrumbs : ctrl.updateBreadcrumbs}))),
+            m('.fb-main', { config: ctrl.updateList }, m('#pOrganizer' )),
             m('.fb-infobar', m.component(Information, { selected : ctrl.selected }))
         ]);
     }
