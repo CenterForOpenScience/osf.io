@@ -17,6 +17,7 @@ from website.search.util import build_query
 from website.search_migration.migrate import migrate
 from website.models import Retraction
 from website.project.licenses import ensure_licenses, NodeLicense
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from tests.base import OsfTestCase
 from tests.test_features import requires_search

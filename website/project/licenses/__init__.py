@@ -30,15 +30,15 @@ def serialize_node_license_record(node_license_record):
     return ret
 
 
-@mongo_utils.unique_on(['id', 'name', '_id'])
+@mongo_utils.unique_on(['id', '_id'])
 class NodeLicense(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
     id = fields.StringField(required=True, unique=True, editable=False)
-    name = fields.StringField(required=True, unique=True, editable=False)
-    text = fields.StringField(required=True, editable=False)
-    properties = fields.StringField(list=True, editable=False)
+    name = fields.StringField(required=True, unique=True)
+    text = fields.StringField(required=True)
+    properties = fields.StringField(list=True)
 
 class NodeLicenseRecord(StoredObject):
 
@@ -74,7 +74,7 @@ class NodeLicenseRecord(StoredObject):
         return copied
 
 
-def ensure_licenses():
+def ensure_licenses(warn=True):
     with open(
             os.path.join(
                 settings.APP_PATH,
@@ -86,22 +86,27 @@ def ensure_licenses():
             name = info['name']
             text = info['text']
             properties = info.get('properties', [])
+            node_license = None
             try:
-                NodeLicense.find_one(
-                    Q('name', 'eq', name) &
+                node_license = NodeLicense.find_one(
                     Q('id', 'eq', id)
                 )
             except NoResultsFound:
-                warnings.warn(
-                    "License {name} ({id}) not already in the database. Adding it now.".format(
-                        name=name,
-                        id=id
+                if warn:
+                    warnings.warn(
+                        "License {name} ({id}) not already in the database. Adding it now.".format(
+                            name=name,
+                            id=id
+                        )
                     )
-                )
                 node_license = NodeLicense(
                     id=id,
                     name=name,
                     text=text,
                     properties=properties
                 )
-                node_license.save()
+            else:
+                node_license.name = name
+                node_license.text = text
+                node_license.properties = properties
+            node_license.save()

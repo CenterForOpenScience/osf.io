@@ -1149,8 +1149,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def set_node_license(self, data, auth, save=True):
         try:
             node_license = NodeLicense.find_one(
-                Q('id', 'eq', data.get('id')) &
-                Q('name', 'eq', data.get('name'))
+                Q('id', 'eq', data.get('id'))
             )
         except NoResultsFound:
             raise NodeStateError("Trying to update a Node with an invalid license.")

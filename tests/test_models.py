@@ -3,6 +3,7 @@
 import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
+import functools
 
 import pytz
 import datetime
@@ -45,6 +46,8 @@ from website.addons.wiki.exceptions import (
     PageConflictError,
     PageNotFoundError,
 )
+from website.project.licenses import ensure_licenses
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from tests.base import OsfTestCase, Guid, fake, capture_signals
 from tests.factories import (
@@ -52,7 +55,8 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory
+    AuthUserFactory, DashboardFactory, FolderFactory,
+    NodeLicenseRecordFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -2235,6 +2239,7 @@ class TestProject(OsfTestCase):
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user, description='foobar')
+        ensure_licenses()
 
     def test_repr(self):
         assert_in(self.project.title, repr(self.project))
@@ -2791,14 +2796,11 @@ class TestProject(OsfTestCase):
         assert_false(project.is_registration_of(self.project))
 
     def test_registration_preserves_license(self):
-        license = {
-            'name': 'A License',
-            'text': 'Blah blah blah'
-        }
+        license = NodeLicenseRecordFactory()
         self.project.node_license = license
         self.project.save()
         with mock_archive(self.project, autocomplete=True) as registration:
-            assert_equal(registration.node_license, license)
+            assert_equal(registration.node_license.id, license.id)
 
     def test_is_contributor_unregistered(self):
         unreg = UnregUserFactory()
@@ -3199,6 +3201,7 @@ class TestForkNode(OsfTestCase):
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
+        ensure_licenses()
 
     def _cmp_fork_original(self, fork_user, fork_date, fork, original,
                            title_prepend='Fork of '):
@@ -3368,14 +3371,11 @@ class TestForkNode(OsfTestCase):
         assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
 
     def test_fork_preserves_license(self):
-        license = {
-            'name': 'A License',
-            'text': 'Blah blah blah'
-        }
+        license = NodeLicenseRecordFactory()
         self.project.node_license = license
         self.project.save()
         fork = self.project.fork_node(self.auth)
-        assert_equal(fork.node_license, license)
+        assert_equal(fork.node_license.id, license.id)
 
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)
