@@ -3,6 +3,7 @@ import httplib as http
 from rest_framework import status
 from rest_framework.exceptions import APIException
 
+
 def json_api_exception_handler(exc, context):
     """ Custom exception handler that returns errors object as an array """
 
@@ -29,7 +30,7 @@ def json_api_exception_handler(exc, context):
         if isinstance(exc, JSONAPIException):
             errors.extend([
                 {
-                    'source': exc.source,
+                    'source': exc.source or {},
                     'detail': exc.detail,
                 }
             ])
