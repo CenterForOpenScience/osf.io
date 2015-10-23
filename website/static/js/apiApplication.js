@@ -256,7 +256,6 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
 
         // // If no detail url provided, render view as though it was a creation form. Otherwise, treat as READ/UPDATE.
         this.apiDetailUrl = ko.observable(urls.apiDetailUrl);
-        this.apiResetUrl = ko.observable(urls.apiResetUrl);
         this.isCreateView = ko.computed(function () {
             return !this.apiDetailUrl();
         }.bind(this));
@@ -409,11 +408,17 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                             'danger');
 
                         Raven.captureMessage('Error resetting instance secret', {
-                            url: self.apiResetUrl,
+                            url: appData.apiResetUrl,
                             status: status,
                             error: error
                         });
                     }.bind(self));
+                }
+            },
+            buttons: {
+                confirm: {
+                    label: 'Reset Secret',
+                    className: 'btn-danger'
                 }
             }
         });
