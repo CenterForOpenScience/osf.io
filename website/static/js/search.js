@@ -114,12 +114,12 @@ var ViewModel = function(params) {
             }
             else {
                 if (a.name > b.name) {
-                    return -1;
-                }
-                else {
                     return 1;
                 }
-                return a.name > b.name;
+                else {
+                    return -1;
+                }
+                return 0;
             }
         });
         return $.map(sortedLicenses, function(count, name) {

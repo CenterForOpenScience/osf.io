@@ -98,7 +98,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
                 message: 'Future years are not allowed.'
             }
         });
-        self.copyrightHolders = ko.observable(license.copyright_holders.join(', ') || '').extend({
+        self.copyrightHolders = ko.observable((license.copyright_holders || []).join(', ')).extend({
             required: true
         });
         self.dirty = ko.computed(function() {
