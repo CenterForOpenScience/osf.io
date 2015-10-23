@@ -13,6 +13,7 @@ from framework.auth.decorators import collect_auth
 from framework.mongo.utils import get_or_http_error
 
 from website.models import Node
+from website import settings
 
 _load_node_or_fail = lambda pk: get_or_http_error(Node, pk)
 
