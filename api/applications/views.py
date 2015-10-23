@@ -109,9 +109,9 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ApplicationMixin)
 
 class ApplicationReset(generics.RetrieveUpdateDestroyAPIView, ApplicationMixin):
     """
-    Get information about a specific API application (eg OAuth2) that the user has registered
+    Resets client secret of a specific API application (eg OAuth2) that the user has registered
 
-    Should not return information if the application belongs to a different user
+    Should not perform update or return information if the application belongs to a different user
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
