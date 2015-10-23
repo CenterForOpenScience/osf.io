@@ -397,9 +397,9 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     `type` is "contributors"
 
         name           type     description
-        ---------------------------------------------------------------------------------
-        bibliographic  boolean  Whether the user will be included in citations for this node or not
-        permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
+        ------------------------------------------------------------------------------------------------------
+        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
+        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
 
     ##Links
 
@@ -419,7 +419,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         Query Params:  <none>
         Body (JSON): {
                       "data": {
-                        "type": "contributors",     # required
+                        "type": "contributors",                   # required
                         "attributes": {
                           "bibliographic": true|false,            # optional
                           "permission": "read"|"write"|"admin"    # optional
@@ -427,8 +427,8 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
                         "relationships": {
                           "users": {
                             "data": {
-                              "type": "users",                 # required
-                              "id":   "{user_id}", # required
+                              "type": "users",                    # required
+                              "id":   "{user_id}"                 # required
                             }
                         }
                     }
@@ -436,12 +436,12 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
             }
         Success:       201 CREATED + node contributor representation
 
-    Contributors can be added to nodes by issuing a POST request to this endpoint.  This effectively creates a relationship
+    Add a contributor to a node by issuing a POST request to this endpoint.  This effectively creates a relationship
     between the node and the user.  Besides the top-level type, there are optional "attributes" which describe the
     relationship between the node and the user. `bibliographic` is a boolean and defaults to `true`.  `permission` must
-    be a [valid OSF permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`.  The contributor must be
-    described as a relationship object with a "data" member, containing the user `type` and user `id`.  The id must be a
-    valid user id.  All other fields not listed above will be ignored.  If the request is successful the API will return
+    be a [valid OSF permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`.  A relationship object
+    with a "data" member, containing the user `type` and user `id` must be included.  The id must be a valid user id.
+    All other fields not listed above will be ignored.  If the request is successful the API will return
     a 201 response with the representation of the new node contributor in the body.  For the new node contributor's
     canonical URL, see the `links.self` field of the response.
 
@@ -451,11 +451,9 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    NodeContributors may be filtered by their `full_name`, `given_name`, `middle_names`, `family_name`, `id`,
-    `bibliographic`, or `permissions` attributes.  The `description`, and `category` are string fields and will be filtered
-    using simple substring matching.  `bibliographic` is a boolean, and can be filtered using truthy values,
-    such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in the query will cause the match to fail
-    regardless.
+    NodeContributors may be filtered by `bibliographic`, or `permission` attributes.  `bibliographic` is a boolean, and
+    can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in
+    the query will cause the match to fail regardless.
 
     #This Request/Response
     """
@@ -518,9 +516,9 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
     `type` is "contributors"
 
         name           type     description
-        ---------------------------------------------------------------------------------
-        bibliographic  boolean  Whether the user will be included in citations for this node or not
-        permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
+        ------------------------------------------------------------------------------------------------------
+        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
+        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
 
     ##Relationships
 
@@ -530,7 +528,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     ##Links
 
-        self:  the relationship url for this node contributor
+        self:  the detail url for this node contributor
         html:  this user's page on the OSF website
         profile_image: this user's gravatar
 
@@ -543,11 +541,11 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
-                           "type": "contributors",        # required
-                           "id":   {contributor_id}, # required
+                           "type": "contributors",                    # required
+                           "id": {contributor_id},                    # required
                            "attributes": {
-                             "bibliographic": true|false,            # optional
-                             "permission":     "read"|"write"|"admin" # optional
+                             "bibliographic": true|false,             # optional
+                             "permission": "read"|"write"|"admin"     # optional
                            }
                          }
                        }
@@ -567,7 +565,8 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         Success:       204 No Content
 
     To remove a contributor from a node, issue a DELETE request to the `self` link.  Attempting to remove the only admin
-    from a node will result in a 400 Bad Request response.
+    from a node will result in a 400 Bad Request response.  This request will only remove the relationship between the
+    node and the user, not the user itself.
 
     ##Query Params
 
@@ -795,7 +794,7 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
         Query Params:  <none>
         Body (JSON): {
                        "data": {
-                          "type": "node_links",     # required
+                          "type": "node_links",                  # required
                           "relationships": {
                             "nodes": {
                               "data": {
@@ -810,7 +809,7 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
 
     To add a node link (a pointer to another node), issue a POST request to this endpoint.  This effectively creates a
     relationship between the node and the target node.  The target node must be described as a relationship object with
-    a "data" member, containing the `type` nodes and the target node `id`.
+    a "data" member, containing the nodes `type` and the target node `id`.
 
     ##Query Params
 
@@ -862,7 +861,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
     ##Links
 
-        self:  the relationship url for this node link
+        self:  the detail url for this node link
         html:  this node's page on the OSF website
         profile_image: this contributor's gravatar
 
