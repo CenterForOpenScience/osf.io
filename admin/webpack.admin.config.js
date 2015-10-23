@@ -16,14 +16,11 @@ var staticAdminPath = function(dir) {
     return path.join(adminRoot, dir);
 };
 
-var entry = {
-    // JS
-    'register_1-page': staticWebsitePath('js/pages/register_1-page.js'),
-};
-
+// [lauren]: how I think adding another file will work
+//common.entry.<new file> = staticAdminPath('js/pages/base-page.js');
 
 // Adding bundle tracker to plugins
-var plugins = [
+common.plugins = [
     // Bundle common code between modules
     new webpack.optimize.CommonsChunkPlugin('vendor', 'vendor.js'),
     // Bower support
@@ -42,6 +39,13 @@ var plugins = [
     // for using webpack with Django
     new BundleTracker({filename: './webpack-stats.json'}),
 ];
+
+common.output = {
+    path: './static/public/js/',
+    // publicPath: '/static/', // used to generate urls to e.g. images
+    filename: '[name].js',
+    sourcePrefix: ''
+};
 
 module.exports = assign(common, {
     debug: true,
