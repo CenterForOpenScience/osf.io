@@ -275,7 +275,7 @@ class NodeLog(StoredObject):
 
     was_connected_to = fields.ForeignField('node', list=True)
 
-    user = fields.ForeignField('user')
+    user = fields.ForeignField('user', index=True)
     foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
@@ -3704,6 +3704,7 @@ class RegistrationApproval(EmailApprovableSanction):
         src.save()
 
     def _on_complete(self, user):
+        self.state = Sanction.APPROVED
         register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
         auth = Auth(self.initiated_by)
