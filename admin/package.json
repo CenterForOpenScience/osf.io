@@ -54,7 +54,10 @@
     "typeahead.js": "^0.10.5",
     "url-loader": "^0.5.5",
     "webpack": "^1.7.2",
+<<<<<<< HEAD
     "webpack-bundle-tracker": "0.0.8",
+=======
+>>>>>>> bc5c13a... move admin webpack files into admin module and update package.json to reflect change
     "ws": "~0.4.32"
   },
   "devDependencies": {
@@ -71,7 +74,12 @@
     "karma-sourcemap-loader": "^0.3.4",
     "karma-spec-reporter": "0.0.16",
     "karma-webpack": "~1.5.0",
+<<<<<<< HEAD
     "mocha": "^2.1.0"
+=======
+    "mocha": "^2.1.0",
+    "webpack-bundle-tracker": "0.0.8",
+>>>>>>> bc5c13a... move admin webpack files into admin module and update package.json to reflect change
   },
   "scripts": {
     "test": "./node_modules/karma/bin/karma start --single-run --browsers PhantomJS"
