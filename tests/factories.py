@@ -25,7 +25,8 @@ from framework.sessions.model import Session
 from website.addons import base as addons_base
 from website.oauth.models import ApiOAuth2Application, ExternalAccount, ExternalProvider
 from website.project.model import (
-    Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig
+    Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig,
+    AlternativeCitation
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
@@ -533,3 +534,19 @@ class ArchiveTargetFactory(ModularOdmFactory):
 
 class ArchiveJobFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveJob
+
+
+class AlternativeCitationFactory(ModularOdmFactory):
+    FACTORY_FOR = AlternativeCitation
+
+    @classmethod
+    def _create(cls, target_class, *args, **kwargs):
+        name = kwargs.get('name')
+        text = kwargs.get('text')
+        instance = target_class(
+            name=name,
+            text=text
+        )
+        print instance
+        instance.save()
+        return instance

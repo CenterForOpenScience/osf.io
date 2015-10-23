@@ -20,7 +20,8 @@ from api.nodes.serializers import (
     NodeProviderSerializer,
     NodeContributorsSerializer,
     NodeRegistrationSerializer,
-    NodeContributorDetailSerializer
+    NodeContributorDetailSerializer,
+    NodeAlternativeCitationSerializer
 )
 from api.nodes.permissions import (
     AdminOrPublic,
@@ -1269,46 +1270,88 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
             and addon.complete
         ]
 
-class NodeAlternativeCitationsList(generics.ListAPIView, NodeMixin):
+class NodeAlternativeCitationsList(generics.ListCreateAPIView, NodeMixin):
     """List of alternative citations for a project.
 
     ##Actions
 
     ###Create Alternative Citation
 
-        Method:         PUT
-        URL:            ??
-        Query Params:   ??
-        Body  (??):     ??
+        Method:         POST
+        Body (JSON):    {
+                            "data": {
+                                "type": "citations",    # required
+                                "attributes": {
+                                    "name": {name},     # mandatory
+                                    "text": {text}      # mandatory
+                                }
+                            }
+                        }
         Success:        201 Created + new citation representation
+    """
+
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        AdminOrPublic,
+        ReadOnlyIfRegistration
+    )
+
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
+
+    serializer_class = NodeAlternativeCitationSerializer
+
+    def get_queryset(self):
+        return [
+            citation
+            for citation
+            in self.get_node().alternativeCitations
+        ]
+
+class NodeAlternativeCitationDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
+    """Details about an alternative citations for a project.
+
+    ##Actions
 
     ###Update Alternative Citation
 
         Method:         PUT
-        URL:            ??
-        Query Params:   ??
-        Body  (??):     ??
-        Success:        201 OK + updated citation representation
+        Body (JSON):    {
+                            "data": {
+                                "type": "citations",    # required
+                                "id": {{id}}            # required
+                                "attributes": {
+                                    "name": {name},     # mandatory
+                                    "text": {text}      # mandatory
+                                }
+                            }
+                        }
+        Success:        200 Ok + updated citation representation
 
     ###Delete Alternative Citation
 
         Method:         DELETE
-        URL:            ??
-        Query Params:   ??
-        Body  (??):     ??
         Success:        204 No content
     """
 
-    # permission_classes = ( ?? )
-    #
-    # required_read_scopes = ??
-    # required_write_scopes = ??
-    #
-    # serializer_class = NodeAlternativeCitationSerializer
+    permission_classes = (
+        drf_permissions.IsAuthenticatedOrReadOnly,
+        AdminOrPublic,
+        ReadOnlyIfRegistration
+    )
 
-    def get_queryset(self):
-        return [
-            citation.to_json()
-            for citation
-            in self.get_node().alternativeCitations
-        ]
+    required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_CITATIONS_WRITE]
+
+    serializer_class = NodeAlternativeCitationSerializer
+
+    def get_object(self):
+        try:
+            return self.get_node().alternativeCitations.find(Q('_id', 'eq', str(self.kwargs['citation_id'])))[0]
+        except IndexError:
+            raise NotFound
+
+    def perform_destroy(self, instance):
+        citation = self.get_object()
+        self.get_node().alternativeCitations.remove(citation)
+        self.get_node().save()

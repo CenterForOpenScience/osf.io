@@ -1,18 +1,21 @@
 from rest_framework import serializers as ser
-from rest_framework import exceptions
+from rest_framework import exceptions, status
+from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError, APIException
+from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
-from website.models import Node, User
+from website.models import Node, User, AlternativeCitation
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField, JSONAPIListField
-from api.base.exceptions import InvalidModelValueError
+from api.base.exceptions import InvalidModelValueError, json_api_exception_handler
 
 
 class NodeTagField(ser.Field):
@@ -351,3 +354,57 @@ class NodeProviderSerializer(JSONAPISerializer):
     @staticmethod
     def get_id(obj):
         return '{}:{}'.format(obj.node._id, obj.provider)
+
+class NodeAlternativeCitationSerializer(JSONAPISerializer):
+
+    id = IDField(source="_id", read_only=True)
+    name = ser.CharField(read_only=True)
+    text = ser.CharField(read_only=True)
+
+    class Meta:
+        type_ = 'citations'
+
+    def create(self, validated_data):
+        data = self.context['request'].data
+        node = self.context['view'].get_node()
+
+        errors = []
+        name_exists = node.alternativeCitations.find(Q('name', 'eq', data['name'])
+                                                     & Q('_id', 'ne', data['id'])).count() > 0
+        if name_exists:
+            errors.append("There is already an alternative citation named '{}'".format(data['name']))
+        matching_citations = node.alternativeCitations.find(Q('text', 'eq', data['text'])
+                                                            & Q('_id', 'ne', data['id']))
+        if matching_citations.count() > 0:
+            names = "', '".join([str(citation.name) for citation in matching_citations])
+            errors.append("Citation matches '{}'".format(names))
+        if name_exists or matching_citations.count() > 0:
+            raise ValidationError(detail=errors)
+        else:
+            citation = AlternativeCitation(text=data['text'], name=data['name'])
+            citation.save()
+            node.alternativeCitations.append(citation)
+            node.save()
+            return citation
+
+    def update(self, instance, validated_data):
+        data = self.context['request'].data
+        node = self.context['view'].get_node()
+        errors = []
+        name_exists = node.alternativeCitations.find(Q('name', 'eq', data['name'])
+                                                     & Q('_id', 'ne', data['id'])).count() > 0
+        if name_exists:
+            errors.append("There is already an alternative citation named '{}'".format(data['name']))
+        matching_citations = node.alternativeCitations.find(Q('text', 'eq', data['text'])
+                                                            & Q('_id', 'ne', data['id']))
+        if matching_citations.count() > 0:
+            names = "', '".join([str(citation.name) for citation in matching_citations])
+            errors.append("Citation matches '{}'".format(names))
+        if name_exists or matching_citations.count() > 0:
+            raise ValidationError(detail=errors)
+        else:
+            citation = node.alternativeCitations.find(Q('_id', 'eq', str(data['id'])))[0]
+            citation.name = data['name']
+            citation.text = data['text']
+            citation.save()
+            return citation

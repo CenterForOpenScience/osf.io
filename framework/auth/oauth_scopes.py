@@ -38,6 +38,9 @@ class CoreScopes(object):
     NODE_REGISTRATIONS_READ = 'nodes.registrations_read'
     NODE_REGISTRATIONS_WRITE = 'nodes.registrations_write'
 
+    NODE_CITATIONS_READ = 'nodes.citations_read'
+    NODE_CITATIONS_WRITE = 'nodes.citations_write'
+
     APPLICATIONS_READ = 'applications_read'
     APPLICATIONS_WRITE = 'applications_write'
 
@@ -57,9 +60,11 @@ class ComposedScopes(object):
 
     # Nodes collection.
     # Base node data includes node metadata, links, and children.
-    NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ)
+    NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
+                          CoreScopes.NODE_CITATIONS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
-                    (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE)
+                    (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
+                     CoreScopes.NODE_CITATIONS_WRITE)
 
     # Privileges relating to editing content uploaded under that node # TODO: Add wiki etc when implemented
     NODE_DATA_READ = (CoreScopes.NODE_FILE_READ,)

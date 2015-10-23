@@ -1475,26 +1475,6 @@ def make_url_map(app):
             'post',
             project_views.contributor.invite_contributor_post,
             json_renderer
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/edit_citation/',
-                '/project/<pid>/node/<nid>/edit_citation/'
-            ],
-            'post',
-            project_views.node.edit_citation,
-            json_renderer
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/remove_citation/',
-                '/project/<pid>/node/<nid>/remove_citation/'
-            ],
-            'post',
-            project_views.node.remove_citation,
-            json_renderer
         )
     ], prefix='/api/v1')
 

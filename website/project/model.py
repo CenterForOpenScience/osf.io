@@ -678,7 +678,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     # {<User.id>: [<Node._id>, <Node2._id>, ...] }
     child_node_subscriptions = fields.DictionaryField(default=dict)
 
-    alternativeCitations = fields.ForeignField('alternativecitation', list=True)
+    alternativeCitations = fields.ForeignField('alternativecitation', list=True, backref='citations')
 
     _meta = {
         'optimistic': True,
