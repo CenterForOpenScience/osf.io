@@ -239,12 +239,11 @@ def conference_view(**kwargs):
         num_submissions = len(projects)
         if num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
-        print conf.end_date
         meetings.append({
             'name': conf.name,
             'location': conf.location,
-            'end_date': conf.end_date,
-            'start_date': conf.start_date,
+            'end_date': conf.end_date.strftime("%d. %b %Y") if conf.end_date else None,
+            'start_date': conf.start_date.strftime("%d. %b %Y") if conf.start_date else None,
             'url': web_url_for('conference_results', meeting=conf.endpoint),
             'count': num_submissions,
         })
