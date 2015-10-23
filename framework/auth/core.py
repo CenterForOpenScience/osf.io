@@ -287,8 +287,20 @@ class User(GuidStoredObject, AddonModelMixin):
     #              'expiration': <datetime>}
     # }
 
-    # email lists to which the user has chosen a subscription setting
+    # TODO remove this field once migration (scripts/migration/migrate_mailing_lists_to_mailchimp_fields.py)
+    # has been run. This field is deprecated and replaced with mailchimp_mailing_lists
     mailing_lists = fields.DictionaryField()
+
+    # email lists to which the user has chosen a subscription setting
+    mailchimp_mailing_lists = fields.DictionaryField()
+    # Format: {
+    #   'list1': True,
+    #   'list2: False,
+    #    ...
+    # }
+
+    # email lists to which the user has chosen a subscription setting, being sent from osf, rather than mailchimp
+    osf_mailing_lists = fields.DictionaryField(default=lambda: {settings.OSF_HELP_LIST: True})
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -355,7 +367,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # hashed password used to authenticate to Piwik
     piwik_token = fields.StringField()
 
-    # date the user last logged in via the web interface
+    # date the user last sent a request
     date_last_login = fields.DateTimeField()
 
     # date the user first successfully confirmed an email address
@@ -1173,9 +1185,9 @@ class User(GuidStoredObject, AddonModelMixin):
         security_messages.update(self.security_messages)
         self.security_messages = security_messages
 
-        for key, value in user.mailing_lists.iteritems():
+        for key, value in user.mailchimp_mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            subscription = value or self.mailing_lists.get(key)
+            subscription = value or self.mailchimp_mailing_lists.get(key)
             signals.user_merged.send(self, list_name=key, subscription=subscription)
 
             # clear subscriptions for merged user
@@ -1268,6 +1280,7 @@ class User(GuidStoredObject, AddonModelMixin):
         user.username = None
         user.password = None
         user.verification_key = None
+        user.osf_mailing_lists = {}
         user.merged_by = self
 
         user.save()

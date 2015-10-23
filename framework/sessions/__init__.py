@@ -5,6 +5,7 @@ import urllib
 import urlparse
 import bson.objectid
 import httplib as http
+from datetime import datetime
 
 import itsdangerous
 
@@ -13,6 +14,7 @@ from werkzeug.local import LocalProxy
 from weakref import WeakKeyDictionary
 
 from framework.flask import redirect
+from framework.mongo import database
 
 from website import settings
 
@@ -150,6 +152,8 @@ def before_request():
             session.data['auth_user_username'] = user.username
             session.data['auth_user_id'] = user._primary_key
             session.data['auth_user_fullname'] = user.fullname
+            user.date_last_login = datetime.utcnow()
+            user.save()
         else:
             # Invalid key: Not found in database
             session.data['auth_error_code'] = http.FORBIDDEN
@@ -162,11 +166,11 @@ def before_request():
         try:
             session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie)
             session = Session.load(session_id) or Session(_id=session_id)
-            set_session(session)
+        except itsdangerous.BadData:
             return
-        except:
-            pass
-
+        if session.data.get('auth_user_id'):
+            database['user'].update({'_id': session.data.get('auth_user_id')}, {'$set': {'date_last_login': datetime.utcnow()}}, w=0)
+        set_session(session)
 
 def after_request(response):
     if session.data.get('auth_user_id'):

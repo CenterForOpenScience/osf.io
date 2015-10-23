@@ -43,7 +43,7 @@
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                            <p class="small text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or user settings.</p>
+                            <p class="small text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or <a href="http://osf.io/settings/notifications/">user settings</a>.</p>
                         </td>
                     </tr>
                 </tbody>
@@ -56,8 +56,9 @@
                     <tbody>
                         <tr>
                             <td style="border-collapse: collapse;">
-                                <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2015 Center For Open Science, All rights reserved. </p>
-                                ${footer()}
+                                <p class="small text-center" style="text-align: center;font-size: 12px;">Copyright &copy; 2015 Center For Open Science, All rights reserved.
+                                ${self.footer()}
+                                </p>
                             </td>
                         </tr>
                     </tbody>

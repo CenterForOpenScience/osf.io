@@ -292,8 +292,10 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
-    pass
-
+    def setUp(self):
+        super(ApiTestCase, self).setUp()
+        settings.USE_EMAIL = False
+        
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):
