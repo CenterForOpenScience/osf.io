@@ -27,6 +27,15 @@ var FileBrowser = {
         var self = this;
         self.url = $osf.apiV2Url('users/me/nodes', {});
         self.data = [];
+        self.collections = [
+            { id:1, label : 'All My Projects', path : 'users/me/nodes', pathOptions : { 'filter[registration]' : 'false'} },
+            { id:2, label : 'All My Registrations', path : 'users/me/nodes', pathOptions : { 'filter[registration]' : 'true'}},
+            { id:3, label : 'Nodes', path : 'users/me/nodes', pathOptions : {}}
+        ];
+        self.breadcrumbs = m.prop([
+            { label : 'All My Projects', path : 'users/me/nodes', pathOptions : { 'filter[registration]' : 'false'}}
+        ]);
+        self.filesData = m.prop($osf.apiV2Url(self.collections[0].path, self.collections[0].pathOptions));
 
         // For information panel
         self.selected = m.prop([]);
@@ -36,12 +45,15 @@ var FileBrowser = {
         }.bind(self);
 
 
+        // COLLECTIONS
         self.activeCollection = m.prop(1);
         self.updateCollection = function(coll) {
             self.activeCollection(coll.id);
             console.log(self.activeCollection());
+            coll.url = $osf.apiV2Url(coll.path, coll.pathOptions);
             self.updateList(coll.url);
         };
+
 
         self.activeUser = m.prop(1);
         self.updateUserFilter = function(user) {
@@ -56,20 +68,13 @@ var FileBrowser = {
         }.bind(self);
 
         // For breadcrumbs
-        self.breadcrumbs = [
-            { label : 'First', href : '/first'},
-            { label : 'Second', href : '/second'},
-            { label : 'Third', href : '/third'}
-        ];
+
+
         self.updateBreadcrumbs = function(){
 
         }.bind(self);
 
-        self.collections = [
-            { id:1, label : 'All My Projects', url : 'v2/users/me/nodes'},
-            { id:2, label : 'All My Registrations', url : '#'},
-            { id:3, label : 'Another Collection', url : '#'}
-        ];
+
 
         self.nameFilters = [
             { label : 'Caner Uguz', userID : '8q36f'}
@@ -79,7 +84,9 @@ var FileBrowser = {
             { tag : 'something'}
         ];
 
-        self.filesData = m.prop('http://localhost:8000/v2/users/me/nodes');
+        self.buildUrl = function (path, options) {
+
+        };
 
     },
     view : function (ctrl) {
@@ -129,7 +136,7 @@ var Breadcrumbs = {
     },
     view : function (ctrl) {
         return m('.fb-breadcrumbs', m('ul', [
-            ctrl.data.map(function(item, index, array){
+            ctrl.data().map(function(item, index, array){
                 if(index === array.length-1){
                     return m('li',  item.label);
                 }
