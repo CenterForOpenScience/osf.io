@@ -60,17 +60,13 @@ class FilterMixin(object):
         if not self.serializer_class:
             raise NotImplementedError()
 
-    @staticmethod
-    def _isinstance_any(instance, bases):
-        return any([isinstance(instance, base) for base in bases])
-
     def _get_default_operator(self, field):
         return self.DEFAULT_OPERATOR_OVERRIDES.get(type(field), self.DEFAULT_OPERATOR)
 
     def _get_valid_operators(self, field):
-        if self._isinstance_any(field, self.COMPARABLE_FIELDS):
+        if isinstance(field, self.COMPARABLE_FIELDS):
             return self.COMPARISON_OPERATORS + (self.DEFAULT_OPERATOR, )
-        elif self._isinstance_any(field, self.MATCHABLE_FIELDS):
+        elif isinstance(field, self.MATCHABLE_FIELDS):
             return self.MATCH_OPERATORS + (self.DEFAULT_OPERATOR, )
         else:
             return None
@@ -99,13 +95,13 @@ class FilterMixin(object):
             valid_operators = self._get_valid_operators(field)
             raise InvalidFilterOperator(value=op, valid_operators=valid_operators)
         if op in self.COMPARISON_OPERATORS:
-            if not self._isinstance_any(field, self.COMPARABLE_FIELDS):
+            if not isinstance(field, self.COMPARABLE_FIELDS):
                 raise InvalidFilterComparisonType(
                     parameter="filter",
-                    detail="Field '{0}' does not suport comparison operators in a filter.".format(field_name)
+                    detail="Field '{0}' does not support comparison operators in a filter.".format(field_name)
                 )
         if op in self.MATCH_OPERATORS:
-            if not self._isinstance_any(field, self.MATCHABLE_FIELDS):
+            if not isinstance(field, self.MATCHABLE_FIELDS):
                 raise InvalidFilterMatchType(
                     parameter="filter",
                     detail="Field '{0}' does not support match operators in a filter.".format(field_name)
@@ -149,10 +145,11 @@ class FilterMixin(object):
         for key, value in query_params.iteritems():
             match = self.QUERY_PATTERN.match(key)
             if match:
-                field_name = match.groupdict()['field'].strip()
+                match_dict = match.groupdict()
+                field_name = match_dict['field'].strip()
                 field = self._get_field_or_error(field_name)
 
-                op = match.groupdict().get('op') or self._get_default_operator(field)
+                op = match_dict.get('op') or self._get_default_operator(field)
                 self._validate_operator(field, field_name, op)
 
                 field_name = self.convert_key(field_name, field)
@@ -160,7 +157,7 @@ class FilterMixin(object):
                     query[field_name] = []
 
                 # Special case date(time)s to allow for ambiguous date matches
-                if type(field) in self.DATE_FIELDS:
+                if isinstance(field, self.DATE_FIELDS):
                     query[field_name].extend(self._parse_date_param(field, field_name, op, value))
                 else:
                     query[field_name].append({
@@ -170,14 +167,14 @@ class FilterMixin(object):
         return query
 
     def convert_key(self, field_name, field):
-        """Used so that that queries on fields with the souce attribute set will work
+        """Used so that that queries on fields with the source attribute set will work
         :param basestring field_name: text representation of the field name
         :param rest_framework.fields.Field field: Field instance
         """
         return field.source or field_name
 
     def convert_value(self, value, field):
-        """Used to convert string values from query params to bools and dates when necessary
+        """Used to convert incoming values from query params to the appropriate types for filter comparisons
         :param basestring value: value to be resolved
         :param rest_framework.fields.Field field: Field instance
         """
@@ -191,7 +188,7 @@ class FilterMixin(object):
                     value=value,
                     field_type='bool'
                 )
-        elif any([isinstance(field, date_field) for date_field in self.DATE_FIELDS]):
+        elif isinstance(field, self.DATE_FIELDS):
             try:
                 return date_parser.parse(value)
             except ValueError:
@@ -199,7 +196,7 @@ class FilterMixin(object):
                     value=value,
                     field_type='date'
                 )
-        elif any([isinstance(field, list_field) for list_field in self.LIST_FIELDS]):
+        elif isinstance(field, self.LIST_FIELDS):
             return value
         else:
             try:
@@ -315,7 +312,7 @@ class ListFilterMixin(FilterMixin):
     def get_filtered_queryset(self, field_name, params, default_queryset):
         """filters default queryset based on the serializer field type"""
         field = self.serializer_class._declared_fields[field_name]
-        field_name = field.source or field_name
+        field_name = self.convert_key(field_name, field)
 
         if isinstance(field, ser.SerializerMethodField):
             return_val = [
