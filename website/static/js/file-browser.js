@@ -25,17 +25,24 @@ var defaults = {
 var FileBrowser = {
     controller : function (args) {
         var self = this;
-        self.url = $osf.apiV2Url('users/me/nodes', {});
         self.data = [];
+        self.isLoadedUrl = false;
         self.collections = [
-            { id:1, label : 'All My Projects', path : 'users/me/nodes', pathOptions : { 'filter[registration]' : 'false'} },
-            { id:2, label : 'All My Registrations', path : 'users/me/nodes', pathOptions : { 'filter[registration]' : 'true'}},
-            { id:3, label : 'Nodes', path : 'users/me/nodes', pathOptions : {}}
+            { id:1, label : 'All My Projects', path : 'users/me/nodes/', pathOptions : {  query : { 'filter[registration]' : 'false'} } },
+            { id:2, label : 'All My Registrations', path : 'users/me/nodes/', pathOptions : { query : {  'filter[registration]' : 'true'} } },
+            { id:3, label : 'Nodes', path : 'users/me/nodes/', pathOptions : {}}
         ];
-        self.breadcrumbs = m.prop([
-            { label : 'All My Projects', path : 'users/me/nodes', pathOptions : { 'filter[registration]' : 'false'}}
-        ]);
         self.filesData = m.prop($osf.apiV2Url(self.collections[0].path, self.collections[0].pathOptions));
+        self.breadcrumbs = m.prop([
+            { label : 'All My Projects', path : 'users/me/nodes/', pathOptions : { query : { 'filter[registration]' : 'false' }}}
+        ]);
+        self.nameFilters = [
+            { label : 'Caner Uguz', userID : '8q36f'}
+        ];
+        self.tagFilters = [
+            { tag : 'something'}
+        ];
+
 
         // For information panel
         self.selected = m.prop([]);
@@ -51,7 +58,9 @@ var FileBrowser = {
             self.activeCollection(coll.id);
             console.log(self.activeCollection());
             coll.url = $osf.apiV2Url(coll.path, coll.pathOptions);
-            self.updateList(coll.url);
+            self.filesData(coll.url);
+            self.updateList();
+            m.redraw(true);
         };
 
 
@@ -62,31 +71,17 @@ var FileBrowser = {
             self.updateList(url);
         };
 
-        self.updateList = function(url){
-            self.filesData(url);
-            console.log(self.filesData());
+        self.updateList = function(element, isInit, context){
+            //if(!self.isLoadedUrl) {
+            //    m.mount(document.getElementById('pOrganizer'), m.component( ProjectOrganizer, { filesData : self.filesData, updateSelected : self.updateSelected, updateBreadcrumbs : self.updateBreadcrumbs}));
+            //    self.isLoadedUrl = true;
+            //}
         }.bind(self);
 
         // For breadcrumbs
-
-
         self.updateBreadcrumbs = function(){
 
         }.bind(self);
-
-
-
-        self.nameFilters = [
-            { label : 'Caner Uguz', userID : '8q36f'}
-        ];
-
-        self.tagFilters = [
-            { tag : 'something'}
-        ];
-
-        self.buildUrl = function (path, options) {
-
-        };
 
     },
     view : function (ctrl) {
@@ -96,7 +91,7 @@ var FileBrowser = {
                 m.component(Collections, {list : ctrl.collections, activeCollection : ctrl.activeCollection, updateCollection : ctrl.updateCollection } ),
                 m.component(Filters, { activeUser : ctrl.activeUser, updateUser : ctrl.updateUserFilter, nameFilters : ctrl.nameFilters, tagFilters : ctrl.tagFilters })
             ]),
-            m('.fb-main', m.component(ProjectOrganizer, { filesData : ctrl.filesData, updateSelected : ctrl.updateSelected, updateBreadcrumbs : ctrl.updateBreadcrumbs})),
+            m('.fb-main', m('#pOrganizer', m.component( ProjectOrganizer, { filesData : ctrl.filesData, updateSelected : ctrl.updateSelected, updateBreadcrumbs : ctrl.updateBreadcrumbs}))),
             m('.fb-infobar', m.component(Information, { selected : ctrl.selected }))
         ]);
     }
