@@ -37,6 +37,7 @@ def dict_error_formatting(error, index=None):
 
     return formatted_error_list
 
+
 def json_api_exception_handler(exc, context):
     """
     Custom exception handler that returns errors object as an array
@@ -53,7 +54,7 @@ def json_api_exception_handler(exc, context):
         message = response.data
 
         if isinstance(exc, JSONAPIException):
-            errors.extend([{'source': exc.source, 'detail': exc.detail}])
+            errors.extend([{'source': exc.source or {}, 'detail': exc.detail}])
         elif isinstance(message, dict):
             errors.extend(dict_error_formatting(message, None))
         else:
