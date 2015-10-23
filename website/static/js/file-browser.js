@@ -7,7 +7,7 @@ var Treebeard = require('treebeard');   // Uses treebeard, installed as plugin
 var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
-
+var $osf = require('js/osfHelpers');
 
 /**
  *  Options for fileBrowser
@@ -25,7 +25,7 @@ var defaults = {
 var FileBrowser = {
     controller : function (args) {
         var self = this;
-        self.url = 'http://localhost:8000/v2/users/me/nodes';
+        self.url = $osf.apiV2Url('users/me/nodes', {});
         self.data = [];
 
         // For information panel

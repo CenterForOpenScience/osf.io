@@ -354,7 +354,7 @@ function _poResolveToggle(item) {
  */
 function _poResolveLazyLoad(item) {
     var node = item.data;
-    return 'http://localhost:8000/v2/nodes/' + node.uid + '/children';
+    return $osf.apiV2Url('nodes/' + node.uid + '/children', {});
 }
 
 /**
