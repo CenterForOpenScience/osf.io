@@ -11,7 +11,7 @@ import itsdangerous
 
 from modularodm import fields, Q
 from modularodm.exceptions import NoResultsFound
-from modularodm.exceptions import ValidationError, ValidationValueError
+from modularodm.exceptions import ValidationError, ValidationValueError, QueryException
 from modularodm.validators import URLValidator
 
 import framework
@@ -148,10 +148,11 @@ def get_user(email=None, password=None, verification_key=None):
 class Auth(object):
 
     def __init__(self, user=None, api_node=None,
-                 private_key=None):
+                 private_key=None, private_link=None):
         self.user = user
         self.api_node = api_node
         self.private_key = private_key
+        self.private_link = private_link
 
     def __repr__(self):
         return ('<Auth(user="{self.user}", '
@@ -165,10 +166,18 @@ class Auth(object):
     def from_kwargs(cls, request_args, kwargs):
         user = request_args.get('user') or kwargs.get('user') or _get_current_user()
         private_key = request_args.get('view_only')
-
+        try:
+            # Avoid circular import
+            from website.project.model import PrivateLink
+            private_link = PrivateLink.find_one(
+                Q('key', 'eq', private_key)
+            )
+        except QueryException:
+            private_link = None
         return cls(
             user=user,
             private_key=private_key,
+            private_link=private_link,
         )
 
 
