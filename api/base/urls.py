@@ -2,7 +2,7 @@ from django.conf import settings
 from django.conf.urls import include, url, patterns
 from django.conf.urls.static import static
 from settings import API_BASE
-from website.settings import DEV_MODE
+from website import settings as osf_settings
 
 from . import views
 
@@ -22,7 +22,7 @@ urlpatterns = [
         )
 ]
 
-if DEV_MODE:
+if osf_settings.DEV_MODE:
     urlpatterns.extend([
         url(r'^v2/collections/', include('api.collections.urls', namespace='collections')),
     ])
