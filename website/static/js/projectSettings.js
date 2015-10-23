@@ -25,15 +25,15 @@ var ProjectSettings = oop.extend(
             self.titlePlaceholder = params.currentTitle;
             self.descriptionPlaceholder = params.currentDescription;
 
+            self.categoryOptions = params.categoryOptions;
+            self.categoryPlaceholder = params.category;
+            self.selectedCategory = ko.observable(params.category);
+
             self.disabled = params.disabled || false;
 
             if (!params.updateUrl) {
                 throw new Error(language.instantiationErrorMessage);
             }
-
-            self.categoryOptions = params.categoryOptions;
-            self.categoryPlaceholder = params.category;
-            self.selectedCategory = ko.observable(params.category);
 
             self.updateUrl = params.updateUrl;
             self.node_id = params.node_id;
