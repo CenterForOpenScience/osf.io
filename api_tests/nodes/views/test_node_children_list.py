@@ -288,4 +288,3 @@ class TestNodeChildCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
-

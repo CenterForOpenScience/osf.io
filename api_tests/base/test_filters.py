@@ -215,12 +215,13 @@ class TestFilterMixin(ApiTestCase):
         assert_true(isinstance(value, datetime.datetime))
         assert_equal(value, parser.parse('2014-12-12'))
 
-    def test_convert_value_number(self):
+    def test_convert_value_int(self):
         value = '9000'
         field = FakeSerializer._declared_fields['int_field']
         value = self.view.convert_value(value, field)
         assert_equal(value, 9000)
 
+    def test_convert_value_float(self):
         value = '42'
         orig_type = type(value)
         field = FakeSerializer._declared_fields['float_field']

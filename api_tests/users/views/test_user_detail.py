@@ -11,78 +11,6 @@ from tests.factories import AuthUserFactory, DashboardFactory, FolderFactory, Pr
 from api.base.settings.defaults import API_BASE
 
 
-class TestUsers(ApiTestCase):
-
-    def setUp(self):
-        super(TestUsers, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_two = AuthUserFactory()
-
-    def tearDown(self):
-        super(TestUsers, self).tearDown()
-
-    def test_returns_200(self):
-        res = self.app.get('/{}users/'.format(API_BASE))
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-
-    def test_find_user_in_users(self):
-        url = "/{}users/".format(API_BASE)
-
-        res = self.app.get(url)
-        user_son = res.json['data']
-
-        ids = [each['id'] for each in user_son]
-        assert_in(self.user_two._id, ids)
-
-    def test_all_users_in_users(self):
-        url = "/{}users/".format(API_BASE)
-
-        res = self.app.get(url)
-        user_son = res.json['data']
-
-        ids = [each['id'] for each in user_son]
-        assert_in(self.user_one._id, ids)
-        assert_in(self.user_two._id, ids)
-
-    def test_find_multiple_in_users(self):
-        url = "/{}users/?filter[full_name]=fred".format(API_BASE)
-
-        res = self.app.get(url)
-        user_json = res.json['data']
-        ids = [each['id'] for each in user_json]
-        assert_in(self.user_one._id, ids)
-        assert_in(self.user_two._id, ids)
-
-    def test_find_single_user_in_users(self):
-        url = "/{}users/?filter[full_name]=my".format(API_BASE)
-        self.user_one.fullname = 'My Mom'
-        self.user_one.save()
-        res = self.app.get(url)
-        user_json = res.json['data']
-        ids = [each['id'] for each in user_json]
-        assert_in(self.user_one._id, ids)
-        assert_not_in(self.user_two._id, ids)
-
-    def test_find_no_user_in_users(self):
-        url = "/{}users/?filter[full_name]=NotMyMom".format(API_BASE)
-        res = self.app.get(url)
-        user_json = res.json['data']
-        ids = [each['id'] for each in user_json]
-        assert_not_in(self.user_one._id, ids)
-        assert_not_in(self.user_two._id, ids)
-
-    def test_users_list_takes_profile_image_size_param(self):
-        size = 42
-        url = "/{}users/?profile_image_size={}".format(API_BASE, size)
-        res = self.app.get(url)
-        user_json = res.json['data']
-        for user in user_json:
-            profile_image_url = user['links']['profile_image']
-            query_dict = urlparse.parse_qs(urlparse.urlparse(profile_image_url).query)
-            assert_equal(int(query_dict.get('s')[0]), size)
-
-
 class TestUserDetail(ApiTestCase):
 
     def setUp(self):
@@ -136,7 +64,7 @@ class TestUserDetail(ApiTestCase):
         user_json = res.json['data']
         assert_not_equal(user_json['attributes']['full_name'], self.user_one.fullname)
         assert_equal(user_json['attributes']['full_name'], self.user_two.fullname)
-        
+
     def test_user_detail_takes_profile_image_size_param(self):
         size = 42
         url = "/{}users/{}/?profile_image_size={}".format(API_BASE, self.user_one._id, size)
@@ -151,94 +79,6 @@ class TestUserDetail(ApiTestCase):
         res = self.app.get(url)
         user_json = res.json['data']
         assert_in('profile_image', user_json['links'])
-
-
-class TestUserNodes(ApiTestCase):
-
-    def setUp(self):
-        super(TestUserNodes, self).setUp()
-        self.user_one = AuthUserFactory()
-        self.user_one.social['twitter'] = 'howtopizza'
-        self.user_one.save()
-
-        self.user_two = AuthUserFactory()
-        self.public_project_user_one = ProjectFactory(title="Public Project User One",
-                                                      is_public=True,
-                                                      creator=self.user_one)
-        self.private_project_user_one = ProjectFactory(title="Private Project User One",
-                                                       is_public=False,
-                                                       creator=self.user_one)
-        self.public_project_user_two = ProjectFactory(title="Public Project User Two",
-                                                      is_public=True,
-                                                      creator=self.user_two)
-        self.private_project_user_two = ProjectFactory(title="Private Project User Two",
-                                                       is_public=False,
-                                                       creator=self.user_two)
-        self.deleted_project_user_one = FolderFactory(title="Deleted Project User One",
-                                                      is_public=False,
-                                                      creator=self.user_one,
-                                                      is_deleted=True)
-        self.folder = FolderFactory()
-        self.deleted_folder = FolderFactory(title="Deleted Folder User One",
-                                            is_public=False,
-                                            creator=self.user_one,
-                                            is_deleted=True)
-        self.dashboard = DashboardFactory()
-
-    def tearDown(self):
-        super(TestUserNodes, self).tearDown()
-
-    def test_authorized_in_gets_200(self):
-        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.user_one.auth)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-
-    def test_anonymous_gets_200(self):
-        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url)
-        assert_equal(res.status_code, 200)
-        assert_equal(res.content_type, 'application/vnd.api+json')
-
-    def test_get_projects_logged_in(self):
-        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url, auth=self.user_one.auth)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_in(self.public_project_user_one._id, ids)
-        assert_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.public_project_user_two._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.deleted_folder._id, ids)
-        assert_not_in(self.deleted_project_user_one._id, ids)
-
-    def test_get_projects_not_logged_in(self):
-        url = "/{}users/{}/nodes/".format(API_BASE, self.user_one._id)
-        res = self.app.get(url)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_in(self.public_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.public_project_user_two._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.deleted_project_user_one._id, ids)
-
-    def test_get_projects_logged_in_as_different_user(self):
-        url = "/{}users/{}/nodes/".format(API_BASE, self.user_two._id)
-        res = self.app.get(url, auth=self.user_one.auth)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_in(self.public_project_user_two._id, ids)
-        assert_not_in(self.public_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_one._id, ids)
-        assert_not_in(self.private_project_user_two._id, ids)
-        assert_not_in(self.folder._id, ids)
-        assert_not_in(self.deleted_project_user_one._id, ids)
 
 
 class TestUserRoutesNodeRoutes(ApiTestCase):
@@ -797,60 +637,3 @@ class TestDeactivatedUser(ApiTestCase):
         self.user.save()
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 410)
-
-
-class TestExceptionFormatting(ApiTestCase):
-    def setUp(self):
-
-        super(TestExceptionFormatting, self).setUp()
-
-        self.user = AuthUserFactory.build(
-            fullname='Martin Luther King Jr.',
-            given_name='Martin',
-            family_name='King',
-            suffix='Jr.',
-            social=dict(
-                github='userOneGithub',
-                scholar='userOneScholar',
-                personal='http://www.useronepersonalwebsite.com',
-                twitter='userOneTwitter',
-                linkedIn='userOneLinkedIn',
-                impactStory='userOneImpactStory',
-                orcid='userOneOrcid',
-                researcherId='userOneResearcherId'
-            )
-        )
-        self.url = '/{}users/{}/'.format(API_BASE, self.user._id)
-
-        self.user_two = AuthUserFactory()
-
-    def test_updates_user_with_no_fullname(self):
-        res = self.app.put_json_api(self.url, {'data': {'id': self.user._id, 'type': 'users', 'attributes': {}}}, auth=self.user.auth, expect_errors=True)
-        errors = res.json['errors']
-        assert(isinstance(errors, list))
-        assert_equal(res.json['errors'][0]['source'], {'pointer': '/data/attributes/full_name'})
-        assert_equal(res.json['errors'][0]['detail'], 'This field is required.')
-
-    def test_updates_user_unauthorized(self):
-        res = self.app.put_json_api(self.url, expect_errors=True)
-        errors = res.json['errors']
-        assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': "Authentication credentials were not provided."})
-
-    def test_updates_user_forbidden(self):
-        res = self.app.put_json_api(self.url, auth=self.user_two.auth, expect_errors=True)
-        errors = res.json['errors']
-        assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': 'You do not have permission to perform this action.'})
-
-    def test_user_does_not_exist_formatting(self):
-        url = '/{}users/{}/'.format(API_BASE, '12345')
-        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        errors = res.json['errors']
-        assert(isinstance(errors, list))
-        assert_equal(errors[0], {'detail': 'Not found.'})
-
-    def test_basic_auth_me_wrong_password(self):
-        url = '/{}users/{}/'.format(API_BASE, 'me')
-        res = self.app.get(url, auth=(self.user.username, 'nottherightone'), expect_errors=True)
-        assert_equal(res.status_code, 401)
