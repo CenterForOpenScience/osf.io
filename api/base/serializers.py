@@ -113,6 +113,9 @@ class AuthorizedCharField(ser.CharField):
     Example:
         content = AuthorizedCharField(source='return_content')
     """
+    def __init__(self, source=None, **kwargs):
+        self.source = source
+        super(AuthorizedCharField, self).__init__(source=self.source, **kwargs)
 
     def get_attribute(self, obj):
         user = self.context['request'].user
@@ -170,7 +173,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField, HyperlinkedF
 
         meta = {}
         for key in self.meta:
-            if key == 'count' or key == 'unread_comments_count':
+            if key in {'count', 'unread_comments_count'}:
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
                 if utils.is_truthy(show_related_counts):
                     meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)

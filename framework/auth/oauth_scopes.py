@@ -38,11 +38,11 @@ class CoreScopes(object):
     NODE_REGISTRATIONS_READ = 'nodes.registrations_read'
     NODE_REGISTRATIONS_WRITE = 'nodes.registrations_write'
 
-    NODE_COMMENTS_READ = 'comments_read'
-    NODE_COMMENTS_WRITE = 'comments_write'
+    NODE_COMMENTS_READ = 'comments.data_read'
+    NODE_COMMENTS_WRITE = 'comments.data_write'
 
-    COMMENT_REPORTS_READ = 'comment_reports_read'
-    COMMENT_REPORTS_WRITE = 'comment_reports_write'
+    COMMENT_REPORTS_READ = 'comments.reports_read'
+    COMMENT_REPORTS_WRITE = 'comments.reports_write'
 
     APPLICATIONS_READ = 'applications_read'
     APPLICATIONS_WRITE = 'applications_write'

@@ -2,12 +2,16 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 from rest_framework import generics, permissions as drf_permissions
 from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied
-from api.comments.serializers import CommentSerializer, CommentDetailSerializer, CommentReportsSerializer, CommentReportDetailSerializer, CommentReport
+from api.comments.serializers import (
+    CommentSerializer,
+    CommentDetailSerializer,
+    CommentReportsSerializer,
+    CommentReportDetailSerializer,
+    CommentReport
+)
 from api.base.exceptions import Gone
 from api.base import permissions as base_permissions
-from api.nodes.permissions import (
-    ContributorOrPublicForComments
-)
+from api.nodes.permissions import ContributorOrPublicForComments
 from framework.auth.oauth_scopes import CoreScopes
 from website.project.model import Comment
 
