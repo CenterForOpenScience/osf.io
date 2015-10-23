@@ -1,6 +1,12 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Registrations</%def>
 <div id="registrationsListScope">
+    <form id="newDraftRegistrationForm" method="POST" style="display:none">
+        <!-- ko if: selectedSchema() -->
+        <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name">
+        <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version">
+        <!-- /ko -->
+    </form>
 <ul id="registrationsTabs" class="nav nav-tabs" role="tablist">
   <li role="presentation" class="active">
     <a id="registrationsControl" aria-controls="registrations" href="#registrations">Registrations</a>
@@ -46,7 +52,7 @@
 
         % if 'admin' in user['permissions'] and not disk_saving_mode:
             <div class="col-md-3">
-        <a data-bind="css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
+        <a data-bind="click: createDraftModal, css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
           New Registration
         </a>
             </div>
@@ -170,6 +176,28 @@
   </div>
 </div>
 </div>
+<script type="text/html" id="createDraftRegistrationModal">
+    <p>Registration creates a frozen version of the project that can never be edited or deleted but can be retracted. Your original project remains editable but will now have the registration linked to it. Things to know about registration:</p>
+    <ul>
+        <li>Ensure your project is in the state you wish to freeze before registering.</li>
+        <li>Consider turning links into forks.</li>
+        <li>Registrations can have embargo periods for up to four years. If you choose an embargo period, the registration will automatically become public when the embargo expires.</li>
+        <li>Retracting a registration removes the contents of the registrations but will leave behind a log showing when the registration was created and retracted.</li>
+    </ul>
+
+    <p>Continue your registration by selecting a registration form:</p>
+    <!-- ko foreach: schemas -->
+    <div class="radio">
+        <label>
+            <input type="radio" name="chosenDraftRegistrationTemplate" data-bind="checkedValue: $data, checked: $root.selectedSchema"/>
+            {{ schema.title }}
+            <!-- ko if: schema.description -->
+            <i data-bind="tooltip: {title: schema.description}" class="fa fa-info-circle"> </i>
+            <!-- /ko -->
+        </label>
+    </div>
+    <!-- /ko -->
+</script>
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
 

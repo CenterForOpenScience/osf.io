@@ -614,9 +614,7 @@ var RegistrationManager = function(node, draftsSelector, urls) {
     self.urls = urls;
 
     self.schemas = ko.observableArray();
-    self.selectedSchema = ko.observable({
-        description: ''
-    });
+    self.selectedSchema = ko.observable();
 
     // TODO: convert existing registration UI to frontend impl.
     // self.registrations = ko.observable([]);
@@ -634,11 +632,8 @@ var RegistrationManager = function(node, draftsSelector, urls) {
     self.getSchemas = $.getJSON.bind(null, self.urls.schemas);
 
     self.previewSchema = ko.computed(function() {
-        var schema = self.selectedSchema();
-        return {
-            schema: schema.schema,
-            readonly: true
-        };
+        // TODO(lyndsysimon): Remove this method
+        return {}
     });
 };
 RegistrationManager.prototype.init = function() {
@@ -694,13 +689,23 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
 /**
  * Show the draft registration preview pane
  **/
-RegistrationManager.prototype.beforeCreateDraft = function() {
+RegistrationManager.prototype.createDraftModal = function() {
     var self = this;
 
-    var node = self.node;
-
-    self.selectedSchema(self.schemas()[0]);
-    self.preview(true);
+    bootbox.confirm({
+        size: 'large',
+        title: "Register <title>",
+        message: function() {
+            ko.renderTemplate('createDraftRegistrationModal', self, {}, this);
+        },
+        callback: function(result) {
+            if (result) {
+                $('#newDraftRegistrationForm').submit();
+            } else {
+                self.selectedSchema(undefined);
+            }
+        }
+    });
 };
 /**
  * Redirect to the draft register page

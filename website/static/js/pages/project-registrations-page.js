@@ -24,13 +24,9 @@ $(document).ready(function() {
         //submit: node.urls.api + 'draft/{draft_pk}/submit/',
         delete: node.urls.api + 'drafts/{draft_pk}/',
         schemas: '/api/v1/project/drafts/schemas/',
-        edit: node.urls.web + 'drafts/{draft_pk}/'
+        edit: node.urls.web + 'drafts/{draft_pk}/',
+        create: node.urls.web + 'registrations/'
     });
     draftManager.init();
 
-    $('#registerNode').click(function(event) {
-        event.preventDefault();
-        draftManager.beforeCreateDraft();
-        $("#draftsControl").click();
-    });
 });
