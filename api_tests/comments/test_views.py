@@ -95,6 +95,7 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['user']['links']['related']['href']
         expected_url = '/{}users/{}/'.format(API_BASE, self.user._id)
+        assert_equal(res.status_code, 200)
         assert_equal(urlparse(url).path, expected_url)
 
     def test_comment_has_node_link(self):
@@ -102,6 +103,7 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['node']['links']['related']['href']
         expected_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
+        assert_equal(res.status_code, 200)
         assert_equal(urlparse(url).path, expected_url)
 
     def test_comment_has_target_link_with_correct_type(self):
@@ -111,6 +113,7 @@ class TestCommentDetailView(ApiTestCase):
         expected_url = '/{}nodes/{}/'.format(API_BASE, self.public_project._id)
         target_type = res.json['data']['relationships']['target']['links']['related']['meta']['type']
         expected_type = 'node'
+        assert_equal(res.status_code, 200)
         assert_equal(urlparse(url).path, expected_url)
         assert_equal(target_type, expected_type)
 
@@ -119,6 +122,7 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['replies']['links']['self']['href']
         expected_url = '/{}comments/{}/replies/'.format(API_BASE, self.public_comment)
+        assert_equal(res.status_code, 200)
         assert_equal(urlparse(url).path, expected_url)
 
     def test_comment_has_reports_link(self):
@@ -126,6 +130,7 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.get(self.public_url)
         url = res.json['data']['relationships']['reports']['links']['related']['href']
         expected_url = '/{}comments/{}/reports/'.format(API_BASE, self.public_comment)
+        assert_equal(res.status_code, 200)
         assert_equal(urlparse(url).path, expected_url)
 
     def test_private_node_only_logged_in_contributor_commenter_can_update_comment(self):
@@ -146,21 +151,22 @@ class TestCommentDetailView(ApiTestCase):
 
     def test_public_node_only_contributor_commenter_can_update_comment(self):
         self._set_up_public_project_with_comment()
-
-        # Contributor who made the comment
         res = self.app.put_json_api(self.public_url, self.public_comment_payload, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(self.public_comment_payload['data']['attributes']['content'], res.json['data']['attributes']['content'])
 
-        # Another contributor on the project who did not make the comment
+    def test_public_node_contributor_cannot_update_other_users_comment(self):
+        self._set_up_public_project_with_comment()
         res = self.app.put_json_api(self.public_url, self.public_comment_payload, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-        # Non-contributor
+    def test_public_node_non_contributor_cannot_update_other_users_comment(self):
+        self._set_up_public_project_with_comment()
         res = self.app.put_json_api(self.public_url, self.public_comment_payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-        # Logged-out user
+    def test_public_node_logged_out_user_cannot_update_comment(self):
+        self._set_up_public_project_with_comment()
         res = self.app.put_json_api(self.public_url, self.public_comment_payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
@@ -182,12 +188,6 @@ class TestCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(payload['data']['attributes']['content'], res.json['data']['attributes']['content'])
 
-        res = self.app.put_json_api(url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
-        res = self.app.put_json_api(url, payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-
     def test_private_node_only_logged_in_contributor_commenter_can_delete_comment(self):
         self._set_up_private_project_with_comment()
         comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
@@ -206,12 +206,51 @@ class TestCommentDetailView(ApiTestCase):
         assert_true(res.json['data']['attributes']['deleted'])
         assert_equal(res.json['data']['attributes']['content'], comment.content)
 
+    def test_private_node_contributor_cannot_delete_other_users_comment(self):
+        self._set_up_private_project_with_comment()
+        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'deleted': True
+                }
+            }
+        }
         res = self.app.patch_json_api(url, payload, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_private_node_non_contributor_cannot_delete_comment(self):
+        self._set_up_private_project_with_comment()
+        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'deleted': True
+                }
+            }
+        }
         res = self.app.patch_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_private_node_logged_out_user_cannot_delete_comment(self):
+        self._set_up_private_project_with_comment()
+        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'deleted': True
+                }
+            }
+        }
         res = self.app.patch_json_api(url, payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
@@ -235,12 +274,57 @@ class TestCommentDetailView(ApiTestCase):
         assert_false(res.json['data']['attributes']['deleted'])
         assert_equal(res.json['data']['attributes']['content'], comment.content)
 
+    def test_private_node_contributor_cannot_undelete_other_users_comment(self):
+        self._set_up_private_project_with_comment()
+        comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.user)
+        comment.is_deleted = True
+        comment.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'deleted': False
+                }
+            }
+        }
         res = self.app.patch_json_api(url, payload, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_private_node_non_contributor_cannot_undelete_comment(self):
+        self._set_up_private_project_with_comment()
+        comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.user)
+        comment.is_deleted = True
+        comment.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'deleted': False
+                }
+            }
+        }
         res = self.app.patch_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_private_node_logged_out_user_cannot_undelete_comment(self):
+        self._set_up_private_project_with_comment()
+        comment = CommentFactory.build(node=self.private_project, target=self.private_project, user=self.user)
+        comment.is_deleted = True
+        comment.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'deleted': False
+                }
+            }
+        }
         res = self.app.patch_json_api(url, payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
@@ -262,12 +346,51 @@ class TestCommentDetailView(ApiTestCase):
         assert_true(res.json['data']['attributes']['deleted'])
         assert_equal(res.json['data']['attributes']['content'], comment.content)
 
+    def test_public_node_contributor_cannot_delete_other_users_comment(self):
+        public_project = ProjectFactory(is_public=True, creator=self.user)
+        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'deleted': True
+                }
+            }
+        }
         res = self.app.patch_json_api(url, payload, auth=self.contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_public_node_non_contributor_cannot_delete_other_users_comment(self):
+        public_project = ProjectFactory(is_public=True, creator=self.user)
+        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'deleted': True
+                }
+            }
+        }
         res = self.app.patch_json_api(url, payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
+    def test_public_node_logged_out_user_cannot_delete_comment(self):
+        public_project = ProjectFactory(is_public=True, creator=self.user)
+        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        payload = {
+            'data': {
+                'id': comment._id,
+                'type': 'comments',
+                'attributes': {
+                    'deleted': True
+                }
+            }
+        }
         res = self.app.patch_json_api(url, payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
@@ -289,29 +412,22 @@ class TestCommentDetailView(ApiTestCase):
         assert_true(res.json['data']['attributes']['deleted'])
         assert_equal(res.json['data']['attributes']['content'], comment.content)
 
-        res = self.app.patch_json_api(url, payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
-
     def test_private_node_only_logged_in_commenter_can_view_deleted_comment(self):
         self._set_up_private_project_with_comment()
         comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
+        comment.is_deleted = True
+        comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        res = self.app.patch_json_api(url, payload, auth=self.user.auth)
-        assert_true(res.json['data']['attributes']['deleted'])
-
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['content'], comment.content)
 
+    def test_private_node_contributor_cannot_see_other_users_deleted_comment(self):
+        self._set_up_private_project_with_comment()
+        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
+        comment.is_deleted = True
+        comment.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.get(url, auth=self.contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
@@ -319,27 +435,29 @@ class TestCommentDetailView(ApiTestCase):
     def test_public_node_only_logged_in_commenter_can_view_deleted_comment(self):
         public_project = ProjectFactory(is_public=True, creator=self.user)
         comment = CommentFactory(node=public_project, target=public_project, user=self.user)
-        payload = {
-            'data': {
-                'id': comment._id,
-                'type': 'comments',
-                'attributes': {
-                    'deleted': True
-                }
-            }
-        }
+        comment.is_deleted = True
+        comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
-        res = self.app.patch_json_api(url, payload, auth=self.user.auth)
-        assert_true(res.json['data']['attributes']['deleted'])
-
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['content'], comment.content)
 
+    def test_public_node_contributor_cannot_view_other_users_deleted_comment(self):
+        public_project = ProjectFactory(is_public=True, creator=self.user)
+        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
+        comment.is_deleted = True
+        comment.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.get(url, auth=self.contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
 
+    def test_public_node_non_contributor_cannot_view_other_users_deleted_comment(self):
+        public_project = ProjectFactory(is_public=True, creator=self.user)
+        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
+        comment.is_deleted = True
+        comment.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.get(url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
@@ -546,24 +664,32 @@ class TestCommentRepliesCreate(ApiTestCase):
         comment = CommentFactory(node=project, user=self.user)
         reply = CommentFactory(node=project, target=comment, user=self.user)
         url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
-
         res = self.app.post_json_api(url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+    def test_public_node_contributor_can_reply(self):
+        project = ProjectFactory(is_public=True, comment_level='public')
+        comment = CommentFactory(node=project, user=self.user)
+        reply = CommentFactory(node=project, target=comment, user=self.user)
+        url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
+        res = self.app.post_json_api(url, self.payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
 
     def test_public_node_any_logged_in_user_can_reply(self):
         project = ProjectFactory(is_public=True, comment_level='public')
         comment = CommentFactory(node=project, user=self.user)
         reply = CommentFactory(node=project, target=comment, user=self.user)
         url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
-
-        res = self.app.post_json_api(url, self.payload, auth=self.user.auth)
-        assert_equal(res.status_code, 201)
-        assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
-
         res = self.app.post_json_api(url, self.payload, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
 
+    def test_public_node_logged_out_user_cannot_reply(self):
+        project = ProjectFactory(is_public=True, comment_level='public')
+        comment = CommentFactory(node=project, user=self.user)
+        reply = CommentFactory(node=project, target=comment, user=self.user)
+        url = '/{}comments/{}/replies/'.format(API_BASE, reply._id)
         res = self.app.post_json_api(url, self.payload, expect_errors=True)
         assert_equal(res.status_code, 401)
 
@@ -573,11 +699,10 @@ class TestCommentRepliesCreate(ApiTestCase):
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data']['attributes']['content'], self.payload['data']['attributes']['content'])
 
+    def test_public_node_non_contributor_cannot_reply(self):
+        self._set_up_public_project_comment_reply()
         res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-
-        res = self.app.post_json_api(self.public_url, self.payload, expect_errors=True)
-        assert_equal(res.status_code, 401)
 
 
 class TestCommentReportsView(ApiTestCase):
@@ -678,9 +803,7 @@ class TestCommentReportsView(ApiTestCase):
         comment.reports = comment.reports or {}
         comment.reports[self.non_contributor._id] = {'category': 'spam', 'text': 'This is spam.'}
         comment.save()
-
         url = '/{}comments/{}/reports/'.format(API_BASE, comment._id)
-
         res = self.app.get(url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         report_json = res.json['data']
