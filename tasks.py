@@ -59,7 +59,15 @@ def server(host=None, port=5000, debug=True, live=False):
 @task
 def apiserver(port=8000, live=False):
     """Run the API server."""
-    cmd = 'python manage.py runserver {}'.format(port)
+    cmd = 'DJANGO_SETTINGS_MODULE="api.base.settings" python manage.py runserver {}'.format(port)
+    if live:
+        cmd += ' livereload'
+    run(cmd, echo=True, pty=True)
+
+@task
+def adminserver(port=8001, live=False):
+    """Run the Admin server."""
+    cmd = 'DJANGO_SETTINGS_MODULE="admin.base.settings" python manage.py runserver {}'.format(port)
     if live:
         cmd += ' livereload'
     run(cmd, echo=True, pty=True)
