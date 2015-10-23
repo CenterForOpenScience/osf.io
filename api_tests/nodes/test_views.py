@@ -3581,6 +3581,12 @@ class TestNodeCommentCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes/content')
 
+    def test_create_comment_invalid_target_node(self):
+        url = '/{}nodes/{}/comments/'.format(API_BASE, 'abcde')
+        res = self.app.post_json_api(url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'Not found.')
+
     def test_private_node_logged_in_admin_can_comment(self):
         res = self.app.post_json_api(self.private_url, self.payload, auth=self.user.auth)
         assert_equal(res.status_code, 201)
