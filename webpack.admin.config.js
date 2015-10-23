@@ -5,12 +5,20 @@ var assign = require('object-assign');
 var BundleTracker = require('webpack-bundle-tracker');
 
 var root = path.join(__dirname, 'website', 'static');
+var admin_root = path.join(__dirname, 'admin', 'static');
 
 var staticPath = function(dir) {
     return path.join(root, dir);
 };
 
+var staticAdminPath = function(dir) {
+    return path.join(root, dir);
+};
+
 var entry = {
+	// admin module pre-reg
+	'prereg-admin-page': staticAdminPath('js/pages/prereg-admin-page.js'),
+    'registration-edit-page': staticAdminPath('js/pages/registration-edit-page.js'),
     // JS
     'base-page': staticPath('js/pages/base-page.js'),
     'home-page': staticPath('js/pages/home-page.js'),
