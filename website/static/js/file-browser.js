@@ -28,15 +28,6 @@ var FileBrowser = {
         self.url = 'http://localhost:8000/v2/users/me/nodes';
         self.data = [];
 
-
-        // Get Data
-        // url:  '',
-        //    crossOrigin: true,
-        //    xhrFields: { withCredentials: true}
-        //
-
-
-
         // For information panel
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){

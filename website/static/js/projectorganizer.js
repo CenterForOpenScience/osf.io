@@ -257,27 +257,20 @@ function _poModified(item) {
  * @private
  */
 function _poResolveRows(item) {
+
     var css = '',
-        draggable = false,
         default_columns;
-    if (item.data.permissions) {
-        draggable = item.data.permissions.movable || item.data.permissions.copyable;
-    }
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
     } else {
         item.css = '';
     }
 
-    if (draggable) {
-        css = 'po-draggable';
-    }
-
-    default_columns = [{
+     default_columns = [{
         data : 'name',  // Data field name
         folderIcons : true,
         filter : true,
-        css : css,
+        css : 'po-draggable', // All projects are draggable since we separated collections from the grid
         custom : _poTitleColumn
     }, {
         data : 'contributors',
