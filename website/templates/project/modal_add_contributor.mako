@@ -25,14 +25,29 @@
                                     </span>
                                 </div>
                             </div>
-                        </div>
-                        <div class="row search-contributor-links">
-                            <div class="col-md-12">
-                                <div>
-                                    <!-- ko if:parentId -->
-                                        <a data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></a>
-                                    <!-- /ko -->
+                            <div class="row search-contributor-links">
+                                <div class="col-md-6">
+                                    <div>
+                                        <!-- ko if:parentId -->
+                                            <button class="btn btn-default" data-bind="click:importFromParent, html:'Import contributors from <i>' + parentTitle + '</i>'"></button>
+                                        <!-- /ko -->
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
+                        <!-- Link to add non-registered contributor -->
+                        <div class='help-block'>
+                            <div data-bind='if: foundResults'>
+                                <ul class="pagination pagination-sm" data-bind="foreach: paginators">
+                                    <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
+                                </ul>
+                                <p>
+                                    <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
+                                </p>
+                            </div>
+                            <div data-bind="if: noResults">
+                                No results found. Try a more specific search or  <a href="#"
+                                data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
                             </div>
                         </div>
                     </form>
@@ -109,21 +124,7 @@
 
                                 </tbody>
                             </table>
-                            <!-- Link to add non-registered contributor -->
-                            <div class='help-block'>
-                                <div data-bind='if: foundResults'>
-                                    <ul class="pagination pagination-sm" data-bind="foreach: paginators">
-                                        <li data-bind="css: style"><a href="#" data-bind="click: handler, html: text"></a></li>
-                                    </ul>
-                                    <p>
-                                        <a href="#"data-bind="click:gotoInvite">Add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
-                                    </p>
-                                </div>
-                                <div data-bind="if: noResults">
-                                    No results found. Try a more specific search or  <a href="#"
-                                    data-bind="click:gotoInvite">add <strong><em>{{query}}</em></strong> as an unregistered contributor</a>.
-                                </div>
-                            </div>
+
                         </div><!-- ./col-md -->
 
                         <div class="col-md-6">
