@@ -19,7 +19,7 @@
 .fb-main {
     width: 55%;
     float: left;
-    padding: 0;
+    padding: 0 0 1px 0;
 }
 
 .fb-infobar {
