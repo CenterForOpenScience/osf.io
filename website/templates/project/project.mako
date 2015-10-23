@@ -177,6 +177,7 @@
                     <span id="description">Description:</span> <span id="nodeDescriptionEditable" class="node-description overflow" data-type="textarea">${node['description']}</span>
                     </p>
                 % endif
+                % if ('admin' in user['permissions'] or node['license'].get('name', 'No license') != 'No license'):
                     <p>
                       <license-picker params="saveUrl: '${node['update_url']}',
                                               saveMethod: 'PUT',
@@ -185,9 +186,9 @@
                                               readonly: ${ node['is_registration'] | sjson, n}">
                         <span id="license">License:</span>
                         <span class="text-muted"> ${node['license'].get('name', 'No license')} </span>
-
                       </license-picker>
                     </p>
+                 % endif
             </div>
         </div>
 
