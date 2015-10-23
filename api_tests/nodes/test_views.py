@@ -396,7 +396,7 @@ class TestNodeFiltering(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(
             res.json['errors'][0]['detail'],
-            "Field 'title' does not suport comparison operators in a filter."
+            "Field 'title' does not support comparison operators in a filter."
         )
 
     def test_filter_by_registration_invalid_bool(self):
@@ -478,10 +478,23 @@ class TestNodeFiltering(ApiTestCase):
             datetime.datetime.isoformat(self.first_date)
         )
         res = self.app.get(url)
+        assert_equal(res.status_code, http.OK)
         ids = [item['id'] for item in res.json['data']]
         assert_not_in(self.project_one._id, ids)
         assert_in(self.project_two._id, ids)
         assert_not_in(self.project_three._id, ids)
+
+    def test_filter_by_date_supports_fuzzy_match(self):
+        ambiguous_datetime = datetime.datetime.isoformat(self.third_date).split('T')[0]
+        url = '/{0}nodes/?filter[date_created][eq]={1}'.format(
+            API_BASE,
+            ambiguous_datetime
+        )
+        res = self.app.get(url)
+        assert_equal(res.status_code, http.OK)
+        nodes = res.json['data']        
+        assert_equal(len(nodes), 1)
+        assert_equal(nodes[0]['id'], self.project_three._id)
 
 
 class TestNodeCreate(ApiTestCase):
