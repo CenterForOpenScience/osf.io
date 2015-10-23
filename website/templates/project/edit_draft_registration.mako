@@ -46,7 +46,7 @@
                 </div>
                 <p>Last saved: <span data-bind="text: $root.lastSaved"></span>
                 </p>
-                <button data-bind="click: save" type="button" class="btn btn-primary">Save as Draft
+                <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
                 </button>
                     <!-- ko if: onLastPage -->
                     <a data-bind="css: {'disabled': !canRegister()},

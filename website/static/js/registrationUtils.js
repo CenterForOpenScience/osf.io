@@ -589,6 +589,13 @@ RegistrationEditor.prototype.save = function() {
             schema_data: data
         });
     }
+    return true;
+};
+
+RegistrationEditor.prototype.saveForLater = function () {
+    var self = this;
+
+    self.save();
     window.location = self.urls.draftRegistrations;
 };
 
