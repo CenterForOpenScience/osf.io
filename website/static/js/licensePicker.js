@@ -213,7 +213,33 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
                 data: JSON.stringify(payload)
             }).done(self.onSaveSuccess.bind(self, selectedLicense)).fail(self.onSaveFail.bind(self));
         };
-        return save();
+        if (license.id === OTHER_LICENSE.id) {
+            var ret = $.Deferred();
+            bootbox.dialog({
+                title: 'Your Own License',
+                message: 'You have opted to use your own license. Please upload a license file named "license.txt" into the OSF Storage of this project.',
+                buttons: {
+                    cancel: {
+                        label: 'Cancel',
+                        className: 'btn btn-default'
+                    },
+                    main: {
+                        label: 'Add license',
+                        className: 'btn btn-primary',
+                        callback: function(confirmed) {
+                            if (confirmed) {
+                                save().then(ret.resolve);
+                            } else {
+                                ret.reject();
+                            }
+                        }
+                    }
+                }
+            });
+            return ret.promise();
+        } else {
+            return save();
+        }
     }
 });
 

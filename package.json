@@ -31,7 +31,7 @@
     "knockout": "~3.2.0",
     "knockout.punches": "^0.5.1",
     "knockout.validation": "^2.0.2",
-    "list-of-licenses": "git://github.com/samchrisinger/list-of-licenses.git#502a6795b3a282e25531933901655e5f186b6e62",
+    "list-of-licenses": "git://github.com/samchrisinger/list-of-licenses.git#5f56934c36262dcf4ee6cdbf0374f23f3b83f219",
     "livedb": "~0.4.8",
     "livedb-mongo": "~0.4.1",
     "markdown-it": "~4.1.0",
