@@ -3,8 +3,7 @@ from django.conf.urls import url
 from api.collections import views
 from website import settings
 
-urlpatterns = [
-    ]
+urlpatterns = []
 
 # Routes only active in local/staging environments
 if settings.DEV_MODE:
