@@ -792,19 +792,27 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
 
-    **TODO: this is placeholder documentation pending finish**
-
     ##Attributes
 
-        name           type               description
-        ---------------------------------------------------------------------------------
-        $name          $type              $descr
+    *None*
 
     ##Relationships
 
     ##Links
 
+    self:  the canonical api endpoint of this node
+
     ##Actions
+
+    ###Delete
+
+        Method:   DELETE
+        URL:      links.self
+        Params:   <none>
+        Success:  204 No Content
+
+    To delete a node_link, issue a DELETE request against `links.self`.  A successful delete will return a 204 No Content
+    response. Attempting to delete a node you do not own will result in a 403 Forbidden.
 
     ##Query Params
 

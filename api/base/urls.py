@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls import include, url, patterns
 from django.conf.urls.static import static
 from settings import API_BASE
+from website.settings import DEV_MODE
 
 from . import views
 
@@ -20,6 +21,11 @@ urlpatterns = [
                          ))
         )
 ]
+
+if DEV_MODE:
+    urlpatterns.extend([
+        url(r'^collections/', include('api.collections.urls', namespace='collections')),
+    ])
 
 urlpatterns += static('/static/', document_root=settings.STATIC_ROOT)
 

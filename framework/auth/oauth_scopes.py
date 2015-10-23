@@ -41,6 +41,9 @@ class CoreScopes(object):
     APPLICATIONS_READ = 'applications_read'
     APPLICATIONS_WRITE = 'applications_write'
 
+    ORGANIZER_COLLECTIONS_BASE_READ = 'collections.base_read'
+    ORGANIZER_COLLECTIONS_BASE_WRITE = 'collections.base_write'
+
 
 class ComposedScopes(object):
     """
@@ -61,6 +64,11 @@ class ComposedScopes(object):
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
                     (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE)
 
+    # Collections collection
+    # Using collections and the node links they collect.
+    ORGANIZER_READ = (CoreScopes.ORGANIZER_COLLECTIONS_BASE_READ, CoreScopes.NODE_LINKS_READ)
+    ORGANIZER_WRITE = ORGANIZER_READ + (CoreScopes.ORGANIZER_COLLECTIONS_BASE_WRITE, CoreScopes.NODE_LINKS_WRITE)
+
     # Privileges relating to editing content uploaded under that node # TODO: Add wiki etc when implemented
     NODE_DATA_READ = (CoreScopes.NODE_FILE_READ,)
     NODE_DATA_WRITE = NODE_DATA_READ + \
@@ -76,8 +84,8 @@ class ComposedScopes(object):
     NODE_ALL_WRITE = NODE_ALL_READ + NODE_METADATA_WRITE + NODE_DATA_WRITE + NODE_ACCESS_WRITE
 
     # Full permissions: all routes intended to be exposed to third party API users
-    FULL_READ = NODE_ALL_READ + USERS_READ
-    FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE
+    FULL_READ = NODE_ALL_READ + USERS_READ + ORGANIZER_READ
+    FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE + ORGANIZER_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
     ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE
@@ -144,6 +152,14 @@ if settings.DEV_MODE:
                                      description='View and edit all metadata, files, and access rights associated with '
                                                  'all public and private projects accessible to this account.',
                                      is_public=True),
+        'osf.organizer.all_read': scope(parts=frozenset(ComposedScopes.ORGANIZER_READ),
+                                        description='View all project organization collections and the '
+                                                    'metadata of the projects being organized.',
+                                        is_public=True),
+        'osf.organizer.all_write': scope(parts=frozenset(ComposedScopes.ORGANIZER_WRITE),
+                                        description='View and edit all project organization collections and the '
+                                                    'metadata of the projects being organized.',
+                                        is_public=True),
 
         # Undocumented scopes that can not be requested by third parties (per CAS restriction)
         'osf.admin': scope(parts=frozenset(ComposedScopes.ADMIN_LEVEL),

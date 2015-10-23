@@ -3,6 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from api.users.serializers import UserSerializer
+from website import settings
 from .utils import absolute_reverse
 
 @api_view(('GET',))
@@ -257,7 +258,7 @@ def root(request, format=None):
     else:
         current_user = None
 
-    return Response({
+    return_val = {
         'meta': {
             'message': 'Welcome to the OSF API.',
             'version': request.version,
@@ -267,7 +268,12 @@ def root(request, format=None):
             'nodes': absolute_reverse('nodes:node-list'),
             'users': absolute_reverse('users:user-list'),
         }
-    })
+    }
+    if settings.DEV_MODE:
+        return_val["links"]["collections"] = absolute_reverse('collections:collection-list')
+
+    return Response(return_val)
+
 
 def error_404(request, format=None, *args, **kwargs):
     return JsonResponse(
