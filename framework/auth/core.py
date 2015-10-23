@@ -166,6 +166,7 @@ class Auth(object):
     def from_kwargs(cls, request_args, kwargs):
         user = request_args.get('user') or kwargs.get('user') or _get_current_user()
         private_key = request_args.get('view_only')
+        
         try:
             # Avoid circular import
             from website.project.model import PrivateLink
