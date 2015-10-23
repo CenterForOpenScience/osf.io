@@ -386,8 +386,7 @@ def oauth_application_register(auth, **kwargs):
     """Register an API application: blank form view"""
     app_list_url = api_v2_url("applications/")  # POST request to this url
     return {"app_list_url": app_list_url,
-            "app_detail_url": '',
-            "app_reset_url": ''}
+            "app_detail_url": ''}
 
 @must_be_logged_in
 def oauth_application_detail(auth, **kwargs):
@@ -406,10 +405,8 @@ def oauth_application_detail(auth, **kwargs):
         raise HTTPError(http.GONE)
 
     app_detail_url = api_v2_url("applications/{}/".format(client_id))  # Send request to this URL
-    app_reset_url = api_v2_url("applications/{}/reset/".format(client_id))
     return {"app_list_url": '',
-            "app_detail_url": app_detail_url,
-            "app_reset_url": app_reset_url}
+            "app_detail_url": app_detail_url}
 
 def collect_user_config_js(addon_configs):
     """Collect webpack bundles for each of the addons' user-cfg.js modules. Return
