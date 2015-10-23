@@ -63,7 +63,7 @@ var ProjectSettings = oop.extend(
                 self.selectedCategory(self.categoryPlaceholder);
                 self.title(self.titlePlaceholder);
                 self.description(self.descriptionPlaceholder);
-                self.changeMessage(language.updateSuccessMessage, 'text-success')
+                self.changeMessage(language.updateSuccessMessage, 'text-success');
             });
             request.fail(self.updateError.bind(self));
             return request;
@@ -88,7 +88,7 @@ var ProjectSettings = oop.extend(
                         description: self.description(),
                     }
                 }
-            }
+            };
         }
     });
 

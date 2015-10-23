@@ -6,7 +6,7 @@ var faker = require('faker');
 
 var $osf = require('js/osfHelpers');
 var Raven = require('raven-js');
-var language = require('js/osfLanguage').ProjectSettings;
+var language = require('js/osfLanguage').projectSettings;
 
 /*
  * Dear sloria,
@@ -35,7 +35,7 @@ describe('ProjectSettings', () => {
         categoryOptions.push(faker.internet.domainWord());
     }
     var updateUrl = faker.internet.ip();
-    var vm = new ProjectSettings({category: category, categoryOptions: categoryOptions, updateUrl: updateUrl});
+    var vm = new ProjectSettings({category: category, categoryOptions: categoryOptions, updateUrl: updateUrl, node_id: 'nodeID'});
     describe('#constructor', function() {
         it('throws an error if no updateUrl is passed', () => {
             var broken = function() {
@@ -82,13 +82,9 @@ describe('ProjectSettings', () => {
                 updateUrl,
                 function(xhr) {
                     serverSpy();
-                    var response = {
-                        'updated_fields': JSON.parse(xhr.requestBody)
-                    };
                     xhr.respond(
                         200,
-                        {'Content-Type': 'application/json'},
-                        JSON.stringify(response)
+                        {'Content-Type': 'application/json'}
                     );
                 }
             );
@@ -101,6 +97,7 @@ describe('ProjectSettings', () => {
             vm.selectedCategory(newcategory);
             vm.title('New title');
             vm.description('New description');
+            vm.requestPayload = vm.serialize();
             vm.updateAll()
                 .always(function() {
                     assert.called(serverSpy);
