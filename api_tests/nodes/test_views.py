@@ -1428,7 +1428,7 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
                         }
                     }
                 }
-            }
+             }
         }
 
     def test_add_node_contributors_relationships_is_a_list(self):

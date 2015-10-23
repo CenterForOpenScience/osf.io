@@ -25,6 +25,8 @@ class JSONAPIParser(JSONParser):
         """
         if not isinstance(relationships, dict):
             raise ParseError()
+
+        # Can only create one type of relationship.
         related_resource = relationships.keys()[0]
         if not isinstance(relationships[related_resource], dict) or related_resource == 'data':
             raise ParseError()
