@@ -1459,12 +1459,8 @@ var tbOptions = {
     }
 };
 
-
 var ProjectOrganizer = {
     controller : function (args) {
-
-    },
-    view : function (ctrl, args) {
         var poOptions = $.extend(
             {
                 updateSelected : args.updateSelected,
@@ -1473,8 +1469,10 @@ var ProjectOrganizer = {
             },
             tbOptions
         );
-        var tb = new Treebeard(poOptions, true);
-        return m('.fb-project-organizer#projectOrganizer', tb);
+        this.tb = new Treebeard(poOptions, true);
+    },
+    view : function (ctrl, args) {
+        return m('.fb-project-organizer#projectOrganizer', ctrl.tb);
     }
 };
 
