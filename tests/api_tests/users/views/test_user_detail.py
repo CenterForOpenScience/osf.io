@@ -637,4 +637,3 @@ class TestDeactivatedUser(ApiTestCase):
         self.user.save()
         res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 410)
-
