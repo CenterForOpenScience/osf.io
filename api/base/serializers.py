@@ -114,6 +114,7 @@ class AuthorizedCharField(ser.CharField):
         content = AuthorizedCharField(source='return_content')
     """
     def __init__(self, source=None, **kwargs):
+        assert source is not None, 'The `source` argument is required.'
         self.source = source
         super(AuthorizedCharField, self).__init__(source=self.source, **kwargs)
 
