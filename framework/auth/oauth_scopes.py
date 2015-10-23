@@ -152,14 +152,6 @@ if settings.DEV_MODE:
                                      description='View and edit all metadata, files, and access rights associated with '
                                                  'all public and private projects accessible to this account.',
                                      is_public=True),
-        'osf.organizer.all_read': scope(parts=frozenset(ComposedScopes.ORGANIZER_READ),
-                                        description='View all project organization collections and the '
-                                                    'metadata of the projects being organized.',
-                                        is_public=True),
-        'osf.organizer.all_write': scope(parts=frozenset(ComposedScopes.ORGANIZER_WRITE),
-                                        description='View and edit all project organization collections and the '
-                                                    'metadata of the projects being organized.',
-                                        is_public=True),
 
         # Undocumented scopes that can not be requested by third parties (per CAS restriction)
         'osf.admin': scope(parts=frozenset(ComposedScopes.ADMIN_LEVEL),
