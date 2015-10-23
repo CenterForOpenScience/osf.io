@@ -351,6 +351,7 @@ class TestApplicationReset(ApiTestCase):
     @mock.patch('framework.auth.cas.CasClient.revoke_application_tokens')
     def test_reset_revokes_tokens_and_resets(self, mock_method):
         mock_method.return_value(True)
+        old_secret = self.user1_app.client_secret
         self.user1_app.reset_secret(save=True)
         mock_method.assert_called()
         self.user1_app.reload()
