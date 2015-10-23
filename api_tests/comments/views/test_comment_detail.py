@@ -432,6 +432,15 @@ class TestCommentDetailView(ApiTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
 
+    def test_private_node_logged_out_user_cannot_see_deleted_comment(self):
+        self._set_up_private_project_with_comment()
+        comment = CommentFactory(node=self.private_project, target=self.private_project, user=self.user)
+        comment.is_deleted = True
+        comment.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 401)
+
     def test_public_node_only_logged_in_commenter_can_view_deleted_comment(self):
         public_project = ProjectFactory(is_public=True, creator=self.user)
         comment = CommentFactory(node=public_project, target=public_project, user=self.user)
@@ -459,5 +468,15 @@ class TestCommentDetailView(ApiTestCase):
         comment.save()
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.get(url, auth=self.non_contributor.auth)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
+
+    def test_public_node_logged_out_user_cannot_view_deleted_comments(self):
+        public_project = ProjectFactory(is_public=True, creator=self.user)
+        comment = CommentFactory(node=public_project, target=public_project, user=self.user)
+        comment.is_deleted = True
+        comment.save()
+        url = '/{}comments/{}/'.format(API_BASE, comment._id)
+        res = self.app.get(url)
         assert_equal(res.status_code, 200)
         assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
