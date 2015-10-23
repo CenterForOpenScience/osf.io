@@ -8,7 +8,7 @@ def json_api_exception_handler(exc, context):
     """ Custom exception handler that returns errors object as an array """
 
     # We're deliberately not stripping html from exception detail.
-    # This creates potential vulnerabilitys to script injection attacks
+    # This creates potential vulnerabilities to script injection attacks
     # when returning raw user input into error messages.
     #
     # Fortunately, Django's templating language strips markup bu default,
@@ -115,9 +115,9 @@ class InvalidFilterOperator(JSONAPIParameterException):
     """Raised when client passes an invalid operator to a query param filter."""
     status_code = http.BAD_REQUEST
 
-    def __init__(self, detail=None, value=None, valid_operators=None):
+    def __init__(self, detail=None, value=None, valid_operators=('eq', 'lt', 'lte', 'gt', 'gte', 'contains', 'icontains')):
         if value and not detail:
-            valid_operators = ', '.join(valid_operators or ['eq', 'lt', 'lte', 'gt', 'gte', 'contains', 'icontains'])
+            valid_operators = ', '.join(valid_operators)
             detail = "Value '{0}' is not a supported filter operator; use one of {1}.".format(
                 value,
                 valid_operators

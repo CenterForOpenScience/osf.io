@@ -84,7 +84,7 @@ class FilterMixin(object):
         if field_name not in self.serializer_class._declared_fields:
             raise InvalidFilterError(detail="'{0}' is not a valid field for this endpoint.".format(field_name))
         if field_name not in getattr(self.serializer_class, 'filterable_fields', set()):
-            raise InvalidFilterFieldError(attribute=field_name)
+            raise InvalidFilterFieldError(parameter='filter', value=field_name)
         return self.serializer_class._declared_fields[field_name]
 
     def _validate_operator(self, field, field_name, op):
