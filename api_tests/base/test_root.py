@@ -26,4 +26,3 @@ class TestWelcomeToApi(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['meta']['current_user']['data']['attributes']['given_name'], self.user.given_name)
 
-
