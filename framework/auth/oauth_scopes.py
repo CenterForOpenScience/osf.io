@@ -41,6 +41,10 @@ class CoreScopes(object):
     APPLICATIONS_READ = 'applications_read'
     APPLICATIONS_WRITE = 'applications_write'
 
+    NODE_LOG_READ = 'nodes.logs_read'
+
+    NULL = 'null'
+
 
 class ComposedScopes(object):
     """

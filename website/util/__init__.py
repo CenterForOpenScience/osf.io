@@ -180,3 +180,32 @@ def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
     url.path.segments.extend([urllib.quote(x.encode('utf-8')) for x in segments])
     url.args.update(kwargs)
     return url.url
+
+def soft_get(something, key, default=None):
+    """
+    Gently try to get key from something. Emulates dict.get behavior across
+    both collections and classes.
+    """
+    if not something:
+        return default
+    elif isinstance(something, collections.Mapping):
+        return something.get(key, default)
+    else:
+        return getattr(something, key, default)
+
+def deep_get(obj, key):
+    """
+    Using a dot-seperated key deeply fetch dict or class attributes
+    E.g.:
+
+    deep_get({
+        'user': {
+            'name': 'Miles Teg'
+        }
+    }, 'user.name')  # == 'Miles Teg'
+    """
+    if '.' in key:
+        keychain = key.split('.')
+        return deep_get(soft_get(obj, keychain.pop(0)), '.'.join(keychain))
+    else:
+        return soft_get(obj, key)

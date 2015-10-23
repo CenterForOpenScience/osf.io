@@ -7,10 +7,12 @@ from rest_framework import serializers as ser
 
 from website import settings
 from website.util.sanitize import strip_html
-from website.util import waterbutler_api_url_for
+from website.util import waterbutler_api_url_for, deep_get
 
 from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict
+
+from website.util import rapply as _rapply
 
 
 class AllowMissing(ser.Field):
@@ -39,8 +41,6 @@ class AllowMissing(ser.Field):
     def to_internal_value(self, data):
         return self.field.to_internal_value(data)
 
-
-from website.util import rapply as _rapply
 
 def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
@@ -112,11 +112,11 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
 
         Returns None if lookup value is None
         """
-
-        if getattr(obj, self.lookup_field) is None:
-            return None
-
-        return super(JSONAPIHyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+        attr = deep_get(obj, self.lookup_field)
+        if attr is None:
+            raise SkipField()
+        kwargs = {self.lookup_url_kwarg: attr}
+        return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
 
     # overrides HyperlinkedIdentityField
     def to_representation(self, value):
@@ -126,7 +126,10 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
+        try:
+            url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
+        except SkipField:
+            url = None  # TODO: remove/fix this when we merge https://github.com/CenterForOpenScience/osf.io/pull/4356
 
         meta = {}
         for key in self.meta or {}:
@@ -196,7 +199,6 @@ def _tpl(val):
         return match.groups()[0]
     return None
 
-
 def _get_attr_from_tpl(attr_tpl, obj):
     attr_name = _tpl(str(attr_tpl))
     if attr_name:
@@ -220,7 +222,8 @@ def _get_attr_from_tpl(attr_tpl, obj):
 # TODO: Make this a Field that is usable on its own?
 class Link(object):
     """Link object to use in conjunction with Links field. Does reverse lookup of
-    URLs given an endpoint name and attributed enclosed in `<>`.
+    URLs given an endpoint name and attributed enclosed in `<>`. This includes
+    complex key strings like 'user.id'
     """
 
     def __init__(self, endpoint, args=None, kwargs=None, query_kwargs=None, **kw):

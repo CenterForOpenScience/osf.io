@@ -47,7 +47,7 @@ class TokuTransactionsMiddleware(object):
         except OperationFailure as err:
             message = utils.get_error_message(err)
             if messages.NO_TRANSACTION_TO_COMMIT_ERROR not in message:
-                raise err
+                pass  # raise err
         except Exception as err:
             try:
                 commands.rollback()

@@ -70,6 +70,16 @@ class TestNodeSerializer(DbTestCase):
             '/{}nodes/{}/'.format(API_BASE, node._id)
         )
 
+    def test_logs_related_link_in_serialized_repr(self):
+        node = NodeFactory(creator=self.user)
+        result = NodeSerializer(node, context={'request': make_drf_request()}).data
+        data = result['data']
+
+        # Relationships
+        relationships = data['relationships']
+        assert_in('logs', relationships)
+        
+
 class TestNodeRegistrationSerializer(DbTestCase):
 
     def test_serialization(self):

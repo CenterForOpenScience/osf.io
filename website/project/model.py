@@ -353,9 +353,18 @@ class NodeLog(StoredObject):
     REGISTRATION_APPROVAL_INITIATED = 'registration_initiated'
     REGISTRATION_APPROVAL_APPROVED = 'registration_approved'
 
+    @classmethod
+    def actions(cls):
+        return [cls.CREATED_FROM, cls.PROJECT_CREATED, cls.PROJECT_REGISTERED, cls.PROJECT_DELETED, cls.NODE_CREATED, cls.NODE_FORKED, cls.NODE_REMOVED, cls.POINTER_CREATED, cls.POINTER_FORKED, cls.POINTER_REMOVED, cls.WIKI_UPDATED, cls.WIKI_DELETED, cls.WIKI_RENAMED, cls.MADE_WIKI_PUBLIC, cls.MADE_WIKI_PRIVATE, cls.CONTRIB_ADDED, cls.CONTRIB_REMOVED, cls.CONTRIB_REORDERED, cls.PERMISSIONS_UPDATED, cls.MADE_PRIVATE, cls.MADE_PUBLIC, cls.TAG_ADDED, cls.TAG_REMOVED, cls.EDITED_TITLE, cls.EDITED_DESCRIPTION, cls.UPDATED_FIELDS, cls.FILE_MOVED, cls.FILE_COPIED, cls.FOLDER_CREATED, cls.FILE_ADDED, cls.FILE_UPDATED, cls.FILE_REMOVED, cls.FILE_RESTORED, cls.ADDON_ADDED, cls.ADDON_REMOVED, cls.COMMENT_ADDED, cls.COMMENT_REMOVED, cls.COMMENT_UPDATED, cls.MADE_CONTRIBUTOR_VISIBLE, cls.MADE_CONTRIBUTOR_INVISIBLE, cls.EXTERNAL_IDS_ADDED, cls.EMBARGO_APPROVED, cls.EMBARGO_CANCELLED, cls.EMBARGO_COMPLETED, cls.EMBARGO_INITIATED, cls.RETRACTION_APPROVED, cls.RETRACTION_CANCELLED, cls.RETRACTION_INITIATED, cls.REGISTRATION_APPROVAL_CANCELLED, cls.REGISTRATION_APPROVAL_INITIATED, cls.REGISTRATION_APPROVAL_APPROVED]
+
     def __repr__(self):
         return ('<NodeLog({self.action!r}, params={self.params!r}) '
                 'with id {self._id!r}>').format(self=self)
+
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
 
     @property
     def node(self):

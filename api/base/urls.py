@@ -9,16 +9,20 @@ base_pattern = '^{}'.format(API_BASE)
 
 urlpatterns = [
     ### API ###
-    url(base_pattern,
-        include(patterns('',
-                         url(r'^$', views.root, name='root'),
-                         url(r'^applications/', include('api.applications.urls', namespace='applications')),
-                         url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
-                         url(r'^users/', include('api.users.urls', namespace='users')),
-                         url(r'^files/', include('api.files.urls', namespace='files')),
-                         url(r'^docs/', include('rest_framework_swagger.urls')),
-                         ))
+    url(
+        base_pattern,
+        include(
+            patterns('',
+                url(r'^$', views.root),
+                url(r'^applications/', include('api.applications.urls', namespace='applications')),
+                url(r'^nodes/', include('api.nodes.urls', namespace='nodes')),
+                url(r'^users/', include('api.users.urls', namespace='users')),
+                url(r'^logs/', include('api.logs.urls', namespace='logs')),
+                url(r'^files/', include('api.files.urls', namespace='files')),
+                url(r'^docs/', include('rest_framework_swagger.urls')),
+            )
         )
+    )
 ]
 
 urlpatterns += static('/static/', document_root=settings.STATIC_ROOT)

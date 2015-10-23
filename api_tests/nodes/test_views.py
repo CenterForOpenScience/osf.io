@@ -5,6 +5,7 @@ from urlparse import urlparse
 
 import mock
 from nose.tools import *  # flake8: noqa
+import datetime
 import httpretty
 
 from framework.auth.core import Auth
@@ -14,12 +15,15 @@ from website.models import Node, NodeLog
 from website.views import find_dashboard
 from website.util import permissions, waterbutler_api_url_for
 from website.util.sanitize import strip_html
+
 from api.base.settings.defaults import API_BASE
-from tests.base import ApiTestCase, fake
+
+from tests.base import ApiTestCase, fake, assert_datetime_equal
 from tests.factories import (
     DashboardFactory,
     FolderFactory,
     NodeFactory,
+    NodeLogFactory,
     ProjectFactory,
     RegistrationFactory,
     UserFactory,
@@ -3329,6 +3333,109 @@ class TestReturnDeletedNode(ApiTestCase):
     def test_delete_deleted_private_node(self):
         res = self.app.delete(self.private_url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 410)
+
+class TestNodeLogList(ApiTestCase):
+    def setUp(self):
+        super(TestNodeLogList, self).setUp()
+        self.user = AuthUserFactory()
+        self.contrib = AuthUserFactory()
+        self.creator = AuthUserFactory()
+        self.user_auth = Auth(self.user)
+        self.NodeLogFactory = ProjectFactory()
+        self.pointer = ProjectFactory()
+
+        self.private_project = ProjectFactory(is_public=False, creator=self.user)
+        self.private_url = '/{}nodes/{}/logs/'.format(API_BASE, self.private_project._id)
+
+        self.public_project = ProjectFactory(is_public=True, creator=self.user)
+        self.public_url = '/{}nodes/{}/logs/'.format(API_BASE, self.public_project._id)
+
+    def tearDown(self):
+        super(TestNodeLogList, self).tearDown()
+        NodeLog.remove()
+
+    def test_add_tag(self):
+        user_auth = Auth(self.user)
+        self.public_project.add_tag("Jeff Spies", auth=user_auth)
+        assert_equal("tag_added", self.public_project.logs[-1].action)
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(res.json['data'][0]['attributes']['action'], 'tag_added')
+        assert_equal("Jeff Spies", self.public_project.logs[-1].params['tag'])
+
+    def test_remove_tag(self):
+        user_auth = Auth(self.user)
+        self.public_project.add_tag("Jeff Spies", auth=user_auth)
+        assert_equal("tag_added", self.public_project.logs[-1].action)
+        self.public_project.remove_tag("Jeff Spies", auth=self.user_auth)
+        assert_equal("tag_removed", self.public_project.logs[-1].action)
+        res = self.app.get(self.public_url, auth=self.user)
+        assert_equal(res.json['data'][0]['attributes']['action'], 'tag_removed')
+        assert_equal("Jeff Spies", self.public_project.logs[-1].params['tag'])
+
+    def test_project_created(self):
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_equal(self.public_project.logs[0].action, "project_created")
+
+    def assert_datetime_equal(dt1, dt2, allowance=500):
+        assert_less(dt1 - dt2, dt.timedelta(milliseconds=allowance))
+
+    def test_log_create_on_public_project(self):
+        datetime.datetime.strptime('2015-07-28 21:06:34.965114', '%Y-%m-%d %H:%M:%S.%f')
+        res = self.app.get(self.public_url)
+        assert_equal(res.status_code, 200)
+        assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['attributes']['date'], "%Y-%m-%dT%H:%M:%S.%f"),
+                              self.public_project.logs[0].date)
+        assert_equal(res.json['data'][0]['attributes']['action'], self.public_project.logs[0].action)
+
+    def test_log_create_on_private_project(self):
+        res = self.app.get(self.private_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        assert_datetime_equal(datetime.datetime.strptime(res.json['data'][0]['attributes']['date'], "%Y-%m-%dT%H:%M:%S.%f"),
+                              self.private_project.logs[0].date)
+        assert_equal(res.json['data'][0]['attributes']['action'], self.private_project.logs[0].action)
+
+    def test_project_remove_contributor(self):
+        self.public_project.add_contributor(self.contrib, auth=self.user_auth)
+        assert_equal('contributor_added', self.public_project.logs[-1].action)
+        self.public_project.remove_contributor(self.contrib, auth=self.user_auth)
+        assert_equal('contributor_removed', self.public_project.logs[-1].action)
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(res.json['data'][0]['attributes']['action'], 'contributor_removed')
+
+    def test_add_addon(self):
+        self.public_project.add_addon('github', auth=self.user_auth)
+        assert_equal('addon_added', self.public_project.logs[-1].action)
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(res.json['data'][0]['attributes']['action'], 'addon_added')
+
+    def test_project_add_contributor(self):
+        self.public_project.add_contributor(self.contrib, auth=self.user_auth)
+        assert_equal('contributor_added', self.public_project.logs[-1].action)
+        self.public_project.save()
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(res.json['data'][0]['attributes']['action'], 'contributor_added')
+
+    def test_remove_addon(self):
+        self.public_project.add_addon('github', auth=self.user_auth)
+        assert_equal('addon_added', self.public_project.logs[-1].action)
+        self.public_project.delete_addon('github', auth=self.user_auth)
+        assert_equal('addon_removed', self.public_project.logs[-1].action)
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(res.json['data'][0]['attributes']['action'], 'addon_removed')
+
+    def test_add_pointer(self):
+        self.public_project.add_pointer(self.pointer, auth=Auth(self.user), save=True)
+        assert_equal('pointer_created', self.public_project.logs[-1].action)
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        assert_equal(res.json['data'][0]['attributes']['action'], 'pointer_created')
+
+    def test_child_node_logs_included(self):
+        ProjectFactory(parent=self.public_project, is_public=True)
+        ProjectFactory(parent=self.public_project, is_public=True)
+        res = self.app.get(self.public_url, auth=self.user.auth)
+        logs = res.json['data']
+        assert_equal(len(logs), 3)
 
 
 class TestExceptionFormatting(ApiTestCase):
