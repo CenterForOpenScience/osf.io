@@ -215,6 +215,13 @@ class NodeContributorsSerializer(JSONAPISerializer):
             }
         )
 
+
+class NodeContributorsCreateSerializer(NodeContributorsSerializer):
+    """
+    Overrides NodeContributorsSerializer to add target_type field
+    """
+    target_type = TargetTypeField(target_type='users')
+
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
@@ -230,13 +237,6 @@ class NodeContributorsSerializer(JSONAPISerializer):
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
         return contributor
-
-
-class NodeContributorsCreateSerializer(NodeContributorsSerializer):
-    """
-    Overrides NodeContributorsSerializer to add target_type field
-    """
-    target_type = TargetTypeField(target_type='users')
 
 
 class NodeContributorDetailSerializer(NodeContributorsSerializer):
