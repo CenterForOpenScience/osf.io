@@ -24,7 +24,7 @@ urlpatterns = [
 
 if DEV_MODE:
     urlpatterns.extend([
-        url(r'^collections/', include('api.collections.urls', namespace='collections')),
+        url(r'^v2/collections/', include('api.collections.urls', namespace='collections')),
     ])
 
 urlpatterns += static('/static/', document_root=settings.STATIC_ROOT)
