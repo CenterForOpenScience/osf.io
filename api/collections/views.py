@@ -30,7 +30,7 @@ class CollectionMixin(object):
     """
 
     serializer_class = CollectionSerializer
-    node_lookup_url_kwarg = 'node_id'
+    node_lookup_url_kwarg = 'collection_id'
 
     def get_node(self, check_object_permissions=True):
         node = get_object_or_error(
@@ -369,6 +369,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, CollectionMixin):
             'node link'
         )
         # May raise a permission denied
+        self.kwargs['node_id'] = self.kwargs['collection_id']
         self.check_object_permissions(self.request, node_link)
         return node_link
 

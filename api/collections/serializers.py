@@ -28,7 +28,7 @@ class CollectionSerializer(JSONAPISerializer):
     links = LinksField({'html': 'get_absolute_url'})
 
     node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='collections:node-pointers', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='node_id', meta={'count': 'get_node_links_count'}))
+                                                  lookup_url_kwarg='collection_id', meta={'count': 'get_node_links_count'}))
 
     class Meta:
         type_ = 'collections'
@@ -82,11 +82,11 @@ class CollectionDetailSerializer(CollectionSerializer):
 
 class CollectionNodeLinkSerializer(NodeLinksSerializer):
     def get_absolute_url(self, obj):
-        node_id = self.context['request'].parser_context['kwargs']['node_id']
+        node_id = self.context['request'].parser_context['kwargs']['collection_id']
         return absolute_reverse(
             'collections:node-pointer-detail',
             kwargs={
-                'node_id': node_id,
+                'collection_id': node_id,
                 'node_link_id': obj._id
             }
         )
