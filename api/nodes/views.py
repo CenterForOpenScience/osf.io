@@ -1384,7 +1384,7 @@ class NodeLogList(generics.ListAPIView, NodeMixin, ListFilterMixin):
 
     log_lookup_url_kwarg = 'node_id'
 
-    ordering = ('date', )
+    ordering = ('-date', )
 
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
