@@ -505,6 +505,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+     'MiamiBrainhack15': {
+        'name': 'University of Miami Brainhack 2015',
+        'info_url': 'http://brainhack.org/americas/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
