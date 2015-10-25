@@ -52,7 +52,7 @@ class JSONAPIParser(JSONParser):
         relationships = resource_object.get('relationships')
         
         # Request must include "relationships" or "attributes"
-        if is_relationship:
+        if is_relationship and request_method == 'POST':
             if not relationships:
                 raise JSONAPIException(source={'pointer': '/data/relationships'}, detail=NO_RELATIONSHIPS_ERROR)
         else:
