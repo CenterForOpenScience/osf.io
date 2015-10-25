@@ -1194,7 +1194,7 @@ class TestNodeBulkDelete(ApiTestCase):
         ]}
         res = self.app.bulk_delete_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/type.')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /type.')
 
     def test_bulk_delete_no_id(self):
         payload = {'data': [
