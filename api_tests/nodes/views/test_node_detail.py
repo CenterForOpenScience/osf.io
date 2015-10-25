@@ -132,6 +132,12 @@ class TestNodeDetail(ApiTestCase):
         )
         assert_equal(res.status_code, 404)
 
+    def test_registrations_cannot_be_returned_at_node_detail_endpoint(self):
+        registration = RegistrationFactory(project=self.public_project, creator=self.user)
+        res = self.app.get('/{}nodes/{}/'.format(API_BASE, registration._id), auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'This is a registration.')
+
 
 class NodeCRUDTestCase(ApiTestCase):
 
