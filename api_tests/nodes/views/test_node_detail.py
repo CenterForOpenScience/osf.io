@@ -16,7 +16,8 @@ from tests.factories import (
     NodeFactory,
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    FolderFactory
 )
 
 from tests.utils import assert_logs, assert_not_logs
@@ -137,6 +138,11 @@ class TestNodeDetail(ApiTestCase):
         res = self.app.get('/{}nodes/{}/'.format(API_BASE, registration._id), auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This is a registration.')
+
+    def test_cannot_return_folder_at_node_detail_endpoint(self):
+        folder = FolderFactory(creator=self.user)
+        res = self.app.get('/{}nodes/{}/'.format(API_BASE, folder._id), auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
 
 
 class NodeCRUDTestCase(ApiTestCase):
