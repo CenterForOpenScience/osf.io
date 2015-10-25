@@ -150,7 +150,7 @@ class Comment(GuidStoredObject):
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
-    modified = fields.BooleanField()
+    modified = fields.BooleanField(default=False)
 
     is_deleted = fields.BooleanField(default=False)
     content = fields.StringField()
