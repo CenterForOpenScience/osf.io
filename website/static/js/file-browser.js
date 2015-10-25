@@ -35,7 +35,7 @@ var FileBrowser = {
         self.filesData = m.prop($osf.apiV2Url(self.collections[0].path, self.collections[0].pathOptions));
 
         self.breadcrumbs = m.prop([
-            { label : 'All My Projects', path : 'users/me/nodes/', pathOptions : { query : { 'filter[registration]' : 'false' }}}
+            { label : 'All My Projects', url : 'http://localhost:8000/v2/users/me/nodes/?filter%5Bregistration%5D=false'}
         ]);
         self.nameFilters = [
             { label : 'Caner Uguz', userID : '8q36f'}
@@ -48,10 +48,15 @@ var FileBrowser = {
             if (value !== self.filesData()) {
                 self.filesData(value);
                 self.isLoadedUrl = false; // check if in fact changed
-                self.updateList();
+                //self.updateList();
             }
         };
 
+        self.generateLinks = function (type, data) {
+            if(type === 'node'){
+                return $osf.apiV2Url('nodes/' + data + '/children', {});
+            }
+        };
         // INFORMATION PANEL
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){
@@ -75,7 +80,7 @@ var FileBrowser = {
         self.updateUserFilter = function(user) {
             self.activeUser(user.id);
             var url  = 'v2/users/' + user.userID;
-            self.updateList(url);
+            //self.updateList(url);
         };
 
         // Refresh the Grid
@@ -88,19 +93,31 @@ var FileBrowser = {
         }.bind(self);
 
         // BREADCRUMBS
-        self.updateBreadcrumbs = function(){
-
+        self.updateBreadcrumbs = function(node){
+            var link = self.generateLinks('node', node.uid);
+            self.breadcrumbs().push({
+                label : node.attributes.title,
+                url : link,
+                uid : node.id
+            });
+            self.updateFilesData(link);
         }.bind(self);
+
+        self.loadBreadcrumbs = function(item){
+            self.updateFilesData(item.url);
+        };
 
     },
     view : function (ctrl) {
         return m('', [
-            m.component(Breadcrumbs, { data : ctrl.breadcrumbs } ),
+            m.component(Breadcrumbs, { data : ctrl.breadcrumbs, loadBreadcrumbs : ctrl.loadBreadcrumbs} ),
             m('.fb-sidebar', [
                 m.component(Collections, {list : ctrl.collections, activeCollection : ctrl.activeCollection, updateCollection : ctrl.updateCollection } ),
                 m.component(Filters, { activeUser : ctrl.activeUser, updateUser : ctrl.updateUserFilter, nameFilters : ctrl.nameFilters, tagFilters : ctrl.tagFilters })
             ]),
-            m('.fb-main', { config: ctrl.updateList }, m('#pOrganizer' )),
+            m('.fb-main', {
+            //    config: ctrl.updateList
+            }, m('#pOrganizer', m.component( ProjectOrganizer, { filesData : ctrl.filesData, updateSelected : ctrl.updateSelected, updateBreadcrumbs : ctrl.updateBreadcrumbs}) )),
             m('.fb-infobar', m.component(Information, { selected : ctrl.selected }))
         ]);
     }
@@ -135,17 +152,20 @@ var Collections  = {
  * @constructor
  */
 var Breadcrumbs = {
-    controller : function (data) {
-        this.data = data ? data.data : [];
+    controller : function (args) {
+        var self = this;
+        self.updateFilesData = function() {
+            args.loadBreadcrumbs(this);
+        };
     },
-    view : function (ctrl) {
+    view : function (ctrl, args) {
         return m('.fb-breadcrumbs', m('ul', [
-            ctrl.data().map(function(item, index, array){
+            args.data().map(function(item, index, array){
                 if(index === array.length-1){
                     return m('li',  item.label);
                 }
                 return m('li',
-                    m('a', { href : item.href},  item.label),
+                    m('a', { href : '#', onclick : ctrl.updateFilesData.bind(item)},  item.label),
                     m('i.fa.fa-chevron-right')
                 );
             })

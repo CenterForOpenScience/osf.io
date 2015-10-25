@@ -112,7 +112,11 @@ function _poTitleColumn(item) {
     if (item.data.archiving) { // TODO check if this variable will be available
         return  m('span', {'class': 'registration-archiving'}, node.attributes.title + ' [Archiving]');
     } else if(node.links.html){
-        return m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title);
+        return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title),
+            m('span', { ondblclick : function(){
+                tb.options.updateBreadcrumbs(node);
+            }}, ' -Open')
+        ];
     } else {
         return  m('span', { 'class' : css}, node.attributes.title);
     }
@@ -1459,8 +1463,15 @@ var tbOptions = {
     }
 };
 
+var counter = 0;
 var ProjectOrganizer = {
     controller : function (args) {
+        console.log(counter++);
+
+        //this.tb = Treebeard(poOptions, true);
+    },
+    view : function (ctrl, args) {
+        console.log(args.filesData());
         var poOptions = $.extend(
             {
                 updateSelected : args.updateSelected,
@@ -1469,10 +1480,7 @@ var ProjectOrganizer = {
             },
             tbOptions
         );
-        this.tb = new Treebeard(poOptions, true);
-    },
-    view : function (ctrl, args) {
-        return m('.fb-project-organizer#projectOrganizer', ctrl.tb);
+        return m('.fb-project-organizer#projectOrganizer', Treebeard(poOptions, true));
     }
 };
 
