@@ -1,4 +1,3 @@
-from datetime import datetime
 from rest_framework import serializers as ser
 from framework.guid.model import Guid
 from framework.auth.core import Auth
@@ -49,27 +48,14 @@ class CommentSerializer(JSONAPISerializer):
         type_ = 'comments'
 
     def create(self, validated_data):
-        user = self.context['request'].user
-        node_id = self.context['view'].kwargs.get('node_id', None)
-        target_id = self.context['view'].kwargs.get('comment_id', None)
+        user = validated_data['user']
+        node = validated_data['node']
 
-        if node_id:
-            node = self.context['view'].get_node()
-            target = node
-        elif target_id:
-            target = Comment.load(target_id)
-            node = target.node
-
-        validated_data['user'] = user
-        validated_data['node'] = node
-        validated_data['target'] = target
         validated_data['content'] = validated_data.pop('return_content')
-
-        if node.can_comment(Auth(user)):
+        if node and node.can_comment(Auth(user)):
             comment = Comment.create(auth=Auth(user), **validated_data)
         else:
             raise PermissionDenied("Not authorized to comment on this project.")
-
         return comment
 
     def update(self, comment, validated_data):

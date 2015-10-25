@@ -60,7 +60,10 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
-        self.get_comment(check_permissions=True)
+        target = self.get_comment()
+        serializer.validated_data['user'] = self.request.user
+        serializer.validated_data['target'] = target
+        serializer.validated_data['node'] = target.node
         serializer.save()
 
 

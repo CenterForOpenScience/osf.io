@@ -177,7 +177,7 @@ class TestCommentRepliesCreate(ApiTestCase):
         url = '/{}comments/{}/replies/'.format(API_BASE, 'abcde')
         res = self.app.post_json_api(url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
-        assert_equal(res.json['errors'][0]['detail'], 'NOT FOUND')
+        assert_equal(res.json['errors'][0]['detail'], 'Not found.')
 
     def test_private_node_logged_in_admin_can_reply(self):
         self._set_up_private_project_comment_reply()

@@ -1296,3 +1296,10 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
 
     def get_queryset(self):
         return Comment.find(self.get_query_from_request())
+
+    def perform_create(self, serializer):
+        node = self.get_node()
+        serializer.validated_data['user'] = self.request.user
+        serializer.validated_data['target'] = node
+        serializer.validated_data['node'] = node
+        serializer.save()
