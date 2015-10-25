@@ -1410,6 +1410,17 @@ class TestNode(OsfTestCase):
         with assert_raises(PermissionsError):
             project.set_privacy('private', Auth(non_contrib))
 
+    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self):
+        n_orig_logs = len(self.parent.get_aggregate_logs_queryset(Auth(self.user)))
+
+        log = self.parent.logs[-1]
+        log.should_hide = True
+        log.save()
+
+        n_new_logs = len(self.parent.get_aggregate_logs_queryset(Auth(self.user)))
+        # Hidden log is not returned
+        assert_equal(n_new_logs, n_orig_logs - 1)
+
     def test_validate_categories(self):
         with assert_raises(ValidationError):
             Node(category='invalid').save()  # an invalid category
