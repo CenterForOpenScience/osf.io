@@ -12,9 +12,8 @@ from website.util import permissions as osf_permissions
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
 from api.base.serializers import (LinksField, JSONAPIHyperlinkedIdentityField, DevOnly,
-                                  JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, 
+                                  JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink,
                                   IDField, TypeField, TargetTypeField, JSONAPIListField)
-from api.base.exceptions import InvalidModelValueError
 
 
 class NodeTagField(ser.Field):

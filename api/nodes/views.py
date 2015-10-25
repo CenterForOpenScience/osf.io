@@ -520,7 +520,7 @@ class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDest
             contributor.node_id = node._id
             contributors.append(contributor)
         return contributors
-        
+
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
         """
@@ -532,11 +532,11 @@ class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDest
             return NodeContributorsCreateSerializer
         else:
             return NodeContributorsSerializer
-        
+
     # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
         queryset = self.get_queryset_from_request()
-        
+
         # If bulk request, queryset only contains contributors in request
         if is_bulk_request(self.request):
             contrib_ids = [item['id'] for item in self.request.data]
@@ -551,7 +551,7 @@ class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDest
         res = super(NodeContributorsList, self).get_parser_context(http_request)
         res['is_relationship'] = True
         return res
-       
+
     # Overrides BulkDestroyJSONAPIView
     def perform_destroy(self, instance):
         user = self.request.user

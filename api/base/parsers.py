@@ -44,13 +44,13 @@ class JSONAPIParser(JSONParser):
 
         id = data.get('id')
         return {'id': id, 'target_type': target_type}
-    
+
     def flatten_data(self, resource_object, request_method, is_list, is_relationship):
         """
         Flattens data objects, making attributes and relationships fields the same level as id and type.
         """
         relationships = resource_object.get('relationships')
-        
+
         # Request must include "relationships" or "attributes"
         if is_relationship and request_method == 'POST':
             if not relationships:
@@ -72,14 +72,14 @@ class JSONAPIParser(JSONParser):
 
         attributes = resource_object.get('attributes')
         parsed = {'id': object_id, 'type': object_type}
-        
+
         if attributes:
             parsed.update(attributes)
-            
+
         if relationships:
             relationships = self.flatten_relationships(relationships)
             parsed.update(relationships)
-            
+
         return parsed
 
     def parse(self, stream, media_type=None, parser_context=None):
@@ -87,20 +87,20 @@ class JSONAPIParser(JSONParser):
         Parses the incoming bytestream as JSON and returns the resulting data.
         """
         result = super(JSONAPIParser, self).parse(stream, media_type=media_type, parser_context=parser_context)
-        
+
         if not isinstance(result, dict):
             raise ParseError()
         data = result.get('data', {})
-        
+
         is_relationship = parser_context.get('is_relationship')
-        
+
         method = parser_context['request'].method
-        
+
         if data:
             if is_bulk_request(parser_context['request']):
                 if not isinstance(data, list):
                     raise ParseError('Expected a list of items but got type "dict".')
-                
+
                 data_collection = []
                 data_collection.extend([self.flatten_data(data_object, method, True, is_relationship) for data_object in data])
 
