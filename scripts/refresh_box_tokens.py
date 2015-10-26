@@ -19,8 +19,10 @@ logging.basicConfig(level=logging.INFO)
 
 
 def get_targets(delta):
+    # NOTE: expires_at is the  access_token's expiration date,
+    # NOT the refresh token's
     return ExternalAccount.find(
-        Q('expires_at', 'lt', datetime.datetime.utcnow() + delta) &
+        Q('expires_at', 'lt', datetime.datetime.utcnow() - delta) &
         Q('provider', 'eq', 'box')
     )
 
@@ -46,7 +48,7 @@ if __name__ == '__main__':
     try:
         days = int(sys.argv[2])
     except (IndexError, ValueError, TypeError):
-        days = 7  # refresh tokens that expire this week
+        days = 60 - 7  # refresh tokens that expire this week
     delta = relativedelta(days=days)
     # Log to file
     if not dry_run:
