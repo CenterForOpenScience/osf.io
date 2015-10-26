@@ -192,6 +192,26 @@ class RelationshipField(JSONAPIHyperlinkedIdentityField):
             kwargs[lookup_url_kwarg] = lookup_value
         return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
 
+    def get_meta_information(self, meta_data, value):
+        meta = {}
+        if meta_data:
+            for key in meta_data or {}:
+                if key == 'count':
+                    show_related_counts = self.context['request'].query_params.get('related_counts', False)
+                    if utils.is_truthy(show_related_counts):
+                        meta[key] = _rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+                    elif utils.is_falsy(show_related_counts):
+                        continue
+                    else:
+                        raise InvalidQueryStringError(
+                            detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
+                            parameter='related_counts'
+                        )
+                else:
+                    meta[key] = _rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
+            return meta
+        return None
+
     def to_representation(self, value):
 
         request = self.context.get('request', None)
@@ -209,7 +229,10 @@ class RelationshipField(JSONAPIHyperlinkedIdentityField):
         else:
             self_url = None
 
-        return {'links': {'related': {'href': related_url}, 'self': {'href': self_url}}}
+        self_meta = self.get_meta_information(self.self_meta, value)
+        related_meta = self.get_meta_information(self.related_meta, value)
+
+        return {'links': {'related': {'href': related_url, 'meta': related_meta}, 'self': {'href': self_url, 'meta': self_meta}}}
 
 
 class LinksField(ser.Field):
