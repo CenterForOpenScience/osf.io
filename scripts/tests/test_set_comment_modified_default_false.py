@@ -1,10 +1,8 @@
 from nose.tools import *
-from modularodm import Q
 
 from scripts.set_comment_modified_default_false import get_targets, do_migration
 from tests.base import OsfTestCase
 from tests.factories import CommentFactory
-from website.project.model import Comment
 
 
 class TestUpdateDefaultCommentModified(OsfTestCase):
@@ -12,7 +10,7 @@ class TestUpdateDefaultCommentModified(OsfTestCase):
     def test_get_targets(self):
         comment = CommentFactory(modified=None)
         modified_comment = CommentFactory(modified=True)
-        targets = Comment.find(Q('modified', 'eq', None))
+        targets = get_targets()
         assert_equal(targets.count(), 1)
 
     def test_unmodified_comment_default_is_set_to_false(self):
@@ -28,7 +26,7 @@ class TestUpdateDefaultCommentModified(OsfTestCase):
 
     def test_update_default_modified_updates_all_targets(self):
         comment = CommentFactory(modified=None)
-        targets = Comment.find(Q('modified', 'eq', None))
+        targets = get_targets()
         assert_equal(targets.count(), 1)
 
         do_migration(get_targets(), dry=False)
