@@ -73,19 +73,19 @@ class Mendeley(ExternalProvider):
                 'token_type': 'bearer',
             })
 
-        #Check if Mendeley can be accessed
-        try:
-            self._client.folders.list()
-        except MendeleyApiException, error:
-            if error.status == 403:
-                raise HTTPError(403, data=dict(
-                    message_short='Authorization Error',
-                    message_long='Could not retrieve Mendeley settings at this time. The credentials associated with '
-                                 'this Mendeley account may no longer be valid. Try disconnecting and reconnecting the '
-                                 'Mendeley account on your account settings page.'
-                ))
-            else:
-                raise HTTPError(error.status)
+            #Check if Mendeley can be accessed
+            try:
+                self._client.folders.list()
+            except MendeleyApiException as error:
+                if error.status == 403:
+                    raise HTTPError(403, data=dict(
+                        message_short='Authorization Error',
+                        message_long='Could not retrieve Mendeley settings at this time. The credentials associated with '
+                                     'this Mendeley account may no longer be valid. Try disconnecting and reconnecting the '
+                                     'Mendeley account on your account settings page.'
+                    ))
+                else:
+                    raise HTTPError(error.status)
 
         return self._client
 

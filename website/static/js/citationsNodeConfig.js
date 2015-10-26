@@ -63,7 +63,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     });
                 },
                 ondataloaderror: function(err){
-                    $osf.handleHTTPError(err);
+                    $osf.handleAddonApiHTTPError(err);
                     self.destroyPicker();
                     self.loading(false);
                     $(self.folderpickerSelector).html(errorpage);
