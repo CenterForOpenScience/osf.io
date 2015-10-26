@@ -1,7 +1,6 @@
 from rest_framework import serializers as ser
-from rest_framework import exceptions, status
-from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError, APIException
+from rest_framework import exceptions
+from rest_framework.exceptions import ValidationError
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
@@ -15,7 +14,7 @@ from website.util import permissions as osf_permissions
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField, JSONAPIListField
-from api.base.exceptions import InvalidModelValueError, json_api_exception_handler
+from api.base.exceptions import InvalidModelValueError
 
 
 class NodeTagField(ser.Field):
