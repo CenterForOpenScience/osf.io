@@ -3,6 +3,7 @@ import functools
 import operator
 
 from modularodm import Q
+from modularodm.query.queryset import BaseQuerySet
 from rest_framework.filters import OrderingFilter
 from rest_framework import serializers as ser
 
@@ -17,7 +18,10 @@ class ODMOrderingFilter(OrderingFilter):
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
         if ordering:
-            return queryset.sort(*ordering)
+            if isinstance(queryset, BaseQuerySet):
+                return queryset.sort(*ordering)
+            else:
+                return sorted(queryset, cmp=operator.attrgetter(*ordering))
         return queryset
 
 query_pattern = re.compile(r'filter\[\s*(?P<field>\S*)\s*\]\s*')
@@ -168,12 +172,15 @@ class ListFilterMixin(FilterMixin):
         """filters default queryset based on query parameters"""
         fields_dict = query_params_to_fields(query_params)
         queryset = set(default_queryset)
-        if fields_dict:
-            for field_name, value in fields_dict.items():
-                if self.is_filterable_field(key=field_name):
-                    queryset = queryset.intersection(set(self.get_filtered_queryset(field_name, value, default_queryset)))
-                else:
-                    raise InvalidFilterError
+        for field_name, value in fields_dict.items():
+            if self.is_filterable_field(key=field_name):
+                filtered_queryset = set(self.get_filtered_queryset(field_name, value, default_queryset))
+                queryset = [
+                    result for result in queryset
+                    if result in filtered_queryset
+                ]
+            else:
+                raise InvalidFilterError
         return list(queryset)
 
     def get_filtered_queryset(self, field_name, value, default_queryset):
@@ -186,7 +193,7 @@ class ListFilterMixin(FilterMixin):
         elif isinstance(field, ser.BooleanField):
             return_val = [item for item in default_queryset if getattr(item, field_source, None) == self.convert_value(value, field_name)]
         elif isinstance(field, ser.CharField):
-            return_val = [item for item in default_queryset if value.lower() in getattr(item, field_source, None).lower()]
+            return_val = [item for item in default_queryset if value.lower() in getattr(item, field_source, '').lower()]
         else:
             # TODO Ensure that if you try to filter on an invalid field, it returns a useful error.
             return_val = [item for item in default_queryset if value in getattr(item, field_source, None)]
