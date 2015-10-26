@@ -5,6 +5,7 @@ from random import SystemRandom
 from modularodm.fields import BooleanField, StringField, IntegerField
 from oath import accept_totp
 
+from framework.status import push_status_message
 from website.addons.base import AddonUserSettingsBase
 
 class TwoFactorUserSettings(AddonUserSettingsBase):
