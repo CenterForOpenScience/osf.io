@@ -13,9 +13,12 @@ from website.project.model import (
     Retraction, Embargo, RegistrationApproval,
     Sanction, AlternativeCitation
 )
+
 from website.oauth.models import ApiOAuth2Application, ExternalAccount
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
+
+from website.mails import QueuedMail
 from website.files.models.base import FileVersion
 from website.files.models.base import StoredFileNode
 from website.files.models.base import TrashedFileNode
@@ -33,7 +36,8 @@ MODELS = (
     NotificationSubscription, NotificationDigest, CitationStyle,
     CitationStyle, ExternalAccount, Identifier,
     Embargo, Retraction, RegistrationApproval,
-    ArchiveJob, ArchiveTarget, BlacklistGuid, Sanction, AlternativeCitation
+    ArchiveJob, ArchiveTarget, BlacklistGuid, Sanction,
+    QueuedMail, AlternativeCitation
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

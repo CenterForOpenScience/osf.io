@@ -123,6 +123,10 @@ class TestUser(base.OsfTestCase):
 
 class TestUserMerging(base.OsfTestCase):
     ADDONS_UNDER_TEST = {
+        'deletable': {
+            'user_settings': factories.MockAddonUserSettings,
+            'node_settings': factories.MockAddonNodeSettings,
+        },
         'unmergeable': {
             'user_settings': factories.MockAddonUserSettings,
             'node_settings': factories.MockAddonNodeSettings,
@@ -176,6 +180,13 @@ class TestUserMerging(base.OsfTestCase):
         self.user.add_addon('unmergeable')
 
         assert_false(self.user.can_be_merged)
+
+    def test_can_be_merged_delete_unmergable_addon(self):
+        self.user.add_addon('mergeable')
+        self.user.add_addon('deletable')
+        self.user.delete_addon('deletable')
+
+        assert_true(self.user.can_be_merged)
 
     def test_merge_unconfirmed_into_unmergeable(self):
         self.user.add_addon('unmergeable')
@@ -244,12 +255,12 @@ class TestUserMerging(base.OsfTestCase):
         self.user.external_accounts = [factories.ExternalAccountFactory()]
         other_user.external_accounts = [factories.ExternalAccountFactory()]
 
-        self.user.mailing_lists = {
+        self.user.mailchimp_mailing_lists = {
             'user': True,
             'shared_gt': True,
             'shared_lt': False,
         }
-        other_user.mailing_lists = {
+        other_user.mailchimp_mailing_lists = {
             'other': True,
             'shared_gt': False,
             'shared_lt': True,
@@ -301,6 +312,7 @@ class TestUserMerging(base.OsfTestCase):
             'suffix',
             'timezone',
             'username',
+            'mailing_lists',
             'verification_key',
             'contributor_added_email_records'
         ]
@@ -324,11 +336,14 @@ class TestUserMerging(base.OsfTestCase):
                 self.user.external_accounts[0]._id,
                 other_user.external_accounts[0]._id,
             ],
-            'mailing_lists': {
+            'mailchimp_mailing_lists': {
                 'user': True,
                 'other': True,
                 'shared_gt': True,
                 'shared_lt': True,
+            },
+            'osf_mailing_lists': {
+                'Open Science Framework Help': True
             },
             'security_messages': {
                 'user': today,
@@ -358,7 +373,7 @@ class TestUserMerging(base.OsfTestCase):
         # mock mailchimp
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailing_lists)]}
+        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
 
         # perform the merge
         self.user.merge_user(other_user)
