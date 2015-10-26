@@ -1,169 +1,17 @@
 # -*- coding: utf-8 -*-
 import abc
-import httplib as http
 
-import mock
 from nose.tools import *  # noqa (PEP8 asserts)
 
 from framework.auth import Auth
 
-from website import settings
 from website.addons.base import exceptions
-from website.util import api_url_for, web_url_for
 
-from tests.base import OsfTestCase
-from tests.factories import AuthUserFactory, ProjectFactory, UserFactory
+from tests.factories import ProjectFactory, UserFactory
 from tests.utils import patch_dynamic
 
-class AddonTestCase(OsfTestCase):
-    """General Addon TestCase that automatically sets up a user and node with
-    an addon.
 
-    Must define:
-
-        - ADDON_SHORT_NAME (class variable)
-        - set_user_settings(self, settings): Method that makes any modifications
-            to the UserSettings object, e.g. setting access_token
-        - set_node_settings(self, settings): Metehod that makes any modifications
-            to the NodeSettings object.
-
-    This will give you:
-
-        - self.user: A User with the addon enabled
-        - self.project: A project created by self.user and has the addon enabled
-        - self.user_settings: AddonUserSettings object for the addon
-        - self.node_settings: AddonNodeSettings object for the addon
-
-    """
-    DB_NAME = getattr(settings, 'TEST_DB_ADDON_NAME', 'osf_addon')
-    ADDON_SHORT_NAME = None
-    OWNERS = ['user', 'node']
-    NODE_USER_FIELD = 'user_settings'
-
-    # Optional overrides
-    def create_user(self):
-        return AuthUserFactory.build()
-
-    def create_project(self):
-        return ProjectFactory(creator=self.user)
-
-    def set_user_settings(self, settings):
-        """Make any necessary modifications to the user settings object,
-        e.g. setting access_token.
-
-        """
-        raise NotImplementedError('Must define set_user_settings(self, settings) method')
-
-    def set_node_settings(self, settings):
-        raise NotImplementedError('Must define set_node_settings(self, settings) method')
-
-    def create_user_settings(self):
-        """Initialize user settings object if requested by `self.OWNERS`.
-
-        """
-        if 'user' not in self.OWNERS:
-            return
-        self.user.add_addon(self.ADDON_SHORT_NAME, override=True)
-        assert self.user.has_addon(self.ADDON_SHORT_NAME), '{0} is not enabled'.format(self.ADDON_SHORT_NAME)
-        self.user_settings = self.user.get_addon(self.ADDON_SHORT_NAME)
-        self.set_user_settings(self.user_settings)
-        self.user_settings.save()
-
-    def create_node_settings(self):
-        """Initialize node settings object if requested by `self.OWNERS`,
-        additionally linking to user settings if requested by
-        `self.NODE_USER_FIELD`.
-
-        """
-        if 'node' not in self.OWNERS:
-            return
-        self.project.add_addon(self.ADDON_SHORT_NAME, auth=Auth(self.user))
-        self.node_settings = self.project.get_addon(self.ADDON_SHORT_NAME)
-        # User has imported their addon settings to this node
-        if self.NODE_USER_FIELD:
-            setattr(self.node_settings, self.NODE_USER_FIELD, self.user_settings)
-        self.set_node_settings(self.node_settings)
-        self.node_settings.save()
-
-    def setUp(self):
-
-        super(AddonTestCase, self).setUp()
-
-        self.user = self.create_user()
-        if not self.ADDON_SHORT_NAME:
-            raise ValueError('Must define ADDON_SHORT_NAME in the test class.')
-        self.user.save()
-
-        self.project = self.create_project()
-        self.project.save()
-
-        self.create_user_settings()
-        self.create_node_settings()
-
-class OAuthAddonTestCase(AddonTestCase):
-
-    @property
-    def ExternalAccountFactory(self):
-        raise NotImplementedError()
-
-    def set_user_settings(self, settings):
-        self.external_account = self.ExternalAccountFactory()
-        self.external_account.save()
-        self.user.external_accounts.append(self.external_account)
-        self.user.save()
-
-    def set_node_settings(self, settings):
-        self.user_settings.grant_oauth_access(self.project, self.external_account)
-
-class OAuthAddonAuthViewsTestCase(OAuthAddonTestCase):
-
-    @property
-    def Provider(self):
-        raise NotImplementedError()
-
-    def test_oauth_start(self):
-        url = api_url_for(
-            'oauth_connect',
-            service_name=self.ADDON_SHORT_NAME
-        )
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.FOUND)
-        assert_equal(res.location, self.Provider.auth_url)
-
-    def test_oauth_finish(self):
-        url = web_url_for(
-            'oauth_callback',
-            service_name=self.ADDON_SHORT_NAME
-        )
-        with mock.patch.object(self.Provider, 'auth_callback') as mock_callback:
-            mock_callback.return_value = True
-            res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
-        name, args, kwargs = mock_callback.mock_calls[0]
-        assert_equal(kwargs['user']._id, self.user._id)
-
-    def test_delete_external_account(self):
-        url = api_url_for(
-            'oauth_disconnect',
-            external_account_id=self.external_account._id
-        )
-        res = self.app.delete(url, auth=self.user.auth)
-        assert_equal(res.status_code, http.OK)
-        self.user.reload()
-        for account in self.user.external_accounts:
-            assert_not_equal(account._id, self.external_account._id)
-        assert_false(self.user.external_accounts)
-
-    def test_delete_external_account_not_owner(self):
-        other_user = AuthUserFactory()
-        url = api_url_for(
-            'oauth_disconnect',
-            external_account_id=self.external_account._id
-        )
-        res = self.app.delete(url, auth=other_user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.FORBIDDEN)
-
-class OAuthAddonTestSuiteBase(object):
+class OAuthAddonModelTestSuiteMixinBase(object):
 
     ___metaclass__ = abc.ABCMeta
 
@@ -180,10 +28,10 @@ class OAuthAddonTestSuiteBase(object):
         pass
 
 
-class OAuthAddonUserSettingTestSuite(OAuthAddonTestSuiteBase):
+class OAuthAddonUserSettingTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
     def setUp(self):
-        super(OAuthAddonUserSettingTestSuite, self).setUp()
+        super(OAuthAddonUserSettingTestSuiteMixin, self).setUp()
         self.node = ProjectFactory()
         self.user = self.node.creator
 
@@ -268,7 +116,7 @@ class OAuthAddonUserSettingTestSuite(OAuthAddonTestSuiteBase):
             )
         )
 
-class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
+class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
 
     @abc.abstractproperty
     def NodeSettingsFactory(self):
@@ -290,7 +138,7 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
         }
 
     def setUp(self):
-        super(OAuthAddonNodeSettingsTestSuite, self).setUp()
+        super(OAuthAddonNodeSettingsTestSuiteMixin, self).setUp()
         self.node = ProjectFactory()
         self.user = self.node.creator
         self.external_account = self.ExternalAccountFactory()
@@ -314,7 +162,7 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
         self.node_settings.save()
 
     def tearDown(self):
-        super(OAuthAddonNodeSettingsTestSuite, self).tearDown()
+        super(OAuthAddonNodeSettingsTestSuiteMixin, self).tearDown()
         self.user_settings.remove()
         self.node_settings.remove()
         self.external_account.remove()
@@ -325,7 +173,7 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
         assert_true(self.node_settings.has_auth)
         assert_true(self.node_settings.complete)
 
-    def test_complete_false(self):
+    def test_complete_has_auth_not_verified(self):
         self.user_settings.revoke_oauth_access(self.external_account)
 
         assert_true(self.node_settings.has_auth)
@@ -353,11 +201,13 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
     def test_has_auth(self):
         self.user.external_accounts = []
         self.user_settings.reload()
-        settings = self.NodeSettingsClass(user_settings=self.user_settings)
+        node = ProjectFactory()
+        settings = self.NodeSettingsClass(user_settings=self.user_settings, owner=node)
         settings.save()
         assert_false(settings.has_auth)
 
         self.user.external_accounts.append(self.external_account)
+        settings.set_auth(self.external_account, self.user)
         settings.reload()
         assert_true(settings.has_auth)
 
@@ -432,7 +282,7 @@ class OAuthAddonNodeSettingsTestSuite(OAuthAddonTestSuiteBase):
         user_settings.save()
 
         node_settings.external_account = external_account
-        node_settings.set_user_auth(user_settings)
+        node_settings.set_auth(external_account, user_settings.owner)
         node_settings.save()
 
         assert_true(node_settings.has_auth)
