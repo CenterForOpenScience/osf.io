@@ -1414,6 +1414,17 @@ class TestNode(OsfTestCase):
         with assert_raises(PermissionsError):
             project.set_privacy('private', Auth(non_contrib))
 
+    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self):
+        n_orig_logs = len(self.parent.get_aggregate_logs_queryset(Auth(self.user)))
+
+        log = self.parent.logs[-1]
+        log.should_hide = True
+        log.save()
+
+        n_new_logs = len(self.parent.get_aggregate_logs_queryset(Auth(self.user)))
+        # Hidden log is not returned
+        assert_equal(n_new_logs, n_orig_logs - 1)
+
     def test_validate_categories(self):
         with assert_raises(ValidationError):
             Node(category='invalid').save()  # an invalid category
@@ -1469,6 +1480,12 @@ class TestNode(OsfTestCase):
     def test_api_url_for_absolute(self):
         result = self.parent.api_url_for('view_project', _absolute=True)
         assert_in(settings.DOMAIN, result)
+
+    def test_get_absolute_url(self):
+        assert_equal(self.node.get_absolute_url(),
+                     '{}v2/nodes/{}/'
+                     .format(settings.API_DOMAIN, self.node._id)
+                     )
 
     def test_node_factory(self):
         node = NodeFactory()
@@ -3582,6 +3599,12 @@ class TestRegisterNode(OsfTestCase):
 
     def test_registered_from(self):
         assert_equal(self.registration.registered_from, self.project)
+
+    def test_registered_get_absolute_url(self):
+        assert_equal(self.registration.get_absolute_url(),
+                     '{}v2/registrations/{}/'
+                        .format(settings.API_DOMAIN, self.registration._id)
+        )
 
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)
