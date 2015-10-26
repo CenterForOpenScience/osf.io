@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+1# -*- coding: utf-8 -*-
 """Views tests for the Box addon."""
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
@@ -13,18 +13,17 @@ from box.client import BoxClientException
 from tests.factories import AuthUserFactory
 
 from website.addons.box.tests.utils import (
-    BoxAddonTestCaseMixin,
     BoxAddonTestCase,
     MockBox,
     patch_client
 )
 from website.addons.box.utils import box_addon_folder
 from website.addons.box.serializer import BoxSerializer
-from website.addons.base.testing import OAuthAddonAuthViewsTestCase
+from website.addons.base import testing
 
 mock_client = MockBox()
 
-class TestAuthViews(BoxAddonTestCaseMixin, OAuthAddonAuthViewsTestCase):
+class TestAuthViews(BoxAddonTestCase, testing.views.OAuthAddonAuthViewsTestCaseMixin):
     pass
 
 class TestConfigViews(BoxAddonTestCase):
@@ -242,7 +241,7 @@ class TestConfigViews(BoxAddonTestCase):
         self.node_settings.save()
         url = api_url_for('box_add_user_auth', pid=self.project._primary_key)
         res = self.app.put_json(
-            url, 
+            url,
             {
                 'external_account_id': self.external_account._id,
             },
@@ -272,7 +271,7 @@ class TestConfigViews(BoxAddonTestCase):
         self.node_settings.save()
         url = api_url_for('box_add_user_auth', pid=self.project._primary_key)
         self.app.put_json(
-            url, 
+            url,
             {
                 'external_account_id': self.external_account._id,
             },

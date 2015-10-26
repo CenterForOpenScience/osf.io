@@ -347,10 +347,10 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
             if x.provider == self.oauth_provider.short_name
         ]
 
-    def delete(self):
+    def delete(self, save=True):
         for account in self.external_accounts:
             self.revoke_oauth_access(account, save=False)
-        super(AddonOAuthUserSettingsBase, self).delete()
+        super(AddonOAuthUserSettingsBase, self).delete(save=save)
 
     def grant_oauth_access(self, node, external_account, metadata=None):
         """Give a node permission to use an ``ExternalAccount`` instance."""
@@ -772,7 +772,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     @property
     def provider_id(self):
         raise NotImplementedError(
-            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_id' property."
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'provider_id' property."
         )
 
     @property
@@ -785,13 +785,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     @property
     def has_auth(self):
         """Instance has an external account and *active* permission to use it"""
-        if not (self.user_settings and self.external_account):
-            return False
-
-        return self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account
-        )
+        return bool(self.user_settings and self.user_settings.has_auth)
 
     def clear_settings(self):
         raise NotImplementedError(

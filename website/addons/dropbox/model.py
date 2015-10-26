@@ -128,8 +128,6 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def set_auth(self, external_account, user):
         """Import a user's Dropbox authentication and create a NodeLog.
-
-        :param DropboxUserSettings user_settings: The user settings to link.
         """
         super(DropboxNodeSettings, self).set_auth(external_account, user)
         user_settings = user.get_addon(self.config.short_name)

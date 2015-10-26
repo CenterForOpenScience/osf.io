@@ -11,12 +11,10 @@ from website.addons.box.tests.factories import (
 )
 from website.addons.box.model import BoxNodeSettings
 
-from website.addons.base.testing import (
-    OAuthAddonUserSettingTestSuite,
-    OAuthAddonNodeSettingsTestSuite
-)
+from website.addons.base.testing import models
 
-class TestNodeSettings(OAuthAddonNodeSettingsTestSuite, OsfTestCase):
+
+class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase):
 
     short_name = 'box'
     full_name = 'Box'
@@ -31,8 +29,8 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuite, OsfTestCase):
         mock_refresh.return_value = True
         super(TestNodeSettings, self).test_serialize_credentials()
 
-class TestUserSettings(OAuthAddonUserSettingTestSuite, OsfTestCase):
+class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 
     short_name = 'box'
-    full_name = 'box'
+    full_name = 'Box'
     ExternalAccountFactory = BoxAccountFactory

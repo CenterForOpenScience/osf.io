@@ -144,11 +144,10 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder_name = None
         self.folder_path = None
 
-    def set_user_auth(self, user_settings):
-        """Import a user's Box authentication and create a NodeLog.
-
-        :param BoxUserSettings user_settings: The user settings to link.
-        """
+    def set_auth(self, external_account, user):
+        """Import a user's Box authentication and create a NodeLog."""
+        super(BoxNodeSettings, self).set_auth(external_account, user)
+        user_settings = user.get_addon(self.config.short_name)
         self.user_settings = user_settings
         nodelogger = BoxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
         nodelogger.log(action="node_authorized", save=True)

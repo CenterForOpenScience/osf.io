@@ -63,7 +63,7 @@ class OAuthAddonSerializer(AddonSerializer):
 
     @property
     def credentials_owner(self):
-        return self.user_settings.owner
+        return self.user_settings.owner if self.user_settings else None
 
     @property
     def user_is_owner(self):

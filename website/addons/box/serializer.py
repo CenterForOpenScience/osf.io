@@ -7,11 +7,9 @@ from box.client import BoxClient, BoxClientException
 
 class BoxSerializer(StorageAddonSerializer):
 
-    # overrides OAuthAddonSerializer
-    def credentials_owner(self, user_settings=None):
-        return user_settings.owner or self.user_settings.owner
+    addon_short_name = 'box'
 
-    def creditials_are_valid(self, user_settings, client):
+    def credentials_are_valid(self, user_settings, client):
         if user_settings:
             client = client or BoxClient(user_settings.external_accounts[0].oauth_key)
             try:
