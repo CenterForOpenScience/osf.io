@@ -1,6 +1,5 @@
 /**
- * Initialization code for the dashboard pages. Starts up the Project Organizer
- * and binds the onboarder Knockout components.
+ * Initialization code for the dashboard pages.
  */
 
 'use strict';
@@ -10,35 +9,24 @@ var ko = require('knockout');
 var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
-// Knockout components for the onboarder
-require('js/onboarder.js');
 var $osf = require('js/osfHelpers');
+var FileBrowser = require('js/file-browser.js');
 var LogFeed = require('js/logFeed');
 var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
+var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 
 var url = '/api/v1/dashboard/get_nodes/';
 var request = $.getJSON(url, function(response) {
     var allNodes = response.nodes;
-    //  For uploads, only show nodes for which user has write or admin permissions
-    var uploadSelection = ko.utils.arrayFilter(allNodes, function(node) {
-        return $.inArray(node.permissions, ['write', 'admin']) !== -1;
-    });
-
-    // If we need to change what nodes can be registered, filter here
-    var registrationSelection = ko.utils.arrayFilter(allNodes, function(node) {
-        return $.inArray(node.permissions, ['admin']) !== -1;
-    });
-
-    $osf.applyBindings({nodes: allNodes}, '#obGoToProject');
-    $osf.applyBindings({nodes: registrationSelection, enableComponents: true}, '#obRegisterProject');
-    $osf.applyBindings({nodes: uploadSelection}, '#obUploader');
-    $osf.applyBindings({nodes: allNodes}, '#obCreateProject');
+    //.. Getting nodes
 });
 request.fail(function(xhr, textStatus, error) {
     Raven.captureMessage('Could not fetch dashboard nodes.', {
         url: url, textStatus: textStatus, error: error
     });
 });
+
+var nodesListUrl = '/api/v1/dashboard/get_nodes/';
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
@@ -67,29 +55,24 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
 
 $(document).ready(function() {
     $('#projectOrganizerScope').tooltip({selector: '[data-toggle=tooltip]'});
+    //var request = $.ajax({
+    //    url:  'http://localhost:8000/v2/users/me/nodes',
+    //    crossOrigin: true,
+    //    xhrFields: { withCredentials: true}
+    //});
+    //request.done(function(result) {
 
-    var request = $.ajax({
-        url:  '/api/v1/dashboard/'
-    });
-    request.done(function(data) {
-        var po = new ProjectOrganizer({
-            placement : 'dashboard',
-            divID: 'project-grid',
-            filesData: data.data,
-            multiselect : true
-        });
-
-        ensureUserTimezone(data.timezone, data.locale, data.id);
-    });
-    request.fail(function(xhr, textStatus, error) {
-        Raven.captureMessage('Failed to populate user dashboard', {
-            url: url,
-            textStatus: textStatus,
-            error: error
-        });
-    });
+        m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser));
+        // TODO: new data does not have timezone information
+        //ensureUserTimezone(result.timezone, result.locale, result.id);
+    //});
+    //request.fail(function(xhr, textStatus, error) {
+    //    Raven.captureMessage('Failed to populate user dashboard', {
+    //        url: url,
+    //        textStatus: textStatus,
+    //        error: error
+    //    });
+    //});
 
 });
 
-// Initialize logfeed
-new LogFeed('#logScope', '/api/v1/watched/logs/');
