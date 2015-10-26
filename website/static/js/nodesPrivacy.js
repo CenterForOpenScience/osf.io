@@ -12,10 +12,11 @@ var oop = require('./oop');
 var $osf = require('./osfHelpers');
 var Paginator = require('./paginator');
 var osfHelpers = require('js/osfHelpers');
-
-var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard.js');
-
-
+var $ = require('jquery');
+var m = require('mithril');
+var Treebeard = require('treebeard');
+var $osf = require('js/osfHelpers');
+var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
 var ctx = window.contextVars;
 
@@ -49,23 +50,78 @@ var MESSAGES = {
     addonWarning: 'The following addons will be effected by this change.  Are you sure you want to continue?'
 };
 
+function getNodePrivacyDirty(nodeTree, nodesOriginal) {
+    var i;
+    var nodeId = nodeTree.node.id;
+    var nodeIsPublic = nodeTree.node.is_public;
+    var addons = nodeTree.node.addons;
+    nodesOriginal[nodeId] = {
+        isPublic: nodeIsPublic,
+        addons: addons
+    };
+    if (nodeTree.children) {
+        for (i in nodeTree.children) {
+            nodesOriginal = getNodePrivacyDirty(nodeTree.children[i], nodesOriginal);
+        }
+    }
+    //var localNodes = nodesOriginal;
+    return nodesOriginal;
+}
 
+//function getAddons(nodeTree, addons) {
+//    var nodeAddons = [];
+//    var i;
+//    debugger
+//    nodeAddons = nodeTree.node.addons;
+//    //for (i=0; i < nodeAddons.length; i++) {
+//    //    console.log('nodeAddons[i] is ' + nodeAddons[i]);
+//    //}
+//    addons.push(nodeTree.node.addons);
+//    if (nodeTree.children) {
+//        for (i in nodeTree.children) {
+//            addons = getAddons(nodeTree.children[i], addons);
+//        }
+//    }
+//    //var localNodes = nodesOriginal;
+//    return addons;
+//}
+//
 var NodesPrivacyViewModel = function() {
     var self = this;
-    // Initialize treebeard grid for privacySettings
-    var $notificationsMsg = $('#configureNotificationsMessage');
-    var treebeardUrl = ctx.node.urls.api  + 'get_node_tree/';
+    var nodesOriginal = {};
+    var addons = [];
 
+    self.nodesState = ko.observable({});
+
+    self.nodesState.subscribe(function(newValue) {
+        console.log('nodesState is ' + JSON.stringify(newValue));
+        m.redraw(true);
+    });
+
+    self.nodesChanged = ko.observable({});
+
+    self.nodesChanged.subscribe(function(newValue) {
+        console.log('nodesChanged is ' + JSON.stringify(newValue));
+        console.log('nodesOriginal is ' + JSON.stringify(nodesOriginal));
+    });
+
+    // Initialize treebeard grid for privacySettings
+    var $privacysMsg = $('#configurePrivacyMessage');
+    var treebeardUrl = ctx.node.urls.api  + 'get_node_tree/';
 
     $.ajax({
         url: treebeardUrl,
         type: 'GET',
         dataType: 'json'
     }).done(function(response) {
-        new NodesPrivacyTreebeard(response);
+        response[0].node.is_public = true;
+        addons = getAddons(response[0], addons);
+        nodesOriginal = getNodePrivacyDirty(response[0], nodesOriginal);
+        self.nodesState(nodesOriginal);
+        new NodesPrivacyTreebeard(response, self.nodesState, self.nodesChanged, nodesOriginal);
     }).fail(function(xhr, status, error) {
-        $notificationsMsg.addClass('text-danger');
-        $notificationsMsg.text('Could not retrieve project settings.');
+        $privacysMsg.addClass('text-danger');
+        $privacysMsg.text('Could not retrieve project settings.');
         Raven.captureMessage('Could not GET project settings.', {
             url: treebeardUrl, status: status, error: error
         });
@@ -87,23 +143,173 @@ var NodesPrivacyViewModel = function() {
     });
     self.message = ko.observable(MESSAGES.makeProjectPublicWarning);
 
+
+
     self.selectProjects =  function() {
-        this.page('select');
+        self.page('select');
     };
 
     self.addonWarning =  function() {
-        this.page('addon');
+        self.page('addon');
     };
 
     self.confirmChanges =  function() {
-         this.page('warning');
+         self.page('warning');
     };
 
     self.clear = function() {
-         this.page('warning');
+         self.page('warning');
+    };
+
+    self.selectAll = function() {
+        var node;
+        var nodesState = ko.toJS(self.nodesState());
+        var nodesChanged = ko.toJS(self.nodesChanged());
+        for (node in nodesState) {
+            nodesState[node] = true;
+            if (!nodesOriginal[node]) {
+                nodesChanged[node] = true;
+            }
+            else if (typeof (nodesChanged[node])) {
+                delete nodesChanged[node];
+            }
+        }
+        self.nodesState(nodesState);
+        self.nodesChanged(nodesChanged);
+        m.redraw(true);
+    };
+
+    self.selectNone = function() {
+        var node;
+        var nodesState = ko.toJS(self.nodesState());
+        var nodesChanged = ko.toJS(self.nodesChanged());
+        for (node in nodesState) {
+            nodesState[node] = false;
+            if (nodesOriginal[node]) {
+                nodesChanged[node] = false;
+            }
+            else if (typeof (nodesChanged[node])) {
+                delete nodesChanged[node];
+            }
+        }
+
+        self.nodesState(nodesState);
+        self.nodesChanged(nodesChanged);
+        m.redraw(true);
     };
 
 };
+
+function expandOnLoad() {
+    var tb = this;  // jshint ignore: line
+    for (var i = 0; i < tb.treeData.children.length; i++) {
+        var parent = tb.treeData.children[i];
+        tb.updateFolder(null, parent);
+        expandChildren(tb, parent.children);
+    }
+}
+
+function expandChildren(tb, children) {
+    var openParent = false;
+    for (var i = 0; i < children.length; i++) {
+        var child = children[i];
+        var parent = children[i].parent();
+        if (child.children.length > 0) {
+            expandChildren(tb, child.children);
+        }
+    }
+    if (openParent) {
+        openAncestors(tb, children[0]);
+    }
+}
+
+function openAncestors (tb, item) {
+    var parent = item.parent();
+    if(parent && parent.id > 0) {
+        tb.updateFolder(null, parent);
+        openAncestors(tb, parent);
+    }
+}
+
+function NodesPrivacyTreebeard(data, nodesState, nodesChanged, nodesOriginal) {
+    /** nodesChanged and nodesState are knockout variables.  nodesChanged will keep track of the nodes that have
+     *  changed state.  nodeState is all the nodes in their current state.
+     *
+     *
+     *
+     *
+     * */
+    var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
+        divID: 'grid',
+        filesData: data,
+        naturalScrollLimit : 0,
+        rowHeight : 35,
+        hScroll : 0,
+        columnTitles : function() {
+            return [
+                {
+                    title: 'checkBox',
+                    width: '4%',
+                    sortType : 'text',
+                    sort : true
+                },
+                {
+                    title: 'project',
+                    width : '96%',
+                    sortType : 'text',
+                    sort: true
+                }
+            ];
+        },
+        resolveRows: function nodesPrivacyResolveRows(item){
+            var columns = [];
+            var title = item.data.node.id;
+            var nodesStateLocal = ko.toJS(nodesState());
+            var nodesChangedLocal = ko.toJS(nodesChanged());
+
+            columns.push(
+                {
+                    data : 'action',
+                    sortInclude : false,
+                    filter : false,
+                    custom : function () {
+                        return m('input[type=checkbox]', {
+                            onclick : function() {
+                                /* nodesChanged is a knockout variable tracking necessary changes */
+                                item.data.node.is_public = !item.data.node.is_public;
+                                nodesStateLocal[title] = item.data.node.is_public;
+                                if (nodesStateLocal[title] !== nodesOriginal[title]) {
+                                    nodesChangedLocal[title] = item.data.node.is_public;
+                                }
+                                else if (typeof (nodesChangedLocal[title])) {
+                                    delete nodesChangedLocal[title];
+                                }
+                                nodesChanged(nodesChangedLocal);
+                                nodesState(nodesStateLocal);
+                            },
+                            checked: nodesState()[title]
+                        });
+                    }
+                },
+                {
+                    data: 'project',  // Data field name
+                    folderIcons: true,
+                    filter: true,
+                    sortInclude: false,
+                    hideColumnTitles: false,
+                    custom: function () {
+                        return m('span', item.data.node.title);
+                    }
+                }
+            );
+            return columns;
+        }
+    });
+    var grid = new Treebeard(tbOptions);
+    expandOnLoad.call(grid.tbController);
+}
+module.exports = NodesPrivacyTreebeard;
+
 
 function NodesPrivacy (selector, data, options) {
     var self = this;

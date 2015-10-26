@@ -6,6 +6,7 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 
+
 function expandOnLoad() {
     var tb = this;  // jshint ignore: line
     for (var i = 0; i < tb.treeData.children.length; i++) {
@@ -20,9 +21,6 @@ function expandChildren(tb, children) {
     for (var i = 0; i < children.length; i++) {
         var child = children[i];
         var parent = children[i].parent();
-        if (child.data.kind === 'event' && child.data.event.notificationType !== 'adopt_parent') {
-            openParent = true;
-        }
         if (child.children.length > 0) {
             expandChildren(tb, child.children);
         }
@@ -40,8 +38,14 @@ function openAncestors (tb, item) {
     }
 }
 
-function NodesPrivacyTreebeard(data) {
-
+function NodesPrivacyTreebeard(data, nodesState, nodesChanged, nodesOriginal) {
+    /** nodesChanged and nodesState are knockout variables.  nodesChanged will keep track of the nodes that have
+     *  changed state.  nodeState is all the nodes in their current state.
+     *
+     *
+     *
+     *
+     * */
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         divID: 'grid',
         filesData: data,
@@ -51,32 +55,47 @@ function NodesPrivacyTreebeard(data) {
         columnTitles : function() {
             return [
                 {
-                    title: "checkBox",
-                    width: "4%",
-                    sortType : "text",
+                    title: 'checkBox',
+                    width: '4%',
+                    sortType : 'text',
                     sort : true
                 },
                 {
-                    title: "project",
-                    width : "96%",
-                    sortType : "text",
+                    title: 'project',
+                    width : '96%',
+                    sortType : 'text',
                     sort: true
                 }
             ];
         },
         resolveRows: function nodesPrivacyResolveRows(item){
-            return [
+            var columns = [];
+            var title = item.data.node.id;
+            var nodesStateLocal = ko.toJS(nodesState());
+            var nodesChangedLocal = ko.toJS(nodesChanged());
+
+            columns.push(
                 {
                     data : 'action',
                     sortInclude : false,
                     filter : false,
                     custom : function () {
-                        var that = this;
-                        return m('input[type=checkbox]', {onclick : function() {
-                            item.data.is_public = true;
-                            that.updateFolder(item, data);
-                        },
-                            checked: item.data.node.is_public});
+                        return m('input[type=checkbox]', {
+                            onclick : function() {
+                                /* nodesChanged is a knockout variable tracking necessary changes */
+                                item.data.node.is_public = !item.data.node.is_public;
+                                nodesStateLocal[title] = item.data.node.is_public;
+                                if (nodesStateLocal[title] !== nodesOriginal[title]) {
+                                    nodesChangedLocal[title] = item.data.node.is_public;
+                                }
+                                else if (typeof (nodesChangedLocal[title])) {
+                                    delete nodesChangedLocal[title];
+                                }
+                                nodesChanged(nodesChangedLocal);
+                                nodesState(nodesStateLocal);
+                            },
+                            checked: nodesState()[title]
+                        });
                     }
                 },
                 {
@@ -89,13 +108,12 @@ function NodesPrivacyTreebeard(data) {
                         return m('span', item.data.node.title);
                     }
                 }
-            ];
+            );
+            return columns;
         }
-
     });
-
     var grid = new Treebeard(tbOptions);
     expandOnLoad.call(grid.tbController);
 }
-
 module.exports = NodesPrivacyTreebeard;
+
