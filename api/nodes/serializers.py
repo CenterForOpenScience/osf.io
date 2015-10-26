@@ -69,10 +69,10 @@ class NodeSerializer(JSONAPISerializer):
     # for testing purposes: self and related field
     children = RelationshipField(
         related_view='nodes:node-children',
-        related_view_kwargs={'help': '_id'},
+        related_view_kwargs={'node_id': '_id'},
         self_view='nodes:node-pointers',
         self_view_kwargs={'node_id':'_id'},
-        related_meta = {'count': 'get_node_count'}
+        related_meta = {'count': 'get_node_count'},
     )
 
     # for testing purposes: two kwargs
