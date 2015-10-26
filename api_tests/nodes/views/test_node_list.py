@@ -77,6 +77,12 @@ class TestNodeList(ApiTestCase):
         assert_in(self.public._id, ids)
         assert_not_in(self.private._id, ids)
 
+    def test_node_list_does_not_return_registrations(self):
+        registration = RegistrationFactory(project=self.public, creator=self.user)
+        res = self.app.get(self.url, auth=self.user.auth)
+        ids = [each['id'] for each in res.json['data']]
+        assert_not_in(registration._id, ids)
+
 
 class TestNodeFiltering(ApiTestCase):
 
@@ -101,17 +107,6 @@ class TestNodeFiltering(ApiTestCase):
     def tearDown(self):
         super(TestNodeFiltering, self).tearDown()
         Node.remove()
-
-    def test_filtering_registrations(self):
-        url = '/{}nodes/?filter[registration]=true'.format(API_BASE)
-        registration = RegistrationFactory(creator=self.user_one)
-
-        res = self.app.get(url, auth=self.user_one.auth, expect_errors=True)
-        node_json = res.json['data']
-
-        ids = [each['id'] for each in node_json]
-        assert_not_in(self.project_one._id, ids)
-        assert_in(registration._id, ids)
 
     def test_filtering_by_category(self):
         project = ProjectFactory(creator=self.user_one, category='hypothesis')
