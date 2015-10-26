@@ -2434,16 +2434,24 @@ class TestProject(OsfTestCase):
         assert_in(link, self.project.private_links)
 
     def test_has_anonymous_link(self):
-        link1 = PrivateLinkFactory(anonymous=True, key="link1")
+        link1 = PrivateLinkFactory(key="link1")
         link1.nodes.append(self.project)
         link1.save()
+
         user2 = UserFactory()
-        auth2 = Auth(user=user2, private_key="link1")
+        private_link_anon = mock.MagicMock()
+        private_link_anon.anonymous = True
+        auth2 = Auth(user=user2, private_key="link1", private_link=private_link_anon)
+
         link2 = PrivateLinkFactory(key="link2")
         link2.nodes.append(self.project)
         link2.save()
+
         user3 = UserFactory()
-        auth3 = Auth(user=user3, private_key="link2")
+        private_link_not_anon = mock.MagicMock()
+        private_link_not_anon.anonymous = False
+        auth3 = Auth(user=user3, private_key="link2", private_link=private_link_not_anon)
+
         assert_true(has_anonymous_link(self.project, auth2))
         assert_false(has_anonymous_link(self.project, auth3))
 
