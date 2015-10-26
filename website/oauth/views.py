@@ -22,7 +22,15 @@ def oauth_disconnect(external_account_id, auth):
         HTTPError(http.FORBIDDEN)
 
     # iterate AddonUserSettings for addons
+    # iterate Nodes[].ProviderNodeSettings for AddonUserSettings
     for user_settings in user.get_oauth_addons():
+        for node in user_settings.get_nodes_with_oauth_grants(account):
+            try:
+                addon_settings = node.get_addon(account.provider)
+                addon_settings.deauthorize(auth=auth)
+            except AttributeError:
+                # No associated addon settings despite oauth grant
+                pass
         user_settings.revoke_oauth_access(account)
         user_settings.save()
 
