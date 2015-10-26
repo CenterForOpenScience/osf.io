@@ -1353,6 +1353,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         assert_equal(len(errors), 1)
         assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')
 
+
 class TestNodeContributorAdd(NodeCRUDTestCase):
 
     def setUp(self):
