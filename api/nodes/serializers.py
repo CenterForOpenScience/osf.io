@@ -33,7 +33,6 @@ class NodeSerializer(JSONAPISerializer):
         'title',
         'description',
         'public',
-        'registration',
         'tags',
         'category',
     ])
@@ -262,34 +261,6 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         contributor.bibliographic = node.get_visible(contributor)
         contributor.node_id = node._id
         return contributor
-
-
-class NodeRegistrationSerializer(NodeSerializer):
-
-    retracted = ser.BooleanField(source='is_retracted', read_only=True,
-        help_text='Whether this registration has been retracted.')
-    date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-
-    registered_by = JSONAPIHyperlinkedIdentityField(
-        view_name='users:user-detail',
-        lookup_field='registered_user_id',
-        link_type='related',
-        lookup_url_kwarg='user_id'
-    )
-
-    registered_from = JSONAPIHyperlinkedIdentityField(
-        view_name='nodes:node-detail',
-        lookup_field='registered_from_id',
-        link_type='related',
-        lookup_url_kwarg='node_id'
-    )
-
-    # TODO: Finish me
-
-    # TODO: Override create?
-
-    def update(self, *args, **kwargs):
-        raise exceptions.ValidationError('Registrations cannot be modified.')
 
 
 class NodeLinksSerializer(JSONAPISerializer):

@@ -200,10 +200,10 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     ##### Callback overrides #####
     def after_delete(self, node=None, user=None):
-        if user:
-            self.deauthorize(Auth(user=user), add_log=True)
-        else:
-            self.deauthorize(add_log=True)
+        self.deauthorize(Auth(user=user), add_log=True)
         self.save()
 
-    on_delete = after_delete
+    def on_delete(self):
+        self.deauthorize(add_log=False)
+        self.clear_auth()
+        self.save()
