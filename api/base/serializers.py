@@ -147,6 +147,69 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
+class RelationshipField(JSONAPIHyperlinkedIdentityField):
+    """
+    RelationshipField that permits the return of both self and related links
+
+    Example:
+    children = RelationshipField(
+        related_view='nodes:node-children',
+        related_view_kwargs={'node_id': '_id'},
+        self_view='nodes:node-pointers',
+        self_view_kwargs={'node_id': '_id'},
+    )
+    """
+    def __init__(self, **kwargs):
+        self.meta = kwargs.pop('meta', None)
+        self.related_view = kwargs.pop('related_view', None)
+        self.related_view_kwargs = kwargs.pop('related_view_kwargs', None)
+        self.self_view = kwargs.pop('self_view', None)
+        self.self_view_kwargs = kwargs.pop('self_view_kwargs', None)
+        assert (self.related_view is not None or self.self_view is not None), 'Self or related view must be specified.'
+        if self.related_view:
+            assert self.related_view_kwargs is not None, 'Must provide related view kwargs.'
+        if self.self_view:
+            assert self.self_view_kwargs is not None, 'Must provide self view kwargs.'
+
+        super(RelationshipField, self).__init__(self)
+
+    def get_related_url(self, obj, view_name, request, format):
+        kwargs = {}
+
+        for lookup_url_kwarg, lookup_field in self.related_view_kwargs.iteritems():
+            lookup_value = getattr(obj, lookup_field, lookup_field)
+            if lookup_value is None:
+                return None
+            kwargs[lookup_url_kwarg] = lookup_value
+        return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
+
+    def get_self_url(self, obj, view_name, request, format):
+        kwargs = {}
+
+        for lookup_url_kwarg, lookup_field in self.self_view_kwargs.iteritems():
+            lookup_value = getattr(obj, lookup_field, lookup_field)
+            if lookup_value is None:
+                return None
+            kwargs[lookup_url_kwarg] = lookup_value
+        return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
+
+    def to_representation(self, value):
+
+        request = self.context.get('request', None)
+        format = self.context.get('format', None)
+        if self.related_view:
+            related_url = self.get_related_url(value, self.related_view, request, format)
+        else:
+            related_url = None
+
+        if self.self_view:
+            self_url = self.get_self_url(value, self.self_view, request, format)
+        else:
+            self_url = None
+
+        return {'links': {'related': {'href': related_url}, 'self': {'href': self_url}}}
+
+
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
     If the object to be serialized implements `get_absolute_url`, then the return value
@@ -328,7 +391,7 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if isinstance(field, JSONAPIHyperlinkedIdentityField):
+            if isinstance(field, (JSONAPIHyperlinkedIdentityField, RelationshipField)):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
