@@ -68,6 +68,7 @@ class TestApplicationReset(ApiTestCase):
         res = self.app.put_json_api(self.user1_reset_url, self.correct, auth=self.user2.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         mock_method.assert_not_called()
+        self.user1_app.reload()
         assert_equal(old_secret, self.user1_app.client_secret)
 
     @mock.patch('website.oauth.models.ApiOAuth2Application.reset_secret')
@@ -77,6 +78,7 @@ class TestApplicationReset(ApiTestCase):
         res = self.app.put_json_api(self.user1_reset_url, self.correct, auth=None, expect_errors=True)
         assert_equal(res.status_code, 401)
         mock_method.assert_not_called()
+        self.user1_app.reload()
         assert_equal(old_secret, self.user1_app.client_secret)
 
     def tearDown(self):
