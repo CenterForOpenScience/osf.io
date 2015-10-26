@@ -36,10 +36,7 @@ def dropbox_user_config_get(auth, **kwargs):
     Dropbox user settings.
     """
     serializer = DropboxSerializer(user_settings=auth.user.get_addon('dropbox'))
-    return {
-        'result': serializer.serialized_user_settings
-    }
-
+    return serializer.serialized_user_settings
 
 @must_be_logged_in
 @must_be_valid_project
@@ -140,9 +137,7 @@ def dropbox_get_folders(auth, node_addon, user_addon, **kwargs):
     """Get a list of Dropbox folders for a user/node pair
     """
     client = get_client_from_user_settings(user_addon)
-    return {
-        'folders': utils.get_folders(client)
-    }
+    return utils.get_folders(client)
 
 @must_be_contributor_or_public
 @must_have_addon('dropbox', 'node')

@@ -54,7 +54,7 @@ class DropboxProvider(ExternalProvider):
 
     @property
     def auth_url(self):
-        return self.oauth_flow.start({'force_reapprove': True})
+        return self.oauth_flow.start('force_reapprove=true')
 
     # Overrides ExternalProvider
     def auth_callback(self, user):

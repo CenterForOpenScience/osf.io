@@ -144,7 +144,7 @@ def serialize_folder(metadata):
     if metadata['path'] == '' or metadata['path'] == '/':
         name = '/ (Full Dropbox)'
     else:
-        name = 'Dropbox' + metadata['path']
+        name = metadata['path']
     return {
         'name': name,
         'path': metadata['path']
@@ -160,6 +160,8 @@ def get_folders(client):
         'name': '/ (Full Dropbox)',
         'path': ''
     }
-    folders = [root] + [serialize_folder(each)
-                        for each in metadata['contents'] if each['is_dir']]
+    folders = [root] + [
+        serialize_folder(each)
+        for each in metadata['contents'] if each['is_dir']
+    ]
     return folders
