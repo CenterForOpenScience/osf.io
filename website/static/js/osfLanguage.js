@@ -67,6 +67,12 @@ module.exports = {
             deauthError: 'Could not disconnect the Google Drive account at this time',
         }
     },
+    fileRename: {
+        generalError: 'Error in renaming file. If error persists please contact ' +
+            SUPPORT_LINK,
+        blank: 'Name cannot be blank.',
+        hundred: 'Please enter a name less than 100 characters.',
+    },
     apiOauth2Application: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
         deactivateConfirm: 'Are you sure you want to deactivate this application for all users and revoke all access tokens? This cannot be reversed.',

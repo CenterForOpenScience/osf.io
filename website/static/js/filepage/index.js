@@ -11,6 +11,7 @@ var FileEditor = require('./editor.js');
 var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
+var language = require('js/osfLanguage.js');
 
 // Sanity
 var Panel = utils.Panel;
@@ -339,6 +340,75 @@ var FileViewPage = {
             }
             m.redraw(true);
         };
+
+        $.fn.editable.defaults.mode = 'inline';
+        if(self.canEdit() && (
+            self.file.provider !== 'dataverse' ||
+            self.file.provider !== 'figshare')
+        ) {
+            var $fileName = $('#fileName');
+            var conflict = 'warn';
+            var to = {
+                data: {
+                    nodeId: self.node.id,
+                    //path: self.file.path,
+                    path: null,
+                    provider: self.file.provider,
+                }
+            };
+            var from = $.extend(true, {}, to);
+            from.data.path = self.file.path;
+            $fileName.editable({
+                type: 'text',
+                send: 'always',
+                url: waterbutler.moveUrl(),
+                ajaxOptions: {
+                    beforeSend: $osf.setXHRAuthorization,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                },
+                params: function(params) {
+                    return JSON.stringify({
+                        'rename': params.value,
+                        'conflict': conflict,
+                        'source': waterbutler.toJsonBlob(from),
+                        'destination': waterbutler.toJsonBlob(to),
+                    });
+                },
+                validate: function(value) {
+                    if($.trim(value) === '') {
+                        return language.fileRename.blank;
+                    } else if(value.length > 100) {
+                        return language.fileRename.hundred;
+                    }
+                },
+                success: function(response, value) {
+                    window.location.reload();
+                },
+                error: function(response) {
+                    var code = response.responseJSON.code;
+                    var msg = $osf.htmlEscape(response.responseJSON.message);
+                    var msgLong = $osf.htmlEscape(response.responseJSON.message_long);
+                    if(msgLong && code !== 404) {
+                        $osf.growl('Error', msgLong);
+                        return ' ';
+                    } else if(msg && code !== 404) {
+                        $osf.growl('Error', msg);
+                        return ' ';
+                    } else {
+                        // Log unexpected error with Raven
+                        Raven.captureMessage('Error in renaming file', {
+                            url: waterbutler.moveUrl(),
+                            responseText: response.responseText,
+                            statusText: response.statusText
+                        });
+                        $osf.growl('Error', language.fileRename.generalError);
+                        return ' ';
+                    }
+                }
+            });
+        }
 
         //Hack to polyfill the Panel interface
         //Ran into problems with mithrils caching messing up with multiple "Panels"
