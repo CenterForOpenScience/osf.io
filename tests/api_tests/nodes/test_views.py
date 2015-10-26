@@ -3361,10 +3361,10 @@ class TestCreateAlternativeCitations(ApiTestCase):
         self.citation = AlternativeCitationFactory(name="name", text="text")
         self.public.alternativeCitations.append(self.citation)
         self.private.alternativeCitations.append(self.citation)
-        self.public.save()
-        self.private.save()
         self.public.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
         self.private.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
+        self.public.save()
+        self.private.save()
         self.public_url = '/{}nodes/{}/citations/'.format(API_BASE, self.public._id)
         self.private_url = '/{}nodes/{}/citations/'.format(API_BASE, self.private._id)
         self.citation.public_url = self.public_url + '{}/'.format(self.citation._id)
@@ -3400,15 +3400,15 @@ class TestCreateAlternativeCitations(ApiTestCase):
         self.public.reload()
         assert_equal(len(self.public.alternativeCitations), 1)
 
-        res = self.app.post_json_api(self.public_url, self.payload(name='Test', text='Citation'), auth=self.user_three.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        self.public.reload()
-        assert_equal(len(self.public.alternativeCitations), 1)
-
         res = self.app.post_json_api(self.private_url, self.payload(name='Test', text='Citation'), auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         self.private.reload()
         assert_equal(len(self.private.alternativeCitations), 1)
+
+        res = self.app.post_json_api(self.public_url, self.payload(name='Test', text='Citation'), auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        self.public.reload()
+        assert_equal(len(self.public.alternativeCitations), 1)
 
         res = self.app.post_json_api(self.private_url, self.payload(name='Test', text='Citation'), auth=self.user_three.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
@@ -3420,18 +3420,16 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], "There is already an alternative citation named 'name'")
+        assert_equal(len(self.public.alternativeCitations), 1)
 
         res = self.app.post_json_api(self.private_url, self.payload(name='name', text='Citation'), auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(len(res.json['errors']), 1)
         assert_equal(res.json['errors'][0]['detail'], "There is already an alternative citation named 'name'")
+        assert_equal(len(self.private.alternativeCitations), 1)
 
     def test_add_repeat_name_non_admin(self):
         res = self.app.post_json_api(self.public_url, self.payload(name='name', text='Citation'), auth=self.user_two.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        self.public.reload()
-        assert_equal(len(self.public.alternativeCitations), 1)
-        res = self.app.post_json_api(self.public_url, self.payload(name='name', text='Citation'), auth=self.user_three.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         self.public.reload()
         assert_equal(len(self.public.alternativeCitations), 1)
@@ -3440,6 +3438,12 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         self.private.reload()
         assert_equal(len(self.private.alternativeCitations), 1)
+
+        res = self.app.post_json_api(self.public_url, self.payload(name='name', text='Citation'), auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        self.public.reload()
+        assert_equal(len(self.public.alternativeCitations), 1)
+
         res = self.app.post_json_api(self.private_url, self.payload(name='name', text='Citation'), auth=self.user_three.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         self.private.reload()
@@ -3465,17 +3469,21 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         self.public.reload()
         assert_equal(len(self.public.alternativeCitations), 1)
-        res = self.app.post_json_api(self.public_url, self.payload(name='Citation', text='text'), auth=self.user_three.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        self.public.reload()
-        assert_equal(len(self.public.alternativeCitations), 1)
 
         res = self.app.post_json_api(self.private_url, self.payload(name='Citation', text='text'), auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         self.private.reload()
         assert_equal(len(self.private.alternativeCitations), 1)
+
+        res = self.app.post_json_api(self.public_url, self.payload(name='Citation', text='text'), auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        self.public.reload()
+        assert_equal(len(self.public.alternativeCitations), 1)
+
         res = self.app.post_json_api(self.private_url, self.payload(name='Citation', text='text'), auth=self.user_three.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+        self.private.reload()
+        assert_equal(len(self.private.alternativeCitations), 1)
 
     def test_add_repeat_name_and_text_admin(self):
         res = self.app.post_json_api(self.public_url, self.payload(name='name', text='text'), auth=self.user.auth, expect_errors=True)
@@ -3499,15 +3507,17 @@ class TestCreateAlternativeCitations(ApiTestCase):
         assert_equal(res.status_code, 403)
         self.public.reload()
         assert_equal(len(self.public.alternativeCitations), 1)
-        res = self.app.post_json_api(self.public_url, self.payload(name='name', text='text'), auth=self.user_three.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-        self.public.reload()
-        assert_equal(len(self.public.alternativeCitations), 1)
 
         res = self.app.post_json_api(self.private_url, self.payload(name='name', text='text'), auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         self.private.reload()
         assert_equal(len(self.private.alternativeCitations), 1)
+
+        res = self.app.post_json_api(self.public_url, self.payload(name='name', text='text'), auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        self.public.reload()
+        assert_equal(len(self.public.alternativeCitations), 1)
+
         res = self.app.post_json_api(self.private_url, self.payload(name='name', text='text'), auth=self.user_three.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         self.private.reload()
@@ -3528,10 +3538,10 @@ class TestUpdateAlternativeCitations(ApiTestCase):
         self.private.alternativeCitations.append(self.citation)
         self.public.alternativeCitations.append(self.citation2)
         self.private.alternativeCitations.append(self.citation2)
-        self.public.save()
-        self.private.save()
         self.public.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
         self.private.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
+        self.public.save()
+        self.private.save()
         self.public_url = '/{}nodes/{}/citations/'.format(API_BASE, self.public._id)
         self.private_url = '/{}nodes/{}/citations/'.format(API_BASE, self.private._id)
         self.citation.public_url = self.public_url + '{}/'.format(self.citation._id)
@@ -3841,7 +3851,6 @@ class TestDeleteAlternativeCitations(ApiTestCase):
         self.private.reload()
         assert_equal(len(self.private.alternativeCitations), 1)
 
-
 class TestGetAlternativeCitations(ApiTestCase):
     def setUp(self):
         super(TestGetAlternativeCitations, self).setUp()
@@ -3912,16 +3921,6 @@ class TestGetAlternativeCitations(ApiTestCase):
         res = self.app.get(self.private_url_bad, auth=self.user_three.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    def test_get_citation_non_contrib(self):
-        res = self.app.get(self.citation.public_url, auth=self.user_three.auth)
-        assert_equal(res.status_code, 200)
-        attributes = res.json['data']['attributes']
-        assert_equal(attributes['name'], 'name')
-        assert_equal(attributes['text'], 'text')
-
-        res = self.app.get(self.citation.private_url, auth=self.user_three.auth, expect_errors=True)
-        assert_equal(res.status_code, 403)
-
     def test_get_all_citations_admin(self):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
@@ -3952,3 +3951,116 @@ class TestGetAlternativeCitations(ApiTestCase):
 
         res = self.app.get(self.private_url, auth=self.user_three.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+class TestRegistrationAlternativeCitations(ApiTestCase):
+    def setUp(self):
+        super(TestRegistrationAlternativeCitations, self).setUp()
+        self.user = AuthUserFactory()
+        self.user_two = AuthUserFactory()
+        self.user_three = AuthUserFactory()
+
+        self.public = ProjectFactory(creator=self.user, is_public=True)
+        self.citation = AlternativeCitationFactory(name="name", text="text")
+        self.public.alternativeCitations.append(self.citation)
+        self.public.save()
+        self.public.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], visible=True, save=True)
+        self.registration = RegistrationFactory(project=self.public)
+        self.reg_url = '/{}nodes/{}/citations/'.format(API_BASE, self.registration._id)
+        self.citation.reg_url = self.reg_url + '{}/'.format(self.citation._id)
+
+    def payload(self, name=None, text=None, id=None):
+        payload = {'data': {
+            'type': 'citations',
+            'attributes': {
+                'name': name,
+                'text': text
+                }
+            }
+        }
+        if id is not None:
+            payload['data']['id'] = id
+        return payload
+
+    def test_get_all_reg_citations_admin(self):
+        res = self.app.get(self.reg_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(len(data), 1)
+
+    def test_get_all_reg_citations_contrib_non_admin(self):
+        res = self.app.get(self.reg_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(len(data), 1)
+
+    def test_get_all_reg_citations_non_contrib(self):
+        res = self.app.get(self.reg_url, auth=self.user_three.auth)
+        assert_equal(res.status_code, 200)
+        data = res.json['data']
+        assert_equal(len(data), 1)
+
+    def test_get_reg_citation_admin(self):
+        res = self.app.get(self.citation.reg_url, auth=self.user.auth)
+        assert_equal(res.status_code, 200)
+        attributes = res.json['data']['attributes']
+        assert_equal(attributes['name'], 'name')
+        assert_equal(attributes['text'], 'text')
+
+    def test_get_reg_citation_contrib_non_admin(self):
+        res = self.app.get(self.citation.reg_url, auth=self.user_two.auth)
+        assert_equal(res.status_code, 200)
+        attributes = res.json['data']['attributes']
+        assert_equal(attributes['name'], 'name')
+        assert_equal(attributes['text'], 'text')
+
+    def test_get_reg_citation_non_contrib(self):
+        res = self.app.get(self.citation.reg_url, auth=self.user_three.auth)
+        assert_equal(res.status_code, 200)
+        attributes = res.json['data']['attributes']
+        assert_equal(attributes['name'], 'name')
+        assert_equal(attributes['text'], 'text')
+
+    def test_create_reg_citation_admin(self):
+        res = self.app.post_json_api(self.reg_url, self.payload(name="test", text='Citation'), auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(len(self.registration.alternativeCitations), 1)
+
+    def test_create_reg_citation_non_admin(self):
+        res = self.app.post_json_api(self.reg_url, self.payload(name="test", text='Citation'), auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(len(self.registration.alternativeCitations), 1)
+
+        res = self.app.post_json_api(self.reg_url, self.payload(name="test", text='Citation'), auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(len(self.registration.alternativeCitations), 1)
+
+    def test_update_reg_citation_admin(self):
+        res = self.app.put_json_api(self.citation.reg_url, self.payload(name="test", text='Citation', id=self.citation._id), auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(self.citation.name, "name")
+        assert_equal(self.citation.text, "text")
+
+    def test_update_reg_citation_non_admin(self):
+        res = self.app.put_json_api(self.citation.reg_url, self.payload(name="test", text='Citation', id=self.citation._id), auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(self.citation.name, "name")
+        assert_equal(self.citation.text, "text")
+
+        res = self.app.put_json_api(self.citation.reg_url, self.payload(name="test", text='Citation', id=self.citation._id), auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(self.citation.name, "name")
+        assert_equal(self.citation.text, "text")
+
+    def test_delete_reg_citation_admin(self):
+        res = self.app.delete(self.citation.reg_url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(len(self.registration.alternativeCitations), 1)
+
+    def test_delete_reg_citation_non_admin(self):
+        res = self.app.delete(self.citation.reg_url, auth=self.user_two.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(len(self.registration.alternativeCitations), 1)
+
+        res = self.app.delete(self.citation.reg_url, auth=self.user_three.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
+        assert_equal(len(self.registration.alternativeCitations), 1)

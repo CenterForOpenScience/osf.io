@@ -1293,7 +1293,8 @@ class NodeAlternativeCitationsList(generics.ListCreateAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         AdminOrPublic,
-        ReadOnlyIfRegistration
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]
@@ -1337,7 +1338,8 @@ class NodeAlternativeCitationDetail(generics.RetrieveUpdateDestroyAPIView, NodeM
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         AdminOrPublic,
-        ReadOnlyIfRegistration
+        ReadOnlyIfRegistration,
+        base_permissions.TokenHasScope
     )
 
     required_read_scopes = [CoreScopes.NODE_CITATIONS_READ]

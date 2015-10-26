@@ -1932,6 +1932,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.alternativeCitations = self.alternativeCitations
 
         registered.save()
 

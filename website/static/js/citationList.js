@@ -132,8 +132,8 @@ var AlternativeModel = function(citation, view) {
         if (self.messages().length === 0) {
             var url = $osf.apiV2Url('nodes/' + ctx.node.id + '/citations/');
             var payload = {};
-            var method = "POST";
-            payload['data'] = {
+            var method = 'POST';
+            payload.data = {
                 'type': 'citations',
                 'attributes': {
                     'name': self.name(),
@@ -143,8 +143,8 @@ var AlternativeModel = function(citation, view) {
             if (self.id !== undefined) {
                 url += self.id + '/';
 
-                payload.data.attributes['id'] = self.id;
-                method = "PUT";
+                payload.data.attributes.id = self.id;
+                method = 'PUT';
             }
             $osf.ajaxJSON(method, url, {data: payload, isCors: true}).done(function(response) {
                 var data = response.data;
