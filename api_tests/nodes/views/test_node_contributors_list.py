@@ -162,9 +162,9 @@ class TestNodeContributorFiltering(ApiTestCase):
     
     def test_filtering_on_permission_field(self):
         # regression test for changes in filter fields
-        # permission is now permissions
-        url_permission = '/{}nodes/{}/contributors/?filter[permission]=foo'.format(API_BASE, self.project._id)
-        res = self.app.get(url_fullname, auth=self.user.auth, expect_errors=True)
+        # permission is now permission
+        url = '/{}nodes/{}/contributors/?filter[permission]=foo'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
