@@ -2427,15 +2427,3 @@ mock_root_folders = {
   }
  ]
 }
-
-def create_mock_dict(mock_dict):
-    mock_dict.__getitem__.side_effect = getitem
-    mock_dict.__setitem__.side_effect = setitem
-
-
-def getitem(key):
-    return mock_folders[key]
-
-
-def setitem(key, val):
-     mock_folders[key] = val

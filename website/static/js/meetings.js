@@ -27,7 +27,7 @@ function Meetings(data) {
                      sort : true
                 },
                 {
-                    title: 'Accepting Submissions',
+                    title: 'Accepting submissions',
                     width: '25%',
                     sortType: 'text',
                     sort: true
