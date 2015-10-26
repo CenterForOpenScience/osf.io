@@ -61,7 +61,6 @@ function Submissions(data) {
                     sortInclude: true,
                     custom: function() { return m('a', {href: item.data.authorUrl}, item.data.author); }
                 },
-
                 {
                     data: 'dateCreated', // Data field name
                     sortInclude: true,

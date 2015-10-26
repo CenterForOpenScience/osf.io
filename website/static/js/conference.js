@@ -1,5 +1,6 @@
 var $ = require('jquery');
 var m = require('mithril');
+var osfHelpers = require('js/osfHelpers');
 var Treebeard = require('treebeard');
 
 
@@ -22,13 +23,13 @@ function Meeting(data) {
                 },
                 {
                     title: 'Author',
-                    width : '20%',
+                    width : '10%',
                     sortType : 'text',
                     sort : true
                 },
                 {
                     title: 'Category',
-                    width : '15%',
+                    width : '10%',
                     sortType : 'text',
                     sort : true
                 },
@@ -37,6 +38,12 @@ function Meeting(data) {
                     width : '15%',
                     sortType : 'number',
                     sort : true
+                },
+                 {
+                    title: 'Date Created',
+                    width: '15%',
+                    sortType: 'date',
+                    sort: true
                 }
             ];
         },
@@ -77,6 +84,14 @@ function Meeting(data) {
                         }
                     }
 
+                },
+                {
+                    data: 'dateCreated', // Data field name
+                    sortInclude: true,
+                    custom: function() {
+                        var dateCreated = new osfHelpers.FormattableDate(item.data.dateCreated);
+                        return m('', dateCreated.local);
+                    }
                 }
             ];
             return default_columns;
