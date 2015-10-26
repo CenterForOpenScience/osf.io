@@ -1,5 +1,5 @@
 from rest_framework import generics, permissions as drf_permissions
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import ValidationError
 
 from framework.auth.oauth_scopes import CoreScopes
 
@@ -77,8 +77,8 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationSerializer
 
@@ -91,7 +91,7 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
 
         query = base_query & permission_query
         return query
@@ -155,8 +155,8 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [CoreScopes.NODE_BASE_READ]
-    required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
+    required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationDetailSerializer
 
@@ -164,11 +164,5 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
     def get_object(self):
         registration = self.get_node()
         if not registration.is_registration:
-            raise NotFound('This is not a registration.')
+            raise ValidationError('This is not a registration.')
         return registration
-
-    # overrides RetrieveAPIView
-    def get_serializer_context(self):
-        # Serializer needs the request in order to make an update to privacy
-        # TODO: The method it overrides already returns request (plus more stuff). Why does this method exist?
-        return {'request': self.request}

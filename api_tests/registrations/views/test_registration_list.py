@@ -21,13 +21,10 @@ class TestRegistrationList(ApiTestCase):
 
         self.project = ProjectFactory(is_public=False, creator=self.user)
         self.registration_project = RegistrationFactory(creator=self.user, project=self.project)
-        self.project.save()
         self.url = '/{}registrations/'.format(API_BASE)
 
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_registration_project = RegistrationFactory(creator=self.user, project=self.public_project)
-        self.public_project.save()
-
         self.user_two = AuthUserFactory()
 
     def tearDown(self):
@@ -66,4 +63,3 @@ class TestRegistrationList(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
 
         assert_equal(registered_from, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
-

@@ -22,8 +22,6 @@ class TestRegistrationDetail(ApiTestCase):
         self.private_project = ProjectFactory(title="Project Two", is_public=False, creator=self.user)
         self.public_registration = RegistrationFactory(project=self.public_project, creator=self.user)
         self.private_registration = RegistrationFactory(project=self.private_project, creator=self.user)
-        self.public_project.save()
-        self.private_project.save()
         self.public_url = '/{}registrations/{}/'.format(API_BASE, self.public_registration._id)
         self.private_url = '/{}registrations/{}/'.format(API_BASE, self.private_registration._id)
 
@@ -66,5 +64,5 @@ class TestRegistrationDetail(ApiTestCase):
     def test_do_not_return_node_detail(self):
         url = '/{}registrations/{}/'.format(API_BASE, self.public_project._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "This is not a registration.")
