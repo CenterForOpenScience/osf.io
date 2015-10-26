@@ -295,6 +295,7 @@ def update_node(node, index=None, bulk=False):
             return elastic_document
         else:
             es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
+
     #TODO @hmoco, make this a celry task that takes care of updating files
     from website.files.models.base import FileNode
     for file_ in list(FileNode.find(Q('node', 'eq', node) & Q('provider', 'eq', 'osfstorage') & Q('is_file', 'eq', True))):
