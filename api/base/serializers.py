@@ -176,16 +176,24 @@ class RelationshipField(JSONAPIHyperlinkedIdentityField):
 
         super(RelationshipField, self).__init__(self)
 
-    def get_url(self, obj, view_name, request, format):
+    def get_self_url(self, obj, view_name, request, format):
         kwargs = {}
+        if view_name is None:
+            return None
 
-        if self.kind == 'related':
-            view_kwargs = 'related_view_kwargs'
+        for lookup_url_kwarg, lookup_field in self.self_view_kwargs.items():
+            lookup_value = getattr(obj, lookup_field, lookup_field)
+            if lookup_value is None:
+                return None
+            kwargs[lookup_url_kwarg] = lookup_value
+        return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
 
-        if self.kind == 'self':
-            view_kwargs = 'self_view_kwargs'
+    def get_related_url(self, obj, view_name, request, format):
+        kwargs = {}
+        if view_name is None:
+            return None
 
-        for lookup_url_kwarg, lookup_field in getattr(self, view_kwargs).items():
+        for lookup_url_kwarg, lookup_field in self.related_view_kwargs.items():
             lookup_value = getattr(obj, lookup_field, lookup_field)
             if lookup_value is None:
                 return None
@@ -217,23 +225,18 @@ class RelationshipField(JSONAPIHyperlinkedIdentityField):
         request = self.context.get('request', None)
         format = self.context.get('format', None)
 
-        if self.related_view:
-            self.kind = 'related'
-            related_url = self.get_url(value, self.related_view, request, format)
-        else:
-            related_url = None
-
-        if self.self_view:
-            self.kind = 'self'
-            self_url = self.get_url(value, self.self_view, request, format)
-        else:
-            self_url = None
-
-        self_meta = self.get_meta_information(self.self_meta, value)
+        related_url = self.get_related_url(value, self.related_view, request, format)
         related_meta = self.get_meta_information(self.related_meta, value)
 
-        return {'links': {'related': {'href': related_url, 'meta': related_meta}, 'self': {'href': self_url, 'meta': self_meta}}}
+        self_url = self.get_self_url(value, self.self_view, request, format)
+        self_meta = self.get_meta_information(self.self_meta, value)
 
+        ret = {'links': {'related': {'href': related_url, 'meta': related_meta}, 'self': {'href': self_url, 'meta': self_meta}}}
+
+        if not ret['links']['self']['href']:
+            del ret['links']['self']
+
+        return ret
 
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
