@@ -6,7 +6,7 @@
 <%def name="title()">${file_name | h}</%def>
 <div class="row">
   <div class="col-sm-5">
-     <h2>
+     <h2 class="break-word">
        ## Split file name into two parts: with and without extension
        <%
         extStart = file_name.rfind(".")
@@ -17,9 +17,7 @@
           file_name_title = file_name[0:extStart]
           file_name_ext = file_name[extStart:]
        %> 
-       <span id="fileName">
         ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
-       </span>
        % if file_revision:
          <small>&nbsp;${file_revision | h}</small>
        % endif
