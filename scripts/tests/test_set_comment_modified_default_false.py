@@ -15,13 +15,13 @@ class TestUpdateDefaultCommentModified(OsfTestCase):
 
     def test_unmodified_comment_default_is_set_to_false(self):
         comment = CommentFactory(modified=None)
-        do_migration(get_targets(), dry=False)
+        do_migration(get_targets())
         comment.reload()
         assert_equal(comment.modified, False)
 
     def test_modified_comment_does_not_update(self):
         comment = CommentFactory(modified=True)
-        do_migration(get_targets(), dry=False)
+        do_migration(get_targets())
         assert_true(comment.modified)
 
     def test_update_default_modified_updates_all_targets(self):
@@ -29,5 +29,5 @@ class TestUpdateDefaultCommentModified(OsfTestCase):
         targets = get_targets()
         assert_equal(targets.count(), 1)
 
-        do_migration(get_targets(), dry=False)
+        do_migration(get_targets())
         assert_equal(targets.count(), 0)
