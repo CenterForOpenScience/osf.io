@@ -134,3 +134,32 @@ def get_share_folder_uri(path):
     cleaned = clean_path(path)
     return ('https://dropbox.com/home/{cleaned}'
             '?shareoptions=1&share_subfolder=0&share=1').format(cleaned=cleaned)
+
+
+def serialize_folder(metadata):
+    """Serializes metadata to a dict with the display name and path
+    of the folder.
+    """
+    # if path is root
+    if metadata['path'] == '' or metadata['path'] == '/':
+        name = '/ (Full Dropbox)'
+    else:
+        name = 'Dropbox' + metadata['path']
+    return {
+        'name': name,
+        'path': metadata['path']
+    }
+
+def get_folders(client):
+    """Gets a list of folders in a user's Dropbox, including the root.
+    Each folder is represented as a dict with its display name and path.
+    """
+    metadata = client.metadata('/', list=True)
+    # List each folder, including the root
+    root = {
+        'name': '/ (Full Dropbox)',
+        'path': ''
+    }
+    folders = [root] + [serialize_folder(each)
+                        for each in metadata['contents'] if each['is_dir']]
+    return folders

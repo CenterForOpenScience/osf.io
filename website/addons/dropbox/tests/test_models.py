@@ -11,12 +11,9 @@ from website.addons.dropbox.tests.factories import (
 from website.addons.dropbox.model import (
     DropboxNodeSettings
 )
-from website.addons.base.testing import (
-    OAuthAddonUserSettingTestSuite,
-    OAuthAddonNodeSettingsTestSuite
-)
+from website.addons.base import testing
 
-class TestNodeSettings(OAuthAddonNodeSettingsTestSuite, OsfTestCase):
+class TestNodeSettings(testing.models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase):
 
     short_name = 'dropbox'
     full_name = 'dropbox'
@@ -39,7 +36,7 @@ class TestNodeSettings(OAuthAddonNodeSettingsTestSuite, OsfTestCase):
         assert_is_none(node_settings.folder)
 
 
-class TestUserSettings(OAuthAddonUserSettingTestSuite, OsfTestCase):
+class TestUserSettings(testing.models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 
     short_name = 'dropbox'
     full_name = 'dropbox'

@@ -12,7 +12,7 @@ from tests.factories import ProjectFactory
 
 from website.addons.dropbox.tests.utils import DropboxAddonTestCase
 from website.addons.dropbox import utils
-from website.addons.dropbox.views.config import serialize_folder
+from website.addons.dropbox.utils import serialize_folder
 
 
 class TestNodeLogger(DropboxAddonTestCase):

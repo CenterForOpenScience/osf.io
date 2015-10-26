@@ -6,20 +6,25 @@ from modularodm import storage
 
 from framework.mongo import set_up_storage
 
-from website.addons.base.testing import OAuthAddonTestCase
+from website.addons.base.testing import OAuthAddonTestCaseMixin, AddonTestCase
 from website.addons.dropbox import MODELS
+from website.addons.dropbox.model import DropboxProvider
 from website.addons.dropbox.tests.factories import DropboxAccountFactory
 
 def init_storage():
     set_up_storage(MODELS, storage_class=storage.MongoStorage)
 
-class DropboxAddonTestCaseMixin(object):
+class DropboxAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
 
     ADDON_SHORT_NAME = 'dropbox'
     ExternalAccountFactory = DropboxAccountFactory
+    Provider = DropboxProvider
 
-class DropboxAddonTestCase(DropboxAddonTestCaseMixin, OAuthAddonTestCase):
-    pass
+    def set_node_settings(self, settings):
+        super(DropboxAddonTestCase, self).set_node_settings(settings)
+        settings.folder = 'foo'
+        settings.save()
+
 
 mock_responses = {
     'put_file': {

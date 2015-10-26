@@ -11,7 +11,7 @@ auth_routes = {
         Rule(
             '/settings/dropbox/accounts/',
             'get',
-            views.auth.dropbox_user_config_get,
+            views.dropbox_user_config_get,
             json_renderer,
         )
     ],
@@ -27,7 +27,7 @@ api_routes = {
             ['/project/<pid>/dropbox/config/',
             '/project/<pid>/node/<nid>/dropbox/config/'],
             'get',
-            views.config.dropbox_config_get,
+            views.dropbox_config_get,
             json_renderer
         ),
 
@@ -35,14 +35,14 @@ api_routes = {
             ['/project/<pid>/dropbox/config/',
             '/project/<pid>/node/<nid>/dropbox/config/'],
             'put',
-            views.config.dropbox_config_put,
+            views.dropbox_config_put,
             json_renderer
         ),
         Rule(
             ['/project/<pid>/dropbox/config/',
             '/project/<pid>/node/<nid>/dropbox/config/'],
             'delete',
-            views.config.dropbox_deauthorize,
+            views.dropbox_deauthorize,
             json_renderer
         ),
 
@@ -50,7 +50,15 @@ api_routes = {
             ['/project/<pid>/dropbox/config/import-auth/',
             '/project/<pid>/node/<nid>/dropbox/config/import-auth/'],
             'put',
-            views.config.dropbox_import_user_auth,
+            views.dropbox_import_user_auth,
+            json_renderer
+        ),
+
+        Rule(
+            ['/project/<pid>/dropbox/user-auth/',
+            '/project/<pid>/node/<nid>/dropbox/user_auth/'],
+            'delete',
+            views.dropbox_remove_user_auth,
             json_renderer
         ),
 
@@ -58,7 +66,7 @@ api_routes = {
             ['/project/<pid>/dropbox/config/share/',
             '/project/<pid>/node/<nid>/dropbox/config/share/'],
             'get',
-            views.config.dropbox_get_share_emails,
+            views.dropbox_get_share_emails,
             json_renderer
         ),
 
@@ -66,7 +74,7 @@ api_routes = {
             ['/project/<pid>/dropbox/folders/',
             '/project/<pid>/node/<nid>/dropbox/folders/'],
             'get',
-            views.config.dropbox_get_folders,
+            views.dropbox_get_folders,
             json_renderer
         ),
 
@@ -79,7 +87,7 @@ api_routes = {
                 '/project/<pid>/node/<nid>/dropbox/hgrid/<path:path>',
             ],
             'get',
-            views.hgrid.dropbox_hgrid_data_contents,
+            views.dropbox_hgrid_data_contents,
             json_renderer
         ),
     ],

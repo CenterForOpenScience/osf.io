@@ -117,11 +117,6 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def display_name(self):
         return '{0}: {1}'.format(self.config.full_name, self.folder)
 
-    @property
-    def has_auth(self):
-        """Whether an access token is associated with this node."""
-        return bool(self.user_settings and self.user_settings.has_auth)
-
     def clear_settings(self):
         self.folder = None
 
@@ -131,11 +126,13 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         nodelogger = DropboxNodeLogger(node=self.owner, auth=auth)
         nodelogger.log(action="folder_selected", save=True)
 
-    def set_user_auth(self, user_settings):
+    def set_auth(self, external_account, user):
         """Import a user's Dropbox authentication and create a NodeLog.
 
         :param DropboxUserSettings user_settings: The user settings to link.
         """
+        super(DropboxNodeSettings, self).set_auth(external_account, user)
+        user_settings = user.get_addon(self.config.short_name)
         self.user_settings = user_settings
         nodelogger = DropboxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
         nodelogger.log(action="node_authorized", save=True)
