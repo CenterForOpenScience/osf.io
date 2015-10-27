@@ -174,7 +174,7 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
 
     ##Links
 
-        self:  the canonical api endpoint of this node
+        self:  the canonical api endpoint of this comment
 
     ##Actions
 
@@ -227,7 +227,59 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
 
 
 class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
-    """List of reports made for a comment."""
+    """List of reports made for a comment. *Writeable*.
+
+    Paginated list of spam reports for a comment.` Each resource contains the full representation of the
+    report, meaning additional requests to an individual comment's report detail view are not necessary.
+
+    ###Permissions
+
+    The comment reports endpoint can only be viewed by users with permission to comment on the node. Users
+    are only shown comment reports that they have made.
+
+    ##Attributes
+
+    OSF comment report entities have the "comment_reports" `type`.
+
+        name           type               description
+        -------------------------------------------------------------------------------------
+        category        string            the type of spam, must be one of the allowed values
+        message         string            description of why the comment was reported
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "comment_reports",      # required
+                           "attributes": {
+                             "category":       {category}, # mandatory
+                             "message":        {text},     # optional
+                           }
+                         }
+                       }
+        Success:       201 CREATED + comment report representation
+
+    To create a report for this comment, issue a POST request against this endpoint. The `category` field is mandatory,
+    and must be one of the [permitted report categories](/v2/#osf-report-categories). The `message` field is
+    optional. If the comment report creation is successful the API will return a 201 response with the representation
+    of the new comment report in the body. For the new comment report's canonical URL, see the `links.self` field of
+    the response.
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+    """
     permission_classes = (
         drf_permissions.IsAuthenticated,
         CommentReportsPermissions,
@@ -251,7 +303,64 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
 
 
 class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
-    """Details about a specific comment report."""
+    """Details about a specific comment report. *Writeable*.
+
+    ###Permissions
+
+    A comment report detail can only be viewed, edited and removed by the user who created the report.
+
+    ##Attributes
+
+    OSF comment report entities have the "comment_reports" `type`.
+
+        name           type               description
+        -------------------------------------------------------------------------------------
+        category        string            the type of spam, must be one of the allowed values
+        message         string            description of why the comment was reported
+
+    ##Links
+
+        self:  the canonical api endpoint of this comment report
+
+    ##Actions
+
+    ###Update
+
+        Method:        PUT / PATCH
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "comment_reports",   # required
+                           "id":   {user_id},           # required
+                           "attributes": {
+                             "category":       {category},      # mandatory
+                             "message":         {text},         # optional
+                           }
+                         }
+                       }
+        Success:       200 OK + comment report representation
+
+    To update a report for this comment, issue a PUT/PATCH request against this endpoint. The `category` field is
+    mandatory for a PUT request and must be one of the [permitted report categories](/v2/#osf-report-categories). The
+    `message` field is optional. Non-string values will be accepted and stringified, but we make no promises about the
+    stringification output.  So don't do that.
+
+    ###Delete
+        Method:        DELETE
+        URL:           links.self
+        Query Params:  <none>
+        Success:       204 + No content
+
+    To delete a comment report, issue a DELETE request against `links.self`.  A successful delete will return a
+    204 No Content response.
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+    """
     permission_classes = (
         drf_permissions.IsAuthenticated,
         CommentReportsPermissions,
