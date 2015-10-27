@@ -46,8 +46,6 @@ from website.addons.wiki.exceptions import (
     PageConflictError,
     PageNotFoundError,
 )
-from website.project.licenses import ensure_licenses
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from tests.base import OsfTestCase, Guid, fake, capture_signals
 from tests.factories import (
@@ -2256,7 +2254,6 @@ class TestProject(OsfTestCase):
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user, description='foobar')
-        ensure_licenses()
 
     def test_repr(self):
         assert_in(self.project.title, repr(self.project))
@@ -3218,7 +3215,6 @@ class TestForkNode(OsfTestCase):
         self.user = UserFactory()
         self.auth = Auth(user=self.user)
         self.project = ProjectFactory(creator=self.user)
-        ensure_licenses()
 
     def _cmp_fork_original(self, fork_user, fork_date, fork, original,
                            title_prepend='Fork of '):

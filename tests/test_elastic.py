@@ -3,7 +3,6 @@ import time
 import unittest
 import logging
 import functools
-from copy import deepcopy
 
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 import mock
@@ -16,8 +15,6 @@ from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
 from website.models import Retraction
-from website.project.licenses import ensure_licenses, NodeLicense
-ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
@@ -56,8 +53,8 @@ def query_user(name):
 
 def retry_assertion(interval=0.3, retries=3):
     def test_wrapper(func):
-        t_interval = deepcopy(interval)
-        t_retries = deepcopy(retries)
+        t_interval = interval
+        t_retries = retries
         @functools.wraps(func)
         def wrapped(*args, **kwargs):
             try:
@@ -217,7 +214,6 @@ class TestNodeSearch(SearchTestCase):
         self.public_child = ProjectFactory(parent=self.node, is_public=True, title='public_child')
         self.private_child = ProjectFactory(parent=self.node, title='private_child')
         self.public_subchild = ProjectFactory(parent=self.private_child, is_public=True)
-        ensure_licenses()
         self.node.node_license = NodeLicenseRecordFactory()
         self.node.save()
 
