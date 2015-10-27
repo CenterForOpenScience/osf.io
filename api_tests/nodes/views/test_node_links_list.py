@@ -186,7 +186,7 @@ class TestNodeLinkCreate(ApiTestCase):
 
     def test_create_pointer_contributing_node_to_fake_node(self):
         res = self.app.post_json_api(self.private_url, self.fake_payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
         assert_in('detail', res.json['errors'][0])
 
     def test_create_fake_node_pointing_to_contributing_node(self):
