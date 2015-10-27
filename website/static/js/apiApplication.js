@@ -397,8 +397,7 @@ var ApplicationDetailViewModel = oop.extend(ChangeMessageMixin, {
                     var request = self.client.resetOne(appData);
                     request.done(function (dataObj) {
                         self.appData().clientSecret(dataObj.clientSecret());
-                        self.originalValues().data.attributes.client_secret = dataObj.clientSecret(); // want only client secret, other things in dataObj are missing
-                        self.originalValues(self.originalValues()); // this.dirty won't update unless reassigned in this manner
+                        self.originalValues(self.appData().serialize());
                         self.changeMessage(
                             language.apiOauth2Application.dataUpdated,
                             'text-success',
