@@ -1,5 +1,5 @@
 <%!
-    import website.settings
+    from website import settings
 %>
 <!doctype html>
 <html class="no-js" lang="">
@@ -46,7 +46,7 @@
                 <tbody>
                     <tr>
                         <td style="border-collapse: collapse;">
-                            <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or <a href=${website.settings.DOMAIN + "settings"}>user settings</a>. </p>
+                            <p class="text-smaller text-center" style="text-align: center;font-size: 12px;">To change your email notification preferences, visit your project or <a href=${settings.DOMAIN + "settings"}>user settings</a>. </p>
                         </td>
                     </tr>
                 </tbody>
@@ -72,7 +72,9 @@
 </html>
 
 <%def name="content()">
+
 </%def>
 
 <%def name="footer()">
+
 </%def>

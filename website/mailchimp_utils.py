@@ -39,8 +39,8 @@ def subscribe_mailchimp(list_name, user_id):
     m = get_mailchimp_api()
     list_id = get_list_id_from_name(list_name=list_name)
 
-    if user.mailing_lists is None:
-        user.mailing_lists = {}
+    if user.mailchimp_mailing_lists is None:
+        user.mailchimp_mailing_lists = {}
 
     try:
         m.lists.subscribe(
@@ -57,9 +57,9 @@ def subscribe_mailchimp(list_name, user_id):
     except mailchimp.ValidationError as error:
         sentry.log_exception()
         sentry.log_message(error.message)
-        user.mailing_lists[list_name] = False
+        user.mailchimp_mailing_lists[list_name] = False
     else:
-        user.mailing_lists[list_name] = True
+        user.mailchimp_mailing_lists[list_name] = True
     finally:
         user.save()
 
@@ -82,11 +82,11 @@ def unsubscribe_mailchimp(list_name, user_id, username=None):
     m.lists.unsubscribe(id=list_id, email={'email': username or user.username})
 
     # Update mailing_list user field
-    if user.mailing_lists is None:
-        user.mailing_lists = {}
+    if user.mailchimp_mailing_lists is None:
+        user.mailchimp_mailing_lists = {}
         user.save()
 
-    user.mailing_lists[list_name] = False
+    user.mailchimp_mailing_lists[list_name] = False
     user.save()
 
 
