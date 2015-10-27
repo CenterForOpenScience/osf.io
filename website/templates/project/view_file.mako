@@ -6,12 +6,12 @@
 <%def name="title()">${file_name | h}</%def>
 <div class="row">
   <div class="col-sm-5">
-     <h2>
-       <span id="fileName">${file_name | h}</span>
-       % if file_revision:
-         <small>&nbsp;${file_revision | h}</small>
-       % endif
-     </h2>
+    <h2 class="break-word">
+      ${file_name | h}
+      % if file_revision:
+        <small>&nbsp;${file_revision | h}</small>
+      % endif
+    </h2>
   </div>
   <div class="col-sm-7">
     <div id="toggleBar" class="pull-right"></div>
