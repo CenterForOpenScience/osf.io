@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from . import routes, views, model
+from . import routes, views, model, listeners
 
 MODELS = [model.OsfStorageNodeSettings]
 NODE_SETTINGS_MODEL = model.OsfStorageNodeSettings
