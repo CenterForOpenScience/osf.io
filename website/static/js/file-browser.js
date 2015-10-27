@@ -38,7 +38,7 @@ var FileBrowser = {
             { label : 'All My Projects', url : 'http://localhost:8000/v2/users/me/nodes/?filter%5Bregistration%5D=false', type : 'collection'}
         ]);
         self.nameFilters = [
-            { label : 'Caner Uguz', userID : '8q36f', type : 'filter'}
+            { label : 'Caner Uguz', id : '8q36f', type : 'filter'}
         ];
         self.tagFilters = [
             { tag : 'something', type : 'filter'}
@@ -79,7 +79,13 @@ var FileBrowser = {
         self.activeUser = m.prop(1);
         self.updateUserFilter = function(user) {
             self.activeUser(user.id);
-            var url  = 'v2/users/' + user.userID;
+            var linkObject = {
+                type : 'user',
+                data : user,
+                label : user.label,
+                id : user.id
+            };
+            self.updateFilesData(linkObject);
         };
 
         // Refresh the Grid
@@ -96,29 +102,30 @@ var FileBrowser = {
             var crumb = {
                 label : linkObject.label,
                 url : linkObject.link,
-                uid : linkObject.id
+                id : linkObject.id
             };
-            if (linkObject.type === 'collection'){
+            if (linkObject.type === 'collection' || linkObject.type === 'user'){
                 self.breadcrumbs([crumb]);
                 return;
             }
             if (linkObject.type === 'breadcrumb'){
-                self.breadcrumbs().splice(linkObject.index+1, self.breadcrumbs.length-linkObject.index+1);
+                self.breadcrumbs().splice(linkObject.index+1, self.breadcrumbs().length-linkObject.index-1);
                 return;
             }
             self.breadcrumbs().push(crumb);
         }.bind(self);
 
         self.generateLinks = function (linkObject) {
-            if(linkObject.type === 'node'){
-                return $osf.apiV2Url('nodes/' + linkObject.data.uid + '/children', {});
-            }
             if (linkObject.type === 'collection'){
                 return $osf.apiV2Url(linkObject.data.path, linkObject.data.pathOptions);
             }
-            if (linkObject.type === 'breadrcrumb') {
+            if (linkObject.type === 'breadcrumb') {
                 return linkObject.data.url;
             }
+            if (linkObject.type === 'user') {
+                return $osf.apiV2Url('users/' + linkObject.id + '/nodes', {});
+            }
+            return $osf.apiV2Url('nodes/' + linkObject.data.uid + '/children', {}); // If type === node
         };
 
 
