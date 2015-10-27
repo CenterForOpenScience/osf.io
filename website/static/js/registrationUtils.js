@@ -780,7 +780,7 @@ RegistrationManager.prototype.createDraftModal = function() {
 
     bootbox.confirm({
         size: 'large',
-        title: "Register <title>",
+        title: 'Register <title>',
         message: function() {
             ko.renderTemplate('createDraftRegistrationModal', self, {}, this);
         },
