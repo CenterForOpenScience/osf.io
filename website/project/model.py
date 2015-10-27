@@ -2347,11 +2347,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
             results.append(outcome)
             if outcome:
-                from website.files.models import OsfStorageFileNode
-                files = OsfStorageFileNode.find(Q('node', 'eq', self) & Q('checkout', 'eq', contrib))
-                for file in files:
-                    file.checkout = None
-                    file.save()
+                project_signals.contributor_removed.send(self, contrib)
             removed.append(contrib._id)
         if log:
             self.add_log(

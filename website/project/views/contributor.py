@@ -4,6 +4,7 @@ import httplib as http
 import time
 
 from flask import request
+from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework import forms
@@ -29,10 +30,11 @@ from website.profile import utils as profile_utils
 from website.project.decorators import (must_have_permission, must_be_valid_project,
         must_not_be_registration, must_be_contributor_or_public, must_be_contributor)
 from website.project.model import has_anonymous_link
-from website.project.signals import unreg_contributor_added, contributor_added
+from website.project.signals import unreg_contributor_added, contributor_added, contributor_removed
 from website.util import web_url_for, is_json_request
 from website.util.permissions import expand_permissions, ADMIN
 from website.util import sanitize
+from website.files.models import OsfStorageFileNode
 
 @collect_auth
 @must_be_valid_project(retractions_valid=True)
@@ -738,3 +740,12 @@ def claim_user_post(node, **kwargs):
         'email': email,
         'fullname': unclaimed_data['name']
     }
+
+@contributor_removed.connect
+def checkin_files_by_user(node, user):
+    ''' Listens to a contributor being removed to check in all of their files
+    '''
+    files = OsfStorageFileNode.find(Q('node', 'eq', node) & Q('checkout', 'eq', user))
+    for file in files:
+        file.checkout = None
+        file.save()
