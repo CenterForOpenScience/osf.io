@@ -1021,29 +1021,29 @@ function _removeEvent (event, items, col) {
 }
 
 function doCheckout(item, checkout, showError) {
-    $.ajax({
-        method: 'put',
-        url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
-        beforeSend: $osf.setXHRAuthorization,
-        contentType: 'application/json',
-        dataType: 'json',
-        data: JSON.stringify({
+    $osf.ajaxJSON(
+        'PUT',
+        window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
+        {
+            isCors: true,
             data: {
-                id: item.data.path.replace('/', ''),
-                type: 'files',
-                attributes: {
-                    checkout: checkout
+                data: {
+                    id: item.data.path.replace('/', ''),
+                    type: 'files',
+                    attributes: {
+                        checkout: checkout
+                    }
                 }
             }
-        })
-    }).done(function(resp) {
+        }
+    ).done(function(resp) {
         if (showError) {
             window.location.reload();
         }
     }).fail(function(resp) {
         if (showError) {
-            //find error and make better message
-            $osf.growl('Error', 'Unable to check-out file.');
+            $osf.growl('Error', 'Unable to check-out file. This is most likely due to the file being already checked-out' +
+                ' by another user.');
         }
     });
 }

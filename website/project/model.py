@@ -2347,7 +2347,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
             results.append(outcome)
             if outcome:
-                project_signals.contributor_removed.send(self, contrib)
+                project_signals.contributor_removed.send(self, user=contrib)
             removed.append(contrib._id)
         if log:
             self.add_log(
