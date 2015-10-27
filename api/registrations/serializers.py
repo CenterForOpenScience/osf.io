@@ -3,7 +3,7 @@ from rest_framework import exceptions
 
 from api.base.utils import absolute_reverse
 from api.nodes.serializers import NodeSerializer
-from api.base.serializers import IDField, JSONAPIHyperlinkedIdentityField, LinksField
+from api.base.serializers import IDField, RelationshipField, LinksField
 
 
 class RegistrationSerializer(NodeSerializer):
@@ -12,18 +12,14 @@ class RegistrationSerializer(NodeSerializer):
         help_text='Whether this registration has been retracted.')
     date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
 
-    registered_by = JSONAPIHyperlinkedIdentityField(
-        view_name='users:user-detail',
-        lookup_field='registered_user_id',
-        link_type='related',
-        lookup_url_kwarg='user_id'
+    registered_by = RelationshipField(
+        related_view='users:user-detail',
+        related_view_kwargs={'user_id': 'registered_user_id'}
     )
 
-    registered_from = JSONAPIHyperlinkedIdentityField(
-        view_name='nodes:node-detail',
-        lookup_field='registered_from_id',
-        link_type='related',
-        lookup_url_kwarg='node_id'
+    registered_from = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': 'registered_from_id'}
     )
 
     # TODO: Finish me

@@ -10,7 +10,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
-from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly, RelationshipField
+from api.base.serializers import LinksField, DevOnly, RelationshipField
 from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField, JSONAPIListField
 from api.base.exceptions import InvalidModelValueError
 
@@ -69,27 +69,19 @@ class NodeSerializer(JSONAPISerializer):
     # for testing purposes: self and related field
     children = RelationshipField(
         related_view='nodes:node-children',
-        related_view_kwargs={'node_id': '_id'},
-        self_view='nodes:node-pointers',
-        self_view_kwargs={'node_id':'_id'},
+        related_view_kwargs={'node_id': 'pk'},
         related_meta = {'count': 'get_node_count'},
-    )
-
-    # for testing purposes: two kwargs
-    contributor_detail = RelationshipField(
-        related_view='nodes:node-contributor-detail',
-        related_view_kwargs={'node_id': '_id', 'user_id': 'hkdpx'},
     )
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
-        related_view_kwargs={'node_id': '_id'},
+        related_view_kwargs={'node_id': 'pk'},
         related_meta = {'count': 'get_contrib_count'}
     )
 
     files = RelationshipField(
         related_view='nodes:node-providers',
-        related_view_kwargs={'node_id': '_id'}
+        related_view_kwargs={'node_id': 'pk'}
     )
 
     forked_from = RelationshipField(
@@ -100,7 +92,7 @@ class NodeSerializer(JSONAPISerializer):
 
     node_links = DevOnly(RelationshipField(
         related_view='nodes:node-pointers',
-        related_view_kwargs={'node_id': '_id'},
+        related_view_kwargs={'node_id': 'pk'},
         related_meta = {'count': 'get_pointers_count'}
     ))
 
@@ -111,7 +103,7 @@ class NodeSerializer(JSONAPISerializer):
 
     registrations = DevOnly(RelationshipField(
         related_view='nodes:node-registrations',
-        related_view_kwargs={'node_id': '_id'},
+        related_view_kwargs={'node_id': 'pk'},
         related_meta = {'count': 'get_registration_count'}
     ))
 
@@ -226,8 +218,11 @@ class NodeContributorsSerializer(JSONAPISerializer):
     }, {
         'profile_image': 'profile_image_url',
     }))
-    nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
-                                             link_type='related')
+
+    nodes = RelationshipField(
+        related_view='users:user-nodes',
+        related_view_kwargs={'user_id': 'pk'}
+    )
 
     def profile_image_url(self, user):
         size = self.context['request'].query_params.get('profile_image_size')
@@ -298,8 +293,10 @@ class NodeLinksSerializer(JSONAPISerializer):
     # title = ser.CharField(read_only=True, source='node.title', help_text='The title of the node that this Node Link '
     #                                                                      'points to')
 
-    target_node = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='pk', link_type='related',
-                                              lookup_url_kwarg='node_id')
+    target_node = RelationshipField(
+        related_view='nodes:node-detail',
+        related_view_kwargs={'node_id': 'pk'}
+    )
     class Meta:
         type_ = 'node_links'
 
