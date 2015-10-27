@@ -161,7 +161,9 @@ var FileBrowser = {
                 m.component(Collections, {list : ctrl.collections, activeCollection : ctrl.activeCollection, updateCollection : ctrl.updateCollection } ),
                 m.component(Filters, { activeUser : ctrl.activeUser, updateUser : ctrl.updateUserFilter, nameFilters : ctrl.nameFilters, tagFilters : ctrl.tagFilters })
             ]),
-            m('.fb-main', { config: ctrl.updateList, style : poStyle }, m('#poOrganizer' )),
+            m('.fb-main', { config: ctrl.updateList, style : poStyle },
+                m('#poOrganizer', m('.spinner-loading-wrapper', m('.logo-spin.logo-md')))
+            ),
             infoPanel
         ]);
     }
