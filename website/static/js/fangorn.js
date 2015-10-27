@@ -1021,7 +1021,8 @@ function _removeEvent (event, items, col) {
 }
 
 function doCheckout(item, checkout, showError) {
-    $osf.ajaxJSON(
+    var ret = $.Deferred();
+    var request = $osf.ajaxJSON(
         'PUT',
         window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
         {
@@ -1036,16 +1037,20 @@ function doCheckout(item, checkout, showError) {
                 }
             }
         }
-    ).done(function(resp) {
+    );
+    request.done(function(resp) {
         if (showError) {
             window.location.reload();
         }
-    }).fail(function(resp) {
+    });
+    request.fail(function(resp) {
         if (showError) {
             $osf.growl('Error', 'Unable to check-out file. This is most likely due to the file being already checked-out' +
                 ' by another user.');
         }
     });
+
+    return ret.promise();
 }
 
 
