@@ -140,6 +140,56 @@ def validate_comment_reports(value, *args, **kwargs):
             )
 
 
+class SpamMixin(StoredObject):
+    """Mixin to add to objects that can be marked as spam.
+    """
+
+    UNKNOWN = 0
+    FLAGGED = 1
+    SPAM = 2
+    HAM = 4
+
+    spam_status = fields.IntegerField(default=UNKNOWN, index=True)
+    reports = fields.ListField(dict, default=[])
+
+    def flag_spam(self, save=False):
+        if self.spam_status == self.UNKNOWN:
+            self.spam_status = self.FLAGGED
+        if save:
+            self.save()
+
+    def remove_flag(self, save=False):
+        if self.spam_status == self.FLAGGED:
+            self.spam_status = self.UNKNOWN
+        if save:
+            self.save()
+
+    def confirm_ham(self, save=False):
+        self.spam_status = self.HAM
+        if save:
+            self.save()
+
+    def confirm_spam(self, save=False):
+        self.spam_status = self.SPAM
+        if save:
+            self.save()
+
+    @property
+    def is_spam(self):
+        return self.spam_status == self.SPAM
+
+    def report_spam(self, user, date, save=False, **kwargs):
+        if user == self.user:
+            raise ValueError
+        report = {'user': user._id, 'date': date}
+        report.update(kwargs)
+        report_list = self.reports
+        report_list.append(report)
+        self.reports = report_list
+        if save:
+            self.save()
+
+
 class Comment(GuidStoredObject):
 
     _id = fields.StringField(primary=True)
