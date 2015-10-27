@@ -1146,10 +1146,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         return self.is_contributor(auth.user)
 
-    def set_node_license(self, data, auth, save=True):
+    def set_node_license(self, license_id, year, copyright_holders, auth, save=True):
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError("Only admins can change a project's license.")
         try:
             node_license = NodeLicense.find_one(
-                Q('id', 'eq', data.get('id'))
+                Q('id', 'eq', license_id)
             )
         except NoResultsFound:
             raise NodeStateError("Trying to update a Node with an invalid license.")
@@ -1159,8 +1161,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 node_license=node_license
             )
         record.node_license = node_license
-        record.year = data.get('year')
-        record.copyright_holders = data.get('copyright_holders')
+        record.year = year
+        record.copyright_holders = copyright_holders or []
         record.save()
         self.node_license = record
         self.add_log(
@@ -1204,7 +1206,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     save=False
                 )
             elif key == 'node_license':
-                self.set_node_license(value, auth, save=False)
+                self.set_node_license(
+                    value.get('id'),
+                    value.get('year'),
+                    value.get('copyright_holders'),
+                    auth,
+                    save=False
+                )
             else:
                 with warnings.catch_warnings():
                     try:
