@@ -8,10 +8,10 @@ from framework.auth.core import User
 from website.files.models import FileNode
 from api.base.utils import absolute_reverse
 from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
-from api.base.serializers import JSONAPIHyperlinkedIdentityField
+from api.base.serializers import JSONAPIHyperlinkedIdentityField, RelationshipField
 from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 
-class CheckoutField(JSONAPIHyperlinkedIdentityField):
+class CheckoutField(ser.HyperlinkedIdentityField):
 
     default_error_messages = {'invalid_data': 'Checkout must be either the current user or null'}
 
@@ -69,9 +69,16 @@ class FileSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
 
-    files = NodeFileHyperLink(kind='folder', link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
-    versions = NodeFileHyperLink(kind='file', link_type='related', view_name='files:file-versions', kwargs=(('file_id', '_id'), ))
-
+    files = NodeFileHyperLink(
+        related_view='nodes:node-files',
+        related_view_kwargs={'node_id': 'node_id', 'path': 'path', 'provider': 'provider'},
+        kind='folder'
+    )
+    versions = NodeFileHyperLink(
+        related_view='files:file-versions',
+        related_view_kwargs={'file_id': '_id'},
+        kind='file'
+    )
     links = LinksField({
         'info': Link('files:file-detail', kwargs={'file_id': '<_id>'}),
         'move': WaterbutlerLink(),
