@@ -1417,7 +1417,7 @@ var tbOptions = {
         var tb = this,
             rowDiv = tb.select('.tb-row');
         //_poLoadOpenChildren.call(tb);
-        //rowDiv.first().trigger('click');
+        rowDiv.first().trigger('click');
 
         $('.gridWrapper').on('mouseout', function () {
             tb.select('.tb-row').removeClass('po-hover');

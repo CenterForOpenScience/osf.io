@@ -27,6 +27,10 @@ var FileBrowser = {
         var self = this;
         self.data = [];
         self.isLoadedUrl = false;
+
+        // View States
+        self.showInfo = m.prop(false);
+
         self.collections = [
             { id:1, type : 'collection', label : 'All My Projects', path : 'users/me/nodes/', pathOptions : {  query : { 'filter[registration]' : 'false'} } },
             { id:2, type : 'collection', label : 'All My Registrations', path : 'users/me/nodes/', pathOptions : { query : {  'filter[registration]' : 'true'} } },
@@ -132,14 +136,33 @@ var FileBrowser = {
 
     },
     view : function (ctrl) {
+        var infoPanel = '';
+        var poStyle = 'width : 75%';
+        var infoClass = 'btn-default';
+        if(ctrl.showInfo()){
+            infoPanel = m('.fb-infobar', m.component(Information, { selected : ctrl.selected }));
+            poStyle = 'width : 55%';
+            infoClass = 'btn-primary';
+        }
+
         return m('', [
-            m.component(Breadcrumbs, { data : ctrl.breadcrumbs, updateFilesData : ctrl.updateFilesData} ),
+            m('.fb-header', [
+                m.component(Breadcrumbs, { data : ctrl.breadcrumbs, updateFilesData : ctrl.updateFilesData}),
+                m('.fb-buttonRow', [
+                    m('button.btn', {
+                        'class' : infoClass,
+                        onclick : function () {
+                            ctrl.showInfo(!ctrl.showInfo());
+                        }
+                    }, m('.fa.fa-info'))
+                ])
+            ]),
             m('.fb-sidebar', [
                 m.component(Collections, {list : ctrl.collections, activeCollection : ctrl.activeCollection, updateCollection : ctrl.updateCollection } ),
                 m.component(Filters, { activeUser : ctrl.activeUser, updateUser : ctrl.updateUserFilter, nameFilters : ctrl.nameFilters, tagFilters : ctrl.tagFilters })
             ]),
-            m('.fb-main', { config: ctrl.updateList }, m('#poOrganizer' )),
-            m('.fb-infobar', m.component(Information, { selected : ctrl.selected }))
+            m('.fb-main', { config: ctrl.updateList, style : poStyle }, m('#poOrganizer' )),
+            infoPanel
         ]);
     }
 };

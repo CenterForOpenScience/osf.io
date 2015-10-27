@@ -3,9 +3,13 @@
     width: 100%;
 }
 
-.fb-breadcrumbs {
+.fb-header {
     background-color: #efefef;
     padding: 10px;
+}
+.fb-breadcrumbs {
+    width: 60%;
+    display : inline-block;
 }
 
 .fb-sidebar {
@@ -17,7 +21,6 @@
 }
 
 .fb-main {
-    width: 55%;
     float: left;
     padding: 0 0 1px 0;
 }
@@ -30,6 +33,11 @@
     width: 20%;
 }
 
+.fb-buttonRow {
+    width: 40%;
+    text-align: right;
+    display: inline-block;
+}
 .fb-breadcrumbs ul, .fb-collections ul, .fb-filters ul {
     padding: 0;
     list-style: none;
