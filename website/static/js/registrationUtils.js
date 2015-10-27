@@ -800,6 +800,10 @@ RegistrationEditor.prototype.getContributors = function() {
             $.map(data.contributors, function(val, i) {
                 contributorNames.push(val.user_fullname);
             });
+        }).fail(function() {
+            $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
+                       'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                       'problem persists.');
         });
     return contributorNames;
 };
