@@ -95,14 +95,14 @@ var FileViewPage = {
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
         self.file.checkoutUser = null;
-        self.request_done = false;
+        self.requestDone = false;
         self.isCheckoutUser = function() {
             $.ajax({
                 method: 'get',
                 url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
                 beforeSend: $osf.setXHRAuthorization
             }).done(function(resp) {
-                self.request_done = true;
+                self.requestDone = true;
                 self.file.checkoutUser = resp.data.relationships.checkout.links.related.href ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
                 if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
@@ -112,8 +112,6 @@ var FileViewPage = {
                         '. It beeds to be checked back in before any changes can be made.'
                     ])));
                 }
-            }).fail(function(resp) {
-                $osf.growl('Error', 'Unable to get check-out status of this file.');
             });
         };
         if (self.file.provider === 'osfstorage'){
