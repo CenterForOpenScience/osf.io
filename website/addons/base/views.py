@@ -18,6 +18,8 @@ from framework.auth import oauth_scopes
 from framework.routing import json_renderer
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
+from framework.transactions.context import TokuTransaction
+from framework.transactions.handlers import no_auto_transaction
 from framework.auth.decorators import must_be_logged_in, must_be_signed, collect_auth
 from website import mails
 from website import settings
@@ -232,127 +234,130 @@ LOG_ACTION_MAP = {
 
 
 @must_be_signed
+@no_auto_transaction
 @must_be_valid_project
 def create_waterbutler_log(payload, **kwargs):
-    try:
-        auth = payload['auth']
-        action = LOG_ACTION_MAP[payload['action']]
-    except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    user = User.load(auth['id'])
-    if user is None:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    auth = Auth(user=user)
-    node = kwargs['node'] or kwargs['project']
-
-    if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
-
-        for bundle in ('source', 'destination'):
-            for key in ('provider', 'materialized', 'name', 'nid'):
-                if key not in payload[bundle]:
-                    raise HTTPError(httplib.BAD_REQUEST)
-
-        dest = payload['destination']
-        src = payload['source']
-
-        if src is not None and dest is not None:
-            dest_path = dest['materialized']
-            src_path = src['materialized']
-            if dest_path.endswith('/') and src_path.endswith('/'):
-                dest_path = os.path.dirname(dest_path)
-                src_path = os.path.dirname(src_path)
-            if (
-                os.path.split(dest_path)[0] == os.path.split(src_path)[0] and
-                dest['provider'] == src['provider'] and
-                dest['nid'] == src['nid'] and
-                dest['name'] != src['name']
-            ):
-                action = LOG_ACTION_MAP['rename']
-
-        destination_node = node  # For clarity
-        source_node = Node.load(payload['source']['nid'])
-
-        source = source_node.get_addon(payload['source']['provider'])
-        destination = node.get_addon(payload['destination']['provider'])
-
-        payload['source'].update({
-            'materialized': payload['source']['materialized'].lstrip('/'),
-            'addon': source.config.full_name,
-            'url': source_node.web_url_for(
-                'addon_view_or_download_file',
-                path=payload['source']['path'].lstrip('/'),
-                provider=payload['source']['provider']
-            ),
-            'node': {
-                '_id': source_node._id,
-                'url': source_node.url,
-                'title': source_node.title,
-            }
-        })
-
-        payload['destination'].update({
-            'materialized': payload['destination']['materialized'].lstrip('/'),
-            'addon': destination.config.full_name,
-            'url': destination_node.web_url_for(
-                'addon_view_or_download_file',
-                path=payload['destination']['path'].lstrip('/'),
-                provider=payload['destination']['provider']
-            ),
-            'node': {
-                '_id': destination_node._id,
-                'url': destination_node.url,
-                'title': destination_node.title,
-            }
-        })
-
-        payload.update({
-            'node': destination_node._id,
-            'project': destination_node.parent_id,
-        })
-
-        if not payload.get('errors'):
-            destination_node.add_log(
-                action=action,
-                auth=auth,
-                params=payload
-            )
-
-        if payload.get('email') is True or payload.get('errors'):
-            mails.send_mail(
-                user.username,
-                mails.FILE_OPERATION_FAILED if payload.get('errors')
-                else mails.FILE_OPERATION_SUCCESS,
-                action=payload['action'],
-                source_node=source_node,
-                destination_node=destination_node,
-                source_path=payload['source']['path'],
-                destination_path=payload['source']['path'],
-                source_addon=payload['source']['addon'],
-                destination_addon=payload['destination']['addon'],
-            )
-
-        if payload.get('error'):
-            # Action failed but our function succeeded
-            # Bail out to avoid file_signals
-            return {'status': 'success'}
-
-    else:
+    with TokuTransaction():
         try:
-            metadata = payload['metadata']
-            node_addon = node.get_addon(payload['provider'])
+            auth = payload['auth']
+            action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
 
-        if node_addon is None:
+        user = User.load(auth['id'])
+        if user is None:
             raise HTTPError(httplib.BAD_REQUEST)
 
-        metadata['path'] = metadata['path'].lstrip('/')
+        auth = Auth(user=user)
+        node = kwargs['node'] or kwargs['project']
 
-        node_addon.create_waterbutler_log(auth, action, metadata)
+        if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
 
-    file_signals.file_updated.send(node=node, user=user, event_type=action, payload=payload)
+            for bundle in ('source', 'destination'):
+                for key in ('provider', 'materialized', 'name', 'nid'):
+                    if key not in payload[bundle]:
+                        raise HTTPError(httplib.BAD_REQUEST)
+
+            dest = payload['destination']
+            src = payload['source']
+
+            if src is not None and dest is not None:
+                dest_path = dest['materialized']
+                src_path = src['materialized']
+                if dest_path.endswith('/') and src_path.endswith('/'):
+                    dest_path = os.path.dirname(dest_path)
+                    src_path = os.path.dirname(src_path)
+                if (
+                    os.path.split(dest_path)[0] == os.path.split(src_path)[0] and
+                    dest['provider'] == src['provider'] and
+                    dest['nid'] == src['nid'] and
+                    dest['name'] != src['name']
+                ):
+                    action = LOG_ACTION_MAP['rename']
+
+            destination_node = node  # For clarity
+            source_node = Node.load(payload['source']['nid'])
+
+            source = source_node.get_addon(payload['source']['provider'])
+            destination = node.get_addon(payload['destination']['provider'])
+
+            payload['source'].update({
+                'materialized': payload['source']['materialized'].lstrip('/'),
+                'addon': source.config.full_name,
+                'url': source_node.web_url_for(
+                    'addon_view_or_download_file',
+                    path=payload['source']['path'].lstrip('/'),
+                    provider=payload['source']['provider']
+                ),
+                'node': {
+                    '_id': source_node._id,
+                    'url': source_node.url,
+                    'title': source_node.title,
+                }
+            })
+
+            payload['destination'].update({
+                'materialized': payload['destination']['materialized'].lstrip('/'),
+                'addon': destination.config.full_name,
+                'url': destination_node.web_url_for(
+                    'addon_view_or_download_file',
+                    path=payload['destination']['path'].lstrip('/'),
+                    provider=payload['destination']['provider']
+                ),
+                'node': {
+                    '_id': destination_node._id,
+                    'url': destination_node.url,
+                    'title': destination_node.title,
+                }
+            })
+
+            payload.update({
+                'node': destination_node._id,
+                'project': destination_node.parent_id,
+            })
+
+            if not payload.get('errors'):
+                destination_node.add_log(
+                    action=action,
+                    auth=auth,
+                    params=payload
+                )
+
+            if payload.get('email') is True or payload.get('errors'):
+                mails.send_mail(
+                    user.username,
+                    mails.FILE_OPERATION_FAILED if payload.get('errors')
+                    else mails.FILE_OPERATION_SUCCESS,
+                    action=payload['action'],
+                    source_node=source_node,
+                    destination_node=destination_node,
+                    source_path=payload['source']['path'],
+                    destination_path=payload['source']['path'],
+                    source_addon=payload['source']['addon'],
+                    destination_addon=payload['destination']['addon'],
+                )
+
+            if payload.get('error'):
+                # Action failed but our function succeeded
+                # Bail out to avoid file_signals
+                return {'status': 'success'}
+
+        else:
+            try:
+                metadata = payload['metadata']
+                node_addon = node.get_addon(payload['provider'])
+            except KeyError:
+                raise HTTPError(httplib.BAD_REQUEST)
+
+            if node_addon is None:
+                raise HTTPError(httplib.BAD_REQUEST)
+
+            metadata['path'] = metadata['path'].lstrip('/')
+
+            node_addon.create_waterbutler_log(auth, action, metadata)
+
+    with TokuTransaction():
+        file_signals.file_updated.send(node=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
 

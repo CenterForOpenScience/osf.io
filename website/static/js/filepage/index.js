@@ -11,7 +11,6 @@ var FileEditor = require('./editor.js');
 var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
-var language = require('js/osfLanguage.js');
 
 // Sanity
 var Panel = utils.Panel;
@@ -356,71 +355,6 @@ var FileViewPage = {
         }, 1000);
 
         self.mfrIframeParent = $('#mfrIframeParent');
-
-        if(self.canEdit) {
-            var $fileName = $('#fileName');
-            var conflict = 'warn';
-            var to = {
-                data: {
-                    nodeId: self.node.id,
-                    path: null,
-                    provider: self.file.provider,
-                }
-            };
-            var from = $.extend(true, {}, to);
-            from.data.path = self.file.path;
-            $fileName.editable({
-                type: 'text',
-                mode: 'inline',
-                send: 'always',
-                url: waterbutler.moveUrl(),
-                ajaxOptions:{
-                    beforeSend: $osf.setXHRAuthorization,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                },
-                params: function(params) {
-                    params = JSON.stringify({
-                        'rename': params.value,
-                        'conflict': conflict,
-                        'source': waterbutler.toJsonBlob(from),
-                        'destination': waterbutler.toJsonBlob(to),
-                    });
-                    return params;
-                },
-                validate: function(value) {
-                    if($.trim(value) === ''){
-                        return 'Name cannot be blank.';
-                    } else if(value.length > 100){
-                        return 'Please enter a name less than 100 characters.';
-                    }
-                },
-                success: function(response, value) {
-                    window.location.reload();
-                },
-                error: function(response) {
-                    var msg = $osf.htmlEscape(response.responseJSON.message);
-                    var msgLong = response.responseJSON.message_long;
-                    if (msgLong) {
-                        $osf.growl('Error', msgLong);
-                        return ' ';
-                    } else if (msg) {
-                        $osf.growl('Error', msg);
-                        return ' ';
-                    } else {
-                        // Log unexpected error with Raven
-                        Raven.captureMessage('Error in renaming file', {
-                            url: waterbutler.moveUrl(),
-                            responseText: response.responseText,
-                            statusText: response.statusText
-                        });
-                        $osf.growl('Error', language.Addons.rename.generalError);
-                        return ' ';
-                    }
-                }
-            });
-        }
     },
     view: function(ctrl) {
         //This code was abstracted into a panel toggler at one point
