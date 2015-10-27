@@ -114,7 +114,13 @@ function _poTitleColumn(item) {
     } else if(node.links.html){
         return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title),
             m('span', { ondblclick : function(){
-                tb.options.updateBreadcrumbs(node);
+                var linkObject = {
+                    type : 'node',
+                    data : node,
+                    label : node.attributes.title,
+                    id : node.uid
+                };
+                tb.options.updateFilesData(linkObject);
             }}, ' -Open')
         ];
     } else {
@@ -1468,7 +1474,7 @@ var ProjectOrganizer = {
         var poOptions = $.extend(
             {
                 updateSelected : args.updateSelected,
-                updateBreadcrumbs : args.updateBreadcrumbs,
+                updateFilesData : args.updateFilesData,
                 filesData: args.filesData()
             },
             tbOptions

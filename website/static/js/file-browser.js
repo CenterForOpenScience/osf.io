@@ -28,27 +28,28 @@ var FileBrowser = {
         self.data = [];
         self.isLoadedUrl = false;
         self.collections = [
-            { id:1, label : 'All My Projects', path : 'users/me/nodes/', pathOptions : {  query : { 'filter[registration]' : 'false'} } },
-            { id:2, label : 'All My Registrations', path : 'users/me/nodes/', pathOptions : { query : {  'filter[registration]' : 'true'} } },
-            { id:3, label : 'Nodes', path : 'users/me/nodes/', pathOptions : {}}
+            { id:1, type : 'collection', label : 'All My Projects', path : 'users/me/nodes/', pathOptions : {  query : { 'filter[registration]' : 'false'} } },
+            { id:2, type : 'collection', label : 'All My Registrations', path : 'users/me/nodes/', pathOptions : { query : {  'filter[registration]' : 'true'} } },
+            { id:3, type : 'collection', label : 'Nodes', path : 'users/me/nodes/', pathOptions : {}}
         ];
         self.filesData = m.prop($osf.apiV2Url(self.collections[0].path, self.collections[0].pathOptions));
 
         self.breadcrumbs = m.prop([
-            { label : 'All My Projects', url : 'http://localhost:8000/v2/users/me/nodes/?filter%5Bregistration%5D=false'}
+            { label : 'All My Projects', url : 'http://localhost:8000/v2/users/me/nodes/?filter%5Bregistration%5D=false', type : 'collection'}
         ]);
         self.nameFilters = [
-            { label : 'Caner Uguz', userID : '8q36f'}
+            { label : 'Caner Uguz', userID : '8q36f', type : 'filter'}
         ];
         self.tagFilters = [
-            { tag : 'something'}
+            { tag : 'something', type : 'filter'}
         ];
 
-        self.updateFilesData = function(value) {
-            if (value !== self.filesData()) {
-                self.filesData(value);
+        self.updateFilesData = function(linkObject) {
+            linkObject.link = self.generateLinks(linkObject);
+            if (linkObject.link !== self.filesData()) {
+                self.filesData(linkObject.link);
                 self.isLoadedUrl = false; // check if in fact changed
-                //self.updateList();
+                self.updateBreadcrumbs(linkObject);
             }
         };
 
@@ -64,9 +65,13 @@ var FileBrowser = {
         self.activeCollection = m.prop(1);
         self.updateCollection = function(coll) {
             self.activeCollection(coll.id);
-            console.log(self.activeCollection());
-            coll.url = $osf.apiV2Url(coll.path, coll.pathOptions);
-            self.updateFilesData(coll.url);
+            var linkObject = {
+                type : 'collection',
+                data : coll,
+                label : coll.label,
+                id : coll.id
+            };
+            self.updateFilesData(linkObject);
         };
 
 
@@ -75,36 +80,44 @@ var FileBrowser = {
         self.updateUserFilter = function(user) {
             self.activeUser(user.id);
             var url  = 'v2/users/' + user.userID;
-            //self.updateList(url);
         };
 
         // Refresh the Grid
         self.updateList = function(element, isInit, context){
             if(!self.isLoadedUrl) {
                 var el = element || document.getElementById('pOrganizer');
-                m.mount(el, m.component( ProjectOrganizer, { filesData : self.filesData, updateSelected : self.updateSelected, updateBreadcrumbs : self.updateBreadcrumbs}));
+                m.mount(el, m.component( ProjectOrganizer, { filesData : self.filesData, updateSelected : self.updateSelected, updateFilesData : self.updateFilesData}));
                 self.isLoadedUrl = true;
             }
         }.bind(self);
 
         // BREADCRUMBS
-        self.updateBreadcrumbs = function(node){
-            var link = self.generateLinks('node', node.uid);
-            self.breadcrumbs().push({
-                label : node.attributes.title,
-                url : link,
-                uid : node.id
-            });
-            self.updateFilesData(link);
+        self.updateBreadcrumbs = function(linkObject){
+            var crumb = {
+                label : linkObject.label,
+                url : linkObject.link,
+                uid : linkObject.id
+            };
+            if (linkObject.type === 'collection'){
+                self.breadcrumbs([crumb]);
+                return;
+            }
+            if (linkObject.type === 'breadcrumb'){
+                self.breadcrumbs().splice(linkObject.index+1, self.breadcrumbs.length-linkObject.index+1);
+                return;
+            }
+            self.breadcrumbs().push(crumb);
         }.bind(self);
 
-        self.loadBreadcrumbs = function(item){
-            self.updateFilesData(item.url);
-        };
-
-        self.generateLinks = function (type, data) {
-            if(type === 'node'){
-                return $osf.apiV2Url('nodes/' + data + '/children', {});
+        self.generateLinks = function (linkObject) {
+            if(linkObject.type === 'node'){
+                return $osf.apiV2Url('nodes/' + linkObject.data.uid + '/children', {});
+            }
+            if (linkObject.type === 'collection'){
+                return $osf.apiV2Url(linkObject.data.path, linkObject.data.pathOptions);
+            }
+            if (linkObject.type === 'breadrcrumb') {
+                return linkObject.data.url;
             }
         };
 
@@ -113,7 +126,7 @@ var FileBrowser = {
     },
     view : function (ctrl) {
         return m('', [
-            m.component(Breadcrumbs, { data : ctrl.breadcrumbs, loadBreadcrumbs : ctrl.loadBreadcrumbs} ),
+            m.component(Breadcrumbs, { data : ctrl.breadcrumbs, updateFilesData : ctrl.updateFilesData} ),
             m('.fb-sidebar', [
                 m.component(Collections, {list : ctrl.collections, activeCollection : ctrl.activeCollection, updateCollection : ctrl.updateCollection } ),
                 m.component(Filters, { activeUser : ctrl.activeUser, updateUser : ctrl.updateUserFilter, nameFilters : ctrl.nameFilters, tagFilters : ctrl.tagFilters })
@@ -156,7 +169,7 @@ var Breadcrumbs = {
     controller : function (args) {
         var self = this;
         self.updateFilesData = function() {
-            args.loadBreadcrumbs(this);
+            args.updateFilesData(this);
         };
     },
     view : function (ctrl, args) {
@@ -165,8 +178,15 @@ var Breadcrumbs = {
                 if(index === array.length-1){
                     return m('li',  item.label);
                 }
+                var linkObject = {
+                    type : 'breadcrumb',
+                    data : item,
+                    label : item.label,
+                    id : null,
+                    index : index
+                };
                 return m('li',
-                    m('a', { href : '#', onclick : ctrl.updateFilesData.bind(item)},  item.label),
+                    m('a', { href : '#', onclick : ctrl.updateFilesData.bind(linkObject)},  item.label),
                     m('i.fa.fa-chevron-right')
                 );
             })
