@@ -4058,25 +4058,35 @@ class TestComments(OsfTestCase):
         assert_equal(len(self.comment.node.logs), 3)
         assert_equal(self.comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
 
-    def test_report_abuse(self):
+    def test_report_spam(self):
         user = UserFactory()
-        self.comment.report_abuse(user, category='spam', text='ads', save=True)
-        assert_in(user._id, self.comment.reports)
-        assert_equal(
-            self.comment.reports[user._id],
-            {'category': 'spam', 'text': 'ads'}
-        )
+        time = datetime.datetime.utcnow()
+        self.comment.report_spam(user, time, category='spam', message='ads', save=True)
+        equivalent = {
+            'user': user._id,
+            'date': time,
+            'category': 'spam',
+            'message': 'ads',
+            'retracted': False
+        }
+        assert_in(equivalent, self.comment.reports)
 
-    def test_report_abuse_own_comment(self):
+    def test_report_spam_own_comment(self):
         with assert_raises(ValueError):
-            self.comment.report_abuse(
-                self.comment.user, category='spam', text='ads', save=True
+            self.comment.report_spam(
+                self.comment.user,
+                datetime.datetime.utcnow(),
+                category='spam', text='ads',
+                save=True
             )
 
-    def test_unreport_abuse(self):
+    def test_retract_report(self):
         user = UserFactory()
-        self.comment.report_abuse(user, category='spam', text='ads', save=True)
-        self.comment.unreport_abuse(user, save=True)
+        time = datetime.datetime.utcnow()
+        self.comment.report_spam(
+            user, time, category='spam', text='ads', save=True
+        )
+        self.comment.retract_report(user, save=True)
         assert_not_in(user._id, self.comment.reports)
 
     def test_unreport_abuse_not_reporter(self):

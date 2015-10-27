@@ -158,7 +158,7 @@ class SpamMixin(object):
     #  - retracted: if a report has been retracted
     #  - category: What type of spam does the reporter believe this is
     #  - message: Comment on the comment
-    reports = fields.DictionaryField(list=True)
+    reports = fields.DictionaryField(list=True, default=[])
 
     def flag_spam(self, save=False):
         # If ham and unedited then tell user that they should read it again
@@ -198,11 +198,10 @@ class SpamMixin(object):
         """
         if user == self.user:
             raise ValueError
+        self.flag_spam()
         report = {'user': user._id, 'date': date, 'retracted': False}
         report.update(kwargs)
-        report_list = self.reports
-        report_list.append(report)
-        self.reports = report_list
+        self.reports.append(report)
         if save:
             self.save()
 
