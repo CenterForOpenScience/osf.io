@@ -215,8 +215,7 @@ class RelationshipField(JSONAPIHyperlinkedIdentityField):
                         )
                 else:
                     meta[key] = _rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
-            return meta
-        return None
+        return meta
 
     def to_representation(self, value):
 
