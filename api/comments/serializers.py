@@ -64,7 +64,7 @@ class CommentSerializer(JSONAPISerializer):
         if validated_data:
             if 'return_content' in validated_data:
                 comment.edit(validated_data['return_content'], auth=auth, save=True)
-            if validated_data.get('is_deleted', None) == True:
+            if validated_data.get('is_deleted', None) is True:
                 comment.delete(auth, save=True)
             elif comment.is_deleted:
                 comment.undelete(auth, save=True)
