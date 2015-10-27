@@ -5,7 +5,7 @@ from rest_framework.fields import SkipField
 from rest_framework.reverse import reverse
 from rest_framework import serializers as ser
 
-from framework.auth.core import Auth
+from framework.auth import core as auth_core
 from website import settings
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
@@ -104,7 +104,7 @@ class AuthorizedCharField(ser.CharField):
 
     def get_attribute(self, obj):
         user = self.context['request'].user
-        auth = Auth(user)
+        auth = auth_core.Auth(user)
         field_source_method = getattr(obj, self.source)
         return field_source_method(auth=auth)
 
