@@ -160,14 +160,12 @@ class RelationshipField(JSONAPIHyperlinkedIdentityField):
     )
     """
     def __init__(self, **kwargs):
-        self.meta = kwargs.pop('meta', None)
         self.related_view = kwargs.pop('related_view', None)
         self.related_view_kwargs = kwargs.pop('related_view_kwargs', None)
         self.related_meta = kwargs.pop('related_meta', None)
         self.self_meta = kwargs.pop('self_meta', None)
         self.self_view = kwargs.pop('self_view', None)
         self.self_view_kwargs = kwargs.pop('self_view_kwargs', None)
-        self.kind = ''
         assert (self.related_view is not None or self.self_view is not None), 'Self or related view must be specified.'
         if self.related_view:
             assert self.related_view_kwargs is not None, 'Must provide related view kwargs.'
@@ -237,6 +235,7 @@ class RelationshipField(JSONAPIHyperlinkedIdentityField):
             del ret['links']['self']
 
         return ret
+
 
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
