@@ -5,6 +5,7 @@ from website.models import Node, Pointer, User, Comment
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth
+from api.comments.serializers import CommentReport
 
 
 class ContributorOrPublic(permissions.BasePermission):
@@ -99,9 +100,13 @@ class CommentReportsPermissions(permissions.BasePermission):
        can access the comment reports endpoint."""
 
     def has_object_permission(self, request, view, obj):
-        assert isinstance(obj, Comment), 'obj must be a Comment, got {}'.format(obj)
+        assert isinstance(obj, (Comment, CommentReport)), 'obj must be a Comment or Comment Report, got {}'.format(obj)
         auth = get_user_auth(request)
-        node = obj.node
+        if isinstance(obj, Comment):
+            node = obj.node
+        elif isinstance(obj, CommentReport):
+            comment = view.get_comment()
+            node = comment.node
         return node.can_comment(auth)
 
 
