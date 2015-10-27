@@ -13,13 +13,8 @@
                     value: value,
                     attr.placeholder: match" type="text" class="form-control" />
 </script>
-## TODO(hrybacki): valueUpdate doesn't work with textarea(s), as a result throttling is not
-## possible and we must call `save` on via the event binding. We still have throttling in
-## place for the other fields but this will need to be resolved with what will likely be a
-## convoluted solution.on.
 <script type="text/html" id="textarea">
   <textarea data-bind="valueUpdate: 'keyup',
-                       event: {'keyup': save},
                        textInput: value"
             class="form-control"> </textarea>
 </script>
@@ -36,10 +31,7 @@
 <script type="text/html" id="singleselect">
   <div class="col-md-12" data-bind="foreach: {data: options, as: 'option'}">
     <p>
-      <input type="radio" data-bind="event: {
-                                       'click': $parent.save
-                                     },
-                                     checked: $parent.value,
+      <input type="radio" data-bind="checked: $parent.value,
                                      value: option"/>
       <span data-bind="text: option"></span>
     </p>
