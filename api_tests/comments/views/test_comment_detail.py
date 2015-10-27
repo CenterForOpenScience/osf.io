@@ -55,6 +55,7 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.get(self.private_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(self.comment._id, res.json['data']['id'])
+        assert_equal(self.comment.content, res.json['data']['attributes']['content'])
 
     def test_private_node_logged_in_non_contributor_cannot_view_comment(self):
         self._set_up_private_project_with_comment()
@@ -71,24 +72,28 @@ class TestCommentDetailView(ApiTestCase):
         res = self.app.get(self.public_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(self.public_comment._id, res.json['data']['id'])
+        assert_equal(self.public_comment.content, res.json['data']['attributes']['content'])
 
     def test_public_node_logged_in_non_contributor_can_view_comment(self):
         self._set_up_public_project_with_comment()
         res = self.app.get(self.public_url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
         assert_equal(self.public_comment._id, res.json['data']['id'])
+        assert_equal(self.public_comment.content, res.json['data']['attributes']['content'])
 
     def test_public_node_logged_out_user_can_view_comment(self):
         self._set_up_public_project_with_comment()
         res = self.app.get(self.public_url)
         assert_equal(res.status_code, 200)
         assert_equal(self.public_comment._id, res.json['data']['id'])
+        assert_equal(self.public_comment.content, res.json['data']['attributes']['content'])
 
     def test_registration_logged_in_contributor_can_view_comment(self):
         self._set_up_registration_with_comment()
         res = self.app.get(self.registration_url, auth=self.user.auth)
         assert_equal(res.status_code, 200)
         assert_equal(self.registration_comment._id, res.json['data']['id'])
+        assert_equal(self.registration_comment.content, res.json['data']['attributes']['content'])
 
     def test_comment_has_user_link(self):
         self._set_up_public_project_with_comment()
