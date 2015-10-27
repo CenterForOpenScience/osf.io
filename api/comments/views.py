@@ -43,11 +43,67 @@ class CommentMixin(object):
 
 
 class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
-    """Replies to a comment.
+    """List of replies to a comment. *Writeable*.
 
-    By default, a GET will return both deleted and not deleted replies. Comment replies may be
-    filtered by their `deleted` field.
+    Paginated list of comment replies ordered by their `date_created.` Each resource contains the full representation
+    of the comment, meaning additional requests to an individual comment's detail view are not necessary.
+
+    ###Permissions
+
+    Comments on public nodes are given read-only access to everyone. If the node comment-level is "private",
+    only contributors have permission to comment. If the comment-level is "public" any logged-in OSF user can comment.
+    Comments on private nodes are only visible to contributors and administrators on the parent node.
+
+    ##Attributes
+
+    OSF comment reply entities have the "comments" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        content        string             content of the comment
+        date_created   iso8601 timestamp  timestamp that the comment was created
+        date_modified  iso8601 timestamp  timestamp when the comment was last updated
+        modified       boolean            has this comment been edited?
+        deleted        boolean            is this comment deleted?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "comments",   # required
+                           "attributes": {
+                             "content":       {content},        # mandatory
+                             "deleted":       {is_deleted},     # optional
+                           }
+                         }
+                       }
+        Success:       201 CREATED + comment representation
+
+    To create a comment reply, issue a POST request against this endpoint.  The `content` field is mandatory. The
+    `deleted` field is optional and defaults to `False`. If the comment reply creation is successful the API will return
+    a 201 response with the representation of the new comment reply in the body. For the new comment reply's canonical
+    URL, see the `links.self` field of the response.
+
+    ##Query Params
+
+    + `filter[deleted]=True|False` -- filter comment replies based on whether or not they are deleted.
+
+    The list of comment replies includes deleted comments by default. The `deleted` field is a boolean and can be
+    filtered using truthy values, such as `true`, `false`, `0`, or `1`. Note that quoting `true` or `false` in
+    the query will cause the match to fail regardless.
+
+    #This Request/Response
     """
+
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanCommentOrPublic,
@@ -58,6 +114,8 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentSerializer
+
+    ordering = ('-date_created', )  # default ordering
 
     def get_queryset(self):
         return Comment.find(Q('target', 'eq', self.get_comment()))
@@ -72,7 +130,86 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
 
 
 class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
-    """Details about a specific comment."""
+    """Details about a specific comment. *Writeable*.
+
+    ###Permissions
+
+    Comments on public nodes are given read-only access to everyone. Comments on private nodes are only visible
+    to contributors and administrators on the parent node. Only the user who created the comment has permissions
+    to edit and delete the comment.
+
+    ##Attributes
+
+    OSF comment entities have the "comments" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        content        string             content of the comment
+        date_created   iso8601 timestamp  timestamp that the comment was created
+        date_modified  iso8601 timestamp  timestamp when the comment was last updated
+        modified       boolean            has this comment been edited?
+        deleted        boolean            is this comment deleted?
+
+    ##Relationships
+
+    ###User
+
+    The user who created the comment.
+
+    ###Node
+
+    The project associated with this comment.
+
+    ###Target
+
+    The "parent" of the comment. If the comment was made on a node, the target is the node. If the comment
+    is a reply, its target is the comment it was in reply to.
+
+    ###Replies
+    List of replies to this comment. New replies can be created through this endpoint.
+
+    ###Reports
+    List of spam reports for this comment. Only users with permissions to create comments can
+    access this endpoint, and users can only see reports that they have created.
+
+    ##Links
+
+        self:  the canonical api endpoint of this node
+
+    ##Actions
+
+    ###Update
+
+        Method:        PUT / PATCH
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "comments",   # required
+                           "id":   {comment_id}, # required
+                           "attributes": {
+                             "content":       {content},        # mandatory
+                             "deleted":       {is_deleted},     # mandatory
+                           }
+                         }
+                       }
+        Success:       200 OK + comment representation
+
+    To update a comment, issue either a PUT or a PATCH request against the `links.self` URL.  The `content`
+    and 'deleted' fields are mandatory if you PUT and optional if you PATCH. Non-string values will be accepted and
+    stringified, but we make no promises about the stringification output.  So don't do that.
+
+    To delete a comment, issue a PATCH request against the `links.self` URL, with `is_deleted: True`:
+
+    To undelete a comment, issue a PATCH request against the `links.self` URL, with `is_deleted: False`.
+
+    ##Query Params
+
+    *None*.
+
+    #This Request/Response
+
+    """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         CommentDetailPermissions,

@@ -1317,10 +1317,65 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
 
 class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
-    """List of comments for a node.
+    """List of comments on a node. *Writeable*.
 
-    By default, a GET will return both deleted and not deleted comments. Comments may be
-    filtered by their `deleted` field.
+    Paginated list of comments ordered by their `date_created.` Each resource contains the full representation of the
+    comment, meaning additional requests to an individual comment's detail view are not necessary.
+
+    ###Permissions
+
+    Comments on public nodes are given read-only access to everyone. If the node comment-level is "private",
+    only contributors have permission to comment. If the comment-level is "public" any logged-in OSF user can comment.
+    Comments on private nodes are only visible to contributors and administrators on the parent node.
+
+    ##Attributes
+
+    OSF comment entities have the "comments" `type`.
+
+        name           type               description
+        ---------------------------------------------------------------------------------
+        content        string             content of the comment
+        date_created   iso8601 timestamp  timestamp that the comment was created
+        date_modified  iso8601 timestamp  timestamp when the comment was last updated
+        modified       boolean            has this comment been edited?
+        deleted        boolean            is this comment deleted?
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
+
+    ###Create
+
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON):   {
+                         "data": {
+                           "type": "comments",   # required
+                           "attributes": {
+                             "content":       {content},        # mandatory
+                             "deleted":       {is_deleted},     # optional
+                           }
+                         }
+                       }
+        Success:       201 CREATED + comment representation
+
+    To create a comment on this node, issue a POST request against this endpoint. The `content` field is mandatory.
+    The `deleted` field is optional and defaults to `False`. If the comment creation is successful the API will return
+    a 201 response with the representation of the new comment in the body. For the new comment's canonical URL, see the
+    `links.self` field of the response.
+
+    ##Query Params
+
+    + `filter[deleted]=True|False` -- filter comments based on whether or not they are deleted.
+
+    The list of node comments includes deleted comments by default. The `deleted` field is a boolean and can be
+    filtered using truthy values, such as `true`, `false`, `0`, or `1`. Note that quoting `true` or `false` in
+    the query will cause the match to fail regardless.
+
+    #This Request/Response
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -1332,6 +1387,8 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentSerializer
+
+    ordering = ('-date_created', )  # default ordering
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
