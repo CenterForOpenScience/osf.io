@@ -54,11 +54,7 @@ function getNodePrivacyDirty(nodeTree, nodesOriginal) {
     var i;
     var nodeId = nodeTree.node.id;
     var nodeIsPublic = nodeTree.node.is_public;
-    var addons = nodeTree.node.addons;
-    nodesOriginal[nodeId] = {
-        isPublic: nodeIsPublic,
-        addons: addons
-    };
+    nodesOriginal[nodeId] = nodeIsPublic;
     if (nodeTree.children) {
         for (i in nodeTree.children) {
             nodesOriginal = getNodePrivacyDirty(nodeTree.children[i], nodesOriginal);
@@ -68,6 +64,24 @@ function getNodePrivacyDirty(nodeTree, nodesOriginal) {
     return nodesOriginal;
 }
 
+//function getNodePrivacyDirty(nodeTree, nodesOriginal) {
+//    var i;
+//    var nodeId = nodeTree.node.id;
+//    var nodeIsPublic = nodeTree.node.is_public;
+//    var addons = nodeTree.node.addons;
+//    nodesOriginal[nodeId] = {
+//        isPublic: nodeIsPublic,
+//        addons: addons
+//    };
+//    if (nodeTree.children) {
+//        for (i in nodeTree.children) {
+//            nodesOriginal = getNodePrivacyDirty(nodeTree.children[i], nodesOriginal);
+//        }
+//    }
+//    //var localNodes = nodesOriginal;
+//    return nodesOriginal;
+//}
+//
 //function getAddons(nodeTree, addons) {
 //    var nodeAddons = [];
 //    var i;
@@ -115,7 +129,7 @@ var NodesPrivacyViewModel = function() {
         dataType: 'json'
     }).done(function(response) {
         response[0].node.is_public = true;
-        addons = getAddons(response[0], addons);
+        //addons = getAddons(response[0], addons);
         nodesOriginal = getNodePrivacyDirty(response[0], nodesOriginal);
         self.nodesState(nodesOriginal);
         new NodesPrivacyTreebeard(response, self.nodesState, self.nodesChanged, nodesOriginal);
