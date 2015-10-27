@@ -83,6 +83,10 @@
                     </ul>
                   </span>
                   <div data-bind="template: {data: $data, name: type}"></div>
+                  <br />
+                  <button data-bind="click: $root.authorDialog,
+                                     visible: $root.currentQuestion().title === 'Authorship' && $root.contributors.length > 1"  type="button" class="btn btn-primary">Import Contributors
+                  </button>
                 </span>
               </div>
           </div>
@@ -156,7 +160,7 @@
 
 <script>
  function setAllBoxes(value) {
-     var boxes = document.querySelectorAll('input[type="checkbox"]');
+     var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
      $.each(boxes, function(i, box) {
          this.checked = value;
      });
@@ -168,14 +172,14 @@
         <p>Select: <a onClick="setAllBoxes(true)">All</a> | <a onClick="setAllBoxes(false)">None</a></p>
     </div>
     <div data-bind="foreach: {data: contributors, as: 'contrib'}">
-        <div class="checkbox">
+        <div class="checkbox" id="contribBoxes">
             <label>
                 <input type="checkbox" data-bind="value: contrib">
-                <!-- ko text: contrib --> <!-- /ko -->
+                <span data-bind="text: contrib"></span>
             </label>
         </div>
     </div>
-    <p>If you would like to add contributors to your OSF project, you can do that on your <a href="${web_url_for('node_contributors', pid=node['root_id'])}">Contributors Page</a> </p>
+    <p>If you would like to add contributors to your OSF project, you can do that on your <a href="${web_url_for('node_contributors', pid=node['id'])}">Contributors Page</a> </p>
 </script>
 
 <%include file="registration_editor_extensions.mako" />

@@ -439,7 +439,7 @@ var RegistrationEditor = function(urls, editorId) {
     });
     self.showValidation = ko.observable(false);
 
-    self.contributors = ko.observable(self.getContributors());
+    self.contributors = self.getContributors();
 
     self.currentPages = ko.computed(function() {
         var draft = self.draft();
@@ -782,16 +782,25 @@ RegistrationEditor.prototype.save = function() {
     return true;
 };
 /**
+ * Makes ajax request for a project's contributors
+ */
+RegistrationEditor.prototype.makeContributorsRequest = function() {
+    var self = this;
+    var contributorsUrl = window.contextVars.node.urls.api + 'contributors_abbrev/';
+    return $osf.ajaxJSON('get', contributorsUrl);
+};
+/**
  * Returns the `user_fullname` of each contributor attached to a node.
  **/
 RegistrationEditor.prototype.getContributors = function() {
-    var contributorsUrl = window.contextVars.node.urls.api + 'contributors_abbrev/';
+    var self = this;
     var contributorNames = [];
-    $osf.ajaxJSON('get', contributorsUrl).done(function(data) {
-        $.each(data.contributors, function(idx, val) {
-            contributorNames.push(val.user_fullname);
+    self.makeContributorsRequest()
+        .done(function(data) {
+            $.map(data.contributors, function(val, i) {
+                contributorNames.push(val.user_fullname);
+            });
         });
-    });
     return contributorNames;
 };
 /**
@@ -812,15 +821,15 @@ RegistrationEditor.prototype.authorDialog = function() {
                 label: 'Import',
                 className: 'btn-primary pull-left',
                 callback: function() {
-                    var boxes = document.querySelectorAll('input[type="checkbox"]');
-                    var authorString = '';
+                    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+                    var authors = [];
                     $.each(boxes, function(i, box) {
                         if( this.checked ) {
-                            authorString += this.value + ', ';
+                            authors.push(this.value);
                         }
                     });
-                    if ( authorString ) {
-                        self.currentQuestion().setValue( authorString );
+                    if ( authors ) {
+                        self.currentQuestion().setValue(authors.join(', '));
                         self.save();
                     }
                 }

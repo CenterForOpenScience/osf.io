@@ -89,9 +89,7 @@
                                 click: $root.check" type="button" class="pull-right btn btn-success">Register
                   </a>
                 </span>
-                <button data-bind="click: authorDialog,
-                                   visible: currentQuestion().title === 'Authorship' && contributors().length > 1"  type="button" class="btn btn-primary">Import Contributors
-                </button>
+                
               </div>
             </div>
           </div>
