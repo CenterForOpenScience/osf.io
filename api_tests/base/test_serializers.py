@@ -11,6 +11,7 @@ from api.base.settings.defaults import API_BASE
 from api.base.serializers import JSONAPISerializer
 from api.nodes.serializers import NodeSerializer, RelationshipField
 
+
 class TestApiBaseSerializers(ApiTestCase):
 
     def setUp(self):
@@ -79,6 +80,7 @@ class TestRelationshipField(DbTestCase):
         )
 
         two_url_kwargs = RelationshipField(
+            # fake url, for testing purposes
             related_view='nodes:node-pointer-detail',
             related_view_kwargs={'node_id': 'pk', 'node_link_id': 'pk'},
         )

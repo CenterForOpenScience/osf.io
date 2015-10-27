@@ -70,13 +70,13 @@ class NodeSerializer(JSONAPISerializer):
     children = RelationshipField(
         related_view='nodes:node-children',
         related_view_kwargs={'node_id': 'pk'},
-        related_meta = {'count': 'get_node_count'},
+        related_meta={'count': 'get_node_count'},
     )
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': 'pk'},
-        related_meta = {'count': 'get_contrib_count'}
+        related_meta={'count': 'get_contrib_count'}
     )
 
     files = RelationshipField(
@@ -89,11 +89,10 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': 'forked_from_id'}
     )
 
-
     node_links = DevOnly(RelationshipField(
         related_view='nodes:node-pointers',
         related_view_kwargs={'node_id': 'pk'},
-        related_meta = {'count': 'get_pointers_count'}
+        related_meta={'count': 'get_pointers_count'}
     ))
 
     parent = RelationshipField(
@@ -104,7 +103,7 @@ class NodeSerializer(JSONAPISerializer):
     registrations = DevOnly(RelationshipField(
         related_view='nodes:node-registrations',
         related_view_kwargs={'node_id': 'pk'},
-        related_meta = {'count': 'get_registration_count'}
+        related_meta={'count': 'get_registration_count'}
     ))
 
     class Meta:
