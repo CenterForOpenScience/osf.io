@@ -225,16 +225,19 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         urls = super(RelationshipField, self).to_representation(value)
 
-        related_url = urls['related']
-        related_meta = self.get_meta_information(self.related_meta, value)
+        if urls is None:
+            ret = {'links': {'related': {'href': None, 'meta': {}}, 'self': {'href': None, 'meta': {}}}}
+        else:
+            related_url = urls['related']
+            related_meta = self.get_meta_information(self.related_meta, value)
 
-        self_url = urls['self']
-        self_meta = self.get_meta_information(self.self_meta, value)
+            self_url = urls['self']
+            self_meta = self.get_meta_information(self.self_meta, value)
 
-        ret = {'links': {'related': {'href': related_url, 'meta': related_meta}, 'self': {'href': self_url, 'meta': self_meta}}}
+            ret = {'links': {'related': {'href': related_url, 'meta': related_meta}, 'self': {'href': self_url, 'meta': self_meta}}}
 
-        if not ret['links']['self']['href']:
-            del ret['links']['self']
+            if not ret['links']['self']['href']:
+                del ret['links']['self']
 
         return ret
 
@@ -358,21 +361,15 @@ class WaterbutlerLink(Link):
         return waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
 
 
-class NodeFileHyperLink(JSONAPIHyperlinkedIdentityField):
-    def __init__(self, kind=None, kwargs=None, **kws):
+class NodeFileHyperLink(RelationshipField):
+    def __init__(self, kind=None, **kws):
         self.kind = kind
-        self.kwargs = []
-        for kw in (kwargs or []):
-            if isinstance(kw, basestring):
-                kw = (kw, kw)
-            assert isinstance(kw, tuple) and len(kw) == 2
-            self.kwargs.append(kw)
         super(NodeFileHyperLink, self).__init__(**kws)
 
     def get_url(self, obj, view_name, request, format):
         if self.kind and obj.kind != self.kind:
             return None
-        return reverse(view_name, kwargs={attr_name: getattr(obj, attr) for (attr_name, attr) in self.kwargs}, request=request, format=format)
+        return super(NodeFileHyperLink, self).get_url(obj, view_name, request, format)
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
@@ -420,7 +417,7 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if isinstance(field, (JSONAPIHyperlinkedIdentityField, RelationshipField)):
+            if isinstance(field, (ser.HyperlinkedIdentityField, RelationshipField)):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
