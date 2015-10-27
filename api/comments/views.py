@@ -13,7 +13,10 @@ from api.comments.serializers import (
     CommentReportDetailSerializer,
     CommentReport
 )
-from api.nodes.permissions import ContributorOrPublicForComments
+from api.nodes.permissions import (
+    CanCommentOrPublic,
+    CommentDetailPermissions,
+    CommentReportsPermissions)
 from framework.auth.oauth_scopes import CoreScopes
 from website.project.model import Comment
 
@@ -47,7 +50,7 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublicForComments,
+        CanCommentOrPublic,
         base_permissions.TokenHasScope,
     )
 
@@ -72,7 +75,7 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
     """Details about a specific comment."""
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublicForComments,
+        CommentDetailPermissions,
         base_permissions.TokenHasScope,
     )
 
@@ -90,7 +93,7 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
     """List of reports made for a comment."""
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        ContributorOrPublicForComments,
+        CommentReportsPermissions,
         base_permissions.TokenHasScope,
     )
 
@@ -114,7 +117,7 @@ class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     """Details about a specific comment report."""
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        ContributorOrPublicForComments,
+        CommentReportsPermissions,
         base_permissions.TokenHasScope,
     )
 

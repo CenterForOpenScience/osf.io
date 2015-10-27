@@ -25,9 +25,9 @@ from api.nodes.serializers import (
 from api.registrations.serializers import RegistrationSerializer
 from api.nodes.permissions import (
     AdminOrPublic,
+    CanCommentOrPublic,
     ContributorOrPublic,
     ContributorOrPublicForPointers,
-    ContributorOrPublicForComments,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
 )
@@ -1324,7 +1324,7 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
-        ContributorOrPublicForComments,
+        CanCommentOrPublic,
         base_permissions.TokenHasScope,
     )
 
