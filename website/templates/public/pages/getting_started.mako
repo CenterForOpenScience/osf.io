@@ -16,17 +16,17 @@
                     <li>
                         <a  class="active" href="#start">Getting Started</a>
                         <ul class="nav">
-                            <li><a href="#start-one"><i class="fa fa-chevron-right"></i> Creating a Project</a></li>
+                            <li><a href="#start-one"><i class="fa fa-chevron-right"></i> Creating a project</a></li>
                             <li><a href="#start-two"><i class="fa fa-chevron-right"></i> Collaboration</a></li>
-                            <li><a href="#start-three"><i class="fa fa-chevron-right"></i> Version Control</a></li>
+                            <li><a href="#start-three"><i class="fa fa-chevron-right"></i> Version control</a></li>
                         </ul>
                     </li>
                     <li>
                         <a href="#structure">Structure</a>
                         <ul class="nav">
-                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project Organizer</a></li>
+                            <li><a href="#organizer"><i class="fa fa-chevron-right"></i> Project organizer</a></li>
                             <li><a href="#dashboards"><i class="fa fa-chevron-right"></i> Dashboard</a></li>
-                            <li><a href="#userprofile"><i class="fa fa-chevron-right"></i> User Profile</a></li>
+                            <li><a href="#userprofile"><i class="fa fa-chevron-right"></i> User profile</a></li>
                             <li><a href="#projects"><i class="fa fa-chevron-right"></i> Projects</a></li>
                             <li><a href="#components"><i class="fa fa-chevron-right"></i> Components</a></li>
                             <li><a href="#files"><i class="fa fa-chevron-right"></i> Files</a></li>
@@ -42,7 +42,7 @@
                             <li><a href="#contributors"><i class="fa fa-chevron-right"></i> Contributors</a></li>
                             <li><a href="#privacy"><i class="fa fa-chevron-right"></i> Privacy</a></li>
                             <li><a href="#citations"><i class="fa fa-chevron-right"></i> Citations</a></li>
-                            <li><a href="#viewonly"><i class="fa fa-chevron-right"></i> View-only Links</a></li>
+                            <li><a href="#viewonly"><i class="fa fa-chevron-right"></i> View-only links</a></li>
                             <li><a href="#comments"><i class="fa fa-chevron-right"></i> Comments</a></li>
                         </ul>
                     </li>
@@ -58,7 +58,7 @@
                             <li><a href="#drive"><i class="fa fa-chevron-right"></i> Google Drive</a></li>
                             <li><a href="#mendeley"><i class="fa fa-chevron-right"></i> Mendeley</a></li>
                             <li><a href="#zotero"><i class="fa fa-chevron-right"></i> Zotero</a></li>
-                            <li><a href="#twofactor"><i class="fa fa-chevron-right"></i> Two-factor Authentication</a></li>
+                            <li><a href="#twofactor"><i class="fa fa-chevron-right"></i> Two-factor authentication</a></li>
                         </ul>
                     </li>
                     <li>
@@ -122,7 +122,7 @@
                 </div>
             </div>
         <div  id="structure" class="row p-t-xl">
-            <h2 class="text-center">Structuring Your Work</h2>
+            <h2 class="text-center">Structuring your work</h2>
             <div class="col-md-12">
                 <%include file="/public/pages/help/organizer.mako"/>
                 <%include file="/public/pages/help/dashboards.mako"/>
@@ -138,7 +138,7 @@
         </div>
 
         <div id="sharing" class="row p-t-xl">
-            <h2 class="text-center">Sharing Your Work</h2>
+            <h2 class="text-center">Sharing your work</h2>
             <div class="col-md-12">
                 <%include file="/public/pages/help/contributors.mako"/>
                 <%include file="/public/pages/help/privacy.mako"/>
