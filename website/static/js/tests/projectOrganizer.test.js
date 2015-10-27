@@ -3,7 +3,7 @@
 var assert = require('chai').assert;
 var Raven = require('raven-js');
 var $ = require('jquery');
-var ProjectOrganizer = require('js/projectorganizer');
+var ProjectOrganizer = require('js/project-organizer');
 
 // TODO: These tests are about moving projects around but new PO separates the collections and these are not relevant. Check and remove files.
 // Add sinon asserts to chai.assert, so we can do assert.calledWith instead of sinon.assert.calledWith

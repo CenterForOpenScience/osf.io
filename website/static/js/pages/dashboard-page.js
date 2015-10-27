@@ -12,7 +12,6 @@ var jstz = require('jstimezonedetect').jstz;
 var $osf = require('js/osfHelpers');
 var FileBrowser = require('js/file-browser.js');
 var LogFeed = require('js/logFeed');
-var ProjectOrganizer = require('js/projectorganizer').ProjectOrganizer;
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 
 var url = '/api/v1/dashboard/get_nodes/';
