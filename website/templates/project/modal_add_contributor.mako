@@ -51,9 +51,7 @@
                             </div>
                         </div>
                     </form>
-
                     <hr />
-
                     <!-- Choose which to add -->
                     <div class="row">
 
