@@ -1042,12 +1042,14 @@ function doCheckout(item, checkout, showError) {
         if (showError) {
             window.location.reload();
         }
+        ret.resolve(resp);
     });
-    request.fail(function(resp) {
+    request.fail(function(xhr, status, error) {
         if (showError) {
             $osf.growl('Error', 'Unable to check-out file. This is most likely due to the file being already checked-out' +
                 ' by another user.');
         }
+        ret.reject(xhr, status, error);
     });
 
     return ret.promise();
