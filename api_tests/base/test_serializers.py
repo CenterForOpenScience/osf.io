@@ -9,7 +9,7 @@ from tests.utils import make_drf_request
 
 from api.base.settings.defaults import API_BASE
 from api.base.serializers import JSONAPISerializer
-from api.nodes.serializers import NodeSerializer, JSONAPIHyperlinkedIdentityField
+from api.nodes.serializers import NodeSerializer, RelationshipField
 
 class TestApiBaseSerializers(ApiTestCase):
 
@@ -55,23 +55,20 @@ class TestApiBaseSerializers(ApiTestCase):
         assert_equal(res.status_code, http.BAD_REQUEST)
 
 
-class TestJSONAPIHyperlinkedIdentityField(DbTestCase):
+class TestRelationshipField(DbTestCase):
 
-    # We need a Serializer to test the JSONHyperlinkedIdentity field (needs context)
+    # We need a Serializer to test the Relationship field (needs context)
     class BasicNodeSerializer(JSONAPISerializer):
-        parent = JSONAPIHyperlinkedIdentityField(
-            view_name='nodes:node-detail',
-            lookup_field='pk',
-            lookup_url_kwarg='node_id',
-            link_type='related'
+
+        parent = RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': 'pk'}
         )
 
-        parent_with_meta = JSONAPIHyperlinkedIdentityField(
-            view_name='nodes:node-detail',
-            lookup_field='pk',
-            lookup_url_kwarg='node_id',
-            link_type='related',
-            meta={'count': 'get_count', 'extra': 'get_extra'}
+        parent_with_meta = RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': 'pk'},
+            related_meta={'count': 'get_count', 'extra': 'get_extra'},
         )
 
         class Meta:
