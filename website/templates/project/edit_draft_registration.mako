@@ -73,6 +73,13 @@
                 </a>
                 <br />
                 <br />
+                <div class="progress progress-bar-md">
+                  <div class="progress-bar progress-bar-success" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                       data-bind="attr.aria-completion: draft.completion,
+                                  style: {width: draft.completion + '%'}">
+                      <span class="sr-only"></span>
+                  </div>
+                </div>
                 <!-- EDITOR -->
                 <div data-bind="if: currentQuestion">
                   <div id="registrationEditor" data-bind="template: {data: currentQuestion, name: 'editor'}">
