@@ -71,6 +71,18 @@ class TestRelationshipField(DbTestCase):
             related_meta={'count': 'get_count', 'extra': 'get_extra'},
         )
 
+        self_and_related_field = RelationshipField(
+            related_view='nodes:node-detail',
+            related_view_kwargs={'node_id': 'pk'},
+            self_view='nodes:node-contributors',
+            self_view_kwargs={'node_id': 'pk'},
+        )
+
+        contributor_detail = RelationshipField(
+            related_view='nodes:node-contributor-detail',
+            related_view_kwargs={'node_id': 'pk', 'user_id': 'hkdpx'},
+        )
+
         class Meta:
             type_ = 'nodes'
 
@@ -93,3 +105,21 @@ class TestRelationshipField(DbTestCase):
         assert_not_in('count', meta)
         assert_in('extra', meta)
         assert_equal(meta['extra'], 'foo')
+
+    def test_self_and_related_fields(self):
+        req = make_drf_request()
+        project = factories.ProjectFactory()
+        node = factories.NodeFactory(parent=project)
+        data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
+
+        relationship_field = data['relationships']['self_and_related_field']['links']
+        assert_in('/v2/nodes/{}/contributors/'.format(node._id), relationship_field['self']['href'])
+        assert_in('/v2/nodes/{}/'.format(node._id), relationship_field['related']['href'])
+
+    def test_field_with_two_kwargs(self):
+        req = make_drf_request()
+        project = factories.ProjectFactory()
+        node = factories.NodeFactory(parent=project)
+        data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
+        field = data['relationships']['contributor_detail']['links']
+        assert_in('/v2/nodes/{}/contributors/{}/'.format(node._id, 'hkdpx'), field['related']['href'])
