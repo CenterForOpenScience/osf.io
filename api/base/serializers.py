@@ -160,44 +160,23 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     )
     """
     def __init__(self, **kwargs):
-        self.related_view = kwargs.pop('related_view', None)
-        self.related_view_kwargs = kwargs.pop('related_view_kwargs', None)
+        related_view = kwargs.pop('related_view', None)
+        self_view = kwargs.pop('self_view', None)
+        related_kwargs = kwargs.pop('related_view_kwargs', None)
+        self_kwargs = kwargs.pop('self_view_kwargs', None)
+        self.view_names = {'related': related_view, 'self': self_view}
+        self.view_kwargs = {'related': related_kwargs, 'self': self_kwargs}
         self.related_meta = kwargs.pop('related_meta', None)
         self.self_meta = kwargs.pop('self_meta', None)
-        self.self_view = kwargs.pop('self_view', None)
-        self.self_view_kwargs = kwargs.pop('self_view_kwargs', None)
-        assert (self.related_view is not None or self.self_view is not None), 'Self or related view must be specified.'
-        if self.related_view:
-            assert self.related_view_kwargs is not None, 'Must provide related view kwargs.'
-        if self.self_view:
-            assert self.self_view_kwargs is not None, 'Must provide self view kwargs.'
+        assert (related_view is not None or self_view is not None), 'Self or related view must be specified.'
+        if related_view:
+            assert related_kwargs is not None, 'Must provide related view kwargs.'
+        if self_view:
+            assert self_kwargs is not None, 'Must provide self view kwargs.'
 
         super(RelationshipField, self).__init__(self)
 
-    def get_self_url(self, obj, view_name, request, format):
-        kwargs = {}
-        if view_name is None:
-            return None
-
-        for lookup_url_kwarg, lookup_field in self.self_view_kwargs.items():
-            lookup_value = getattr(obj, lookup_field, None)
-            if lookup_value is None:
-                return None
-            kwargs[lookup_url_kwarg] = lookup_value
-        return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
-
-    def get_related_url(self, obj, view_name, request, format):
-        kwargs = {}
-        if view_name is None:
-            return None
-
-        for lookup_url_kwarg, lookup_field in self.related_view_kwargs.items():
-            lookup_value = getattr(obj, lookup_field, None)
-            if lookup_value is None:
-                return None
-            kwargs[lookup_url_kwarg] = lookup_value
-        return self.reverse(view_name, kwargs=kwargs, request=request, format=format)
-
+    # For retrieving meta values, otherwise returns {}
     def get_meta_information(self, meta_data, value):
         meta = {}
         if meta_data:
@@ -217,15 +196,39 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     meta[key] = _rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
 
+    # For returning kwargs dictionary of format {"lookup_url_kwarg": lookup_value}
+    def kwargs_lookup(self, obj, kwargs_dict):
+        kwargs_retrieval = {}
+        for lookup_url_kwarg, lookup_field in kwargs_dict.items():
+            lookup_value = getattr(obj, lookup_field, None)
+            if lookup_value is None:
+                return None
+            kwargs_retrieval[lookup_url_kwarg] = lookup_value
+        return kwargs_retrieval
+
+    # Overrides HyperlinkedIdentityField
+    def get_url(self, obj, view_name, request, format):
+        urls = {}
+        for view_name, view in self.view_names.items():
+            if view is None:
+                urls[view_name] = None
+                continue
+            kwargs = self.kwargs_lookup(obj, self.view_kwargs[view_name])
+            if kwargs is None:
+                urls[view_name] = None
+            else:
+                urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
+        return urls
+
+    # Overrides
     def to_representation(self, value):
 
-        request = self.context.get('request', None)
-        format = self.context.get('format', None)
+        urls = super(RelationshipField, self).to_representation(value)
 
-        related_url = self.get_related_url(value, self.related_view, request, format)
+        related_url = urls['related']
         related_meta = self.get_meta_information(self.related_meta, value)
 
-        self_url = self.get_self_url(value, self.self_view, request, format)
+        self_url = urls['self']
         self_meta = self.get_meta_information(self.self_meta, value)
 
         ret = {'links': {'related': {'href': related_url, 'meta': related_meta}, 'self': {'href': self_url, 'meta': self_meta}}}
