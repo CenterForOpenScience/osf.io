@@ -23,3 +23,7 @@ progressbar==2.3
 
 # Avoid eating cpu with live reloading
 watchdog==0.8.3
+
+# Colorized server logs
+termcolor==1.1.0
+colorama==0.3.3
