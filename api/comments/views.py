@@ -28,9 +28,8 @@ class CommentMixin(object):
 
     def get_comment(self, check_permissions=True):
         pk = self.kwargs[self.comment_lookup_url_kwarg]
-        query = Q('_id', 'eq', pk)
         try:
-            comment = Comment.find_one(query)
+            comment = Comment.find_one(Q('_id', 'eq', pk))
         except NoResultsFound:
             raise NotFound
 

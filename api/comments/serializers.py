@@ -1,8 +1,7 @@
 from rest_framework import serializers as ser
-from framework.guid.model import Guid
 from framework.auth.core import Auth
-from website.project.model import Node, Comment
-from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
+from website.project.model import Comment
+from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse
 from api.base.serializers import (JSONAPISerializer,
@@ -49,11 +48,12 @@ class CommentSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         user = validated_data['user']
+        auth = Auth(user)
         node = validated_data['node']
 
         validated_data['content'] = validated_data.pop('return_content')
-        if node and node.can_comment(Auth(user)):
-            comment = Comment.create(auth=Auth(user), **validated_data)
+        if node and node.can_comment(auth):
+            comment = Comment.create(auth=auth, **validated_data)
         else:
             raise PermissionDenied("Not authorized to comment on this project.")
         return comment
@@ -64,26 +64,17 @@ class CommentSerializer(JSONAPISerializer):
         if validated_data:
             if 'return_content' in validated_data:
                 comment.edit(validated_data['return_content'], auth=auth, save=True)
-            is_deleted = validated_data.get('is_deleted', None)
-            if is_deleted:
+            if validated_data.get('is_deleted', None) == True:
                 comment.delete(auth, save=True)
             elif comment.is_deleted:
                 comment.undelete(auth, save=True)
         return comment
 
     def get_target_type(self, obj):
-        target_id = obj._id
-        guid_object = Guid.load(target_id)
-        if not guid_object:
-            raise NotFound('Comment target not found.')
-        target = guid_object.referent
-
-        if isinstance(target, Node):
-            return 'node'
-        elif isinstance(target, Comment):
-            return 'comment'
-        else:
+        object_type = obj._name
+        if not object_type or object_type not in ['comment', 'node']:
             raise InvalidModelValueError('Invalid comment target.')
+        return object_type
 
 
 class CommentDetailSerializer(CommentSerializer):
