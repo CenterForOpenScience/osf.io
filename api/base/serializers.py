@@ -2,32 +2,16 @@ import re
 import collections
 
 from rest_framework.fields import SkipField
-from rest_framework.exceptions import NotFound
 from rest_framework.reverse import reverse
 from rest_framework import serializers as ser
 
 from framework.auth.core import Auth
-from framework.guid.model import Guid
 from website import settings
-from website.project.model import Node, Comment
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
 
 from api.base import utils
-from api.base.exceptions import InvalidQueryStringError, Conflict, InvalidModelValueError
-
-GUID_VIEWS = {
-    'node': {
-        'view_name': 'nodes:node-detail',
-        'lookup_field': 'pk',
-        'lookup_url_kwarg': 'node_id'
-    },
-    'comment': {
-        'view_name': 'comments:comment-detail',
-        'lookup_field': 'pk',
-        'lookup_url_kwarg': 'comment_id'
-    },
-}
+from api.base.exceptions import InvalidQueryStringError, Conflict
 
 
 class AllowMissing(ser.Field):
@@ -234,26 +218,6 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field, HyperlinkedFieldMixin):
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
 
-    def get_guid_views(self, guid):
-        # get target type from guid
-        guid_object = Guid.load(guid)
-        if not guid_object:
-            raise NotFound
-        guid_referent = guid_object.referent
-
-        if isinstance(guid_referent, Node):
-            self.link_type = 'related'
-            guid_views = GUID_VIEWS['node']
-
-        elif isinstance(guid_referent, Comment):
-            self.link_type = 'self'
-            guid_views = GUID_VIEWS['comment']
-
-        else:
-            raise InvalidModelValueError('Invalid comment target.')
-
-        return guid_views
-
     def to_representation(self, value):
         """
         Returns nested dictionary in format {'links': {'self.link_type': ... }
@@ -261,14 +225,10 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field, HyperlinkedFieldMixin):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        guid_views = self.get_guid_views(value._id)
-        view_name = guid_views['view_name']
-        lookup_url_kwarg = guid_views['lookup_url_kwarg']
-
-        url = Link(view_name, kwargs={lookup_url_kwarg: '<_id>'}).resolve_url(value)
+        if value._name in self.parent.Meta.type_:
+            self.link_type = 'self'
         meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
-
-        return self.format_json_response(link_type=self.link_type, url=url, meta=meta)
+        return self.format_json_response(link_type=self.link_type, url=value.get_absolute_url(), meta=meta)
 
 
 class LinksField(ser.Field):
