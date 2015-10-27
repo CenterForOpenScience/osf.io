@@ -16,10 +16,10 @@ def main():
     logger.warn('Current files will now be updated to be indexed if necessary')
     if dry_run:
         logger.warn('Dry_run mode')
-    for file in OsfStorageFile.find():
-        logger.info('File with _id {0} and name {1} has been saved.'.format(file._id, file.name))
+    for file_ in OsfStorageFile.find():
+        logger.info('File with _id {0} and name {1} has been saved.'.format(file_._id, file_.name))
         if not dry_run:
-            file.save()
+            file_.save()
 
 if __name__ == '__main__':
     main()

@@ -785,39 +785,39 @@ class TestSearchFiles(SearchTestCase):
         assert_equal(len(find), 1)
 
     def test_delete_file(self):
-        file = self.root.append_file('I\'ve Got Dreams To Remember.wav')
+        file_ = self.root.append_file('I\'ve Got Dreams To Remember.wav')
         find = query_file('I\'ve Got Dreams To Remember.wav')['results']
         assert_equal(len(find), 1)
-        file.delete()
+        file_.delete()
         find = query_file('I\'ve Got Dreams To Remember.wav')['results']
         assert_equal(len(find), 0)
 
     def test_add_tag(self):
-        file = self.root.append_file('That\'s How Strong My Love Is.mp3')
+        file_ = self.root.append_file('That\'s How Strong My Love Is.mp3')
         from website.models import Tag
         tag = Tag(_id='Redding')
         tag.save()
-        file.tags.append(tag)
-        file.save()
+        file_.tags.append(tag)
+        file_.save()
         find = query_tag_file('Redding')['results']
         assert_equal(len(find), 1)
 
     def test_remove_tag(self):
-        file = self.root.append_file('I\'ve Been Loving You Too Long.mp3')
+        file_ = self.root.append_file('I\'ve Been Loving You Too Long.mp3')
         from website.models import Tag
         tag = Tag(_id='Blue')
         tag.save()
-        file.tags.append(tag)
-        file.save()
+        file_.tags.append(tag)
+        file_.save()
         find = query_tag_file('Blue')['results']
         assert_equal(len(find), 1)
-        file.tags.remove('Blue')
-        file.save()
+        file_.tags.remove('Blue')
+        file_.save()
         find = query_tag_file('Blue')['results']
         assert_equal(len(find), 0)
 
     def test_make_node_private(self):
-        file = self.root.append_file('Change_Gonna_Come.wav')
+        file_ = self.root.append_file('Change_Gonna_Come.wav')
         find = query_file('Change_Gonna_Come.wav')['results']
         assert_equal(len(find), 1)
         self.node.is_public = False
@@ -828,7 +828,7 @@ class TestSearchFiles(SearchTestCase):
     def test_make_private_node_public(self):
         self.node.is_public = False
         self.node.save()
-        file = self.root.append_file('Try a Little Tenderness.flac')
+        file_ = self.root.append_file('Try a Little Tenderness.flac')
         find = query_file('Try a Little Tenderness.flac')['results']
         assert_equal(len(find), 0)
         self.node.is_public = True
