@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
-from . import routes, views, model, listeners
+from . import routes, views, model
+from . import listeners  # noqa
 
 MODELS = [model.OsfStorageNodeSettings]
 NODE_SETTINGS_MODEL = model.OsfStorageNodeSettings

@@ -4,7 +4,6 @@ import httplib as http
 import time
 
 from flask import request
-from modularodm import Q
 from modularodm.exceptions import ValidationError, ValidationValueError
 
 from framework import forms
