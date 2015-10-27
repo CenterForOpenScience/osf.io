@@ -2,8 +2,8 @@ from __future__ import unicode_literals
 
 from nose.tools import *  # flake8: noqa
 
-from website.files.exceptions import FileNodeCheckedOutError
 from api.base.settings.defaults import API_BASE
+from website.files.exceptions import FileNodeCheckedOutError
 from website.addons.osfstorage import settings as osfstorage_settings
 
 from tests.base import ApiTestCase
@@ -198,80 +198,3 @@ class TestFileView(ApiTestCase):
             expect_errors=True,
         )
         assert_equal(res.status_code, 403)
-
-    def test_delete_checked_out_file(self):
-        self.file.provider = 'osfstorage'
-        self.file.save()
-        res = self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
-            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
-            auth=self.user.auth,
-        )
-        assert_equal(res.status_code, 200)
-        self.file.reload()
-        with assert_raises(FileNodeCheckedOutError):
-            self.file.delete()
-
-    def test_delete_folder_with_checked_out_file(self):
-        self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
-            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': None}}},
-            auth=self.user.auth,
-        )
-        self.file.reload()
-        folder = self.root_node.append_folder('folder')
-        self.file.move_under(folder)
-        self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
-            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
-            auth=self.user.auth,
-        )
-        self.file.reload()
-        with assert_raises(FileNodeCheckedOutError):
-            folder.delete()
-
-    def test_move_checked_out_file(self):
-        self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
-            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
-            auth=self.user.auth,
-        )
-        self.file.reload()
-        folder = self.root_node.append_folder('folder')
-        with assert_raises(FileNodeCheckedOutError):
-            self.file.move_under(folder)
-
-    def test_checked_out_merge(self):
-        user = AuthUserFactory()
-        node = ProjectFactory(creator=user)
-        osfstorage = node.get_addon('osfstorage')
-        root_node = osfstorage.get_root()
-        file = root_node.append_file('test_file')
-        user_merge_target = AuthUserFactory()
-        self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, file._id),
-            {'data': {'id': file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
-            auth=user.auth
-        )
-        file.reload()
-        assert_equal(user, file.checkout)
-        user_merge_target.merge_user(user)
-        file.reload()
-        assert_equal(user_merge_target, file.checkout)
-
-    def test_remove_contributor_with_checked_file(self):
-        user = AuthUserFactory()
-        self.node.contributors.append(user)
-        self.node.add_permission(user, 'admin')
-        self.node.visible_contributor_ids.append(user._id)
-        self.node.save()
-        self.app.put_json_api(
-            '/{}files/{}/'.format(API_BASE, self.file._id),
-            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': self.user._id}}},
-            auth=self.user.auth
-        )
-        self.file.reload()
-        assert_equal(self.user, self.file.checkout)
-        self.file.node.remove_contributors([self.user], save=True)
-        self.file.reload()
-        assert_equal(self.file.checkout, None)

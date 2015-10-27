@@ -1020,7 +1020,7 @@ function _removeEvent (event, items, col) {
     }
 }
 
-function doCheckout(item, checker, error_message) {
+function doCheckout(item, checkout, showError) {
     $.ajax({
         method: 'put',
         url: window.contextVars.apiV2Prefix + 'files' + item.data.path + '/',
@@ -1032,16 +1032,17 @@ function doCheckout(item, checker, error_message) {
                 id: item.data.path.replace('/', ''),
                 type: 'files',
                 attributes: {
-                    checkout: checker
+                    checkout: checkout
                 }
             }
         })
     }).done(function(resp) {
-        if (error_message) {
+        if (showError) {
             window.location.reload();
         }
     }).fail(function(resp) {
-        if (error_message) {
+        if (showError) {
+            //find error and make better message
             $osf.growl('Error', 'Unable to check-out file.');
         }
     });

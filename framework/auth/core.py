@@ -31,7 +31,6 @@ from framework.sessions.utils import remove_sessions_for_user
 
 from website import mails, settings, filters, security
 
-
 name_formatters = {
     'long': lambda user: user.fullname,
     'surname': lambda user: user.family_name if user.family_name else user.fullname,
@@ -1139,11 +1138,6 @@ class User(GuidStoredObject, AddonModelMixin):
         )
         return self.get_recent_log_ids(since=midnight)
 
-    def files_checked_out(self):
-        # done here to prevent Import error due to circular import.
-        from website.files.models.osfstorage import FileNode
-        return FileNode.find(Q('checkout', 'eq', self))
-
     @property
     def can_be_merged(self):
         """The ability of the `merge_user` method to fully merge the user"""
@@ -1277,8 +1271,9 @@ class User(GuidStoredObject, AddonModelMixin):
             node.creator = self
             node.save()
 
-        # - file that the user has checked_out
-        for file_node in user.files_checked_out():
+        # - file that the user has checked_out, import done here to prevent import error
+        from website.files.models.base import FileNode
+        for file_node in FileNode.files_checked_out(user=user):
             file_node.checkout = self
             file_node.save()
 

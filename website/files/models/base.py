@@ -263,6 +263,14 @@ class FileNode(object):
         return StoredFileNode.find_one(cls._filter(qs)).wrapped()
 
     @classmethod
+    def files_checked_out(cls, user):
+        """
+        :param user: The user with checkedout files
+        :return: A queryset of all FileNodes checked out by user
+        """
+        return cls.find(Q('checkout', 'eq', user))
+
+    @classmethod
     def load(cls, _id):
         """A proxy for StoredFileNode.load requires the wrapped version of the found value
         to be an instance of cls.
