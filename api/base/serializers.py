@@ -147,16 +147,16 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
-class RelationshipField(JSONAPIHyperlinkedIdentityField):
+class RelationshipField(ser.HyperlinkedIdentityField):
     """
     RelationshipField that permits the return of both self and related links
 
     Example:
     children = RelationshipField(
         related_view='nodes:node-children',
-        related_view_kwargs={'node_id': '_id'},
+        related_view_kwargs={'node_id': 'pk'},
         self_view='nodes:node-pointers',
-        self_view_kwargs={'node_id': '_id'},
+        self_view_kwargs={'node_id': 'pk'},
     )
     """
     def __init__(self, **kwargs):
@@ -180,7 +180,7 @@ class RelationshipField(JSONAPIHyperlinkedIdentityField):
             return None
 
         for lookup_url_kwarg, lookup_field in self.self_view_kwargs.items():
-            lookup_value = getattr(obj, lookup_field, lookup_field)
+            lookup_value = getattr(obj, lookup_field, None)
             if lookup_value is None:
                 return None
             kwargs[lookup_url_kwarg] = lookup_value
@@ -192,7 +192,7 @@ class RelationshipField(JSONAPIHyperlinkedIdentityField):
             return None
 
         for lookup_url_kwarg, lookup_field in self.related_view_kwargs.items():
-            lookup_value = getattr(obj, lookup_field, lookup_field)
+            lookup_value = getattr(obj, lookup_field, None)
             if lookup_value is None:
                 return None
             kwargs[lookup_url_kwarg] = lookup_value

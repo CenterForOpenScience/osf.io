@@ -37,7 +37,7 @@ class TestApiBaseSerializers(ApiTestCase):
         relationships = res.json['data']['relationships']
         for key, relation in relationships.iteritems():
             field = NodeSerializer._declared_fields[key]
-            if (field.meta or {}).get('count'):
+            if (field.related_meta or {}).get('count'):
                 link = relation['links'].values()[0]
                 assert_in('count', link['meta'])
 
@@ -78,9 +78,9 @@ class TestRelationshipField(DbTestCase):
             self_view_kwargs={'node_id': 'pk'},
         )
 
-        contributor_detail = RelationshipField(
-            related_view='nodes:node-contributor-detail',
-            related_view_kwargs={'node_id': 'pk', 'user_id': 'hkdpx'},
+        two_url_kwargs = RelationshipField(
+            related_view='nodes:node-pointer-detail',
+            related_view_kwargs={'node_id': 'pk', 'node_link_id': 'pk'},
         )
 
         class Meta:
@@ -121,5 +121,5 @@ class TestRelationshipField(DbTestCase):
         project = factories.ProjectFactory()
         node = factories.NodeFactory(parent=project)
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
-        field = data['relationships']['contributor_detail']['links']
-        assert_in('/v2/nodes/{}/contributors/{}/'.format(node._id, 'hkdpx'), field['related']['href'])
+        field = data['relationships']['two_url_kwargs']['links']
+        assert_in('/v2/nodes/{}/node_links/{}/'.format(node._id, node._id), field['related']['href'])
