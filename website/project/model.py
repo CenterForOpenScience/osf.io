@@ -140,7 +140,7 @@ def validate_comment_reports(value, *args, **kwargs):
             )
 
 
-class SpamMixin(StoredObject):
+class SpamMixin(object):
     """Mixin to add to objects that can be marked as spam.
     """
 
@@ -150,9 +150,18 @@ class SpamMixin(StoredObject):
     HAM = 4
 
     spam_status = fields.IntegerField(default=UNKNOWN, index=True)
-    reports = fields.ListField(dict, default=[])
+
+    # Reports is a list of reports
+    # Each report is a dictionary including:
+    #  - user: Reporting user
+    #  - date: date reported
+    #  - retracted: if a report has been retracted
+    #  - category: What type of spam does the reporter believe this is
+    #  - message: Comment on the comment
+    reports = fields.DictionaryField(list=True)
 
     def flag_spam(self, save=False):
+        # If ham and unedited then tell user that they should read it again
         if self.spam_status == self.UNKNOWN:
             self.spam_status = self.FLAGGED
         if save:
@@ -179,9 +188,17 @@ class SpamMixin(StoredObject):
         return self.spam_status == self.SPAM
 
     def report_spam(self, user, date, save=False, **kwargs):
+        """Report object is spam or other abuse of OSF
+
+        :param user: User submitting report
+        :param date: Date report submitted
+        :param save: Save changes
+        :param kwargs: Should include category and message
+        :raises ValueError: if user is reporting self
+        """
         if user == self.user:
             raise ValueError
-        report = {'user': user._id, 'date': date}
+        report = {'user': user._id, 'date': date, 'retracted': False}
         report.update(kwargs)
         report_list = self.reports
         report_list.append(report)
@@ -189,8 +206,25 @@ class SpamMixin(StoredObject):
         if save:
             self.save()
 
+    def retract_report(self, user, save=False):
+        """Retract last report by user
 
-class Comment(GuidStoredObject):
+        Only marks the last report as retracted because there could be
+        history in how the object is edited that requires a user
+        to flag or retract even if object is marked as HAM.
+        :param user: User retracting
+        :param save: Save changes
+        """
+        reports = self.reports
+        for report in reversed(reports):
+            if report['user'] == user._id:
+                report['retracted'] = True
+        self.reports = reports
+        if save:
+            self.save()
+
+
+class Comment(GuidStoredObject, SpamMixin):
 
     _id = fields.StringField(primary=True)
 
@@ -204,13 +238,6 @@ class Comment(GuidStoredObject):
 
     is_deleted = fields.BooleanField(default=False)
     content = fields.StringField()
-
-    # Dictionary field mapping user IDs to dictionaries of report details:
-    # {
-    #   'icpnw': {'category': 'hate', 'message': 'offensive'},
-    #   'cdi38': {'category': 'spam', 'message': 'godwins law'},
-    # }
-    reports = fields.DictionaryField(validate=validate_comment_reports)
 
     @classmethod
     def create(cls, auth, **kwargs):
@@ -279,36 +306,6 @@ class Comment(GuidStoredObject):
             auth=auth,
             save=False,
         )
-        if save:
-            self.save()
-
-    def report_abuse(self, user, save=False, **kwargs):
-        """Report that a comment is abuse.
-
-        :param User user: User submitting the report
-        :param bool save: Save changes
-        :param dict kwargs: Report details
-        :raises: ValueError if the user submitting abuse is the same as the
-            user who posted the comment
-        """
-        if user == self.user:
-            raise ValueError
-        self.reports[user._id] = kwargs
-        if save:
-            self.save()
-
-    def unreport_abuse(self, user, save=False):
-        """Revoke report of abuse.
-
-        :param User user: User who submitted the report
-        :param bool save: Save changes
-        :raises: ValueError if user has not reported comment as abuse
-        """
-        try:
-            self.reports.pop(user._id)
-        except KeyError:
-            raise ValueError('User has not reported comment as abuse')
-
         if save:
             self.save()
 
