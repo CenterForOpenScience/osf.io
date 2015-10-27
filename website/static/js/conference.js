@@ -34,17 +34,17 @@ function Meeting(data) {
                     sort : true
                 },
                 {
+                    title: 'Date Created',
+                    width: '15%',
+                    sortType: 'date',
+                    sort: true
+                },
+                {
                     title: 'Downloads',
                     width : '15%',
                     sortType : 'number',
                     sort : true
                 },
-                 {
-                    title: 'Date Created',
-                    width: '15%',
-                    sortType: 'date',
-                    sort: true
-                }
             ];
         },
         resolveRows : function _conferenceResolveRows(item){
@@ -70,6 +70,14 @@ function Meeting(data) {
                     filter : false
                 },
                 {
+                    data: 'dateCreated', // Data field name
+                    sortInclude: true,
+                    custom: function() {
+                        var dateCreated = new osfHelpers.FormattableDate(item.data.dateCreated);
+                        return m('', dateCreated.local);
+                    }
+                },
+                {
                     data : 'download',  // Data field name
                     folderIcons : false,
                     filter : false,
@@ -85,14 +93,6 @@ function Meeting(data) {
                     }
 
                 },
-                {
-                    data: 'dateCreated', // Data field name
-                    sortInclude: true,
-                    custom: function() {
-                        var dateCreated = new osfHelpers.FormattableDate(item.data.dateCreated);
-                        return m('', dateCreated.local);
-                    }
-                }
             ];
             return default_columns;
         },
