@@ -6,7 +6,7 @@ from nose.tools import *  # flake8: noqa
 
 from website.models import Node
 from website.views import find_dashboard
-from website.files.exceptions import FileNodeorChildCheckedOutError
+from website.files.exceptions import FileNodeCheckedOutError
 from framework.auth.core import Auth
 from website.addons.github import model
 from website.util.sanitize import strip_html
@@ -219,7 +219,7 @@ class TestFileView(ApiTestCase):
         )
         assert_equal(res.status_code, 200)
         self.file.reload()
-        with assert_raises(FileNodeorChildCheckedOutError):
+        with assert_raises(FileNodeCheckedOutError):
             self.file.delete()
 
     def test_delete_folder_with_checked_out_file(self):
@@ -237,7 +237,7 @@ class TestFileView(ApiTestCase):
             auth=self.user.auth,
         )
         self.file.reload()
-        with assert_raises(FileNodeorChildCheckedOutError):
+        with assert_raises(FileNodeCheckedOutError):
             folder.delete()
 
     def test_move_checked_out_file(self):
@@ -248,7 +248,7 @@ class TestFileView(ApiTestCase):
         )
         self.file.reload()
         folder = self.root_node.append_folder('folder')
-        with assert_raises(FileNodeorChildCheckedOutError):
+        with assert_raises(FileNodeCheckedOutError):
             self.file.move_under(folder)
 
     def test_checked_out_merge(self):

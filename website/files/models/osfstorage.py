@@ -73,12 +73,12 @@ class OsfStorageFileNode(FileNode):
 
     def delete(self, user=None, parent=None):
         if self.is_checked_out:
-            raise exceptions.FileNodeorChildCheckedOutError()
+            raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).delete(user=user, parent=parent)
 
     def move_under(self, destination_parent, name=None):
         if self.is_checked_out:
-            raise exceptions.FileNodeorChildCheckedOutError()
+            raise exceptions.FileNodeCheckedOutError()
         return super(OsfStorageFileNode, self).move_under(destination_parent, name)
 
     def save(self):

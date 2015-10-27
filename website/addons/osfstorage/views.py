@@ -95,7 +95,7 @@ def osfstorage_copy_hook(source, destination, name=None, **kwargs):
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
     try:
         return source.move_under(destination, name=name).serialize(), httplib.OK
-    except exceptions.FileNodeorChildCheckedOutError:
+    except exceptions.FileNodeCheckedOutError:
         raise HTTPError(httplib.METHOD_NOT_ALLOWED, data={
             'message_long': 'Cannot move file as it is checked out.'
         })
@@ -212,7 +212,7 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     try:
         file_node.delete()
 
-    except exceptions.FileNodeorChildCheckedOutError:
+    except exceptions.FileNodeCheckedOutError:
         raise HTTPError(httplib.FORBIDDEN)
 
     return {'status': 'success'}
