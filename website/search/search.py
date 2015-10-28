@@ -11,8 +11,6 @@ else:
     search_engine = None
     logger.warn('Elastic search is not set to load')
 
-INDEX = settings.ELASTIC_INDEX
-
 def requires_search(func):
     def wrapped(*args, **kwargs):
         if search_engine is not None:
@@ -21,19 +19,23 @@ def requires_search(func):
 
 
 @requires_search
-def search(query, index=INDEX, doc_type=None):
+def search(query, index=None, doc_type=None):
+    index = index or settings.ELASTIC_INDEX
     return search_engine.search(query, index=index, doc_type=doc_type)
 
 @requires_search
-def update_node(node, index=INDEX, bulk=False):
+def update_node(node, index=None, bulk=False):
+    index = index or settings.ELASTIC_INDEX
     return search_engine.update_node(node, index=index, bulk=bulk)
 
 @requires_search
-def bulk_update_nodes(serialize, nodes, index=INDEX):
+def bulk_update_nodes(serialize, nodes, index=None):
+    index = index or settings.ELASTIC_INDEX
     search_engine.bulk_update_nodes(serialize, nodes, index=index)
 
 @requires_search
-def delete_node(node, index=INDEX):
+def delete_node(node, index=None):
+    index = index or settings.ELASTIC_INDEX
     doc_type = node.project_or_component
     if node.is_registration:
         doc_type = 'registration'
@@ -44,11 +46,13 @@ def update_contributors(nodes):
 
 
 @requires_search
-def update_user(user, index=INDEX):
+def update_user(user, index=None):
+    index = index or settings.ELASTIC_INDEX
     search_engine.update_user(user, index=index)
 
 @requires_search
-def update_file(file_, index=INDEX, delete=False):
+def update_file(file_, index=None, delete=False):
+    index = index or settings.ELASTIC_INDEX
     search_engine.update_file(file_, index=index, delete=delete)
 
 @requires_search
@@ -60,7 +64,8 @@ def delete_index(index):
     search_engine.delete_index(index)
 
 @requires_search
-def create_index(index=INDEX):
+def create_index(index=None):
+    index = index or settings.ELASTIC_INDEX
     search_engine.create_index(index=index)
 
 

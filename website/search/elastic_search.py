@@ -230,7 +230,8 @@ def get_doctype_from_node(node):
 
 
 @requires_search
-def update_node(node, index=INDEX, bulk=False):
+def update_node(node, index=None, bulk=False):
+    index = index or INDEX
     from website.addons.wiki.model import NodeWikiPage
 
     category = get_doctype_from_node(node)
@@ -301,7 +302,7 @@ def update_node(node, index=INDEX, bulk=False):
         update_file(file_)
 
 
-def bulk_update_nodes(serialize, nodes, index=INDEX):
+def bulk_update_nodes(serialize, nodes, index=None):
     """Updates the list of input projects
 
     :param function Node-> dict serialize:
@@ -309,6 +310,7 @@ def bulk_update_nodes(serialize, nodes, index=INDEX):
     :param str index: Index of the nodes
     :return:
     """
+    index = index or INDEX
     actions = []
     for node in nodes:
         serialized = serialize(node)
@@ -339,8 +341,9 @@ bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contri
 
 
 @requires_search
-def update_user(user, index=INDEX):
+def update_user(user, index=None):
 
+    index = index or INDEX
     if not user.is_active:
         try:
             es.delete(index=index, doc_type='user', id=user._id, refresh=True, ignore=[404])
@@ -385,8 +388,9 @@ def update_user(user, index=INDEX):
     es.index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
 
 @requires_search
-def update_file(file_, index=INDEX, delete=False):
+def update_file(file_, index=None, delete=False):
 
+    index = index or INDEX
     if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
         es.delete(
             index=index,
@@ -429,10 +433,11 @@ def delete_index(index):
 
 
 @requires_search
-def create_index(index=INDEX):
+def create_index(index=None):
     '''Creates index with some specified mappings to begin with,
     all of which are applied to all projects, components, and registrations.
     '''
+    index = index or INDEX
     document_types = ['project', 'component', 'registration', 'user']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
@@ -472,7 +477,8 @@ def create_index(index=INDEX):
         es.indices.put_mapping(index=index, doc_type=type_, body=mapping, ignore=[400, 404])
 
 @requires_search
-def delete_doc(elastic_document_id, node, index=INDEX, category=None):
+def delete_doc(elastic_document_id, node, index=None, category=None):
+    index = index or INDEX
     category = category or 'registration' if node.is_registration else node.project_or_component
     es.delete(index=index, doc_type=category, id=elastic_document_id, refresh=True, ignore=[404])
 
