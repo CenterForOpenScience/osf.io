@@ -70,10 +70,10 @@ function Meetings(data) {
                             return;
                         }
                         if (item.data.start_date === null) {
-                            return item.data.start_date;
+                            return item.data.end_date;
                         }
                         if (item.data.end_date === null) {
-                            return item.data.end_date;
+                            return item.data.start_date;
                         }
                         if (item.data.end_date === item.data.start_date) {
                             return item.data.end_date;
