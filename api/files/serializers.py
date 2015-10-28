@@ -47,6 +47,14 @@ class CheckoutField(ser.HyperlinkedIdentityField):
         except StopIteration:
             self.fail('invalid_data')
 
+    def to_representation(self, value):
+
+        url = super(CheckoutField, self).to_representation(value)
+
+        ret = {'links': {'related': {'href': url, 'meta': {}}}}
+
+        return ret
+
 
 class FileSerializer(JSONAPISerializer):
     filterable_fields = frozenset([

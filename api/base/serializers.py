@@ -220,7 +220,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
         return urls
 
-    # Overrides
+    # Overrides HyperlinkedIdentityField
     def to_representation(self, value):
 
         urls = super(RelationshipField, self).to_representation(value)
@@ -236,8 +236,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
             ret = {'links': {'related': {'href': related_url, 'meta': related_meta}, 'self': {'href': self_url, 'meta': self_meta}}}
 
-            if not ret['links']['self']['href']:
-                del ret['links']['self']
+        if not ret['links']['self']['href']:
+            del ret['links']['self']
 
         return ret
 
