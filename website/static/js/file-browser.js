@@ -6,7 +6,7 @@
 var Treebeard = require('treebeard');   // Uses treebeard, installed as plugin
 var $ = require('jquery');  // jQuery
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-var ProjectOrganizer = require('js/project-organizer').ProjectOrganizer;
+var ProjectOrganizer = require('js/project-organizer');
 var $osf = require('js/osfHelpers');
 
 /**

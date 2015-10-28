@@ -428,9 +428,6 @@ var tbOptions = {
         });
     },
     ontogglefolder : function (item, event) {
-        //if (event) {
-        //    saveExpandState(item.data);
-        //}
         if (!item.open) {
             item.load = false;
         }
@@ -438,7 +435,6 @@ var tbOptions = {
     },
     onscrollcomplete : function () {
         $('[data-toggle="tooltip"]').tooltip();
-        //_cleanupMithril();
     },
     onmultiselect : _poMultiselect,
     resolveIcon : _poIconView,
@@ -488,8 +484,5 @@ var ProjectOrganizer = {
 };
 
 
-module.exports = {
-    ProjectOrganizer: ProjectOrganizer,
-    //_whichIsContainer: whichIsContainer,
-    //_canAcceptDrop: canAcceptDrop
-};
+module.exports = ProjectOrganizer;
+
