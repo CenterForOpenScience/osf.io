@@ -11,7 +11,7 @@ from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
 from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 
 
-class CheckoutField(ser.HyperlinkedIdentityField):
+class CheckoutField(ser.HyperlinkedRelatedField):
 
     default_error_messages = {'invalid_data': 'Checkout must be either the current user or null'}
 
@@ -25,7 +25,7 @@ class CheckoutField(ser.HyperlinkedIdentityField):
         self.meta = None
         self.link_type = 'related'
 
-        super(ser.HyperlinkedIdentityField, self).__init__('users:user-detail', **kwargs)
+        super(CheckoutField, self).__init__('users:user-detail', **kwargs)
 
     def get_queryset(self):
         return User.find(Q('_id', 'eq', self.context['request'].user._id))
@@ -33,7 +33,7 @@ class CheckoutField(ser.HyperlinkedIdentityField):
     def get_url(self, obj, view_name, request, format):
         if obj is None:
             return None
-        return super(ser.HyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
+        return super(CheckoutField, self).get_url(obj, view_name, request, format)
 
     def to_internal_value(self, data):
         if data is None:
