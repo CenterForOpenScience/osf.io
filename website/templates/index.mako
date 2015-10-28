@@ -49,17 +49,17 @@
                     <form data-bind="submit: submit">
                         <div class="form-group" data-bind="css: {'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid()}">
                               <label class="placeholder-replace" style="display:none">Full name</label>
-                              <input class="form-control" placeholder="Full name" data-bind=" value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName)}">
+                              <input class="form-control" placeholder="Full Name" data-bind=" value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName)}">
                               <p class="help-block osf-box-lt" data-bind="validationMessage: fullName" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': email1() && !email1.isValid(), 'has-success': email1() && email1.isValid()}">
                               <label class="placeholder-replace" style="display:none">Contact email</label>
-                              <input class="form-control" placeholder="Contact email" data-bind=" value: email1, disable: submitted(), event: { blur: trim.bind($data, email1)}">
+                              <input class="form-control" placeholder="Contact Email" data-bind=" value: email1, disable: submitted(), event: { blur: trim.bind($data, email1)}">
                               <p class="help-block osf-box-lt" data-bind="validationMessage: email1" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': email2() && !email2.isValid(),'has-success': email2() && email2.isValid()}">
                               <label class="placeholder-replace" style="display:none">Confirm email</label>
-                              <input class="form-control" placeholder="Confirm email" data-bind="value: email2, disable: submitted(), event: { blur: trim.bind($data, email2)}">
+                              <input class="form-control" placeholder="Confirm Email" data-bind="value: email2, disable: submitted(), event: { blur: trim.bind($data, email2)}">
                               <p class="help-block osf-box-lt" data-bind="validationMessage: email2" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': password() && !password.isValid(), 'has-success': password() && password.isValid()}">
