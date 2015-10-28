@@ -1,20 +1,17 @@
 # -*- coding: utf-8 -*-
-from api.base.wsgi import application
-
-from nose.tools import *  # flake8: noqa
 import httplib as http
 import contextlib
 import mock
 
-from rest_framework import serializers as ser
+from nose.tools import *  # flake8: noqa
 
-from tests.base import ApiTestCase
+from tests.base import ApiTestCase, DbTestCase
 from tests import factories
 from tests.utils import make_drf_request
 
 from api.base.settings.defaults import API_BASE
-from api.base import serializers as base_serializers
-from api.nodes.serializers import NodeSerializer
+from api.base.serializers import JSONAPISerializer
+from api.nodes.serializers import NodeSerializer, JSONAPIHyperlinkedIdentityField
 
 class FakeModel(object):
 
@@ -100,7 +97,7 @@ class TestApiBaseSerializers(ApiTestCase):
             if relation == {}:
                 continue
             field = NodeSerializer._declared_fields[key]
-            if (field.meta or {}).get('count'):            
+            if (field.meta or {}).get('count'):
                 link = relation['links'].values()[0]
                 assert_in('count', link['meta'])
 
@@ -119,12 +116,88 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': 'fish'}, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    def test_self_link_is_unwrapped_url(self):
-        res = self.app.get(self.url)
 
-        assert_true(isinstance(res.json['data']['links']['self'], basestring))
+class TestJSONAPIHyperlinkedIdentityField(DbTestCase):
 
-    def test_null_link_formatting(self):
-        res = self.app.get(self.url)
+    # We need a Serializer to test the JSONHyperlinkedIdentity field (needs context)
+    class BasicNodeSerializer(JSONAPISerializer):
+        parent = JSONAPIHyperlinkedIdentityField(
+            view_name='nodes:node-detail',
+            lookup_field='pk',
+            lookup_url_kwarg='node_id',
+            link_type='related'
+        )
 
-        assert_not_in('parent', res.json['data']['relationships'])
+        parent_with_meta = JSONAPIHyperlinkedIdentityField(
+            view_name='nodes:node-detail',
+            lookup_field='pk',
+            lookup_url_kwarg='node_id',
+            link_type='related',
+            meta={'count': 'get_count', 'extra': 'get_extra'}
+        )
+
+        class Meta:
+            type_ = 'nodes'
+
+        def get_count(self, obj):
+            return 1
+
+        def get_extra(self, obj):
+            return 'foo'
+
+    # TODO: Expand tests
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4832
+    def test_serializing_meta(self):
+        req = make_drf_request()
+        project = factories.ProjectFactory()
+        node = factories.NodeFactory(parent=project)
+        data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
+
+        meta = data['relationships']['parent_with_meta']['links']['related']['meta']
+        assert_not_in('count', meta)
+        assert_in('extra', meta)
+        assert_equal(meta['extra'], 'foo')
+
+
+class TestJSONAPIHyperlinkedIdentityField(DbTestCase):
+
+    # We need a Serializer to test the JSONHyperlinkedIdentity field (needs context)
+    class BasicNodeSerializer(JSONAPISerializer):
+        parent = JSONAPIHyperlinkedIdentityField(
+            view_name='nodes:node-detail',
+            lookup_field='pk',
+            lookup_url_kwarg='node_id',
+            link_type='related'
+        )
+
+        parent_with_meta = JSONAPIHyperlinkedIdentityField(
+            view_name='nodes:node-detail',
+            lookup_field='pk',
+            lookup_url_kwarg='node_id',
+            link_type='related',
+            meta={'count': 'get_count', 'extra': 'get_extra'}
+        )
+
+        class Meta:
+            type_ = 'nodes'
+
+        def get_count(self, obj):
+            return 1
+
+        def get_extra(self, obj):
+            return 'foo'
+
+    # TODO: Expand tests
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4832
+    def test_serializing_meta(self):
+        req = make_drf_request()
+        project = factories.ProjectFactory()
+        node = factories.NodeFactory(parent=project)
+        data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
+
+        meta = data['relationships']['parent_with_meta']['links']['related']['meta']
+        assert_not_in('count', meta)
+        assert_in('extra', meta)
+        assert_equal(meta['extra'], 'foo')

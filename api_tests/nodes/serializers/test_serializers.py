@@ -9,7 +9,8 @@ from tests.utils import make_drf_request
 from tests.factories import UserFactory, NodeFactory, RegistrationFactory, ProjectFactory
 
 from framework.auth import Auth
-from api.nodes.serializers import NodeSerializer, NodeRegistrationSerializer
+from api.nodes.serializers import NodeSerializer
+from api.registrations.serializers import RegistrationSerializer
 from api.base.settings.defaults import API_BASE
 
 
@@ -74,10 +75,10 @@ class TestNodeRegistrationSerializer(DbTestCase):
         user = UserFactory()
         req = make_drf_request()
         reg = RegistrationFactory(creator=user)
-        result = NodeRegistrationSerializer(reg, context={'request': req}).data
+        result = RegistrationSerializer(reg, context={'request': req}).data
         data = result['data']
         assert_equal(data['id'], reg._id)
-        assert_equal(data['type'], 'nodes')
+        assert_equal(data['type'], 'registrations')
 
         # Attributes
         attributes = data['attributes']
