@@ -266,6 +266,6 @@ class TestRegistrationApprovalHooks(OsfTestCase):
         registration = factories.RegistrationFactory(creator=user)
         registration.require_approval(user)
 
-        assert_true(registration.registration_approval.pending_approval)  # sanity check
+        assert_true(registration.registration_approval.is_pending_approval)  # sanity check
         registration.registration_approval._on_complete(None)
-        assert_false(registration.registration_approval.pending_approval)
+        assert_false(registration.registration_approval.is_pending_approval)
