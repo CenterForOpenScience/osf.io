@@ -8,9 +8,7 @@ require('jquery-tagsinput');
 
 m.mount(document.getElementsByClassName('file-view-panels')[0], FileViewPage(window.contextVars));
 
-function build_tag_url(nid, filePath, tag) {
-    return '/api/v1/project/' + nid + '/osfstorage' + filePath + '/tags/' + tag + '/';
-}
+var tagUrl = '/api/v1/project/' + window.contextVars.node.id + '/osfstorage' + window.contextVars.file.path + '/tags/';
 
 $(function() {
     // Tag input
@@ -19,7 +17,7 @@ $(function() {
         interactive: window.contextVars.currentUser.canEdit,
         maxChars: 128,
         onAddTag: function (tag) {
-            var url = build_tag_url(window.contextVars.node.id, window.contextVars.file.path, tag);
+            var url = tagUrl + tag + '/';
             var request = $osf.postJSON(url);
             request.fail(function (xhr, textStatus, error) {
                 $osf.growl('Error', 'Could not add tag.');
@@ -29,7 +27,7 @@ $(function() {
             });
         },
         onRemoveTag: function (tag) {
-            var url = build_tag_url(window.contextVars.node.id, window.contextVars.file.path, tag);
+            var url = tagUrl + tag + '/';
             var request = $.ajax({
                 url: url,
                 type: 'DELETE',
