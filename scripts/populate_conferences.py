@@ -505,7 +505,7 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
         'field_names': {
-            'submission1': 'measure',
+            'submission1': 'measures',
             'submission2': 'materials',
             'submission1_plural': 'measures/scales',
             'submission2_plural': 'study materials',

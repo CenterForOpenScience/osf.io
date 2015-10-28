@@ -25,7 +25,7 @@ BASE_REGEX = r'''
         (?P<test>test-)?
         (?P<meeting>\w*?)
         -
-        (?P<category>{0})
+        (?P<category>{allowed_types})
         @osf\.io
     '''
 
@@ -126,7 +126,7 @@ class ConferenceMessage(object):
 
     @cached_property
     def route(self):
-        match = re.search(re.compile(BASE_REGEX.format(self.find_allowed_types if self.find_allowed_types else 'poster|talk'), re.IGNORECASE | re.VERBOSE), self.form['recipient'])
+        match = re.search(re.compile(BASE_REGEX.format(allowed_types=(self.allowed_types or 'poster|talk')), re.IGNORECASE | re.VERBOSE), self.form['recipient'])
         if not match:
             raise ConferenceError('Invalid recipient: '.format(self.form['recipient']))
         data = match.groupdict()
@@ -162,7 +162,7 @@ class ConferenceMessage(object):
         )
 
     @property
-    def find_allowed_types(self):
+    def allowed_types(self):
         from .model import Conference
         allowed_types = []
         for conf in Conference.find():
