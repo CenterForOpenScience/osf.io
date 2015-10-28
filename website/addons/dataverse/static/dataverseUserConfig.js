@@ -101,7 +101,7 @@ function ViewModel(url) {
             return;
         }
 
-        if (!self.customHost() || !self.apiToken()) {
+        if ( self.useCustomHost() && ( !self.customHost() || !self.apiToken() ) )  {
             self.changeMessage("Please enter a Dataverse host and an API token.", 'text-danger');
             return;
         }
