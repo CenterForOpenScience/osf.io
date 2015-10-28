@@ -9,13 +9,8 @@
      <h2 class="break-word">
        ## Split file name into two parts: with and without extension
        <%
-        extStart = file_name.rfind(".")
-        if extStart == -1:
-           file_name_title = file_name
-           file_name_ext = ""
-        else: 
-          file_name_title = file_name[0:extStart]
-          file_name_ext = file_name[extStart:]
+        import os
+        file_name_title, file_name_ext = os.path.splitext(file_name)
        %> 
         ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
        % if file_revision:
