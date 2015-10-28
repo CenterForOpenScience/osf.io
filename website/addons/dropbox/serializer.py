@@ -31,11 +31,10 @@ class DropboxSerializer(StorageAddonSerializer):
         return {
             'auth': api_url_for('oauth_connect',
                                 service_name='dropbox'),
-            'importAuth': node.api_url_for('dropbox_import_user_auth'),
+            'importAuth': node.api_url_for('dropbox_import_auth'),
             'files': node.web_url_for('collect_file_trees'),
-            'folders': node.api_url_for('dropbox_get_folders'),
-            'config': node.api_url_for('dropbox_config_put'),
-            'emails': node.api_url_for('dropbox_get_share_emails'),
-            'deauthorize': node.api_url_for('dropbox_remove_user_auth'),
-            'accounts': node.api_url_for('dropbox_user_config_get'),
+            'folders': node.api_url_for('dropbox_folder_list'),
+            'config': node.api_url_for('dropbox_set_config'),
+            'deauthorize': node.api_url_for('dropbox_deauthorize_node'),
+            'accounts': node.api_url_for('dropbox_account_list'),
         }

@@ -36,7 +36,7 @@ INCLUDE_CSS = {
 }
 
 HAS_HGRID_FILES = True
-GET_HGRID_DATA = views.dropbox_addon_folder
+GET_HGRID_DATA = views.dropbox_root_folder
 
 MAX_FILE_SIZE = 150  # MB
 

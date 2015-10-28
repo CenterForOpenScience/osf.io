@@ -120,6 +120,9 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def clear_settings(self):
         self.folder = None
 
+    def fetch_folder_name(self):
+        return self.provider_id
+
     def set_folder(self, folder, auth):
         self.folder = folder
         # Add log to node

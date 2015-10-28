@@ -65,3 +65,44 @@ class OAuthAddonAuthViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         )
         res = self.app.delete(url, auth=other_user.auth, expect_errors=True)
         assert_equal(res.status_code, http.FORBIDDEN)
+
+class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
+
+    def test_import_auth(self):
+        ea = self.ExternalAccountFactory()
+        self.user.external_accounts.append(ea)
+        self.user.save()
+
+        node = ProjectFactory(creator=self.user)
+        url = node.api_url_for('{0}_import_auth'.format(self.ADDON_SHORT_NAME))
+        res = self.app.put_json(url, {
+            'external_account_id': ea._id
+        })
+        assert_equal(res.status_code, http.OK)
+        assert_in('result', res.json)
+        node_settings = node.get_addon(self.ADDON_SHORT_NAME)
+        assert_equal(node_settings.external_account._id, ea._id)
+
+    def test_import_auth_invalid_account(self):
+        pass
+
+    def test_import_auth_cant_write_node(self):
+        pass
+
+    def test_set_config(self):
+        pass
+
+    def test_get_config(self):
+        pass
+
+    def test_account_list(self):
+        pass
+
+    def test_folder_list(self):
+        pass
+
+    def test_root_folder(self):
+        pass
+
+    def test_deauthorize_node(self):
+        pass

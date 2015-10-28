@@ -32,12 +32,10 @@ class BoxSerializer(StorageAddonSerializer):
         return {
             'auth': api_url_for('oauth_connect',
                                 service_name='box'),
-            'importAuth': node.api_url_for('box_add_user_auth'),
+            'importAuth': node.api_url_for('box_import_auth'),
             'files': node.web_url_for('collect_file_trees'),
             'folders': node.api_url_for('box_folder_list'),
             'config': node.api_url_for('box_set_config'),
-            'emails': node.api_url_for('box_get_share_emails'),
-            'share': 'https://app.box.com/files/0/f/{0}'.format(self.node_settings.folder_id),
-            'deauthorize': node.api_url_for('box_remove_user_auth'),
-            'accounts': node.api_url_for('box_get_user_settings'),
+            'deauthorize': node.api_url_for('box_deauthorize_node'),
+            'accounts': node.api_url_for('box_account_list'),
         }

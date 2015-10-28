@@ -1,4 +1,4 @@
-1# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Views tests for the Box addon."""
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
