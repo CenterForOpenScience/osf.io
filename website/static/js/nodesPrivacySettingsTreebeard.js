@@ -2,6 +2,7 @@
 
 var $ = require('jquery');
 var m = require('mithril');
+var ko = require('knockout');
 var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');

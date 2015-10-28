@@ -1010,7 +1010,7 @@ def get_children(auth, node, **kwargs):
     return _render_nodes(nodes, auth)
 
 
-def format_data(user, node_ids):
+def node_privacy_tree(user, node_ids):
     """ Format subscriptions data for project settings page
     :param user: modular odm User object
     :param node_ids: list of parent project ids
@@ -1034,7 +1034,7 @@ def format_data(user, node_ids):
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
 
-        children.extend(format_data(
+        children.extend(node_privacy_tree(
             user,
             [
                 n._id
@@ -1069,7 +1069,7 @@ def format_data(user, node_ids):
 @must_be_valid_project
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    return format_data(auth.user, [node._id])
+    return node_privacy_tree(auth.user, [node._id])
 
 
 @must_be_contributor_or_public

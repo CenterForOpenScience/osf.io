@@ -17,10 +17,13 @@ var m = require('mithril');
 var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
+var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard');
 
 var ctx = window.contextVars;
 
 var NODE_OFFSET = 25;
+
+var API_BASE = 'http://localhost:8000/v2/nodes/'
 
 var MESSAGES = {
     makeProjectPublicWarning: 'Please review your project for sensitive or restricted information before making it public.  ' +
@@ -62,6 +65,37 @@ function getNodePrivacyDirty(nodeTree, nodesOriginal) {
     }
     //var localNodes = nodesOriginal;
     return nodesOriginal;
+}
+
+function patchNodePrivacy(node, isPublic) {
+            var url = API_BASE + node + '/';
+            $.ajax({
+                url: url,
+                type: 'PATCH',
+                dataType: 'json',
+                contentType: 'application/json',
+                crossOrigin: true,
+                xhrFields: { withCredentials: true},
+                processData: false,
+                data: JSON.stringify(
+                    {'data': {
+                       'type': 'nodes',
+                       'id':   node,
+                       'attributes': {
+                           'public': isPublic
+                       }
+                }
+                })
+            }).done(function(response) {
+                console.log('response is' + JSON.stringify(response));
+            }).fail(function(xhr, status, error) {
+                //$privacysMsg.addClass('text-danger');
+                //$privacysMsg.text('Could not retrieve project settings.');
+                Raven.captureMessage('Could not PATCH project settings.', {
+                    url: url,  status: status, error: error
+                });
+            });
+
 }
 
 //function getNodePrivacyDirty(nodeTree, nodesOriginal) {
@@ -119,7 +153,6 @@ var NodesPrivacyViewModel = function() {
         console.log('nodesOriginal is ' + JSON.stringify(nodesOriginal));
     });
 
-    // Initialize treebeard grid for privacySettings
     var $privacysMsg = $('#configurePrivacyMessage');
     var treebeardUrl = ctx.node.urls.api  + 'get_node_tree/';
 
@@ -133,6 +166,7 @@ var NodesPrivacyViewModel = function() {
         nodesOriginal = getNodePrivacyDirty(response[0], nodesOriginal);
         self.nodesState(nodesOriginal);
         new NodesPrivacyTreebeard(response, self.nodesState, self.nodesChanged, nodesOriginal);
+        //patchNodePrivacy('uxgdq', true);
     }).fail(function(xhr, status, error) {
         $privacysMsg.addClass('text-danger');
         $privacysMsg.text('Could not retrieve project settings.');
@@ -140,6 +174,7 @@ var NodesPrivacyViewModel = function() {
             url: treebeardUrl, status: status, error: error
         });
     });
+
     self.page = ko.observable('warning');
     self.pageTitle = ko.computed(function() {
         return {
@@ -168,7 +203,10 @@ var NodesPrivacyViewModel = function() {
     };
 
     self.confirmChanges =  function() {
-         self.page('warning');
+        var nodesChanged = ko.toJS(self.nodesChanged);
+        for (var node in nodesChanged) {
+            patchNodePrivacy(node, nodesChanged[node]);
+        }
     };
 
     self.clear = function() {
@@ -213,117 +251,6 @@ var NodesPrivacyViewModel = function() {
     };
 
 };
-
-function expandOnLoad() {
-    var tb = this;  // jshint ignore: line
-    for (var i = 0; i < tb.treeData.children.length; i++) {
-        var parent = tb.treeData.children[i];
-        tb.updateFolder(null, parent);
-        expandChildren(tb, parent.children);
-    }
-}
-
-function expandChildren(tb, children) {
-    var openParent = false;
-    for (var i = 0; i < children.length; i++) {
-        var child = children[i];
-        var parent = children[i].parent();
-        if (child.children.length > 0) {
-            expandChildren(tb, child.children);
-        }
-    }
-    if (openParent) {
-        openAncestors(tb, children[0]);
-    }
-}
-
-function openAncestors (tb, item) {
-    var parent = item.parent();
-    if(parent && parent.id > 0) {
-        tb.updateFolder(null, parent);
-        openAncestors(tb, parent);
-    }
-}
-
-function NodesPrivacyTreebeard(data, nodesState, nodesChanged, nodesOriginal) {
-    /** nodesChanged and nodesState are knockout variables.  nodesChanged will keep track of the nodes that have
-     *  changed state.  nodeState is all the nodes in their current state.
-     *
-     *
-     *
-     *
-     * */
-    var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
-        divID: 'grid',
-        filesData: data,
-        naturalScrollLimit : 0,
-        rowHeight : 35,
-        hScroll : 0,
-        columnTitles : function() {
-            return [
-                {
-                    title: 'checkBox',
-                    width: '4%',
-                    sortType : 'text',
-                    sort : true
-                },
-                {
-                    title: 'project',
-                    width : '96%',
-                    sortType : 'text',
-                    sort: true
-                }
-            ];
-        },
-        resolveRows: function nodesPrivacyResolveRows(item){
-            var columns = [];
-            var title = item.data.node.id;
-            var nodesStateLocal = ko.toJS(nodesState());
-            var nodesChangedLocal = ko.toJS(nodesChanged());
-
-            columns.push(
-                {
-                    data : 'action',
-                    sortInclude : false,
-                    filter : false,
-                    custom : function () {
-                        return m('input[type=checkbox]', {
-                            onclick : function() {
-                                /* nodesChanged is a knockout variable tracking necessary changes */
-                                item.data.node.is_public = !item.data.node.is_public;
-                                nodesStateLocal[title] = item.data.node.is_public;
-                                if (nodesStateLocal[title] !== nodesOriginal[title]) {
-                                    nodesChangedLocal[title] = item.data.node.is_public;
-                                }
-                                else if (typeof (nodesChangedLocal[title])) {
-                                    delete nodesChangedLocal[title];
-                                }
-                                nodesChanged(nodesChangedLocal);
-                                nodesState(nodesStateLocal);
-                            },
-                            checked: nodesState()[title]
-                        });
-                    }
-                },
-                {
-                    data: 'project',  // Data field name
-                    folderIcons: true,
-                    filter: true,
-                    sortInclude: false,
-                    hideColumnTitles: false,
-                    custom: function () {
-                        return m('span', item.data.node.title);
-                    }
-                }
-            );
-            return columns;
-        }
-    });
-    var grid = new Treebeard(tbOptions);
-    expandOnLoad.call(grid.tbController);
-}
-module.exports = NodesPrivacyTreebeard;
-
 
 function NodesPrivacy (selector, data, options) {
     var self = this;
