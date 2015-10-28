@@ -14,8 +14,20 @@ from api.base.exceptions import InvalidQueryStringError, Conflict
 
 def format_relationship_links(related_link, self_link, rel_meta, self_meta):
 
-    ret = {'links': {'related': {'href': related_link, 'meta': rel_meta}, 'self': {'href': self_link, 'meta': self_meta}}}
+    ret = {
+        'links': {
+            'related': {
+                'href': related_link,
+                'meta': rel_meta
+            },
+            'self': {
+                'href': self_link,
+                'meta': self_meta
+            }
+        }
+    }
 
+    # Not currently returning self links
     if not ret['links']['self']['href']:
         del ret['links']['self']
 
