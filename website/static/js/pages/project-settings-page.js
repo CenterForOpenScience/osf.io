@@ -144,7 +144,7 @@ $(document).ready(function() {
                 function() {
                     msgElm.text('');
                 },
-                3000
+                5000
             );
         }
         function successfulAddonUpdate() {
