@@ -30,10 +30,9 @@ def connect_from_settings(node_settings):
 def connect_or_401(host, token):
     try:
         connection = _connect(host, token)
-        if connection is None:
+        if not connection:
             raise ConnectionError
-        else:
-            return connection
+        return connection
     except UnauthorizedError:
         raise HTTPError(http.UNAUTHORIZED)
 

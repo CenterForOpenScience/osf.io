@@ -100,12 +100,12 @@ function ViewModel(url) {
             self.changeMessage("Please enter an API token.", 'text-danger');
             return;
         }
-        else{
-            if (!self.customHost() || !self.apiToken()) {
-                self.changeMessage("Please enter a Dataverse host and an API token.", 'text-danger');
-                return;
-            }
+
+        if (!self.customHost() || !self.apiToken()) {
+            self.changeMessage("Please enter a Dataverse host and an API token.", 'text-danger');
+            return;
         }
+
 
         var url = self.urls().create;
 
