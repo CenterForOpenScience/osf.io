@@ -14,7 +14,7 @@ class RegistrationSerializer(NodeSerializer):
     date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
     embargoed = ser.BooleanField(read_only=True, source='embargo.state')
     embargo_end_date = ser.DateTimeField(source='embargo.end_date', read_only=True)
-    registration_schema = ser.CharField(read_only=True)
+    registration_schema = ser.CharField(read_only=True, source='registered_schema')
     registered_meta = ser.CharField(read_only=True)
 
 
