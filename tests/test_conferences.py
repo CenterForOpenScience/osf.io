@@ -368,6 +368,27 @@ class TestMessage(ContextTestCase):
             assert_equal(msg.conference_name, 'conf')
             assert_equal(msg.conference_category, 'talk')
 
+    def test_alternate_route_valid(self):
+        conf = ConferenceFactory.build(endpoint='chocolate', active=True)
+        conf.name = 'Chocolate Conference'
+        conf.field_names['submission2'] = 'data'
+        conf.save()
+        recipient = '{0}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
+        with self.make_context(data={'recipient': recipient}):
+            self.app.app.preprocess_request()
+            msg = message.ConferenceMessage()
+            assert_equal(msg.conference_name, 'chocolate')
+            assert_equal(msg.conference_category, 'data')
+        conf.__class__.remove_one(conf)
+
+    def test_alternate_route_invalid(self):
+        recipient = '{0}chocolate-data@osf.io'.format('test-' if settings.DEV_MODE else '')
+        with self.make_context(data={'recipient': recipient}):
+            self.app.app.preprocess_request()
+            msg = message.ConferenceMessage()
+            with assert_raises(message.ConferenceError):
+                msg.route
+
     def test_attachments_count_zero(self):
         with self.make_context(data={'attachment-count': '0'}):
             msg = message.ConferenceMessage()
@@ -471,6 +492,11 @@ class TestConferenceModel(OsfTestCase):
         with assert_raises(ValidationError):
             ConferenceFactory(endpoint='spsp2014', name=None).save()
 
+    def test_default_field_names(self):
+        conf = ConferenceFactory(endpoint='cookie', name='Cookies Conference')
+        conf.save()
+        assert_equal(conf.field_names['submission1'], 'poster')
+        assert_equal(conf.field_names['mail_subject'], 'Presentation title')
 
 class TestConferenceIntegration(ContextTestCase):
 

@@ -24,7 +24,7 @@
                 "replace": true
             }'></div>
             <hr />
-            <h3>Forgot Password</h3>
+            <h3>Forgot password</h3>
             <div mod-meta='{
                 "tpl": "util/render_form.mako",
                 "uri": "/api/v1/forms/forgot_password/",
@@ -45,7 +45,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h4 style="margin-bottom:0">Two-factor Authentication</h4>
+                    <h4 style="margin-bottom:0">Two-factor authentication</h4>
                 </div>
                 <div class="modal-body">
                     <p>Two-factor authentication helps protect your OSF account by requiring both a password and a code generated on your mobile phone to log in. This addon may be enabled on your account's <a href="${ web_url_for('user_addons') }">addon settings</a>.</p>
