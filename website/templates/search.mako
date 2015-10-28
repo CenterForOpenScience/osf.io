@@ -134,15 +134,12 @@
     </script>
     <script type="text/html" id="file">
         <h4><a href="{{ deep_url }}">{{ name }}</a> (<span data-bind="if: is_registration">Registration </span>File)</h4>
-        <!-- ko if: parent_url -->
-        <h5>From: <a data-bind="attr.href: parent_url">{{ parent_title }}</a> / <a data-bind="attr.href: node_url">{{ node_title }}</a></h5>
-        <!-- /ko -->
-        <!-- ko if: !parent_url -->
-        <h5>From: <span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: node_url">{{ node_title }}</a></h5>
-        <!-- /ko -->
-        <!-- ko if: tags.length > 0 -->
-        <div data-bind="template: 'tag-cloud'"></div>
-        <!-- /ko -->
+        <h5>
+            <!-- ko if: parent_url --> From: <a data-bind="attr.href: parent_url">{{ parent_title }}</a> / <!-- /ko -->
+            <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title">{{ parent_title }} /</span> <!-- /ko -->
+            <a data-bind="attr.href: node_url">{{ node_title }}</a>
+        </h5>
+        <!-- ko if: tags.length > 0 --> <div data-bind="template: 'tag-cloud'"></div> <!-- /ko -->
     </script>
     <script type="text/html" id="user">
 
