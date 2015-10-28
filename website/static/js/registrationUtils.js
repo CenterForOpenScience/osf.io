@@ -174,21 +174,6 @@ var MetaSchema = function(params) {
     self.messages = params.messages || {};
 
 };
-/**
- * @returns {Question[]} a flat list of the schema's questions
- **/
-MetaSchema.prototype.flatQuestions = function() {
-    var self = this;
-
-    var flat = [];
-
-    $.each(self.schema.pages, function(i, page) {
-        $.each(page.questions, function(qid, question) {
-            flat.push(question);
-        });
-    });
-    return flat;
-};
 
 /**
  * @class Draft
@@ -237,15 +222,20 @@ var Draft = function(params, metaSchema) {
         return self.metaSchema ? self.metaSchema.fulfills : [];
     });
 
+    self.pages = ko.observableArray([]);
+    $.each(self.schema().pages, function(id, pageData) {
+        self.pages.push(new Page(pageData, self.schemaData));
+    });
+
     self.completion = ko.computed(function() {
         var total = 0;
         var complete = 0;
         if (self.schemaData) {
             var schema = self.schema();
-            $.each(schema.pages, function(i, page) {
-                $.each(page.questions, function(qid, question) {
-                    var q = self.schemaData[qid];
-                    if (q && (q.value || '').trim()) {
+            $.each(self.pages(), function(i, page) {
+                $.each(page.questions(), function(qid, question) {
+
+                    if ((question.value() || '').trim()) {
                         complete++;
                     }
                     total++;
@@ -254,11 +244,6 @@ var Draft = function(params, metaSchema) {
             return Math.ceil(100 * (complete / total));
         }
         return 0;
-    });
-
-    self.pages = ko.observableArray([]);
-    $.each(self.schema().pages, function(id, pageData) {
-        self.pages.push(new Page(pageData, self.schemaData));
     });
 };
 Draft.prototype.preRegisterPrompts = function(response, confirm) {
@@ -450,14 +435,6 @@ RegistrationEditor.prototype.init = function(draft) {
     self.currentPage(self.draft().pages()[0]);
 
     self.serialized.subscribe(self.autoSave.bind(self));
-};
-/**
- * @returns {Question[]} flat list of the current schema's questions
- **/
-RegistrationEditor.prototype.flatQuestions = function() {
-    var self = this;
-
-    return self.draft().metaSchema.flatQuestions();
 };
 /**
  * Creates a template context for editor type subtemplates. Looks for the data type
@@ -653,7 +630,6 @@ RegistrationEditor.prototype.save = function() {
     var request;
 
     var payload = self.serialized();
-    console.log(payload);
     if (typeof self.draft().pk === 'undefined') {
         // Draft has not yet been assigned a PK; create a new DraftRegistration
         request = $osf.postJSON(self.urls.create, payload);

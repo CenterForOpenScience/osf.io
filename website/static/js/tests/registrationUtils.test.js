@@ -8,6 +8,7 @@ var faker = require('faker');
 var bootbox = require('bootbox');
 
 var $osf = require('js/osfHelpers');
+var utils = require('./utils');
 
 window.contextVars.currentUser = {
     fullname: faker.name.findName(),
@@ -24,15 +25,20 @@ var RegistrationEditor = registrationUtils.RegistrationEditor;
 var RegistrationManager = registrationUtils.RegistrationManager;
 
 var makeMetaSchema = function() {
-    var questions = {};
     var qid;
-    [1, 1, 1].map(function() {
-        qid = faker.internet.ip();
-        questions[qid] = {
-            type: 'string',
-            format: 'text'
-        };
-    });
+
+    var makeQuestions = function() {
+        var questions = {};
+
+        [1, 1, 1].map(function() {
+            qid = faker.internet.ip();
+            questions[qid] = {
+                type: 'string',
+                format: 'text'
+            };
+        });
+        return questions;
+    };
 
     var params = {
         schema_name: 'My Schema',
@@ -47,7 +53,7 @@ var makeMetaSchema = function() {
                 return {
                     id: faker.internet.ip(),
                     title: 'Page',
-                    questions: questions
+                    questions: makeQuestions()
                 };
             })
         },
@@ -129,39 +135,6 @@ describe('Question', () => {
     });
 });
 
-describe('MetaSchema', () => {
-    describe('#constructor', () => {
-        it('loads optional instantion data and maps question data to Question instances', () => {
-
-            var ctx = makeMetaSchema();
-            var qid = ctx[0];
-            var params = ctx[1];
-            var ms = ctx[2];
-            assert.equal(ms.name, params.schema_name);
-            assert.equal(ms.version, params.schema_version);
-            assert.equal(ms.schema.pages[0].id, params.schema.pages[0].id);
-
-            assert.isDefined(ms.schema.pages[2].questions[qid].value);
-        });
-    });
-    describe('#flatQuestions', () => {
-        it('creates a flat array of the schema questions', () => {
-            var ctx = makeMetaSchema();
-            var qid = ctx[0];
-            var params = ctx[1];
-            var ms = ctx[2];
-
-            var questions = [];
-            $.each(params.schema.pages, function(i, page) {
-                $.each(page.questions, function(qid, question) {
-                    questions.push(question);
-                });
-            });
-            assert.deepEqual(questions, ms.flatQuestions());
-        });
-    });
-});
-
 describe('Draft', () => {
     var ms = makeMetaSchema()[2];
     
@@ -193,15 +166,8 @@ describe('Draft', () => {
             assert.equal(draft.updated.toString(), params.updated.toString());
         });
         it('calculates a percent completion based on the passed registration_metadata', () => {
-            var ms = makeMetaSchema()[2];
 
             var data = {};
-            var questions = ms.flatQuestions();
-            $.each(questions, function(i, q) {
-                data[q.id] = {
-                    value: 'value'
-                };
-            });
 
             var params = {
                 pk: faker.random.number(),
@@ -215,6 +181,12 @@ describe('Draft', () => {
             };
 
             var draft = new Draft(params, ms);
+
+            $.each(draft.pages(), function(_, page) {
+                $.each(page.questions(), function(_, question) {
+                    question.value('value');
+                });
+            });
 
             assert.equal(draft.completion(), 100);
         });
@@ -325,7 +297,7 @@ describe('Draft', () => {
 
 describe('RegistrationEditor', () => {
     var ms = makeMetaSchema()[2];
-    var questions = ms.flatQuestions();
+    var questions = [];
 
     var metaData = {};
     $.each(questions, function(i, q) {
@@ -377,72 +349,51 @@ describe('RegistrationEditor', () => {
     });
     describe('#create', () => {
         var postJSONStub;
-        var updateDataStub;
         before(() => {
             postJSONStub = sinon.stub($osf, 'postJSON', function() {
                 var ret = $.Deferred();
-                ret.resolve();
+                ret.resolve({pk : '12345'});
                 return ret;
             });
-            updateDataStub = sinon.stub(editor, 'updateData');
         });
         after(() => {
-            $osf.postJSON.restore();
-            editor.updateData.restore();
+            postJSONStub.restore();
         });
         it('POSTs to the create URL with the current draft state', (done) => {
+
             editor.create({}).always(function() {
-                var metaSchema = draft.metaSchema;
-                assert.isTrue(
-                    postJSONStub.calledWith(
-                        createUrl,
-                        {
-                            schema_name: metaSchema.name,
-                            schema_version: metaSchema.version,
-                            schema_data: {}
-                        }
-                    )
+                assert.deepEqual(
+                    postJSONStub.args[0][1].schema_data,
+                    {}
                 );
                 done();
             });
         });
     });
     describe('#save', () => {
-        var putSaveDataStub;
-        var updateDataStub;
+        var putJSONStub;
         beforeEach(() => {
-            putSaveDataStub = sinon.stub(editor, 'putSaveData', function() {
+            putJSONStub = sinon.stub($osf, 'putJSON', function() {
                 var ret = $.Deferred();
-                ret.resolve();
+                ret.resolve({pk: '12345'}, 1, {});
                 return ret;
             });
-            updateDataStub = sinon.stub(editor, 'updateData');
         });
         afterEach(() => {
-            editor.putSaveData.restore();
-            editor.updateData.restore();
+            putJSONStub.restore();
         });
-        it('PUTs to the update URL with the current draft state', () => {
-            var metaSchema = draft.metaSchema;
-            questions[0].value('Updated');
-            editor.save();
-
-            var data = {};
-            $.each(questions, function(i, q) {
-                data[q.id] = {
-                    value: q.value()
-                };
+        it('PUTs to the update URL with the current draft state', (done) => {
+            var question = draft.pages()[0].questions()[0];
+            question.value('Updated');
+            editor.save().always(function() {
+                assert.equal(
+                    putJSONStub.args[0][1].schema_data[question.id].value,
+                    'Updated'
+                );
+                done();
             });
 
-            assert.isTrue(
-                putSaveDataStub.calledWith(
-                    {
-                        schema_name: metaSchema.name,
-                        schema_version: metaSchema.version,
-                        schema_data: data
-                    }
-                )
-            );
+
         });
     });
 });
