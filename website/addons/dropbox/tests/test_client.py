@@ -4,13 +4,14 @@ from nose.tools import *  # noqa (PEP8 asserts)
 from dropbox.client import DropboxClient
 
 from tests.base import OsfTestCase
-from tests.factories import UserFactory
+from tests.factories import UserFactory, ProjectFactory
 
 from website.addons.base.exceptions import AddonError
 from website.addons.dropbox.model import DropboxUserSettings
 from website.addons.dropbox.tests.factories import (
     DropboxNodeSettingsFactory,
-    DropboxUserSettingsFactory
+    DropboxUserSettingsFactory,
+    DropboxAccountFactory
 )
 from website.addons.dropbox.client import (
     get_client, get_node_addon_client, get_node_client,
@@ -40,13 +41,18 @@ class TestCore(OsfTestCase):
 class TestClientHelpers(OsfTestCase):
 
     def setUp(self):
-
         super(TestClientHelpers, self).setUp()
+        self.user = UserFactory()
+        self.external_account = DropboxAccountFactory()
+        self.user.external_accounts.append(self.external_account)
+        self.user.save()
 
-        self.user_settings = DropboxUserSettingsFactory()
-        self.node_settings = DropboxNodeSettingsFactory(user_settings=self.user_settings)
-        self.user = self.user_settings.owner
-        self.node = self.node_settings.owner
+        self.node = ProjectFactory(creator=self.user)
+        self.user_settings = DropboxUserSettingsFactory(owner=self.user)
+        self.node_settings = DropboxNodeSettingsFactory(
+            owner=self.node,
+            user_settings=self.user_settings
+        )
 
     def test_get_client_returns_a_dropbox_client(self):
         client = get_client(self.user)

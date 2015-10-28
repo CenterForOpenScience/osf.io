@@ -99,6 +99,13 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     _api = None
 
     @property
+    def nodelogger(self):
+        return DropboxNodeLogger(
+            node=self.owner,
+            auth=Auth(self.user_settings.owner)
+        )
+
+    @property
     def api(self):
         """authenticated ExternalProvider instance"""
         if self._api is None:
@@ -126,17 +133,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def set_folder(self, folder, auth):
         self.folder = folder
         # Add log to node
-        nodelogger = DropboxNodeLogger(node=self.owner, auth=auth)
-        nodelogger.log(action="folder_selected", save=True)
-
-    def set_auth(self, external_account, user):
-        """Import a user's Dropbox authentication and create a NodeLog.
-        """
-        super(DropboxNodeSettings, self).set_auth(external_account, user)
-        user_settings = user.get_addon(self.config.short_name)
-        self.user_settings = user_settings
-        nodelogger = DropboxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
-        nodelogger.log(action="node_authorized", save=True)
+        self.nodelogger.log(action="folder_selected", save=True)
 
     # TODO: Is this used? If not, remove this and perhaps remove the 'deleted' field
     def delete(self, save=True):

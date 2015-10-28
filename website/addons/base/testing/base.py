@@ -105,6 +105,7 @@ class OAuthAddonTestCaseMixin(object):
         self.external_account.save()
         self.user.external_accounts.append(self.external_account)
         self.user.save()
+        self.auth = Auth(self.user)
 
     def set_node_settings(self, settings):
         self.user_settings.grant_oauth_access(self.project, self.external_account)

@@ -35,7 +35,6 @@ def import_auth(addon_short_name, Serializer):
         except PermissionsError:
             raise HTTPError(http.FORBIDDEN)
 
-        node_addon.set_auth(external_account, user_addon.owner)
         node_addon.save()
 
         return {
@@ -87,9 +86,10 @@ def root_folder(addon_short_name):
 
 
 def get_config(addon_short_name, Serializer):
-    @must_be_valid_project
     @must_be_logged_in
     @must_have_addon(addon_short_name, 'node')
+    @must_be_valid_project
+    @must_have_permission(permissions.WRITE)
     def _get_config(node_addon, auth, **kwargs):
         """API that returns the serialized node settings."""
         return {
@@ -101,7 +101,7 @@ def get_config(addon_short_name, Serializer):
     _get_config.__name__ = '{0}_get_config'.format(addon_short_name)
     return _get_config
 
-def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
+def set_config(addon_short_name, addon_full_name, set_folder):
     @must_not_be_registration
     @must_have_addon(addon_short_name, 'user')
     @must_have_addon(addon_short_name, 'node')
@@ -113,7 +113,6 @@ def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
         set_folder(node_addon, folder, auth)
 
         path = folder['path']
-        serializer = Serializer(node_settings=node_addon)
         return {
             'result': {
                 'folder': {
@@ -121,8 +120,7 @@ def set_config(addon_short_name, addon_full_name, Serializer, set_folder):
                         addon_full_name
                     ),
                     'path': path,
-                },
-                'urls': serializer.addon_serialized_urls,
+                }
             },
             'message': 'Successfully updated settings.',
         }

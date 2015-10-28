@@ -99,7 +99,7 @@ def test_serialize_folder():
     }
     result = serialize_folder(metadata)
     assert_equal(result['path'], metadata['path'])
-    assert_equal(result['name'], 'Dropbox' + metadata['path'])
+    assert_equal(result['name'], metadata['path'])
 
 
 class TestMetadataSerialization(OsfTestCase):

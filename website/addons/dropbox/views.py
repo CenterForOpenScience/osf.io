@@ -39,7 +39,7 @@ dropbox_import_auth = generic_views.import_auth(
     DropboxSerializer
 )
 
-def _get_folders(node_settings):
+def _get_folders(node_settings, folder_id):
     client = get_client_from_user_settings(node_settings.user_settings)
     return utils.get_folders(client)
 
@@ -62,7 +62,6 @@ def _set_folder(node_addon, folder, auth):
 dropbox_set_config = generic_views.set_config(
     SHORT_NAME,
     FULL_NAME,
-    DropboxSerializer,
     _set_folder
 )
 

@@ -776,6 +776,12 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         )
 
     @property
+    def nodelogger(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'nodelogger' property."
+        )
+
+    @property
     def complete(self):
         return bool(self.has_auth and self.user_settings.verify_oauth_access(
             node=self.owner,
@@ -796,7 +802,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         # TODO(samchrisinger)
         pass
 
-    def set_auth(self, external_account, user):
+    def set_auth(self, external_account, user, log=True):
         """Connect the node addon to a user's external account.
 
         This method also adds the permission to use the account in the user's
@@ -815,6 +821,8 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         self.user_settings = user_settings
         self.external_account = external_account
 
+        if log:
+            self.nodelogger.log(action="node_authorized", save=True)
         self.save()
 
     def clear_auth(self):
@@ -885,7 +893,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             save=False,
         )
         if self.has_auth and self.user_settings.owner == user:
-            clone.set_auth(self.external_account, user)
+            clone.set_auth(self.external_account, user, log=False)
             message = '{addon} authorization copied to forked {category}.'.format(
                 addon=self.config.full_name,
                 category=fork.project_or_component,
