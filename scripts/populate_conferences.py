@@ -365,16 +365,6 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-    'PsiChiRepository': {
-        'name': 'Psi Chi Repository',
-        'info_url': None,
-        'logo_url': None,
-        'active': True,
-        'admins': [],
-        'public_projects': True,
-        'poster': True,
-        'talk': True,
-    },
     'R2RC': {
         'name': 'Right to Research Coalition',
         'info_url': None,
@@ -495,7 +485,7 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-     'ESIP2016W': {
+    'ESIP2016W': {
         'name': 'Earth Science Information Partners Winter Meeting 2016',
         'info_url': 'http://commons.esipfed.org/2016WinterMeeting',
         'logo_url': 'http://s30.postimg.org/m2uz2g4pt/ESIP.png',
@@ -504,6 +494,27 @@ MEETING_DATA = {
         'public_projects': True,
         'poster': True,
         'talk': True,
+    },
+    'PsiChiRepository': {
+        'name': 'Psi Chi',
+        'info_url': 'http://psichi.org',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+        'field_names': {
+            'submission1': 'measures',
+            'submission2': 'materials',
+            'submission1_plural': 'measures/scales',
+            'submission2_plural': 'study materials',
+            'meeting_title_type': 'Repository',
+            'add_submission': 'materials',
+            'mail_subject': 'Title',
+            'mail_message_body': 'Measure or material short description',
+            'mail_attachment': 'Your measure/scale or material file(s)'
+        }
     },
 }
 
