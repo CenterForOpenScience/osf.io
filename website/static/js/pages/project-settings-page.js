@@ -139,8 +139,13 @@ $(document).ready(function() {
         };
 
         function successMessage() {
-            msgElm.text('Settings updated').fadeIn();
-            msgElm.fadeOut(3000);
+            msgElm.text('Settings updated');
+            setTimeout(
+                function() {
+                    msgElm.text('');
+                },
+                3000
+            );
         }
         function successfulAddonUpdate() {
             successMessage();
