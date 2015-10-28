@@ -25,6 +25,8 @@ class Conference(StoredObject):
     public_projects = fields.BooleanField(required=False, default=True)
     poster = fields.BooleanField(default=True)
     talk = fields.BooleanField(default=True)
+    # field_names are used to customize the text on the conference page, the categories
+    # of submissions, and the email adress to send material to.
     field_names = fields.DictionaryField(
         default=lambda: {
             'submission1': 'poster',

@@ -365,16 +365,6 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-    'PsiChiRepository': {
-        'name': 'Psi Chi Repository',
-        'info_url': None,
-        'logo_url': None,
-        'active': True,
-        'admins': [],
-        'public_projects': True,
-        'poster': True,
-        'talk': True,
-    },
     'R2RC': {
         'name': 'Right to Research Coalition',
         'info_url': None,
@@ -505,9 +495,9 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-    'psichi2015': {
-        'name': 'PsiChi',
-        'info_url': 'psichi.org',
+    'PsiChiRepository': {
+        'name': 'Psi Chi',
+        'info_url': 'http://psichi.org',
         'logo_url': None,
         'active': True,
         'admins': [],
