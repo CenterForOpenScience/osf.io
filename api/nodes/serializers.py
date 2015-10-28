@@ -10,7 +10,7 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
-from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField,
+from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
     TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly)
 from api.base.exceptions import InvalidModelValueError
 
@@ -338,7 +338,7 @@ class NodeProviderSerializer(JSONAPISerializer):
     path = ser.CharField(read_only=True)
     node = ser.CharField(source='node_id', read_only=True)
     provider = ser.CharField(read_only=True)
-    files = NodeFileHyperLink(
+    files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
         related_view_kwargs={'node_id': 'node_id', 'path': 'path', 'provider': 'provider'},
         kind='folder'

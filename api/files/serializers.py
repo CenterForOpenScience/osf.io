@@ -7,7 +7,7 @@ from website import settings
 from framework.auth.core import User
 from website.files.models import FileNode
 from api.base.utils import absolute_reverse
-from api.base.serializers import NodeFileHyperLink, WaterbutlerLink, format_relationship_links
+from api.base.serializers import NodeFileHyperLinkField, WaterbutlerLink, format_relationship_links
 from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 
 
@@ -76,12 +76,12 @@ class FileSerializer(JSONAPISerializer):
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
 
-    files = NodeFileHyperLink(
+    files = NodeFileHyperLinkField(
         related_view='nodes:node-files',
         related_view_kwargs={'node_id': 'node_id', 'path': 'path', 'provider': 'provider'},
         kind='folder'
     )
-    versions = NodeFileHyperLink(
+    versions = NodeFileHyperLinkField(
         related_view='files:file-versions',
         related_view_kwargs={'file_id': '_id'},
         kind='file'

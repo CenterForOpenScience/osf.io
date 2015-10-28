@@ -336,15 +336,15 @@ class WaterbutlerLink(Link):
         return waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
 
 
-class NodeFileHyperLink(RelationshipField):
+class NodeFileHyperLinkField(RelationshipField):
     def __init__(self, kind=None, **kws):
         self.kind = kind
-        super(NodeFileHyperLink, self).__init__(**kws)
+        super(NodeFileHyperLinkField, self).__init__(**kws)
 
     def get_url(self, obj, view_name, request, format):
         if self.kind and obj.kind != self.kind:
             return {}
-        return super(NodeFileHyperLink, self).get_url(obj, view_name, request, format)
+        return super(NodeFileHyperLinkField, self).get_url(obj, view_name, request, format)
 
 
 class JSONAPIListSerializer(ser.ListSerializer):
