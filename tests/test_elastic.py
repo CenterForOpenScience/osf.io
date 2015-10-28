@@ -14,7 +14,7 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
-from website.models import Retraction
+from website.models import Retraction, NodeLicense
 
 from tests.base import OsfTestCase
 from tests.test_features import requires_search

@@ -545,9 +545,15 @@ class NodeLicenseRecordFactory(ModularOdmFactory):
     @classmethod
     def _create(cls, *args, **kwargs):
         try:
-            kwargs['node_license'] = kwargs.get('node_license') or NodeLicense.find_one(
+            NodeLicense.find_one(
                 Q('name', 'eq', 'No license')
             )
         except NoResultsFound:
             ensure_licenses()
+        kwargs['node_license'] = kwargs.get(
+            'node_license',
+            NodeLicense.find_one(
+                Q('name', 'eq', 'No license')
+            )
+        )
         return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)
