@@ -271,12 +271,12 @@ def update_comments_timestamp(auth, node, **kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def report_abuse(auth, **kwargs):
+def report_spam(auth, **kwargs):
 
     user = auth.user
 
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth)
+    comment_id = kwargs.get('cid')
+    comment = get_comment(comment_id, auth)
 
     category = request.json.get('category')
     text = request.json.get('text', '')
@@ -284,7 +284,7 @@ def report_abuse(auth, **kwargs):
         raise HTTPError(http.BAD_REQUEST)
 
     try:
-        comment.report_abuse(user, save=True, category=category, text=text)
+        comment.report_spam(user, datetime.utcnow(), save=True, category=category, message=text)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 
@@ -293,14 +293,14 @@ def report_abuse(auth, **kwargs):
 
 @must_be_logged_in
 @must_be_contributor_or_public
-def unreport_abuse(auth, **kwargs):
+def retract_report(auth, **kwargs):
     user = auth.user
 
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth)
+    comment_id = kwargs.get('cid')
+    comment = get_comment(comment_id, auth)
 
     try:
-        comment.unreport_abuse(user, save=True)
+        comment.retract_report(user, save=True)
     except ValueError:
         raise HTTPError(http.BAD_REQUEST)
 

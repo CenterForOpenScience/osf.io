@@ -3753,7 +3753,7 @@ class TestComments(OsfTestCase):
 
         assert_false(comment.is_deleted)
 
-    def test_report_abuse(self):
+    def test_report_spam(self):
 
         self._configure_project(self.project, 'public')
         comment = CommentFactory(node=self.project)
@@ -3771,11 +3771,8 @@ class TestComments(OsfTestCase):
         )
 
         comment.reload()
-        assert_in(reporter._id, comment.reports)
-        assert_equal(
-            comment.reports[reporter._id],
-            {'category': 'spam', 'text': 'ads'}
-        )
+        assert_equal(len(comment.reports), 1)
+        assert_equal(reporter._id, comment.reports[0]['user'])
 
     def test_can_view_private_comments_if_contributor(self):
 

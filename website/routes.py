@@ -372,7 +372,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/comment/<cid>/report/',
             ],
             'post',
-            project_views.comment.report_abuse,
+            project_views.comment.report_spam,
             json_renderer,
         ),
 
@@ -382,7 +382,7 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/comment/<cid>/unreport/',
             ],
             'post',
-            project_views.comment.unreport_abuse,
+            project_views.comment.retract_report,
             json_renderer,
         ),
 

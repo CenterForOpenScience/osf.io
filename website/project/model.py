@@ -128,21 +128,30 @@ class MetaData(GuidStoredObject):
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
 
 
-def validate_comment_reports(value, *args, **kwargs):
-    for key, val in value.iteritems():
-        if not User.load(key):
-            raise ValidationValueError('Keys must be user IDs')
-        if not isinstance(val, dict):
-            raise ValidationTypeError('Values must be dictionaries')
-        if 'category' not in val or 'text' not in val:
-            raise ValidationValueError(
-                'Values must include `category` and `text` keys'
-            )
+def validate_reports(value, *args, **kwargs):
+    if not isinstance(value, dict):
+        raise ValidationTypeError('Values must be dictionaries')
+    if (
+        'category' not in value or
+        'message' not in value or
+        'date' not in value or
+        'user' not in value or
+        'retracted' not in value
+    ):
+        raise ValidationValueError(
+            'Values must include `user`, `date`, `category`, `message`, `retracted` keys'
+        )
+    if not User.load(value['user']):
+        raise ValidationValueError('Keys must be user IDs')
 
 
-class SpamMixin(object):
+class SpamMixin(StoredObject):
     """Mixin to add to objects that can be marked as spam.
     """
+
+    _meta = {
+        'abstract': True
+    }
 
     UNKNOWN = 0
     FLAGGED = 1
@@ -158,7 +167,7 @@ class SpamMixin(object):
     #  - retracted: if a report has been retracted
     #  - category: What type of spam does the reporter believe this is
     #  - message: Comment on the comment
-    reports = fields.DictionaryField(list=True, default=[])
+    reports = fields.DictionaryField(list=True, default=[], validate=validate_reports)
 
     def flag_spam(self, save=False):
         # If ham and unedited then tell user that they should read it again
@@ -214,11 +223,9 @@ class SpamMixin(object):
         :param user: User retracting
         :param save: Save changes
         """
-        reports = self.reports
-        for report in reversed(reports):
+        for report in reversed(self.reports):
             if report['user'] == user._id:
                 report['retracted'] = True
-        self.reports = reports
         if save:
             self.save()
 

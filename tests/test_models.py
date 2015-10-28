@@ -4084,31 +4084,52 @@ class TestComments(OsfTestCase):
         user = UserFactory()
         time = datetime.datetime.utcnow()
         self.comment.report_spam(
-            user, time, category='spam', text='ads', save=True
+            user, time, category='spam', message='ads', save=True
         )
         self.comment.retract_report(user, save=True)
-        assert_not_in(user._id, self.comment.reports)
+        equivalent = {
+            'user': user._id,
+            'date': time,
+            'category': 'spam',
+            'message': 'ads',
+            'retracted': True
+        }
+        assert_in(equivalent, self.comment.reports)
 
-    def test_unreport_abuse_not_reporter(self):
+    def test_retract_report_not_reporter(self):
         reporter = UserFactory()
         non_reporter = UserFactory()
-        self.comment.report_abuse(reporter, category='spam', text='ads', save=True)
-        with assert_raises(ValueError):
-            self.comment.unreport_abuse(non_reporter, save=True)
-        assert_in(reporter._id, self.comment.reports)
+        time = datetime.datetime.utcnow()
+        self.comment.report_spam(
+            reporter, time, category='spam', message='ads', save=True
+        )
+        equivalent = {
+            'user': reporter._id,
+            'date': time,
+            'category': 'spam',
+            'message': 'ads',
+            'retracted': False
+        }
+        assert_in(equivalent, self.comment.reports)
 
-    def test_validate_reports_bad_key(self):
-        self.comment.reports[None] = {'category': 'spam', 'text': 'ads'}
+    def test_validate_reports_user(self):
+        self.comment.reports.append(dict(
+            user=None,
+            date=1,
+            category='spam',
+            message='ads',
+            retracted=False
+        ))
         with assert_raises(ValidationValueError):
             self.comment.save()
 
     def test_validate_reports_bad_type(self):
-        self.comment.reports[self.comment.user._id] = 'not a dict'
+        self.comment.reports.append('not a dict')
         with assert_raises(ValidationTypeError):
             self.comment.save()
 
     def test_validate_reports_bad_value(self):
-        self.comment.reports[self.comment.user._id] = {'foo': 'bar'}
+        self.comment.reports.append({'foo': 'bar'})
         with assert_raises(ValidationValueError):
             self.comment.save()
 
