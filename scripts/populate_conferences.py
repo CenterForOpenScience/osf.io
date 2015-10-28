@@ -516,7 +516,7 @@ MEETING_DATA = {
         'talk': True,
         'field_names': {
             'submission1': 'measure',
-            'submission2': 'material',
+            'submission2': 'materials',
             'submission1_plural': 'measures/scales',
             'submission2_plural': 'study materials',
             'meeting_title_type': 'Repository',
