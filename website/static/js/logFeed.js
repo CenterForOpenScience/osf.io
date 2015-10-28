@@ -173,10 +173,10 @@ var createLogs = function(logData){
             // The node type, either 'project' or 'component'
             // NOTE: This is NOT the component category (e.g. 'hypothesis')
             nodeType: item.node.is_registration ? 'registration': item.node.node_type,
-            projectUrl: item.node.node_type === 'project' ? '/' + item.node.registered_from_id + '/' : item.node.url,
             nodeCategory: item.node.category,
             contributors: item.contributors,
             nodeUrl: item.node.url,
+            projectUrl: item.node.node_type === 'project' ? '/' + item.node.registered_from_id + '/' : item.node.url,
             userFullName: item.user.fullname,
             userURL: item.user.url,
             params: item.params,
