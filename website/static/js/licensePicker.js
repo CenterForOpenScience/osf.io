@@ -69,7 +69,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         self.selectedLicenseUrl = ko.pureComputed(function() {
             return self.selectedLicense().url;
         });
-        /** ;
+        /**
          * Needed to track selected/saved license in the list of licenses
          **/
         self.selectedLicenseId = ko.computed({
@@ -87,6 +87,10 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         });
         self.selectedLicenseId(license.id);
 
+
+        self.hideValidation = ko.computed(function() {
+            return self.selectedLicenseId() === DEFAULT_LICENSE.id;
+        });
         self.year = ko.observable(license.year || new Date().getFullYear()).extend({
             required: true,
             pattern: {
@@ -101,6 +105,7 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
         self.copyrightHolders = ko.observable((license.copyright_holders || []).join(', ')).extend({
             required: true
         });
+
         self.dirty = ko.computed(function() {
             var savedLicense = self.savedLicense();
             return self.year() !== savedLicense.year || self.copyrightHolders() !== savedLicense.copyrightHolders;
@@ -139,6 +144,13 @@ var LicensePicker = oop.extend(ChangeMessageMixin, {
             else {
                 return true;
             }
+        });
+
+        self.selectedLicense.subscribe(function() {
+            var group = ko.validation.group(
+                $.map(self.properties() || [], function(p) { return p.value; })
+            );
+            group.showAllMessages();
         });
 
         self.disableSave = ko.computed(function() {

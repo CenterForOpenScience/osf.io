@@ -33,7 +33,9 @@
                 <div class="form-group">
                   <label>
                     <span data-bind="text: name + ':'"></span>
-                    <span class="text-danger" data-bind="validationMessage: value"></span>
+                    <span data-bind="css: {'hidden': $parent.hideValidation()}">
+                      <span class="text-danger" data-bind="validationMessage: value"></span>
+                    </span>
                   </label>
                   <input class="form-control" data-bind="value: value, valueUpdate: 'keyup'" />
                 </div>
@@ -41,7 +43,7 @@
             </div>
         </div>
         <div class="col-md" style="width:100%" data-bind="if: previewing && selectedLicenseText()">
-            <pre data-bind="text: selectedLicenseText" style="border:none;width:100%;text-align:justify"></pre>
+          <pre data-bind="text: selectedLicenseText" style="border:none; width:100%; text-align:justify; max-height: 300px;"></pre>
         </div>
         <button class="btn btn-success pull-right" data-bind="click: save,
                                                                css: {
