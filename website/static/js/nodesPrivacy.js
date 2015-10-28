@@ -50,17 +50,20 @@ var MESSAGES = {
                         'will be to retract the registration.  This will eliminate the registration, ' +
                         'leaving only basic information of the project title, description, and '  +
                         'contributors with a notice of retraction.',
-    addonWarning: 'The following addons will be effected by this change.  Are you sure you want to continue?'
+
+    addonWarning: 'The following addons will be effected by this change.  Are you sure you want to continue?',
+
+    selectNodes: 'Choose which of your projects and components to make public or private. Checked projects and components will be public, unchecked is private.'
 };
 
-function getNodePrivacyDirty(nodeTree, nodesOriginal) {
+function getNodeTree(nodeTree, nodesOriginal) {
     var i;
     var nodeId = nodeTree.node.id;
     var nodeIsPublic = nodeTree.node.is_public;
     nodesOriginal[nodeId] = nodeIsPublic;
     if (nodeTree.children) {
         for (i in nodeTree.children) {
-            nodesOriginal = getNodePrivacyDirty(nodeTree.children[i], nodesOriginal);
+            nodesOriginal = getNodeTree(nodeTree.children[i], nodesOriginal);
         }
     }
     //var localNodes = nodesOriginal;
@@ -68,37 +71,36 @@ function getNodePrivacyDirty(nodeTree, nodesOriginal) {
 }
 
 function patchNodePrivacy(node, isPublic) {
-            var url = API_BASE + node + '/';
-            $.ajax({
-                url: url,
-                type: 'PATCH',
-                dataType: 'json',
-                contentType: 'application/json',
-                crossOrigin: true,
-                xhrFields: { withCredentials: true},
-                processData: false,
-                data: JSON.stringify(
-                    {'data': {
-                       'type': 'nodes',
-                       'id':   node,
-                       'attributes': {
-                           'public': isPublic
-                       }
-                }
-                })
-            }).done(function(response) {
-                console.log('response is' + JSON.stringify(response));
-            }).fail(function(xhr, status, error) {
-                //$privacysMsg.addClass('text-danger');
-                //$privacysMsg.text('Could not retrieve project settings.');
-                Raven.captureMessage('Could not PATCH project settings.', {
-                    url: url,  status: status, error: error
-                });
-            });
-
+    var url = API_BASE + node + '/';
+    $.ajax({
+        url: url,
+        type: 'PATCH',
+        dataType: 'json',
+        contentType: 'application/json',
+        crossOrigin: true,
+        xhrFields: { withCredentials: true},
+        processData: false,
+        data: JSON.stringify(
+            {'data': {
+               'type': 'nodes',
+               'id':   node,
+               'attributes': {
+                   'public': isPublic
+               }
+        }
+        })
+    }).done(function(response) {
+        window.location.reload();
+    }).fail(function(xhr, status, error) {
+        //$privacysMsg.addClass('text-danger');
+        //$privacysMsg.text('Could not retrieve project settings.');
+        Raven.captureMessage('Could not PATCH project settings.', {
+            url: url,  status: status, error: error
+        });
+    });
 }
 
-//function getNodePrivacyDirty(nodeTree, nodesOriginal) {
+//function getNodeTree(nodeTree, nodesOriginal) {
 //    var i;
 //    var nodeId = nodeTree.node.id;
 //    var nodeIsPublic = nodeTree.node.is_public;
@@ -109,13 +111,13 @@ function patchNodePrivacy(node, isPublic) {
 //    };
 //    if (nodeTree.children) {
 //        for (i in nodeTree.children) {
-//            nodesOriginal = getNodePrivacyDirty(nodeTree.children[i], nodesOriginal);
+//            nodesOriginal = getNodeTree(nodeTree.children[i], nodesOriginal);
 //        }
 //    }
 //    //var localNodes = nodesOriginal;
 //    return nodesOriginal;
 //}
-//
+
 //function getAddons(nodeTree, addons) {
 //    var nodeAddons = [];
 //    var i;
@@ -146,6 +148,10 @@ var NodesPrivacyViewModel = function() {
         m.redraw(true);
     });
 
+    self.addons = ko.observable();
+
+    self.nodeParent = ko.observable();
+
     self.nodesChanged = ko.observable({});
 
     self.nodesChanged.subscribe(function(newValue) {
@@ -156,14 +162,20 @@ var NodesPrivacyViewModel = function() {
     var $privacysMsg = $('#configurePrivacyMessage');
     var treebeardUrl = ctx.node.urls.api  + 'get_node_tree/';
 
+    $('#nodesPrivacy').on('hidden.bs.modal', function () {
+        self.clear();
+    });
+
     $.ajax({
         url: treebeardUrl,
         type: 'GET',
         dataType: 'json'
     }).done(function(response) {
         response[0].node.is_public = true;
+        self.nodeParent(response[0].node.id);
+        self.addons(response[0].addons);
         //addons = getAddons(response[0], addons);
-        nodesOriginal = getNodePrivacyDirty(response[0], nodesOriginal);
+        nodesOriginal = getNodeTree(response[0], nodesOriginal);
         self.nodesState(nodesOriginal);
         new NodesPrivacyTreebeard(response, self.nodesState, self.nodesChanged, nodesOriginal);
         //patchNodePrivacy('uxgdq', true);
@@ -183,14 +195,14 @@ var NodesPrivacyViewModel = function() {
             addon: 'Addons Effected'
         }[self.page()];
     });
+
     self.message = ko.computed(function() {
         return {
             warning: MESSAGES.makeProjectPublicWarning,
-            select: '',
+            select: MESSAGES.selectNodes,
             addon: MESSAGES.addonWarning
         }[self.page()];
     });
-    self.message = ko.observable(MESSAGES.makeProjectPublicWarning);
 
 
 
@@ -210,7 +222,9 @@ var NodesPrivacyViewModel = function() {
     };
 
     self.clear = function() {
-         self.page('warning');
+        self.page('warning');
+        self.nodesChanged({});
+        self.nodesState(nodesOriginal);
     };
 
     self.selectAll = function() {

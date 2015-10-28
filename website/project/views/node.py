@@ -3,6 +3,8 @@ import logging
 import httplib as http
 import math
 from itertools import islice
+from sets import Set
+
 
 from flask import request
 from modularodm import Q
@@ -1010,7 +1012,7 @@ def get_children(auth, node, **kwargs):
     return _render_nodes(nodes, auth)
 
 
-def node_privacy_tree(user, node_ids):
+def node_privacy_tree(user, node_ids, addons):
     """ Format subscriptions data for project settings page
     :param user: modular odm User object
     :param node_ids: list of parent project ids
@@ -1025,11 +1027,9 @@ def node_privacy_tree(user, node_ids):
         can_read_children = node.has_permission_on_children(user, 'read')
         if not can_read and not can_read_children:
             continue
-        addons = node.get_addon_names()
-        saved_addons = []
-        for addon in addons:
-            if addon is not 'osfstorage' and addon is not 'wiki':
-                saved_addons.append(addon)
+        for addon in node.get_addon_names():
+            if (addon is not 'osfstorage') and (addon is not 'wiki') and (addons.count(addon) != 1):
+                addons.append(addon)
         children = []
         # List project/node if user has at least 'read' permissions (contributor or admin viewer) or if
         # user is contributor on a component of the project/node
@@ -1041,7 +1041,7 @@ def node_privacy_tree(user, node_ids):
                 for n in node.nodes
                 if n.primary and
                 not n.is_deleted
-            ]
+            ], addons
         ))
         item = {
             'node': {
@@ -1053,11 +1053,11 @@ def node_privacy_tree(user, node_ids):
             'children': children,
             'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
             'nodeType': node.project_or_component,
-            'addons': saved_addons,
             'category': node.category,
             'permissions': {
                 'view': can_read,
-            }
+            },
+            'addons': addons
         }
 
         items.append(item)
@@ -1069,7 +1069,11 @@ def node_privacy_tree(user, node_ids):
 @must_be_valid_project
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    return node_privacy_tree(auth.user, [node._id])
+    addons = []
+    for addon in node.get_addon_names():
+        if addon is not 'osfstorage' and addon is not 'wiki':
+            addons.append(addon)
+    return node_privacy_tree(auth.user, [node._id], addons)
 
 
 @must_be_contributor_or_public

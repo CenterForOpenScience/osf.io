@@ -13,6 +13,9 @@
                 </div>
                 <div data-bind="if: page() == 'addon'">
                     <span data-bind="text:message"></span>
+                        % for addon in addons:
+                            <h4>${addon}</h4>
+                        % endfor
                 </div>
                 <!-- Invite user page -->
 
@@ -20,15 +23,15 @@
                     <div class="row">
                         <div class="col-md-10">
                             <div class="m-b-md box p-sm">
-                              Choose all or some of your project components to make public. Unselected components will be private.
+                                <span data-bind="text:message"></span>
                             </div>
                         </div>
                     </div>
                     <div>
                         Select:&nbsp;
-                        <a data-bind="click:selectAll">All</a>
+                        <a data-bind="click:selectAll">Make all public</a>
                         &nbsp;|&nbsp;
-                        <a data-bind="click:selectNone">None</a>
+                        <a data-bind="click:selectNone">Make all private</a>
                     </div>
                         <div class="tb-row-titles">
                             <div style="width: 100%" data-tb-th-col="0" class="tb-th">
@@ -64,7 +67,7 @@
                 </span>
 
                 <span data-bind="if: page() == 'addon'">
-                <a href="#" class="btn btn-primary" data-bind="click: confirmChanges" data-dismiss="modal">Confirm</a>
+                    <a href="#" class="btn btn-primary" data-bind="click: confirmChanges" data-dismiss="modal">Confirm</a>
                 </span>
 
 
