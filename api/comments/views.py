@@ -50,7 +50,7 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
 
     ###Permissions
 
-    Comments on public nodes are given read-only access to everyone. If the node comment-level is "private",
+    Comments on public nodes are given read-only access to everyone. If the node comment-level is "private,"
     only contributors have permission to comment. If the comment-level is "public" any logged-in OSF user can comment.
     Comments on private nodes are only visible to contributors and administrators on the parent node.
 
@@ -135,7 +135,7 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
     ###Permissions
 
     Comments on public nodes are given read-only access to everyone. Comments on private nodes are only visible
-    to contributors and administrators on the parent node. Only the user who created the comment has permissions
+    to contributors and administrators on the parent node. Only the user who created the comment has permission
     to edit and delete the comment.
 
     ##Attributes
@@ -169,7 +169,7 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
     List of replies to this comment. New replies can be created through this endpoint.
 
     ###Reports
-    List of spam reports for this comment. Only users with permissions to create comments can
+    List of spam reports for this comment. Only users with permission to create comments can
     access this endpoint, and users can only see reports that they have created.
 
     ##Links
@@ -196,12 +196,12 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
         Success:       200 OK + comment representation
 
     To update a comment, issue either a PUT or a PATCH request against the `links.self` URL.  The `content`
-    and 'deleted' fields are mandatory if you PUT and optional if you PATCH. Non-string values will be accepted and
+    and `deleted` fields are mandatory if you PUT and optional if you PATCH. Non-string values will be accepted and
     stringified, but we make no promises about the stringification output.  So don't do that.
 
-    To delete a comment, issue a PATCH request against the `links.self` URL, with `is_deleted: True`:
+    To delete a comment, issue a PATCH request against the `links.self` URL, with `deleted: True`:
 
-    To undelete a comment, issue a PATCH request against the `links.self` URL, with `is_deleted: False`.
+    To undelete a comment, issue a PATCH request against the `links.self` URL, with `deleted: False`.
 
     ##Query Params
 
