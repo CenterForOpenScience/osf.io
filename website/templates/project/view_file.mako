@@ -6,18 +6,18 @@
 <%def name="title()">${file_name | h}</%def>
 <div class="row">
   <div class="col-sm-5">
-     <h2 class="break-word">
-       ## Split file name into two parts: with and without extension
-       <%
-        import os
-        file_name_title, file_name_ext = os.path.splitext(file_name)
-       %> 
-       ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
+    <h2 class="break-word">
+      ## Split file name into two parts: with and without extension
+      <%
+       import os
+       file_name_title, file_name_ext = os.path.splitext(file_name)
+      %> 
+      ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
 
-       % if file_revision:
-         <small>&nbsp;${file_revision | h}</small>
-       % endif
-     </h2>
+      % if file_revision:
+        <small>&nbsp;${file_revision | h}</small>
+      % endif
+    </h2>
   </div>
   <div class="col-sm-7">
     <div id="toggleBar" class="pull-right"></div>
