@@ -1,7 +1,6 @@
 import re
 import collections
 
-from rest_framework.reverse import reverse
 from rest_framework.fields import SkipField
 from rest_framework import serializers as ser
 
@@ -88,75 +87,18 @@ class JSONAPIListField(ser.ListField):
         return super(JSONAPIListField, self).to_internal_value(data)
 
 
-class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
-    """
-    HyperlinkedIdentityField that returns a nested dict with url,
-    optional meta information, and link_type.
-
-    Example:
-
-        children = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk',
-                                    link_type='related', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
-
-    """
-
-    def __init__(self, view_name=None, **kwargs):
-        self.meta = kwargs.pop('meta', None)
-        self.link_type = kwargs.pop('link_type', 'url')
-        super(JSONAPIHyperlinkedIdentityField, self).__init__(view_name=view_name, **kwargs)
-
-    # overrides HyperlinkedIdentityField
-    def get_url(self, obj, view_name, request, format):
-        """
-        Given an object, return the URL that hyperlinks to the object.
-
-        Returns None if lookup value is None
-        """
-
-        if getattr(obj, self.lookup_field) is None:
-            return None
-
-        return super(JSONAPIHyperlinkedIdentityField, self).get_url(obj, view_name, request, format)
-
-    # overrides HyperlinkedIdentityField
-    def to_representation(self, value):
-        """
-        Returns nested dictionary in format {'links': {'self.link_type': ... }
-
-        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
-        the link is represented as a links object with 'href' and 'meta' members.
-        """
-        url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
-
-        meta = {}
-        for key in self.meta or {}:
-            if key == 'count':
-                show_related_counts = self.context['request'].query_params.get('related_counts', False)
-                if utils.is_truthy(show_related_counts):
-                    meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
-                elif utils.is_falsy(show_related_counts):
-                    continue
-                else:
-                    raise InvalidQueryStringError(
-                        detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
-                        parameter='related_counts'
-                    )
-            else:
-                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
-
-        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
-
-
 class RelationshipField(ser.HyperlinkedIdentityField):
     """
-    RelationshipField that permits the return of both self and related links
+    RelationshipField that permits the return of both self and related links, along with optional
+    meta information.
 
     Example:
     children = RelationshipField(
         related_view='nodes:node-children',
         related_view_kwargs={'node_id': 'pk'},
-        self_view='nodes:node-pointers',
+        self_view='nodes:node-node-children-relationship',
         self_view_kwargs={'node_id': 'pk'},
+        related_meta={'count': 'get_node_count'}
     )
     """
     def __init__(self, **kwargs):
@@ -164,7 +106,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self_view = kwargs.pop('self_view', None)
         related_kwargs = kwargs.pop('related_view_kwargs', None)
         self_kwargs = kwargs.pop('self_view_kwargs', None)
-        self.view_names = {'related': related_view, 'self': self_view}
+        self.views = {'related': related_view, 'self': self_view}
         self.view_kwargs = {'related': related_kwargs, 'self': self_kwargs}
         self.related_meta = kwargs.pop('related_meta', None)
         self.self_meta = kwargs.pop('self_meta', None)
@@ -174,7 +116,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if self_view:
             assert self_kwargs is not None, 'Must provide self view kwargs.'
 
-        super(RelationshipField, self).__init__(self)
+        super(RelationshipField, self).__init__(self.views, **kwargs)
 
     # For retrieving meta values, otherwise returns {}
     def get_meta_information(self, meta_data, value):
@@ -209,15 +151,15 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     # Overrides HyperlinkedIdentityField
     def get_url(self, obj, view_name, request, format):
         urls = {}
-        for view_name, view in self.view_names.items():
+        for view_name, view in self.views.items():
             if view is None:
                 urls[view_name] = None
-                continue
-            kwargs = self.kwargs_lookup(obj, self.view_kwargs[view_name])
-            if kwargs is None:
-                urls[view_name] = None
             else:
-                urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
+                kwargs = self.kwargs_lookup(obj, self.view_kwargs[view_name])
+                if kwargs is None:
+                    urls[view_name] = None
+                else:
+                    urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
         return urls
 
     # Overrides HyperlinkedIdentityField
@@ -236,6 +178,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
             ret = {'links': {'related': {'href': related_url, 'meta': related_meta}, 'self': {'href': self_url, 'meta': self_meta}}}
 
+        # Currently not returning self links
         if not ret['links']['self']['href']:
             del ret['links']['self']
 
@@ -384,7 +327,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
     allows for enveloping of both single resources and collections.  Looks to nest fields
-    according to JSON API spec. Relational fields must use JSONAPIHyperlinkedIdentityField.
+    according to JSON API spec. Relational fields must use RelationshipField or HyperlinkedIdentityField.
     Self/html links must be nested under "links".
     """
 

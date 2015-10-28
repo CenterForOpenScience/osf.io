@@ -8,8 +8,8 @@ from framework.auth.core import User
 from website.files.models import FileNode
 from api.base.utils import absolute_reverse
 from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
-from api.base.serializers import JSONAPIHyperlinkedIdentityField, RelationshipField
 from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
+
 
 class CheckoutField(ser.HyperlinkedIdentityField):
 
