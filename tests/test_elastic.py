@@ -13,7 +13,7 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
-from website.models import Retraction
+from website.models import Retraction, Tag
 
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
@@ -794,7 +794,6 @@ class TestSearchFiles(SearchTestCase):
 
     def test_add_tag(self):
         file_ = self.root.append_file('That\'s How Strong My Love Is.mp3')
-        from website.models import Tag
         tag = Tag(_id='Redding')
         tag.save()
         file_.tags.append(tag)
@@ -804,7 +803,6 @@ class TestSearchFiles(SearchTestCase):
 
     def test_remove_tag(self):
         file_ = self.root.append_file('I\'ve Been Loving You Too Long.mp3')
-        from website.models import Tag
         tag = Tag(_id='Blue')
         tag.save()
         file_.tags.append(tag)
