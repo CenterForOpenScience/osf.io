@@ -12,7 +12,8 @@
         import os
         file_name_title, file_name_ext = os.path.splitext(file_name)
        %> 
-        ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
+       ${file_name_title | h}<span id="file-ext">${file_name_ext | h}</span>
+
        % if file_revision:
          <small>&nbsp;${file_revision | h}</small>
        % endif
