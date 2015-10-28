@@ -14,7 +14,7 @@ import time
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
 
-from modularodm import Q, fields
+from modularodm import Q
 from modularodm.exceptions import ValidationError
 from dateutil.parser import parse as parse_date
 
@@ -37,7 +37,7 @@ from website.project.views.contributor import (
     notify_added_contributor
 )
 from website.profile.utils import add_contributor_json, serialize_unregistered
-from website.profile.views import fmt_date_or_none
+from website.profile.views import fmt_date_or_none, update_osf_help_mails_subscription
 from website.util import api_url_for, web_url_for
 from website import mails, settings
 from website.util import rubeus
@@ -245,7 +245,6 @@ class TestProjectViews(OsfTestCase):
         assert_false(ret)
         self.project.reload()
         assert_true(self.project.is_contributor(self.user2))
-
 
     def test_can_view_nested_project_as_admin(self):
         self.parent_project = NodeFactory(
@@ -639,7 +638,6 @@ class TestProjectViews(OsfTestCase):
         assert_equal(res.status_code, 200)
         assert_equal(len(data['errors']), 2)
 
-
     # Regression test for https://github.com/CenterForOpenScience/osf.io/issues/1478
     @mock.patch('website.archiver.tasks.archive')
     def test_registered_projects_contributions(self, mock_archive):
@@ -974,6 +972,22 @@ class TestProjectViews(OsfTestCase):
         res = self.app.get(url, auth=self.auth)
         assert_equal(res.status_code, 302)
         assert_in(self.project.web_url_for('project_statistics', _guid=True), res.location)
+
+    def test_update_node(self):
+        url = self.project.api_url_for('update_node')
+        res = self.app.put_json(url, {'title': 'newtitle'}, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(self.project.title, 'newtitle')
+
+    # Regression test
+    def test_update_node_with_tags(self):
+        self.project.add_tag('cheezebørger', auth=Auth(self.project.creator), save=True)
+        url = self.project.api_url_for('update_node')
+        res = self.app.put_json(url, {'title': 'newtitle'}, auth=self.auth)
+        assert_equal(res.status_code, 200)
+        self.project.reload()
+        assert_equal(self.project.title, 'newtitle')
 
 
 class TestEditableChildrenViews(OsfTestCase):
@@ -1464,7 +1478,7 @@ class TestUserProfile(OsfTestCase):
         email = fake.email()
         self.user.emails.append(email)
         list_name = 'foo'
-        self.user.mailing_lists[list_name] = True
+        self.user.mailchimp_mailing_lists[list_name] = True
         self.user.save()
 
         mock_client = mock.MagicMock()
@@ -1501,7 +1515,7 @@ class TestUserProfile(OsfTestCase):
         email = fake.email()
         self.user.emails.append(email)
         list_name = 'foo'
-        self.user.mailing_lists[list_name] = False
+        self.user.mailchimp_mailing_lists[list_name] = False
         self.user.save()
 
         mock_client = mock.MagicMock()
@@ -3103,7 +3117,8 @@ class TestAuthViews(OsfTestCase):
                     'password': password,
                 }
             )
-        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered,
+                                                       auth.signals.unconfirmed_user_created]))
         mock_send_confirm_email.assert_called()
 
     @mock.patch('framework.auth.views.send_confirm_email')
@@ -3118,7 +3133,8 @@ class TestAuthViews(OsfTestCase):
                 'register-username2': email,
                 'register-password2': password
             })
-        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered]))
+        assert_equal(mock_signals.signals_sent(), set([auth.signals.user_registered,
+                                                       auth.signals.unconfirmed_user_created]))
         mock_send_confirm_email.assert_called()
 
     def test_resend_confirmation_get(self):
@@ -3251,6 +3267,42 @@ class TestConfigureMailingListViews(OsfTestCase):
         cls._original_enable_email_subscriptions = settings.ENABLE_EMAIL_SUBSCRIPTIONS
         settings.ENABLE_EMAIL_SUBSCRIPTIONS = True
 
+    def test_user_unsubscribe_and_subscribe_help_mailing_list(self):
+        user = AuthUserFactory()
+        url = api_url_for('user_choose_mailing_lists')
+        payload = {settings.OSF_HELP_LIST: False}
+        res = self.app.post_json(url, payload, auth=user.auth)
+        user.reload()
+
+        assert_false(user.osf_mailing_lists[settings.OSF_HELP_LIST])
+
+        payload = {settings.OSF_HELP_LIST: True}
+        res = self.app.post_json(url, payload, auth=user.auth)
+        user.reload()
+
+        assert_true(user.osf_mailing_lists[settings.OSF_HELP_LIST])
+
+    def test_get_notifications(self):
+        user = AuthUserFactory()
+        mailing_lists = dict(user.osf_mailing_lists.items() + user.mailchimp_mailing_lists.items())
+        url = api_url_for('user_notifications')
+        res = self.app.get(url, auth=user.auth)
+        assert_equal(mailing_lists, res.json['mailing_lists'])
+
+    def test_osf_help_mails_subscribe(self):
+        user = UserFactory()
+        user.osf_mailing_lists[settings.OSF_HELP_LIST] = False
+        user.save()
+        update_osf_help_mails_subscription(user, True)
+        assert_true(user.osf_mailing_lists[settings.OSF_HELP_LIST])
+
+    def test_osf_help_mails_unsubscribe(self):
+        user = UserFactory()
+        user.osf_mailing_lists[settings.OSF_HELP_LIST] = True
+        user.save()
+        update_osf_help_mails_subscription(user, False)
+        assert_false(user.osf_mailing_lists[settings.OSF_HELP_LIST])
+
     @unittest.skipIf(settings.USE_CELERY, 'Subscription must happen synchronously for this test')
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_user_choose_mailing_lists_updates_user_dict(self, mock_get_mailchimp_api):
@@ -3267,9 +3319,9 @@ class TestConfigureMailingListViews(OsfTestCase):
         user.reload()
 
         # check user.mailing_lists is updated
-        assert_true(user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
+        assert_true(user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST])
         assert_equal(
-            user.mailing_lists[settings.MAILCHIMP_GENERAL_LIST],
+            user.mailchimp_mailing_lists[settings.MAILCHIMP_GENERAL_LIST],
             payload[settings.MAILCHIMP_GENERAL_LIST]
         )
 
@@ -3300,7 +3352,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user is not subscribed to a list
         user = AuthUserFactory()
-        user.mailing_lists = {'OSF General': False}
+        user.mailchimp_mailing_lists = {'OSF General': False}
         user.save()
 
         # user subscribes and webhook sends request to OSF
@@ -3316,7 +3368,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user field is updated on the OSF
         user.reload()
-        assert_true(user.mailing_lists[list_name])
+        assert_true(user.mailchimp_mailing_lists[list_name])
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_mailchimp_webhook_profile_action_does_not_change_user(self, mock_get_mailchimp_api):
@@ -3331,7 +3383,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user is subscribed to a list
         user = AuthUserFactory()
-        user.mailing_lists = {'OSF General': True}
+        user.mailchimp_mailing_lists = {'OSF General': True}
         user.save()
 
         # user hits subscribe again, which will update the user's existing info on mailchimp
@@ -3348,7 +3400,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user field does not change
         user.reload()
-        assert_true(user.mailing_lists[list_name])
+        assert_true(user.mailchimp_mailing_lists[list_name])
 
     @mock.patch('website.mailchimp_utils.get_mailchimp_api')
     def test_sync_data_from_mailchimp_unsubscribes_user(self, mock_get_mailchimp_api):
@@ -3360,7 +3412,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user is subscribed to a list
         user = AuthUserFactory()
-        user.mailing_lists = {'OSF General': True}
+        user.mailchimp_mailing_lists = {'OSF General': True}
         user.save()
 
         # user unsubscribes through mailchimp and webhook sends request
@@ -3376,7 +3428,7 @@ class TestConfigureMailingListViews(OsfTestCase):
 
         # user field is updated on the OSF
         user.reload()
-        assert_false(user.mailing_lists[list_name])
+        assert_false(user.mailchimp_mailing_lists[list_name])
 
     def test_sync_data_from_mailchimp_fails_without_secret_key(self):
         user = AuthUserFactory()

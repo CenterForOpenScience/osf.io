@@ -36,15 +36,15 @@
         </small>
     </h4>
     <!-- Settings Pane -->
-    <div class="${addon_short_name}-settings" data-bind="visible: showSettings">
+    <div class="${addon_short_name}-settings" data-bind='visible: showSettings'>
         <div class="row">
             <div class="col-md-12">
                 <p class="break-word">
                     <strong>Current Folder:</strong>
-                    <a data-bind="ifnot: folderName() === '', attr.href: urls().files">
-                        {{folderName}}
+                    <a href="{{ urls().files }}" data-bind="if: folderName">
+                        {{ folderName }}
                     </a>
-                    <span data-bind="if: folderName() === ''" class="text-muted">
+                    <span class="text-muted" data-bind="ifnot: folderName">
                         None
                     </span>
                 </p>

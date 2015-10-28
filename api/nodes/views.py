@@ -19,9 +19,9 @@ from api.nodes.serializers import (
     NodeDetailSerializer,
     NodeProviderSerializer,
     NodeContributorsSerializer,
-    NodeRegistrationSerializer,
     NodeContributorDetailSerializer
 )
+from api.registrations.serializers import RegistrationSerializer
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
@@ -61,19 +61,21 @@ class NodeMixin(object):
             self.check_object_permissions(self.request, node)
         return node
 
+
 class WaterButlerMixin(object):
 
     path_lookup_url_kwarg = 'path'
     provider_lookup_url_kwarg = 'provider'
 
     def get_file_item(self, item):
+        attrs = item['attributes']
         file_node = FileNode.resolve_class(
-            item['provider'],
-            FileNode.FOLDER if item['kind'] == 'folder'
+            attrs['provider'],
+            FileNode.FOLDER if attrs['kind'] == 'folder'
             else FileNode.FILE
-        ).get_or_create(self.get_node(check_object_permissions=False), item['path'])
+        ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
 
-        file_node.update(None, item, user=self.request.user)
+        file_node.update(None, attrs, user=self.request.user)
 
         self.check_object_permissions(self.request, file_node)
 
@@ -102,7 +104,6 @@ class WaterButlerMixin(object):
             return obj
 
         url = waterbutler_api_url_for(node._id, provider, path, meta=True)
-
         waterbutler_request = requests.get(
             url,
             cookies=self.request.COOKIES,
@@ -136,7 +137,8 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     is that a project is the top-level node, and components are children of the project. There is also a [category
     field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.
+    a category other than project, and children nodes may have a category of project.  Registrations are not included
+    in this endpoint.
 
     ##Node Attributes
 
@@ -152,7 +154,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         date_created   iso8601 timestamp  timestamp that the node was created
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
-        registration   boolean            has this project been registered?
+        registration   boolean            is this is a registration?
         collection     boolean            is this node a collection of other nodes?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
@@ -185,7 +187,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     New nodes are created by issuing a POST request to this endpoint.  The `title` and `category` fields are
     mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  `public` defaults
     to false.  All other fields not listed above will be ignored.  If the node creation is successful the API will
-    return a 201 response with the respresentation of the new node in the body.  For the new node's canonical URL, see
+    return a 201 response with the representation of the new node in the body.  For the new node's canonical URL, see
     the `links.self` field of the response.
 
     ##Query Params
@@ -218,12 +220,13 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
+            Q('is_folder', 'ne', True) &
+            Q('is_registration', 'eq', False)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
 
         query = base_query & permission_query
         return query
@@ -251,7 +254,8 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     is that a project is the top-level node, and components are children of the project. There is also a [category
     field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.
+    a category other than project, and children nodes may have a category of project. Registrations cannot be accessed
+    through this endpoint.
 
     ###Permissions
 
@@ -360,7 +364,10 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
-        return self.get_node()
+        node = self.get_node()
+        if node.is_registration:
+            raise ValidationError('This is a registration.')
+        return node
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
@@ -586,14 +593,51 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
 # TODO: Support creating registrations
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
-    """Registrations of the current node.
+    """Node Registrations.
 
-    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
-    created for the current node.
+    Registrations are read-only snapshots of a project. This view is a list of all the registrations of the current node.
 
-    **TODO: registrations via api are still a WIP**
+    Each resource contains the full representation of the registration, meaning additional requests to an individual
+    registrations's detail view are not necessary.
 
-     """
+    ##Registration Attributes
+
+    Registrations have the "registrations" `type`.
+
+        name               type               description
+        ---------------------------------------------------------------------------------
+        title              string             title of the registered project or component
+        description        string             description of the registered node
+        category           string             node category, must be one of the allowed values
+        date_created       iso8601 timestamp  timestamp that the node was created
+        date_modified      iso8601 timestamp  timestamp when the node was last updated
+        tags               array of strings   list of tags that describe the registered node
+        fork               boolean            is this project a fork?
+        registration       boolean            has this project been registered?
+        collection         boolean            is this registered node a collection of other nodes?
+        dashboard          boolean            is this registered node visible on the user dashboard?
+        public             boolean            has this registration been made publicly-visible?
+        retracted          boolean            has this registration been retracted?
+        date_registered    iso8601 timestamp  timestamp that the registration was created
+
+
+    ##Relationships
+
+    ###Registered from
+
+    The registration is branched from this node.
+
+    ###Registered by
+
+    The registration was initiated by this user.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    #This request/response
+
+    """
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -603,7 +647,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
-    serializer_class = NodeRegistrationSerializer
+    serializer_class = RegistrationSerializer
 
     # overrides ListAPIView
     # TODO: Filter out retractions by default
@@ -848,7 +892,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
+class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
     """Files attached to a node for a given provider. *Read-only*.
 
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
@@ -1077,7 +1121,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
 
@@ -1089,6 +1133,10 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
             raise NotFound
 
         return list(files_list.children)
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
