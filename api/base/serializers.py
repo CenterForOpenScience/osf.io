@@ -12,6 +12,15 @@ from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict
 
 
+def format_relationship_links(related_link, self_link, rel_meta, self_meta):
+
+    ret = {'links': {'related': {'href': related_link, 'meta': rel_meta}, 'self': {'href': self_link, 'meta': self_meta}}}
+
+    if not ret['links']['self']['href']:
+        del ret['links']['self']
+
+    return ret
+
 class AllowMissing(ser.Field):
 
     def __init__(self, field, **kwargs):
@@ -167,23 +176,17 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         urls = super(RelationshipField, self).to_representation(value)
 
-        if urls is None:
-            ret = {'links': {'related': {'href': None, 'meta': {}}, 'self': {'href': None, 'meta': {}}}}
+        if urls == {}:
+            ret = format_relationship_links({}, {}, {}, {})
         else:
             related_url = urls['related']
             related_meta = self.get_meta_information(self.related_meta, value)
-
             self_url = urls['self']
             self_meta = self.get_meta_information(self.self_meta, value)
 
-            ret = {'links': {'related': {'href': related_url, 'meta': related_meta}, 'self': {'href': self_url, 'meta': self_meta}}}
-
-        # Currently not returning self links
-        if not ret['links']['self']['href']:
-            del ret['links']['self']
+            ret = format_relationship_links(related_url, self_url, related_meta, self_meta)
 
         return ret
-
 
 class LinksField(ser.Field):
     """Links field that resolves to a links object. Used in conjunction with `Link`.
@@ -311,7 +314,7 @@ class NodeFileHyperLink(RelationshipField):
 
     def get_url(self, obj, view_name, request, format):
         if self.kind and obj.kind != self.kind:
-            return None
+            return {}
         return super(NodeFileHyperLink, self).get_url(obj, view_name, request, format)
 
 

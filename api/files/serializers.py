@@ -7,7 +7,7 @@ from website import settings
 from framework.auth.core import User
 from website.files.models import FileNode
 from api.base.utils import absolute_reverse
-from api.base.serializers import NodeFileHyperLink, WaterbutlerLink
+from api.base.serializers import NodeFileHyperLink, WaterbutlerLink, format_relationship_links
 from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, TypeField
 
 
@@ -32,7 +32,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
     def get_url(self, obj, view_name, request, format):
         if obj is None:
-            return None
+            return {}
         return super(CheckoutField, self).get_url(obj, view_name, request, format)
 
     def to_internal_value(self, data):
@@ -51,8 +51,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
         url = super(CheckoutField, self).to_representation(value)
 
-        ret = {'links': {'related': {'href': url, 'meta': {}}}}
-
+        ret = format_relationship_links(url, {}, {}, {})
         return ret
 
 
