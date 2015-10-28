@@ -158,7 +158,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')
+        assert_equal(errors[0]['detail'], "'invalid' is not a valid field for this endpoint.")
 
 
 class TestNodeContributorAdd(NodeCRUDTestCase):
@@ -450,4 +450,3 @@ class TestNodeContributorAdd(NodeCRUDTestCase):
 
         self.private_project.reload()
         assert_not_in(self.user_two, self.private_project.contributors)
-
