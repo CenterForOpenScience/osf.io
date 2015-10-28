@@ -51,7 +51,6 @@ class AddonSerializer(object):
                 result['urls']['owner'] = web_url_for('profile_view_id',
                                                   uid=owner._primary_key)
                 result['ownerName'] = owner.fullname
-
         return result
 
     @property
