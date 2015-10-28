@@ -11,6 +11,7 @@ from time import sleep
 import requests
 from modularodm import Q
 
+from framework.auth.decorators import must_be_logged_in
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.exceptions import (
@@ -369,13 +370,22 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         self.save()
 
-    def revoke_oauth_access(self, external_account):
+    @must_be_logged_in
+    def revoke_oauth_access(self, external_account, auth):
         """Revoke all access to an ``ExternalAccount``.
 
         TODO: This should accept node and metadata params in the future, to
             allow fine-grained revocation of grants. That's not yet been needed,
             so it's not yet been implemented.
         """
+        for node in self.get_nodes_with_oauth_grants(external_account):
+            try:
+                addon_settings = node.get_addon(external_account.provider)
+                addon_settings.deauthorize(auth=auth)
+            except AttributeError:
+                # No associated addon settings despite oauth grant
+                pass
+
         for key in self.oauth_grants:
             self.oauth_grants[key].pop(external_account._id, None)
 
