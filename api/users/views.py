@@ -67,6 +67,11 @@ class UserList(generics.ListAPIView, ODMFilterMixin):
         suffix             string             suffix of user's name for bibliographic citations
         date_registered    iso8601 timestamp  timestamp when the user's account was created
 
+    ##User Relationships
+
+    ###Nodes
+    A list of all nodes the user has contributed to. The Node List can be retrieved at `/nodes/links/related/href`.
+
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
@@ -137,8 +142,9 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
 
     ###Nodes
 
-    A list of all nodes the user has contributed to.  If the user id in the path is the same as the logged-in user, all
-    nodes will be visible.  Otherwise, you will only be able to see the other user's publicly-visible nodes.
+    A list of all nodes the user has contributed to, `/nodes/links/related/href`.  If the user id in the path is the
+    same as the logged-in user, all nodes will be visible.  Otherwise, you will only be able to see the other user's
+    publicly-visible nodes.
 
     ##Links
 
@@ -150,7 +156,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -168,7 +174,7 @@ class UserDetail(generics.RetrieveUpdateAPIView, UserMixin):
         Success:       200 OK + node representation
 
     To update your user profile, issue a PUT request to either the canonical URL of your user resource (as given in
-    `links.self`) or to `/users/me/`.  Only the `full_name` attribute is required.  Unlike at signup, the given, middle,
+    `/links/self`) or to `/users/me/`.  Only the `full_name` attribute is required.  Unlike at signup, the given, middle,
     and family names will not be inferred from the `full_name`.  Currently, only `full_name`, `given_name`,
     `middle_names`, `family_name`, and `suffix` are updateable.
 
