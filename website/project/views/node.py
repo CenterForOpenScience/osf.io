@@ -1012,13 +1012,14 @@ def get_children(auth, node, **kwargs):
     return _render_nodes(nodes, auth)
 
 
-def node_privacy_tree(user, node_ids, addons):
+def node_privacy_tree(user, node_ids):
     """ Format subscriptions data for project settings page
     :param user: modular odm User object
     :param node_ids: list of parent project ids
     :return: treebeard-formatted data
     """
     items = []
+    addons = []
     for node_id in node_ids:
         node = Node.load(node_id)
         assert node, '{} is not a valid Node.'.format(node_id)
@@ -1049,6 +1050,7 @@ def node_privacy_tree(user, node_ids, addons):
                 'url': node.url if can_read else '',
                 'title': node.title if can_read else 'Private Project',
                 'is_public': node.is_public,
+                'addons': addons
             },
             'children': children,
             'kind': 'folder' if not node.node__parent or not node.parent_node.has_permission(user, 'read') else 'node',
@@ -1056,8 +1058,7 @@ def node_privacy_tree(user, node_ids, addons):
             'category': node.category,
             'permissions': {
                 'view': can_read,
-            },
-            'addons': addons
+            }
         }
 
         items.append(item)
@@ -1069,11 +1070,7 @@ def node_privacy_tree(user, node_ids, addons):
 @must_be_valid_project
 def get_node_tree(auth, **kwargs):
     node = kwargs.get('node') or kwargs['project']
-    addons = []
-    for addon in node.get_addon_names():
-        if addon is not 'osfstorage' and addon is not 'wiki':
-            addons.append(addon)
-    return node_privacy_tree(auth.user, [node._id], addons)
+    return node_privacy_tree(auth.user, [node._id])
 
 
 @must_be_contributor_or_public

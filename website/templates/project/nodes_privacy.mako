@@ -12,10 +12,36 @@
                     <span data-bind="text:message"></span>
                 </div>
                 <div data-bind="if: page() == 'addon'">
-                    <span data-bind="text:message"></span>
-                        % for addon in addons:
-                            <h4>${addon}</h4>
-                        % endfor
+
+
+                    <span data-bind="visible: nodesChangedPublic().length > 0">The following addons will be changed public:</span>
+                    <div>
+                        <ul data-bind="foreach: { data: changedAddons, as: 'item' }">
+                            <li>
+                                <span data-bind="text: item"></span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                    <span data-bind="visible: nodesChangedPublic().length > 0">The following nodes will be make public:</span>
+                    <ul data-bind="foreach: { data: nodesChangedPublic, as: 'item' }">
+                        <li>
+                            <span data-bind="text: item"></span>
+                        </li>
+                    </ul>
+                    </div>
+                    <div>
+
+                    <span data-bind="visible: nodesChangedPrivate().length > 0">The following nodes will be make private:</span>
+                    <ul data-bind="foreach: { data: nodesChangedPrivate, as: 'item' }">
+                        <li>
+                            <span data-bind="text: item"></span>
+                        </li>
+                    </ul>
+                    </div>
+                    <span>Are you sure you would like to continue?</span>
+
+
                 </div>
                 <!-- Invite user page -->
 

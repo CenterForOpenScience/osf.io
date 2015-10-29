@@ -39,7 +39,7 @@ function openAncestors (tb, item) {
     }
 }
 
-function NodesPrivacyTreebeard(data, nodesState, nodesChanged, nodesOriginal) {
+function NodesPrivacyTreebeard(data, nodesState, nodesOriginal) {
     /** nodesChanged and nodesState are knockout variables.  nodesChanged will keep track of the nodes that have
      *  changed state.  nodeState is all the nodes in their current state.
      *
@@ -71,10 +71,8 @@ function NodesPrivacyTreebeard(data, nodesState, nodesChanged, nodesOriginal) {
         },
         resolveRows: function nodesPrivacyResolveRows(item){
             var columns = [];
-            var title = item.data.node.id;
+            var id = item.data.node.id;
             var nodesStateLocal = ko.toJS(nodesState());
-            var nodesChangedLocal = ko.toJS(nodesChanged());
-
             columns.push(
                 {
                     data : 'action',
@@ -85,17 +83,16 @@ function NodesPrivacyTreebeard(data, nodesState, nodesChanged, nodesOriginal) {
                             onclick : function() {
                                 /* nodesChanged is a knockout variable tracking necessary changes */
                                 item.data.node.is_public = !item.data.node.is_public;
-                                nodesStateLocal[title] = item.data.node.is_public;
-                                if (nodesStateLocal[title] !== nodesOriginal[title]) {
-                                    nodesChangedLocal[title] = item.data.node.is_public;
+                                nodesStateLocal[id].public = item.data.node.is_public;
+                                if (nodesStateLocal[id].public !== nodesOriginal[id].local) {
+                                    nodesStateLocal[id].changed = true;
                                 }
-                                else if (typeof (nodesChangedLocal[title])) {
-                                    delete nodesChangedLocal[title];
+                                else {
+                                    nodesStateLocal[id].changed = false;
                                 }
-                                nodesChanged(nodesChangedLocal);
                                 nodesState(nodesStateLocal);
                             },
-                            checked: nodesState()[title]
+                            checked: nodesState()[id].public
                         });
                     }
                 },

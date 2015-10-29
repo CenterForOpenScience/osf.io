@@ -16,7 +16,6 @@ var $ = require('jquery');
 var m = require('mithril');
 var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
-var projectSettingsTreebeardBase = require('js/projectSettingsTreebeardBase');
 var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard');
 
 var ctx = window.contextVars;
@@ -31,47 +30,37 @@ var MESSAGES = {
                         'return it to private later, but search engines or others may access files before you do so.  ' +
                         'Are you sure you would like to continue?',
 
-    makeProjectPrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
-                        'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Would you like to continue?',
+    selectNodes: 'Choose which of your projects and components to make public or private. Checked projects and components will be public, unchecked is private.',
 
-    makeComponentPublicWarning: '<p>Please review your component for sensitive or restricted information before making it public.</p>' +
-                        'Once a component is made public, you should assume it will always be public. You can ' +
-                        'return it to private later, but search engines or others may access files before you do so.  ' +
-                        'Are you sure you would like to continue?',
+    addonWarning: 'The following addons will be effected by this change.',
 
-    makeComponentPrivateWarning: 'Making a component private will prevent users from viewing it on this site, ' +
-                        'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Would you like to continue?',
+    nodesPublic: 'The following nodes will be make public',
 
-    makeRegistrationPublicWarning: 'Once a registration is made public, you will not be able to make the ' +
-                        'registration private again.  After making the registration public, if you '  +
-                        'discover material in it that should have remained private, your only option ' +
-                        'will be to retract the registration.  This will eliminate the registration, ' +
-                        'leaving only basic information of the project title, description, and '  +
-                        'contributors with a notice of retraction.',
-
-    addonWarning: 'The following addons will be effected by this change.  Are you sure you want to continue?',
-
-    selectNodes: 'Choose which of your projects and components to make public or private. Checked projects and components will be public, unchecked is private.'
+    nodesPrivate: 'The following nodes will be make public'
 };
 
-function getNodeTree(nodeTree, nodesOriginal) {
+function getNodesOriginal(nodeTree, nodesOriginal) {
     var i;
     var nodeId = nodeTree.node.id;
-    var nodeIsPublic = nodeTree.node.is_public;
-    nodesOriginal[nodeId] = nodeIsPublic;
+    nodesOriginal[nodeId] = {
+        public: nodeTree.node.is_public,
+        id: nodeTree.node.id,
+        addons: nodeTree.node.addons,
+        title: nodeTree.node.title,
+        changed: false
+    }
+
     if (nodeTree.children) {
         for (i in nodeTree.children) {
-            nodesOriginal = getNodeTree(nodeTree.children[i], nodesOriginal);
+            nodesOriginal = getNodesOriginal(nodeTree.children[i], nodesOriginal);
         }
     }
     //var localNodes = nodesOriginal;
     return nodesOriginal;
 }
 
-function patchNodePrivacy(node, isPublic) {
-    var url = API_BASE + node + '/';
+function patchNodePrivacy(node) {
+    var url = API_BASE + node.id + '/';
     $.ajax({
         url: url,
         type: 'PATCH',
@@ -83,14 +72,13 @@ function patchNodePrivacy(node, isPublic) {
         data: JSON.stringify(
             {'data': {
                'type': 'nodes',
-               'id':   node,
+               'id':   node.id,
                'attributes': {
-                   'public': isPublic
+                   'public': node.public
                }
         }
         })
     }).done(function(response) {
-        window.location.reload();
     }).fail(function(xhr, status, error) {
         //$privacysMsg.addClass('text-danger');
         //$privacysMsg.text('Could not retrieve project settings.');
@@ -100,64 +88,30 @@ function patchNodePrivacy(node, isPublic) {
     });
 }
 
-//function getNodeTree(nodeTree, nodesOriginal) {
-//    var i;
-//    var nodeId = nodeTree.node.id;
-//    var nodeIsPublic = nodeTree.node.is_public;
-//    var addons = nodeTree.node.addons;
-//    nodesOriginal[nodeId] = {
-//        isPublic: nodeIsPublic,
-//        addons: addons
-//    };
-//    if (nodeTree.children) {
-//        for (i in nodeTree.children) {
-//            nodesOriginal = getNodeTree(nodeTree.children[i], nodesOriginal);
-//        }
-//    }
-//    //var localNodes = nodesOriginal;
-//    return nodesOriginal;
-//}
-
-//function getAddons(nodeTree, addons) {
-//    var nodeAddons = [];
-//    var i;
-//    debugger
-//    nodeAddons = nodeTree.node.addons;
-//    //for (i=0; i < nodeAddons.length; i++) {
-//    //    console.log('nodeAddons[i] is ' + nodeAddons[i]);
-//    //}
-//    addons.push(nodeTree.node.addons);
-//    if (nodeTree.children) {
-//        for (i in nodeTree.children) {
-//            addons = getAddons(nodeTree.children[i], addons);
-//        }
-//    }
-//    //var localNodes = nodesOriginal;
-//    return addons;
-//}
-//
 var NodesPrivacyViewModel = function() {
     var self = this;
     var nodesOriginal = {};
-    var addons = [];
 
-    self.nodesState = ko.observable({});
+    self.nodesState = ko.observableArray();
 
     self.nodesState.subscribe(function(newValue) {
         console.log('nodesState is ' + JSON.stringify(newValue));
         m.redraw(true);
     });
 
-    self.addons = ko.observable();
+    self.nodesChangedPublic = ko.observableArray([]);
+
+    self.nodesChangedPublic.subscribe(function(newValue) {
+        console.log('nodesChangedPublic is ' + JSON.stringify(newValue));
+    });
+
+    self.nodesChangedPrivate =ko.observableArray([]);
+
+    self.nodesChangedPrivate.subscribe(function(newValue) {
+        console.log('nodesChangedPrivate is ' + JSON.stringify(newValue));
+    });
 
     self.nodeParent = ko.observable();
-
-    self.nodesChanged = ko.observable({});
-
-    self.nodesChanged.subscribe(function(newValue) {
-        console.log('nodesChanged is ' + JSON.stringify(newValue));
-        console.log('nodesOriginal is ' + JSON.stringify(nodesOriginal));
-    });
 
     var $privacysMsg = $('#configurePrivacyMessage');
     var treebeardUrl = ctx.node.urls.api  + 'get_node_tree/';
@@ -173,11 +127,9 @@ var NodesPrivacyViewModel = function() {
     }).done(function(response) {
         response[0].node.is_public = true;
         self.nodeParent(response[0].node.id);
-        self.addons(response[0].addons);
-        //addons = getAddons(response[0], addons);
-        nodesOriginal = getNodeTree(response[0], nodesOriginal);
+        nodesOriginal = getNodesOriginal(response[0], nodesOriginal);
         self.nodesState(nodesOriginal);
-        new NodesPrivacyTreebeard(response, self.nodesState, self.nodesChanged, nodesOriginal);
+        new NodesPrivacyTreebeard(response, self.nodesState, nodesOriginal);
         //patchNodePrivacy('uxgdq', true);
     }).fail(function(xhr, status, error) {
         $privacysMsg.addClass('text-danger');
@@ -188,6 +140,7 @@ var NodesPrivacyViewModel = function() {
     });
 
     self.page = ko.observable('warning');
+
     self.pageTitle = ko.computed(function() {
         return {
             warning: 'Warning',
@@ -211,56 +164,72 @@ var NodesPrivacyViewModel = function() {
     };
 
     self.addonWarning =  function() {
+        var nodesState = ko.toJS(self.nodesState);
+        self.changedAddons = ko.observableArray([]);
+        var changedAddons = {};
+        for (var node in nodesState) {
+            if (nodesState[node].changed) {
+                if (nodesState[node].addons.length) {
+                    for (var i=0; i < nodesState[node].addons.length; i++) {
+                        changedAddons[nodesState[node].addons[i]] = true;
+                    }
+                }
+                if (nodesState[node].public) {
+                    self.nodesChangedPublic().push(nodesState[node].title);
+                }
+                else {
+                    self.nodesChangedPrivate().push(nodesState[node].title);
+                }
+            }
+        }
+        for (var addon in changedAddons) {
+            self.changedAddons().push(addon);
+        }
         self.page('addon');
     };
 
     self.confirmChanges =  function() {
-        var nodesChanged = ko.toJS(self.nodesChanged);
-        for (var node in nodesChanged) {
-            patchNodePrivacy(node, nodesChanged[node]);
+        var nodesState = ko.toJS(self.nodesState());
+        for (var node in nodesState) {
+            if (nodesState[node].changed) {
+                patchNodePrivacy(nodesState[node]);
+            }
         }
+        window.location.reload();
     };
 
     self.clear = function() {
         self.page('warning');
-        self.nodesChanged({});
         self.nodesState(nodesOriginal);
     };
 
     self.selectAll = function() {
-        var node;
         var nodesState = ko.toJS(self.nodesState());
-        var nodesChanged = ko.toJS(self.nodesChanged());
-        for (node in nodesState) {
-            nodesState[node] = true;
-            if (!nodesOriginal[node]) {
-                nodesChanged[node] = true;
+        for (var node in nodesState) {
+            nodesState[node].public = true;
+            if (nodesState[node].public !== nodesOriginal[node].public) {
+                nodesState[node].changed = true;
             }
-            else if (typeof (nodesChanged[node])) {
-                delete nodesChanged[node];
+            else {
+                nodesState[node].changed = false;
             }
         }
         self.nodesState(nodesState);
-        self.nodesChanged(nodesChanged);
         m.redraw(true);
     };
 
     self.selectNone = function() {
-        var node;
         var nodesState = ko.toJS(self.nodesState());
-        var nodesChanged = ko.toJS(self.nodesChanged());
-        for (node in nodesState) {
-            nodesState[node] = false;
-            if (nodesOriginal[node]) {
-                nodesChanged[node] = false;
+        for (var node in nodesState) {
+            nodesState[node].public = false;
+            if (nodesState[node].public !== nodesOriginal[node].public) {
+                nodesState[node].changed = true;
             }
-            else if (typeof (nodesChanged[node])) {
-                delete nodesChanged[node];
+            else {
+                nodesState[node].changed = false;
             }
         }
-
         self.nodesState(nodesState);
-        self.nodesChanged(nodesChanged);
         m.redraw(true);
     };
 
