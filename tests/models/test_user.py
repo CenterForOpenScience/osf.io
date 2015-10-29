@@ -7,7 +7,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from framework import auth
 from framework.auth import exceptions
 from framework.exceptions import PermissionsError
-from website import models
+from website import models, project
 from tests import base
 from tests.base import fake
 from tests import factories
@@ -437,3 +437,11 @@ class TestUserMerging(base.OsfTestCase):
 
         assert_in(self.user, self.project_with_unreg_contrib.contributors)
 
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_merge_doesnt_send_signal(self, mock_notify):
+        #Explictly reconnect signal as it is disconnected by default for test
+        project.signals.contributor_added.connect(project.views.contributor.notify_added_contributor)
+        other_user = factories.UserFactory()
+        self.user.merge_user(other_user)
+        assert_equal(other_user.merged_by._id, self.user._id)
+        mock_notify.assert_not_called()

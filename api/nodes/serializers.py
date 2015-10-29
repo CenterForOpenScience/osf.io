@@ -10,8 +10,8 @@ from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
-from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
-from api.base.serializers import JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField, JSONAPIListField
+from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField,
+    TargetTypeField, JSONAPIListField, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -33,9 +33,10 @@ class NodeSerializer(JSONAPISerializer):
         'title',
         'description',
         'public',
-        'registration',
         'tags',
         'category',
+        'date_created',
+        'date_modified'
     ])
 
     id = IDField(source='_id', read_only=True)
@@ -51,7 +52,7 @@ class NodeSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     registration = ser.BooleanField(read_only=True, source='is_registration')
     fork = ser.BooleanField(read_only=True, source='is_fork')
-    collection = ser.BooleanField(read_only=True, source='is_folder')
+    collection = DevOnly(ser.BooleanField(read_only=True, source='is_folder'))
     dashboard = ser.BooleanField(read_only=True, source='is_dashboard')
     tags = JSONAPIListField(child=NodeTagField(), required=False)
 
@@ -172,27 +173,16 @@ class NodeContributorsSerializer(JSONAPISerializer):
     """ Separate from UserSerializer due to necessity to override almost every field as read only
     """
     filterable_fields = frozenset([
-        'full_name',
-        'given_name',
-        'middle_names',
-        'family_name',
         'id',
         'bibliographic',
-        'permissions'
+        'permission'
     ])
 
     id = IDField(source='_id', required=True)
     type = TypeField()
 
-    full_name = ser.CharField(source='fullname', read_only=True, help_text='Display name used in the general user interface')
-    given_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    middle_names = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    family_name = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    suffix = ser.CharField(read_only=True, help_text='For bibliographic citations')
-    date_registered = ser.DateTimeField(read_only=True)
     bibliographic = ser.BooleanField(help_text='Whether the user will be included in citations for this node or not.',
                                      default=True)
-
     permission = ser.ChoiceField(choices=osf_permissions.PERMISSIONS, required=False, allow_null=True,
                                  default=osf_permissions.reduce_permissions(osf_permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS),
                                  help_text='User permission level. Must be "read", "write", or "admin". Defaults to "write".')
@@ -203,7 +193,7 @@ class NodeContributorsSerializer(JSONAPISerializer):
     }, {
         'profile_image': 'profile_image_url',
     }))
-    nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
+    users = JSONAPIHyperlinkedIdentityField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')
 
     def profile_image_url(self, user):
@@ -226,6 +216,13 @@ class NodeContributorsSerializer(JSONAPISerializer):
             }
         )
 
+
+class NodeContributorsCreateSerializer(NodeContributorsSerializer):
+    """
+    Overrides NodeContributorsSerializer to add target_type field
+    """
+    target_type = TargetTypeField(target_type='users')
+
     def create(self, validated_data):
         auth = Auth(self.context['request'].user)
         node = self.context['view'].get_node()
@@ -247,6 +244,7 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
     """
     Overrides node contributor serializer to add additional methods
     """
+
     def update(self, instance, validated_data):
         contributor = instance
         auth = Auth(self.context['request'].user)
@@ -264,39 +262,11 @@ class NodeContributorDetailSerializer(NodeContributorsSerializer):
         return contributor
 
 
-class NodeRegistrationSerializer(NodeSerializer):
-
-    retracted = ser.BooleanField(source='is_retracted', read_only=True,
-        help_text='Whether this registration has been retracted.')
-    date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-
-    registered_by = JSONAPIHyperlinkedIdentityField(
-        view_name='users:user-detail',
-        lookup_field='registered_user_id',
-        link_type='related',
-        lookup_url_kwarg='user_id'
-    )
-
-    registered_from = JSONAPIHyperlinkedIdentityField(
-        view_name='nodes:node-detail',
-        lookup_field='registered_from_id',
-        link_type='related',
-        lookup_url_kwarg='node_id'
-    )
-
-    # TODO: Finish me
-
-    # TODO: Override create?
-
-    def update(self, *args, **kwargs):
-        raise exceptions.ValidationError('Registrations cannot be modified.')
-
-
 class NodeLinksSerializer(JSONAPISerializer):
 
-    id = IDField(source='_id', read_only=True)
+    id = IDField(source='_id')
     type = TypeField()
-    target_node_id = ser.CharField(write_only=True, source='node._id', help_text='The ID of the node that this Node Link points to')
+    target_type = TargetTypeField(target_type='nodes')
 
     # TODO: We don't show the title because the current user may not have access to this node. We may want to conditionally
     # include this field in the future.
@@ -327,7 +297,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         user = request.user
         auth = Auth(user)
         node = self.context['view'].get_node()
-        pointer_node = Node.load(validated_data['node']['_id'])
+        pointer_node = Node.load(validated_data['_id'])
         if not pointer_node:
             raise exceptions.NotFound('Node not found.')
         try:
