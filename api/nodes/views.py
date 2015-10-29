@@ -198,7 +198,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     List of registrations of the current node. Registrations can be accessed through this endpoint,
     `/registrations/links/related/href`.
-    
+
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
@@ -465,17 +465,17 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
         permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
 
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Relationships
+    ##Node Contributor Relationships
 
     ###Users
 
     This endpoint, `/users/links/related/href` shows the contributor user detail.
-    ##Actions
 
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    ##Actions
     ###Adding Contributors
 
         Method:        POST
