@@ -18,18 +18,15 @@ $(document).ready(function() {
         $(this).tab('show');
     });
 
-    var draftManager = new RegistrationManager(node, '#draftRegistrationScope', {
+    var draftManager = new RegistrationManager(node, '#registrationsListScope', {
         list: node.urls.api + 'drafts/',
         // TODO: uncomment when we support draft submission for review
         //submit: node.urls.api + 'draft/{draft_pk}/submit/',
         delete: node.urls.api + 'drafts/{draft_pk}/',
         schemas: '/api/v1/project/drafts/schemas/',
-        edit: node.urls.web + 'drafts/{draft_pk}/'
+        edit: node.urls.web + 'drafts/{draft_pk}/',
+        create: node.urls.web + 'registrations/'
     });
     draftManager.init();
 
-    $('#registerNode').click(function(event) {
-        event.preventDefault();
-        draftManager.beforeCreateDraft();        
-    });
 });

@@ -349,19 +349,6 @@ def must_have_permission(permission):
     # Return decorator
     return wrapper
 
-
-def dev_only(func):
-    """Attempting to access this view in production will yield 404 error"""
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        if settings.DEV_MODE is True:
-            return func(*args, **kwargs)
-        else:
-            raise HTTPError(http.NOT_FOUND)
-
-    return wrapped
-
-
 def must_have_write_permission_or_public_wiki(func):
     """ Checks if user has write permission or wiki is public and publicly editable. """
     @functools.wraps(func)

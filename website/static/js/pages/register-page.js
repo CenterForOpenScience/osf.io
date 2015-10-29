@@ -13,6 +13,9 @@ var ctx = window.contextVars;
 require('pikaday-css');
 
 $(function() {
+    // opt into tooltip
+    $('[data-toggle="tooltip"]').tooltip();
+
     // if registering draft
     if (ctx.draft) {
         var ViewModel = function() {
@@ -48,11 +51,41 @@ $(function() {
                 embargoEndDate: self.embargoAddon.embargoEndDate().toUTCString()
             });
         };
+        ViewModel.prototype.submitForReview = function() {
+            var self = this;
+
+            var draft = self.draft;
+            var metaSchema = draft.metaSchema;
+            var messages = metaSchema.messages;
+            var beforeSubmitForApprovalMessage = messages.beforeSubmitForApproval || '';
+            var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';
+
+            bootbox.confirm(beforeSubmitForApprovalMessage, function(confirmed) {
+                if (confirmed) {
+                    $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {}).then(function() {
+                        bootbox.dialog({
+                            closeButton: false,
+                            message: afterSubmitForApprovalMessage,
+                            title: 'Pre-Registration Prize Submission',
+                            buttons: {
+                                registrations: {
+                                    label: 'Return to registrations page',
+                                    className: 'btn-primary pull-right',
+                                    callback: function() {
+                                        window.location.href = self.draft.urls.registrations;
+                                    }
+                                }
+                            }
+                        });
+                    }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+                }
+            });
+        };
 
         var viewModel = new ViewModel();
         // Apply view model
         $osf.applyBindings(viewModel, '#draftRegistrationScope');
-    } 
+    }
     // if viewing registered metadata
     else {
         var metaSchema = new registrationUtils.MetaSchema(ctx.node.registrationMetaSchema);

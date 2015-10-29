@@ -27,6 +27,13 @@ def do_migration():
             continue
         account = user_addon.external_accounts[0]
         node_addon.set_auth(account, user_addon.owner)
+
+        user_addon.grant_oauth_access(
+            node=node_addon.owner,
+            external_account=account,
+            metadata={'folder': node_addon.folder_id}
+        )
+
         logger.info('Added external account {0} to node {1}'.format(
             account._id, node_addon.owner._id,
         ))

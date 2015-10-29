@@ -1,5 +1,6 @@
 var ko = require('knockout');
 var pikaday = require('pikaday');
+var $osf = require('js/osfHelpers');
 
 var RegistrationEmbargoViewModel = function() {
 
