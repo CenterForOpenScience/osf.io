@@ -637,6 +637,7 @@ RegistrationEditor.prototype.save = function() {
     } else {
         // Update an existing DraftRegistration
         var url = self.urls.update.replace('{draft_pk}', self.draft().pk);
+        console.log('save: begin');
         request = $osf.putJSON(url, payload);
     }
 
@@ -647,6 +648,7 @@ RegistrationEditor.prototype.save = function() {
         xhr.payload = payload;
         // Explicitly set the observable to tell KO it changed.
         self.lastSaveRequest(xhr);
+        console.log('save: complete');
     });
 
     return request;
