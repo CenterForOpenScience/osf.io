@@ -475,7 +475,7 @@ MEETING_DATA = {
         'poster': False,
         'talk': True,
     },
-        'SWPA2016': {
+    'SWPA2016': {
         'name': 'Southwestern Psychological Association Convention 2016',
         'info_url': 'https://www.swpsych.org/conv_dates.php',
         'logo_url': 'http://s28.postimg.org/xbwyqqvx9/SWPAlogo4.jpg',
@@ -495,15 +495,19 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-    'PsiChiRepository': {
-        'name': 'Psi Chi',
-        'info_url': 'http://psichi.org',
+    'MiamiBrainhack15': {
+        'name': 'University of Miami Brainhack 2015',
+        'info_url': 'http://brainhack.org/americas/',
         'logo_url': None,
         'active': True,
         'admins': [],
         'public_projects': True,
         'poster': True,
         'talk': True,
+    },
+    'PsiChiRepository': {
+        'name': 'Psi Chi',
+        'info_url': 'http://psichi.org',
         'field_names': {
             'submission1': 'measures',
             'submission2': 'materials',
