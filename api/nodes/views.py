@@ -1101,11 +1101,11 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
         size          integer    size of file in bytes
         extra         object     may contain additional data beyond what's describe here,
                                  depending on the provider
-          version     integer    version number of file. will be 1 on initial upload
-          downloads   integer    count of the number times the file has been downloaded
-          hashes      object
-            md5       string     md5 hash of file
-            sha256    string     SHA-256 hash of file
+        version     integer    version number of file. will be 1 on initial upload
+        downloads   integer    count of the number times the file has been downloaded
+        hashes      object
+        md5         string     md5 hash of file
+        sha256      string     SHA-256 hash of file
 
     ####Folder Entity
 
@@ -1389,11 +1389,11 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         size          integer    size of file in bytes
         extra         object     may contain additional data beyond what's describe here,
                                  depending on the provider
-          version     integer    version number of file. will be 1 on initial upload
-          downloads   integer    count of the number times the file has been downloaded
-          hashes      object
-            md5       string     md5 hash of file
-            sha256    string     SHA-256 hash of file
+        version       integer    version number of file. will be 1 on initial upload
+        downloads     integer    count of the number times the file has been downloaded
+        hashes        object
+        md5           string     md5 hash of file
+        sha256        string     SHA-256 hash of file
 
     ####Folder Entity
 
@@ -1419,6 +1419,11 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         path      path    relative path of this folder within the provider filesys. always "/"
         node      string  node this provider belongs to
         provider  string  provider id, same as "name"
+
+    ##Provider Relationships
+
+    ### Files
+    This endpoint `/relationships/files/links/related/href` is a list of all files from the provider.
 
     ##Links
 
