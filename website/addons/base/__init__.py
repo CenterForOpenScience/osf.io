@@ -381,10 +381,11 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
         for node in self.get_nodes_with_oauth_grants(external_account):
             try:
                 addon_settings = node.get_addon(external_account.provider)
-                addon_settings.deauthorize(auth=auth)
             except AttributeError:
                 # No associated addon settings despite oauth grant
                 pass
+            else:
+                addon_settings.deauthorize(auth=auth)
 
         for key in self.oauth_grants:
             self.oauth_grants[key].pop(external_account._id, None)
