@@ -132,7 +132,9 @@
     -ms-flex: 3 0 auto;
     flex: 3 0 auto;
     height: 500px; /* this will get overwritten by flex box */
+
 }
+
 
 /* Make wiki images responsive */
 .wiki img{

@@ -1680,6 +1680,10 @@
             buttons.redo = makeButton("wmd-redo-button", getStringAndKey("redo"), "-220px", null);
             buttons.redo.execute = function (manager) { inputBox.session.getUndoManager().redo(); };
 
+            buttons.autoComplete = makeButton("wmd-button", "AceEdit Cntrl+space", "-240px", bindCommand("doAutoComplete"));
+
+
+
             if (helpOptions) {
                 var helpButton = document.createElement("li");
                 var helpButtonImage = document.createElement("span");
@@ -1745,6 +1749,10 @@
 
     commandProto.doItalic = function (chunk, postProcessing) {
         return this.doBorI(chunk, postProcessing, 1, this.getString("italicexample"));
+    };
+
+    commandProto.doAutoComplete = function(chunk, postProcessing){
+        this.editor.setOptions({enableLiveAutocompletion: false});
     };
 
     // chunk: The selected region that will be enclosed with */**

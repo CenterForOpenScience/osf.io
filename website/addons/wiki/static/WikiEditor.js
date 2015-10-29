@@ -17,7 +17,10 @@ var editor;
 ko.bindingHandlers.ace = {
     init: function (element, valueAccessor) {
         editor = ace.edit(element.id);  // jshint ignore: line
-
+        /*editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableLiveAutocompletion: false
+        });*/
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
             valueAccessor()(editor.getValue());
@@ -26,10 +29,6 @@ ko.bindingHandlers.ace = {
     update: function (element, valueAccessor) {
         var content = editor.getValue();        // Content of ace editor
         var value = ko.unwrap(valueAccessor()); // Value from view model
-        editor.setOptions({
-            enableBasicAutocompletion: true,
-            enableLiveAutocompletion: false
-        });
         // Updates the editor based on changes to the view model
         if (value !== undefined && content !== value) {
             var cursorPosition = editor.getCursorPosition();

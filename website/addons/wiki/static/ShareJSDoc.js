@@ -24,13 +24,38 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
     self.editor.getSession().setUseWrapMode(true);   // Wraps text
     self.editor.renderer.setShowGutter(false);       // Hides line number
     self.editor.setShowPrintMargin(false);           // Hides print margin
-    self.editor.commands.removeCommand('showSettingsMenu');  // Disable settings menu
+    //self.editor.commands.removeCommand('showSettingsMenu');  // Disable settings menu
     self.editor.setReadOnly(true); // Read only until initialized
+
+
+    var completions = [
+        {id: 'id1', 'value': 'value1'},
+        {id: 'id2', 'value': 'value2'}
+    ];
+    var autoCompleter = {
+        getCompletions: function(editor, session, pos, prefix, callback) {
+            if (prefix.length < 3) {
+                callback(null, []);
+                return;
+            }
+            callback(
+                null,
+                completions.map(function(c) {
+                        return {value: c.id, caption: c.value};
+                    })
+            );
+        }
+    };
+
+
     self.editor.setOptions({
-        enableBasicAutocompletion: [LanguageTools.snippetCompleter],
-        enableSnippets: true,
-        enableLiveAutocompletion: true
-    });
+            enableBasicAutocompletion: [LanguageTools.snippetCompleter],
+            enableSnippets: true,
+            enableLiveAutocompletion: [autoCompleter]
+        });
+
+
+
 
     if (!collaborative) {
         // Populate editor with most recent draft
@@ -94,10 +119,12 @@ var ShareJSDoc = function(url, metadata, viewText, editor) {
         socket.send(JSON.stringify(metadata));
     }
 
+
     function refreshMaybe() {
         if (allowRefresh && refreshTriggered) {
             if (canEdit) {
                 window.location.reload();
+
             } else {
                 window.location.replace(ctx.urls.page);
             }
