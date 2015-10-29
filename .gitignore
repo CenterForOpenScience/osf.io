@@ -100,3 +100,5 @@ celery_beat.py.db
 
 # Admin Specific
 admin/static/public/
+# web_loader stat file
+admin/webpack-stats.json
