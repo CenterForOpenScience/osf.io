@@ -81,10 +81,10 @@
                     <!-- Nav tabs -->
                     <ul class="nav nav-tabs m-b-md" role="tablist">
                         <li role="presentation" class="active">
-                            <a href="#meetings" aria-controls="meetings" role="tab" data-toggle="tab">All Meetings</a>
+                            <a href="#meetings" aria-controls="meetings" role="tab" data-toggle="tab">All meetings</a>
                         </li>
                         <li role="presentation">
-                            <a href="#submissions" aria-controls="submissions" role="tab" data-toggle="tab">All Submissions</a>
+                            <a href="#submissions" aria-controls="submissions" role="tab" data-toggle="tab">All submissions</a>
                         </li>
                     </ul>
                     <!-- Tab panes -->
