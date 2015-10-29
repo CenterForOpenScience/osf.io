@@ -9,13 +9,19 @@ var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
 var ProjectOrganizer = require('js/project-organizer');
 var $osf = require('js/osfHelpers');
 
-/**
- *  Options for fileBrowser
- */
-var defaults = {
-    wrapper : '#fileBrowser',  // Default ID for wrapping empty div, all contents will be filled in.
-    tboptions : {},
-    fullWidth : true
+var LinkObject = function (type, data, label, id) {
+    if (!type || !data || !label || !id) {
+        console.error("File browser error: Link object expects type, data, label and id passed. One or more are missing:", {
+            type : type,
+            data : data,
+            label : label,
+            id : id
+        });
+    }
+    this.type = type;
+    this.data = data;
+    this.label = label;
+    this.id = id;
 };
 
 /**
@@ -25,27 +31,57 @@ var defaults = {
 var FileBrowser = {
     controller : function (args) {
         var self = this;
-        self.data = [];
         self.isLoadedUrl = false;
 
-        // View States
+        // VIEW STATES
         self.showInfo = m.prop(false);
 
+        // DEFAULT DATA -- to be switched with server response
         self.collections = [
-            { id:1, type : 'collection', label : 'All My Projects', path : 'users/me/nodes/', pathOptions : {  query : { 'filter[registration]' : 'false'} } },
-            { id:2, type : 'collection', label : 'All My Registrations', path : 'users/me/nodes/', pathOptions : { query : {  'filter[registration]' : 'true'} } },
-            { id:3, type : 'collection', label : 'Nodes', path : 'users/me/nodes/', pathOptions : {}}
+            {
+                id:1,
+                type : 'collection',
+                label : 'All My Projects',
+                path : 'users/me/nodes/',
+                pathQuery : { 'filter[registration]' : 'false'}
+            },
+            {
+                id:2,
+                type : 'collection',
+                label : 'All My Registrations',
+                path : 'users/me/nodes/',
+                pathQuery : {  'filter[registration]' : 'true'} },
+            {
+                id:3,
+                type : 'collection',
+                label : 'Nodes',
+                path : 'users/me/nodes/',
+                pathQuery : {}
+            }
         ];
-        self.filesData = m.prop($osf.apiV2Url(self.collections[0].path, self.collections[0].pathOptions));
+        self.filesData = m.prop($osf.apiV2Url(
+            self.collections[0].path,
+            { query : self.collections[0].pathQuery }
+        ));
 
         self.breadcrumbs = m.prop([
-            { label : 'All My Projects', url : 'http://localhost:8000/v2/users/me/nodes/?filter%5Bregistration%5D=false', type : 'collection'}
+            {
+                label : 'All My Projects',
+                url : 'http://localhost:8000/v2/users/me/nodes/?filter%5Bregistration%5D=false',
+                type : 'collection'}
         ]);
         self.nameFilters = [
-            { label : 'Caner Uguz', id : '8q36f', type : 'filter'}
+            {
+                label : 'Caner Uguz',
+                id : '8q36f',
+                type : 'filter'
+            }
         ];
         self.tagFilters = [
-            { tag : 'something', type : 'filter'}
+            {
+                tag : 'something',
+                type : 'filter'
+            }
         ];
 
         self.updateFilesData = function(linkObject) {
@@ -61,20 +97,13 @@ var FileBrowser = {
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){
             self.selected(selectedList);
-            console.log(self.selected());
-        }.bind(self);
-
+        };
 
         // COLLECTIONS PANEL
         self.activeCollection = m.prop(1);
         self.updateCollection = function(coll) {
             self.activeCollection(coll.id);
-            var linkObject = {
-                type : 'collection',
-                data : coll,
-                label : coll.label,
-                id : coll.id
-            };
+            var linkObject = new LinkObject('collection', coll, coll.label, coll.id);
             self.updateFilesData(linkObject);
         };
 
@@ -83,12 +112,7 @@ var FileBrowser = {
         self.activeUser = m.prop(1);
         self.updateUserFilter = function(user) {
             self.activeUser(user.id);
-            var linkObject = {
-                type : 'user',
-                data : user,
-                label : user.label,
-                id : user.id
-            };
+            var linkObject = new LinkObject('user', user, user.label, user.id);
             self.updateFilesData(linkObject);
         };
 
@@ -121,7 +145,10 @@ var FileBrowser = {
 
         self.generateLinks = function (linkObject) {
             if (linkObject.type === 'collection'){
-                return $osf.apiV2Url(linkObject.data.path, linkObject.data.pathOptions);
+                return $osf.apiV2Url(linkObject.data.path, {
+                        query : linkObject.data.pathQuery
+                    }
+                );
             }
             if (linkObject.type === 'breadcrumb') {
                 return linkObject.data.url;
