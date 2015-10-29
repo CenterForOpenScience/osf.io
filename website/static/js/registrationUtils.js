@@ -481,7 +481,15 @@ RegistrationEditor.prototype.check = function() {
                 return;
             }
             // Validation passed for all applicable questions
-            window.location = self.draft().urls.register_page;
+
+            // wait for the last autosave to complete
+            self.lastSaveRequest().always(function() {
+                // save the form
+                self.save().done(function() {
+                    // go to the preview
+                    window.location = self.draft().urls.register_page;
+                });
+            });
         });
     });
 };
@@ -657,7 +665,9 @@ RegistrationEditor.prototype.save = function() {
 RegistrationEditor.prototype.saveForLater = function () {
     var self = this;
 
+    // wait for the last autosave to complete
     self.lastSaveRequest().always(function() {
+        // save the form
         self.save().done(function() {
             window.location = self.urls.draftRegistrations;
         });
