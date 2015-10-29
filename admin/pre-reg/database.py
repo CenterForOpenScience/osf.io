@@ -4,21 +4,11 @@ from modularodm import Q
 
 from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
 from framework.mongo.utils import get_or_http_error
-from framework.auth.core import User
-from framework.auth import Auth
 from website.project.metadata.utils import serialize_meta_schema
-from website.app import do_set_backends, init_addons
-from website import settings as osf_settings
 
 import utils
 
-# [lauren] I think this is done in manage-admin.py now
-init_addons(osf_settings, routes=False)
-do_set_backends(osf_settings)
-
-# TODO[lauren]: remove once all auth is taken out of project
-adminUser = User.load('dsmpw')
-
+# TODO[lauren]: check which serializers used auth
 
 def get_all_drafts():
     """Retrieves all submitted prereg drafts from OSF db
@@ -27,11 +17,9 @@ def get_all_drafts():
     # TODO[lauren]: add query parameters to only retrieve submitted drafts
     # they will have an approval associated with them
     all_drafts = DraftRegistration.find()
-    # TODO[lauren]: change to current user
-    auth = Auth(adminUser)
 
     serialized_drafts = {
-        'drafts': [utils.serialize_draft_registration(d, auth) for d in all_drafts]
+        'drafts': [utils.serialize_draft_registration(d) for d in all_drafts]
     }
     return serialized_drafts
 
@@ -43,14 +31,11 @@ def get_draft(draft_pk):
     :param draft_pk: Unique id for draft
     :return: Serialized draft obj
     """
-    # TODO[lauren]: change to current user
-    auth = Auth(adminUser)
-
     draft = DraftRegistration.find(
         Q('_id', 'eq', draft_pk)
     )
 
-    return utils.serialize_draft_registration(draft[0], auth), http.OK
+    return utils.serialize_draft_registration(draft[0]), http.OK
 
 
 def get_draft_obj(draft_pk):
@@ -58,14 +43,11 @@ def get_draft_obj(draft_pk):
     :param draft_pk: Unique id for draft
     :return: Draft obj
     """
-    # TODO[lauren]: change to current user
-    auth = Auth(adminUser)
-
     draft = DraftRegistration.find(
         Q('_id', 'eq', draft_pk)
     )
 
-    return draft[0], auth
+    return draft[0]
 
 
 def get_approval_obj(approval_pk):
@@ -73,14 +55,11 @@ def get_approval_obj(approval_pk):
     :param approval_pk: Unique id for approval
     :return: Approval obj
     """
-    # TODO[lauren]: change to current user
-    auth = Auth(adminUser)
-
     approval = DraftRegistrationApproval.find(
         Q('_id', 'eq', approval_pk)
     )
 
-    return approval[0], auth
+    return approval[0]
 
 
 def get_metaschemas():

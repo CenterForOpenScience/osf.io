@@ -19,6 +19,7 @@ from framework.exceptions import HTTPError
 from website.project.model import MetaSchema
 from website.exceptions import NodeStateError
 
+# use update to directly insert into db
 
 def get_prereg_users():
     """Retrieves users on the admin site who are in the prereg_group
