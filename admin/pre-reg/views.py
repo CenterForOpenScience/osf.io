@@ -41,26 +41,27 @@ def is_in_prereg_group(user):
     return user.groups.filter(name='prereg_group').exists()
 
 
-@login_required
-@user_passes_test(is_in_prereg_group)
+# @login_required
+# @user_passes_test(is_in_prereg_group)
 def prereg(request):
     """Redirects to prereg page if user has prereg access
     :param request: Current logged in user
     :return: Redirect to prereg page with username, reviewers, and user obj
     """
-    prereg_admin = request.user.has_perm('auth.prereg_admin')
-    user = {
-        'username': str(request.user.username),
-        'admin': json.dumps(prereg_admin)
-    }
-    reviewers = get_prereg_users()
+    #prereg_admin = request.user.has_perm('auth.prereg_admin')
+    #user = {
+    #     'username': str(request.user.username),
+    #     'admin': json.dumps(prereg_admin)
+    # }
+    #reviewers = get_prereg_users()
 
-    context = {'user_info': user, 'reviewers': reviewers, 'user': request.user}
-    return render(request, 'prereg/prereg.html', context)
+    #context = {'user_info': user, 'reviewers': reviewers, 'user': request.user}
+    context = {}
+    return render(request, 'prereg.html', context)
 
 
-@login_required
-@user_passes_test(is_in_prereg_group)
+# @login_required
+# @user_passes_test(is_in_prereg_group)
 def prereg_form(request, draft_pk):
     """Redirects to prereg form review page if user has prereg access
     :param draft_pk: Unique id for selected draft
@@ -68,11 +69,11 @@ def prereg_form(request, draft_pk):
     """
     draft = get_draft(draft_pk)
     context = {'data': json.dumps(draft)}
-    return render(request, 'prereg/edit_draft_registration.html', context)
+    return render(request, 'edit_draft_registration.html', context)
 
 
-@login_required
-@user_passes_test(is_in_prereg_group)
+# @login_required
+# @user_passes_test(is_in_prereg_group)
 def get_drafts(request):
     """Determines whether a user is in the general_administrator_group
     :param user: User wanting access to administrator material
@@ -85,8 +86,8 @@ def get_drafts(request):
     )
 
 
-@login_required
-@user_passes_test(is_in_prereg_group)
+# @login_required
+# @user_passes_test(is_in_prereg_group)
 def get_schemas(request):
     """Retrieves schema information for prereg
     :return: JSON schemas for prereg
