@@ -100,9 +100,9 @@
                             class="btn btn-default">Cancel</button>
                             <button data-bind="click: updateAll"
                             class="btn btn-success">Save changes</button>
-                            <br>
+                        <div class="help-block">
                             <span data-bind="css: messageClass, text: message"></span>
-
+                        </div>
                     % if 'admin' in user['permissions']:
                         <hr />
                         <div class="panel-body">

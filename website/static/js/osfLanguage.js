@@ -82,7 +82,7 @@ module.exports = {
         dataUpdated: 'Application data updated'
     },
     projectSettings: {
-        updateSuccessMessage: 'Category, title, and description updated successfully',
+        updateSuccessMessage: 'Successfully updated settings.',
         updateErrorMessage: 'Error updating project settings',
         instantiationErrorMessage: 'Trying to instantiate ProjectSettings view model without an update URL'
     }
