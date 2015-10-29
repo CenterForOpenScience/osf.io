@@ -683,7 +683,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     Registrations are read-only snapshots of a project. This view is a list of all the registrations of the current node.
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
-    registrations's detail view are not necessary.
+    registration's detail view are not necessary.
 
     ##Registration Attributes
 
@@ -706,8 +706,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         date_registered    iso8601 timestamp  timestamp that the registration was created
 
 
-    ##Relationships
-    ###Inherits all fields from Node Detail
+    ##Registration Relationships
 
     ###Registered from
 
@@ -717,6 +716,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
     The registration was initiated by this user, accessed at `/registered_by/links/related/href`.
 
+    ### (+) all relationships from Node Detail
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
@@ -769,10 +769,49 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
         date_created   iso8601 timestamp  timestamp that the node was created
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
+        fork           boolean            is this node a fork?
         registration   boolean            has this project been registered?
         collection     boolean            is this node a collection of other nodes?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
+
+    ##Node Relationships
+
+    ###Children
+
+    List of nodes that are children of this node.  New child nodes may be added through this endpoint,
+    `/children/links/related/href`.
+
+    ###Contributors
+
+    List of users who are contributors to this node.  Contributors may have "read", "write", or "admin" permissions.  A
+    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint,
+    `/contributors/links/related/href`.
+
+    ###Files
+
+    List of top-level folders (actually cloud-storage providers) associated with this node. `/files/links/related/href`
+    is the starting point for accessing the actual files stored within this node.
+
+    ###Forked From
+
+    If this node is a fork of another node, the original node will be available in
+    `/forked_from/links/related/href`. Otherwise, it will be null.
+
+    ###Node-Links
+
+    List of node links, or pointers from the current node to other nodes.  New links to other nodes can be added through
+    this endpoint, `/node_links/links/related/href`.
+
+    ###Parent
+
+    The parent's canonical endpoint will be available in `/parent/links/related/href`.
+
+    ###Registrations
+
+    List of registrations of the current node. Registrations can be accessed through this endpoint,
+    `/registrations/links/related/href`.
+
 
     ##Links
 
@@ -802,7 +841,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 
     To create a child node of the current node, issue a POST request to this endpoint.  The `title` and `category`
     fields are mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  If the
-    node creation is successful the API will return a 201 response with the respresentation of the new node in the body.
+    node creation is successful the API will return a 201 response with the representation of the new node in the body.
     For the new node's canonical URL, see the `/links/self` field of the response.
 
     ##Query Params
@@ -813,10 +852,10 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 
     <!--- Copied Query Params from NodeList -->
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, or `tags`.  `title`, `description`, and
+    `category` are string fields and will be filtered using simple substring matching.  `public` is a boolean,
+    and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 
