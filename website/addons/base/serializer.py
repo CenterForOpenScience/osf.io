@@ -174,7 +174,7 @@ class StorageAddonSerializer(OAuthAddonSerializer):
             )
             result['ownerName'] = user_settings.owner.fullname
             # Show available folders
-            if node_settings.provider_id is None:
+            if node_settings.folder_id is None:
                 result['folder'] = {'name': None, 'path': None}
             elif valid_credentials:
                 result['folder'] = self.serialized_folder(node_settings)

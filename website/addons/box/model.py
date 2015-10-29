@@ -91,18 +91,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
-    @property
-    def provider_id(self):
-        return self.folder_id
-
-    @property
-    def provider_name(self):
-        return self.fetch_folder_name()
-
-    @property
-    def provider_path(self):
-        return self.fetch_full_folder_path()
-
     def fetch_folder_name(self):
         self._update_folder_data()
         return (getattr(self, 'folder_name') or '').replace('All Files', '/ (Full Box)')

@@ -771,21 +771,21 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     oauth_provider = None
 
     @property
-    def provider_id(self):
+    def folder_id(self):
         raise NotImplementedError(
-            "AddonOAuthNodeSettingsBase subclasses must expose a 'provider_id' property."
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_id' property."
         )
 
     @property
-    def provider_name(self):
+    def folder_name(self):
         raise NotImplementedError(
-            "AddonOAuthNodeSettingsBase subclasses must expose a 'provider_name' property."
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_name' property."
         )
 
     @property
-    def provider_path(self):
+    def folder_path(self):
         raise NotImplementedError(
-            "AddonOAuthNodeSettingsBase subclasses must expose a 'provider_path' property."
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_path' property."
         )
 
     @property
@@ -816,7 +816,12 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
     @property
     def has_auth(self):
         """Instance has an external account and *active* permission to use it"""
-        return bool(self.user_settings and self.user_settings.has_auth)
+        return bool(
+            self.user_settings and self.user_settings.has_auth
+        ) and self.user_settings.verify_oauth_access(
+            node=self.owner,
+            external_account=self.external_account
+        )
 
     def clear_settings(self):
         raise NotImplementedError(
@@ -878,7 +883,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         """If removed contributor authorized this addon, remove addon authorization
         from owner.
         """
-        if self.has_auth and self.user_settings.owner == removed:
+        if self.user_settings and self.user_settings.owner == removed:
 
             # Delete OAuth tokens
             self.user_settings.oauth_grants[self.owner._id].pop(self.external_account._id)

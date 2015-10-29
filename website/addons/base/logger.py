@@ -29,9 +29,9 @@ class AddonNodeLogger(object):
         params = {
             'project': self.node.parent_id,
             'node': self.node._primary_key,
-            'folder_id': node_settings.provider_id,
-            'folder_name': node_settings.provider_name,
-            'folder': node_settings.provider_path
+            'folder_id': node_settings.folder_id,
+            'folder_name': node_settings.folder_name,
+            'folder': node_settings.folder_path
         }
         # If logging a file-related action, add the file's view and download URLs
         if self.path:

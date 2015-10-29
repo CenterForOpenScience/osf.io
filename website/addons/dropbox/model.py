@@ -105,19 +105,15 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         return self._api
 
     @property
+    def folder_id(self):
+        return self.folder
+
+    @property
     def folder_name(self):
-        return os.path.split(self.folder)[1]
+        return os.path.split(self.folder or '')[1]
 
     @property
-    def provider_id(self):
-        return self.folder
-
-    @property
-    def provider_name(self):
-        return self.folder
-
-    @property
-    def provider_path(self):
+    def folder_path(self):
         return self.folder
 
     @property
@@ -128,7 +124,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self.folder = None
 
     def fetch_folder_name(self):
-        return self.provider_id
+        return self.folder
 
     def set_folder(self, folder, auth):
         self.folder = folder
