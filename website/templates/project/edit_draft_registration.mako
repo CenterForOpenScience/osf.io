@@ -38,6 +38,35 @@
                   <!-- /ko -->
               </div>
               <div class="span8 col-md-9 columns eight large-8">
+                <a id="editorPreviousQuestion"
+                   data-bind="click: previousQuestion,
+                              onKeyPress: {
+                                keyCode: 37,
+                                listener: previousQuestion.bind($data)
+                              }" style="padding-left: 5px;">
+                  <i style="display:inline-block; padding-left: 5px; padding-right: 5px;" class="fa fa-arrow-left"></i>Previous
+                </a>
+                <a id="editorNextQuestion"
+                   data-bind="click: nextQuestion,
+                              onKeyPress: {
+                                keyCode: 39,
+                                listener: nextQuestion.bind($data)
+                              }" style="float:right; padding-right:5px;">Next
+                  <i style="display:inline-block; padding-right: 5px; padding-left: 5px;" class="fa fa-arrow-right"></i>
+                </a>
+                <br />
+                <br />
+                <span data-bind="with: draft">
+                    <div class="progress progress-bar-md">
+                        <div data-bind="progress: completion"></div>
+                        <div class="progress-bar progress-bar-success" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                             data-bind="attr.aria-completion: completion,
+                                        style: {width: completion() + '%'}">
+                            <!-- <span class="sr-only"></span> -->
+                        </div>
+                    </div>
+                </span>
+
                 <!-- EDITOR -->
                 <div data-bind="if: currentPage">
                    <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
@@ -53,12 +82,12 @@
                                 click: $root.check,
                                 tooltip: {
                                    title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
-                                 }" type="button" class="pull-right btn btn-success">Preview for submission
-                    </a>
-                  <!-- /ko -->
-                  <!-- ko ifnot: onLastPage -->
-                    <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
-                  <!-- /ko -->
+                                 }">
+                  <a data-bind="css: {'disabled': !canRegister()},
+                                click: $root.check" type="button" class="pull-right btn btn-success">Register
+                  </a>
+                    <!-- /ko -->
+                </span>
               </div>
             </div>
           </div>
