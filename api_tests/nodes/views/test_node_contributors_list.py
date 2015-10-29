@@ -111,8 +111,22 @@ class TestNodeContributorFiltering(ApiTestCase):
         self.user = AuthUserFactory()
         self.project = ProjectFactory(creator=self.user)
 
-    def test_filtering_node_with_only_bibliographic_contributors(self):
+    def test_filtering_full_name_field(self):
+        url = '/{}nodes/{}/contributors/?filter[full_name]=Freddie'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        errors = res.json['errors']
+        assert_equal(len(errors), 1)
+        assert_equal(errors[0]['detail'], "'full_name' is not a valid field for this endpoint.")
 
+    def test_filtering_permission_field(self):
+        url = '/{}nodes/{}/contributors/?filter[permission]=admin'.format(API_BASE, self.project._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(len(res.json['data']), 1)
+        assert_equal(res.json['data'][0]['attributes'].get('permission'), 'admin')
+
+    def test_filtering_node_with_only_bibliographic_contributors(self):
         base_url = '/{}nodes/{}/contributors/'.format(API_BASE, self.project._id)
         # no filter
         res = self.app.get(base_url, auth=self.user.auth)
@@ -158,7 +172,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')
+        assert_equal(errors[0]['detail'], "'invalid' is not a valid field for this endpoint.")
 
 
 class TestNodeContributorAdd(NodeCRUDTestCase):

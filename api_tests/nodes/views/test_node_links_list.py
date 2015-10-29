@@ -244,7 +244,7 @@ class TestNodeLinkCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
 
-    def test_add_node_link_no_target_type_in_relationships(self):
+    def test_add_node_links_no_target_type_in_relationships(self):
         data = {
             'data': {
                 'type': 'node_links',
@@ -262,7 +262,7 @@ class TestNodeLinkCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'Request must include /type.')
 
 
-    def test_add_node_link_no_target_id_in_relationships(self):
+    def test_add_node_links_no_target_id_in_relationships(self):
         data = {
             'data': {
                 'type': 'node_links',
@@ -279,7 +279,7 @@ class TestNodeLinkCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
 
-    def test_add_node_link_incorrect_target_id_in_relationships(self):
+    def test_add_node_links_incorrect_target_id_in_relationships(self):
         data = {
             'data': {
                 'type': 'node_links',
@@ -294,10 +294,9 @@ class TestNodeLinkCreate(ApiTestCase):
             }
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
-        print res
         assert_equal(res.status_code, 404)
 
-    def test_add_node_link_incorrect_target_type_in_relationships(self):
+    def test_add_node_links_incorrect_target_type_in_relationships(self):
         data = {
             'data': {
                 'type': 'nodes',
@@ -482,6 +481,7 @@ class TestNodeLinkCreate(ApiTestCase):
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+
 
 
 class TestNodeLinksBulkCreate(ApiTestCase):

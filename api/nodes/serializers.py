@@ -36,6 +36,8 @@ class NodeSerializer(JSONAPISerializer):
         'public',
         'tags',
         'category',
+        'date_created',
+        'date_modified'
     ])
 
     id = IDField(source='_id', read_only=True)
