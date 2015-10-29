@@ -129,7 +129,7 @@ class WaterButlerMixin(object):
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
-    Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
+    Paginated list of nodes are ordered by their `date_modified`.  Each resource contains the full representation of the
     node, meaning additional requests to an individual node's detail view are not necessary.
 
     <!--- Copied Spiel from NodeDetail -->
@@ -155,11 +155,50 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         date_created   iso8601 timestamp  timestamp that the node was created
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
-        registration   boolean            is this is a registration?
+        registration   boolean            has this project been registered?
+        fork           boolean            is this node a fork?
         collection     boolean            is this node a collection of other nodes?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
 
+    ##Node Relationships
+
+    ###Children
+
+    List of nodes that are children of this node.  New child nodes may be added through this endpoint,
+    `/children/links/related/href`.
+
+    ###Contributors
+
+    List of users who are contributors to this node.  Contributors may have "read", "write", or "admin" permissions.  A
+    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint,
+    `/contributors/links/related/href`.
+
+    ###Files
+
+    List of top-level folders (actually cloud-storage providers) associated with this node. `/files/links/related/href`
+    is the starting point for accessing the actual files stored within this node.
+
+    ###Forked From
+
+    If this node is a fork of another node, the original node will be available in
+    `/forked_from/links/related/href`. Otherwise, it will be null.
+
+    ###Node-Links
+
+    List of node links, or pointers from the current node to other nodes.  New links to other nodes can be added through
+    this endpoint, `/node_links/links/related/href`.
+
+    ###Parent
+
+    If this node is a child node of another node, the parent's canonical endpoint will be available in
+    `/parent/links/related/href`.  Otherwise, it will be null.
+
+    ###Registrations
+
+    List of registrations of the current node. Registrations can be accessed through this endpoint,
+    `/registrations/links/related/href`.
+    
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
@@ -197,10 +236,10 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `title`, `category`, `description`, `public` or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` is
+    a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 
@@ -277,6 +316,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
+        fork           boolean            is this node a fork?
         collection     boolean            is this node a collection of other nodes?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
