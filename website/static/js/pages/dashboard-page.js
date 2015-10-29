@@ -11,21 +11,7 @@ var jstz = require('jstimezonedetect').jstz;
 
 var $osf = require('js/osfHelpers');
 var FileBrowser = require('js/file-browser.js');
-var LogFeed = require('js/logFeed');
 var m = require('mithril'); // exposes mithril methods, useful for redraw etc.
-
-var url = '/api/v1/dashboard/get_nodes/';
-var request = $.getJSON(url, function(response) {
-    var allNodes = response.nodes;
-    //.. Getting nodes
-});
-request.fail(function(xhr, textStatus, error) {
-    Raven.captureMessage('Could not fetch dashboard nodes.', {
-        url: url, textStatus: textStatus, error: error
-    });
-});
-
-var nodesListUrl = '/api/v1/dashboard/get_nodes/';
 
 var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
     var clientTimezone = jstz.determine().name();
