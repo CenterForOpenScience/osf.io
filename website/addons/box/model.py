@@ -86,11 +86,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def display_name(self):
         return '{0}: {1}'.format(self.config.full_name, self.folder_id)
 
-    @property
-    def has_auth(self):
-        """Whether an access token is associated with this node."""
-        return bool(self.user_settings and self.user_settings.has_auth)
-
     def fetch_folder_name(self):
         self._update_folder_data()
         return (getattr(self, 'folder_name') or '').replace('All Files', '/ (Full Box)')

@@ -175,7 +175,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
     def test_complete_has_auth_not_verified(self):
         self.user_settings.revoke_oauth_access(self.external_account)
 
-        assert_true(self.node_settings.has_auth)
+        assert_false(self.node_settings.has_auth)
         assert_false(self.node_settings.complete)
 
     def test_complete_auth_false(self):

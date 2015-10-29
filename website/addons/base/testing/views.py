@@ -197,6 +197,8 @@ class OAuthAddonConfigViewsTestCaseMixin(OAuthAddonTestCaseMixin):
         # Note: if your addon's folder_list view makes API calls
         # then you will need to implement test_folder_list in your
         # subclass, mock any API calls, and call super.
+        self.node_settings.set_auth(self.external_account, self.user)
+        self.node_settings.save()
         url = self.project.api_url_for('{0}_folder_list'.format(self.ADDON_SHORT_NAME))
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(res.status_code, http.OK)

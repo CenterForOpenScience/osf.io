@@ -13,7 +13,6 @@ from box.client import BoxClientException
 from tests.factories import AuthUserFactory
 
 from website.addons.box.model import BoxNodeSettings
-from website.addons.box.utils import box_addon_folder
 from website.addons.box.serializer import BoxSerializer
 from website.addons.base import testing
 from website.addons.box.tests.utils import (
@@ -133,23 +132,6 @@ class TestFilebrowserViews(BoxAddonTestCase):
             expected = [each for each in contents if each['type'] == 'folder']
 
             assert_equal(len(res.json), len(expected))
-
-    @unittest.skip('finish this')
-    def test_box_addon_folder(self):
-        assert 0, 'finish me'
-
-    def test_box_addon_folder_if_folder_is_none(self):
-        # Something is returned on normal circumstances
-        root = box_addon_folder(
-            node_settings=self.node_settings, auth=self.user.auth)
-        assert_true(root)
-
-        # The root object is returned w/ None folder
-        self.node_settings.folder_name = None
-        self.node_settings.save()
-        root = box_addon_folder(
-            node_settings=self.node_settings, auth=self.user.auth)
-        assert_true(root)
 
     @mock.patch('website.addons.box.views.BoxClient.get_folder')
     def test_box_list_folders_deleted(self, mock_metadata):

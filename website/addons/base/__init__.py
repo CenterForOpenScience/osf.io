@@ -817,9 +817,11 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         """Instance has an external account and *active* permission to use it"""
         return bool(
             self.user_settings and self.user_settings.has_auth
-        ) and self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account
+        ) and bool(
+            self.external_account and self.user_settings.verify_oauth_access(
+                node=self.owner,
+                external_account=self.external_account
+            )
         )
 
     def clear_settings(self):

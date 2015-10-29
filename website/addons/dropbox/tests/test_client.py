@@ -53,6 +53,8 @@ class TestClientHelpers(OsfTestCase):
             owner=self.node,
             user_settings=self.user_settings
         )
+        self.node_settings.set_auth(self.external_account, self.user)
+        self.node_settings.save()
 
     def test_get_client_returns_a_dropbox_client(self):
         client = get_client(self.user)
