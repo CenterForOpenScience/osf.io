@@ -80,9 +80,10 @@ def root(request, format=None):
     all request bodies must be wrapped with some metadata.  Each request body must be an object with a `data` key
     containing at least a `type` member.  The value of the `type` member must agree with the `type` of the entities
     represented by the endpoint.  If not, a 409 Conflict will be returned.  The request should also contain an
-    `attributes` member with an object containing the key-value pairs to be created/updated.  PUT/PATCH requests must
-    also have an `id` key that matches the id part of the endpoint.  If the `id` key does not match the id path part, a
-    409 Conflict error will be returned.
+    `attributes` member with an object containing the key-value pairs to be created/updated. If creating a relationship
+    with another object, a `relationships` object with the `type` and `id` of the connecting object should be included.
+    PUT/PATCH requests must also have an `id` key that matches the id part of the endpoint.  If the `id` key does not match
+    the id path part, a 409 Conflict error will be returned.
 
     ####Example 1: Creating a Node via POST
 
@@ -172,7 +173,7 @@ def root(request, format=None):
             }
         }
 
-    If there are no related entities, `href` will be null.
+    If there are no related entities, `href` will be {}.
 
     + `links`
 
