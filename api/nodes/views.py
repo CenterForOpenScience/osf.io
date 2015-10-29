@@ -917,15 +917,15 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
 
         None
 
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Relationships
+    ##Node Link Relationships
 
     ### Target Node
 
-    This endpoint shows the target node detail.
+    This endpoint, `/target_node/links/related/href`, shows the target node detail.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
     ##Actions
 
@@ -1000,17 +1000,15 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
         None
 
+    ##Relationships
+
+    ### Target Node
+
+    This endpoint, `/target_node/links/related/href`, shows the target node detail.
+
     ##Links
 
         self:  the detail url for this node link
-        html:  this node's page on the OSF website
-        profile_image: this contributor's gravatar
-
-    ##Relationships
-
-    ###Target node
-
-    This endpoint shows the target node detail.
 
     ##Actions
 
