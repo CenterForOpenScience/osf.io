@@ -54,7 +54,7 @@ def main(dry_run):
             schema_data.update(schema)
             try:
                 meta_schema = MetaSchema.find_one(
-                    Q('name', 'eq', ' '.join(name.split('_'))) &
+                    Q('name', 'eq', name.replace('_', ' ')) &
                     Q('schema_version', 'eq', 2)
                 )
             except NoResultsFound:

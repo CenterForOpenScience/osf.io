@@ -4646,7 +4646,6 @@ class TestDraftRegistrationViews(OsfTestCase):
                 'summary': {'value': 'Some airy'}
             }
         )
-        self.draft.save()
 
         current_month = dt.datetime.now().strftime("%B")
         current_year = dt.datetime.now().strftime("%Y")
@@ -4699,7 +4698,7 @@ class TestDraftRegistrationViews(OsfTestCase):
         assert_true(reg.is_pending_registration)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_template_make_public_makes_children_pending_registration(self, mock_enquque):
+    def test_register_template_make_public_makes_children_pending_registration(self, mock_enqueue):
         comp1 = NodeFactory(parent=self.node)
         NodeFactory(parent=comp1)
 
@@ -4792,7 +4791,6 @@ class TestDraftRegistrationViews(OsfTestCase):
                 meta_schema=self.meta_schema,
                 schema_data={}
             )
-            d.save()
 
         found = [self.draft]
         # Drafts for self.node
@@ -4803,7 +4801,6 @@ class TestDraftRegistrationViews(OsfTestCase):
                 meta_schema=self.meta_schema,
                 schema_data={}
             )
-            d.save()
             found.append(d)
         url = self.node.api_url_for('get_draft_registrations')
 
