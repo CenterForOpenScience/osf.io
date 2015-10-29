@@ -82,12 +82,13 @@
                                 click: $root.check,
                                 tooltip: {
                                    title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
-                                 }">
-                  <a data-bind="css: {'disabled': !canRegister()},
-                                click: $root.check" type="button" class="pull-right btn btn-success">Register
-                  </a>
+                                 } type=button" class=pull-right btn btn-success">Preview for submission
+                    </a>
                     <!-- /ko -->
-                </span>
+
+                    <!-- ko ifnot: onLastPage -->
+                      <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
+                    <!-- /ko -->
               </div>
             </div>
           </div>
