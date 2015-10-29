@@ -61,7 +61,7 @@ $(document).ready(function() {
     //});
     //request.done(function(result) {
 
-        m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser));
+        m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {wrapperSelector : '#fileBrowser'}));
         // TODO: new data does not have timezone information
         //ensureUserTimezone(result.timezone, result.locale, result.id);
     //});

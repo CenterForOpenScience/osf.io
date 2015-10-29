@@ -32,6 +32,7 @@ var FileBrowser = {
     controller : function (args) {
         var self = this;
         self.isLoadedUrl = false;
+        self.wrapperSelector = args.wrapperSelector;
 
         // VIEW STATES
         self.showInfo = m.prop(false);
@@ -119,7 +120,7 @@ var FileBrowser = {
         // Refresh the Grid
         self.updateList = function(element, isInit, context){
             if(!self.isLoadedUrl) {
-                var el = element || document.getElementById('pOrganizer');
+                var el = element || $(self.wrapperSelector).find('.fb-main').get(0);
                 m.mount(el, m.component( ProjectOrganizer, { filesData : self.filesData, updateSelected : self.updateSelected, updateFilesData : self.updateFilesData}));
                 self.isLoadedUrl = true;
             }
@@ -172,7 +173,7 @@ var FileBrowser = {
             infoClass = 'btn-primary';
         }
 
-        return m('', [
+        return [
             m('.fb-header', [
                 m.component(Breadcrumbs, { data : ctrl.breadcrumbs, updateFilesData : ctrl.updateFilesData}),
                 m('.fb-buttonRow', [
@@ -192,7 +193,7 @@ var FileBrowser = {
                 m('#poOrganizer', m('.spinner-loading-wrapper', m('.logo-spin.logo-md')))
             ),
             infoPanel
-        ]);
+        ];
     }
 };
 
