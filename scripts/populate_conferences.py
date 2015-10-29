@@ -515,6 +515,16 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+     'GI2015': {
+        'name': 'Genome Informatics 2015',
+        'info_url': 'https://meetings.cshl.edu/meetings.aspx?meet=info&year=15',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
