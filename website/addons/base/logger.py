@@ -12,6 +12,16 @@ class AddonNodeLogger(object):
     def addon_short_name(self):
         pass
 
+    def _log_params(self):
+        node_settings = self.node.get_addon(self.addon_short_name, deleted=True)
+        return {
+            'project': self.node.parent_id,
+            'node': self.node._primary_key,
+            'folder_id': node_settings.folder_id,
+            'folder_name': node_settings.folder_name,
+            'folder': node_settings.folder_path
+        }
+
     def __init__(self, node, auth, path=None):
         self.node = node
         self.auth = auth
@@ -25,14 +35,7 @@ class AddonNodeLogger(object):
         :param dict extra: Extra parameters to add to the ``params`` dict of the
         new NodeLog.
         """
-        node_settings = self.node.get_addon(self.addon_short_name, deleted=True)
-        params = {
-            'project': self.node.parent_id,
-            'node': self.node._primary_key,
-            'folder_id': node_settings.folder_id,
-            'folder_name': node_settings.folder_name,
-            'folder': node_settings.folder_path
-        }
+        params = self._log_params()
         # If logging a file-related action, add the file's view and download URLs
         if self.path:
             params.update({
