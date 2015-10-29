@@ -657,8 +657,11 @@ RegistrationEditor.prototype.save = function() {
 RegistrationEditor.prototype.saveForLater = function () {
     var self = this;
 
-    self.save();
-    window.location = self.urls.draftRegistrations;
+    self.lastSaveRequest().always(function() {
+        self.save().done(function() {
+            window.location = self.urls.draftRegistrations;
+        });
+    });
 };
 
 /**
