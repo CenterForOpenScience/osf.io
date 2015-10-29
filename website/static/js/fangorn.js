@@ -1711,11 +1711,11 @@ var FGToolbar = {
                 generalButtons.push(m.component(FGButton, {
                     onclick: function(event){
                         var mithrilContent = m('div', [
-                            m('p', [ m('b', 'Select Rows:'), m('span', ' Click on a row (outside the name) to show further actions in the toolbar.')]),
-                            m('p', [ m('b', 'Select Multiple Files:'), m('span', ' Use Command or Shift keys to select multiple files.')]),
-                            m('p', [ m('b', 'Open Files:'), m('span', ' Click a file name to go to the file.')]),
-                            m('p', [ m('b', 'Open Files in New Tab:'), m('span',  ' Press Command (or Ctrl in Windows) and  click a file name to open it in a new tab.')]),
-                            m('p', [ m('b', 'Copy Files:'), m('span', ' Press Option (or Alt in Windows) while dragging a file to a new folder or component.')])
+                            m('p', [ m('b', 'Select rows:'), m('span', ' Click on a row (outside the add-on, file, or folder name) to show further actions in the toolbar. Use Command or Shift keys to select multiple files.')]),
+                            m('p', [ m('b', 'Open files:'), m('span', ' Click a file name to go to view the file in the OSF.')]),
+                            m('p', [ m('b', 'Open files in new tab:'), m('span',  ' Press Command (Ctrl in Windows) and click a file name to open it in a new tab.')]),
+                            m('p', [ m('b', 'Download as zip:'), m('span', ' Click on the row of an add-on or folder and click the Download as Zip button in the toolbar.'), m('i', ' Not available for all storage add-ons.')]),
+                            m('p', [ m('b', 'Copy files:'), m('span', ' Press Option (Alt in Windows) while dragging a file to a new folder or component.'), m('i', ' Only for contributors with write access.')])
                         ]);
                         var mithrilButtons = m('button', {
                                 'type':'button',
@@ -2243,7 +2243,7 @@ Fangorn.prototype = {
     _initGrid: function () {
         this.grid = new Treebeard(this.options);
         return this.grid;
-    },
+    }
 };
 
 Fangorn.Components = {

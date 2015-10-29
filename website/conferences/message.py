@@ -21,17 +21,13 @@ DKIM_PASS_VALUES = ['Pass']
 SPF_PASS_VALUES = ['Pass', 'Neutral']
 
 ANGLE_BRACKETS_REGEX = re.compile(r'<(.*?)>')
-ROUTE_REGEX = re.compile(
-    r'''
+BASE_REGEX = r'''
         (?P<test>test-)?
         (?P<meeting>\w*?)
         -
-        (?P<category>poster|talk)
+        (?P<category>{allowed_types})
         @osf\.io
-    ''',
-    re.IGNORECASE | re.VERBOSE
-)
-
+    '''
 
 class ConferenceMessage(object):
 
@@ -130,7 +126,7 @@ class ConferenceMessage(object):
 
     @cached_property
     def route(self):
-        match = re.search(ROUTE_REGEX, self.form['recipient'])
+        match = re.search(re.compile(BASE_REGEX.format(allowed_types=(self.allowed_types or 'poster|talk')), re.IGNORECASE | re.VERBOSE), self.form['recipient'])
         if not match:
             raise ConferenceError('Invalid recipient: '.format(self.form['recipient']))
         data = match.groupdict()
@@ -164,3 +160,12 @@ class ConferenceMessage(object):
                 range(count),
             ),
         )
+
+    @property
+    def allowed_types(self):
+        from .model import Conference
+        allowed_types = []
+        for conf in Conference.find():
+            allowed_types.extend([conf.field_names['submission1'], conf.field_names['submission2']])
+        regex_types_allowed = '|'.join(set(allowed_types))
+        return regex_types_allowed

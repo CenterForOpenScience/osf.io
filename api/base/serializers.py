@@ -69,6 +69,7 @@ class IDField(ser.CharField):
 
 
 class TypeField(ser.CharField):
+
     def __init__(self, **kwargs):
         kwargs['write_only'] = True
         kwargs['required'] = True
@@ -78,6 +79,22 @@ class TypeField(ser.CharField):
         if self.root.Meta.type_ != data:
             raise Conflict()
         return super(TypeField, self).to_internal_value(data)
+
+
+class TargetTypeField(ser.CharField):
+    """
+    Enforces that the related resource has the correct type
+    """
+    def __init__(self, **kwargs):
+        kwargs['write_only'] = True
+        kwargs['required'] = True
+        self.target_type = kwargs.pop('target_type')
+        super(TargetTypeField, self).__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        if self.target_type != data:
+            raise Conflict()
+        return super(TargetTypeField, self).to_internal_value(data)
 
 
 class JSONAPIListField(ser.ListField):
@@ -141,6 +158,9 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                         detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
                         parameter='related_counts'
                     )
+            else:
+                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
@@ -362,6 +382,7 @@ class JSONAPISerializer(ser.Serializer):
             self._validated_data = _rapply(self.validated_data, strip_html)
 
         self._validated_data.pop('type', None)
+        self._validated_data.pop('target_type', None)
 
         update_methods = ['PUT', 'PATCH']
         if self.context['request'].method in update_methods:

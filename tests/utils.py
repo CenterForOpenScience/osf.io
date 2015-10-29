@@ -1,14 +1,14 @@
-import mock
 import contextlib
 import functools
+import mock
+
+from django.http import HttpRequest
 from nose import SkipTest
 from nose.tools import assert_equal, assert_not_equal
 
 from framework.auth import Auth
-
-from django.http import HttpRequest
-from website.archiver import listeners as archiver_listeners
 from website.archiver import ARCHIVER_SUCCESS
+from website.archiver import listeners as archiver_listeners
 
 def requires_module(module):
     def decorator(fn):
@@ -99,7 +99,13 @@ def mock_archive(project, schema=None, auth=None, template=None, data=None, pare
     data = data or ''
 
     with mock.patch('framework.tasks.handlers.enqueue_task'):
-        registration = project.register_node(schema, auth, template, data, parent)
+        registration = project.register_node(
+            schema=schema,
+            auth=auth,
+            data=data,
+            template=template,
+            parent=parent,
+        )
     registration.root.require_approval(project.creator)
     if autocomplete:
         root_job = registration.root.archive_job

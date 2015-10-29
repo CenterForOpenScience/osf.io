@@ -33,7 +33,7 @@ from website.profile.utils import serialize_user
 from website.project.signals import contributor_added
 from website.project.model import (
     Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
-    get_pointer_parent, Embargo,
+    get_pointer_parent, Embargo, MetaSchema, DraftRegistration
 )
 from website.util.permissions import CREATOR_PERMISSIONS, ADMIN, READ, WRITE, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
@@ -52,7 +52,7 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory
+    AuthUserFactory, DashboardFactory, FolderFactory, DraftRegistrationFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -942,7 +942,7 @@ class TestMergingUsers(OsfTestCase):
         assert_in('joseph123@hotmail.com', self.master.emails)
 
     def test_send_user_merged_signal(self):
-        self.dupe.mailing_lists['foo'] = True
+        self.dupe.mailchimp_mailing_lists['foo'] = True
         self.dupe.save()
 
         with capture_signals() as mock_signals:
@@ -953,7 +953,7 @@ class TestMergingUsers(OsfTestCase):
     def test_merged_user_unsubscribed_from_mailing_lists(self, mock_get_mailchimp_api):
         list_name = 'foo'
         username = self.dupe.username
-        self.dupe.mailing_lists[list_name] = True
+        self.dupe.mailchimp_mailing_lists[list_name] = True
         self.dupe.save()
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
@@ -962,7 +962,7 @@ class TestMergingUsers(OsfTestCase):
         self._merge_dupe()
         handlers.celery_teardown_request()
         mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username})
-        assert_false(self.dupe.mailing_lists[list_name])
+        assert_false(self.dupe.mailchimp_mailing_lists[list_name])
 
     def test_inherits_projects_contributed_by_dupe(self):
         project = ProjectFactory()
@@ -1410,6 +1410,17 @@ class TestNode(OsfTestCase):
         with assert_raises(PermissionsError):
             project.set_privacy('private', Auth(non_contrib))
 
+    def test_get_aggregate_logs_queryset_doesnt_return_hidden_logs(self):
+        n_orig_logs = len(self.parent.get_aggregate_logs_queryset(Auth(self.user)))
+
+        log = self.parent.logs[-1]
+        log.should_hide = True
+        log.save()
+
+        n_new_logs = len(self.parent.get_aggregate_logs_queryset(Auth(self.user)))
+        # Hidden log is not returned
+        assert_equal(n_new_logs, n_orig_logs - 1)
+
     def test_validate_categories(self):
         with assert_raises(ValidationError):
             Node(category='invalid').save()  # an invalid category
@@ -1465,6 +1476,12 @@ class TestNode(OsfTestCase):
     def test_api_url_for_absolute(self):
         result = self.parent.api_url_for('view_project', _absolute=True)
         assert_in(settings.DOMAIN, result)
+
+    def test_get_absolute_url(self):
+        assert_equal(self.node.get_absolute_url(),
+                     '{}v2/nodes/{}/'
+                     .format(settings.API_DOMAIN, self.node._id)
+                     )
 
     def test_node_factory(self):
         node = NodeFactory()
@@ -1861,6 +1878,58 @@ class TestNode(OsfTestCase):
         self.node.reload()
         assert_false(self.parent.nodes_active)
 
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_propagates_schema_and_data_to_children(self, mock_signal):
+        root = ProjectFactory(creator=self.user)
+        c1 = ProjectFactory(creator=self.user, parent=root)
+        ProjectFactory(creator=self.user, parent=c1)
+
+        ensure_schemas()
+        meta_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Open-Ended Registration') &
+            Q('schema_version', 'eq', 1)
+        )
+        data = {'some': 'data'}
+        reg = root.register_node(
+            schema=meta_schema,
+            auth=self.auth,
+            data=data,
+            template=meta_schema.name,
+        )
+        r1 = reg.nodes[0]
+        r1a = r1.nodes[0]
+        for r in [reg, r1, r1a]:
+            assert_equal(r.registered_meta, {meta_schema.name: data})
+            assert_equal(r.registered_schema, meta_schema)
+
+    def test_create_draft_registration(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = proj.create_draft_registration(
+            user=user,
+            schema=schema,
+            data=data,
+        )
+        assert_equal(user, draft.initiator)
+        assert_equal(schema, draft.registration_schema)
+        assert_equal(data, draft.registration_metadata)
+
+    def test_create_draft_registration_adds_to_draft_registrations_list(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = proj.create_draft_registration(
+            user=user,
+            schema=schema,
+            data=data,
+        )
+        assert_equal(proj.draft_registrations[0], draft)
+
 
 class TestNodeUpdate(OsfTestCase):
 
@@ -1940,6 +2009,24 @@ class TestNodeUpdate(OsfTestCase):
         self.node.update({'description': new_desc}, auth=Auth(self.user), save=True)
         # A new log is not created
         assert_equal(len(self.node.logs), original_n_logs + 1)
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4664
+    def test_updating_category_twice_with_same_content_generates_one_log(self):
+        self.node.category = 'project'
+        self.node.save()
+        original_n_logs = len(self.node.logs)
+        new_category = 'data'
+
+        self.node.update({'category': new_category}, auth=Auth(self.user), save=True)
+        assert_equal(len(self.node.logs), original_n_logs + 1)  # sanity check
+        assert_equal(self.node.category, new_category)
+
+        # Call update with same category
+        self.node.update({'category': new_category}, auth=Auth(self.user), save=True)
+
+        # Only one new log is created
+        assert_equal(len(self.node.logs), original_n_logs + 1)
+        assert_equal(self.node.category, new_category)
 
     # TODO: test permissions, non-writable fields
 
@@ -2836,6 +2923,24 @@ class TestProject(OsfTestCase):
         assert_false(self.project.is_public)
         assert_equal(self.project.logs[-1].action, NodeLog.MADE_PRIVATE)
 
+    @mock.patch('website.project.model.mails.queue_mail')
+    def test_set_privacy_sends_mail_default(self, mock_queue):
+        self.project.set_privacy('private', auth=self.auth)
+        self.project.set_privacy('public', auth=self.auth)
+        assert_true(mock_queue.called_once())
+
+    @mock.patch('website.project.model.mails.queue_mail')
+    def test_set_privacy_sends_mail(self, mock_queue):
+        self.project.set_privacy('private', auth=self.auth)
+        self.project.set_privacy('public', auth=self.auth, meeting_creation=False)
+        assert_true(mock_queue.called_once())
+
+    @mock.patch('website.project.model.mails.queue_mail')
+    def test_set_privacy_skips_mail(self, mock_queue):
+        self.project.set_privacy('private', auth=self.auth)
+        self.project.set_privacy('public', auth=self.auth, meeting_creation=True)
+        assert_false(mock_queue.called)
+
     def test_set_privacy_can_not_cancel_pending_embargo_for_registration(self):
         registration = RegistrationFactory(project=self.project)
         registration.embargo_registration(
@@ -3360,7 +3465,6 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(len(registration1.contributors), 1)
         assert_in(self.user, registration1.contributors)
         assert_equal(registration1.registered_user, self.user)
-        assert_equal(len(registration1.registered_meta), 1)
         assert_equal(len(registration1.private_links), 0)
 
         # Create a registration from a project
@@ -3369,12 +3473,15 @@ class TestRegisterNode(OsfTestCase):
         registration2 = RegistrationFactory(
             project=self.project,
             user=user2,
-            template='Template2',
             data='Something else',
+            template='Test Schema',
         )
         assert_equal(registration2.registered_from, self.project)
         assert_equal(registration2.registered_user, user2)
-        assert_equal(registration2.registered_meta['Template2'], 'Something else')
+        assert_equal(
+            registration2.registered_meta,
+            {'Test Schema': 'Something else'}
+        )
 
         # Test default user
         assert_equal(self.registration.registered_user, self.user)
@@ -3512,10 +3619,6 @@ class TestRegisterNode(OsfTestCase):
             [addon.config.short_name for addon in self.registration.registered_from.get_addons()],
         )
 
-    def test_registered_meta(self):
-        assert_equal(self.registration.registered_meta['Template1'],
-                     'Some words')
-
     def test_registered_user(self):
         # Add a second contributor
         user2 = UserFactory()
@@ -3526,6 +3629,12 @@ class TestRegisterNode(OsfTestCase):
 
     def test_registered_from(self):
         assert_equal(self.registration.registered_from, self.project)
+
+    def test_registered_get_absolute_url(self):
+        assert_equal(self.registration.get_absolute_url(),
+                     '{}v2/registrations/{}/'
+                        .format(settings.API_DOMAIN, self.registration._id)
+        )
 
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)
@@ -4083,6 +4192,93 @@ class TestPrivateLink(OsfTestCase):
         link.nodes.extend([project, node])
         link.save()
         assert_equal(link.node_scale(node), -40)
+
+class TestDraftRegistration(OsfTestCase):
+
+    def setUp(self, *args, **kwargs):
+        super(TestDraftRegistration, self).setUp(*args, **kwargs)
+
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+        self.node = ProjectFactory(creator=self.user)
+
+        MetaSchema.remove()
+        ensure_schemas()
+        self.meta_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Open-Ended Registration') &
+            Q('schema_version', 'eq', 1)
+        )
+        self.draft = DraftRegistration(
+            initiator=self.user,
+            branched_from=self.node,
+            registration_schema=self.meta_schema,
+            registration_metadata={
+                'summary': {'value': 'Some airy'}
+            }
+        )
+        self.draft.save()
+
+    def test_factory(self):
+        draft = DraftRegistrationFactory()
+        assert_is_not_none(draft.branched_from)
+        assert_is_not_none(draft.initiator)
+        assert_is_not_none(draft.registration_schema)
+
+        user = AuthUserFactory()
+        draft = DraftRegistrationFactory(initiator=user)
+        assert_equal(draft.initiator, user)
+
+        node = ProjectFactory()
+        draft = DraftRegistrationFactory(branched_from=node)
+        assert_equal(draft.branched_from, node)
+        assert_equal(draft.initiator, node.creator)
+
+        schema = MetaSchema.find()[1]
+        data = {'some': 'data'}
+        draft = DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
+        assert_equal(draft.registration_schema, schema)
+        assert_equal(draft.registration_metadata, data)
+
+    @mock.patch('website.project.model.Node.register_node')
+    def test_register(self, mock_register_node):
+
+        self.draft.register(self.auth)
+        mock_register_node.assert_called_with(
+            self.draft.registration_schema,
+            self.auth,
+            self.draft.registration_metadata
+        )
+
+    def test_update_metadata_tracks_changes(self):
+        self.draft.registration_metadata = {
+            'foo': {
+                'value': 'bar',
+
+            },
+            'a': {
+                'value': 1,
+            },
+            'b': {
+                'value': True
+            },
+        }
+        changes =  self.draft.update_metadata({
+            'foo': {
+                'value': 'foobar',
+            },
+            'a': {
+                'value': 1,
+            },
+            'b': {
+                'value': True,
+            },
+            'c': {
+                'value': 2,
+            },
+        })
+        self.draft.save()
+        for key in ['foo', 'c']:
+            assert_in(key, changes)
 
 
 if __name__ == '__main__':
