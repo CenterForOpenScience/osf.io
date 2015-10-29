@@ -285,22 +285,40 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     ###Children
 
-    List of nodes that are children of this node.  New child nodes may be added through this endpoint.
+    List of nodes that are children of this node.  New child nodes may be added through this endpoint,
+    `/children/links/related/href`.
 
     ###Contributors
 
     List of users who are contributors to this node.  Contributors may have "read", "write", or "admin" permissions.  A
-    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
+    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint,
+    `/contributors/links/related/href`.
 
     ###Files
 
-    List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
-    for accessing the actual files stored within this node.
+    List of top-level folders (actually cloud-storage providers) associated with this node. `/files/links/related/href`
+    is the starting point for accessing the actual files stored within this node.
+
+    ###Forked From
+
+    If this node is a fork of another node, the original node will be available in
+    `/forked_from/links/related/href`. Otherwise, it will be null.
+
+    ###Node-Links
+
+    List of node links, or pointers from the current node to other nodes.  New links to other nodes can be added through
+    this endpoint, `/node_links/links/related/href`.
 
     ###Parent
 
-    If this node is a child node of another node, the parent's canonical endpoint will be available in the
-    `/parent/links/related/href` key.  Otherwise, it will be null.
+    If this node is a child node of another node, the parent's canonical endpoint will be available in
+    `/parent/links/related/href`.  Otherwise, it will be null.
+
+    ###Registrations
+
+    List of registrations of the current node. Registrations can be accessed through this endpoint,
+    `/registrations/links/related/href`.
+
 
     ##Links
 
@@ -415,7 +433,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     ###Users
 
-    This endpoint shows the contributor user detail.
+    This endpoint, `/users/links/related/href` shows the contributor user detail.
     ##Actions
 
     ###Adding Contributors
@@ -530,7 +548,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     ###Users
 
-    This endpoint shows the contributor user detail.
+    This endpoint, `/users/links/related/href`, shows the contributor's user detail.
 
     ##Links
 
@@ -558,7 +576,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         Success:       200 OK + node representation
 
     To update a contributor's bibliographic preferences or access permissions for the node, issue a PUT request to the
-    `self` link. Since this endpoint has no mandatory attributes, PUT and PATCH are functionally the same.  If the given
+    `/links/self` link. Since this endpoint has no mandatory attributes, PUT and PATCH are functionally the same.  If the given
     user is not already in the contributor list, a 404 Not Found error will be returned.  A node must always have at
     least one admin, and any attempt to downgrade the permissions of a sole admin will result in a 400 Bad Request
     error.
@@ -570,7 +588,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         Query Params:  <none>
         Success:       204 No Content
 
-    To remove a contributor from a node, issue a DELETE request to the `self` link.  Attempting to remove the only admin
+    To remove a contributor from a node, issue a DELETE request to the `/links/self` link.  Attempting to remove the only admin
     from a node will result in a 400 Bad Request response.  This request will only remove the relationship between the
     node and the user, not the user itself.
 
@@ -649,14 +667,15 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
 
 
     ##Relationships
+    ###Inherits all fields from Node Detail
 
     ###Registered from
 
-    The registration is branched from this node.
+    The registration is branched from this node. The source can be found at `/registered_from/links/related/href`.
 
     ###Registered by
 
-    The registration was initiated by this user.
+    The registration was initiated by this user, accessed at `/registered_by/links/related/href`.
 
     ##Links
 
