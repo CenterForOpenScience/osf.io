@@ -283,8 +283,8 @@ function _poColumnTitles() {
 function _poResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus'),
         togglePlus = m('i.fa.fa-plus'),
-        childrenCount = item.data.childrenCount || item.children.length;
-    if (item.kind === 'folder') {
+        childrenCount = item.data.relationships.children.links.related.meta.count;
+    if (item.kind === 'folder' && childrenCount > 0) {
         if (item.open) {
             return toggleMinus;
         }
