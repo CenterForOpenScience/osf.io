@@ -76,6 +76,13 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     _api = None
 
     @property
+    def nodelogger(self):
+        return BoxNodeLogger(
+            node=self.owner,
+            auth=Auth(self.user_settings.owner)
+        )
+
+    @property
     def api(self):
         """authenticated ExternalProvider instance"""
         if self._api is None:
@@ -127,6 +134,8 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         self._update_folder_data()
         self.save()
 
+        """ TODO: see if implicit authorization is necessary
+        (or a good idea in general?)
         if not self.complete:
             self.user_settings.grant_oauth_access(
                 node=self.owner,
@@ -134,32 +143,21 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
                 metadata={'folder': self.folder_id}
             )
             self.user_settings.save()
+        """
 
         # Add log to node
-        nodelogger = BoxNodeLogger(node=self.owner, auth=auth)
-        nodelogger.log(action="folder_selected", save=True)
+        self.nodelogger.log(action="folder_selected", save=True)
 
     def clear_settings(self):
         self.folder_id = None
         self.folder_name = None
         self.folder_path = None
 
-    def set_auth(self, external_account, user):
-        """Import a user's Box authentication and create a NodeLog."""
-        super(BoxNodeSettings, self).set_auth(external_account, user)
-        user_settings = user.get_addon(self.config.short_name)
-        self.user_settings = user_settings
-        nodelogger = BoxNodeLogger(node=self.owner, auth=Auth(user_settings.owner))
-        nodelogger.log(action="node_authorized", save=True)
-
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
-        node = self.owner
-
         if add_log:
             extra = {'folder_id': self.folder_id}
-            nodelogger = BoxNodeLogger(node=node, auth=auth)
-            nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+            self.nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
         self.folder_id = None
         self._update_folder_data()

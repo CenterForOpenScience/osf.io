@@ -43,9 +43,9 @@ class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsT
     Serializer = DropboxSerializer
     client = mock_client
 
+    @mock.patch('website.addons.dropbox.client.get_client', return_value=mock_client)
     def test_folder_list(self):
-        with mock.patch('website.addons.dropbox.client.get_client', return_value=mock_client):
-            super(TestConfigViews, self).test_folder_list()
+        super(TestConfigViews, self).test_folder_list()
 
 
 class TestFilebrowserViews(DropboxAddonTestCase):

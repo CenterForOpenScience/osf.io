@@ -783,10 +783,14 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
     @property
     def complete(self):
-        return bool(self.has_auth and self.user_settings.verify_oauth_access(
-            node=self.owner,
-            external_account=self.external_account,
-        ))
+        return bool(
+            self.has_auth and
+            self.external_account and
+            self.user_settings.verify_oauth_access(
+                node=self.owner,
+                external_account=self.external_account,
+            )
+        )
 
     @property
     def has_auth(self):
