@@ -10,13 +10,6 @@ var ProjectOrganizer = require('js/project-organizer');
 var $osf = require('js/osfHelpers');
 
 var LinkObject = function (type, data, label, index) {
-    if (!type || !data || !label) {
-        console.error('File browser error: Link object expects type, data, label and id passed. One or more are missing:', {
-            type : type,
-            data : data,
-            label : label,
-        });
-    }
     this.type = type;
     this.data = data;
     this.label = label;
@@ -150,11 +143,11 @@ var FileBrowser = {
             else if (linkObject.type === 'user') {
                 return $osf.apiV2Url('users/' + linkObject.id + '/nodes', {});
             }
-            else {
+            else if (linkObject.type === 'node') {
                 return $osf.apiV2Url('nodes/' + linkObject.data.uid + '/children', {});
-            } // If type === node
+            }
             // If nothing
-            throw 'Link could not be generated from linkObject data';
+            throw new Error('Link could not be generated from linkObject data');
         };
 
 
@@ -210,19 +203,13 @@ var FileBrowser = {
  * @constructor
  */
 var Collections  = {
-    controller : function (args) {
-        var self = this;
-        self.updateCollection = function(){
-           args.updateCollection(this);
-        };
-    },
     view : function (ctrl, args) {
         var selectedCSS;
         return m('.fb-collections', m('ul', [
             args.list.map(function(item, index, array){
                 selectedCSS = item.id === args.activeCollection() ? '.active' : '';
                 return m('li', { className : selectedCSS},
-                    m('a', { href : '#', onclick : ctrl.updateCollection.bind(item) },  item.label)
+                    m('a', { href : '#', onclick : args.updateCollection.bind(null, item) },  item.label)
                 );
             })
         ]));
@@ -233,13 +220,8 @@ var Collections  = {
  * Breadcrumbs Module.
  * @constructor
  */
+
 var Breadcrumbs = {
-    controller : function (args) {
-        var self = this;
-        self.updateFilesData = function() {
-            args.updateFilesData(this);
-        };
-    },
     view : function (ctrl, args) {
         return m('.fb-breadcrumbs', m('ul', [
             args.data().map(function(item, index, array){
@@ -248,7 +230,7 @@ var Breadcrumbs = {
                 }
                 var linkObject = new LinkObject(item.type, item, item.label, index);
                 return m('li',
-                    m('a', { href : '#', onclick : ctrl.updateFilesData.bind(linkObject)},  item.label),
+                    m('a', { href : '#', onclick : args.updateFilesData.bind(null, linkObject)},  item.label),
                     m('i.fa.fa-chevron-right')
                 );
             })
@@ -263,12 +245,6 @@ var Breadcrumbs = {
  * @constructor
  */
 var Filters = {
-    controller : function (args) {
-        var self = this;
-        self.updateUser = function(){
-            args.updateUser(this);
-        };
-    },
     view : function (ctrl, args) {
         var selectedCSS;
         return m('.fb-filters.m-t-lg',
@@ -279,7 +255,7 @@ var Filters = {
                     args.nameFilters.map(function(item){
                         selectedCSS = item.id === args.activeUser() ? '.active' : '';
                         return m('li' + selectedCSS,
-                            m('a', { href : '#', onclick : ctrl.updateUser.bind(item)}, item.label)
+                            m('a', { href : '#', onclick : args.updateUser.bind(null, item)}, item.label)
                         );
                     })
                 ])
