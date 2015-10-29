@@ -96,7 +96,7 @@ var FileBrowser = {
         self.activeUser = m.prop(1);
         self.updateUserFilter = function(user) {
             self.activeUser(user.id);
-            var linkObject = new LinkObject('user', user, user.label);
+            var linkObject = new LinkObject('user', user.data, user.label);
             self.updateFilesData(linkObject);
         };
 
@@ -141,10 +141,10 @@ var FileBrowser = {
                 return linkObject.data.url;
             }
             else if (linkObject.type === 'user') {
-                return $osf.apiV2Url('users/' + linkObject.id + '/nodes', {});
+                return $osf.apiV2Url('users/' + linkObject.data + '/nodes', { query : {'related_counts' : true}});
             }
             else if (linkObject.type === 'node') {
-                return $osf.apiV2Url('nodes/' + linkObject.data.uid + '/children', {});
+                return $osf.apiV2Url('nodes/' + linkObject.data.uid + '/children', { query : { 'related_counts' : true }});
             }
             // If nothing
             throw new Error('Link could not be generated from linkObject data');
@@ -229,6 +229,7 @@ var Breadcrumbs = {
                     return m('li',  item.label);
                 }
                 var linkObject = new LinkObject(item.type, item, item.label, index);
+
                 return m('li',
                     m('a', { href : '#', onclick : args.updateFilesData.bind(null, linkObject)},  item.label),
                     m('i.fa.fa-chevron-right')

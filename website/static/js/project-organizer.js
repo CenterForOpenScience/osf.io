@@ -117,8 +117,7 @@ function _poTitleColumn(item) {
                 var linkObject = {
                     type : 'node',
                     data : node,
-                    label : node.attributes.title,
-                    id : node.uid
+                    label : node.attributes.title
                 };
                 tb.options.updateFilesData(linkObject);
             }}, ' -Open')
