@@ -316,6 +316,10 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
     def provider_name(self):
         return 'mendeley'
 
+    @property
+    def provider_id(self):
+        return self.mendeley_list_id
+
     def clear_auth(self):
         self.mendeley_list_id = None
         return super(MendeleyNodeSettings, self).clear_auth()

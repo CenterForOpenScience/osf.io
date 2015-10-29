@@ -17,9 +17,10 @@ from framework.exceptions import (
     PermissionsError,
     HTTPError,
 )
+from framework.auth import Auth
 
 from website import settings
-from website.addons.base import serializer
+from website.addons.base import serializer, logger
 from website.project.model import Node
 from website.util import waterbutler_url_for
 
@@ -776,9 +777,29 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         )
 
     @property
-    def nodelogger(self):
+    def provider_name(self):
         raise NotImplementedError(
-            "AddonOAuthNodeSettingsBase subclasses must expose a 'nodelogger' property."
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'provider_name' property."
+        )
+
+    @property
+    def provider_path(self):
+        raise NotImplementedError(
+            "AddonOAuthNodeSettingsBase subclasses must expose a 'provider_path' property."
+        )
+
+    @property
+    def nodelogger(self):
+        auth = None
+        if self.user_settings:
+            auth = Auth(self.user_settings.owner)
+        return type(
+            '{0}NodeLogger'.format(self.config.short_name.capitalize()),
+            (logger.AddonNodeLogger, ),
+            {'addon_short_name': self.config.short_name}
+        )(
+            node=self.owner,
+            auth=auth
         )
 
     @property

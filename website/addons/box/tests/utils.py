@@ -26,6 +26,7 @@ class BoxAddonTestCase(OAuthAddonTestCaseMixin, AddonTestCase):
     def set_node_settings(self, settings):
         super(BoxAddonTestCase, self).set_node_settings(settings)
         settings.folder_id = '1234567890'
+        settings.folder_name = 'Foo'
 
 mock_responses = {
     'folder': {

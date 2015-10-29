@@ -25,7 +25,19 @@ from website.addons.box.tests.utils import (
 mock_client = MockBox()
 
 class TestAuthViews(BoxAddonTestCase, testing.views.OAuthAddonAuthViewsTestCaseMixin):
-    pass
+
+    def setUp(self):
+        self.mock_update_data = mock.patch.object(
+            BoxNodeSettings,
+            '_update_folder_data'
+        )
+        self.mock_update_data.start()
+        super(TestAuthViews, self).setUp()
+
+    def tearDown(self):
+        self.mock_update_data.stop()
+        super(TestAuthViews, self).tearDown()
+
 
 class TestConfigViews(BoxAddonTestCase, testing.views.OAuthAddonConfigViewsTestCaseMixin):
 
@@ -36,6 +48,18 @@ class TestConfigViews(BoxAddonTestCase, testing.views.OAuthAddonConfigViewsTestC
     Serializer = BoxSerializer
     client = mock_client
 
+    def setUp(self):
+        self.mock_update_data = mock.patch.object(
+            BoxNodeSettings,
+            '_update_folder_data'
+        )
+        self.mock_update_data.start()
+        super(TestConfigViews, self).setUp()
+
+    def tearDown(self):
+        self.mock_update_data.stop()
+        super(TestConfigViews, self).tearDown()
+
     @mock.patch.object(BoxSerializer, 'credentials_are_valid', return_value=True)
     def test_import_auth(self, *args):
         super(TestConfigViews, self).test_import_auth()
@@ -43,10 +67,6 @@ class TestConfigViews(BoxAddonTestCase, testing.views.OAuthAddonConfigViewsTestC
     @mock.patch.object(BoxNodeSettings, 'fetch_full_folder_path', return_value='/Foo')
     def test_get_config(self, mock_update_folder_data):
         super(TestConfigViews, self).test_get_config()
-
-    @mock.patch.object(BoxNodeSettings, '_update_folder_data')
-    def test_set_config(self, mock_update_folder_data):
-        super(TestConfigViews, self).test_set_config()
 
 
 class TestFilebrowserViews(BoxAddonTestCase):

@@ -13,7 +13,7 @@ from website.addons.base import AddonOAuthUserSettingsBase, AddonOAuthNodeSettin
 from website.addons.base import StorageAddonBase
 
 from website.addons.box import settings
-from website.addons.box.utils import BoxNodeLogger, refresh_oauth_key
+from website.addons.box.utils import refresh_oauth_key
 from website.addons.box.serializer import BoxSerializer
 from website.oauth.models import ExternalProvider
 
@@ -76,13 +76,6 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     _api = None
 
     @property
-    def nodelogger(self):
-        return BoxNodeLogger(
-            node=self.owner,
-            auth=Auth(self.user_settings.owner)
-        )
-
-    @property
     def api(self):
         """authenticated ExternalProvider instance"""
         if self._api is None:
@@ -102,9 +95,17 @@ class BoxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     def provider_id(self):
         return self.folder_id
 
+    @property
+    def provider_name(self):
+        return self.fetch_folder_name()
+
+    @property
+    def provider_path(self):
+        return self.fetch_full_folder_path()
+
     def fetch_folder_name(self):
         self._update_folder_data()
-        return self.folder_name.replace('All Files', '/ (Full Box)')
+        return (getattr(self, 'folder_name') or '').replace('All Files', '/ (Full Box)')
 
     def fetch_full_folder_path(self):
         self._update_folder_data()

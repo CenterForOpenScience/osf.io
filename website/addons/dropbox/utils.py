@@ -8,54 +8,6 @@ from website.util import rubeus
 
 logger = logging.getLogger(__name__)
 
-
-# TODO: Generalize this for other addons?
-class DropboxNodeLogger(object):
-    """Helper class for adding correctly-formatted Dropbox logs to nodes.
-
-    Usage: ::
-
-        from website.project.model import NodeLog
-
-        node = ...
-        auth = ...
-        nodelogger = DropboxNodeLogger(node, auth)
-        nodelogger.log(NodeLog.FILE_REMOVED, save=True)
-
-
-    :param Node node: The node to add logs to
-    :param Auth auth: Authorization of the person who did the action.
-    """
-    def __init__(self, node, auth, path=None):
-        self.node = node
-        self.auth = auth
-        self.path = path
-
-    def log(self, action, extra=None, save=False):
-        """Log an event. Wraps the Node#add_log method, automatically adding
-        relevant parameters and prefixing log events with `"dropbox_"`.
-
-        :param str action: Log action. Should be a class constant from NodeLog.
-        :param dict extra: Extra parameters to add to the ``params`` dict of the
-            new NodeLog.
-        """
-        params = {
-            'project': self.node.parent_id,
-            'node': self.node._primary_key,
-            'folder': self.node.get_addon('dropbox', deleted=True).folder
-        }
-        if extra:
-            params.update(extra)
-        # Prefix the action with dropbox_
-        self.node.add_log(
-            action="dropbox_{0}".format(action),
-            params=params,
-            auth=self.auth
-        )
-        if save:
-            self.node.save()
-
-
 def is_subdir(path, directory):
     if not (path and directory):
         return False

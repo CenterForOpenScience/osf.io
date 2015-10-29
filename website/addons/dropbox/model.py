@@ -17,7 +17,6 @@ from website.oauth.models import ExternalProvider
 
 from website.addons.dropbox import settings
 from website.addons.dropbox.serializer import DropboxSerializer
-from website.addons.dropbox.utils import DropboxNodeLogger
 
 logger = logging.getLogger(__name__)
 
@@ -99,13 +98,6 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     _api = None
 
     @property
-    def nodelogger(self):
-        return DropboxNodeLogger(
-            node=self.owner,
-            auth=Auth(self.user_settings.owner)
-        )
-
-    @property
     def api(self):
         """authenticated ExternalProvider instance"""
         if self._api is None:
@@ -118,6 +110,14 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     @property
     def provider_id(self):
+        return self.folder
+
+    @property
+    def provider_name(self):
+        return self.folder
+
+    @property
+    def provider_path(self):
         return self.folder
 
     @property
@@ -142,7 +142,6 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
     def deauthorize(self, auth=None, add_log=True):
         """Remove user authorization from this node and log the event."""
-        node = self.owner
         folder = self.folder
 
         self.folder = None
@@ -150,8 +149,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
 
         if add_log:
             extra = {'folder': folder}
-            nodelogger = DropboxNodeLogger(node=node, auth=auth)
-            nodelogger.log(action="node_deauthorized", extra=extra, save=True)
+            self.nodelogger.log(action="node_deauthorized", extra=extra, save=True)
 
     def serialize_waterbutler_credentials(self):
         if not self.has_auth:
