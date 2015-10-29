@@ -6,20 +6,6 @@
         <div class="col-md-9">
           <h3>Register</h3>
         </div>
-        <div class="col-md-3" data-bind="with: draft">
-          <span class="btn-group" data-bind="if: requiresApproval">
-            <a data-bind="click: $root.submitForReview,
-                          css: {
-                          'disable': isPendingReview
-                          },
-                          tooltip: {
-                          position: 'top',
-                          title: isPendingReview ? 'Request for review already sent' : 'Submit for review'
-                          }" class="btn btn-default" type="button">
-              <i class="fa fa"></i> Submit for review
-            </a>
-          </span>
-        </div>
     </div>
     <hr />
     <div class="row">
@@ -38,22 +24,6 @@
                   <!-- /ko -->
               </div>
               <div class="span8 col-md-9 columns eight large-8">
-                <a id="editorPreviousQuestion"
-                   data-bind="click: previousQuestion,
-                              onKeyPress: {
-                                keyCode: 37,
-                                listener: previousQuestion.bind($data)
-                              }" style="padding-left: 5px;">
-                  <i style="display:inline-block; padding-left: 5px; padding-right: 5px;" class="fa fa-arrow-left"></i>Previous
-                </a>
-                <a id="editorNextQuestion"
-                   data-bind="click: nextQuestion,
-                              onKeyPress: {
-                                keyCode: 39,
-                                listener: nextQuestion.bind($data)
-                              }" style="float:right; padding-right:5px;">Next
-                  <i style="display:inline-block; padding-right: 5px; padding-left: 5px;" class="fa fa-arrow-right"></i>
-                </a>
                 <br />
                 <br />
                 <span data-bind="with: draft">
@@ -82,10 +52,9 @@
                                 click: $root.check,
                                 tooltip: {
                                    title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
-                                 } type=button" class=pull-right btn btn-success">Preview for submission
+                                 }" type="button" class="pull-right btn btn-success">Preview for submission
                     </a>
                     <!-- /ko -->
-
                     <!-- ko ifnot: onLastPage -->
                       <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
                     <!-- /ko -->
