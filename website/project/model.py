@@ -3219,8 +3219,6 @@ class Sanction(StoredObject):
     #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
     # }
     approval_state = fields.DictionaryField()
-    # One of 'unapproved', 'approved', or 'rejected'
-    state = fields.StringField(default='unapproved')
 
     def __repr__(self):
         return '<Sanction(end_date={self.end_date!r}) with _id {self._id!r}>'.format(self=self)
@@ -3820,10 +3818,10 @@ class DraftRegistrationApproval(Sanction):
 
     mode = Sanction.ANY
 
-    def _on_complete(self, user, token):
+    def _on_complete(self, *args, **kwargs):
         pass  # draft approval state gets loaded dynamically from this record
 
-    def _on_reject(self, user, token):
+    def _on_reject(self, *args, **kwargs):
         pass  # draft approval state gets loaded dynamically from this record
 
 
