@@ -29,6 +29,10 @@ class TestNodeSettings(models.OAuthAddonNodeSettingsTestSuiteMixin, OsfTestCase)
         mock_refresh.return_value = True
         super(TestNodeSettings, self).test_serialize_credentials()
 
+    @mock.patch.object(BoxNodeSettings, '_update_folder_data')
+    def test_set_folder(self, mock_update_folder_data):
+        super(TestNodeSettings, self).test_set_folder()
+
 class TestUserSettings(models.OAuthAddonUserSettingTestSuiteMixin, OsfTestCase):
 
     short_name = 'box'

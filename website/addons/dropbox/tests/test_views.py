@@ -44,7 +44,7 @@ class TestConfigViews(DropboxAddonTestCase, views_testing.OAuthAddonConfigViewsT
     client = mock_client
 
     @mock.patch('website.addons.dropbox.client.get_client', return_value=mock_client)
-    def test_folder_list(self):
+    def test_folder_list(self, *args):
         super(TestConfigViews, self).test_folder_list()
 
 

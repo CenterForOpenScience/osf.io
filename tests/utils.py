@@ -128,24 +128,6 @@ def make_drf_request(*args, **kwargs):
     # A DRF Request wraps a Django HttpRequest
     return Request(http_request, *args, **kwargs)
 
-def patch_dynamic(objname, attr):
-    """Dyanmically mock.patch an instance method after class declaration. The
-    primary use case for this util is when you want to patch a method of a
-    property of an abstract test case. This property may (or must) be over-
-    ridden in base classes, and cannot be determined at class definition (of the superclass).
-
-    :param basestring objname: name of instance attribute to patch
-    :param basestring attr: name of attribute of instance attribute to patch
-    """
-    def wrapper(func):
-        @functools.wraps(func)
-        def wrapped(self, *args, **kwargs):
-            obj = getattr(self, objname)
-            with mock.patch.object(obj, attr) as mocked:
-                args = args + (mocked,)
-                func(self, *args, **kwargs)
-        return wrapped
-    return wrapper
 
 class MockAuth(object):
 

@@ -8,7 +8,6 @@ from framework.auth import Auth
 from website.addons.base import exceptions
 
 from tests.factories import ProjectFactory, UserFactory
-from tests.utils import patch_dynamic
 
 
 class OAuthAddonModelTestSuiteMixinBase(object):
@@ -262,8 +261,7 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_in('node', params)
         assert_in('project', params)
 
-    @patch_dynamic('NodeSettingsClass', '_update_folder_data')
-    def test_set_folder(self, mock_update_folder):
+    def test_set_folder(self):
         folder_id = '1234567890'
         self.node_settings.set_folder(folder_id, auth=Auth(self.user))
         self.node_settings.save()

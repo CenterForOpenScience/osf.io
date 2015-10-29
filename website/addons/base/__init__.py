@@ -802,10 +802,6 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
             "AddonOAuthNodeSettingsBase subclasses must expose a 'clear_settings' method."
         )
 
-    def _update_folder_data(self):
-        # TODO(samchrisinger)
-        pass
-
     def set_auth(self, external_account, user, log=True):
         """Connect the node addon to a user's external account.
 
