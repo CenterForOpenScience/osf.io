@@ -41,15 +41,16 @@ var Filter = function (label, data, type) {
     this.data = data;
     this.type = 'name' || type;
 };
+
 /**
  * Initialize File Browser. Prepeares an option object within FileBrowser
  * @constructor
  */
 var FileBrowser = {
-    controller : function (args) {
+    controller : function (options) {
         var self = this;
         self.isLoadedUrl = false;
-        self.wrapperSelector = args.wrapperSelector;
+        self.wrapperSelector = options.wrapperSelector;
 
         // VIEW STATES
         self.showInfo = m.prop(false);
@@ -168,7 +169,6 @@ var FileBrowser = {
             poStyle = 'width : 55%';
             infoClass = 'btn-primary';
         }
-
         return [
             m('.fb-header', [
                 m.component(Breadcrumbs, {
