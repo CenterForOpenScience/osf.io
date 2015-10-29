@@ -10,7 +10,7 @@ from tests import factories
 from tests.utils import make_drf_request
 
 from api.base.settings.defaults import API_BASE
-from api.base.serializers import JSONAPISerializer
+from api.base import serializers as base_serializers
 from api.nodes.serializers import NodeSerializer, JSONAPIHyperlinkedIdentityField
 
 class FakeModel(object):
@@ -120,7 +120,7 @@ class TestApiBaseSerializers(ApiTestCase):
 class TestJSONAPIHyperlinkedIdentityField(DbTestCase):
 
     # We need a Serializer to test the JSONHyperlinkedIdentity field (needs context)
-    class BasicNodeSerializer(JSONAPISerializer):
+    class BasicNodeSerializer(base_serializers.JSONAPISerializer):
         parent = JSONAPIHyperlinkedIdentityField(
             view_name='nodes:node-detail',
             lookup_field='pk',
@@ -163,7 +163,7 @@ class TestJSONAPIHyperlinkedIdentityField(DbTestCase):
 class TestJSONAPIHyperlinkedIdentityField(DbTestCase):
 
     # We need a Serializer to test the JSONHyperlinkedIdentity field (needs context)
-    class BasicNodeSerializer(JSONAPISerializer):
+    class BasicNodeSerializer(base_serializers.JSONAPISerializer):
         parent = JSONAPIHyperlinkedIdentityField(
             view_name='nodes:node-detail',
             lookup_field='pk',

@@ -164,6 +164,8 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                         detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
                         parameter='related_counts'
                     )
+            else:
+                meta[key] = website_utils.rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
         # JSON-API requires that the self link is just a URL
         if self.link_type == 'self':
             return {'links': {self.link_type: url}}
