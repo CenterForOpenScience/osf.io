@@ -117,7 +117,7 @@ class TestNodeContributorFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')
+        assert_equal(errors[0]['detail'], "'full_name' is not a valid field for this endpoint.")
 
     def test_filtering_permission_field(self):
         url = '/{}nodes/{}/contributors/?filter[permission]=admin'.format(API_BASE, self.project._id)
