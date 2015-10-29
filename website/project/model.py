@@ -569,8 +569,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ]
     }]
 
-    is_draft_registration = False
-
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
         'title',
@@ -3826,8 +3824,6 @@ class DraftRegistrationApproval(Sanction):
 
 
 class DraftRegistration(AddonModelMixin, StoredObject):
-
-    is_draft_registration = True
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
