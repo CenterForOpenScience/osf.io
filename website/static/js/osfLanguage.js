@@ -82,8 +82,9 @@ module.exports = {
         dataUpdated: 'Application data updated'
     },
     projectSettings: {
-        updateSuccessMessage: 'Successfully updated settings.',
-        updateErrorMessage: 'Error updating project settings',
+        updateSuccessMessage: 'Successfully updated project settings.',
+        updateErrorMessage400: 'Error updating project settings: check that all fields are valid.',
+        updateErrorMessage: 'Could not update project settings. ' + REFRESH_OR_SUPPORT,
         instantiationErrorMessage: 'Trying to instantiate ProjectSettings view model without an update URL'
     }
 };

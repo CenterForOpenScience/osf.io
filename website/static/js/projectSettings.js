@@ -41,8 +41,16 @@ var ProjectSettings = oop.extend(
         /*error handler*/
         updateError: function(xhr, status, error) {
             var self = this;
-            self.changeMessage(language.updateErrorMessage, 'text-danger');
-            Raven.captureMessage(language.updateErrorMessage, {
+            var errorMessage;
+            if (error == "BAD REQUEST") {
+                self.changeMessage(language.updateErrorMessage400, 'text-danger');
+                errorMessage = language.updateErrorMessage400;
+            }
+            else {
+                self.changeMessage(language.updateErrorMessage, 'text-danger');
+                errorMessage = language.updateErrorMessage;
+            }
+            Raven.captureMessage(errorMessage, {
                 url: self.updateUrl,
                 textStatus: status,
                 err: error
