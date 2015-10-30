@@ -1495,7 +1495,8 @@ class TestUserProfile(OsfTestCase):
 
         mock_client.lists.unsubscribe.assert_called_with(
             id=list_id,
-            email={'email': self.user.username}
+            email={'email': self.user.username},
+            send_goodbye=True
         )
         mock_client.lists.subscribe.assert_called_with(
             id=list_id,
