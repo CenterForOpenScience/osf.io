@@ -365,16 +365,6 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-    'PsiChiRepository': {
-        'name': 'Psi Chi Repository',
-        'info_url': None,
-        'logo_url': None,
-        'active': True,
-        'admins': [],
-        'public_projects': True,
-        'poster': True,
-        'talk': True,
-    },
     'R2RC': {
         'name': 'Right to Research Coalition',
         'info_url': None,
@@ -475,6 +465,71 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
+    'CNI2015': {
+        'name': 'Coalition for Networked Information (CNI) Fall Membership Meeting 2015',
+        'info_url': 'https://wp.me/P1LncT-64s',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': False,
+        'talk': True,
+    },
+    'SWPA2016': {
+        'name': 'Southwestern Psychological Association Convention 2016',
+        'info_url': 'https://www.swpsych.org/conv_dates.php',
+        'logo_url': 'http://s28.postimg.org/xbwyqqvx9/SWPAlogo4.jpg',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'ESIP2016W': {
+        'name': 'Earth Science Information Partners Winter Meeting 2016',
+        'info_url': 'http://commons.esipfed.org/2016WinterMeeting',
+        'logo_url': 'http://s30.postimg.org/m2uz2g4pt/ESIP.png',
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'MiamiBrainhack15': {
+        'name': 'University of Miami Brainhack 2015',
+        'info_url': 'http://brainhack.org/americas/',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
+    'PsiChiRepository': {
+        'name': 'Psi Chi',
+        'info_url': 'http://psichi.org',
+        'field_names': {
+            'submission1': 'measures',
+            'submission2': 'materials',
+            'submission1_plural': 'measures/scales',
+            'submission2_plural': 'study materials',
+            'meeting_title_type': 'Repository',
+            'add_submission': 'materials',
+            'mail_subject': 'Title',
+            'mail_message_body': 'Measure or material short description',
+            'mail_attachment': 'Your measure/scale or material file(s)'
+        },
+    },
+    'GI2015': {
+        'name': 'Genome Informatics 2015',
+        'info_url': 'https://meetings.cshl.edu/meetings.aspx?meet=info&year=15',
+        'logo_url': None,
+        'active': True,
+        'admins': [],
+        'public_projects': True,
+        'poster': True,
+        'talk': True,
+    },
 }
 
 
@@ -495,14 +550,13 @@ def populate_conferences():
         try:
             conf.save()
         except ModularOdmException:
-            print('{0} Conference already exists. Updating existing record...'.format(meeting))
             conf = Conference.find_one(Q('endpoint', 'eq', meeting))
             for key, value in attrs.items():
                 setattr(conf, key, value)
             conf.admins = admin_objs
             changed_fields = conf.save()
             if changed_fields:
-                print('Changed: {}'.format(changed_fields))
+                print('Updated {}: {}'.format(meeting, changed_fields))
         else:
             print('Added new Conference: {}'.format(meeting))
 

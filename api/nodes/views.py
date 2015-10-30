@@ -19,9 +19,10 @@ from api.nodes.serializers import (
     NodeDetailSerializer,
     NodeProviderSerializer,
     NodeContributorsSerializer,
-    NodeRegistrationSerializer,
-    NodeContributorDetailSerializer
+    NodeContributorDetailSerializer,
+    NodeContributorsCreateSerializer
 )
+from api.registrations.serializers import RegistrationSerializer
 from api.nodes.permissions import (
     AdminOrPublic,
     ContributorOrPublic,
@@ -61,19 +62,21 @@ class NodeMixin(object):
             self.check_object_permissions(self.request, node)
         return node
 
+
 class WaterButlerMixin(object):
 
     path_lookup_url_kwarg = 'path'
     provider_lookup_url_kwarg = 'provider'
 
     def get_file_item(self, item):
+        attrs = item['attributes']
         file_node = FileNode.resolve_class(
-            item['provider'],
-            FileNode.FOLDER if item['kind'] == 'folder'
+            attrs['provider'],
+            FileNode.FOLDER if attrs['kind'] == 'folder'
             else FileNode.FILE
-        ).get_or_create(self.get_node(check_object_permissions=False), item['path'])
+        ).get_or_create(self.get_node(check_object_permissions=False), attrs['path'])
 
-        file_node.update(None, item, user=self.request.user)
+        file_node.update(None, attrs, user=self.request.user)
 
         self.check_object_permissions(self.request, file_node)
 
@@ -102,7 +105,6 @@ class WaterButlerMixin(object):
             return obj
 
         url = waterbutler_api_url_for(node._id, provider, path, meta=True)
-
         waterbutler_request = requests.get(
             url,
             cookies=self.request.COOKIES,
@@ -136,7 +138,8 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     is that a project is the top-level node, and components are children of the project. There is also a [category
     field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.
+    a category other than project, and children nodes may have a category of project.  Registrations are not included
+    in this endpoint.
 
     ##Node Attributes
 
@@ -152,7 +155,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         date_created   iso8601 timestamp  timestamp that the node was created
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
-        registration   boolean            has this project been registered?
+        registration   boolean            is this is a registration?
         collection     boolean            is this node a collection of other nodes?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
@@ -185,7 +188,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     New nodes are created by issuing a POST request to this endpoint.  The `title` and `category` fields are
     mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  `public` defaults
     to false.  All other fields not listed above will be ignored.  If the node creation is successful the API will
-    return a 201 response with the respresentation of the new node in the body.  For the new node's canonical URL, see
+    return a 201 response with the representation of the new node in the body.  For the new node's canonical URL, see
     the `links.self` field of the response.
 
     ##Query Params
@@ -218,12 +221,13 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True)
+            Q('is_folder', 'ne', True) &
+            Q('is_registration', 'eq', False)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
         if not user.is_anonymous():
-            permission_query = (Q('is_public', 'eq', True) | Q('contributors', 'icontains', user._id))
+            permission_query = (permission_query | Q('contributors', 'icontains', user._id))
 
         query = base_query & permission_query
         return query
@@ -251,7 +255,8 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     is that a project is the top-level node, and components are children of the project. There is also a [category
     field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.
+    a category other than project, and children nodes may have a category of project. Registrations cannot be accessed
+    through this endpoint.
 
     ###Permissions
 
@@ -360,7 +365,10 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
-        return self.get_node()
+        node = self.get_node()
+        if node.is_registration:
+            raise ValidationError('This is a registration.')
+        return node
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
@@ -395,16 +403,19 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     `type` is "contributors"
 
         name           type     description
-        ---------------------------------------------------------------------------------
-        bibliographic  boolean  Whether the user will be included in citations for this node or not
-        permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
-
-    All other attributes are inherited from the User object.
+        ------------------------------------------------------------------------------------------------------
+        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
+        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
 
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
+    ##Relationships
+
+    ###Users
+
+    This endpoint shows the contributor user detail.
     ##Actions
 
     ###Adding Contributors
@@ -412,23 +423,33 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         Method:        POST
         URL:           links.self
         Query Params:  <none>
-        Body (JSON):   {
-                         "data": {
-                           "type": "contributors",        # required
-                           "id":   {contributor_user_id}, # required
-                           "attributes": {
-                             "bibliographic": true|false,            # optional
-                             "permission":    "read"|"write"|"admin" # optional
-                           }
-                         }
-                       }
+        Body (JSON): {
+                      "data": {
+                        "type": "contributors",                   # required
+                        "attributes": {
+                          "bibliographic": true|false,            # optional
+                          "permission": "read"|"write"|"admin"    # optional
+                        },
+                        "relationships": {
+                          "users": {
+                            "data": {
+                              "type": "users",                    # required
+                              "id":   "{user_id}"                 # required
+                            }
+                        }
+                    }
+                }
+            }
         Success:       201 CREATED + node contributor representation
 
-    Contributors can be added to nodes are by issuing a POST request to this endpoint.  The `id` attribute is mandatory and
-    must be a valid user id.  `bibliographic` is a boolean and defaults to `true`.  `permission` must be a [valid OSF
-    permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`. All other fields not listed above will be
-    ignored.  If the request is successful the API will return a 201 response with the respresentation of the new node
-    contributor in the body.  For the new node contributor's canonical URL, see the `links.self` field of the response.
+    Add a contributor to a node by issuing a POST request to this endpoint.  This effectively creates a relationship
+    between the node and the user.  Besides the top-level type, there are optional "attributes" which describe the
+    relationship between the node and the user. `bibliographic` is a boolean and defaults to `true`.  `permission` must
+    be a [valid OSF permission key](/v2/#osf-node-permission-keys) and defaults to `"write"`.  A relationship object
+    with a "data" member, containing the user `type` and user `id` must be included.  The id must be a valid user id.
+    All other fields not listed above will be ignored.  If the request is successful the API will return
+    a 201 response with the representation of the new node contributor in the body.  For the new node contributor's
+    canonical URL, see the `links.self` field of the response.
 
     ##Query Params
 
@@ -436,11 +457,9 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    NodeContributors may be filtered by their `full_name`, `given_name`, `middle_names`, `family_name`, `id`,
-    `bibliographic`, or `permissions` attributes.  The `description`, and `category` are string fields and will be filtered
-    using simple substring matching.  `bibliographic` is a boolean, and can be filtered using truthy values,
-    such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in the query will cause the match to fail
-    regardless.
+    NodeContributors may be filtered by `bibliographic`, or `permission` attributes.  `bibliographic` is a boolean, and
+    can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in
+    the query will cause the match to fail regardless.
 
     #This Request/Response
     """
@@ -467,9 +486,24 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
             contributors.append(contributor)
         return contributors
 
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return NodeContributorsCreateSerializer
+        else:
+            return NodeContributorsSerializer
+
     # overrides ListAPIView
     def get_queryset(self):
         return self.get_queryset_from_request()
+
+    # overrides ListCreateAPIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(NodeContributorsList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
 
 
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
@@ -488,22 +522,21 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
     `type` is "contributors"
 
         name           type     description
-        ---------------------------------------------------------------------------------
-        bibliographic  boolean  Whether the user will be included in citations for this node or not
-        permission     string   User permission level. Must be "read", "write", or "admin". Defaults to "write".
-
-    All other attributes are inherited from the User object.
+        ------------------------------------------------------------------------------------------------------
+        bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
+        permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
 
     ##Relationships
 
-    ###Nodes
+    ###Users
 
-    This endpoint shows the list of all nodes the user contributes to.
+    This endpoint shows the contributor user detail.
 
     ##Links
 
-        self:  the canonical api endpoint of this node
-        html:  this node's page on the OSF website
+        self:  the detail url for this node contributor
+        html:  this user's page on the OSF website
+        profile_image: this user's gravatar
 
     ##Actions
 
@@ -514,11 +547,11 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
-                           "type": "contributors",        # required
-                           "id":   {contributor_user_id}, # required
+                           "type": "contributors",                    # required
+                           "id": {contributor_id},                    # required
                            "attributes": {
-                             "bibiliographic": true|false,            # optional
-                             "permission":     "read"|"write"|"admin" # optional
+                             "bibliographic": true|false,             # optional
+                             "permission": "read"|"write"|"admin"     # optional
                            }
                          }
                        }
@@ -538,7 +571,8 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         Success:       204 No Content
 
     To remove a contributor from a node, issue a DELETE request to the `self` link.  Attempting to remove the only admin
-    from a node will result in a 400 Bad Request response.
+    from a node will result in a 400 Bad Request response.  This request will only remove the relationship between the
+    node and the user, not the user itself.
 
     ##Query Params
 
@@ -586,14 +620,51 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
 # TODO: Support creating registrations
 class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
-    """Registrations of the current node.
+    """Node Registrations.
 
-    Registrations are read-only snapshots of a project. This view lists all of the existing registrations
-    created for the current node.
+    Registrations are read-only snapshots of a project. This view is a list of all the registrations of the current node.
 
-    **TODO: registrations via api are still a WIP**
+    Each resource contains the full representation of the registration, meaning additional requests to an individual
+    registrations's detail view are not necessary.
 
-     """
+    ##Registration Attributes
+
+    Registrations have the "registrations" `type`.
+
+        name               type               description
+        ---------------------------------------------------------------------------------
+        title              string             title of the registered project or component
+        description        string             description of the registered node
+        category           string             node category, must be one of the allowed values
+        date_created       iso8601 timestamp  timestamp that the node was created
+        date_modified      iso8601 timestamp  timestamp when the node was last updated
+        tags               array of strings   list of tags that describe the registered node
+        fork               boolean            is this project a fork?
+        registration       boolean            has this project been registered?
+        collection         boolean            is this registered node a collection of other nodes?
+        dashboard          boolean            is this registered node visible on the user dashboard?
+        public             boolean            has this registration been made publicly-visible?
+        retracted          boolean            has this registration been retracted?
+        date_registered    iso8601 timestamp  timestamp that the registration was created
+
+
+    ##Relationships
+
+    ###Registered from
+
+    The registration is branched from this node.
+
+    ###Registered by
+
+    The registration was initiated by this user.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
+
+    #This request/response
+
+    """
     permission_classes = (
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
@@ -603,7 +674,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
-    serializer_class = NodeRegistrationSerializer
+    serializer_class = RegistrationSerializer
 
     # overrides ListAPIView
     # TODO: Filter out retractions by default
@@ -743,19 +814,45 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
 
-    **TODO: this is placeholder documentation pending finish**
-
     ##Node Link Attributes
+    `type` is "node_links"
 
-    **TODO: import from NodeLinksDetail**
+        None
 
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
+    ##Relationships
+
+    ### Target Node
+
+    This endpoint shows the target node detail.
+
     ##Actions
 
-    ###Create
+    ###Adding Node Links
+        Method:        POST
+        URL:           links.self
+        Query Params:  <none>
+        Body (JSON): {
+                       "data": {
+                          "type": "node_links",                  # required
+                          "relationships": {
+                            "nodes": {
+                              "data": {
+                                "type": "nodes",                 # required
+                                "id": "{target_node_id}",        # required
+                              }
+                            }
+                          }
+                       }
+                    }
+        Success:       201 CREATED + node link representation
+
+    To add a node link (a pointer to another node), issue a POST request to this endpoint.  This effectively creates a
+    relationship between the node and the target node.  The target node must be described as a relationship object with
+    a "data" member, containing the nodes `type` and the target node `id`.
 
     ##Query Params
 
@@ -784,6 +881,15 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
             if not pointer.node.is_deleted
         ]
 
+    # overrides ListCreateAPIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(NodeLinksList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     """Node Link details. *Writeable*.
@@ -791,19 +897,34 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
     Node Links are a direct reference to the node that they point to.
 
-    **TODO: this is placeholder documentation pending finish**
-
     ##Attributes
+    `type` is "node_links"
 
-        name           type               description
-        ---------------------------------------------------------------------------------
-        $name          $type              $descr
-
-    ##Relationships
+        None
 
     ##Links
 
+        self:  the detail url for this node link
+        html:  this node's page on the OSF website
+        profile_image: this contributor's gravatar
+
+    ##Relationships
+
+    ###Target node
+
+    This endpoint shows the target node detail.
+
     ##Actions
+
+    ###Remove Node Link
+
+        Method:        DELETE
+        URL:           links.self
+        Query Params:  <none>
+        Success:       204 No Content
+
+    To remove a node link from a node, issue a DELETE request to the `self` link.  This request will remove the
+    relationship between the node and the target node, not the nodes themselves.
 
     ##Query Params
 
@@ -848,7 +969,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
+class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, NodeMixin):
     """Files attached to a node for a given provider. *Read-only*.
 
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
@@ -1077,7 +1198,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
-    def get_queryset(self):
+    def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
 
@@ -1089,6 +1210,10 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, NodeMixin):
             raise NotFound
 
         return list(files_list.children)
+
+    # overrides ListAPIView
+    def get_queryset(self):
+        return self.get_queryset_from_request()
 
 
 class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):

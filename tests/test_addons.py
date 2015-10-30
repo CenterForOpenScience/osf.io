@@ -2,10 +2,12 @@
 
 import time
 import mock
+import datetime
 import unittest
 from nose.tools import *  # noqa
 
-import webtest
+import jwe
+import jwt
 import furl
 import itsdangerous
 from modularodm import storage
@@ -76,8 +78,6 @@ class TestAddonAuth(OsfTestCase):
 
     def setUp(self):
         super(TestAddonAuth, self).setUp()
-        self.flask_app = SetEnvironMiddleware(self.app.app, REMOTE_ADDR='127.0.0.1')
-        self.test_app = webtest.TestApp(self.flask_app)
         self.user = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
@@ -85,6 +85,7 @@ class TestAddonAuth(OsfTestCase):
         self.session.save()
         self.cookie = itsdangerous.Signer(settings.SECRET_KEY).sign(self.session._id)
         self.configure_addon()
+        self.JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
     def configure_addon(self):
         self.user.add_addon('github')
@@ -102,53 +103,60 @@ class TestAddonAuth(OsfTestCase):
         self.node_addon.save()
 
     def build_url(self, **kwargs):
-        options = dict(
+        options = {'payload': jwe.encrypt(jwt.encode({'data': dict(dict(
             action='download',
-            cookie=self.cookie,
             nid=self.node._id,
             provider=self.node_addon.config.short_name,
-        )
-        options.update(kwargs)
+            ), **kwargs),
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+        }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), self.JWE_KEY)}
         return api_url_for('get_auth', **options)
 
     def test_auth_download(self):
         url = self.build_url()
-        res = self.test_app.get(url)
-        assert_equal(res.json['auth'], views.make_auth(self.user))
-        assert_equal(res.json['credentials'], self.node_addon.serialize_waterbutler_credentials())
-        assert_equal(res.json['settings'], self.node_addon.serialize_waterbutler_settings())
+        res = self.app.get(url, auth=self.user.auth)
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        assert_equal(data['auth'], views.make_auth(self.user))
+        assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
+        assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
         expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True))
-        observed_url = furl.furl(res.json['callback_url'])
+        observed_url = furl.furl(data['callback_url'])
         observed_url.port = expected_url.port
         assert_equal(expected_url, observed_url)
 
     def test_auth_missing_args(self):
         url = self.build_url(cookie=None)
-        res = self.test_app.get(url, expect_errors=True)
+        res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
     def test_auth_bad_cookie(self):
+        url = self.build_url(cookie=self.cookie)
+        res = self.app.get(url, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        data = jwt.decode(jwe.decrypt(res.json['payload'].encode('utf-8'), self.JWE_KEY), settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM)['data']
+        assert_equal(data['auth'], views.make_auth(self.user))
+        assert_equal(data['credentials'], self.node_addon.serialize_waterbutler_credentials())
+        assert_equal(data['settings'], self.node_addon.serialize_waterbutler_settings())
+        expected_url = furl.furl(self.node.api_url_for('create_waterbutler_log', _absolute=True))
+        observed_url = furl.furl(data['callback_url'])
+        observed_url.port = expected_url.port
+        assert_equal(expected_url, observed_url)
+
+    def test_auth_cookie(self):
         url = self.build_url(cookie=self.cookie[::-1])
-        res = self.test_app.get(url, expect_errors=True)
+        res = self.app.get(url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
     def test_auth_missing_addon(self):
         url = self.build_url(provider='queenhub')
-        res = self.test_app.get(url, expect_errors=True)
+        res = self.app.get(url, expect_errors=True, auth=self.user.auth)
         assert_equal(res.status_code, 400)
-
-    def test_auth_bad_ip(self):
-        flask_app = SetEnvironMiddleware(self.app.app, REMOTE_ADDR='192.168.1.1')
-        test_app = webtest.TestApp(flask_app)
-        url = self.build_url()
-        res = test_app.get(url, expect_errors=True)
-        assert_equal(res.status_code, 403)
 
     @mock.patch('website.addons.base.views.cas.get_client')
     def test_auth_bad_bearer_token(self, mock_cas_client):
         mock_cas_client.return_value = mock.Mock(profile=mock.Mock(return_value=cas.CasResponse(authenticated=False)))
         url = self.build_url()
-        res = self.test_app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
+        res = self.app.get(url, headers={'Authorization': 'Bearer invalid_access_token'}, expect_errors=True)
         assert_equal(res.status_code, 403)
 
 
@@ -156,8 +164,6 @@ class TestAddonLogs(OsfTestCase):
 
     def setUp(self):
         super(TestAddonLogs, self).setUp()
-        self.flask_app = SetEnvironMiddleware(self.app.app, REMOTE_ADDR='127.0.0.1')
-        self.test_app = webtest.TestApp(self.flask_app)
         self.user = AuthUserFactory()
         self.auth_obj = Auth(user=self.user)
         self.node = ProjectFactory(creator=self.user)
@@ -207,7 +213,7 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path})
         nlogs = len(self.node.logs)
-        self.test_app.put_json(url, payload, headers={'Content-Type': 'application/json'})
+        self.app.put_json(url, payload, headers={'Content-Type': 'application/json'})
         self.node.reload()
         assert_equal(len(self.node.logs), nlogs + 1)
         # # Mocking form_message and perform so that the payload need not be exact.
@@ -219,7 +225,7 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path}, auth=None)
         nlogs = len(self.node.logs)
-        res = self.test_app.put_json(
+        res = self.app.put_json(
             url,
             payload,
             headers={'Content-Type': 'application/json'},
@@ -234,7 +240,7 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path}, auth={'id': None})
         nlogs = len(self.node.logs)
-        res = self.test_app.put_json(
+        res = self.app.put_json(
             url,
             payload,
             headers={'Content-Type': 'application/json'},
@@ -250,7 +256,7 @@ class TestAddonLogs(OsfTestCase):
         url = node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path})
         nlogs = len(node.logs)
-        res = self.test_app.put_json(
+        res = self.app.put_json(
             url,
             payload,
             headers={'Content-Type': 'application/json'},
@@ -265,7 +271,7 @@ class TestAddonLogs(OsfTestCase):
         url = self.node.api_url_for('create_waterbutler_log')
         payload = self.build_payload(metadata={'path': path}, action='dance')
         nlogs = len(self.node.logs)
-        res = self.test_app.put_json(
+        res = self.app.put_json(
             url,
             payload,
             headers={'Content-Type': 'application/json'},
@@ -298,7 +304,7 @@ class TestAddonLogs(OsfTestCase):
                 'kind': 'file',
             },
         )
-        self.test_app.put_json(
+        self.app.put_json(
             url,
             payload,
             headers={'Content-Type': 'application/json'}
@@ -459,8 +465,8 @@ def assert_urls_equal(url1, url2):
         setattr(furl2, attr, None)
     # Note: furl params are ordered and cause trouble
     assert_equal(dict(furl1.args), dict(furl2.args))
-    furl1.args ={}
-    furl2.args ={}
+    furl1.args = {}
+    furl2.args = {}
     assert_equal(furl1, furl2)
 
 
@@ -609,7 +615,7 @@ class TestAddonFileViews(OsfTestCase):
 
         args, kwargs = mock_view_file.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[0].user, self.user)
+        assert_equals(args[0].user._id, self.user._id)
         assert_equals(args[1], self.project)
         assert_equals(args[2], file_node)
         assert_true(isinstance(args[3], file_node.touch(None).__class__))
@@ -628,7 +634,7 @@ class TestAddonFileViews(OsfTestCase):
 
         args, kwargs = mock_view_file.call_args
         assert_equals(kwargs, {})
-        assert_equals(args[0].user, self.user)
+        assert_equals(args[0].user._id, self.user._id)
         assert_equals(args[1], self.project)
         assert_equals(args[2], file_node)
         assert_true(isinstance(args[3], file_node.touch(None).__class__))

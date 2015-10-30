@@ -7,313 +7,358 @@ import mock
 from dateutil import relativedelta
 
 from framework.auth import Auth
+from framework.exceptions import PermissionsError
 from tests.base import OsfTestCase
-from tests.factories import UserFactory, ProjectFactory
+from tests.factories import UserFactory, ProjectFactory, ExternalAccountFactory
 from website.addons.base import exceptions
 
+from website.addons.googledrive import model
 from website.addons.googledrive.client import GoogleAuthClient
-from website.addons.googledrive.model import (
-    GoogleDriveUserSettings,
-    GoogleDriveNodeSettings,
-    GoogleDriveOAuthSettings,
-)
-from website.addons.googledrive.tests.factories import (
-    GoogleDriveNodeSettingsFactory,
-    GoogleDriveUserSettingsFactory,
-    GoogleDriveOAuthSettingsFactory,
-)
 
-
-class TestGoogleDriveUserSettingsModel(OsfTestCase):
-
+class TestGoogleDriveProvider(OsfTestCase):
     def setUp(self):
-        super(TestGoogleDriveUserSettingsModel, self).setUp()
-        self.user = UserFactory()
+        super(TestGoogleDriveProvider, self).setUp()
+        self.provider = model.GoogleDriveProvider()
 
-    def test_fields(self):
-        user_settings = GoogleDriveUserSettingsFactory()
-        retrieved = GoogleDriveUserSettings.load(user_settings._primary_key)
+    @mock.patch.object(GoogleAuthClient, 'userinfo')
+    def test_handle_callback(self, mock_client):
+        fake_response = {'access_token': 'abc123'}
+        fake_info = {'sub': '12345', 'name': 'fakename', 'profile': 'fakeUrl'}
+        mock_client.return_value = fake_info
+        res = self.provider.handle_callback(fake_response)
+        assert_equal(res['provider_id'], '12345')
+        assert_equal(res['display_name'], 'fakename')
+        assert_equal(res['profile_url'], 'fakeUrl')
 
-        assert_true(retrieved.owner)
-        assert_true(retrieved.username)
-        assert_true(retrieved.expires_at)
-        assert_true(retrieved.access_token)
-
-    def test_has_auth(self):
-        user_settings = GoogleDriveUserSettingsFactory(access_token=None)
-        assert_false(user_settings.has_auth)
-        user_settings.access_token = '12345'
-        user_settings.save()
-        assert_true(user_settings.has_auth)
-
-    @mock.patch.object(GoogleDriveOAuthSettings, '_needs_refresh')
-    def test_access_token_checks(self, mock_needs_refresh):
-        mock_needs_refresh.return_value = False
-        user_settings = GoogleDriveUserSettingsFactory()
-
-        user_settings.access_token
-
-        mock_needs_refresh.assert_called_once()
 
     @mock.patch.object(GoogleAuthClient, 'refresh')
-    @mock.patch.object(GoogleDriveOAuthSettings, '_needs_refresh')
-    def test_access_token_refreshes(self, mock_needs_refresh, mock_refresh):
-        mock_refresh.return_value = {
-            'access_token': 'abc',
-            'refresh_token': '123',
-            'expires_at': time.time(),
-        }
-        user_settings = GoogleDriveUserSettingsFactory()
-        user_settings.expires_at = datetime.now()
-        user_settings.access_token
-        mock_refresh.assert_called_once()
+    def test_refresh_token(self, mock_refresh):
+        fake_access_token = 'abc123'
+        fake_refresh_token = 'xyz456'
+        mock_refresh.return_value = 'faketoken'
+
+        res = self.provider._refresh_token(fake_access_token, fake_refresh_token)
+        assert_equal(res, 'faketoken')
+
 
     @mock.patch.object(GoogleAuthClient, 'refresh')
-    def test_access_token_refreshes_timeout(self, mock_refresh):
-        mock_refresh.return_value = {
-            'access_token': 'abc',
-            'refresh_token': '123',
-            'expires_at': time.time(),
-        }
-        user_settings = GoogleDriveUserSettingsFactory()
-        user_settings.expires_at = (datetime.utcnow() + relativedelta.relativedelta(seconds=5))
+    def test_refresh_token_without_refresh_token(self, mock_refresh):
+        fake_access_token = 'abc123'
+        fake_refresh_token = None
+        mock_refresh.return_value = 'faketoken'
 
-        user_settings.access_token
+        res = self.provider._refresh_token(fake_access_token, fake_refresh_token)
+        assert_false(res)
 
-        mock_refresh.assert_called_once()
-
-    @mock.patch.object(GoogleAuthClient, 'refresh')
-    def test_access_token_refreshes_timeout_longer(self, mock_refresh):
-        mock_refresh.return_value = {
-            'access_token': 'abc',
-            'refresh_token': '123',
-            'expires_at': time.time(),
-        }
-        user_settings = GoogleDriveUserSettingsFactory()
-        user_settings.expires_at = datetime.utcnow() + relativedelta.relativedelta(minutes=4)
-        user_settings.access_token
-        mock_refresh.assert_called_once()
-
-    @mock.patch.object(GoogleAuthClient, 'refresh')
-    def test_access_token_doesnt_refresh(self, mock_refresh):
-        user_settings = GoogleDriveUserSettingsFactory()
-        user_settings.save()
-        user_settings.access_token
-        assert_false(mock_refresh.called)
-
-    def test_clear_clears_associated_node_settings(self):
-        node_settings = GoogleDriveNodeSettingsFactory.build()
-        user_settings = GoogleDriveUserSettingsFactory()
-        node_settings.user_settings = user_settings
-        node_settings.save()
-        user_settings.clear()
-        user_settings.save()
-
-        # Node settings no longer associated with user settings
-        assert_is(node_settings.folder_id, None)
-        assert_is(node_settings.user_settings, None)
-
-    def test_clear(self):
-        node_settings = GoogleDriveNodeSettingsFactory.build()
-        user_settings = GoogleDriveUserSettingsFactory(access_token='abcde')
-        node_settings.user_settings = user_settings
-        node_settings.save()
-
-        assert_true(user_settings.access_token)
-        user_settings.clear()
-        user_settings.save()
-        assert_false(user_settings.access_token)
-
-    @mock.patch.object(GoogleDriveOAuthSettings, 'revoke_access_token')
-    def test_clear_wo_oauth_settings(self, mock_revoke_access_token):
-        user_settings = GoogleDriveUserSettingsFactory(access_token='abcde')
-        user_settings.oauth_settings = None
-        user_settings.save()
-        node_settings = GoogleDriveNodeSettingsFactory.build()
-        node_settings.user_settings = user_settings
-        node_settings.save()
-
-        assert_false(user_settings.oauth_settings)
-        user_settings.clear()
-        user_settings.save()
-
-        assert_false(mock_revoke_access_token.called)
-
-    def test_delete(self):
-        user_settings = GoogleDriveUserSettingsFactory()
-        assert_true(user_settings.has_auth)
-        user_settings.delete()
-        user_settings.save()
-        assert_false(user_settings.access_token)
-        assert_true(user_settings.deleted)
-
-    def test_delete_clears_associated_node_settings(self):
-        node_settings = GoogleDriveNodeSettingsFactory.build()
-        user_settings = GoogleDriveUserSettingsFactory()
-        node_settings.user_settings = user_settings
-        node_settings.save()
-
-        user_settings.delete()
-        user_settings.save()
-
-        # Node settings no longer associated with user settings
-        assert_false(node_settings.deleted)
-        assert_is(node_settings.folder_id, None)
-        assert_is(node_settings.user_settings, None)
-
-
-class TestGoogleDriveNodeSettingsModel(OsfTestCase):
-
+class TestGoogleDriveUserSettings(OsfTestCase):
     def setUp(self):
-        super(TestGoogleDriveNodeSettingsModel, self).setUp()
-        self.user = UserFactory()
-        self.user.add_addon('googledrive')
+        super(TestGoogleDriveUserSettings, self).setUp()
+        self.node = ProjectFactory()
+        self.user = self.node.creator
+
+        self.external_account = ExternalAccountFactory()
+
+        self.user.external_accounts.append(self.external_account)
         self.user.save()
-        self.user_settings = self.user.get_addon('googledrive')
-        oauth_settings = GoogleDriveOAuthSettingsFactory()
-        oauth_settings.save()
-        self.user_settings.oauth_settings = oauth_settings
+
+        self.user_settings = self.user.get_or_add_addon('googledrive')
+
+    def tearDown(self):
+        super(TestGoogleDriveUserSettings, self).tearDown()
+        self.user_settings.remove()
+        self.external_account.remove()
+        self.node.remove()
+        self.user.remove()
+
+    def test_grant_oauth_access_no_metadata(self):
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+        )
         self.user_settings.save()
-        self.project = ProjectFactory()
-        self.node_settings = GoogleDriveNodeSettingsFactory(
-            user_settings=self.user_settings,
-            owner=self.project,
+
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {self.node._id: {self.external_account._id: {}}},
         )
 
-    def test_fields(self):
-        node_settings = GoogleDriveNodeSettings(user_settings=self.user_settings)
-        node_settings.save()
+    def test_grant_oauth_access_metadata(self):
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id'}
+        )
+        self.user_settings.save()
 
-        assert_true(node_settings.user_settings)
-        assert_true(hasattr(node_settings, 'folder_id'))
-        assert_true(hasattr(node_settings, 'folder_path'))
-        assert_true(hasattr(node_settings, 'folder_name'))
-        assert_equal(node_settings.user_settings.owner, self.user)
+        assert_equal(
+            self.user_settings.oauth_grants,
+            {
+                self.node._id: {
+                    self.external_account._id: {'folder': 'fake_folder_id'}
+                },
+            }
+        )
 
-    def test_complete_true(self):
-        assert_true(self.node_settings.has_auth)
-        assert_true(self.node_settings.complete)
+    def test_verify_oauth_access_no_metadata(self):
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+        )
+        self.user_settings.save()
 
-    def test_complete_false(self):
-        self.node_settings.folder_id = None
+        account_has_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=self.external_account
+        )
 
-        assert_true(self.node_settings.has_auth)
-        assert_false(self.node_settings.complete)
+        factory_account_has_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=ExternalAccountFactory()
+        )
 
-    def test_complete_auth_false(self):
-        self.node_settings.user_settings = None
+        assert_true(account_has_access)
+        assert_false(factory_account_has_access)
 
-        assert_false(self.node_settings.has_auth)
-        assert_false(self.node_settings.complete)
+    def test_verify_oauth_access_metadata(self):
+        self.user_settings.grant_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id'}
+        )
+        self.user_settings.save()
 
-    def test_folder_defaults_to_none(self):
-        node_settings = GoogleDriveNodeSettings(user_settings=self.user_settings)
-        node_settings.save()
+        correct_meta_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'fake_folder_id'}
+        )
 
-        assert_is_none(node_settings.folder_id)
-        assert_is_none(node_settings.folder_path)
+        incorrect_meta_no_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=self.external_account,
+            metadata={'folder': 'another_folder_id'}
+        )
 
-    def test_has_auth(self):
-        settings = GoogleDriveNodeSettings(user_settings=self.user_settings)
-        settings.user_settings.access_token = None
-        settings.save()
+        assert_true(correct_meta_access)
+        assert_false(incorrect_meta_no_access)
 
-        assert_false(settings.has_auth)
 
-        settings.user_settings.access_token = '123abc'
-        settings.user_settings.save()
+class TestGoogleDriveNodeSettings(OsfTestCase):
 
-        assert_true(settings.has_auth)
+    def setUp(self):
+        super(TestGoogleDriveNodeSettings, self).setUp()
+        self.node = ProjectFactory()
+        self.node_settings = model.GoogleDriveNodeSettings(owner=self.node)
+        self.node_settings.save()
+        self.user = self.node.creator
+        self.user_settings = self.user.get_or_add_addon('googledrive')
 
-    # TODO use this test if delete function is used in googledrive/model
-    # def test_delete(self):
-    #     assert_true(self.node_settings.user_settings)
-    #     assert_true(self.node_settings.folder)
-    #     old_logs = self.project.logs
-    #     self.node_settings.delete()
-    #     self.node_settings.save()
-    #     assert_is(self.node_settings.user_settings, None)
-    #     assert_is(self.node_settings.folder, None)
-    #     assert_true(self.node_settings.deleted)
-    #     assert_equal(self.project.logs, old_logs)
+    def tearDown(self):
+        super(TestGoogleDriveNodeSettings, self).tearDown()
+        self.user_settings.remove()
+        self.node_settings.remove()
+        self.node.remove()
+        self.user.remove()
 
-    def test_deauthorize(self):
-        assert_true(self.node_settings.folder_id)
-        assert_true(self.node_settings.user_settings)
+    @mock.patch('website.addons.googledrive.model.GoogleDriveProvider')
+    def test_api_not_cached(self, mock_gdp):
+        # The first call to .api returns a new object
+        api = self.node_settings.api
+        mock_gdp.assert_called_once()
+        assert_equal(api, mock_gdp())
 
-        self.node_settings.deauthorize(auth=Auth(self.user))
+    @mock.patch('website.addons.googledrive.model.GoogleDriveProvider')
+    def test_api_cached(self, mock_gdp):
+        # Repeated calls to .api returns the same object
+        self.node_settings._api = 'testapi'
+        api = self.node_settings.api
+        assert_false(mock_gdp.called)
+        assert_equal(api, 'testapi')
+
+    def test_set_auth(self):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.user.save()
+
+        # this should be reset after the call
+        self.node_settings.folder_id = 'anything'
+
+        self.node_settings.set_auth(
+            external_account=external_account,
+            user=self.user
+        )
+
+        # this instance is updated
+        assert_equal(
+            self.node_settings.external_account,
+            external_account
+        )
+        assert_equal(
+            self.node_settings.user_settings,
+            self.user_settings
+        )
+        assert_is_none(
+            self.node_settings.folder_id
+        )
+
+        set_auth_gives_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=external_account,
+        )
+
+        assert_true(set_auth_gives_access)
+
+    def test_set_auth_wrong_user(self):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.user.save()
+
+        with assert_raises(PermissionsError):
+            self.node_settings.set_auth(
+                external_account=external_account,
+                user=UserFactory()
+            )
+
+    def test_clear_auth(self):
+        self.node_settings.external_account = ExternalAccountFactory()
+        self.node_settings.folder_id = 'something'
+        self.node_settings.user_settings = self.user_settings
         self.node_settings.save()
 
-        assert_is(self.node_settings.folder_id, None)
-        assert_is(self.node_settings.user_settings, None)
+        self.node_settings.clear_auth()
 
-        last_log = self.project.logs[-1]
-        params = last_log.params
+        assert_is_none(self.node_settings.external_account)
+        assert_is_none(self.node_settings.folder_id)
+        assert_is_none(self.node_settings.user_settings)
+        assert_is_none(self.node_settings.folder_path)
+        assert_is_none(self.node_settings.folder_name)
 
-        assert_in('node', params)
-        assert_in('folder', params)
-        assert_in('project', params)
-        assert_equal(last_log.action, 'googledrive_node_deauthorized')
+    def test_set_target_folder(self):
 
-    def test_set_folder(self):
-        folder_name = {
-            'id': '1234',
-            'name': 'freddie',
-            'path': 'queen/freddie',
+        folder = {
+            'id': 'fake-folder-id',
+            'name': 'fake-folder-name',
+            'path': 'fake_path'
         }
 
-        self.node_settings.set_folder(folder_name, auth=Auth(self.user))
+
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.user.save()
+
+        self.node_settings.set_auth(
+            external_account=external_account,
+            user=self.user,
+            )
+
+        assert_is_none(self.node_settings.folder_id)
+
+        self.node_settings.set_target_folder(
+            folder,
+            auth=Auth(user=self.user),
+            )
+
+        # instance was updated
+        assert_equal(
+            self.node_settings.folder_id,
+            'fake-folder-id',
+            )
+
+        has_access = self.user_settings.verify_oauth_access(
+            node=self.node,
+            external_account=external_account,
+            metadata={'folder': 'fake-folder-id'}
+        )
+
+        # user_settings was updated
+        assert_true(has_access)
+
+        log = self.node.logs[-1]
+        assert_equal(log.action, 'googledrive_folder_selected')
+        assert_equal(log.params['folder'], folder['path'])
+
+    def test_has_auth_false(self):
+        external_account = ExternalAccountFactory()
+
+        assert_false(self.node_settings.has_auth)
+
+        # both external_account and user_settings must be set to have auth
+        self.node_settings.external_account = external_account
+        assert_false(self.node_settings.has_auth)
+
+        self.node_settings.external_account = None
+        self.node_settings.user_settings = self.user_settings
+        assert_false(self.node_settings.has_auth)
+
+        # set_auth must be called to have auth
+        self.node_settings.external_account = external_account
+        self.node_settings.user_settings = self.user_settings
+        assert_false(self.node_settings.has_auth)
+
+    def test_has_auth_true(self):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+
+        self.node_settings.set_auth(external_account, self.user)
+
+        self.node_settings.folder_id = None
+        assert_true(self.node_settings.has_auth)
+
+        self.node_settings.folder_id = 'totally fake ID'
+        assert_true(self.node_settings.has_auth)
+
+    def test_selected_folder_name_root(self):
+        self.node_settings.folder_id = 'root'
+
+        assert_equal(
+            self.node_settings.selected_folder_name,
+            "Full Google Drive"
+        )
+
+    def test_selected_folder_name_empty(self):
+        self.node_settings.folder_id = None
+
+        assert_equal(
+            self.node_settings.selected_folder_name,
+            ''
+        )
+
+    def test_selected_folder_name(self):
+        self.node_settings.folder_id = 'fake-id'
+        self.node_settings.folder_path = 'fake-folder-name'
         self.node_settings.save()
-        # Folder was set
-        assert_equal(self.node_settings.folder_name, folder_name['name'])
-        # Log was saved
-        last_log = self.project.logs[-1]
-        assert_equal(last_log.action, 'googledrive_folder_selected')
-
-    def test_set_user_auth(self):
-        node_settings = GoogleDriveNodeSettingsFactory()
-        user_settings = GoogleDriveUserSettingsFactory()
-
-        node_settings.set_user_auth(user_settings)
-        node_settings.save()
-
-        assert_true(node_settings.has_auth)
-        assert_equal(node_settings.user_settings, user_settings)
-        # A log was saved
-        last_log = node_settings.owner.logs[-1]
-        log_params = last_log.params
-
-        assert_equal(last_log.user, user_settings.owner)
-        assert_equal(log_params['folder'], node_settings.folder_path)
-        assert_equal(last_log.action, 'googledrive_node_authorized')
-        assert_equal(log_params['node'], node_settings.owner._primary_key)
+        assert_equal(
+            self.node_settings.selected_folder_name,
+            'fake-folder-name'
+        )
 
     def test_serialize_credentials(self):
-        self.user_settings.access_token = 'secret'
-        self.user_settings.save()
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        self.node_settings.set_auth(external_account, self.user)
         credentials = self.node_settings.serialize_waterbutler_credentials()
-        expected = {'token': self.node_settings.user_settings.access_token}
+        expected = {'token': self.node_settings.fetch_access_token()}
         assert_equal(credentials, expected)
 
     def test_serialize_credentials_not_authorized(self):
-        self.node_settings.user_settings = None
-        self.node_settings.save()
-
+        external_account = ExternalAccountFactory()
+        self.node_settings.external_account = external_account
         with assert_raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_credentials()
 
     def test_serialize_settings(self):
-        self.node_settings.folder_path = 'camera uploads/pizza.nii'
+        self.node_settings.folder_id = 'fake-id'
+        self.node_settings.folder_path = 'fake-folder-name'
         self.node_settings.save()
 
         settings = self.node_settings.serialize_waterbutler_settings()
 
         expected = {
             'folder': {
-                'id': '12345',
-                'name': 'pizza.nii',
-                'path': 'camera uploads/pizza.nii',
-            }
+                'id': 'fake-id',
+                'name': 'fake-folder-name',
+                'path': 'fake-folder-name',
+                }
         }
 
         assert_equal(settings, expected)
@@ -325,101 +370,33 @@ class TestGoogleDriveNodeSettingsModel(OsfTestCase):
         with assert_raises(exceptions.AddonError):
             self.node_settings.serialize_waterbutler_settings()
 
-    def test_create_log(self):
-        action = 'file_added'
-        path = '12345/camera uploads/pizza.nii'
+    def test_fetch_access_token_with_token_not_expired(self):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        external_account.expires_at = datetime.utcnow() + relativedelta.relativedelta(minutes=6)
+        external_account.oauth_key = 'fake-token'
+        external_account.save()
+        self.node_settings.set_auth(external_account, self.user)
+        assert_equal(self.node_settings.fetch_access_token(), 'fake-token')
 
-        nlog = len(self.project.logs)
-        self.node_settings.create_waterbutler_log(
-            auth=Auth(user=self.user),
-            action=action,
-            metadata={'path': path},
-        )
+    @mock.patch.object(GoogleAuthClient, 'refresh')
+    def test_fetch_access_token_with_token_expired(self, mock_refresh):
+        external_account = ExternalAccountFactory()
+        self.user.external_accounts.append(external_account)
+        external_account.expires_at = datetime.utcnow() + relativedelta.relativedelta(minutes=4)
+        external_account.oauth_key = 'fake-token'
+        external_account.refresh_token = 'refresh-fake-token'
+        external_account.save()
 
-        self.project.reload()
-
-        assert_equal(len(self.project.logs), nlog + 1)
-        assert_equal(
-            self.project.logs[-1].action,
-            'googledrive_{0}'.format(action),
-        )
-        assert_equal(self.project.logs[-1].params['path'], path)
-
-
-class TestNodeSettingsCallbacks(OsfTestCase):
-
-    def setUp(self):
-        super(TestNodeSettingsCallbacks, self).setUp()
-        # Create node settings with auth
-        self.user_settings = GoogleDriveUserSettingsFactory(access_token='123abc', username='name/email')
-        self.node_settings = GoogleDriveNodeSettingsFactory(
-            user_settings=self.user_settings,
-            folder='',
-        )
-
-        self.project = self.node_settings.owner
-        self.user = self.user_settings.owner
-
-    def test_after_fork_by_authorized_googledrive_user(self):
-        fork = ProjectFactory()
-        clone, message = self.node_settings.after_fork(
-            node=self.project, fork=fork, user=self.user_settings.owner
-        )
-        assert_equal(clone.user_settings, self.user_settings)
-
-    def test_after_fork_by_unauthorized_googledrive_user(self):
-        fork = ProjectFactory()
-        user = UserFactory()
-        clone, message = self.node_settings.after_fork(
-            node=self.project, fork=fork, user=user,
-            save=True
-        )
-        # need request context for url_for
-        assert_is(clone.user_settings, None)
-
-    def test_before_fork(self):
-        node = ProjectFactory()
-        message = self.node_settings.before_fork(node, self.user)
-        assert_true(message)
-
-    def test_before_remove_contributor_message(self):
-        message = self.node_settings.before_remove_contributor(
-            self.project, self.user)
-        assert_true(message)
-        assert_in(self.user.fullname, message)
-        assert_in(self.project.project_or_component, message)
-
-    def test_after_remove_authorized_googledrive_user_not_self(self):
-        message = self.node_settings.after_remove_contributor(
-            self.project, self.user_settings.owner)
-        self.node_settings.save()
-        assert_is_none(self.node_settings.user_settings)
-        assert_true(message)
-        assert_in("You can re-authenticate", message)
-
-    def test_after_remove_authorized_googledrive_user_self(self):
-        auth = Auth(user=self.user_settings.owner)
-        message = self.node_settings.after_remove_contributor(
-            self.project, self.user_settings.owner, auth)
-        self.node_settings.save()
-        assert_is_none(self.node_settings.user_settings)
-        assert_true(message)
-        assert_not_in("You can re-authenticate", message)
-
-    def test_after_delete(self):
-        self.project.remove_node(Auth(user=self.project.creator))
-        # Ensure that changes to node settings have been saved
-        self.node_settings.reload()
-        assert_true(self.node_settings.folder_id is None)
-        assert_true(self.node_settings.folder_path is None)
-        assert_true(self.node_settings.user_settings is None)
-
-    @mock.patch('website.archiver.tasks.archive')
-    def test_does_not_get_copied_to_registrations(self, mock_archive):
-        registration = self.project.register_node(
-            schema=None,
-            auth=Auth(user=self.project.creator),
-            template='Template1',
-            data='hodor'
-        )
-        assert_false(registration.has_addon('googledrive'))
+        fake_token = {
+            'access_token': 'new-access-token',
+            'refresh_token': 'new-refresh-token',
+            'expires_at': 1234.5
+        }
+        mock_refresh.return_value = fake_token
+        self.node_settings.set_auth(external_account, self.user)
+        self.node_settings.fetch_access_token()
+        mock_refresh.assert_called_once()
+        assert_equal(external_account.oauth_key, 'new-access-token')
+        assert_equal(external_account.refresh_token, 'new-refresh-token')
+        assert_equal(external_account.expires_at, datetime.utcfromtimestamp(1234.5))

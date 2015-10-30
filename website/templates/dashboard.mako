@@ -15,8 +15,6 @@
 <div id="fileBrowser" class="fileBrowser" ></div>
 
 
-
-
 %if 'badges' in addons_enabled:
     <div class="row">
         <div class="col-sm-5">
