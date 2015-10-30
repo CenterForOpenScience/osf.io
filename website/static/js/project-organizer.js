@@ -425,6 +425,7 @@ var tbOptions = {
         $('.gridWrapper').on('mouseout', function () {
             tb.select('.tb-row').removeClass('po-hover');
         });
+        m.render(document.getElementById('poFilter'), tb.options.filterTemplate.call(this));
     },
     ontogglefolder : function (item, event) {
         if (!item.open) {
@@ -448,6 +449,14 @@ var tbOptions = {
     headerTemplate : function(){ return ''; },
     xhrconfig : function(xhr) {
         xhr.withCredentials = true;
+    },
+    filterTemplate : function() {
+        var tb = this;
+        return m('input.pull-left.form-control[placeholder="' + tb.options.filterPlaceholder + '"][type="text"]', {
+            style: 'width:100%;display:inline;',
+            onkeyup: tb.filter,
+            value: tb.filterText()
+        });
     },
     lazyLoadPreprocess : function(value){
         var tb = this;
