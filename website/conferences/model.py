@@ -25,6 +25,21 @@ class Conference(StoredObject):
     public_projects = fields.BooleanField(required=False, default=True)
     poster = fields.BooleanField(default=True)
     talk = fields.BooleanField(default=True)
+    # field_names are used to customize the text on the conference page, the categories
+    # of submissions, and the email adress to send material to.
+    field_names = fields.DictionaryField(
+        default=lambda: {
+            'submission1': 'poster',
+            'submission2': 'talk',
+            'submission1_plural': 'posters',
+            'submission2_plural': 'talks',
+            'meeting_title_type': 'Posters & Talks',
+            'add_submission': 'poster or talk',
+            'mail_subject': 'Presentation title',
+            'mail_message_body': 'Presentation abstract (if any)',
+            'mail_attachment': 'Your presentation file (e.g., PowerPoint, PDF, etc.)'
+        }
+    )
 
     @classmethod
     def get_by_endpoint(cls, endpoint, active=True):
