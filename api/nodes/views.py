@@ -262,7 +262,7 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
         """
         Use NodeDetailSerializer which requires 'id'
         """
-        if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
+        if self.request.method in ('PUT', 'PATCH', 'DELETE'):
             return NodeDetailSerializer
         else:
             return NodeSerializer
