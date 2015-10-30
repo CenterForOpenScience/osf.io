@@ -469,7 +469,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     ###Users
 
-    This endpoint, `/users/links/related/href` shows the contributor user detail.
+    This endpoint, `/users/links/related/href`, shows the contributor user detail.
 
     ##Links
 
@@ -515,7 +515,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    NodeContributors may be filtered by `bibliographic`, or `permission` attributes.  `bibliographic` is a boolean, and
+    NodeContributors may be filtered by `bibliographic` or `permission` attributes.  `bibliographic` is a boolean, and
     can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in
     the query will cause the match to fail regardless.
 
