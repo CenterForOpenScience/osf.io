@@ -36,6 +36,8 @@ class DropboxProvider(ExternalProvider):
 
     @property
     def oauth_flow(self):
+        if 'oauth_states' not in session.data:
+            session.data['oauth_states'] = {}
         if self.short_name not in session.data['oauth_states']:
             session.data['oauth_states'][self.short_name] = {
                 'state': None
@@ -84,9 +86,6 @@ class DropboxNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     oauth_provider = DropboxProvider
     serializer = DropboxSerializer
 
-    foreign_user_settings = fields.ForeignField(
-        'dropboxusersettings', backref='authorized'
-    )
     folder = fields.StringField(default=None)
 
     #: Information saved at the time of registration
