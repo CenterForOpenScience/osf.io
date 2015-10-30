@@ -806,6 +806,14 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
 
         self.save()
 
+    def deauthorize(self, auth=None, add_log=False):
+        """Remove authorization from this node.
+
+        This method should be overridden for addon-specific behavior,
+        such as logging and clearing non-generalizable settings.
+        """
+        self.clear_auth()
+
     def clear_auth(self):
         """Disconnect the node settings from the user settings.
 
