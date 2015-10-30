@@ -10,12 +10,13 @@ class RegistrationSerializer(NodeSerializer):
 
     retracted = ser.BooleanField(source='is_retracted', read_only=True,
         help_text='Whether this registration has been retracted.')
+    pending_retraction = ser.BooleanField(source='is_pending_retraction', read_only=True)
+    pending_approval = ser.BooleanField(source='sanction.pending_approval')
+    pending_registration = ser.BooleanField(read_only=True, source='is_pending_registration')
     date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-    embargoed = ser.BooleanField(read_only=True, source='embargo.state')
-    embargo_end_date = ser.DateTimeField(source='embargo.end_date', read_only=True)
-    registration_schema = ser.CharField(read_only=True, source='registered_schema')
-    registered_meta = ser.CharField(read_only=True)
-        
+    registration_approved = ser.BooleanField(source='is_registration_approved', read_only=True)
+    pending_embargo = ser.BooleanField(read_only=True, source='is_pending_embargo')
+    registered_meta = ser.DictField(read_only=True)
 
     registered_by = JSONAPIHyperlinkedIdentityField(
         view_name='users:user-detail',
