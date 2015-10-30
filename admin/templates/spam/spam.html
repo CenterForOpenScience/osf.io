@@ -8,32 +8,37 @@
     <table>
     <thead>
         <tr>
-            <th>Category</th>
-            <th>Comment id</th>
-            <th>Content</th>
+            <th><input type="checkbox"></th>
             <th>Author</th>
-            <th># of Reports</th>
+            <th>Reporter</th>
+            <th>Date</th>
+            <th>Content</th>
         </tr>
     </thead>
     <tbody>
     {% for comment in comments %}
     <tr>
         <td>
-            {{ comment.category }}
+            <input type="checkbox">
         </td>
         <td>
-            {{ comment.id }}
+            {{ comment.author.fullname }}
         </td>
         <td>
-            {{ comment.content }}
+            {% with comment.reports|first as first_report %}
+                {{ first_report.reporter.fullname }}
+            {% endwith %}
         </td>
         <td>
-            <a href={{ comment.author.absolute_url }}>
-                {{ comment.author.fullname }}
+            {{ comment.created|date }}
+        </td>
+        <td>
+            {{ comment.content|truncatechars:30 }}
+        </td>
+        <td>
+            <a href="{% url 'spam:detail' comment.id %}">
+                <input type="button" value="Detail">
             </a>
-        </td>
-        <td>
-            {{ comment.reports|length }}
         </td>
     </tr>
     {% empty %}

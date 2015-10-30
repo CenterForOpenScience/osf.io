@@ -22,6 +22,12 @@ def serialize_comment(comment):
     return comment
 
 
+def retrieve_comment(id):
+    query = Q("_id", 'eq', id)
+    comment = Comment.find_one(query)
+    return serialize_comment(comment)
+
+
 def serialize_comments():
     query = Q('reports', 'ne', {})
     return [
