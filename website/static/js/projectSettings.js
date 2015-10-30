@@ -37,6 +37,11 @@ var ProjectSettings = oop.extend(
 
             self.updateUrl = params.updateUrl;
             self.node_id = params.node_id;
+
+            self.originalProjectSettings = ko.observable(self.serialize());
+            self.dirty = ko.computed(function(){
+                return JSON.stringify(self.originalProjectSettings()) !== JSON.stringify(self.serialize());
+            }.bind(self));
         },
         /*error handler*/
         updateError: function(xhr, status, error) {
@@ -59,6 +64,10 @@ var ProjectSettings = oop.extend(
         /*update handler*/
         updateAll: function() {
             var self = this;
+            if (!self.dirty()){
+                self.changeMessage(language.updateSuccessMessage, 'text-success');
+                return;
+            }
             var requestPayload = self.serialize();
             var request = $osf.ajaxJSON('put',
                 self.updateUrl,
@@ -71,6 +80,7 @@ var ProjectSettings = oop.extend(
                 self.selectedCategory(self.categoryPlaceholder);
                 self.title(self.titlePlaceholder);
                 self.description(self.descriptionPlaceholder);
+                self.originalProjectSettings(self.serialize());
                 self.changeMessage(language.updateSuccessMessage, 'text-success');
             });
             request.fail(self.updateError.bind(self));
