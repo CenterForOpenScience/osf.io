@@ -463,6 +463,7 @@ var tbOptions = {
         value.data.map(function(item){
             item.kind = 'folder';
             item.uid = item.id;
+            item.name = item.attributes.title;
             // TODO: Dummy data, remove this when api is ready
             item.contributors = [{
                 id: '8q36f',
