@@ -88,6 +88,65 @@
 </script>
 <script type="text/html" id="editor">
   <span data-bind="template: {data: $data, name: 'editorBase'}"></span>
+  <div class="row">
+    <div class="col-md-12">
+      <div class="well" data-bind="template: {data: $data, name: 'commentable'}"></div>
+    </div>
+  </div>
+</script>
+
+<!-- Commnetable -->
+<script type="text/html" id="commentable">
+    <h4> Comments </h4>
+    <ul class="list-group" id="commentList" data-bind="foreach: {data: comments, as: 'comment'}">
+        <li class="list-group-item">
+          <div class="row" data-bind="if: comment.isDeleted">
+            <div class="col-md-12">
+              <strong><span data-bind="text: comment.getAuthor"></span></strong> deleted this comment on <em data-bind="text: comment.lastModified"></em>
+            </div>
+          </div>
+          <div class="row" data-bind="ifnot: comment.isDeleted">
+            <div class="col-md-12">
+              <div class="row">
+                <div class="col-sm-9">
+                  <strong><span data-bind="text: comment.getAuthor"></span></strong> said ...
+                </div>
+                <div class="col-sm-3">
+                  <div style="text-align: right;" class="btn-group">
+                    <button data-bind="disable: comment.saved,
+                                       click: comment.toggleSaved.bind(comment, $root.save.bind($root))" class="btn btn-success fa fa-save registration-editor-comment-save"></button>
+                    <button data-bind="enable: comment.canEdit,
+                                       click: comment.toggleSaved.bind(comment, $root.save.bind($root))" class="btn btn-info fa fa-pencil"></button>
+                    <button data-bind="enable: comment.canDelete,
+                                       click: comment.delete.bind(comment, $root.save.bind($root)) "
+                            class="btn btn-danger fa fa-times"></button>
+                  </div>
+                </div>
+              </div>
+              <br />
+              <div class="row">
+                <div class="col-md-12 form-group">
+                  <textarea class="form-control" data-bind="disable: comment.saved,
+                                                            value: comment.value" type="text"></textarea>
+                </div>
+              </div>
+            </div>
+        </li>
+    </ul>
+    <div class="input-group">
+      <input class="form-control registration-editor-comment" type="text"
+             data-bind="value: nextComment,
+                        valueUpdate: 'keyup',
+                        onKeyPress: {
+                          keyCode: 13,
+                          listener: addComment.bind($data, $root.save.bind($root))
+                        }" />
+      <span class="input-group-btn">
+        <button class="btn btn-primary"
+                data-bind="click: addComment.bind($data, $root.save.bind($root)),
+                           enable: allowAddNext">Add</button>
+      </span>
+    </div>
 </script>
 
 <%include file="registration_editor_extensions.mako" />

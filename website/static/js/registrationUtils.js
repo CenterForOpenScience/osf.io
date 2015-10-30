@@ -195,6 +195,22 @@ Question.prototype.init = function() {
     }
 };
 /**
+ * Creates a new comment from the current value of Question.nextComment and clears nextComment
+ *
+ * @param {function}: save: save function for the current registrationDraft
+ **/
+Question.prototype.addComment = function(save) {
+    var self = this;
+
+    var comment = new Comment({
+        value: self.nextComment()
+    });
+    comment.seenBy.push($osf.currentUser().id);
+    self.comments.push(comment);
+    self.nextComment('');
+    save();
+};
+/**
  * Shows/hides the Question example
  **/
 Question.prototype.toggleExample = function() {
@@ -810,6 +826,73 @@ RegistrationEditor.prototype.check = function() {
         });
     });
 };
+
+RegistrationEditor.prototype.viewComments = function() {
+    var self = this;
+
+    var comments = self.currentQuestion().comments();
+    $.each(comments, function(index, comment) {
+        if (comment.seenBy().indexOf($osf.currentUser().id) === -1) {
+            comment.seenBy.push($osf.currentUser().id);
+        }
+    });
+};
+RegistrationEditor.prototype.getUnseenComments = function(qid) {
+    var self = this;
+
+    var question = self.draft().schemaData[qid];
+    var comments = question.comments || [];
+    for (var key in question) {
+        if (key === 'comments') {
+            for (var i = 0; i < question[key].length - 1; i++) {
+                if (question[key][i].indexOf($osf.currentUser().id) === -1) {
+                    comments.push(question[key][i]);
+                }
+            }
+        }
+    }
+    return comments;
+};
+/**
+ * Load the next question into the editor, wrapping around if needed
+ **/
+RegistrationEditor.prototype.nextQuestion = function() {
+    var self = this;
+
+    var currentQuestion = self.currentQuestion();
+
+    var questions = self.flatQuestions();
+    var index = $osf.indexOf(questions, function(q) {
+        return q.id === currentQuestion.id;
+    });
+    if (index + 1 === questions.length) {
+        self.currentQuestion(questions.shift());
+        self.viewComments();
+    } else {
+        self.currentQuestion(questions[index + 1]);
+        self.viewComments();
+    }
+};
+/**
+ * Load the previous question into the editor, wrapping around if needed
+ **/
+RegistrationEditor.prototype.previousQuestion = function() {
+    var self = this;
+
+    var currentQuestion = self.currentQuestion();
+
+    var questions = self.flatQuestions();
+    var index = $osf.indexOf(questions, function(q) {
+        return q.id === currentQuestion.id;
+    });
+    if (index - 1 < 0) {
+        self.currentQuestion(questions.pop());
+        self.viewComments();
+    } else {
+        self.currentQuestion(questions[index - 1]);
+        self.viewComments();
+    }
+};
 /**
  * Load the next question into the editor, wrapping around if needed
  **/
@@ -1189,6 +1272,7 @@ RegistrationManager.prototype.maybeWarn = function(draft) {
 };
 
 module.exports = {
+    Comment: Comment,
     Question: Question,
     MetaSchema: MetaSchema,
     Draft: Draft,
