@@ -9,14 +9,17 @@ from api.base.serializers import IDField, JSONAPIHyperlinkedIdentityField, Links
 class RegistrationSerializer(NodeSerializer):
 
     retracted = ser.BooleanField(source='is_retracted', read_only=True,
-        help_text='Whether this registration has been retracted.')
-    pending_retraction = ser.BooleanField(source='is_pending_retraction', read_only=True)
-    pending_approval = ser.BooleanField(source='sanction.pending_approval')
-    pending_registration = ser.BooleanField(read_only=True, source='is_pending_registration')
-    date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
-    registration_approved = ser.BooleanField(source='is_registration_approved', read_only=True)
-    pending_embargo = ser.BooleanField(read_only=True, source='is_pending_embargo')
-    registered_meta = ser.DictField(read_only=True)
+        help_text='Has this registration has been retracted?')
+    pending_retraction = ser.BooleanField(source='is_pending_retraction', read_only=True,
+        help_text='Is this registration pending retraction?')
+    pending_approval = ser.BooleanField(source='sanction.pending_approval', read_only=True,
+        help_text='Does this registration have a sanction pending approval?')
+    date_registered = ser.DateTimeField(source='registered_date', read_only=True,
+        help_text='Date time of registration.')
+    pending_embargo = ser.BooleanField(read_only=True, source='is_pending_embargo',
+        help_text='Is this registration pending embargo?')
+    registered_meta = ser.DictField(read_only=True,
+        help_text='Includes a dictionary with registration schema, embargo end date, and supplemental registration questions')
 
     registered_by = JSONAPIHyperlinkedIdentityField(
         view_name='users:user-detail',
