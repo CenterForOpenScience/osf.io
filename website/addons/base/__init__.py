@@ -787,16 +787,21 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         raise NotImplementedError(
             "AddonOAuthNodeSettingsBase subclasses must expose a 'folder_path' property."
         )
+
     @property
     def nodelogger(self):
         auth = None
         if self.user_settings:
             auth = Auth(self.user_settings.owner)
-        return type(
-            '{0}NodeLogger'.format(self.config.short_name.capitalize()),
-            (logger.AddonNodeLogger, ),
-            {'addon_short_name': self.config.short_name}
-        )(
+        self._logger_class = getattr(
+            '_logger_class',
+            type(
+                '{0}NodeLogger'.format(self.config.short_name.capitalize()),
+                (logger.AddonNodeLogger, ),
+                {'addon_short_name': self.config.short_name}
+            )
+        )
+        return self._logger_class(
             node=self.owner,
             auth=auth
         )
