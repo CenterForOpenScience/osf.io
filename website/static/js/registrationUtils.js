@@ -223,9 +223,13 @@ var Page = function(schemaPage, data) {
     self.title = schemaPage.title;
     self.id = schemaPage.id;
 
-    self.active = ko.observable(false);
+    self.comments = ko.observableArray(
+        $.map(data.comments || [], function(comment) {
+            return new Comment(comment);
+        })
+    );
 
-    $.each(schemaPage.questions, function(id, question) {
+    $.each(schemaPage.questions, function(id, questionSchema) {
         if (data[id] && data[id].value) {
             question.value(data[id].value);
         }
@@ -347,6 +351,18 @@ var Draft = function(params, metaSchema) {
     self.pages = ko.observableArray([]);
     $.each(self.schema().pages, function(id, pageData) {
         self.pages.push(new Page(pageData, self.schemaData));
+    });
+
+    self.userHasUnseenComment = ko.computed(function() {
+        var user = $osf.currentUser();
+        var ret = false;
+        $.each(self.pages(), function(i, page) {
+            $.each(page.comments(), function(idx, comment) {
+                if ( comment.seenBy().indexOf(user) === -1 )
+                    ret = true;
+            });
+        });
+        return ret;
     });
 
     self.completion = ko.computed(function() {

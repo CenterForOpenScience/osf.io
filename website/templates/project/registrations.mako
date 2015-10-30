@@ -81,6 +81,9 @@
                     <div data-bind="if: isPendingApproval">
                         <div class="draft-status-badge bg-warning"> Pending Review</div>
                     </div>
+                    <div data-bind="if: userHasUnseenComment">
+                        <div class="draft-status-badge bg-warning"> Unseen Comments</div>
+                    </div>
                 </span>
                 </small>
                 <div class="row">
