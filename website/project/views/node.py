@@ -754,7 +754,7 @@ def _view_project(node, auth, primary=False):
                     'name_no_ext': from_mongo(meta),
                     'name_clean': clean_template_name(meta),
                 }
-                for meta in node.registered_metaregistered_meta or []
+                for meta in node.registered_meta or []
             ],
             'registered_schema': serialize_meta_schema(node.registered_schema),
             'registration_count': len(node.node__registrations),
