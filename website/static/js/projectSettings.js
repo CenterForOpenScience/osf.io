@@ -39,9 +39,9 @@ var ProjectSettings = oop.extend(
             self.node_id = params.node_id;
 
             self.originalProjectSettings = ko.observable(self.serialize());
-            self.dirty = ko.computed(function(){
+            self.dirty = ko.pureComputed(function(){
                 return JSON.stringify(self.originalProjectSettings()) !== JSON.stringify(self.serialize());
-            }.bind(self));
+            });
         },
         /*error handler*/
         updateError: function(xhr, status, error) {
