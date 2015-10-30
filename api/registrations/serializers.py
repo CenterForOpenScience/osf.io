@@ -12,7 +12,7 @@ class RegistrationSerializer(NodeSerializer):
         help_text='Has this registration has been retracted?')
     pending_retraction = ser.BooleanField(source='is_pending_retraction', read_only=True,
         help_text='Is this registration pending retraction?')
-    pending_approval = ser.BooleanField(source='sanction.pending_approval', read_only=True,
+    pending_registration_approval = ser.BooleanField(source='sanction.pending_approval', read_only=True,
         help_text='Does this registration have a sanction pending approval?')
     date_registered = ser.DateTimeField(source='registered_date', read_only=True,
         help_text='Date time of registration.')
