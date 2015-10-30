@@ -50,12 +50,12 @@ var FileBrowser = {
 
         // DEFAULT DATA -- to be switched with server response
         self.collections = [
-            new Collection('All My Projects', 'users/me/nodes/', { 'filter[registration]' : 'false', 'related_counts' : true }),
-            new Collection('All My Registrations', 'users/me/nodes/', { 'filter[registration]' : 'true', 'related_counts' : true }),
-            new Collection('Everything', 'users/me/nodes/', { 'filter[registration]' : 'false', 'related_counts' : true }),
+            new Collection('All My Projects', 'users/me/nodes/', { 'related_counts' : true }),
+            new Collection('All My Registrations', 'registrations/', { 'related_counts' : true }),
+            new Collection('Everything', 'users/me/nodes/', { 'related_counts' : true }),
         ];
         self.breadcrumbs = m.prop([
-            new Breadcrumb('All My Projects','http://localhost:8000/v2/users/me/nodes/?filter%5Bregistration%5D=false&related_counts=true', 'collection')
+            new Breadcrumb('All My Projects','http://localhost:8000/v2/users/me/nodes/?related_counts=true', 'collection')
         ]);
         self.nameFilters = [
             new Filter('Caner Uguz', '8q36f')
