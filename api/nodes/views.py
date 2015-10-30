@@ -137,8 +137,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     is that a project is the top-level node, and components are children of the project. There is also a [category
     field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.  Registrations are not included
-    in this endpoint.
+    a category other than project, and children nodes may have a category of project.
 
     ##Node Attributes
 
@@ -220,8 +219,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     def get_default_odm_query(self):
         base_query = (
             Q('is_deleted', 'ne', True) &
-            Q('is_folder', 'ne', True) &
-            Q('is_registration', 'eq', False)
+            Q('is_folder', 'ne', True)
         )
         user = self.request.user
         permission_query = Q('is_public', 'eq', True)
@@ -275,6 +273,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         date_created   iso8601 timestamp  timestamp that the node was created
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
+        fork           boolean            is this project a fork?
         registration   boolean            has this project been registered?
         collection     boolean            is this node a collection of other nodes?
         dashboard      boolean            is this node visible on the user dashboard?
