@@ -155,11 +155,11 @@ var FileBrowser = {
     },
     view : function (ctrl) {
         var infoPanel = '';
-        var poStyle = 'width : 75%';
+        var poStyle = 'width : 80%';
         var infoClass = 'btn-default';
         if (ctrl.showInfo()){
             infoPanel = m('.fb-infobar', m.component(Information, { selected : ctrl.selected }));
-            poStyle = 'width : 55%';
+            poStyle = 'width : 60%';
             infoClass = 'btn-primary';
         }
         return [
