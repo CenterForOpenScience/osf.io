@@ -86,13 +86,13 @@
                         </div>
                         <div class="form-group">
                             <label for="title">Title:</label>
-                            <input class="form-control" type="text" maxlength="200" data-bind="value: title,
+                            <input class="form-control" type="text" maxlength="200" placeholder="Required" data-bind="value: title,
                                                                                                       valueUpdate: 'afterkeydown'">
                             <span class="text-danger" data-bind="validationMessage: title"></span>
                         </div>
                         <div class="form-group">
                             <label for="description">Description:</label>
-                            <textarea data-bind="value: description,
+                            <textarea placeholder="Optional" data-bind="value: description,
                                              valueUpdate: 'afterkeydown'",
                             class="form-control resize-vertical"></textarea>
                         </div>
