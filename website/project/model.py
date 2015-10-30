@@ -3179,7 +3179,11 @@ class Sanction(StoredObject):
     state = fields.StringField(
         default=UNAPPROVED,
         validate=validators.choice_in((
+            # Allowed values according to source code comment
             'unapproved',
+            'approved',
+            'rejected',
+            # Possible values, origin unclear. May be required, incl for unit tests TODO: review later
             'active',
             'cancelled',
             'completed',
