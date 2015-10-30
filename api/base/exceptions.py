@@ -68,13 +68,11 @@ def json_api_exception_handler(exc, context):
         else:
             if isinstance(message, basestring):
                 message = [message]
-            index = 0
-            for error in message:
+            for index, error in enumerate(message):
                 if isinstance(error, dict):
                     errors.extend(dict_error_formatting(error, index))
                 else:
                     errors.append({'detail': error})
-                index += 1
 
         response.data = {'errors': errors}
 
