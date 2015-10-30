@@ -128,25 +128,85 @@ $(document).ready(function() {
             var $elm = $(elm);
             formData[$elm.attr('name')] = $elm.is(':checked');
         });
+
+        var unchecked = checkedOnLoad.filter('#selectAddonsForm input:not(:checked)');
+        var checked = uncheckedOnLoad.filter('#selectAddonsForm input:checked');
         var msgElm = $(this).find('.addon-settings-message');
-        $.ajax({
-            url: ctx.node.urls.api + 'settings/addons/',
-            data: JSON.stringify(formData),
-            type: 'POST',
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function() {
-                msgElm.text('Settings updated').fadeIn();
-                checkedOnLoad = $('#selectAddonsForm input:checked');
-                uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
-                if($osf.isSafari()){
-                    //Safari can't update jquery style change before reloading. So delay is applied here
-                    setTimeout(function(){window.location.reload();}, 100);
-                } else {
-                    window.location.reload();
-                }
+        
+        var submit = function() {
+            var request = $osf.postJSON(ctx.node.urls.api + 'settings/addons/', formData);
+            return request;
+        };
+
+        function successMessage() {
+            msgElm.text('Settings updated');
+            setTimeout(
+                function() {
+                    msgElm.text('');
+                },
+                5000
+            );
+        }
+        function successfulAddonUpdate() {
+            successMessage();
+            checkedOnLoad = $('#selectAddonsForm input:checked');
+            uncheckedOnLoad = $('#selectAddonsForm input:not(:checked)');
+            if($osf.isSafari()) {
+                        //Safari can't update jquery style change before reloading. So delay is applied here
+                        setTimeout(function(){window.location.reload();}, 100);
+            } else {
+                        window.location.reload();
             }
-        });
+        }
+        function failedAddonUpdate() {
+            var msg = 'Sorry, we had trouble saving your settings. If this persists please contact <a href="mailto: support@osf.io">support@osf.io</a>';
+            bootbox.alert({
+                title: 'Request failed',
+                message: msg,
+                buttons: {
+                    ok: {
+                        label: 'Close',
+                        className: 'btn-default'
+                    }
+                }
+            });
+        }
+        // some addons disabled (unchecked warning adopted from profile-settings-addons-page.js)
+        if(unchecked.length > 0) {
+            var uncheckedText = $.map(unchecked, function(el){
+                return ['<li>', $(el).closest('label').text().trim(), '</li>'].join('');
+            }).join('');
+            uncheckedText = ['<ul>', uncheckedText, '</ul>'].join('');
+            bootbox.confirm({
+                title: 'Are you sure you want to remove the add-ons you have deselected? ',
+                message: uncheckedText,
+                callback: function(result) {
+                    if (result) {
+                        var request = submit();
+                        request.done(successfulAddonUpdate);
+                        request.fail(failedAddonUpdate);
+                    } else{
+                        unchecked.each(function(i, el){ $(el).prop('checked', true); });
+                    }
+                },
+                buttons: {
+                    confirm: {
+                        label: 'Remove',
+                        className: 'btn-danger'
+                    }
+                }
+            });
+        }
+        //no addons disabled but some addons enabled
+        else if(checked.length>0) {
+            var request = submit();
+            request.done(successfulAddonUpdate);
+            request.fail(failedAddonUpdate);
+        }
+        // no changes to the state of the addons
+        else {
+            successMessage();
+        }
 
         return false;
 

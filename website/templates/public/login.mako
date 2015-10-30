@@ -22,7 +22,7 @@
                         <input type="password" class="form-control" data-bind="value: password" name="password" placeholder="Enter your password">
 
                         <fieldset>
-                            <a class="forget-password m-t-md" href="${ web_url_for('forgot_password_get') }">Forgot Your Password?</a>
+                            <a class="forget-password m-t-md" href="${ web_url_for('forgot_password_get') }">Forgot your password?</a>
                             <button type="submit" class="btn btn-primary m-t-md pull-right">Sign In</button>
 
                         </fieldset>

@@ -31,7 +31,6 @@ from framework.sessions.utils import remove_sessions_for_user
 
 from website import mails, settings, filters, security
 
-
 name_formatters = {
     'long': lambda user: user.fullname,
     'surname': lambda user: user.family_name if user.family_name else user.fullname,
@@ -1229,6 +1228,11 @@ class User(GuidStoredObject, AddonModelMixin):
             user_settings.merge(addon)
             user_settings.save()
 
+        # Disconnect signal to prevent emails being sent about being a new contributor when merging users
+        # be sure to reconnect it at the end of this code block. Import done here to prevent circular import error.
+        from website.project.signals import contributor_added
+        from website.project.views.contributor import notify_added_contributor
+        contributor_added.disconnect(notify_added_contributor)
         # - projects where the user was a contributor
         for node in user.node__contributed:
             # Skip dashboard node
@@ -1266,6 +1270,7 @@ class User(GuidStoredObject, AddonModelMixin):
                     user._id, node._id
                 ))
             node.save()
+        contributor_added.connect(notify_added_contributor)
 
         # - projects where the user was the creator
         for node in user.node__created:
