@@ -583,7 +583,7 @@ class TestFileTags(StorageTestCase):
         file.save()
         assert_in('Graduation', file.tags)
         url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
-        self.app.delete(url, {'tag': 'Graduation'}, auth=self.user.auth)
+        self.app.delete_json(url, {'tag': 'Graduation'}, auth=self.user.auth)
         file.reload()
         assert_not_in('Graduation', file.tags)
 
@@ -603,6 +603,6 @@ class TestFileTags(StorageTestCase):
         file = self.node_settings.get_root().append_file('WonderfulEveryday.mp3')
         assert_not_in('Chance', file.tags)
         url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
-        res = self.app.delete(url, {'tag': 'Chance'}, auth=self.user.auth, expect_errors=True)
+        res = self.app.delete_json(url, {'tag': 'Chance'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['status'], 'failure')
