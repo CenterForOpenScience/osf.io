@@ -108,7 +108,9 @@ var FileBrowser = {
                     m.component( ProjectOrganizer, {
                         filesData : self.filesData,
                         updateSelected : self.updateSelected,
-                        updateFilesData : self.updateFilesData}
+                        updateFilesData : self.updateFilesData,
+                        wrapperSelector : self.wrapperSelector
+                        }
                     )
                 );
                 self.isLoadedUrl = true;

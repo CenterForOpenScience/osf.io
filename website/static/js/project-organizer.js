@@ -471,7 +471,8 @@ var ProjectOrganizer = {
             {
                 updateSelected : args.updateSelected,
                 updateFilesData : args.updateFilesData,
-                filesData: args.filesData()
+                filesData: args.filesData(),
+                wrapperSelector : args.wrapperSelector
             },
             tbOptions
         );
