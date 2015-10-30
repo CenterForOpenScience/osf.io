@@ -79,3 +79,28 @@ class TestMailChimpHelpers(OsfTestCase):
         mailchimp_utils.unsubscribe_mailchimp(list_name, user._id)
         handlers.celery_teardown_request()
         mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': user.username})
+
+    @mock.patch('website.mailchimp_utils.get_mailchimp_api')
+    def test_unsubscribe_email_not_sent_to_merged_user(self, mock_get_mailchimp_api):
+        list_name = 'foo'
+        user = UserFactory()
+        user.mailchimp_mailing_lists['foo'] = True
+        user.save()
+
+        merge_user = UserFactory()
+        merge_user_email = merge_user.username
+        merge_user.mailchimp_mailing_lists['foo'] = True
+        merge_user.save()
+
+        mock_client = mock.MagicMock()
+        mock_get_mailchimp_api.return_value = mock_client
+        mock_client.lists.list.return_value = {'data': [{'id': 1, 'list_name': list_name}]}
+        list_id = mailchimp_utils.get_list_id_from_name(list_name)
+
+        user.merge_user(merge_user)
+        handlers.celery_teardown_request()
+        mock_client.lists.unsubscribe.assert_called_with(
+            id=list_id,
+            email={'email': merge_user_email},
+            send_goodbye=False,
+        )
