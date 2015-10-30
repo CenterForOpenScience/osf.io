@@ -115,7 +115,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/tags/<tag>/',
+                '/project/<pid>/osfstorage/<fid>/tags/',
             ],
             'post',
             views.osfstorage_add_tag,
@@ -124,7 +124,7 @@ api_routes = {
 
         Rule(
             [
-                '/project/<pid>/osfstorage/<fid>/tags/<tag>/',
+                '/project/<pid>/osfstorage/<fid>/tags/',
             ],
             'delete',
             views.osfstorage_remove_tag,

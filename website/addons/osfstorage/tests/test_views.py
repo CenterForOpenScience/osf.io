@@ -561,10 +561,19 @@ class TestFileTags(StorageTestCase):
         file = self.node_settings.get_root().append_file('Good Morning.mp3')
         assert_not_in('Kanye_West', file.tags)
 
-        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id, tag='Kanye_West')
-        self.app.post_json(url, {}, auth=self.user.auth)
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
         file.reload()
         assert_in('Kanye_West', file.tags)
+
+    def test_file_add_non_ascii_tag(self):
+        file = self.node_settings.get_root().append_file('JapaneseCharacters.txt')
+        assert_not_in('コンサート', file.tags)
+
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        self.app.post_json(url, {'tag': 'コンサート'}, auth=self.user.auth)
+        file.reload()
+        assert_in('コンサート', file.tags)
 
     def test_file_remove_tag(self):
         file = self.node_settings.get_root().append_file('Champion.mp3')
@@ -573,8 +582,8 @@ class TestFileTags(StorageTestCase):
         file.tags.append(tag)
         file.save()
         assert_in('Graduation', file.tags)
-        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id, tag='Graduation')
-        self.app.delete(url, auth=self.user.auth)
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        self.app.delete(url, {'tag': 'Graduation'}, auth=self.user.auth)
         file.reload()
         assert_not_in('Graduation', file.tags)
 
@@ -585,15 +594,15 @@ class TestFileTags(StorageTestCase):
         file.tags.append(tag)
         file.save()
         assert_in('Run_the_Jewels', file.tags)
-        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id, tag='Run_the_Jewels')
-        res = self.app.post_json(url, {}, auth=self.user.auth, expect_errors=True)
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        res = self.app.post_json(url, {'tag': 'Run_the_Jewels'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['status'], 'failure')
 
     def test_remove_nonexistent_tag(self):
         file = self.node_settings.get_root().append_file('WonderfulEveryday.mp3')
         assert_not_in('Chance', file.tags)
-        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id, tag='Chance')
-        res = self.app.delete(url, auth=self.user.auth, expect_errors=True)
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        res = self.app.delete(url, {'tag': 'Chance'}, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['status'], 'failure')

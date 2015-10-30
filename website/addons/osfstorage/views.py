@@ -233,7 +233,9 @@ def osfstorage_download(file_node, payload, node_addon, **kwargs):
 @must_have_permission('write')
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_add_tag(file_node, **kwargs):
-    tag = kwargs.get('tag')
+    data = request.get_json()
+    print data
+    tag = data['tag']
     if tag not in file_node.tags and not file_node.node.is_registration:
         new_tag = Tag.load(tag)
         if not new_tag:
@@ -247,7 +249,8 @@ def osfstorage_add_tag(file_node, **kwargs):
 @must_have_permission('write')
 @decorators.autoload_filenode(must_be='file')
 def osfstorage_remove_tag(file_node, **kwargs):
-    tag = kwargs.get('tag')
+    data = request.get_json()
+    tag = data['tag']
     tag = Tag.load(tag)
     if tag and tag in file_node.tags and not file_node.node.is_registration:
         file_node.tags.remove(tag)
