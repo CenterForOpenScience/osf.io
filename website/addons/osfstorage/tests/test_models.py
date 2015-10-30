@@ -469,7 +469,7 @@ class TestOsfStorageFileVersion(StorageTestCase):
         assert_equal(version2.archive, 'erchiv')
 
     def test_no_matching_archive(self):
-        models.FileVersion.remove()
+        models.FileVersion.remove(remove_all=True)
         assert_is(False, factories.FileVersionFactory(
             location={
                 'service': 'cloud',

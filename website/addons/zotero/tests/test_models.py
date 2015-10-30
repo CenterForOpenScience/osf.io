@@ -73,10 +73,10 @@ class ZoteroNodeSettingsTestCase(OsfTestCase):
 
     def tearDown(self):
         super(ZoteroNodeSettingsTestCase, self).tearDown()
-        self.user_settings.remove()
-        self.node_settings.remove()
-        self.node.remove()
-        self.user.remove()
+        self.user_settings.remove(remove_all=True)
+        self.node_settings.remove(remove_all=True)
+        self.node.remove(remove_all=True)
+        self.user.remove(remove_all=True)
 
     @mock.patch('website.addons.zotero.model.Zotero')
     def test_api_not_cached(self, mock_zotero):

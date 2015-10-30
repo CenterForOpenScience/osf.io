@@ -145,11 +145,11 @@ class TestBoxNodeSettingsModel(OsfTestCase):
 
     def tearDown(self):
         super(TestBoxNodeSettingsModel, self).tearDown()
-        self.user_settings.remove()
-        self.node_settings.remove()
-        self.external_account.remove()
-        self.node.remove()
-        self.user.remove()
+        self.user_settings.remove(remove_all=True)
+        self.node_settings.remove(remove_all=True)
+        self.external_account.remove(remove_all=True)
+        self.node.remove(remove_all=True)
+        self.user.remove(remove_all=True)
 
     def test_complete_true(self):
         assert_true(self.node_settings.has_auth)
