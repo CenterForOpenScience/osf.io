@@ -182,7 +182,7 @@ class ApiAppTestCase(unittest.TestCase):
         self.app = TestAppJSONAPI(django_app)
 
 
-class JSONAPIWrapper():
+class JSONAPIWrapper(object):
     """
     Creates wrapper with stated content_type.
     """
