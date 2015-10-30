@@ -207,7 +207,7 @@ class ExternalProvider(object):
         """Name of the service to be used internally. e.g.: orcid, github"""
         pass
 
-    def auth_callback(self, user):
+    def auth_callback(self, user, **kwargs):
         """Exchange temporary credentials for permanent credentials
 
         This is called in the view that handles the user once they are returned
@@ -260,7 +260,6 @@ class ExternalProvider(object):
                 )
             except (MissingTokenError, RequestsHTTPError):
                 raise HTTPError(http.SERVICE_UNAVAILABLE)
-
         # pre-set as many values as possible for the ``ExternalAccount``
         info = self._default_handle_callback(response)
         # call the hook for subclasses to parse values from the response

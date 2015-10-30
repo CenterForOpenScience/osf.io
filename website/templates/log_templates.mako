@@ -85,7 +85,9 @@ deleted
 
 <script type="text/html" id="created_from">
 created
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> based on <a class="log-node-title-link overflow" data-bind="attr: {href: params.template_node.url}">another</a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+based on <a class="log-node-title-link overflow"
+data-bind="text: params.template_node.title || 'another', attr: {href: params.template_node.url}"></a>
 </script>
 
 <script type="text/html" id="node_created">

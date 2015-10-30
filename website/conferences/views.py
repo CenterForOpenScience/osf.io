@@ -14,7 +14,7 @@ from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 
 from website import settings
-from website.models import Node
+from website.models import Node, Tag
 from website.util import web_url_for
 from website.mails import send_mail
 from website.files.models import StoredFileNode
@@ -165,7 +165,7 @@ def _render_conference_node(node, idx, conf):
         'nodeUrl': node.url,
         'author': author.family_name,
         'authorUrl': node.creator.url,
-        'category': 'talk' if 'talk' in node.system_tags else 'poster',
+        'category': conf.field_names['submission1'] if conf.field_names['submission1'] in node.system_tags else conf.field_names['submission2'],
         'download': download_count,
         'downloadUrl': download_url,
         'dateCreated': str(node.date_created),
@@ -223,16 +223,21 @@ def conference_view(**kwargs):
     meetings = []
     submissions = []
     for conf in Conference.find():
-        query = (
-            Q('tags', 'iexact', conf.endpoint)
-            & Q('is_public', 'eq', True)
-            & Q('is_deleted', 'eq', False)
-        )
-        projects = Node.find(query)
+        # For efficiency, we filter by tag first, then node
+        # instead of doing a single Node query
+        projects = set()
+        for tag in Tag.find(Q('_id', 'iexact', conf.endpoint)):
+            for node in tag.node__tagged:
+                if not node:
+                    continue
+                if not node.is_public or node.is_deleted:
+                    continue
+                projects.add(node)
+
         for idx, node in enumerate(projects):
             submissions.append(_render_conference_node(node, idx, conf))
-        num_submissions = projects.count()
-        if num_submissions < settings.CONFERNCE_MIN_COUNT:
+        num_submissions = len(projects)
+        if num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
         meetings.append({
             'name': conf.name,
