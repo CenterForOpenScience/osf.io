@@ -163,7 +163,7 @@ def _render_conference_node(node, idx, conf):
         'id': idx,
         'title': node.title,
         'nodeUrl': node.url,
-        'author': author.family_name,
+        'author': author.family_name if author.family_name else author.fullname,
         'authorUrl': node.creator.url,
         'category': conf.field_names['submission1'] if conf.field_names['submission1'] in node.system_tags else conf.field_names['submission2'],
         'download': download_count,
