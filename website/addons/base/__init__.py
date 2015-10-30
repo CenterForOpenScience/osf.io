@@ -388,6 +388,10 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
                 addon_settings.deauthorize(auth=auth)
 
         for key in self.oauth_grants:
+            addon_node_settings = Node.load(key).get_addon(self.oauth_provider.short_name)
+            if addon_node_settings is not None:
+                addon_node_settings.delete()
+                addon_node_settings.save()
             self.oauth_grants[key].pop(external_account._id, None)
 
         self.save()
