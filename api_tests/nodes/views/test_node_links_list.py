@@ -100,8 +100,13 @@ class TestNodeLinkCreate(ApiTestCase):
         self.private_payload = {
             'data': {
                 "type": "node_links",
-                "attributes": {
-                    "target_node_id": self.pointer_project._id
+                "relationships": {
+                    'nodes': {
+                        'data': {
+                            'id': self.pointer_project._id,
+                            'type': 'nodes'
+                        }
+                    }
                 }
             }
         }
@@ -109,22 +114,216 @@ class TestNodeLinkCreate(ApiTestCase):
         self.public_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_pointer_project = ProjectFactory(is_public=True, creator=self.user)
         self.public_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.public_project._id)
-        self.public_payload = {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.public_pointer_project._id}}}
+        self.public_payload = {
+            'data': {
+                "type": "node_links",
+                "relationships": {
+                    'nodes': {
+                        'data': {
+                            'id': self.public_pointer_project._id,
+                            'type': 'nodes'
+                        }
+                    }
+                }
+            }
+        }
         self.fake_url = '/{}nodes/{}/node_links/'.format(API_BASE, 'fdxlq')
-        self.fake_payload = {'data': {'type': 'node_links', 'attributes': {'target_node_id': 'fdxlq'}}}
-        self.point_to_itself_payload = {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.public_project._id}}}
+        self.fake_payload = {
+            'data': {
+                "type": "node_links",
+                "relationships": {
+                    'nodes': {
+                        'data': {
+                            'id': 'fdxlq',
+                            'type': 'nodes'
+                        }
+                    }
+                }
+            }
+        }
+        self.point_to_itself_payload = {
+            'data': {
+                "type": "node_links",
+                "relationships": {
+                    'nodes': {
+                        'data': {
+                            'id': self.public_project._id,
+                            'type': 'nodes'
+                        }
+                    }
+                }
+            }
+        }
 
         self.user_two = AuthUserFactory()
         self.user_two_project = ProjectFactory(is_public=True, creator=self.user_two)
         self.user_two_url = '/{}nodes/{}/node_links/'.format(API_BASE, self.user_two_project._id)
-        self.user_two_payload = {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.user_two_project._id}}}
+        self.user_two_payload = {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'id': self.user_two_project._id,
+                            'type': 'nodes'
+                        }
+                    }
+                }
+            }
+        }
 
-    def test_creates_project_target_not_nested(self):
-        payload = {'data': {'type': 'node_links', 'target_node_id': self.pointer_project._id}}
+    def test_add_node_link_relationships_is_a_list(self):
+        data = {
+            'data': {
+                'type': 'node_links',
+                'relationships': [{'target_node_id': self.public_pointer_project._id}]
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+
+    def test_create_node_link_invalid_data(self):
+        res = self.app.post_json_api(self.public_url, "Incorrect data", auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Malformed request.")
+
+
+    def test_add_node_link_no_relationships(self):
+        data = {
+            'data': {
+                'type': 'node_links',
+                'attributes': {
+                    'id': self.public_pointer_project._id
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+
+    def test_add_node_links_empty_relationships(self):
+        data = {
+            'data': {
+                'type': 'node_links',
+                'relationships': {}
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+
+    def test_add_node_links_no_nodes_key_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'data': {
+                        'id': self.public_pointer_project._id,
+                        'type': 'nodes'
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Malformed request.')
+
+    def test_add_node_links_no_data_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'id': self.public_pointer_project._id,
+                        'type': 'nodes'
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data.')
+
+    def test_add_node_links_no_target_type_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'id': self.public_pointer_project._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /type.')
+
+
+    def test_add_node_links_no_target_id_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'type': 'nodes'
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/id')
+
+    def test_add_node_links_incorrect_target_id_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'type': 'nodes',
+                            'id': '12345'
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+
+    def test_add_node_links_incorrect_target_type_in_relationships(self):
+        data = {
+            'data': {
+                'type': 'nodes',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'type': 'Incorrect!',
+                            'id': self.public_pointer_project._id
+                        }
+                    }
+                }
+            }
+        }
+        res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 409)
+
+    def test_creates_node_link_target_not_nested(self):
+        payload = {
+            'data': {
+                'type': 'node_links',
+                'id': self.pointer_project._id
+            }
+        }
         res = self.app.post_json_api(self.public_url, payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/relationships.')
 
     def test_creates_public_node_pointer_logged_out(self):
         res = self.app.post_json_api(self.public_url, self.public_payload, expect_errors=True)
@@ -231,19 +430,55 @@ class TestNodeLinkCreate(ApiTestCase):
         registration = RegistrationFactory(creator=self.user)
 
         url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
-        payload = {'data': {'type': 'node_links', 'attributes': {'target_node_id': self.public_pointer_project._id}}}
+        payload = {
+            'data': {
+                'type': 'node_links',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'id': self.public_pointer_project._id,
+                            'type': 'nodes'
+                        }
+                    }
+                }
+            }
+        }
         res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 
     def test_create_node_pointer_no_type(self):
-        payload = {'data': {'attributes': {'target_node_id': self.user_two_project._id}}}
+        payload = {
+            'data': {
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'id': self.user_two_project._id,
+                            'type': 'nodes'
+                        }
+                    }
+                }
+            }
+        }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_create_node_pointer_incorrect_type(self):
-        payload = {'data': {'type': 'Wrong type.', 'attributes': {'target_node_id': self.user_two_project._id}}}
+        payload = {
+            'data': {
+                'type': 'Wrong type.',
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'id': self.user_two_project._id,
+                            'type': 'nodes'
+                        }
+                    }
+                }
+            }
+        }
         res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
+
