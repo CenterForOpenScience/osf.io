@@ -1920,6 +1920,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param data: Form data
         :param parent Node: parent registration of registration to be created
         """
+        # TODO(lyndsysimon): "template" param is not necessary - use schema.name?
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
             raise PermissionsError(
@@ -3924,7 +3925,10 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
         # Create the registration
         register = node.register_node(
-            self.registration_schema, auth, self.registration_metadata
+            schema=self.registration_schema,
+            auth=auth,
+            data=self.registration_metadata,
+            template=self.registration_schema.name,
         )
         self.registered_node = register
         if save:
