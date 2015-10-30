@@ -6,7 +6,7 @@ var BundleTracker = require('webpack-bundle-tracker');
 
 var websiteRoot = path.join(__dirname, 'websiteRoot', 'static');
 
-var adminRoot = path.join(__dirname, 'admin', 'static');
+var adminRoot = path.join(__dirname, 'static');
 
 var staticWebsitePath = function(dir) {
     return path.join(websiteRoot, dir);
@@ -18,6 +18,10 @@ var staticAdminPath = function(dir) {
 
 // [lauren]: how I think adding another file will work
 //common.entry.<new file> = staticAdminPath('js/pages/base-page.js');
+common.entry = {
+    'prereg-admin-page':staticAdminPath('pre-reg/js/pages/prereg-admin-page.js'),
+    'app.min':staticAdminPath('pre-reg/js/app.min.js'),
+};
 
 // Adding bundle tracker to plugins
 common.plugins = [
