@@ -4244,9 +4244,10 @@ class TestDraftRegistration(OsfTestCase):
 
         self.draft.register(self.auth)
         mock_register_node.assert_called_with(
-            self.draft.registration_schema,
-            self.auth,
-            self.draft.registration_metadata
+            schema=self.draft.registration_schema,
+            auth=self.auth,
+            data=self.draft.registration_metadata,
+            template=self.draft.registration_schema.name,
         )
 
     def test_update_metadata_tracks_changes(self):
