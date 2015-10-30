@@ -388,7 +388,9 @@ def update_user(user, index=None):
     es.index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
 
 @requires_search
-def update_file(file_, index=INDEX, delete=False):
+def update_file(file_, index=None, delete=False):
+
+    index = index or INDEX
 
     if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
         es.delete(
