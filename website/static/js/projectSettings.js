@@ -47,7 +47,7 @@ var ProjectSettings = oop.extend(
         updateError: function(xhr, status, error) {
             var self = this;
             var errorMessage;
-            if (error == "BAD REQUEST") {
+            if (error === 'BAD REQUEST') {
                 self.changeMessage(language.updateErrorMessage400, 'text-danger');
                 errorMessage = language.updateErrorMessage400;
             }
