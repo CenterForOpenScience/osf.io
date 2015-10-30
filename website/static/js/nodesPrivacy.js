@@ -39,6 +39,16 @@ var MESSAGES = {
     nodesPrivate: 'The following nodes will be make public'
 };
 
+var URLS = {
+    makePublic: window.nodeApiUrl + 'permissions/public/',
+    makePrivate: window.nodeApiUrl + 'permissions/private/'
+};
+var PUBLIC = 'public';
+var PRIVATE = 'private';
+var PROJECT = 'project';
+var COMPONENT = 'component';
+
+
 function getNodesOriginal(nodeTree, nodesOriginal) {
     var i;
     var nodeId = nodeTree.node.id;
@@ -58,6 +68,37 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     //var localNodes = nodesOriginal;
     return nodesOriginal;
 }
+
+//function patchNodePrivacy(node) {
+//    var url = API_BASE + node.id + '/';
+//
+//    var msgKey;
+//    var isRegistration = window.contextVars.node.isRegistration;
+//
+//    if (permissions === PUBLIC && isRegistration) { msgKey = 'makeRegistrationPublicWarning'; }
+//    else if(permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
+//    else if(permissions === PUBLIC && nodeType === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
+//    else if(permissions === PRIVATE && nodeType === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
+//    else { msgKey = 'makeComponentPrivateWarning'; }
+//
+//    var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
+//    var buttonText = permissions === PUBLIC ? 'Make Public' : 'Make Private';
+//
+//    var message = MESSAGES[msgKey];
+//
+//$.ajax({
+//    $osf.postJSON(
+//    URLS[urlKey],
+//    {permissions: permissions}
+//    ).done(function() {
+//    window.location.reload();
+//    }).fail(
+//    osfHelpers.handleJSONError
+//);
+//}
+//
+//
+//}
 
 function patchNodePrivacy(node) {
     var url = API_BASE + node.id + '/';
@@ -79,6 +120,8 @@ function patchNodePrivacy(node) {
         }
         })
     }).done(function(response) {
+        console.log("response is " + JSON.stringify(response));
+        console.log("time is " + JSON.stringify(Date.now()));
     }).fail(function(xhr, status, error) {
         //$privacysMsg.addClass('text-danger');
         //$privacysMsg.text('Could not retrieve project settings.');
@@ -86,9 +129,10 @@ function patchNodePrivacy(node) {
             url: url,  status: status, error: error
         });
     });
+
 }
 
-var NodesPrivacyViewModel = function() {
+var NodesPrivacyViewModel = function(data) {
     var self = this;
     var nodesOriginal = {};
 
@@ -99,19 +143,9 @@ var NodesPrivacyViewModel = function() {
         m.redraw(true);
     });
 
-    self.nodesChangedPublic = ko.observableArray([]);
-
-    self.nodesChangedPublic.subscribe(function(newValue) {
-        console.log('nodesChangedPublic is ' + JSON.stringify(newValue));
-    });
-
-    self.nodesChangedPrivate =ko.observableArray([]);
-
-    self.nodesChangedPrivate.subscribe(function(newValue) {
-        console.log('nodesChangedPrivate is ' + JSON.stringify(newValue));
-    });
-
     self.nodeParent = ko.observable();
+    //Parent node is public or not
+
 
     var $privacysMsg = $('#configurePrivacyMessage');
     var treebeardUrl = ctx.node.urls.api  + 'get_node_tree/';
@@ -166,6 +200,8 @@ var NodesPrivacyViewModel = function() {
     self.addonWarning =  function() {
         var nodesState = ko.toJS(self.nodesState);
         self.changedAddons = ko.observableArray([]);
+        self.nodesChangedPublic = ko.observableArray([]);
+        self.nodesChangedPrivate = ko.observableArray([]);
         var changedAddons = {};
         for (var node in nodesState) {
             if (nodesState[node].changed) {
@@ -253,6 +289,6 @@ NodesPrivacy.prototype.init = function() {
 };
 
 module.exports = {
-    _ProjectViewModel: NodesPrivacyViewModel,
+    _NodesPrivacyViewModel: NodesPrivacyViewModel,
     NodesPrivacy: NodesPrivacy
 };

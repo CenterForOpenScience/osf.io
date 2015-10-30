@@ -14,7 +14,7 @@
                 <div data-bind="if: page() == 'addon'">
 
 
-                    <span data-bind="visible: nodesChangedPublic().length > 0">The following addons will be changed public:</span>
+                    <span data-bind="visible: changedAddons().length > 0">The following addons will be changed:</span>
                     <div>
                         <ul data-bind="foreach: { data: changedAddons, as: 'item' }">
                             <li>

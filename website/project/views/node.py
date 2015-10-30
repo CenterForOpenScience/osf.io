@@ -1042,7 +1042,7 @@ def node_privacy_tree(user, node_ids):
                 for n in node.nodes
                 if n.primary and
                 not n.is_deleted
-            ], addons
+            ]
         ))
         item = {
             'node': {
