@@ -18,7 +18,7 @@ $(function() {
         maxChars: 128,
         onAddTag: function (tag) {
             var url = tagUrl;
-            var request = $osf.postJSON(url, {"tag": tag});
+            var request = $osf.postJSON(url, {'tag': tag });
             request.fail(function (xhr, textStatus, error) {
                 $osf.growl('Error', 'Could not add tag.');
                 Raven.captureMessage('Failed to add tag', {
@@ -33,7 +33,7 @@ $(function() {
                 type: 'DELETE',
                 contentType: 'application/json',
                 dataType: 'JSON',
-                content: {"tag": tag }
+                content: {'tag': tag }
             });
             request.fail(function (xhr, textStatus, error) {
                 $osf.growl('Error', 'Could not remove tag.');
