@@ -107,7 +107,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ApplicationMixin)
         serializer.save(owner=self.request.user)
 
 
-class ApplicationReset(generics.RetrieveUpdateDestroyAPIView, ApplicationMixin):
+class ApplicationReset(generics.UpdateAPIView, ApplicationMixin):
     """
     Resets client secret of a specific API application (eg OAuth2) that the user has registered
 
