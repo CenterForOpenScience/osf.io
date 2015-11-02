@@ -9,7 +9,7 @@ from rest_framework import permissions as drf_permissions
 from modularodm import Q
 
 from framework.auth import cas
-from framework.auth.oauth_scopes import ComposedScopes
+from framework.auth.oauth_scopes import CoreScopes
 
 from api.base.filters import ODMFilterMixin
 from api.base.utils import get_object_or_error
@@ -29,8 +29,8 @@ class TokenList(generics.ListCreateAPIView, ODMFilterMixin):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [ComposedScopes.FULL_READ]
-    required_write_scopes = [ComposedScopes.FULL_WRITE]
+    required_read_scopes = [CoreScopes.TOKENS_READ]
+    required_write_scopes = [CoreScopes.TOKENS_WRITE]
 
     serializer_class = ApiOAuth2PersonalTokenSerializer
 
@@ -67,8 +67,8 @@ class TokenDetail(generics.RetrieveUpdateDestroyAPIView):
         base_permissions.TokenHasScope,
     )
 
-    required_read_scopes = [ComposedScopes.FULL_READ]
-    required_write_scopes = [ComposedScopes.FULL_WRITE]
+    required_read_scopes = [CoreScopes.TOKENS_READ]
+    required_write_scopes = [CoreScopes.TOKENS_WRITE]
 
     serializer_class = ApiOAuth2PersonalTokenSerializer
 
