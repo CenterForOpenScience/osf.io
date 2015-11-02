@@ -455,6 +455,16 @@ RegistrationEditor.prototype.context = function(data) {
     }
     return data;
 };
+
+RegistrationEditor.prototype.toPreview = function () {
+    // save the form
+    var self = this;
+    self.save().done(function () {
+        // go to the preview
+        window.location = self.draft().urls.register_page;
+    });
+};
+
 /**
  * Check that the Draft is valid before registering
  */
@@ -483,13 +493,13 @@ RegistrationEditor.prototype.check = function() {
             // Validation passed for all applicable questions
 
             // wait for the last autosave to complete
-            self.lastSaveRequest().always(function() {
-                // save the form
-                self.save().done(function() {
-                    // go to the preview
-                    window.location = self.draft().urls.register_page;
+            if (self.lastSaveRequest()) {
+                self.lastSaveRequest().always(function () {
+                    self.toPreview()
                 });
-            });
+            } else {
+                self.toPreview()
+            }
         });
     });
 };
@@ -662,16 +672,27 @@ RegistrationEditor.prototype.save = function() {
     return request;
 };
 
+
+RegistrationEditor.prototype.toDraft = function () {
+    // save the form
+    var self = this;
+    self.save().done(function() {
+        window.location = self.urls.draftRegistrations;
+    });
+};
+
 RegistrationEditor.prototype.saveForLater = function () {
     var self = this;
 
-    // wait for the last autosave to complete
-    self.lastSaveRequest().always(function() {
-        // save the form
-        self.save().done(function() {
-            window.location = self.urls.draftRegistrations;
+    if (self.lastSaveRequest()) {
+        // wait for the last autosave to complete
+        self.lastSaveRequest().always(function() {
+            self.toDraft();
         });
-    });
+    } else {
+        self.toDraft();
+    }
+
 };
 
 /**
