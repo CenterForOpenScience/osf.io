@@ -800,7 +800,7 @@ def _view_project(node, auth, primary=False):
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
-            'has_read_permissions': node.has_permission(user, 'read'),
+            'has_read_permissions': node.has_permission(user, READ),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
@@ -839,7 +839,7 @@ def _get_children(node, auth, indent=0):
     children = []
 
     for child in node.nodes_primary:
-        if not child.is_deleted and child.has_permission(auth.user, 'admin'):
+        if not child.is_deleted and child.has_permission(auth.user, ADMIN):
             children.append({
                 'id': child._primary_key,
                 'title': child.title,

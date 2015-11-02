@@ -1277,6 +1277,12 @@ class User(GuidStoredObject, AddonModelMixin):
             node.creator = self
             node.save()
 
+        # - file that the user has checked_out, import done here to prevent import error
+        from website.files.models.base import FileNode
+        for file_node in FileNode.files_checked_out(user=user):
+            file_node.checkout = self
+            file_node.save()
+
         # finalize the merge
 
         remove_sessions_for_user(user)
