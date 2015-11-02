@@ -485,7 +485,7 @@ MEETING_DATA = {
         'poster': False,
         'talk': True,
     },
-        'SWPA2016': {
+    'SWPA2016': {
         'name': 'Southwestern Psychological Association Convention 2016',
         'info_url': 'https://www.swpsych.org/conv_dates.php',
         'logo_url': 'http://s28.postimg.org/xbwyqqvx9/SWPAlogo4.jpg',
@@ -495,7 +495,7 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-     'ESIP2016W': {
+    'ESIP2016W': {
         'name': 'Earth Science Information Partners Winter Meeting 2016',
         'info_url': 'http://commons.esipfed.org/2016WinterMeeting',
         'logo_url': 'http://s30.postimg.org/m2uz2g4pt/ESIP.png',
@@ -505,7 +505,7 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-     'MiamiBrainhack15': {
+    'MiamiBrainhack15': {
         'name': 'University of Miami Brainhack 2015',
         'info_url': 'http://brainhack.org/americas/',
         'logo_url': None,
@@ -515,7 +515,7 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-     'GI2015': {
+    'GI2015': {
         'name': 'Genome Informatics 2015',
         'info_url': 'https://meetings.cshl.edu/meetings.aspx?meet=info&year=15',
         'logo_url': None,
@@ -525,7 +525,7 @@ MEETING_DATA = {
         'poster': True,
         'talk': True,
     },
-        'MADSSCi2016': {
+    'MADSSCi2016': {
         'name': 'Mid-Atlantic Directors and Staff of Scientific Cores & Southeastern Association of Shared Services 2016',
         'info_url': 'http://madssci.abrf.org',
         'logo_url': 'http://madssci.abrf.org/sites/default/files/madssci-logo-bk.png',
