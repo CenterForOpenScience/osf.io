@@ -452,7 +452,7 @@ class ApiOAuth2PersonalToken(StoredObject):
     _id = fields.StringField(primary=True,
                              default=lambda: str(ObjectId()))
 
-    token_id = fields.StringField(default=lambda: uuid.uuid4().hex,  # Not *guaranteed* unique, but very unlikely
+    token_id = fields.StringField(default=functools.partial(random_string, length=70),
                                unique=True)
 
     owner = fields.ForeignField('User',
@@ -465,9 +465,6 @@ class ApiOAuth2PersonalToken(StoredObject):
     name = fields.StringField(required=True, index=True)
 
     scopes = fields.StringField(required=True)
-
-    date_last_used = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow,
-                                        editable=False)
 
     is_active = fields.BooleanField(default=True, index=True)
 
