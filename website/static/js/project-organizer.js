@@ -417,7 +417,7 @@ var tbOptions = {
         up : 'i.fa.fa-chevron-up',
         down : 'i.fa.fa-chevron-down'
     },
-    sortDepth : 1,
+    sortDepth : 0,
     onload : function () {
         var tb = this,
             rowDiv = tb.select('.tb-row');
@@ -449,6 +449,9 @@ var tbOptions = {
     headerTemplate : function(){ return ''; },
     xhrconfig : function(xhr) {
         xhr.withCredentials = true;
+    },
+    onselectrow : function(row){
+        console.log(row);
     },
     filterTemplate : function() {
         var tb = this;
