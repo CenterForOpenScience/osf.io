@@ -217,14 +217,18 @@ var FileBrowser = {
 var Collections  = {
     view : function (ctrl, args) {
         var selectedCSS;
-        return m('.fb-collections', m('ul', [
-            args.list.map(function(item){
-                selectedCSS = item.id === args.activeFilter() ? 'active' : '';
-                return m('li', { className : selectedCSS},
-                    m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label)
-                );
-            })
-        ]));
+        return m('.fb-collections', [
+            m('ul', [
+                m('h4', 'Collections'),
+                args.list.map(function(item){
+                    selectedCSS = item.id === args.activeFilter() ? 'active' : '';
+                    return m('li', { className : selectedCSS},
+                        m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label)
+                    );
+                })
+            ]),
+
+        ]);
     }
 };
 
@@ -244,7 +248,7 @@ var Breadcrumbs = {
 
                 return m('li',
                     m('a', { href : '#', onclick : args.updateFilesData.bind(null, linkObject)},  item.label),
-                    m('i.fa.fa-chevron-right')
+                    m('i.fa.fa-angle-right')
                 );
             })
 
@@ -263,7 +267,7 @@ var Filters = {
         return m('.fb-filters.m-t-lg',
             [
                 m('h4', 'Filters'),
-                m('', 'Contributors'),
+                m('h5', [m('i.fa.fa-user'), 'Contributors']),
                 m('ul', [
                     args.nameFilters.map(function(item, index){
                         selectedCSS = item.id === args.activeFilter() ? '.active' : '';
@@ -272,7 +276,7 @@ var Filters = {
                         );
                     })
                 ]),
-                m('', 'Tags'),
+                m('h5', [m('i.fa.fa-tags'), 'Tags']),
                 m('ul', [
                     args.tagFilters.map(function(item){
                         selectedCSS = item.id === args.activeFilter() ? '.active' : '';
