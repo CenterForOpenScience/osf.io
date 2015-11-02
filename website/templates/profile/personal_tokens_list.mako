@@ -40,7 +40,6 @@
                             <tr>
                                 <td>
                                     <a href="#" data-bind="attr: {href: webDetailUrl  }"><span data-bind="text: name"></span></a>
-                                    <p>Last Used: <span class="text-muted" data-bind="text: lastUsed"></span></p>
                                 </td>
                                 <td>
                                     <a href="#" data-bind="click: $root.deleteToken.bind($root)"><i class="fa fa-times text-danger pull-right"></i></a>
