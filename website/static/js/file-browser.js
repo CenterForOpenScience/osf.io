@@ -42,7 +42,7 @@ if (!window.fileBrowserCounter) {
 }
 function getUID() {
     window.fileBrowserCounter = window.fileBrowserCounter + 1;
-    return window.treebeardCounter;
+    return window.fileBrowserCounter;
 }
 
 /**
