@@ -178,10 +178,10 @@ class Comment(GuidStoredObject):
     def return_content(self, auth):
         """ Returns the comment content if the user is allowed to see it. Deleted comments
         can only be viewed by the user who created the comment."""
-        if not auth or auth.user.is_anonymous() and not self.node.is_public:
+        if (not auth or auth.user.is_anonymous()) and not self.node.is_public:
             raise PermissionsError
 
-        if self.is_deleted and ((not auth or auth.user.is_anonymous() and self.node.is_public)
+        if self.is_deleted and (((not auth or auth.user.is_anonymous()) and self.node.is_public)
                                 or (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
             return 'Comment deleted.'
 
