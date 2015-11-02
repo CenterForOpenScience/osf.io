@@ -8,8 +8,11 @@
     <div class="alert alert-info"><strong>NOTICE: </strong>Forks, registrations, and uploads will be temporarily disabled while the OSF undergoes a hardware upgrade. These features will return shortly. Thank you for your patience.</div>
 % endif
 
-  <h3>Projects </h3>
-  <p>Browse and organize all your projects</p>
+    <div class="p-md">
+      <h3>Projects </h3>
+      <p>Browse and organize all your projects</p>
+    </div>
+
 
   <div class="row">
     <div id="poFilter" class="col-xs-12 col-sm-10 col-sm-offset-1 col-md-8 col-md-offset-2 col-lg-6 col-lg-offset-3 m-t-sm m-b-sm"></div>
