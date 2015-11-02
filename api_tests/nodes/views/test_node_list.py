@@ -31,6 +31,10 @@ class TestNodeList(ApiTestCase):
 
         self.url = '/{}nodes/'.format(API_BASE)
 
+    def tearDown(self):
+        super(TestNodeList, self).tearDown()
+        Node.remove()
+
     def test_only_returns_non_deleted_public_projects(self):
         res = self.app.get(self.url)
         node_json = res.json['data']
@@ -81,6 +85,19 @@ class TestNodeList(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         ids = [each['id'] for each in res.json['data']]
         assert_in(registration._id, ids)
+
+    def test_omit_retracted_registration(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public)
+        res = self.app.get(self.url, auth=self.user.auth)
+        print res
+        assert_equal(len(res.json['data']), 3)
+        registration.retract_registration(self.user)
+        retraction = registration.retraction
+        token = retraction.approval_state.values()[0]['approval_token']
+        retraction.approve_retraction(self.user, token)
+        registration.save()
+        res = self.app.get(self.url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
 
 
 class TestNodeFiltering(ApiTestCase):

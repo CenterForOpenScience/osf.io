@@ -233,7 +233,10 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     # overrides ListCreateAPIView
     def get_queryset(self):
         query = self.get_query_from_request()
-        return Node.find(query)
+        nodes = Node.find(query)
+        non_retracted_list = [node._id for node in nodes if not node.is_retracted]
+        non_retracted_nodes = Node.find(Q('_id', 'in', non_retracted_list))
+        return non_retracted_nodes
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):
