@@ -668,7 +668,7 @@ class TestProjectViews(OsfTestCase):
     def test_get_logs_page_num_beyond_limit(self):
         url = self.project.api_url_for('get_logs')
         size = 10
-        page_num = math.ceil(len(self.project.logs)/ float(size))
+        page_num = math.ceil(len(self.project.logs) / float(size))
         res = self.app.get(
             url, {'page': page_num}, auth=self.auth, expect_errors=True
         )
