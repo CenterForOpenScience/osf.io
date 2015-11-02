@@ -1477,6 +1477,12 @@ class TestNode(OsfTestCase):
         result = self.parent.api_url_for('view_project', _absolute=True)
         assert_in(settings.DOMAIN, result)
 
+    def test_get_absolute_url(self):
+        assert_equal(self.node.get_absolute_url(),
+                     '{}v2/nodes/{}/'
+                     .format(settings.API_DOMAIN, self.node._id)
+                     )
+
     def test_node_factory(self):
         node = NodeFactory()
         assert_equal(node.category, 'hypothesis')
@@ -3573,6 +3579,12 @@ class TestRegisterNode(OsfTestCase):
 
     def test_registered_from(self):
         assert_equal(self.registration.registered_from, self.project)
+
+    def test_registered_get_absolute_url(self):
+        assert_equal(self.registration.get_absolute_url(),
+                     '{}v2/registrations/{}/'
+                        .format(settings.API_DOMAIN, self.registration._id)
+        )
 
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)

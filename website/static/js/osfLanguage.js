@@ -73,10 +73,16 @@ module.exports = {
         deactivateError: 'Could not deactivate application. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         dataFetchError: 'Data not loaded. ' + REFRESH_OR_SUPPORT,
         dataListFetchError: 'Could not load list of developer applications at this time. ' + REFRESH_OR_SUPPORT,
-        dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
+        dataSendError: 'Error sending data to the server. Check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         creationSuccess: 'Successfully registered new application',
         dataUpdated: 'Application data updated',
         resetSecretConfirm: 'Are you sure you want to reset the client secret? This cannot be reversed. Your application will be unusable until it is updated with the new client secret, and all users must reauthorize access. Previously issued access tokens will no longer work.',
         resetSecretError: 'Could not reset client secret. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + 'if the problem persists.',
-    }
+    },
+    projectSettings: {
+        updateSuccessMessage: 'Successfully updated project settings.',
+        updateErrorMessage400: 'Error updating project settings. Check that all fields are valid.',
+        updateErrorMessage: 'Could not update project settings. ' + REFRESH_OR_SUPPORT,
+        instantiationErrorMessage: 'Trying to instantiate ProjectSettings view model without an update URL'
+    },
 };
