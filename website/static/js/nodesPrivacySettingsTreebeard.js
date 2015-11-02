@@ -70,6 +70,7 @@ function NodesPrivacyTreebeard(data, nodesState, nodesOriginal) {
             ];
         },
         resolveRows: function nodesPrivacyResolveRows(item){
+            var tb = this;
             var columns = [];
             var id = item.data.node.id;
             var nodesStateLocal = ko.toJS(nodesState());
@@ -83,6 +84,7 @@ function NodesPrivacyTreebeard(data, nodesState, nodesOriginal) {
                             onclick : function() {
                                 /* nodesChanged is a knockout variable tracking necessary changes */
                                 item.data.node.is_public = !item.data.node.is_public;
+                                item.open = true;
                                 nodesStateLocal[id].public = item.data.node.is_public;
                                 if (nodesStateLocal[id].public !== nodesOriginal[id].local) {
                                     nodesStateLocal[id].changed = true;
@@ -91,6 +93,7 @@ function NodesPrivacyTreebeard(data, nodesState, nodesOriginal) {
                                     nodesStateLocal[id].changed = false;
                                 }
                                 nodesState(nodesStateLocal);
+                                tb.updateFolder(null, item);
                             },
                             checked: nodesState()[id].public
                         });

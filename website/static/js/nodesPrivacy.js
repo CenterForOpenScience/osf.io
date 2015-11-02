@@ -69,77 +69,151 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     return nodesOriginal;
 }
 
-//function patchNodePrivacy(node) {
-//    var url = API_BASE + node.id + '/';
+function patchNodesPrivacyV1(nodes) {
+    var index;
+    for (var key in nodes) {
+        var node = nodes[key];
+        if (node.changed) {
+            index = index + 1;
+            //var url = API_BASE + node.id + '/';
+            var url;
+
+            if (node.public) {
+                url = '/api/v1/project/' + node.id + '/permissions/public/';
+            }
+            else {
+                url = '/api/v1/project/' + node.id + '/permissions/private/';
+            }
+            osfHelpers.postJSON(
+                url,
+                {permissions: node.public}
+            ).done(function () {
+                    //window.location.reload();
+                    console.log("success!" + event.timeStamp )
+                }).fail(
+                osfHelpers.handleJSONError
+            );
+        }
+    }
+    //window.location.reload();
+}
+
+//function patchNodesPrivacy(nodes) {
+//    for (var node in nodes) {
 //
-//    var msgKey;
-//    var isRegistration = window.contextVars.node.isRegistration;
+//        if (nodes[node].changed) {
+//                var url = API_BASE + nodes[node].id + '/';
+//                $.ajax({
+//                    url: url,
+//                    type: 'PATCH',
+//                    dataType: 'json',
+//                    contentType: 'application/vnd.api+json',
+//                    crossOrigin: true,
+//                    xhrFields: {withCredentials: true},
+//                    processData: false,
+//                    data: JSON.stringify(
+//                        {
+//                            'data': {
+//                                'type': 'nodes',
+//                                'id': nodes[node].id,
+//                                'attributes': {
+//                                    'public': nodes[node].public
+//                                }
+//                            }
+//                        })
+//                }).done(function (response) {
+//                    console.log("success!" + event.timeStamp )
+//                }).fail(function (xhr, status, error) {
+//                    //$privacysMsg.addClass('text-danger');
+//                    //$privacysMsg.text('Could not retrieve project settings.');
+//                    Raven.captureMessage('Could not PATCH project settings.', {
+//                        url: url, status: status, error: error
+//                    });
+//                });
+//        }
 //
-//    if (permissions === PUBLIC && isRegistration) { msgKey = 'makeRegistrationPublicWarning'; }
-//    else if(permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
-//    else if(permissions === PUBLIC && nodeType === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
-//    else if(permissions === PRIVATE && nodeType === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
-//    else { msgKey = 'makeComponentPrivateWarning'; }
-//
-//    var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
-//    var buttonText = permissions === PUBLIC ? 'Make Public' : 'Make Private';
-//
-//    var message = MESSAGES[msgKey];
-//
-//$.ajax({
-//    $osf.postJSON(
-//    URLS[urlKey],
-//    {permissions: permissions}
-//    ).done(function() {
+//    }
 //    window.location.reload();
-//    }).fail(
-//    osfHelpers.handleJSONError
-//);
-//}
-//
-//
 //}
 
 function patchNodePrivacy(node) {
-    var url = API_BASE + node.id + '/';
-    $.ajax({
-        url: url,
-        type: 'PATCH',
-        dataType: 'json',
-        contentType: 'application/json',
-        crossOrigin: true,
-        xhrFields: { withCredentials: true},
-        processData: false,
-        data: JSON.stringify(
-            {'data': {
-               'type': 'nodes',
-               'id':   node.id,
-               'attributes': {
-                   'public': node.public
-               }
+        if (node.changed) {
+            var url = API_BASE + node.id + '/';
+            $.ajax({
+                url: url,
+                type: 'PATCH',
+                dataType: 'json',
+                contentType: 'application/vnd.api+json',
+                crossOrigin: true,
+                xhrFields: {withCredentials: true},
+                processData: false,
+                data: JSON.stringify(
+                    {
+                        'data': {
+                            'type': 'nodes',
+                            'id': node.id,
+                            'attributes': {
+                                'public': node.public
+                            }
+                        }
+                    })
+            }).done(function (response) {
+                console.log("success!" + event.timeStamp )
+            }).fail(function (xhr, status, error) {
+                //$privacysMsg.addClass('text-danger');
+                //$privacysMsg.text('Could not retrieve project settings.');
+                Raven.captureMessage('Could not PATCH project settings.', {
+                    url: url, status: status, error: error
+                });
+            });
         }
-        })
-    }).done(function(response) {
-        console.log("response is " + JSON.stringify(response));
-        console.log("time is " + JSON.stringify(Date.now()));
-    }).fail(function(xhr, status, error) {
-        //$privacysMsg.addClass('text-danger');
-        //$privacysMsg.text('Could not retrieve project settings.');
-        Raven.captureMessage('Could not PATCH project settings.', {
-            url: url,  status: status, error: error
-        });
-    });
-
 }
 
-var NodesPrivacyViewModel = function(data) {
+//function patchNodesPrivacy(node) {
+//        if (nodes[node].changed) {
+//            osfHelpers.throttle(function() {
+//                var url = API_BASE + nodes[node].id + '/';
+//                $.ajax({
+//                    url: url,
+//                    type: 'PATCH',
+//                    dataType: 'json',
+//                    contentType: 'application/vnd.api+json',
+//                    crossOrigin: true,
+//                    xhrFields: {withCredentials: true},
+//                    processData: false,
+//                    data: JSON.stringify(
+//                        {
+//                            'data': {
+//                                'type': 'nodes',
+//                                'id': nodes[node].id,
+//                                'attributes': {
+//                                    'public': nodes[node].public
+//                                }
+//                            }
+//                        })
+//                }).done(function (response) {
+//                    console.log("success!" + event.timeStamp )
+//                }).fail(function (xhr, status, error) {
+//                    //$privacysMsg.addClass('text-danger');
+//                    //$privacysMsg.text('Could not retrieve project settings.');
+//                    Raven.captureMessage('Could not PATCH project settings.', {
+//                        url: url, status: status, error: error
+//                    });
+//                });
+//            }, 30000)();
+//        }
+//        setTimeout(function(){console.log("hi")}, 10000);
+//}
+
+
+var NodesPrivacyViewModel = function(data, nodeControlVM) {
     var self = this;
     var nodesOriginal = {};
-
     self.nodesState = ko.observableArray();
 
     self.nodesState.subscribe(function(newValue) {
-        console.log('nodesState is ' + JSON.stringify(newValue));
+        console.log('self.nodesState is ' + JSON.stringify(newValue));
+        console.log('nodesOriginal is ' + JSON.stringify(nodesOriginal));
         m.redraw(true);
     });
 
@@ -159,12 +233,13 @@ var NodesPrivacyViewModel = function(data) {
         type: 'GET',
         dataType: 'json'
     }).done(function(response) {
-        response[0].node.is_public = true;
-        self.nodeParent(response[0].node.id);
         nodesOriginal = getNodesOriginal(response[0], nodesOriginal);
-        self.nodesState(nodesOriginal);
+        var nodesState = nodesOriginal
+        self.nodeParent(response[0].node.id);
+        //Modify nodeState to reflect the new parent node permissions
+        console.log('nodesState is ' + JSON.stringify(nodesState));
+        self.nodesState(nodesState);
         new NodesPrivacyTreebeard(response, self.nodesState, nodesOriginal);
-        //patchNodePrivacy('uxgdq', true);
     }).fail(function(xhr, status, error) {
         $privacysMsg.addClass('text-danger');
         $privacysMsg.text('Could not retrieve project settings.');
@@ -224,16 +299,69 @@ var NodesPrivacyViewModel = function(data) {
         self.page('addon');
     };
 
+
+//function log( event ) {
+//  console.log( $(window).scrollTop(), event.timeStamp );
+//};
+//
+//// Console logging happens on window scroll, WAAAY more often
+//// than you want it to.
+//$(window).scroll( log );
+//
+//// Console logging happens on window scroll, but no more than
+//// once every 250ms.
+//$(window).scroll( $.osfhelpers.throttle( 250, log ) );
+//
+//// Note that in jQuery 1.4+ you can unbind by reference using
+//// either the throttled function, or the original function.
+//$(window).unbind( 'scroll', log );
+//
+
     self.confirmChanges =  function() {
         var nodesState = ko.toJS(self.nodesState());
-        for (var node in nodesState) {
-            if (nodesState[node].changed) {
-                patchNodePrivacy(nodesState[node]);
+        var node = nodesState[self.nodeParent()];
+            for (var i = 0; i < 10; i++) {
+                var url = API_BASE + node.id + '/';
+                $.ajax({
+                    url: url,
+                    type: 'PATCH',
+                    dataType: 'json',
+                    contentType: 'application/vnd.api+json',
+                    crossOrigin: true,
+                    xhrFields: {withCredentials: true},
+                    processData: false,
+                    data: JSON.stringify(
+                        {
+                            'data': {
+                                'type': 'nodes',
+                                'id': node.id,
+                                'attributes': {
+                                    'public': node.public
+                                }
+                            }
+                        })
+                }).done(function (response) {
+                    console.log("success!" + event.timeStamp )
+                }).fail(function (xhr, status, error) {
+                    //$privacysMsg.addClass('text-danger');
+                    //$privacysMsg.text('Could not retrieve project settings.');
+                    Raven.captureMessage('Could not PATCH project settings.', {
+                        url: url, status: status, error: error
+                    });
+                });
             }
-        }
         window.location.reload();
     };
 
+    //self.confirmChanges =  function() {
+    //    var nodesState = ko.toJS(self.nodesState());
+    //        for (var key in nodesState) {
+    //            $osf.throttle( 10000, patchNodePrivacy(nodesState[key]))
+    //            //patchNodesPrivacy(nodesState);
+    //        }
+    //    window.location.reload();
+    //};
+    //
     self.clear = function() {
         self.page('warning');
         self.nodesState(nodesOriginal);
@@ -271,12 +399,12 @@ var NodesPrivacyViewModel = function(data) {
 
 };
 
-function NodesPrivacy (selector, data, options) {
+function NodesPrivacy (selector, data, parentNodePrivacy) {
     var self = this;
     self.selector = selector;
     self.$element = $(self.selector);
     self.data = data;
-    self.viewModel = new NodesPrivacyViewModel(self.data);
+    self.viewModel = new NodesPrivacyViewModel(self.data, parentNodePrivacy);
     self.init();
 
 
