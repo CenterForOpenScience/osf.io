@@ -27,9 +27,6 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
 
     token_id = ser.CharField(read_only=True, allow_blank=True)
 
-    date_last_used = ser.DateTimeField(help_text='The date this token was last used (automatically filled in)',
-                                       read_only=True)
-
     class Meta:
         type_ = 'tokens'
 
@@ -44,7 +41,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         data = super(ApiOAuth2PersonalTokenSerializer, self).to_representation(obj, envelope)
         # Make sure users only see token_id on create
         if not self.context['request'].method == 'POST':
-            if data.get('data'):
+            if 'data' in data:
                 data['data']['attributes'].pop('token_id')
             else:
                 data['attributes'].pop('token_id')
@@ -60,7 +57,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         assert isinstance(instance, ApiOAuth2PersonalToken), 'instance must be an ApiOAuth2PersonalToken'
         for attr, value in validated_data.iteritems():
-            if attr == 'token_id':
+            if attr == 'token_id':  # Do not allow user to update token_id
                 continue
             else:
                 setattr(instance, attr, value)
