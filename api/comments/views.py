@@ -6,6 +6,11 @@ from modularodm.exceptions import NoResultsFound
 
 from api.base.exceptions import Gone
 from api.base import permissions as base_permissions
+from api.comments.permissions import (
+    CanCommentOrPublic,
+    CommentDetailPermissions,
+    CommentReportsPermissions
+)
 from api.comments.serializers import (
     CommentSerializer,
     CommentDetailSerializer,
@@ -13,10 +18,6 @@ from api.comments.serializers import (
     CommentReportDetailSerializer,
     CommentReport
 )
-from api.nodes.permissions import (
-    CanCommentOrPublic,
-    CommentDetailPermissions,
-    CommentReportsPermissions)
 from framework.auth.oauth_scopes import CoreScopes
 from website.project.model import Comment
 

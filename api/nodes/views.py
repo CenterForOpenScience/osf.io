@@ -13,6 +13,7 @@ from api.base.filters import ODMFilterMixin, ListFilterMixin
 from api.base.utils import get_object_or_error
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer
+from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
 from api.nodes.serializers import (
     NodeSerializer,
@@ -25,7 +26,6 @@ from api.nodes.serializers import (
 from api.registrations.serializers import RegistrationSerializer
 from api.nodes.permissions import (
     AdminOrPublic,
-    CanCommentOrPublic,
     ContributorOrPublic,
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
