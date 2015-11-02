@@ -250,6 +250,18 @@ class TestUploadFileHook(HookTestCase):
         assert_equals(record.name, name)
         assert_equals(record.parent, parent)
 
+    def test_upload_fail_to_create_version_due_to_checkout(self):
+        user = factories.AuthUserFactory()
+        name = 'Gunter\'s noise.mp3'
+        self.node_settings.get_root().append_file(name)
+        root = self.node_settings.get_root()
+        file = root.find_child_by_name(name)
+        file.checkout = user
+        file.save()
+        res = self.send_upload_hook(root, self.make_payload(name=name), expect_errors=True)
+
+        assert_equal(res.status_code, 403)
+
     def test_update_nested_child(self):
         name = 'ლ(ಠ益ಠლ).unicode'
         parent = self.node_settings.get_root().append_folder('cheesey')
@@ -553,3 +565,62 @@ class TestDeleteHook(HookTestCase):
         resp = self.delete(self.root_node, expect_errors=True)
 
         assert_equal(resp.status_code, 400)
+
+    def test_attempt_delete_rented_file(self):
+        user = factories.AuthUserFactory()
+        file_checked = self.root_node.append_file('Newfile')
+        file_checked.checkout = user
+        file_checked.save()
+
+        res = self.delete(file_checked, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+class TestMoveHook(HookTestCase):
+
+    def setUp(self):
+        super(TestMoveHook, self).setUp()
+        self.root_node = self.node_settings.get_root()
+
+    def test_move_hook(self):
+
+        file = self.root_node.append_file('Ain\'t_got_no,_I_got_life')
+        folder = self.root_node.append_folder('Nina Simone')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': file._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': folder.name,
+                }
+            },
+            method='post_json',)
+        assert_equal(res.status_code, 200)
+
+    def test_move_checkedout_file(self):
+
+        file = self.root_node.append_file('Ain\'t_got_no,_I_got_life')
+        file.checkout = self.user
+        file.save()
+        folder = self.root_node.append_folder('Nina Simone')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': file._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': folder.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 405)
