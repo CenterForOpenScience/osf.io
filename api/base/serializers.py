@@ -12,17 +12,17 @@ from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict
 
 
-def format_relationship_links(related_link, self_link, rel_meta, self_meta):
+def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
 
     ret = {
         'links': {
             'related': {
-                'href': related_link,
-                'meta': rel_meta
+                'href': related_link or {},
+                'meta': rel_meta or {}
             },
             'self': {
-                'href': self_link,
-                'meta': self_meta
+                'href': self_link or {},
+                'meta': self_meta or {}
             }
         }
     }
@@ -212,7 +212,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         urls = super(RelationshipField, self).to_representation(value)
 
         if urls == {}:
-            ret = format_relationship_links({}, {}, {}, {})
+            ret = format_relationship_links()
         else:
             related_url = urls['related']
             related_meta = self.get_meta_information(self.related_meta, value)

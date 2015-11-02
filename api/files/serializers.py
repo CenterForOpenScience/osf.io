@@ -51,7 +51,7 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
         url = super(CheckoutField, self).to_representation(value)
 
-        ret = format_relationship_links(url, {}, {}, {})
+        ret = format_relationship_links(related_link=url)
         return ret
 
 
