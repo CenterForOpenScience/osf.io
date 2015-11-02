@@ -34,12 +34,13 @@
 }
 .filterReset {
     font-size: 20px;
-    color: #999;
-    float: right;
-    margin-top: -33px; /* to align with input box */
-    margin-right: 5px;
+    color: #aaa;
+    margin-right: 7px;
     cursor: default;
     font-weight: bold;
+    position: absolute;
+    right: 0;
+    top: 0;
 }
 
 
@@ -89,4 +90,10 @@
     float: left;
     width: 30%;
 }
+
+/* TODO: Make responsive */
+#poFilter {
+    display: inline-block;
+    width: 260px;
+    position: relative;
 }
