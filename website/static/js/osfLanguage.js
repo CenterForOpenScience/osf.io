@@ -84,7 +84,7 @@ module.exports = {
         dataFetchError: 'Data not loaded. ' + REFRESH_OR_SUPPORT,
         dataListFetchError: 'Could not load list of personal access tokens at this time. ' + REFRESH_OR_SUPPORT,
         dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
-        creationSuccess: 'Successfully registered new personal access token',
+        creationSuccess: 'Successfully generated new personal access token. This token will never expire. This token should never be shared with others. If it is accidentally revealed publicly, it should be deactivated immediately',
         dataUpdated: 'Token data updated'
     }
 };

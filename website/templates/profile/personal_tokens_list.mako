@@ -23,7 +23,7 @@
 
                 <p data-bind="visible: (tokenData().length == 0)">You have not created any access tokens that can connect to the OSF.</p>
                 <div id="if-tokens" data-bind="visible: (tokenData().length > 0)">
-                    <p>You have registered the following access tokens that can connect to the OSF:</p>
+                    <p>You have generated the following personal access tokens:</p>
 
                     <table class="table table-condensed">
                         <thead>
