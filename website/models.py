@@ -11,7 +11,8 @@ from website.project.model import (
     Tag, WatchConfig, MetaSchema, Pointer,
     Comment, PrivateLink, MetaData,
     Retraction, Embargo, RegistrationApproval,
-    Sanction
+    DraftRegistrationApproval, DraftRegistration,
+    Sanction,
 )
 
 from website.oauth.models import ApiOAuth2Application, ExternalAccount
@@ -38,6 +39,7 @@ MODELS = (
     Embargo, Retraction, RegistrationApproval,
     ArchiveJob, ArchiveTarget, BlacklistGuid, Sanction,
     QueuedMail,
+    DraftRegistrationApproval, DraftRegistration,
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

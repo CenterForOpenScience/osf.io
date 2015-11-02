@@ -26,6 +26,7 @@ from api.base.utils import absolute_reverse
 from framework import status
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
+from framework.mongo import validators
 from framework.addons import AddonModelMixin
 from framework.auth import get_user, User, Auth
 from framework.auth import signals as auth_signals
@@ -92,29 +93,40 @@ class MetaSchema(StoredObject):
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = fields.IntegerField()
 
+    @property
+    def requires_approval(self):
+        return self.schema.get('config', {}).get('requiresApproval', False)
 
-def ensure_schemas(clear=True):
-    """Import meta-data schemas from JSON to database, optionally clearing
-    database first.
+    @property
+    def fulfills(self):
+        return self.schema.get('config', {}).get('fulfills', [])
 
-    :param clear: Clear schema database before import
+    @property
+    def messages(self):
+        return self.schema.get('config', {}).get('messages', {})
+
+def ensure_schema(schema, name, version=1):
+    try:
+        schema_obj = MetaSchema.find_one(
+            Q('name', 'eq', name) &
+            Q('schema_version', 'eq', version)
+        )
+    except NoResultsFound:
+        meta_schema = {
+            'name': name,
+            'schema_version': version,
+            'schema': schema,
+        }
+        schema_obj = MetaSchema(**meta_schema)
+        schema_obj.save()
+    return schema_obj
+
+
+def ensure_schemas():
+    """Import meta-data schemas from JSON to database if not already loaded
     """
-    if clear:
-        try:
-            MetaSchema.remove()
-        except AttributeError:
-            if not settings.DEBUG_MODE:
-                raise
     for schema in OSF_META_SCHEMAS:
-        try:
-            MetaSchema.find_one(
-                Q('name', 'eq', schema['name']) &
-                Q('schema_version', 'eq', schema['schema_version'])
-            )
-        except:
-            schema['name'] = schema['name'].replace(' ', '_')
-            schema_obj = MetaSchema(**schema)
-            schema_obj.save()
+        ensure_schema(schema, schema['name'], version=schema.get('version', 1))
 
 
 class MetaData(GuidStoredObject):
@@ -637,6 +649,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     retraction = fields.ForeignField('retraction')
     embargo = fields.ForeignField('embargo')
 
+    draft_registrations = fields.ForeignField('draftregistration', backref='branched', list=True, default=[])
+
     is_fork = fields.BooleanField(default=False, index=True)
     forked_date = fields.DateTimeField(index=True)
 
@@ -753,7 +767,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.parent_node:
                 return self.parent_node.is_pending_registration
             return False
-        return self.registration_approval.pending_approval
+        return self.registration_approval.is_pending_approval
 
     @property
     def is_registration_approved(self):
@@ -777,7 +791,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.parent_node:
                 return self.parent_node.is_pending_retraction
             return False
-        return self.retraction.pending_approval
+        return self.retraction.is_pending_approval
 
     @property
     def embargo_end_date(self):
@@ -793,7 +807,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             if self.parent_node:
                 return self.parent_node.is_pending_embargo
             return False
-        return self.embargo.pending_approval
+        return self.embargo.is_pending_approval
 
     @property
     def is_pending_embargo_for_existing_registration(self):
@@ -926,6 +940,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def add_permission(self, user, permission, save=False):
         """Grant permission to a user.
 
+        :param User user: User to grant permission to
         :param str permission: Permission to grant
         :param bool save: Save changes
         :raises: ValueError if user already has permission
@@ -1883,7 +1898,20 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         return forked
 
-    def register_node(self, schema, auth, template, data, parent=None):
+    def create_draft_registration(self, user, schema, data=None, save=False):
+        draft = DraftRegistration(
+            initiator=user,
+            branched_from=self,
+            registration_schema=schema,
+            registration_metadata=data or {},
+        )
+        draft.save()
+        self.draft_registrations.append(draft)
+        if save:
+            self.save()
+        return draft
+
+    def register_node(self, schema, auth, data, template=None, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1892,6 +1920,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param data: Form data
         :param parent Node: parent registration of registration to be created
         """
+        # TODO(lyndsysimon): "template" param is not necessary - use schema.name?
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
             raise PermissionsError(
@@ -1901,6 +1930,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
 
+        template = template or ''
         template = urllib.unquote_plus(template)
         template = to_mongo(template)
 
@@ -1948,7 +1978,11 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         for node_contained in original.nodes:
             if not node_contained.is_deleted:
                 child_registration = node_contained.register_node(
-                    schema, auth, template, data, parent=registered
+                    schema=schema,
+                    auth=auth,
+                    data=data,
+                    template=template,
+                    parent=registered,
                 )
                 if child_registration and not child_registration.primary:
                     registered.nodes.append(child_registration)
@@ -2570,7 +2604,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
             return True
 
-        #Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
+        # Permissions must be overridden if changed when contributor is added to parent he/she is already on a child of.
         elif contrib_to_add in self.contributors and permissions is not None:
             self.set_permissions(contrib_to_add, permissions)
             if save:
@@ -3131,13 +3165,32 @@ class PrivateLink(StoredObject):
 
 
 class Sanction(StoredObject):
-    """Sanction object is a generic way to track approval states"""
-
+    """Sanction class is a generic way to track approval states"""
+    # Tell modularodm not to attach backends
     abstract = True
 
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+
+    # Neither approved not cancelled
     UNAPPROVED = 'unapproved'
+    # Has approval
     APPROVED = 'approved'
+    # Rejected by at least one person
     REJECTED = 'rejected'
+
+    state = fields.StringField(
+        default=UNAPPROVED,
+        validate=validators.choice_in((
+            # Allowed values according to source code comment
+            'unapproved',
+            'approved',
+            'rejected',
+            # Possible values, origin unclear. May be required, incl for unit tests TODO: review later
+            'active',
+            'cancelled',
+            'completed',
+        ))
+    )
 
     DISPLAY_NAME = 'Sanction'
     # SHORT_NAME must correspond with the associated foreign field to query against,
@@ -3149,8 +3202,15 @@ class Sanction(StoredObject):
     REJECTION_NOT_AUTHORIZED_MESSAEGE = 'This user is not authorized to reject this {DISPLAY_NAME}'
     REJECTION_INVALID_TOKEN_MESSAGE = 'Invalid rejection token provided for this {DISPLAY_NAME}.'
 
-    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+    # Controls whether or not the Sanction needs unanimous approval or just a single approval
+    ANY = 'any'
+    UNANIMOUS = 'unanimous'
+    mode = UNANIMOUS
+
     initiation_date = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
+    # Expiration date-- Sanctions in the UNAPPROVED state that are older than their end_date
+    # are automatically made ACTIVE by a daily cron job
+    # Use end_date=None for a non-expiring Sanction
     end_date = fields.DateTimeField(default=None)
 
     # Sanction subclasses must have an initiated_by field
@@ -3164,14 +3224,12 @@ class Sanction(StoredObject):
     #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
     # }
     approval_state = fields.DictionaryField()
-    # One of 'unapproved', 'approved', or 'rejected'
-    state = fields.StringField(default='unapproved')
 
     def __repr__(self):
-        return '<Sanction(end_date={self.end_date}) with _id {self._id}>'.format(self=self)
+        return '<Sanction(end_date={self.end_date!r}) with _id {self._id!r}>'.format(self=self)
 
     @property
-    def pending_approval(self):
+    def is_pending_approval(self):
         return self.state == Sanction.UNAPPROVED
 
     @property
@@ -3183,6 +3241,10 @@ class Sanction(StoredObject):
         return self.state == Sanction.REJECTED
 
     def _validate_authorizer(self, user):
+        """Subclasses may choose to provide extra restrictions on who can be an authorizer
+
+        :return Boolean: True if user is allowed to be an authorizer else False
+        """
         return True
 
     def add_authorizer(self, user, approved=False, save=False):
@@ -3210,25 +3272,45 @@ class Sanction(StoredObject):
             return True
         return False
 
-    def remove_authorizer(self, user):
+    def remove_authorizer(self, user, save=False):
+        """Remove a user as an authorizer
+
+        :param User user:
+        :return Boolean: True if user is removed else False
+        """
         if user._id not in self.approval_state:
             return False
 
         del self.approval_state[user._id]
-        self.save()
+        if save:
+            self.save()
         return True
 
     def _on_approve(self, user, token):
-        if all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
+        """Callback for when a single user approves a Sanction. Calls #_on_complete under two conditions:
+        - mode is ANY and the Sanction has not already been cancelled
+        - mode is UNANIMOUS and all users have given approval
+
+        :param User user:
+        :param str token: user's approval token
+        """
+        if self.mode == self.ANY or all(authorizer['has_approved'] for authorizer in self.approval_state.values()):
             self.state = Sanction.APPROVED
             self._on_complete(user)
 
     def _on_reject(self, user, token):
-        """Early termination of a Sanction"""
+        """Callback for rejection of a Sanction
+
+        :param User user:
+        :param str token: user's approval token
+        """
         raise NotImplementedError('Sanction subclasses must implement an #_on_reject method')
 
     def _on_complete(self, user):
-        """When a Sanction has unanimous approval"""
+        """Callback for when a Sanction has approval and enters the ACTIVE state
+
+        :param User user:
+        """
         raise NotImplementedError('Sanction subclasses must implement an #_on_complete method')
 
     def approve(self, user, token):
@@ -3380,7 +3462,7 @@ class Embargo(EmailApprovableSanction):
     # show up in any search related fields.
     @property
     def pending_registration(self):
-        return not self.for_existing_registration and self.pending_approval
+        return not self.for_existing_registration and self.is_pending_approval
 
     def __repr__(self):
         parent_registration = None
@@ -3720,6 +3802,7 @@ class RegistrationApproval(EmailApprovableSanction):
         for node in register.root.node_and_primary_descendants():
             self._add_success_logs(node, user)
             node.update_search()  # update search if public
+
         self.save()
 
     def _on_reject(self, user, token):
@@ -3734,3 +3817,126 @@ class RegistrationApproval(EmailApprovableSanction):
             },
             auth=Auth(user),
         )
+
+
+class DraftRegistrationApproval(Sanction):
+
+    mode = Sanction.ANY
+
+    def _on_complete(self, *args, **kwargs):
+        pass  # draft approval state gets loaded dynamically from this record
+
+    def _on_reject(self, *args, **kwargs):
+        pass  # draft approval state gets loaded dynamically from this record
+
+
+class DraftRegistration(AddonModelMixin, StoredObject):
+
+    _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
+
+    datetime_initiated = fields.DateTimeField(auto_now_add=True)
+    datetime_updated = fields.DateTimeField(auto_now=True)
+    # Original Node a draft registration is associated with
+    branched_from = fields.ForeignField('node')
+
+    initiator = fields.ForeignField('user')
+
+    # Dictionary field mapping question id to a question's comments and answer
+    # {
+    #   <qid>: {
+    #     'comments': [{
+    #       'user': {
+    #         'id': <uid>,
+    #         'name': <name>
+    #       },
+    #       value: <value>,
+    #       lastModified: <datetime>
+    #     }],
+    #     'value': <value>
+    #   }
+    # }
+    registration_metadata = fields.DictionaryField(default=dict)
+    registration_schema = fields.ForeignField('metaschema')
+    registered_node = fields.ForeignField('node')
+
+    approval = fields.ForeignField('draftregistrationapproval', default=None)
+
+    # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
+    # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
+    # and these values are added to the DraftRegistration
+    flags = fields.DictionaryField()
+
+    notes = fields.StringField()
+
+    def __init__(self, *args, **kwargs):
+        super(DraftRegistration, self).__init__(*args, **kwargs)
+        meta_schema = self.registration_schema or kwargs.get('registration_schema')
+        if meta_schema:
+            schema = meta_schema.schema
+            if not self.registration_schema:
+                flags = schema.get('flags', {})
+                for flag, value in flags.iteritems():
+                    self.flags[flag] = value
+
+    @property
+    def requires_approval(self):
+        return self.registration_schema.requires_approval
+
+    @property
+    def is_pending_review(self):
+        return self.approval.is_pending_approval if (self.requires_approval and self.approval) else False
+
+    @property
+    def is_approved(self):
+        if self.requires_approval and not self.approval:
+            return False
+        elif self.requires_approval and self.approval:
+            return self.approval.is_approved
+        else:
+            return True
+
+    def update_metadata(self, metadata):
+        changes = []
+        for question_id, value in metadata.iteritems():
+
+            old_value = self.registration_metadata.get(question_id)
+
+            if not old_value or old_value.get('value') != value.get('value'):
+                changes.append(question_id)
+
+        self.registration_metadata.update(metadata)
+
+        project_signals.draft_edited.send(changes)
+        self.after_edit(changes)
+        return changes
+
+    def after_edit(self, changes):
+
+        if changes:
+            self.flags.update({
+                'isPendingReview': False,
+                'isApproved': False
+            })
+            self.save()
+
+    def find_question(self, qid):
+        for page in self.registration_schema.schema['pages']:
+            for question_id, question in page['questions'].iteritems():
+                if question_id == qid:
+                    return question
+
+    def register(self, auth, save=False):
+
+        node = self.branched_from
+
+        # Create the registration
+        register = node.register_node(
+            schema=self.registration_schema,
+            auth=auth,
+            data=self.registration_metadata,
+            template=self.registration_schema.name,
+        )
+        self.registered_node = register
+        if save:
+            self.save()
+        return register

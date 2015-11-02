@@ -99,7 +99,13 @@ def mock_archive(project, schema=None, auth=None, template=None, data=None, pare
     data = data or ''
 
     with mock.patch('framework.tasks.handlers.enqueue_task'):
-        registration = project.register_node(schema, auth, template, data, parent)
+        registration = project.register_node(
+            schema=schema,
+            auth=auth,
+            data=data,
+            template=template,
+            parent=parent,
+        )
     registration.root.require_approval(project.creator)
     if autocomplete:
         root_job = registration.root.archive_job
