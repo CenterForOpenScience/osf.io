@@ -128,7 +128,7 @@ var FileBrowser = {
         // BREADCRUMBS
         self.updateBreadcrumbs = function(linkObject){
             var crumb = new Breadcrumb(linkObject.label, linkObject.link, linkObject.type);
-            if (linkObject.type === 'collection' || linkObject.type === 'user'){
+            if (linkObject.type === 'collection' || linkObject.type === 'name' || linkObject.type === 'tag'){
                 self.breadcrumbs([crumb]);
                 return;
             }
@@ -219,7 +219,7 @@ var Collections  = {
         var selectedCSS;
         return m('.fb-collections', m('ul', [
             args.list.map(function(item){
-                selectedCSS = item.id === args.activeFilter() ? '.active' : '';
+                selectedCSS = item.id === args.activeFilter() ? 'active' : '';
                 return m('li', { className : selectedCSS},
                     m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label)
                 );
