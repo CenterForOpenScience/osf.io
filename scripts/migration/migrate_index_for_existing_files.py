@@ -18,7 +18,7 @@ def main():
     if dry_run:
         logger.warn('Dry_run mode')
     for file_ in OsfStorageFile.find():
-        logger.info('File with _id {0} and name {1} has been saved.'.format(file_._id, file_.name))
+        logger.info(u'File with _id {0} and name {1} has been saved.'.format(file_._id, file_.name))
         if not dry_run:
             search.update_file(file_)
 
