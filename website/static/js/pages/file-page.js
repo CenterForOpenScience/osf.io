@@ -27,9 +27,8 @@ $(function() {
             });
         },
         onRemoveTag: function (tag) {
-            var url = tagUrl + tag + '/';
             var request = $.ajax({
-                url: url,
+                url: tagUrl,
                 type: 'DELETE',
                 contentType: 'application/json',
                 dataType: 'JSON',
