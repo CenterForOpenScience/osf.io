@@ -126,7 +126,6 @@ var TokenDataClient = oop.defclass({
         return $osf.ajaxJSON('DELETE', url, {isCors: true});
     },
     unserialize: function (apiData) {
-        // TODO: (mfraezz) Fix this
         var result;
         // Check return type: return one object (detail view) or list of objects (list view) as appropriate.
         if (Array.isArray(apiData.data)) {
@@ -309,7 +308,7 @@ var TokenDetailViewModel = oop.extend(ChangeMessageMixin, {
             this.tokenData(dataObj);
             this.originalValues(dataObj.serialize());
             this.showToken(true);
-            this.changeMessage(language.apiOauth2Token.creationSuccess, 'text-success', 5000);
+            this.changeMessage(language.apiOauth2Token.creationSuccess, 'text-success');
             this.apiDetailUrl(dataObj.apiDetailUrl); // Toggle ViewModel --> act like a display view now.
             historyjs.replaceState({}, '', dataObj.webDetailUrl);  // Update address bar to show new detail page
         }.bind(this));
