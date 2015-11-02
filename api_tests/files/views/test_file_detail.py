@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
+from website.files.exceptions import FileNodeCheckedOutError
 from website.addons.osfstorage import settings as osfstorage_settings
 
 from tests.base import ApiTestCase
