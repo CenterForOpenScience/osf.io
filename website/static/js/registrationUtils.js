@@ -393,13 +393,23 @@ var RegistrationEditor = function(urls, editorId) {
     self.lastSaved = ko.computed(function() {
         var request = self.lastSaveRequest();
         if (request !== undefined) {
+            // If an autosave event has already occurred during this pageview
             if (request.completedDate !== undefined) {
-                return request.completedDate.toGMTString();
+                return request.completedDate.toUTCString();
             } else {
                 return 'pending';
             }
         } else {
-            return 'never';
+            // If viewing a new or previously worked on draft registration. Note that "updated" is never undefined,
+            //  even for a newly created registration
+            var draft = self.draft();
+            var startDate = draft ? self.draft().initiated : undefined;
+            var updateDate = draft ? self.draft().updated : undefined;
+            if (updateDate && startDate.getTime() !== updateDate.getTime()) {
+                return updateDate.toUTCString();
+            } else {
+                return 'never';
+            }
         }
     });
 
