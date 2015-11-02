@@ -68,7 +68,6 @@ class NodeSerializer(JSONAPISerializer):
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
-    # for testing purposes: self and related field
     children = RelationshipField(
         related_view='nodes:node-children',
         related_view_kwargs={'node_id': 'pk'},
