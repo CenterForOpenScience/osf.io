@@ -13,7 +13,7 @@ import website.search.search as search
 from website.search import elastic_search
 from website.search.util import build_query
 from website.search_migration.migrate import migrate
-from website.models import Retraction
+from website.models import Retraction, Tag
 
 from tests.base import OsfTestCase
 from tests.test_features import requires_search
@@ -49,6 +49,13 @@ def query_user(name):
     term = 'category:user AND "{}"'.format(name)
     return query(term)
 
+def query_file(name):
+    term = 'category:file AND "{}"'.format(name)
+    return query(term)
+
+def query_tag_file(name):
+    term = 'category:file AND (tags:u"{}")'.format(name)
+    return query(term)
 
 def retry_assertion(interval=0.3
                     , retries=3):
@@ -763,3 +770,78 @@ class TestSearchMigration(SearchTestCase):
             var = self.es.indices.get_aliases()
             assert_equal(var[settings.ELASTIC_INDEX + '_v{}'.format(n + 1)]['aliases'].keys()[0], settings.ELASTIC_INDEX)
             assert not var.get(settings.ELASTIC_INDEX + '_v{}'.format(n))
+
+class TestSearchFiles(SearchTestCase):
+
+    def setUp(self):
+        super(TestSearchFiles, self).setUp()
+        self.node = ProjectFactory(is_public=True, title='Otis')
+        self.osf_storage = self.node.get_addon('osfstorage')
+        self.root = self.osf_storage.get_root()
+
+    def test_search_file(self):
+        self.root.append_file('Shake.wav')
+        find = query_file('Shake.wav')['results']
+        assert_equal(len(find), 1)
+
+    def test_delete_file(self):
+        file_ = self.root.append_file('I\'ve Got Dreams To Remember.wav')
+        find = query_file('I\'ve Got Dreams To Remember.wav')['results']
+        assert_equal(len(find), 1)
+        file_.delete()
+        find = query_file('I\'ve Got Dreams To Remember.wav')['results']
+        assert_equal(len(find), 0)
+
+    def test_add_tag(self):
+        file_ = self.root.append_file('That\'s How Strong My Love Is.mp3')
+        tag = Tag(_id='Redding')
+        tag.save()
+        file_.tags.append(tag)
+        file_.save()
+        find = query_tag_file('Redding')['results']
+        assert_equal(len(find), 1)
+
+    def test_remove_tag(self):
+        file_ = self.root.append_file('I\'ve Been Loving You Too Long.mp3')
+        tag = Tag(_id='Blue')
+        tag.save()
+        file_.tags.append(tag)
+        file_.save()
+        find = query_tag_file('Blue')['results']
+        assert_equal(len(find), 1)
+        file_.tags.remove('Blue')
+        file_.save()
+        find = query_tag_file('Blue')['results']
+        assert_equal(len(find), 0)
+
+    def test_make_node_private(self):
+        file_ = self.root.append_file('Change_Gonna_Come.wav')
+        find = query_file('Change_Gonna_Come.wav')['results']
+        assert_equal(len(find), 1)
+        self.node.is_public = False
+        self.node.save()
+        find = query_file('Change_Gonna_Come.wav')['results']
+        assert_equal(len(find), 0)
+
+    def test_make_private_node_public(self):
+        self.node.is_public = False
+        self.node.save()
+        file_ = self.root.append_file('Try a Little Tenderness.flac')
+        find = query_file('Try a Little Tenderness.flac')['results']
+        assert_equal(len(find), 0)
+        self.node.is_public = True
+        self.node.save()
+        find = query_file('Try a Little Tenderness.flac')['results']
+        assert_equal(len(find), 1)
+
+    def test_delete_node(self):
+        node = ProjectFactory(is_public=True, title='The Soul Album')
+        osf_storage = node.get_addon('osfstorage')
+        root = osf_storage.get_root()
+        root.append_file('The Dock of the Bay.mp3')
+        find = query_file('The Dock of the Bay.mp3')['results']
+        assert_equal(len(find), 1)
+        node.is_deleted = True
+        node.save()
+        find = query_file('The Dock of the Bay.mp3')['results']
+        assert_equal(len(find), 0)
