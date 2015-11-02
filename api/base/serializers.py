@@ -109,14 +109,7 @@ class AuthorizedCharField(ser.CharField):
         return field_source_method(auth=auth)
 
 
-class HyperlinkedFieldMixin(object):
-    """ Mixin to ensure correct formatting of JSON API relationship fields. """
-
-    def format_json_response(self, link_type, url, meta):
-        return {'links': {link_type: {'href': url, 'meta': meta}}}
-
-
-class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField, HyperlinkedFieldMixin):
+class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
     """
     HyperlinkedIdentityField that returns a nested dict with url,
     optional meta information, and link_type.
@@ -129,6 +122,7 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField, HyperlinkedF
     """
 
     def __init__(self, view_name=None, **kwargs):
+        self.json_api_link = True  # serializes to a links object
         self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedIdentityField, self).__init__(view_name=view_name, **kwargs)
@@ -172,10 +166,10 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField, HyperlinkedF
             else:
                 meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
 
-        return self.format_json_response(link_type=self.link_type, url=url, meta=meta)
+        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
-class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField, HyperlinkedFieldMixin):
+class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
     """
     HyperlinkedRelated field that returns a nested dict with url,
     optional meta information, and link_type.
@@ -187,6 +181,7 @@ class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField, HyperlinkedFie
 
     """
     def __init__(self, view_name=None, **kwargs):
+        self.json_api_link = True  # serializes to a links object
         self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedRelatedField, self).__init__(view_name=view_name, **kwargs)
@@ -200,10 +195,10 @@ class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField, HyperlinkedFie
         """
         url = super(JSONAPIHyperlinkedRelatedField, self).to_representation(value)
         meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
-        return self.format_json_response(link_type=self.link_type, url=url, meta=meta)
+        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
-class JSONAPIHyperlinkedGuidRelatedField(ser.Field, HyperlinkedFieldMixin):
+class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
     """
     Field that returns a nested dict with the url (constructed based
     on the object's type), optional meta information, and link_type.
@@ -214,6 +209,7 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field, HyperlinkedFieldMixin):
 
     """
     def __init__(self, **kwargs):
+        self.json_api_link = True  # serializes to a links object
         self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
@@ -228,7 +224,7 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field, HyperlinkedFieldMixin):
         if value._name in self.parent.Meta.type_:
             self.link_type = 'self'
         meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
-        return self.format_json_response(link_type=self.link_type, url=value.get_absolute_url(), meta=meta)
+        return {'links': {self.link_type: {'href': value.get_absolute_url(), 'meta': meta}}}
 
 
 class LinksField(ser.Field):
@@ -412,7 +408,7 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if isinstance(field, HyperlinkedFieldMixin):
+            if getattr(field, 'json_api_link', False):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
