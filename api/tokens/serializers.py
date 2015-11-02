@@ -18,10 +18,6 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
                           read_only=True,  # Don't let user register a token in someone else's name
                           source='owner._id')
 
-    user_id = ser.CharField(help_text='The id of the user who owns this token',
-                            read_only=True,
-                            source='owner._id')
-
     scopes = ser.CharField(help_text='Governs permissions associated with this token',
                            required=True)
 
@@ -38,7 +34,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         return obj.absolute_url
 
     def to_representation(self, obj, envelope='data'):
-        data = super(ApiOAuth2PersonalTokenSerializer, self).to_representation(obj, envelope)
+        data = super(ApiOAuth2PersonalTokenSerializer, self).to_representation(obj, envelope=envelope)
         # Make sure users only see token_id on create
         if not self.context['request'].method == 'POST':
             if 'data' in data:
@@ -50,7 +46,6 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         instance = ApiOAuth2PersonalToken(**validated_data)
-        instance.user_id = instance.owner._id
         instance.save()
         return instance
 
