@@ -452,11 +452,18 @@ var tbOptions = {
     },
     filterTemplate : function() {
         var tb = this;
-        return m('input.pull-left.form-control[placeholder="' + tb.options.filterPlaceholder + '"][type="text"]', {
-            style: 'width:100%;display:inline;',
-            onkeyup: tb.filter,
-            value: tb.filterText()
-        });
+        return [
+            m('input.pull-left.form-control[placeholder="' + tb.options.filterPlaceholder + '"][type="text"]', {
+                style: 'width:100%;display:inline;',
+                onkeyup: tb.filter,
+                onchange: m.withAttr("value", tb.filterText),
+                value: tb.filterText()
+            }),
+            m('.filterReset', { onclick : function () {
+                tb.resetFilter.call(tb);
+                $('#poFilter>input').val('');
+            } }, tb.options.removeIcon())
+        ];
     },
     lazyLoadPreprocess : function(value){
         var tb = this;

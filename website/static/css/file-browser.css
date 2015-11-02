@@ -15,11 +15,6 @@
     width: 60%;
     display : inline-block;
 }
-.fb-buttonRow {
-    width: 40%;
-    text-align: right;
-    display: inline-block;
-}
 .fb-breadcrumbs ul, .fb-collections ul, .fb-filters ul {
     padding: 0;
     list-style: none;
@@ -32,6 +27,21 @@
     margin-left: 5px;
     color: #999999;
 }
+.fb-buttonRow {
+    width: 40%;
+    text-align: right;
+    display: inline-block;
+}
+.filterReset {
+    font-size: 20px;
+    color: #999;
+    float: right;
+    margin-top: -33px; /* to align with input box */
+    margin-right: 5px;
+    cursor: default;
+    font-weight: bold;
+}
+
 
 /* Sidebar with Collections and filters*/
 .fb-sidebar {
