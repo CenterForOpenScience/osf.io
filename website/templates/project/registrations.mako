@@ -1,12 +1,12 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Registrations</%def>
 <div id="registrationsListScope">
-    <form id="newDraftRegistrationForm" method="POST" style="display:none">
-        <!-- ko if: selectedSchema() -->
-        <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name">
-        <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version">
-        <!-- /ko -->
-    </form>
+  <form id="newDraftRegistrationForm" method="POST" style="display:none">
+    <!-- ko if: selectedSchema() -->
+    <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name">
+    <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version">
+    <!-- /ko -->
+  </form>
 <ul id="registrationsTabs" class="nav nav-tabs" role="tablist">
   <li role="presentation" class="active">
     <a id="registrationsControl" aria-controls="registrations" href="#registrations">Registrations</a>
@@ -186,17 +186,18 @@
     </ul>
 
     <p>Continue your registration by selecting a registration form:</p>
-    <!-- ko foreach: schemas -->
+    <span data-bind="foreach: schemas">
     <div class="radio">
         <label>
-            <input type="radio" name="chosenDraftRegistrationTemplate" data-bind="checkedValue: $data, checked: $root.selectedSchema"/>
-            {{ schema.title }}
-            <!-- ko if: schema.description -->
-            <i data-bind="tooltip: {title: schema.description}" class="fa fa-info-circle"> </i>
-            <!-- /ko -->
+          <input type="radio" name="chosenDraftRegistrationTemplate" 
+                 data-bind="value: id, checked: $root.selectedSchemaId"/>
+          {{ schema.title }}
+          <!-- ko if: schema.description -->
+          <i data-bind="tooltip: {title: schema.description}" class="fa fa-info-circle"> </i>
+          <!-- /ko -->
         </label>
     </div>
-    <!-- /ko -->
+    </span>
 </script>
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}

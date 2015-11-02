@@ -454,6 +454,16 @@ RegistrationEditor.prototype.context = function(data) {
     }
     return data;
 };
+
+RegistrationEditor.prototype.toPreview = function () {
+    // save the form
+    var self = this;
+    self.save().done(function () {
+        // go to the preview
+        window.location = self.draft().urls.register_page;
+    });
+};
+
 /**
  * Check that the Draft is valid before registering
  */
@@ -482,13 +492,13 @@ RegistrationEditor.prototype.check = function() {
             // Validation passed for all applicable questions
 
             // wait for the last autosave to complete
-            self.lastSaveRequest().always(function() {
-                // save the form
-                self.save().done(function() {
-                    // go to the preview
-                    window.location = self.draft().urls.register_page;
+            if (self.lastSaveRequest()) {
+                self.lastSaveRequest().always(function () {
+                    self.toPreview();
                 });
-            });
+            } else {
+                self.toPreview();
+            }
         });
     });
 };
@@ -661,16 +671,27 @@ RegistrationEditor.prototype.save = function() {
     return request;
 };
 
+
+RegistrationEditor.prototype.toDraft = function () {
+    // save the form
+    var self = this;
+    self.save().done(function() {
+        window.location = self.urls.draftRegistrations;
+    });
+};
+
 RegistrationEditor.prototype.saveForLater = function () {
     var self = this;
 
-    // wait for the last autosave to complete
-    self.lastSaveRequest().always(function() {
-        // save the form
-        self.save().done(function() {
-            window.location = self.urls.draftRegistrations;
+    if (self.lastSaveRequest()) {
+        // wait for the last autosave to complete
+        self.lastSaveRequest().always(function() {
+            self.toDraft();
         });
-    });
+    } else {
+        self.toDraft();
+    }
+
 };
 
 /**
@@ -696,6 +717,9 @@ var RegistrationManager = function(node, draftsSelector, urls) {
 
     self.schemas = ko.observableArray();
     self.selectedSchema = ko.observable();
+    self.selectedSchemaId = ko.computed(function() {
+        return (self.selectedSchema() || {}).id;
+    });
 
     // TODO: convert existing registration UI to frontend impl.
     // self.registrations = ko.observable([]);
@@ -767,18 +791,28 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
  **/
 RegistrationManager.prototype.createDraftModal = function() {
     var self = this;
+    if (!self.selectedSchema()){
+        self.selectedSchema(self.schemas()[0]);
+    }
 
-    bootbox.confirm({
+    bootbox.dialog({
         size: 'large',
         title: 'Register <title>',
         message: function() {
             ko.renderTemplate('createDraftRegistrationModal', self, {}, this);
         },
-        callback: function(result) {
-            if (result) {
-                $('#newDraftRegistrationForm').submit();
-            } else {
-                self.selectedSchema(undefined);
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn btn-default'
+            },
+            create: {
+                label: 'Create draft',
+                className: 'btn btn-primary',
+                callback: function(event) {
+                    var selectedSchema = self.selectedSchema();
+                    $('#newDraftRegistrationForm').submit();
+                }
             }
         }
     });
