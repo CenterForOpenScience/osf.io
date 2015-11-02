@@ -173,6 +173,10 @@ created fork from
 edited description of  <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
+<script type="text/html" id="license_changed">
+updated the license of <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
 <script type="text/html" id="updated_fields">
   changed the <span data-bind="listing: {
                                  data: params.updated_fields,
