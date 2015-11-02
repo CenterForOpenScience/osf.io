@@ -23,7 +23,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
-from website.oauth.models import ApiOAuth2Application, ExternalAccount, ExternalProvider, ApiOAuth2PersonalToken
+from website.oauth.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ExternalAccount, ExternalProvider
 from website.project.model import (
     Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig
 )
@@ -140,9 +140,9 @@ class ApiOAuth2ApplicationFactory(ModularOdmFactory):
 class ApiOAuth2PersonalTokenFactory(ModularOdmFactory):
     FACTORY_FOR = ApiOAuth2PersonalToken
 
-    user_id = SubFactory(UserFactory)
+    owner = SubFactory(UserFactory)
 
-    scopes = ['osf.full+write']
+    scopes = ['osf.full_write']
 
     name = Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
 
