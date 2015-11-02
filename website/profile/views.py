@@ -419,7 +419,7 @@ def personal_access_token_list(auth, **kwargs):
 
 @must_be_logged_in
 def personal_access_token_register(auth, **kwargs):
-    """Register an API personal token: blank form view"""
+    """Register a personal access token: blank form view"""
     token_list_url = api_v2_url("tokens/")  # POST request to this url
     return {"token_list_url": token_list_url,
             "token_detail_url": '',
@@ -427,12 +427,11 @@ def personal_access_token_register(auth, **kwargs):
 
 @must_be_logged_in
 def personal_access_token_detail(auth, **kwargs):
-    """Show detail for a single OAuth personal token"""
+    """Show detail for a single personal access token"""
     _id = kwargs.get('_id')
 
     # The ID must be an active and existing record, and the logged-in user must have permission to view it.
     try:
-        #
         record = ApiOAuth2PersonalToken.find_one(Q('_id', 'eq', _id))
     except NoResultsFound:
         raise HTTPError(http.NOT_FOUND)
