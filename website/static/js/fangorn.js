@@ -1042,7 +1042,7 @@ function doCheckout(item, checkout, showError) {
         }
     }).fail(function(xhr) {
         if (showError) {
-            $osf.growl('Error', 'Unable to check-out file. This is most likely due to the file being already checked-out' +
+            $osf.growl('Error', 'Unable to check out file. This is most likely due to the file being already checked-out' +
                 ' by another user.');
         }
     });
@@ -1569,12 +1569,12 @@ var FGItemButtons = {
                                             m('a.btn.btn-default', {onclick: function() {tb.modal.dismiss();}}, 'Cancel'), //jshint ignore:line
                                             m('a.btn.btn-warning', {onclick: function() {
                                                 doCheckout(item, window.contextVars.currentUser.id, true);
-                                            }}, 'Check-out file')
+                                            }}, 'Check out file')
                                         ]), m('h3.break-word.modal-title', 'Confirm file check-out?'));
                                     },
                                     icon: 'fa fa-sign-out',
                                     className : 'text-warning'
-                                }, 'Check-out file'));
+                                }, 'Check out file'));
                         } else if (item.data.extra.checkout === window.contextVars.currentUser.id) {
                             rowButtons.push(
                                 m.component(FGButton, {
@@ -1583,7 +1583,7 @@ var FGItemButtons = {
                                     },
                                     icon: 'fa fa-sign-in',
                                     className : 'text-warning'
-                                }, 'Check-in file')
+                                }, 'Check in file')
                             );
                         }
                     } else {
@@ -1818,7 +1818,7 @@ var FGToolbar = {
                         },
                         icon: 'fa fa-sign-out',
                         className: 'text-warning'
-                    }, 'Check-out Multiple')
+                    }, 'Check out Multiple')
                 );
             }
             if (showCheckin){
@@ -1833,7 +1833,7 @@ var FGToolbar = {
                         },
                         icon: 'fa fa-sign-in',
                         className: 'text-warning'
-                    }, 'Check-in Multiple')
+                    }, 'Check in Multiple')
                 );
             }
         }

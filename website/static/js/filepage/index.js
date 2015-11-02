@@ -195,12 +195,12 @@ var FileViewPage = {
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
-                        $osf.growl('Error', 'Unable to check-out file');
+                        $osf.growl('Error', 'Unable to check out file');
                     });
                 },
                 buttons:{
                     confirm:{
-                        label: 'Check-out file',
+                        label: 'Check out file',
                         className: 'btn-warning'
                     }
                 }
@@ -225,13 +225,13 @@ var FileViewPage = {
             }).done(function(resp) {
                 window.location.reload();
             }).fail(function(resp) {
-                $osf.growl('Error', 'Unable to check-in file');
+                $osf.growl('Error', 'Unable to check in file');
             });
         });
         $(document).on('fileviewpage:force_checkin', function() {
             bootbox.confirm({
                 title: 'Force check-in file?',
-                message: 'This will check-in the file for all users, allowing it to be edited. Are you sure?',
+                message: 'This will check in the file for all users, allowing it to be edited. Are you sure?',
                 buttons: {
                     confirm:{
                         label: 'Force check-in',
@@ -416,13 +416,13 @@ var FileViewPage = {
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force Check-in')
+                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check-in')
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && ctrl.requestDone && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check-out')
+                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out')
             ]) : '',
             (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) && ctrl.requestDone) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check-in')
+                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in')
             ]) : '',
             window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
                 m.component(SharePopover, {link: link, height: height})
