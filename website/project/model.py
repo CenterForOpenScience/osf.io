@@ -275,7 +275,7 @@ class NodeLog(StoredObject):
 
     was_connected_to = fields.ForeignField('node', list=True)
 
-    user = fields.ForeignField('user', backref='created')
+    user = fields.ForeignField('user', index=True)
     foreign_user = fields.StringField()
 
     DATE_FORMAT = '%m/%d/%Y %H:%M UTC'
@@ -630,6 +630,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     is_registration = fields.BooleanField(default=False, index=True)
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user', backref='registered')
+
     registered_schema = fields.ForeignField('metaschema', backref='registered')
     registered_meta = fields.DictionaryField()
     registration_approval = fields.ForeignField('registrationapproval')
@@ -716,6 +717,23 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def category_display(self):
         """The human-readable representation of this node's category."""
         return self.CATEGORY_MAP[self.category]
+
+    # We need the following 2 properties in order to serialize related links in NodeRegistrationSerializer
+    @property
+    def registered_user_id(self):
+        """The ID of the user who registered this node if this is a registration, else None.
+        """
+        if self.registered_user:
+            return self.registered_user._id
+        return None
+
+    @property
+    def registered_from_id(self):
+        """The ID of the user who registered this node if this is a registration, else None.
+        """
+        if self.registered_from:
+            return self.registered_from._id
+        return None
 
     @property
     def sanction(self):
@@ -1149,11 +1167,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                         if key == 'category':
                             self.delete_search_entry()
                         ###############
-                        values[key] = {
-                            'old': getattr(self, key),
-                            'new': value,
-                        }
-                        setattr(self, key, value)
+                        old_value = getattr(self, key)
+                        if old_value != value:
+                            values[key] = {
+                                'old': old_value,
+                                'new': value,
+                            }
+                            setattr(self, key, value)
                     except AttributeError:
                         raise NodeUpdateError(reason="Invalid value for attribute '{0}'".format(key), key=key)
                     except warnings.Warning:
@@ -1320,6 +1340,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 'template_node': {
                     'id': self._primary_key,
                     'url': self.url,
+                    'title': self.title,
                 },
             },
             auth=auth,
@@ -1491,7 +1512,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         ids = [self._id] + [n._id
                             for n in self.get_descendants_recursive()
                             if n.can_view(auth)]
-        query = Q('__backrefs.logged.node.logs', 'in', ids)
+        query = Q('__backrefs.logged.node.logs', 'in', ids) & Q('should_hide', 'ne', True)
         return NodeLog.find(query).sort('-_id')
 
     @property
@@ -2024,6 +2045,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     @property
     def absolute_api_v2_url(self):
+        if self.is_registration:
+            return absolute_reverse('registrations:registration-detail', kwargs={'registration_id': self._id})
         return absolute_reverse('nodes:node-detail', kwargs={'node_id': self._id})
 
     # used by django and DRF
@@ -2142,6 +2165,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def parent_id(self):
         if self.node__parent:
             return self.node__parent[0]._primary_key
+        return None
+
+    @property
+    def forked_from_id(self):
+        if self.forked_from:
+            return self.forked_from._id
         return None
 
     @property
@@ -2318,6 +2347,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 contributor=contrib, auth=auth, log=False,
             )
             results.append(outcome)
+            if outcome:
+                project_signals.contributor_removed.send(self, user=contrib)
             removed.append(contrib._id)
         if log:
             self.add_log(
@@ -2618,12 +2649,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         self.save()
         return contributor
 
-    def set_privacy(self, permissions, auth=None, log=True, save=True):
-        """Set the permissions for this node.
+    def set_privacy(self, permissions, auth=None, log=True, save=True, meeting_creation=False):
+        """Set the permissions for this node. Also, based on meeting_creation, queues an email to user about abilities of
+            public projects.
 
         :param permissions: A string, either 'public' or 'private'
         :param auth: All the auth information including user, API key.
         :param bool log: Whether to add a NodeLog for the privacy change.
+        :param bool meeting_creation: Whther this was creayed due to a meetings email.
         """
         if auth and not self.has_permission(auth.user, ADMIN):
             raise PermissionsError('Must be an admin to change privacy settings.')
@@ -2662,6 +2695,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if save:
             self.save()
+        if auth and permissions == 'public':
+            project_signals.privacy_set_public.send(auth.user, node=self, meeting_creation=meeting_creation)
         return True
 
     def admin_public_wiki(self, user):
@@ -3665,6 +3700,7 @@ class RegistrationApproval(EmailApprovableSanction):
         src.save()
 
     def _on_complete(self, user):
+        self.state = Sanction.APPROVED
         register = Node.find_one(Q('registration_approval', 'eq', self))
         registered_from = register.registered_from
         auth = Auth(self.initiated_by)

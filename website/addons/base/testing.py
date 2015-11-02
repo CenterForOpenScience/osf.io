@@ -2,6 +2,7 @@
 
 from framework.auth import Auth
 
+from website import settings
 from tests.base import OsfTestCase
 from tests.factories import AuthUserFactory, ProjectFactory
 
@@ -26,7 +27,7 @@ class AddonTestCase(OsfTestCase):
         - self.node_settings: AddonNodeSettings object for the addon
 
     """
-
+    DB_NAME = getattr(settings, 'TEST_DB_ADDON_NAME', 'osf_addon')
     ADDON_SHORT_NAME = None
     OWNERS = ['user', 'node']
     NODE_USER_FIELD = 'user_settings'

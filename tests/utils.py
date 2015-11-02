@@ -1,13 +1,14 @@
-import mock
 import contextlib
 import functools
+import mock
+
+from django.http import HttpRequest
 from nose import SkipTest
 from nose.tools import assert_equal, assert_not_equal
 
 from framework.auth import Auth
-
-from website.archiver import listeners as archiver_listeners
 from website.archiver import ARCHIVER_SUCCESS
+from website.archiver import listeners as archiver_listeners
 
 def requires_module(module):
     def decorator(fn):
@@ -116,3 +117,13 @@ def mock_archive(project, schema=None, auth=None, template=None, data=None, pare
         sanction = registration.root.sanction
         sanction._on_complete(project.creator)
     yield registration
+
+def make_drf_request(*args, **kwargs):
+    from rest_framework.request import Request
+    http_request = HttpRequest()
+    # The values here don't matter; they just need
+    # to be present
+    http_request.META['SERVER_NAME'] = 'localhost'
+    http_request.META['SERVER_PORT'] = 8000
+    # A DRF Request wraps a Django HttpRequest
+    return Request(http_request, *args, **kwargs)

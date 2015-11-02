@@ -17,7 +17,7 @@ from modularodm import exceptions as modm_errors
 from website.files import models
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import settings
-
+from website.files.exceptions import FileNodeCheckedOutError
 
 class TestOsfstorageFileNode(StorageTestCase):
 
@@ -65,6 +65,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'size': None,
             u'modified': None,
             u'contentType': None,
+            u'checkout': None,
             u'md5': None,
             u'sha256': None,
         })
@@ -90,6 +91,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             'size': 1234,
             'modified': None,
             'contentType': 'text/plain',
+            'checkout': None,
             'md5': None,
             'sha256': None,
         })
@@ -109,6 +111,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             'size': 1234,
             'modified': date.isoformat(),
             'contentType': 'text/plain',
+            'checkout': None,
             'md5': None,
             'sha256': None,
         })
@@ -478,3 +481,61 @@ class TestOsfStorageFileVersion(StorageTestCase):
             },
             metadata={'sha256': 'existing'}
         )._find_matching_archive())
+
+
+class TestOsfStorageCheckout(StorageTestCase):
+
+    def setUp(self):
+        super(TestOsfStorageCheckout, self).setUp()
+        self.user = factories.AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+        self.osfstorage = self.node.get_addon('osfstorage')
+        self.root_node = self.osfstorage.get_root()
+        self.file = self.root_node.append_file('3005')
+
+    def test_delete_checked_out_file(self):
+        self.file.checkout = self.user
+        self.file.save()
+        with assert_raises(FileNodeCheckedOutError):
+            self.file.delete()
+
+    def test_delete_folder_with_checked_out_file(self):
+
+        folder = self.root_node.append_folder('folder')
+        self.file.move_under(folder)
+        self.file.checkout = self.user
+        self.file.save()
+        with assert_raises(FileNodeCheckedOutError):
+            folder.delete()
+
+    def test_move_checked_out_file(self):
+        self.file.checkout = self.user
+        self.file.save()
+        folder = self.root_node.append_folder('folder')
+        with assert_raises(FileNodeCheckedOutError):
+            self.file.move_under(folder)
+
+    def test_checked_out_merge(self):
+        user = factories.AuthUserFactory()
+        node = ProjectFactory(creator=user)
+        osfstorage = node.get_addon('osfstorage')
+        root_node = osfstorage.get_root()
+        file = root_node.append_file('test_file')
+        user_merge_target = factories.AuthUserFactory()
+        file.checkout = user
+        file.save()
+        user_merge_target.merge_user(user)
+        file.reload()
+        assert_equal(user_merge_target, file.checkout)
+
+    def test_remove_contributor_with_checked_file(self):
+        user = factories.AuthUserFactory()
+        self.node.contributors.append(user)
+        self.node.add_permission(user, 'admin')
+        self.node.visible_contributor_ids.append(user._id)
+        self.node.save()
+        self.file.checkout = self.user
+        self.file.save()
+        self.file.node.remove_contributors([self.user], save=True)
+        self.file.reload()
+        assert_equal(self.file.checkout, None)
