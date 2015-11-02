@@ -183,9 +183,10 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     def kwargs_lookup(self, obj, kwargs_dict):
         kwargs_retrieval = {}
         for lookup_url_kwarg, lookup_field in kwargs_dict.items():
-            lookup_value = getattr(obj, lookup_field, None)
-            if lookup_value is None:
-                return None
+            try:
+                lookup_value = getattr(obj, lookup_field)
+            except AttributeError as exc:
+                raise AssertionError(exc)
             kwargs_retrieval[lookup_url_kwarg] = lookup_value
         return kwargs_retrieval
 
@@ -197,10 +198,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 urls[view_name] = {}
             else:
                 kwargs = self.kwargs_lookup(obj, self.view_kwargs[view_name])
-                if kwargs is None:
-                    urls[view_name] = {}
-                else:
-                    urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
+                urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
         return urls
 
     # Overrides HyperlinkedIdentityField
