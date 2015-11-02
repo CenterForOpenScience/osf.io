@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
 import httplib as http
 import itertools
 
@@ -11,8 +10,6 @@ from framework import status
 from framework.exceptions import HTTPError
 from framework.flask import redirect  # VOL-aware redirect
 
-from framework.mongo.utils import to_mongo
-from framework.forms.utils import unprocess_payload
 from framework.auth.decorators import must_be_signed
 
 from website.archiver import ARCHIVER_SUCCESS, ARCHIVER_FAILURE
@@ -129,9 +126,7 @@ def node_register_template_page(auth, node, **kwargs):
 
     if node.is_registration and node.registered_meta:
         registered = True
-        payload = node.registered_meta.get(to_mongo(template_name))
-        payload = json.loads(payload)
-        payload = unprocess_payload(payload)
+        payload = node.registered_meta
 
         if node.registered_schema:
             meta_schema = node.registered_schema

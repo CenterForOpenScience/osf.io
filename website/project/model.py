@@ -3,7 +3,6 @@ import itertools
 import functools
 import os
 import re
-import urllib
 import logging
 import pymongo
 import datetime
@@ -34,7 +33,7 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
-from framework.mongo.utils import to_mongo, to_mongo_key, unique_on
+from framework.mongo.utils import to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
@@ -1911,7 +1910,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         return draft
 
-    def register_node(self, schema, auth, data, template=None, parent=None):
+    def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1929,10 +1928,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
-
-        template = template or ''
-        template = urllib.unquote_plus(template)
-        template = to_mongo(template)
 
         when = datetime.datetime.utcnow()
 
@@ -1955,7 +1950,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta[template] = data
+        registered.registered_meta = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
@@ -1981,7 +1976,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     schema=schema,
                     auth=auth,
                     data=data,
-                    template=template,
                     parent=registered,
                 )
                 if child_registration and not child_registration.primary:
@@ -3924,15 +3918,13 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                     return question
 
     def register(self, auth, save=False):
-
         node = self.branched_from
 
         # Create the registration
         register = node.register_node(
             schema=self.registration_schema,
             auth=auth,
-            data=self.registration_metadata,
-            template=self.registration_schema.name,
+            data=self.registration_metadata
         )
         self.registered_node = register
         if save:
