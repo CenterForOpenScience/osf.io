@@ -8,6 +8,7 @@
 var $ = require('jquery');
 var bootbox = require('bootbox');
 var historyjs = require('exports?History!history');
+var moment = require('moment');
 
 var ko = require('knockout');
 require('knockout.validation');
@@ -18,7 +19,6 @@ var koHelpers = require('./koHelpers');  // URL validators etc
 var $osf = require('./osfHelpers');
 var oop = require('js/oop');
 var language = require('js/osfLanguage');
-var moment = require('moment');
 
 
 /*
@@ -40,7 +40,6 @@ var TokenData = oop.defclass({
 
         // Other fields. Owner and client ID should never change within this view.
         this.id = data.id;
-        this.lastUsed = moment.utc(attributes.date_last_used).toString().split(' GMT')[0] + ' UTC';
 
         this.owner = attributes.user_id;
         this.webDetailUrl = data.links ? data.links.html : undefined;
@@ -61,7 +60,7 @@ var TokenData = oop.defclass({
                 type: 'tokens',
                 attributes: {
                     name: this.name(),
-                    scopes: this.scopes().toString().replace(',', ' ') || [],
+                    scopes: this.scopes().toString().replace(/,/g, ' ') || [],
                     user_id: this.owner
                 }
             }
