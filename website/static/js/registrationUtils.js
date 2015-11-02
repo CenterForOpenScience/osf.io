@@ -697,6 +697,9 @@ var RegistrationManager = function(node, draftsSelector, urls) {
 
     self.schemas = ko.observableArray();
     self.selectedSchema = ko.observable();
+    self.selectedSchemaId = ko.computed(function() {
+        return (self.selectedSchema() || {}).id;
+    });
 
     // TODO: convert existing registration UI to frontend impl.
     // self.registrations = ko.observable([]);
@@ -768,18 +771,28 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
  **/
 RegistrationManager.prototype.createDraftModal = function() {
     var self = this;
+    if (!self.selectedSchema()){
+        self.selectedSchema(self.schemas()[0]);
+    }
 
-    bootbox.confirm({
+    bootbox.dialog({
         size: 'large',
         title: 'Register <title>',
         message: function() {
             ko.renderTemplate('createDraftRegistrationModal', self, {}, this);
         },
-        callback: function(result) {
-            if (result) {
-                $('#newDraftRegistrationForm').submit();
-            } else {
-                self.selectedSchema(undefined);
+        buttons: {
+            cancel: {
+                label: 'Cancel',
+                className: 'btn btn-default'
+            },
+            create: {
+                label: 'Create draft',
+                className: 'btn btn-primary',
+                callback: function(event) {
+                    var selectedSchema = self.selectedSchema();
+                    $('#newDraftRegistrationForm').submit();
+                }
             }
         }
     });
