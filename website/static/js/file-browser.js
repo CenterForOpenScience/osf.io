@@ -26,10 +26,11 @@ var Collection = function(label, path, pathQuery) {
     this.id = getUID();
     this.type = 'collection';
     this.label = label || 'New Collection';
-    this.path = path;
-    this.pathQuery = pathQuery;
-};
-
+    this.data = {
+        path: path,
+        pathQuery: pathQuery
+    };
+}
 var Filter = function (label, data, type) {
     this.id = getUID();
     this.label = label;
@@ -74,8 +75,8 @@ var FileBrowser = {
             new Filter('Something Else', 'something', 'tag')
         ];
         self.filesData = m.prop($osf.apiV2Url(
-            self.collections[0].path,
-            { query : self.collections[0].pathQuery }
+            self.collections[0].data.path,
+            { query : self.collections[0].data.pathQuery }
         ));
 
         self.updateFilesData = function(linkObject) {
