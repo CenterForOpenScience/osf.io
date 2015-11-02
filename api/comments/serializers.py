@@ -85,7 +85,7 @@ class CommentDetailSerializer(CommentSerializer):
     deleted = ser.BooleanField(source='is_deleted', required=True)
 
 
-class CommentReportsSerializer(JSONAPISerializer):
+class CommentReportSerializer(JSONAPISerializer):
     id = IDField(source='_id', read_only=True)
     type = TypeField()
     category = ser.ChoiceField(choices=[('spam', 'Spam or advertising'),
@@ -130,7 +130,7 @@ class CommentReportsSerializer(JSONAPISerializer):
         return CommentReport(user._id, **validated_data)
 
 
-class CommentReportDetailSerializer(CommentReportsSerializer):
+class CommentReportDetailSerializer(CommentReportSerializer):
     """
     Overrides CommentReportSerializer to make id required.
     """

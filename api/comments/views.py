@@ -9,7 +9,7 @@ from api.base import permissions as base_permissions
 from api.comments.serializers import (
     CommentSerializer,
     CommentDetailSerializer,
-    CommentReportsSerializer,
+    CommentReportSerializer,
     CommentReportDetailSerializer,
     CommentReport
 )
@@ -288,7 +288,7 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
     required_read_scopes = [CoreScopes.COMMENT_REPORTS_READ]
     required_write_scopes = [CoreScopes.COMMENT_REPORTS_WRITE]
 
-    serializer_class = CommentReportsSerializer
+    serializer_class = CommentReportSerializer
 
     def get_queryset(self):
         user_id = self.request.user._id
