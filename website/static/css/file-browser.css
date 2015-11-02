@@ -49,18 +49,29 @@
     display: block;
     height: 535px;
     float: left;
-    background-color: #eee;
+    background-color: #fff;
+    padding: 10px;
 }
 .fb-collections ul li , .fb-filters ul li {
     padding: 3px 0;
+    border-left: 3px solid #FFFFFF;
 }
-
+.fb-collections h4 , .fb-filters h4 {
+    border-bottom: 1px solid #eee;
+    padding-bottom: 5px;
+}
 .fb-collections ul li.active, .fb-filters ul li.active {
-    background-color: #ccc;
+    background-color: #f8f8f8;
+    border-left: 3px solid #337AB7;
 }
 
-.fb-collections ul>li {
-    padding: 7px;
+.fb-collections ul>li, .fb-filters ul>li {
+    padding: 5px;
+}
+
+.fb-sidebar h5>.fa {
+    color: #666;
+    margin-right: 5px;
 }
 /* Main column with Projects */
 
