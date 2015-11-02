@@ -27,13 +27,7 @@ $(function() {
             });
         },
         onRemoveTag: function (tag) {
-            var request = $.ajax({
-                url: tagUrl,
-                type: 'DELETE',
-                contentType: 'application/json',
-                dataType: 'JSON',
-                content: {'tag': tag }
-            });
+            var request = $osf.ajaxJSON('DELETE', tagUrl, {'data': {'tag': tag}});
             request.fail(function (xhr, textStatus, error) {
                 $osf.growl('Error', 'Could not remove tag.');
                 Raven.captureMessage('Failed to remove tag', {
