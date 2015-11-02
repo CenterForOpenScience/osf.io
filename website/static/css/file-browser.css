@@ -8,8 +8,8 @@
 /* Header with breadcrumbs and cuttons */
 
 .fb-header {
-    background-color: #efefef;
-    padding: 10px;
+    background-color: #f8f8f8;
+    padding: 5px;
 }
 .fb-breadcrumbs {
     width: 60%;
@@ -47,9 +47,9 @@
 .fb-sidebar {
     width: 20%;
     display: block;
-    height: 500px;
+    height: 535px;
     float: left;
-    background-color: aliceblue;
+    background-color: #eee;
 }
 .fb-collections ul li , .fb-filters ul li {
     padding: 3px 0;
@@ -72,8 +72,8 @@
 
 /* Information Panel */
 .fb-infobar {
-    background-color: coral;
-    height: 500px;
+    background-color: #fafafa;
+    height: 535px;
     padding: 10px;
     float: left;
     width: 20%;
