@@ -10,14 +10,16 @@
     </div>
     <hr>
     <div class="row">
-        <div class="span8 col-lg-12 columns twelve large-12" style="padding-left: 30px">
+        <div class="col-lg-12 large-12" style="padding-left: 30px">
             <div data-bind="foreach: {data: draft.pages, as: 'page'}">
                 <h3 data-bind="attr.id: page.id, text: page.title"></h3>
                 <div data-bind="foreach: {data: page.questions, as: 'question'}">
-                    <h4 data-bind="attr.id: question.id, text: question.title"></h4>
-                    <!-- ko if: value -->
-                    <span data-bind="text: question.value"></span>
-                    <!-- /ko -->
+                    <p>
+                        <strong data-bind="attr.id: question.id, text: question.title"></strong>:
+                        <!-- ko if: value -->
+                        <span data-bind="text: question.value"></span>
+                        <!-- /ko -->
+                    </p>
                 </div>
             </div>
         </div>
