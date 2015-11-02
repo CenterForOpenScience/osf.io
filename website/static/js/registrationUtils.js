@@ -248,16 +248,34 @@ var Draft = function(params, metaSchema) {
 };
 Draft.prototype.preRegisterPrompts = function(response, confirm) {
     var self = this;
-    bootbox.confirm({
+    var ViewModel = registrationEmbargo.ViewModel;
+    var viewModel = new ViewModel();
+    viewModel.canRegister = ko.computed(function() {
+        var embargoed = viewModel.showEmbargoDatePicker();
+        return (embargoed && viewModel.isEmbargoEndDateValid()) || !embargoed;
+    });
+    viewModel.pikaday.extend({
+        validation: {
+            validator: function() {
+                return viewModel.isEmbargoEndDateValid();
+            },
+            message: 'Embargo end date must be at least two days in the future.'
+        }
+    });
+    viewModel.close = function() {
+        bootbox.hideAll();
+    };
+    viewModel.register = function() {
+        confirm({
+            registrationChoice: viewModel.registrationChoice(),
+            embargoEndDate: viewModel.embargoEndDate()
+        });
+    };
+    bootbox.dialog({
         size: 'large',
         title: language.registerConfirm,
         message: function() {
-            ko.renderTemplate('preRegistrationTemplate', registrationEmbargo.ViewModel, {}, this);
-        },
-        callback: function(result) {
-            if (result) {
-                confirm();
-            }
+            ko.renderTemplate('preRegistrationTemplate', viewModel, {}, this);
         }
     });
 };
@@ -283,7 +301,7 @@ Draft.prototype.beforeRegister = function(data) {
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(response, self.preRegisterWarnings);
         } else if (response.prompts && response.prompts.length) {
-            self.preRegisterPrompts(response, self.register.bind(self, data));
+            self.preRegisterPrompts(response, self.register.bind(self));
         } else {
             self.register(data);
         }

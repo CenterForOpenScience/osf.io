@@ -35,29 +35,38 @@
 
             <button id="register-submit" type="button" class="btn btn-primary pull-right" data-bind="click: registerDraft">Register</button>
 ## TODO(lyndsysimon): This button is not applicable until prereg is merged in.
-##             <button id="register-submit" type="button" class="btn btn-primary pull-right" data-bind="click: submitForReview, visible: draft.requiresApproval"">Submit for review</button>
+##             <button id="register-submit" type="button" class="btn btn-primary pull-right" data-bind="click: submitForReview, visible: draft.requiresApproval">Submit for review</button>
     </div>
 </div>
-    <script type="text/html" id="preRegistrationTemplate">
-        <ul>
-            <li>The content and version history of <strong>Wiki and OSF Storage</strong> will be copied to the registration.</li>
-        </ul>
-        <div class="form-group">
-            <label class="control-label">Registration Choice</label>
-            <select class="form-control" data-bind="options: registrationOptions,
-                                                    value: registrationChoice,
-                                                    optionsText: 'message',
-                                                    optionsValue: 'value',
-                                                    event: {change: checkShowEmbargoDatePicker}" ></select>
-        </div>
 
-        <span data-bind="visible: showEmbargoDatePicker">
-            <div class="form-group">
-                <label class="control-label">Embargo End Date</label>
-                <input type="text" class="form-control" data-bind="datePicker: isEmbargoEndDateValid">
-            </div>
-        </span>
-    </script>
+<script type="text/html" id="preRegistrationTemplate">
+  <ul>
+    <li>The content and version history of <strong>Wiki and OSF Storage</strong> will be copied to the registration.</li>
+  </ul>
+  <div class="form-group">
+    <label class="control-label">Registration Choice</label>
+    <select class="form-control" data-bind="options: registrationOptions,
+                                            value: registrationChoice,
+                                            optionsText: 'message',
+                                            optionsValue: 'value',
+                                            event: {change: checkShowEmbargoDatePicker}" ></select>
+  </div>
+  <span data-bind="visible: showEmbargoDatePicker">
+    <div class="form-group">
+      <label class="control-label">
+        Embargo End Date 
+      </label>
+      <input type="text" class="form-control" data-bind="datePicker: {value: $root.pikaday, valid: isEmbargoEndDateValid}">
+    </div>
+  </span>
+  <em class="text-danger" data-bind="validationMessage: $root.pikaday"></em>
+  <div class="modal-footer">
+    <button class="btn btn-default" data-bind="click: close">Cancel</button>
+    <button class="btn btn-primary" data-bind="click: register, enable: canRegister">
+      Register
+    </button>
+  </div>
+</script>
 
 <%def name="javascript_bottom()">
     ${parent.javascript_bottom()}
