@@ -14,6 +14,7 @@ from website.addons.osfstorage.tests import factories
 from framework.auth import signing
 from website.util import rubeus
 
+from website.models import Tag
 from website.files import models
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
@@ -574,6 +575,60 @@ class TestDeleteHook(HookTestCase):
 
         res = self.delete(file_checked, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+
+class TestFileTags(StorageTestCase):
+
+    def test_file_add_tag(self):
+        file = self.node_settings.get_root().append_file('Good Morning.mp3')
+        assert_not_in('Kanye_West', file.tags)
+
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
+        file.reload()
+        assert_in('Kanye_West', file.tags)
+
+    def test_file_add_non_ascii_tag(self):
+        file = self.node_settings.get_root().append_file('JapaneseCharacters.txt')
+        assert_not_in('コンサート', file.tags)
+
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        self.app.post_json(url, {'tag': 'コンサート'}, auth=self.user.auth)
+        file.reload()
+        assert_in('コンサート', file.tags)
+
+    def test_file_remove_tag(self):
+        file = self.node_settings.get_root().append_file('Champion.mp3')
+        tag = Tag(_id='Graduation')
+        tag.save()
+        file.tags.append(tag)
+        file.save()
+        assert_in('Graduation', file.tags)
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        self.app.delete_json(url, {'tag': 'Graduation'}, auth=self.user.auth)
+        file.reload()
+        assert_not_in('Graduation', file.tags)
+
+    def test_tag_the_same_tag(self):
+        file = self.node_settings.get_root().append_file('Lie,Cheat,Steal.mp3')
+        tag = Tag(_id='Run_the_Jewels')
+        tag.save()
+        file.tags.append(tag)
+        file.save()
+        assert_in('Run_the_Jewels', file.tags)
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        res = self.app.post_json(url, {'tag': 'Run_the_Jewels'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['status'], 'failure')
+
+    def test_remove_nonexistent_tag(self):
+        file = self.node_settings.get_root().append_file('WonderfulEveryday.mp3')
+        assert_not_in('Chance', file.tags)
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        res = self.app.delete_json(url, {'tag': 'Chance'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['status'], 'failure')
+
 
 class TestMoveHook(HookTestCase):
 

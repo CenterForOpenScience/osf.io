@@ -11,7 +11,6 @@ else:
     search_engine = None
     logger.warn('Elastic search is not set to load')
 
-
 def requires_search(func):
     def wrapped(*args, **kwargs):
         if search_engine is not None:
@@ -51,6 +50,10 @@ def update_user(user, index=None):
     index = index or settings.ELASTIC_INDEX
     search_engine.update_user(user, index=index)
 
+@requires_search
+def update_file(file_, index=None, delete=False):
+    index = index or settings.ELASTIC_INDEX
+    search_engine.update_file(file_, index=index, delete=delete)
 
 @requires_search
 def delete_all():
