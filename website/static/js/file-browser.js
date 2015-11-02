@@ -181,6 +181,7 @@ var FileBrowser = {
                     updateFilesData : ctrl.updateFilesData
                 }),
                 m('.fb-buttonRow', [
+                    m('#poFilter.m-r-xs'),
                     m('button.btn', {
                         'class' : infoClass,
                         onclick : function () {
