@@ -112,7 +112,7 @@ MEETING_DATA = {
         ),
         'location': 'Berkeley, CA',
         'start_date': 'Dec 11 2014',
-        'end_date': 'Dec 12 2104',
+        'end_date': 'Dec 12 2014',
         'active': False,
         'admins': [
             'gkroll@berkeley.edu',
@@ -154,7 +154,7 @@ MEETING_DATA = {
         'info_url': None,
         'logo_url': 'http://icps.psychologicalscience.org/wp-content/themes/deepblue/images/ICPS_Website-header_990px.jpg',
         'location': 'Amsterdam, The Netherlands',
-        'start_date': 'Mar 12 2014',
+        'start_date': 'Mar 12 2015',
         'end_date': 'Mar 14 2015',
         'active': False,
         'admins': [],
