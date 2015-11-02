@@ -5,6 +5,8 @@ from framework.transactions import commands, messages, utils
 
 from .api_globals import api_globals
 
+from api.base import settings
+
 
 # TODO: Verify that a transaction is being created for every
 # individual request.
@@ -47,7 +49,10 @@ class TokuTransactionsMiddleware(object):
         except OperationFailure as err:
             message = utils.get_error_message(err)
             if messages.NO_TRANSACTION_TO_COMMIT_ERROR not in message:
-                raise err
+                if settings.DEBUG_TRANSACTIONS:
+                    pass
+                else:
+                    raise err
         except Exception as err:
             try:
                 commands.rollback()
