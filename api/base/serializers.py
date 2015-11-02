@@ -187,6 +187,8 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 lookup_value = getattr(obj, lookup_field)
             except AttributeError as exc:
                 raise AssertionError(exc)
+            if lookup_value is None:
+                return None
             kwargs_retrieval[lookup_url_kwarg] = lookup_value
         return kwargs_retrieval
 
@@ -198,7 +200,10 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 urls[view_name] = {}
             else:
                 kwargs = self.kwargs_lookup(obj, self.view_kwargs[view_name])
-                urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
+                if kwargs is None:
+                    urls[view_name] = {}
+                else:
+                    urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
         return urls
 
     # Overrides HyperlinkedIdentityField
