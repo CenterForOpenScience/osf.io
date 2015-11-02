@@ -23,6 +23,7 @@ var Breadcrumb = function (label, url, type) {
 };
 
 var Collection = function(label, path, pathQuery) {
+    this.id = getUID();
     this.type = 'collection';
     this.label = label || 'New Collection';
     this.path = path;
@@ -30,10 +31,19 @@ var Collection = function(label, path, pathQuery) {
 };
 
 var Filter = function (label, data, type) {
+    this.id = getUID();
     this.label = label;
     this.data = data;
-    this.type = 'name' || type;
+    this.type = type;
 };
+
+if (!window.fileBrowserCounter) {
+    window.fileBrowserCounter = 0;
+}
+function getUID() {
+    window.fileBrowserCounter = window.fileBrowserCounter + 1;
+    return window.treebeardCounter;
+}
 
 /**
  * Initialize File Browser. Prepeares an option object within FileBrowser
@@ -52,13 +62,13 @@ var FileBrowser = {
         self.collections = [
             new Collection('All My Projects', 'users/me/nodes/', { 'related_counts' : true }),
             new Collection('All My Registrations', 'registrations/', { 'related_counts' : true }),
-            new Collection('Everything', 'users/me/nodes/', { 'related_counts' : true }),
+            new Collection('Everything', 'users/me/nodes/', { 'related_counts' : true })
         ];
         self.breadcrumbs = m.prop([
             new Breadcrumb('All My Projects','http://localhost:8000/v2/users/me/nodes/?related_counts=true', 'collection')
         ]);
         self.nameFilters = [
-            new Filter('Caner Uguz', '8q36f')
+            new Filter('Caner Uguz', '8q36f', 'name')
         ];
         self.tagFilters = [
             new Filter('Something Else', 'something-else', 'tag')
@@ -85,28 +95,19 @@ var FileBrowser = {
 
             });
             self.selected(selectedList);
-
         };
-
-        // COLLECTIONS PANEL
-        self.activeCollection = m.prop(1);
-        self.updateCollection = function(coll) {
-            self.activeCollection(coll.id);
-            var linkObject = new LinkObject( 'collection', coll, coll.label);
-            self.updateFilesData(linkObject);
-        };
-
 
         // USER FILTER
-        self.activeUser = m.prop(1);
-        self.updateUserFilter = function(user) {
-            self.activeUser(user.id);
-            var linkObject = new LinkObject('user', user.data, user.label);
+        self.activeFilter = m.prop(1);
+        self.updateFilter = function(filter) {
+            self.activeFilter(filter.id);
+            var linkObject = new LinkObject(filter.type, filter.data, filter.label);
             self.updateFilesData(linkObject);
         };
 
+
         // Refresh the Grid
-        self.updateList = function(element, isInit, context){
+        self.updateList = function(element){
             if(!self.isLoadedUrl) {
                 var el = element || $(self.wrapperSelector).find('.fb-main').get(0);
                 m.mount(el,
@@ -147,8 +148,11 @@ var FileBrowser = {
             else if (linkObject.type === 'breadcrumb') {
                 return linkObject.data.url;
             }
-            else if (linkObject.type === 'user') {
+            else if (linkObject.type === 'name') {
                 return $osf.apiV2Url('users/' + linkObject.data + '/nodes', { query : {'related_counts' : true}});
+            }
+            else if (linkObject.type === 'tag') {
+                return $osf.apiV2Url('nodes/', { query : {'filter[tag]' : linkObject.data , 'related_counts' : true}});
             }
             else if (linkObject.type === 'node') {
                 return $osf.apiV2Url('nodes/' + linkObject.data.uid + '/children', { query : { 'related_counts' : true }});
@@ -187,12 +191,12 @@ var FileBrowser = {
             m('.fb-sidebar', [
                 m.component(Collections, {
                     list : ctrl.collections,
-                    activeCollection : ctrl.activeCollection,
-                    updateCollection : ctrl.updateCollection
+                    activeFilter : ctrl.activeFilter,
+                    updateFilter : ctrl.updateFilter
                 }),
                 m.component(Filters, {
-                    activeUser : ctrl.activeUser,
-                    updateUser : ctrl.updateUserFilter,
+                    activeFilter : ctrl.activeFilter,
+                    updateFilter : ctrl.updateFilter,
                     nameFilters : ctrl.nameFilters,
                     tagFilters : ctrl.tagFilters
                 })
@@ -213,10 +217,10 @@ var Collections  = {
     view : function (ctrl, args) {
         var selectedCSS;
         return m('.fb-collections', m('ul', [
-            args.list.map(function(item, index, array){
-                selectedCSS = item.id === args.activeCollection() ? '.active' : '';
+            args.list.map(function(item){
+                selectedCSS = item.id === args.activeFilter() ? '.active' : '';
                 return m('li', { className : selectedCSS},
-                    m('a', { href : '#', onclick : args.updateCollection.bind(null, item) },  item.label)
+                    m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label)
                 );
             })
         ]));
@@ -260,14 +264,22 @@ var Filters = {
                 m('h4', 'Filters'),
                 m('', 'Contributors'),
                 m('ul', [
-                    args.nameFilters.map(function(item){
-                        selectedCSS = item.id === args.activeUser() ? '.active' : '';
+                    args.nameFilters.map(function(item, index){
+                        selectedCSS = item.id === args.activeFilter() ? '.active' : '';
                         return m('li' + selectedCSS,
-                            m('a', { href : '#', onclick : args.updateUser.bind(null, item)}, item.label)
+                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item)}, item.label)
+                        );
+                    })
+                ]),
+                m('', 'Tags'),
+                m('ul', [
+                    args.tagFilters.map(function(item){
+                        selectedCSS = item.id === args.activeFilter() ? '.active' : '';
+                        return m('li' + selectedCSS,
+                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item)}, item.label)
                         );
                     })
                 ])
-
             ]
         );
     }
@@ -305,8 +317,7 @@ var Information = {
                 m('p', [
                     m('span', 'Visibility: '),
                     m('span', item.data.attributes.public ? 'Public' : 'Private')
-                ]),
-
+                ])
             ]);
         }
         if (args.selected().length > 1) {
