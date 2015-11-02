@@ -38,9 +38,9 @@ class TokenList(generics.ListCreateAPIView, ODMFilterMixin):
 
     def get_default_odm_query(self):
 
-        user_id = self.request.user._id
+        owner = self.request.user._id
         return (
-            Q('owner', 'eq', user_id) &
+            Q('owner', 'eq', owner) &
             Q('is_active', 'eq', True)
         )
 
