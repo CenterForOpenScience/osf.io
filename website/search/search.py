@@ -24,9 +24,16 @@ def search(query, index=None, doc_type=None):
     return search_engine.search(query, index=index, doc_type=doc_type)
 
 @requires_search
-def update_node(node, index=None, bulk=False):
-    index = index or settings.ELASTIC_INDEX
-    return search_engine.update_node(node, index=index, bulk=bulk)
+def update_node(node, index=None, bulk=False, async=True):
+    if async:
+        node_id = node._id
+        if settings.USE_CELERY:
+            search_engine.update_node_async.delay(node_id=node_id, index=index, bulk=bulk)
+        else:
+            search_engine.update_node_async(node_id=node_id, index=index, bulk=bulk)
+    else:
+        index = index or settings.ELASTIC_INDEX
+        return search_engine.update_node(node, index=index, bulk=bulk)
 
 @requires_search
 def bulk_update_nodes(serialize, nodes, index=None):
