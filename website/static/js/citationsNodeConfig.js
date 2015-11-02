@@ -15,8 +15,6 @@ var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
 var FolderPickerViewModel = require('js/folderPickerNodeConfig');
 
-var errorpage = require('raw!folders_load_error.html');
-
 ko.punches.enableAll();
 
 /**
@@ -63,10 +61,20 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     });
                 },
                 ondataloaderror: function(err){
-                    $osf.handleAddonApiHTTPError(err);
-                    self.destroyPicker();
                     self.loading(false);
-                    $(self.folderpickerSelector).html(errorpage);
+                    self.destroyPicker();
+                    if (err.status == 403) {
+                        var message;
+                        if (self.userIsOwner()) {
+                            message = self.messages.invalidCredOwner();
+                        }
+                        else {
+                            message = self.messages.invalidCredNotOwner();
+                        }
+                        self.changeMessage(message, 'text-danger');
+                    } else {
+                        self.changeMessage(self.messages.connectError(), 'text-danger');
+                    }
                 }.bind(this),
                 resolveLazyloadUrl: function(item) {
                     return this.urls().folders + item.data.id + '/?view=folders';
