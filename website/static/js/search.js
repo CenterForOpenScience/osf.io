@@ -39,9 +39,10 @@ var Tag = function(tagInfo){
     self.count = tagInfo.doc_count;
 };
 
-var License = function(name, count) {
+var License = function(name, id, count) {
 
     this.name = name;
+    this.id = id;
     this.count = ko.observable(count);
     
     this.active = ko.observable(false);
@@ -96,7 +97,7 @@ var ViewModel = function(params) {
 
     self.licenses = ko.observable(
         $.map(licenses, function(license) {
-            var l = new License(license.name, 0);
+            var l = new License(license.name, license.id, 0);
             l.active.subscribe(function() {
                 self.search();
             });
@@ -210,15 +211,17 @@ var ViewModel = function(params) {
     });
 
     self.filters = function(){
-        var licenses = self.selectedLicenses();
-        if (licenses.length) {
+        var selectedLicenses = self.selectedLicenses();
+        if (selectedLicenses.length) {
             var filters = {
                 terms: {
-                    'license.name': licenses
+                    'license.id': $.map(selectedLicenses, function(l) {
+                        return l.id;
+                    })
                 }
             };     
-            if (licenses.filter(function(l) {
-                return l.name === DEFAULT_LICENSE.name;
+            if (selectedLicenses.filter(function(l) {
+                return l.id === DEFAULT_LICENSE.id;
             }).length) {
                 filters = {
                     or: [
@@ -357,7 +360,7 @@ var ViewModel = function(params) {
             for(var i = 0; i < licenseCounts.length; i++) {
                 var l = licenseCounts[i];
                 l.count(0);
-                if (l.name === DEFAULT_LICENSE.name) {
+                if (l.id === DEFAULT_LICENSE.id) {
                     noneLicense = l;
                 }
             }
@@ -366,7 +369,7 @@ var ViewModel = function(params) {
             if ((data.aggs || {}).licenses)  {
                 $.each(data.aggs.licenses, function(key, value) {
                     licenseCounts.filter(function(l) {
-                        return l.name === key;
+                        return l.id === key;
                     })[0].count(value);
                     nullLicenseCount -= value;
                 });

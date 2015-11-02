@@ -92,7 +92,7 @@ def get_aggregations(query, doc_type):
     query['aggregations'] = {
         'licenses': {
             'terms': {
-                'field': 'license.name'
+                'field': 'license.id'
             }
         }
     }
@@ -440,6 +440,7 @@ def create_index(index=None):
                 'tags': NOT_ANALYZED_PROPERTY,
                 'license': {
                     'properties': {
+                        'id': NOT_ANALYZED_PROPERTY,
                         'name': NOT_ANALYZED_PROPERTY,
                     }
                 }
