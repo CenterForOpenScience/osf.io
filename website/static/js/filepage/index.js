@@ -384,7 +384,9 @@ var FileViewPage = {
                     }
                 },
                 success: function(response, value) {
-                    window.location.reload();
+                    if(self.file.provider === 'osfstorage') {
+                        window.location.reload();
+                    }
                 },
                 error: function(response) {
                     var code = response.responseJSON.code;
