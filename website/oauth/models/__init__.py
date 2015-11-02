@@ -445,9 +445,10 @@ class ApiOAuth2Application(StoredObject):
         return self.absolute_api_v2_url
 
 class ApiOAuth2PersonalToken(StoredObject):
-    """
-    Store information about recognized OAuth2 scopes. Only scopes registered under this database model can
-        be requested by third parties.
+    """Information for user-created personal access tokens
+
+    This collection is also used by CAS to create the master list of available tokens.
+    Any changes made to field names in this model must be echoed in the CAS implementation.
     """
     _id = fields.StringField(primary=True,
                              default=lambda: str(ObjectId()))
@@ -459,8 +460,6 @@ class ApiOAuth2PersonalToken(StoredObject):
                                 backref='created',
                                 index=True,
                                 required=True)
-
-    user_id = fields.StringField(default=owner)
 
     name = fields.StringField(required=True, index=True)
 
