@@ -294,7 +294,7 @@ class TestNodeLinkCreate(ApiTestCase):
             }
         }
         res = self.app.post_json_api(self.public_url, data, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
 
     def test_add_node_links_incorrect_target_type_in_relationships(self):
         data = {

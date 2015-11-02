@@ -297,7 +297,7 @@ class NodeLinksSerializer(JSONAPISerializer):
         user = request.user
         auth = Auth(user)
         node = self.context['view'].get_node()
-        target_node_id = validated_data['node']['_id']
+        target_node_id = validated_data['_id']
         pointer_node = Node.load(target_node_id)
         if not pointer_node or pointer_node.is_folder:
             raise InvalidModelValueError(

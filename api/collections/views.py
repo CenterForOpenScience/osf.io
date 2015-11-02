@@ -309,6 +309,15 @@ class NodeLinksList(generics.ListCreateAPIView, CollectionMixin):
             if not pointer.node.is_deleted and not pointer.node.is_folder
         ]
 
+    # overrides ListCreateAPIView
+    def get_parser_context(self, http_request):
+        """
+        Tells parser that we are creating a relationship
+        """
+        res = super(NodeLinksList, self).get_parser_context(http_request)
+        res['is_relationship'] = True
+        return res
+
 
 class NodeLinksDetail(generics.RetrieveDestroyAPIView, CollectionMixin):
     """Node Link details. *Writeable*.

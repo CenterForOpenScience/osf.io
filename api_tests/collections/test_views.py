@@ -14,7 +14,10 @@ from tests.factories import (
 )
 from tests.utils import assert_logs
 from framework.auth.core import Auth
-from api_tests.nodes.test_views import node_url_for
+
+
+def node_url_for(node_id):
+    return '/{}nodes/{}/'.format(API_BASE, node_id)
 
 
 class TestCollectionList(ApiTestCase):
@@ -250,7 +253,8 @@ class TestCollectionFiltering(ApiTestCase):
         assert_equal(res.status_code, 400)
         errors = res.json['errors']
         assert_equal(len(errors), 1)
-        assert_equal(errors[0]['detail'], 'Query string contains an invalid filter.')
+        assert_equal(errors[0]['detail'], "'notafield' is not a valid field for this endpoint.")
+        assert_equal(errors[0]['source'], {'parameter': 'filter'})
 
 
 class TestCollectionDetail(ApiTestCase):
@@ -688,15 +692,31 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         self.fake_url = node_link_string.format(API_BASE, self.fake_node_id)
 
     @staticmethod
-    def post_payload(target_node_id):
-        return {'data': {'type': 'node_links', 'attributes': {'target_node_id': target_node_id}}}
+    def post_payload(target_node_id, outer_type='node_links', inner_type='nodes'):
+        payload = {
+            'data': {
+                'relationships': {
+                    'nodes': {
+                        'data': {
+                            'id': target_node_id,
+                        }
+                    }
+                }
+            }
+        }
+
+        if outer_type:
+            payload['data']['type'] = outer_type
+        if inner_type:
+            payload['data']['relationships']['nodes']['data']['type'] = inner_type
+        return payload
 
     def test_does_not_create_link_when_payload_not_nested(self):
         payload = {'data': {'type': 'node_links', 'target_node_id': self.project._id}}
         res = self.app.post_json_api(self.url, payload, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
-        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
-        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
+        assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
+        assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/relationships.')
 
     def test_does_not_create_node_link_logged_out(self):
         res = self.app.post_json_api(self.url, self.post_payload(self.project._id), expect_errors=True)
@@ -759,7 +779,7 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         error = res_json['errors'][0]
         assert_in('detail', error)
-        assert_equal('Target Node \'{}\' not found.'.format(self.collection._id), error['detail'])
+        assert_equal("Target Node '{}' not found.".format(self.collection._id), error['detail'])
         assert_in('source', error)
         assert_in('pointer', error['source'])
         assert_equal('/data/relationships/node_links/data/id', error['source']['pointer'])
@@ -784,14 +804,14 @@ class TestCollectionNodeLinkCreate(ApiTestCase):
         assert_equal('/data/relationships/node_links/data/id', error['source']['pointer'])
 
     def test_create_node_pointer_no_type(self):
-        payload = {'data': {'attributes': {'target_node_id': self.public_project._id}}}
+        payload = self.post_payload(self.public_project._id, outer_type=None)
         res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/type')
 
     def test_create_node_pointer_incorrect_type(self):
-        payload = {'data': {'type': 'Wrong type.', 'attributes': {'target_node_id': self.public_project._id}}}
+        payload = self.post_payload(self.public_project._id, outer_type='wrong_type')
         res = self.app.post_json_api(self.url, payload, auth=self.user_one.auth, expect_errors=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
