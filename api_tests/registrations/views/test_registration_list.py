@@ -63,3 +63,11 @@ class TestRegistrationList(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
 
         assert_equal(registered_from, '/{}nodes/{}/'.format(API_BASE, self.public_project._id))
+
+    def test_exclude_nodes_from_registrations_endpoint(self):
+        res = self.app.get(self.url, auth=self.user.auth)
+        ids = [each['id'] for each in res.json['data']]
+        assert_in(self.registration_project._id, ids)
+        assert_in(self.public_registration_project._id, ids)
+        assert_not_in(self.public_project._id, ids)
+        assert_not_in(self.project._id, ids)
