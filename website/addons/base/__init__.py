@@ -805,6 +805,7 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         if self.user_settings:
             auth = Auth(self.user_settings.owner)
         self._logger_class = getattr(
+            self,
             '_logger_class',
             type(
                 '{0}NodeLogger'.format(self.config.short_name.capitalize()),

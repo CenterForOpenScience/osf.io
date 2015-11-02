@@ -8,6 +8,7 @@ from framework.auth import Auth
 from website.addons.base import exceptions
 
 from tests.factories import ProjectFactory, UserFactory
+from tests.utils import mock_auth
 
 
 class OAuthAddonModelTestSuiteMixinBase(object):
@@ -173,7 +174,8 @@ class OAuthAddonNodeSettingsTestSuiteMixin(OAuthAddonModelTestSuiteMixinBase):
         assert_true(self.node_settings.complete)
 
     def test_complete_has_auth_not_verified(self):
-        self.user_settings.revoke_oauth_access(self.external_account)
+        with mock_auth(self.user):
+            self.user_settings.revoke_oauth_access(self.external_account)
 
         assert_false(self.node_settings.has_auth)
         assert_false(self.node_settings.complete)

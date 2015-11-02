@@ -157,7 +157,7 @@ class MendeleyNodeSettingsTestCase(OsfTestCase):
             )
 
     def test_deauthorize(self):
-        self.node_settings.external_account = ExternalAccountFactory()
+        self.node_settings.external_account = MendeleyAccountFactory()
         self.node_settings.mendeley_list_id = 'something'
         self.node_settings.user_settings = self.user_settings
         self.node_settings.save()

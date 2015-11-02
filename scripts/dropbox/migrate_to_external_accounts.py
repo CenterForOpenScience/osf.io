@@ -15,6 +15,7 @@ dropbox_views_path = os.path.join(
     'dropbox',
     'views'
 )
+# Remove old dropbox views directory and .pyc files
 if os.path.isdir(dropbox_views_path):
     shutil.rmtree(dropbox_views_path)
 
@@ -121,6 +122,7 @@ def remove_old_documents(old_user_settings, old_user_settings_count, old_node_se
 def migrate(dry_run=True, remove_old=True):
     user_settings_list = list(database['dropboxusersettings'].find())
 
+    # get in-memory versions of collections and collection sizes
     user_settings_collection = database['dropboxusersettings']
     old_user_settings = list(user_settings_collection.find())
     old_user_settings_count = user_settings_collection.count()
