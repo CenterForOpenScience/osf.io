@@ -20,6 +20,7 @@ from website.util import rubeus
 from website.project.model import has_anonymous_link, Tag
 
 from website.files import models
+from website.files import exceptions
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import decorators
 from website.addons.osfstorage import settings as osf_storage_settings
@@ -92,8 +93,12 @@ def osfstorage_copy_hook(source, destination, name=None, **kwargs):
 
 @decorators.waterbutler_opt_hook
 def osfstorage_move_hook(source, destination, name=None, **kwargs):
-    return source.move_under(destination, name=name).serialize(), httplib.OK
-
+    try:
+        return source.move_under(destination, name=name).serialize(), httplib.OK
+    except exceptions.FileNodeCheckedOutError:
+        raise HTTPError(httplib.METHOD_NOT_ALLOWED, data={
+            'message_long': 'Cannot move file as it is checked out.'
+        })
 
 @must_be_signed
 @decorators.autoload_filenode(default_root=True)
@@ -160,18 +165,23 @@ def osfstorage_create_child(file_node, payload, node_addon, **kwargs):
 
     if not is_folder:
         try:
-            version = file_node.create_version(
-                user,
-                dict(payload['settings'], **dict(
-                    payload['worker'], **{
-                        'object': payload['metadata']['name'],
-                        'service': payload['metadata']['provider'],
-                    })
-                ),
-                dict(payload['metadata'], **payload['hashes'])
-            )
-            version_id = version._id
-            archive_exists = version.archive is not None
+            if file_node.checkout is None or file_node.checkout._id == user._id:
+                version = file_node.create_version(
+                    user,
+                    dict(payload['settings'], **dict(
+                        payload['worker'], **{
+                            'object': payload['metadata']['name'],
+                            'service': payload['metadata']['provider'],
+                        })
+                    ),
+                    dict(payload['metadata'], **payload['hashes'])
+                )
+                version_id = version._id
+                archive_exists = version.archive is not None
+            else:
+                raise HTTPError(httplib.FORBIDDEN, data={
+                    'message_long': 'File cannot be updated due to checkout status.'
+                })
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
     else:
@@ -199,7 +209,11 @@ def osfstorage_delete(file_node, payload, node_addon, **kwargs):
     if file_node == node_addon.get_root():
         raise HTTPError(httplib.BAD_REQUEST)
 
-    file_node.delete()
+    try:
+        file_node.delete()
+
+    except exceptions.FileNodeCheckedOutError:
+        raise HTTPError(httplib.FORBIDDEN)
 
     return {'status': 'success'}
 
