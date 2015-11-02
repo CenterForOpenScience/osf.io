@@ -41,6 +41,9 @@ class CoreScopes(object):
     APPLICATIONS_READ = 'applications_read'
     APPLICATIONS_WRITE = 'applications_write'
 
+    TOKENS_READ = 'tokens_read'
+    TOKENS_WRITE = 'tokens_write'
+
 
 class ComposedScopes(object):
     """
@@ -54,6 +57,10 @@ class ComposedScopes(object):
     # Applications collection
     APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ,)
     APPLICATIONS_WRITE = APPLICATIONS_READ + (CoreScopes.APPLICATIONS_WRITE,)
+
+    # Tokens collection
+    TOKENS_READ = (CoreScopes.TOKENS_READ,)
+    TOKENS_WRITE = TOKENS_READ + (CoreScopes.TOKENS_WRITE,)
 
     # Nodes collection.
     # Base node data includes node metadata, links, and children.
