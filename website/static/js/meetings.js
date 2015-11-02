@@ -59,7 +59,6 @@ function Meetings(data) {
                     data: 'location',
                     sortInclude : true,
                     custom : function() {
-                        console.log(item.data.location);
                         return item.data.location; }
                 },
                 {
