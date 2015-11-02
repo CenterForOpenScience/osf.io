@@ -54,7 +54,7 @@ class TestApplicationReset(ApiTestCase):
     def test_reset_url_revokes_tokens_and_resets(self, mock_method):
         mock_method.return_value(True)
         old_secret = self.user1_app.client_secret
-        res = self.app.put_json_api(self.user1_reset_url, self.correct, auth=self.user1.auth, expect_errors=True)
+        res = self.app.patch_json_api(self.user1_reset_url, self.correct, auth=self.user1.auth)
         assert_equal(res.status_code, 200)
         mock_method.assert_called()
         self.user1_app.reload()
@@ -65,7 +65,7 @@ class TestApplicationReset(ApiTestCase):
         mock_method.return_value(True)
         old_secret = self.user1_app.client_secret
         self.user2 = AuthUserFactory()
-        res = self.app.put_json_api(self.user1_reset_url, self.correct, auth=self.user2.auth, expect_errors=True)
+        res = self.app.patch_json_api(self.user1_reset_url, self.correct, auth=self.user2.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         mock_method.assert_not_called()
         self.user1_app.reload()
@@ -75,7 +75,7 @@ class TestApplicationReset(ApiTestCase):
     def test_unauth_user_cannot_reset(self, mock_method):
         mock_method.return_value(True)
         old_secret = self.user1_app.client_secret
-        res = self.app.put_json_api(self.user1_reset_url, self.correct, auth=None, expect_errors=True)
+        res = self.app.patch_json_api(self.user1_reset_url, self.correct, auth=None, expect_errors=True)
         assert_equal(res.status_code, 401)
         mock_method.assert_not_called()
         self.user1_app.reload()
