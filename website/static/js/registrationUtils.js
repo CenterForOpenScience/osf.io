@@ -495,10 +495,10 @@ RegistrationEditor.prototype.check = function() {
             // wait for the last autosave to complete
             if (self.lastSaveRequest()) {
                 self.lastSaveRequest().always(function () {
-                    self.toPreview()
+                    self.toPreview();
                 });
             } else {
-                self.toPreview()
+                self.toPreview();
             }
         });
     });
