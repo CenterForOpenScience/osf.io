@@ -60,7 +60,7 @@ var TokenData = oop.defclass({
                 type: 'tokens',
                 attributes: {
                     name: this.name(),
-                    scopes: this.scopes().toString().replace(/,/g, ' ') || [],
+                    scopes: this.scopes().toString().replace(/,/g, ' ') || '',
                     user_id: this.owner
                 }
             }
