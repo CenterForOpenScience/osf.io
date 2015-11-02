@@ -103,13 +103,24 @@ SHELL_BANNER = """
 
 Welcome to the OSF Python Shell. Happy hacking!
 
+{transaction}
 Available variables:
 
 {context}
 """
 
+TRANSACTION_WARNING = """
+*** TRANSACTION AUTOMATICALLY STARTED ***
 
-def make_shell_context():
+To persist changes run 'commit()'.
+Keep in mind that changing documents will lock them.
+
+This feature can be disabled with the '--no-transactation' flag.
+
+"""
+
+
+def make_shell_context(auto_transact=True):
     from modularodm import Q
     from framework.auth import User, Auth
     from framework.mongo import database
@@ -118,8 +129,29 @@ def make_shell_context():
     from website import models  # all models
     from website import settings
     import requests
+    from framework.transactions import commands
+    from framework.transactions import context as tcontext
     app = init_app()
+
+    def commit():
+        commands.commit()
+        print('Transaction committed.')
+        if auto_transact:
+            commands.begin()
+            print('New transaction opened.')
+
+    def rollback():
+        commands.rollback()
+        print('Transaction rolled back.')
+        if auto_transact:
+            commands.begin()
+            print('New transaction opened.')
+
     context = {
+        'transaction': tcontext.TokuTransaction,
+        'start_transaction': commands.begin,
+        'commit': commit,
+        'rollback': rollback,
         'app': app,
         'db': database,
         'User': User,
@@ -140,6 +172,8 @@ def make_shell_context():
         context['fake'] = fake
     except ImportError:
         pass
+    if auto_transact:
+        commands.begin()
     return context
 
 
@@ -152,10 +186,11 @@ def format_context(context):
 
 # Shell command adapted from Flask-Script. See NOTICE for license info.
 @task
-def shell():
-    context = make_shell_context()
+def shell(transaction=True):
+    context = make_shell_context(auto_transact=transaction)
     banner = SHELL_BANNER.format(version=sys.version,
-        context=format_context(context)
+        context=format_context(context),
+        transaction=TRANSACTION_WARNING if transaction else ''
     )
     try:
         try:

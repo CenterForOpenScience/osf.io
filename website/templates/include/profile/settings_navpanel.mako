@@ -17,7 +17,7 @@
       % if dev_mode:
           ## TODO: Remove dev_mode restriction when APIv2 released into production
           <li class="${'active' if current_page == 'dev_apps' else ''}">
-            <a href="${ '#' if current_page == 'dev_apps' else web_url_for('oauth_application_list')}">Developer Apps</a></li>
+            <a href="${ '#' if current_page == 'dev_apps' else web_url_for('oauth_application_list')}">Developer apps</a></li>
       % endif
   </ul>
 </div>
