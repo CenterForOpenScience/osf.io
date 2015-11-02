@@ -479,8 +479,7 @@ class TestGithubSettings(OsfTestCase):
         registration = self.project.register_node(
             schema=None,
             auth=self.consolidated_auth,
-            data='',
-            template='',
+            data=''
         )
 
         url = registration.api_url + 'github/settings/'
