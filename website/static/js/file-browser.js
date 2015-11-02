@@ -71,7 +71,7 @@ var FileBrowser = {
             new Filter('Caner Uguz', '8q36f', 'name')
         ];
         self.tagFilters = [
-            new Filter('Something Else', 'something-else', 'tag')
+            new Filter('Something Else', 'something', 'tag')
         ];
         self.filesData = m.prop($osf.apiV2Url(
             self.collections[0].path,
@@ -152,7 +152,7 @@ var FileBrowser = {
                 return $osf.apiV2Url('users/' + linkObject.data + '/nodes', { query : {'related_counts' : true}});
             }
             else if (linkObject.type === 'tag') {
-                return $osf.apiV2Url('nodes/', { query : {'filter[tag]' : linkObject.data , 'related_counts' : true}});
+                return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : linkObject.data , 'related_counts' : true}});
             }
             else if (linkObject.type === 'node') {
                 return $osf.apiV2Url('nodes/' + linkObject.data.uid + '/children', { query : { 'related_counts' : true }});
