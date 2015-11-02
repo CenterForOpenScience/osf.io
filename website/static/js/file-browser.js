@@ -80,7 +80,12 @@ var FileBrowser = {
         // INFORMATION PANEL
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){
+            selectedList.map(function(item){
+                // get information
+
+            });
             self.selected(selectedList);
+
         };
 
         // COLLECTIONS PANEL
@@ -165,7 +170,7 @@ var FileBrowser = {
             infoClass = 'btn-primary';
         }
         return [
-            m('.fb-header', [
+            m('.fb-header.m-b-xs', [
                 m.component(Breadcrumbs, {
                     data : ctrl.breadcrumbs,
                     updateFilesData : ctrl.updateFilesData
@@ -277,7 +282,32 @@ var Information = {
         var template = '';
         if (args.selected().length === 1) {
             var item = args.selected()[0];
-            template = m('h4', item.data.attributes.title);
+            template = m('', [
+                m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
+                m('p', [
+                    m('span', 'Description: '),
+                    m('span', item.data.attributes.description)
+                ]),
+                m('p', [
+                    m('span', 'Category: '),
+                    m('span', item.data.attributes.category)
+                ]),
+                m('p', [
+                    m('', 'Tags'),
+                    item.data.attributes.tags.map(function(tag){
+                        return m('span.tag', tag);
+                    })
+                ]),
+                m('p', [
+                    m('span', 'Last Modified: '),
+                    m('span', item.data.attributes.date_modified)
+                ]),
+                m('p', [
+                    m('span', 'Visibility: '),
+                    m('span', item.data.attributes.public ? 'Public' : 'Private')
+                ]),
+
+            ]);
         }
         if (args.selected().length > 1) {
             template = m('', [ 'There are multiple items: ', args.selected().map(function(item){
