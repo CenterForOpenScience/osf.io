@@ -31,6 +31,9 @@ def format_relationship_links(related_link, self_link, rel_meta, self_meta):
     if not ret['links']['self']['href']:
         del ret['links']['self']
 
+    if not ret['links']['related']['href']:
+        del ret['links']['related']
+
     return ret
 
 class AllowMissing(ser.Field):
