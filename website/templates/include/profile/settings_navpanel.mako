@@ -15,9 +15,9 @@
         <a href="${ '#' if current_page == 'notifications' else web_url_for('user_notifications') }">Notifications</a></li>
 
       <li class="${'active' if current_page == 'dev_apps' else ''}">
-        <a href="${ '#' if current_page == 'dev_apps' else web_url_for('oauth_application_list')}">Developer Apps</a></li>
+        <a href="${ '#' if current_page == 'dev_apps' else web_url_for('oauth_application_list')}">Developer apps</a></li>
 
       <li class="${'active' if current_page == 'personal_tokens' else ''}">
-        <a href="${ '#' if current_page == 'personal_tokens' else web_url_for('personal_access_token_list')}">Personal Access Tokens</a></li>
+        <a href="${ '#' if current_page == 'personal_tokens' else web_url_for('personal_access_token_list')}">Personal access tokens</a></li>
   </ul>
 </div>

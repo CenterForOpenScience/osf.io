@@ -565,6 +565,7 @@ def addon_view_file(auth, node, file_node, version):
         'extra': version.metadata.get('extra', {}),
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
+        'file_tags': [tag._id for tag in file_node.tags],
     })
 
     ret.update(rubeus.collect_addon_assets(node))

@@ -11,6 +11,7 @@ import functools
 
 import six
 
+from modularodm import Q
 from elasticsearch import (
     Elasticsearch,
     RequestError,
@@ -20,6 +21,7 @@ from elasticsearch import (
 )
 
 from framework import sentry
+from framework.tasks import app as celery_app
 
 from website import settings
 from website.filters import gravatar
@@ -38,7 +40,8 @@ ALIASES = {
     'component': 'Components',
     'registration': 'Registrations',
     'user': 'Users',
-    'total': 'Total'
+    'total': 'Total',
+    'file': 'Files',
 }
 
 # Prevent tokenizing and stop word removal.
@@ -226,6 +229,13 @@ def get_doctype_from_node(node):
     else:
         return node.category
 
+@celery_app.task(bind=True, max_retries=5, default_retry_delay=60)
+def update_node_async(self, node_id, index=None, bulk=False):
+    node = Node.load(node_id)
+    try:
+        update_node(node=node, index=index, bulk=bulk)
+    except Exception as exc:
+        self.retry(exc=exc)
 
 @requires_search
 def update_node(node, index=None, bulk=False):
@@ -244,6 +254,12 @@ def update_node(node, index=None, bulk=False):
         except IndexError:
             # Skip orphaned components
             return
+
+    #TODO @hmoco, make this a celery task that takes care of updating files
+    from website.files.models.base import FileNode
+    for file_ in FileNode.find(Q('node', 'eq', node) & Q('provider', 'eq', 'osfstorage') & Q('is_file', 'eq', True)):
+        update_file(file_)
+
     if node.is_deleted or not node.is_public or node.archiving:
         delete_doc(elastic_document_id, node)
     else:
@@ -294,8 +310,7 @@ def update_node(node, index=None, bulk=False):
         else:
             es.index(index=index, doc_type=category, id=elastic_document_id, body=elastic_document, refresh=True)
 
-
-def bulk_update_nodes(serialize, nodes, index=INDEX):
+def bulk_update_nodes(serialize, nodes, index=None):
     """Updates the list of input projects
 
     :param function Node-> dict serialize:
@@ -303,6 +318,7 @@ def bulk_update_nodes(serialize, nodes, index=INDEX):
     :param str index: Index of the nodes
     :return:
     """
+    index = index or INDEX
     actions = []
     for node in nodes:
         serialized = serialize(node)
@@ -334,6 +350,7 @@ bulk_update_contributors = functools.partial(bulk_update_nodes, serialize_contri
 
 @requires_search
 def update_user(user, index=None):
+
     index = index or INDEX
     if not user.is_active:
         try:
@@ -378,6 +395,49 @@ def update_user(user, index=None):
 
     es.index(index=index, doc_type='user', body=user_doc, id=user._id, refresh=True)
 
+@requires_search
+def update_file(file_, index=None, delete=False):
+
+    index = index or INDEX
+
+    if not file_.node.is_public or delete or file_.node.is_deleted or file_.node.archiving:
+        es.delete(
+            index=index,
+            doc_type='file',
+            id=file_._id,
+            refresh=True,
+            ignore=[404]
+        )
+        return
+
+    file_deep_url = '/{node_id}/files/{provider}/{path}/'.format(
+        node_id=file_.node._id,
+        provider=file_.provider,
+        path=file_.path,
+    )
+    node_url = '/{node_id}/'.format(node_id=file_.node._id)
+
+    parent_url = '/{}/'.format(file_.node.parent_node._id) if file_.node.parent_node else None,
+    file_doc = {
+        'id': file_._id,
+        'deep_url': file_deep_url,
+        'tags': [tag._id for tag in file_.tags],
+        'name': file_.name,
+        'category': 'file',
+        'node_url': node_url,
+        'node_title': file_.node.title,
+        'parent_url': parent_url,
+        'parent_title': file_.node.parent_node.title if file_.node.parent_node else None,
+        'is_registration': file_.node.is_registration,
+    }
+
+    es.index(
+        index=index,
+        doc_type='file',
+        body=file_doc,
+        id=file_._id,
+        refresh=True
+    )
 
 @requires_search
 def delete_all():
