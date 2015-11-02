@@ -191,11 +191,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         urls = {}
         for view_name, view in self.views.items():
             if view is None:
-                urls[view_name] = None
+                urls[view_name] = {}
             else:
                 kwargs = self.kwargs_lookup(obj, self.view_kwargs[view_name])
                 if kwargs is None:
-                    urls[view_name] = None
+                    urls[view_name] = {}
                 else:
                     urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
         return urls
