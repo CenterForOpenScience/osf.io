@@ -125,14 +125,14 @@ class TestNodeDetail(ApiTestCase):
 
     def test_node_has_correct_unread_comments_count(self):
         res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
-        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread_comments_count']
+        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
         assert_equal(unread_comments, 0)
 
         contributor = AuthUserFactory()
         self.public_project.add_contributor(contributor=contributor, auth=Auth(self.user), save=True)
         comment = CommentFactory(node=self.public_project, target=self.public_project, user=contributor)
         res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
-        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread_comments_count']
+        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
         assert_equal(unread_comments, 1)
 
     def test_node_properties(self):

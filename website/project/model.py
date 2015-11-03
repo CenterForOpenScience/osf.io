@@ -188,6 +188,18 @@ class Comment(GuidStoredObject):
         return self.content
 
     @classmethod
+    def find_unread(cls, user, node):
+        default_timestamp = datetime.datetime(1970, 1, 1, 12, 0, 0)
+        n_unread = 0
+        if node.is_contributor(user):
+            view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
+            n_unread = Comment.find(Q('node', 'eq', node) &
+                                    Q('user', 'ne', user) &
+                                    Q('date_created', 'gt', view_timestamp) &
+                                    Q('date_modified', 'gt', view_timestamp)).count()
+        return n_unread
+
+    @classmethod
     def create(cls, auth, **kwargs):
         comment = cls(**kwargs)
         comment.save()
