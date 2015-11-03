@@ -14,7 +14,7 @@
                     <li><a href="http://cos.io">Home</a></li>
                     <li><a href="/ezcuj/wiki/home/">Reproducibility Project: Psychology</a></li>
                     <li><a href="/e81xl/wiki/home/">Reproducibility Project: Cancer Biology</a></li>
-                    <li><a href="http://cos.io/top/">TOP guidelines</a></li>
+                    <li><a href="http://cos.io/top/">TOP Guidelines</a></li>
                      <li><a href="https://www.givinglibrary.org/organizations/center-for-open-science">Donate</a></li>
                </ul>
             </div>

@@ -27,6 +27,7 @@ from website.conferences.model import Conference, MailRecord
 from website.notifications.model import NotificationDigest
 from website.notifications.model import NotificationSubscription
 from website.archiver.model import ArchiveJob, ArchiveTarget
+from website.project.licenses import NodeLicense, NodeLicenseRecord
 
 # All models
 MODELS = (
@@ -39,7 +40,7 @@ MODELS = (
     Embargo, Retraction, RegistrationApproval,
     ArchiveJob, ArchiveTarget, BlacklistGuid, Sanction,
     QueuedMail,
-    DraftRegistrationApproval, DraftRegistration,
+    NodeLicense, NodeLicenseRecord
 )
 
 GUID_MODELS = (User, Node, Comment, MetaData)

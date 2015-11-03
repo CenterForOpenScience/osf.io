@@ -23,6 +23,8 @@ from modularodm.exceptions import ValidationValueError
 
 from api.base.utils import absolute_reverse
 from framework import status
+
+
 from framework.mongo import ObjectId
 from framework.mongo import StoredObject
 from framework.mongo import validators
@@ -54,6 +56,10 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.licenses import (
+    NodeLicense,
+    NodeLicenseRecord,
+)
 from website.project import signals as project_signals
 
 logger = logging.getLogger(__name__)
@@ -327,6 +333,7 @@ class NodeLog(StoredObject):
 
     EDITED_TITLE = 'edit_title'
     EDITED_DESCRIPTION = 'edit_description'
+    CHANGED_LICENSE = 'license_changed'
 
     UPDATED_FIELDS = 'updated_fields'
 
@@ -583,6 +590,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'is_deleted',
         'wiki_pages_current',
         'is_retracted',
+        'node_license',
     }
 
     # Maps category identifier => Human-readable representation for use in
@@ -607,6 +615,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         'description',
         'category',
         'is_public',
+        'node_license',
     ]
 
     # Named constants
@@ -643,6 +652,15 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_user = fields.ForeignField('user', backref='registered')
 
     registered_schema = fields.ForeignField('metaschema', backref='registered')
+    # Stores a flat set of <question_id>: <response> pairs-- these quesiton ids_above
+    # map the the ids in the registrations MetaSchema (see registered_schema).
+    # {
+    #   <question_id>: {
+    #     'value': <value>,
+    #     'comments': [
+    #       <comment>
+    #     ]
+    # }
     registered_meta = fields.DictionaryField()
     registration_approval = fields.ForeignField('registrationapproval')
     retraction = fields.ForeignField('retraction')
@@ -656,6 +674,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     title = fields.StringField(validate=validate_title)
     description = fields.StringField()
     category = fields.StringField(validate=validate_category, index=True)
+
+    node_license = fields.ForeignField('nodelicenserecord')
 
     # One of 'public', 'private'
     # TODO: Add validator
@@ -725,6 +745,13 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     @property
     def pk(self):
         return self._id
+
+    @property
+    def license(self):
+        node_license = self.node_license
+        if not node_license and self.parent_node:
+            return self.parent_node.license
+        return node_license
 
     @property
     def category_display(self):
@@ -1142,6 +1169,38 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         return self.is_contributor(auth.user)
 
+    def set_node_license(self, license_id, year, copyright_holders, auth, save=True):
+        if not self.has_permission(auth.user, ADMIN):
+            raise PermissionsError("Only admins can change a project's license.")
+        try:
+            node_license = NodeLicense.find_one(
+                Q('id', 'eq', license_id)
+            )
+        except NoResultsFound:
+            raise NodeStateError("Trying to update a Node with an invalid license.")
+        record = self.node_license
+        if record is None:
+            record = NodeLicenseRecord(
+                node_license=node_license
+            )
+        record.node_license = node_license
+        record.year = year
+        record.copyright_holders = copyright_holders or []
+        record.save()
+        self.node_license = record
+        self.add_log(
+            action=NodeLog.CHANGED_LICENSE,
+            params={
+                'parent_node': self.parent_id,
+                'node': self._primary_key,
+                'new_license': node_license.name
+            },
+            auth=auth,
+            save=False,
+        )
+        if save:
+            self.save()
+
     def update(self, fields, auth=None, save=True):
         """Update the node with the given fields.
 
@@ -1167,6 +1226,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     Node.PUBLIC if value else Node.PRIVATE,
                     auth=auth,
                     log=True,
+                    save=False
+                )
+            elif key == 'node_license':
+                self.set_node_license(
+                    value.get('id'),
+                    value.get('year'),
+                    value.get('copyright_holders'),
+                    auth,
                     save=False
                 )
             else:
@@ -1273,6 +1340,14 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             need_update = False
         if need_update:
             self.update_search()
+
+        if 'node_license' in saved_fields:
+            children = [c for c in self.get_descendants_recursive(
+                include=lambda n: n.node_license is None
+            )]
+            # this returns generator, that would get unspooled anyways
+            if children:
+                Node.bulk_update_search(children)
 
         # This method checks what has changed.
         if settings.PIWIK_HOST and update_piwik:
@@ -1715,7 +1790,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def update_search(self):
         from website import search
         try:
-            search.search.update_node(self)
+            search.search.update_node(self, bulk=False, async=True)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
             log_exception()
@@ -1861,6 +1936,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         forked.forked_from = original
         forked.creator = user
         forked.piwik_site_id = None
+        forked.node_license = original.license.copy() if original.license else None
 
         # Forks default to private status
         forked.is_public = False
@@ -1958,6 +2034,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.logs = self.logs
         registered.tags = self.tags
         registered.piwik_site_id = None
+        registered.node_license = original.license.copy() if original.license else None
 
         registered.save()
 
@@ -2375,6 +2452,8 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 contributor=contrib, auth=auth, log=False,
             )
             results.append(outcome)
+            if outcome:
+                project_signals.contributor_removed.send(self, user=contrib)
             removed.append(contrib._id)
         if log:
             self.add_log(
