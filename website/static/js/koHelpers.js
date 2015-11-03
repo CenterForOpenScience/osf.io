@@ -350,13 +350,23 @@ ko.bindingHandlers.getIcon = {
  * <input type="text" data-bind="datePicker: dateIsValid">
  */
 ko.bindingHandlers.datePicker = {
-    init: function(elem, validTest){
+    init: function(elem, valueAccessor) {
+        var opts = valueAccessor();
+        var value;
+        var valid = function() { return true; };
+        if ($.isFunction(opts)) {
+            value = opts;
+        }
+        else {
+            value = opts.value;
+            valid = opts.valid || valid;
+        }
         var picker = new pikaday({
             bound: true,
             field: elem,
             onSelect: function(){
-                pikaday(picker.toString());
-                validTest();
+                value(picker.toString());
+                valid();
             }
         });
     }
