@@ -444,7 +444,9 @@ def update_file(file_, index=None, delete=False):
         )
         return
 
-    file_deep_url = '/{node_id}/files/{provider}/{path}/'.format(
+    # We build URLs manually here so that this function can be
+    # run outside of a Flask request context (e.g. in a celery task)
+    file_deep_url = '/{node_id}/files/{provider}{path}/'.format(
         node_id=file_.node._id,
         provider=file_.provider,
         path=file_.path,
