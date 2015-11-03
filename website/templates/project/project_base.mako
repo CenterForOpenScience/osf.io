@@ -91,10 +91,12 @@
             piwikSiteID: ${ node.get('piwik_site_id', None) | sjson, n },
             piwikHost: ${ piwik_host | sjson, n },
             anonymous: ${ node['anonymous'] | sjson, n },
-            category: ${ node['category_short'] | sjson, n },
+            category: ${node['category_short'] | sjson, n },
             parentTitle: ${ parent_title | sjson, n },
-            parentRegisterUrl: ${ parent_registration_url | sjson, n },
-            parentExists: ${'true' if parent_exists else 'false'}
+            parentRegisterUrl: ${parent_registration_url | sjson, n },
+            parentExists: ${ parent_exists | sjson, n},
+            registrationMetaSchema: ${ node['registered_schema'] | sjson, n },
+            registrationMetaData: ${ node['registered_meta'] | sjson, n }
         }
     });
 
@@ -110,6 +112,6 @@
     src="/static/vendor/bower_components/MathJax/unpacked/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
 </script>
 
-## NOTE: window.contextVars must be set before loading this script
+
 <script src=${"/static/public/js/project-base-page.js" | webpack_asset}> </script>
 </%def>

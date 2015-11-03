@@ -2,7 +2,10 @@
 
 var $ = require('jquery');
 var ko = require('knockout');
+var pikaday = require('pikaday');
 require('knockout.validation');
+
+var iconmap = require('js/iconmap');
 
 var makeExtender = function(interceptor) {
     return function(target, options) {
@@ -260,7 +263,6 @@ ko.bindingHandlers.groupOptions = {
 };
 
 // Expose public utilities
-
 module.exports = {
     makeExtender: makeExtender,
     addExtender: addExtender,
