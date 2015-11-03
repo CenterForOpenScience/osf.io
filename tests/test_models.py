@@ -3,7 +3,6 @@
 import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
-import functools
 
 import pytz
 import datetime
@@ -3057,6 +3056,17 @@ class TestTemplateNode(OsfTestCase):
         assert_not_equal(new.date_created, self.project.date_created)
         self._verify_log(new)
 
+    def test_use_as_template_preserves_license(self):
+        license = NodeLicenseRecordFactory()
+        self.project.node_license = license
+        self.project.save()
+        new = self.project.use_as_template(
+            auth=self.auth
+        )
+
+        assert_equal(new.license.node_license._id, license.node_license._id)
+        self._verify_log(new)
+
     def _create_complex(self):
         # create project connected via Pointer
         self.pointee = ProjectFactory(creator=self.user)
@@ -3294,7 +3304,8 @@ class TestForkNode(OsfTestCase):
         fork_date = datetime.datetime.utcnow()
 
         # Fork node
-        fork = self.project.fork_node(auth=self.auth)
+        with mock.patch.object(Node, 'bulk_update_search'):
+            fork = self.project.fork_node(auth=self.auth)
 
         # Compare fork to original
         self._cmp_fork_original(self.user, fork_date, fork, self.project)
