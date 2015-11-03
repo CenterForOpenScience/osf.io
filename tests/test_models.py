@@ -34,7 +34,7 @@ from website.profile.utils import serialize_user
 from website.project.signals import contributor_added
 from website.project.model import (
     Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
-    get_pointer_parent, Embargo,
+    get_pointer_parent, Embargo, MetaSchema, DraftRegistration
 )
 from website.util.permissions import CREATOR_PERMISSIONS, ADMIN, READ, WRITE, DEFAULT_CONTRIBUTOR_PERMISSIONS
 from website.util import web_url_for, api_url_for
@@ -54,7 +54,7 @@ from tests.factories import (
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
     AuthUserFactory, DashboardFactory, FolderFactory,
-    NodeLicenseRecordFactory
+    NodeLicenseRecordFactory, DraftRegistrationFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -1771,7 +1771,6 @@ class TestNode(OsfTestCase):
             self.node.register_node(
                 schema=None,
                 auth=self.auth,
-                template='the template',
                 data=None
             )
         assert_equal(err.exception.message, 'Cannot register deleted node.')
@@ -1879,6 +1878,57 @@ class TestNode(OsfTestCase):
         self.node.save()
         self.node.reload()
         assert_false(self.parent.nodes_active)
+
+    @mock.patch('website.project.signals.after_create_registration')
+    def test_register_node_propagates_schema_and_data_to_children(self, mock_signal):
+        root = ProjectFactory(creator=self.user)
+        c1 = ProjectFactory(creator=self.user, parent=root)
+        ProjectFactory(creator=self.user, parent=c1)
+
+        ensure_schemas()
+        meta_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Open-Ended Registration') &
+            Q('schema_version', 'eq', 1)
+        )
+        data = {'some': 'data'}
+        reg = root.register_node(
+            schema=meta_schema,
+            auth=self.auth,
+            data=data,
+        )
+        r1 = reg.nodes[0]
+        r1a = r1.nodes[0]
+        for r in [reg, r1, r1a]:
+            assert_equal(r.registered_meta,  data)
+            assert_equal(r.registered_schema, meta_schema)
+
+    def test_create_draft_registration(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = proj.create_draft_registration(
+            user=user,
+            schema=schema,
+            data=data,
+        )
+        assert_equal(user, draft.initiator)
+        assert_equal(schema, draft.registration_schema)
+        assert_equal(data, draft.registration_metadata)
+
+    def test_create_draft_registration_adds_to_draft_registrations_list(self):
+        ensure_schemas()
+        proj = ProjectFactory()
+        user = proj.creator
+        schema = MetaSchema.find()[0]
+        data = {'some': 'data'}
+        draft = proj.create_draft_registration(
+            user=user,
+            schema=schema,
+            data=data,
+        )
+        assert_equal(proj.draft_registrations[0], draft)
 
 
 class TestNodeUpdate(OsfTestCase):
@@ -3430,7 +3480,6 @@ class TestRegisterNode(OsfTestCase):
         assert_equal(len(registration1.contributors), 1)
         assert_in(self.user, registration1.contributors)
         assert_equal(registration1.registered_user, self.user)
-        assert_equal(len(registration1.registered_meta), 1)
         assert_equal(len(registration1.private_links), 0)
 
         # Create a registration from a project
@@ -3439,12 +3488,14 @@ class TestRegisterNode(OsfTestCase):
         registration2 = RegistrationFactory(
             project=self.project,
             user=user2,
-            template='Template2',
-            data='Something else',
+            data={'some': 'data'},
         )
         assert_equal(registration2.registered_from, self.project)
         assert_equal(registration2.registered_user, user2)
-        assert_equal(registration2.registered_meta['Template2'], 'Something else')
+        assert_equal(
+            registration2.registered_meta,
+            {'some': 'data'}
+        )
 
         # Test default user
         assert_equal(self.registration.registered_user, self.user)
@@ -3581,10 +3632,6 @@ class TestRegisterNode(OsfTestCase):
             [addon.config.short_name for addon in self.registration.get_addons()],
             [addon.config.short_name for addon in self.registration.registered_from.get_addons()],
         )
-
-    def test_registered_meta(self):
-        assert_equal(self.registration.registered_meta['Template1'],
-                     'Some words')
 
     def test_registered_user(self):
         # Add a second contributor
@@ -4159,6 +4206,93 @@ class TestPrivateLink(OsfTestCase):
         link.nodes.extend([project, node])
         link.save()
         assert_equal(link.node_scale(node), -40)
+
+class TestDraftRegistration(OsfTestCase):
+
+    def setUp(self, *args, **kwargs):
+        super(TestDraftRegistration, self).setUp(*args, **kwargs)
+
+        self.user = AuthUserFactory()
+        self.auth = self.user.auth
+        self.node = ProjectFactory(creator=self.user)
+
+        MetaSchema.remove()
+        ensure_schemas()
+        self.meta_schema = MetaSchema.find_one(
+            Q('name', 'eq', 'Open-Ended Registration') &
+            Q('schema_version', 'eq', 1)
+        )
+        self.draft = DraftRegistration(
+            initiator=self.user,
+            branched_from=self.node,
+            registration_schema=self.meta_schema,
+            registration_metadata={
+                'summary': {'value': 'Some airy'}
+            }
+        )
+        self.draft.save()
+
+    def test_factory(self):
+        draft = DraftRegistrationFactory()
+        assert_is_not_none(draft.branched_from)
+        assert_is_not_none(draft.initiator)
+        assert_is_not_none(draft.registration_schema)
+
+        user = AuthUserFactory()
+        draft = DraftRegistrationFactory(initiator=user)
+        assert_equal(draft.initiator, user)
+
+        node = ProjectFactory()
+        draft = DraftRegistrationFactory(branched_from=node)
+        assert_equal(draft.branched_from, node)
+        assert_equal(draft.initiator, node.creator)
+
+        schema = MetaSchema.find()[1]
+        data = {'some': 'data'}
+        draft = DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
+        assert_equal(draft.registration_schema, schema)
+        assert_equal(draft.registration_metadata, data)
+
+    @mock.patch('website.project.model.Node.register_node')
+    def test_register(self, mock_register_node):
+
+        self.draft.register(self.auth)
+        mock_register_node.assert_called_with(
+            schema=self.draft.registration_schema,
+            auth=self.auth,
+            data=self.draft.registration_metadata,
+        )
+
+    def test_update_metadata_tracks_changes(self):
+        self.draft.registration_metadata = {
+            'foo': {
+                'value': 'bar',
+
+            },
+            'a': {
+                'value': 1,
+            },
+            'b': {
+                'value': True
+            },
+        }
+        changes =  self.draft.update_metadata({
+            'foo': {
+                'value': 'foobar',
+            },
+            'a': {
+                'value': 1,
+            },
+            'b': {
+                'value': True,
+            },
+            'c': {
+                'value': 2,
+            },
+        })
+        self.draft.save()
+        for key in ['foo', 'c']:
+            assert_in(key, changes)
 
 
 if __name__ == '__main__':
