@@ -206,7 +206,61 @@ ko.bindingHandlers.fadeVisible = {
     }
 };
 
+ko.bindingHandlers.groupOptions = {
+    /** Map a list of lists to a select with optgroup headings
+     *
+     * Usage:
+     * <select class="form-control" data-bind="groupOptions: listOfLists,
+     *                                                       value: boundValue,
+     *                                                       optionsText: textKey>
+     *                                                       optionsValue: valueKey"></select>
+     **/
+    init: function(element, valueAccessor, allBindings) {
+        allBindings = allBindings();
+        var value = allBindings.value;
+        var optionsValue = allBindings.optionsValue || 'value';
+        if (typeof optionsValue === 'string') {
+            var valueKey = optionsValue;
+            optionsValue = function(item) {
+                return item[valueKey];
+            };
+        }
+        var optionsText = allBindings.optionsText || 'value';
+        if (typeof optionsText === 'string') {
+            var textKey = optionsText;
+            optionsText = function(item) {
+                return item[textKey];
+            };
+        }
+
+        var mapChild = function(child) {
+            return $('<option>', {
+                value: optionsValue(child),
+                html: optionsText(child)
+            });
+        };
+
+        var groups = valueAccessor();
+        var children = $();
+        $.each(groups, function(index, group) {
+            if (optionsValue(group)) {
+                children = children.add(mapChild(group));
+            }
+            else {
+                children = children.add(
+                    $('<optgroup>', {
+                        label: optionsText(group)
+                    }).append($.map(group.licenses, mapChild))
+                );
+            }
+        });
+        $(element).append(children);
+        $(element).val(value());
+    }
+};
+
 // Expose public utilities
+
 module.exports = {
     makeExtender: makeExtender,
     addExtender: addExtender,
