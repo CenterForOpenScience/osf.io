@@ -34,6 +34,7 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
     if not ret['links']['related']['href']:
         del ret['links']['related']
 
+
     return ret
 
 class AllowMissing(ser.Field):
@@ -400,6 +401,8 @@ class JSONAPISerializer(ser.Serializer):
 
             if isinstance(field, (ser.HyperlinkedRelatedField, RelationshipField)):
                 data['relationships'][field.field_name] = field.to_representation(attribute)
+                if data['relationships'][field.field_name] == {'links': {}}:
+                    del data['relationships'][field.field_name]
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':
