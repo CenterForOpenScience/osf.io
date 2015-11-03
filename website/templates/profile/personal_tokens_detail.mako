@@ -22,7 +22,7 @@
             <div id="token-fields">
                 <form novalidate class="form-inline" role="form" data-bind="submit: $root.submit.bind($root), validationOptions: {insertMessages: false, messagesOnModified: false}">
                     <div class="form-group">
-                        <label>Token name</label><i class="fa fa-info-circle text-muted" data-bind="tooltip: {title: 'What this token is for.', placement: 'bottom'}"></i>
+                        <label>Token name: </label> <i class="fa fa-info-circle text-muted" data-bind="tooltip: {title: 'What this token is for.', placement: 'bottom'}"></i>
                         <input class="form-control" type="text" data-bind="value: name" required="required" placeholder="Required">
                         <p data-bind="validationMessage: name, visible: $root.showMessages()" class="text-danger"></p>
                     </div>
