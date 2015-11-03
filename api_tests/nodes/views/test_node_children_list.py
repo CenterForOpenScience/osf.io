@@ -319,24 +319,25 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         }
 
     def test_bulk_children_create_blank_request(self):
-        res = self.app.bulk_post_json_api(self.url, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
 
     def test_bulk_creates_children_limits(self):
-        res = self.app.bulk_post_json_api(self.url, {'data': [self.child] * 11}, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, {'data': [self.child] * 11},
+                                     auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Bulk operation limit is 10, got 11.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data')
 
     def test_bulk_creates_children_logged_out_user(self):
-        res = self.app.bulk_post_json_api(self.url, {'data': [self.child, self.child_two]}, expect_errors=True)
+        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 401)
 
         self.project.reload()
         assert_equal(len(self.project.nodes), 0)
 
     def test_bulk_creates_children_logged_in_owner(self):
-        res = self.app.bulk_post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user.auth)
+        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user.auth, bulk=True)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data'][0]['attributes']['title'], self.child['attributes']['title'])
         assert_equal(res.json['data'][0]['attributes']['description'], self.child['attributes']['description'])
@@ -356,7 +357,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
     def test_bulk_creates_children_child_logged_in_write_contributor(self):
         self.project.add_contributor(self.user_two, permissions=[permissions.READ, permissions.WRITE], auth=Auth(self.user), save=True)
 
-        res = self.app.bulk_post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user_two.auth)
+        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user_two.auth, bulk=True)
         assert_equal(res.status_code, 201)
         assert_equal(res.json['data'][0]['attributes']['title'], self.child['attributes']['title'])
         assert_equal(res.json['data'][0]['attributes']['description'], self.child['attributes']['description'])
@@ -376,14 +377,16 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
 
     def test_bulk_creates_children_logged_in_read_contributor(self):
         self.project.add_contributor(self.user_two, permissions=[permissions.READ], auth=Auth(self.user), save=True)
-        res = self.app.bulk_post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user_two.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user_two.auth,
+                                     expect_errors=True, bulk=True)
         assert_equal(res.status_code, 403)
 
         self.project.reload()
         assert_equal(len(self.project.nodes), 0)
 
     def test_bulk_creates_children_logged_in_non_contributor(self):
-        res = self.app.bulk_post_json_api(self.url, {'data': [self.child, self.child_two]}, auth=self.user_two.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, {'data': [self.child, self.child_two]},
+                                     auth=self.user_two.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 403)
 
         self.project.reload()
@@ -393,7 +396,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
         title = '<em>Cool</em> <strong>Project</strong>'
         description = 'An <script>alert("even cooler")</script> child'
 
-        res = self.app.bulk_post_json_api(self.url, {
+        res = self.app.post_json_api(self.url, {
             'data': [{
                 'type': 'nodes',
                 'attributes': {
@@ -403,7 +406,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
                     'public': True
                 }
             }]
-        }, auth=self.user.auth)
+        }, auth=self.user.auth, bulk=True)
         child_id = res.json['data'][0]['id']
         assert_equal(res.status_code, 201)
         url = '/{}nodes/{}/'.format(API_BASE, child_id)
@@ -421,7 +424,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
     def test_cannot_bulk_create_children_on_a_registration(self):
         registration = RegistrationFactory(project=self.project, creator=self.user)
         url = '/{}nodes/{}/children/'.format(API_BASE, registration._id)
-        res = self.app.bulk_post_json_api(url, {
+        res = self.app.post_json_api(url, {
             'data': [self.child_two, {
                 'type': 'nodes',
                 'attributes': {
@@ -431,7 +434,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
                     'public': True,
                 }
             }]
-        }, auth=self.user.auth, expect_errors=True)
+        }, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 403)
 
         self.project.reload()
@@ -447,7 +450,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
                 }
             }]
         }
-        res = self.app.bulk_post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be null.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/1/type')
@@ -466,7 +469,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
                 }
             }]
         }
-        res = self.app.bulk_post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 409)
         assert_equal(res.json['errors'][0]['detail'], 'Resource identifier does not match server endpoint.')
 
@@ -481,7 +484,7 @@ class TestNodeChildrenBulkCreate(ApiTestCase):
                 'category': 'project',
             }]
         }
-        res = self.app.bulk_post_json_api(self.url, child, auth=self.user.auth, expect_errors=True)
+        res = self.app.post_json_api(self.url, child, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], 'Request must include /data/attributes.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes')
