@@ -85,7 +85,7 @@ class TokenDetail(generics.RetrieveUpdateDestroyAPIView):
 
     # overrides DestroyAPIView
     def perform_destroy(self, instance):
-        """Instance is not actually deleted from DB- just flagged as inactive, which hides it from list views"""
+        """Instance is not actually deleted from DB- just flagged as inactive, which hides it from views"""
         obj = self.get_object()
         try:
             obj.deactivate(save=True)
