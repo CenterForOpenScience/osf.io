@@ -465,7 +465,7 @@ def update_file(file_, index=None, delete=False):
         'category': 'file',
         'node_url': node_url,
         'node_title': file_.node.title,
-        'parent_url': parent_url,
+        'parent_url': parent_url if file_.node.parent_node.is_public else None,
         'parent_title': file_.node.parent_node.title if file_.node.parent_node else None,
         'is_registration': file_.node.is_registration,
     }
