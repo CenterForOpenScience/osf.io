@@ -30,7 +30,7 @@ var Collection = function(label, path, pathQuery) {
         path: path,
         pathQuery: pathQuery
     };
-}
+};
 var Filter = function (label, data, type) {
     this.id = getUID();
     this.label = label;
@@ -162,6 +162,11 @@ var FileBrowser = {
             throw new Error('Link could not be generated from linkObject data');
         };
 
+        self.sidebarInit = function (element, isInit) {
+            if(!isInit){
+                $('[data-toggle="tooltip"]').tooltip();
+            }
+        };
 
 
     },
@@ -190,7 +195,7 @@ var FileBrowser = {
                     }, m('.fa.fa-info'))
                 ])
             ]),
-            m('.fb-sidebar', [
+            m('.fb-sidebar', { config : ctrl.sidebarInit}, [
                 m.component(Collections, {
                     list : ctrl.collections,
                     activeFilter : ctrl.activeFilter,
@@ -220,7 +225,15 @@ var Collections  = {
         var selectedCSS;
         return m('.fb-collections', [
             m('ul', [
-                m('h5', [m('i.fa.fa-cubes'), 'Collections']),
+                m('h4', [
+                    'Collections ',
+                    m('i.fa.fa-question-circle.text-muted', {
+                        'data-toggle':  'tooltip',
+                        'title':  'Collections are groups of projects. You can create new collections and add any project you are a collaborator on or a public project.',
+                        'data-placement' : 'bottom'
+                    }, ''),
+                    m('.pull-right', m('button.btn.btn-xs.btn-success', m('i.fa.fa-plus')))
+                ]),
                 args.list.map(function(item){
                     selectedCSS = item.id === args.activeFilter() ? 'active' : '';
                     return m('li', { className : selectedCSS},
