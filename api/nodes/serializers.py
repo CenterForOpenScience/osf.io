@@ -78,7 +78,7 @@ class NodeSerializer(JSONAPISerializer):
                                              link_type='related')
 
     comments = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-comments', lookup_field='pk', lookup_url_kwarg='node_id',
-                                               link_type='related', meta={'unread_comments_count': 'get_unread_comments_count'})
+                                               link_type='related', meta={'unread': 'get_unread_comments_count'})
 
     node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
                                                   lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
