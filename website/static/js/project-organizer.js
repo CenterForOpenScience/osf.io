@@ -414,8 +414,8 @@ var tbOptions = {
     multiselect : true,
     hoverClassMultiselect : 'fangorn-selected',
     sortButtonSelector : {
-        up : 'i.fa.fa-chevron-up',
-        down : 'i.fa.fa-chevron-down'
+        up : 'i.fa.fa-angle-up',
+        down : 'i.fa.fa-angle-down'
     },
     sortDepth : 0,
     onload : function () {

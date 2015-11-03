@@ -220,7 +220,7 @@ var Collections  = {
         var selectedCSS;
         return m('.fb-collections', [
             m('ul', [
-                m('h4', 'Collections'),
+                m('h5', [m('i.fa.fa-cubes'), 'Collections']),
                 args.list.map(function(item){
                     selectedCSS = item.id === args.activeFilter() ? 'active' : '';
                     return m('li', { className : selectedCSS},
@@ -267,7 +267,6 @@ var Filters = {
         var selectedCSS;
         return m('.fb-filters.m-t-lg',
             [
-                m('h4', 'Filters'),
                 m('h5', [m('i.fa.fa-user'), 'Contributors']),
                 m('ul', [
                     args.nameFilters.map(function(item, index){
