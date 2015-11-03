@@ -35,7 +35,6 @@ from website.project.model import (
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.archiver import ARCHIVER_SUCCESS
-from website.project import utils as project_utils
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -187,7 +186,7 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                template=None, data=None, archive=False, embargo=None, registration_approval=None, retraction=None, *args, **kwargs):
+                data=None, archive=False, embargo=None, registration_approval=None, retraction=None, *args, **kwargs):
         save_kwargs(**kwargs)
 
         # Original project to be registered
@@ -200,13 +199,12 @@ class RegistrationFactory(AbstractNodeFactory):
         #)
         schema = None
         user = user or project.creator
-        data = data or "Some words"
+        data = data or {'some': 'data'}
         auth = Auth(user=user)
         register = lambda: project.register_node(
             schema=schema,
             auth=auth,
-            data=data,
-            template=template,
+            data=data
         )
 
         def add_approval_step(reg):

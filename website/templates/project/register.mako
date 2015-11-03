@@ -1,9 +1,9 @@
 <%inherit file="project/project_base.mako"/>
-<%def name="title()">Register ${node['title']}</%def>
 
 <legend class="text-center">Register</legend>
 
 % if node.get('registered_schema'):
+<%def name="title()">Registration of ${node['title']}</%def>
   <div id="registrationMetaDataScope" class="container scripted">
     <div class="row">
       <div class="span8 col-md-2 columns eight large-8">        
@@ -30,7 +30,7 @@
             <div data-bind="foreach: {data: Object.keys(page.questions), as: 'qid'}">
               <div class="row" data-bind="with: $parent.questions[qid]">
                 <h4 data-bind="attr.id: qid, text: title"></h4>
-                <small><em data-bind="text: description"></em></small>
+                <small><em data-bind="text: $data.description"></em></small>
                 <div class="col-md-12 well" data-bind="text: $root.schemaData[qid].value"></div>
               </div>
             </div>              
@@ -40,9 +40,10 @@
     </div>
   </div>  
 % else:
-    <script type="text/javascript">
-      window.location.href = '${node.url}' + 'registrations/';
-    </script>
+  <%def name="title()">Register ${node['title']}</%def>
+<script type="text/javascript">
+  window.location.href = '${node.url}' + 'registrations/';
+</script>
 % endif
 
 <%def name="javascript_bottom()">

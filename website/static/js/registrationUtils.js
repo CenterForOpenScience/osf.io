@@ -172,7 +172,6 @@ var MetaSchema = function(params) {
     self.requiresApproval = params.requires_approval || false;
     self.fulfills = params.fulfills || [];
     self.messages = params.messages || {};
-
 };
 
 /**
