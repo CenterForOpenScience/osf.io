@@ -879,7 +879,6 @@ class TestNodeContributorBulkCreate(NodeCRUDTestCase):
         }
         res = self.app.post_json_api(self.public_url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        print res
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/relationships')
 
     def test_node_contributor_ugly_payload(self):

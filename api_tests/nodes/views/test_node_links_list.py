@@ -744,7 +744,6 @@ class TestNodeLinksBulkCreate(ApiTestCase):
         url = '/{}nodes/{}/node_links/'.format(API_BASE, registration._id)
         payload = {'data': [{'type': 'node_links', 'relationships': {'nodes': {'data': {'type': 'nodes', 'id': self.public_pointer_project._id}}}}]}
         res = self.app.post_json_api(url, payload, auth=self.user.auth, expect_errors=True, bulk=True)
-        print res
         assert_equal(res.status_code, 403)
 
     def test_bulk_creates_node_pointer_no_type(self):
