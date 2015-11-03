@@ -108,7 +108,7 @@ var FileViewPage = {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
                         m('strong', 'File is checked-out.'),
                         'This file has been checked-out by a ',
-                        m('a[href="/' + self.file.checkoutUser + '"]', 'collaborator'),
+                        m('a[href="/' + self.file.checkoutUser + '"]', 'contributor'),
                         '. It beeds to be checked back in before any changes can be made.'
                     ])));
                 }
