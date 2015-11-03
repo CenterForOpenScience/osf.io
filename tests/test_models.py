@@ -4114,13 +4114,13 @@ class TestComments(OsfTestCase):
         user = AuthUserFactory()
         comment = CommentFactory(is_deleted=True)
         content = comment.get_content(auth=Auth(user))
-        assert_equal(content, 'Comment deleted.')
+        assert_is_none(content)
 
     def test_get_content_public_project_does_not_return_deleted_content_to_logged_out_user(self):
         project = ProjectFactory(is_public=True)
         comment = CommentFactory(node=project, is_deleted=True)
         content = comment.get_content(auth=None)
-        assert_equal(content, 'Comment deleted.')
+        assert_is_none(content)
 
     def test_get_content_private_project_throws_permissions_error_for_logged_out_users(self):
         project = ProjectFactory(is_public=False)

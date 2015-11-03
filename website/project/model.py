@@ -183,7 +183,7 @@ class Comment(GuidStoredObject):
 
         if self.is_deleted and (((not auth or auth.user.is_anonymous()) and self.node.is_public)
                                 or (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
-            return 'Comment deleted.'
+            return None
 
         return self.content
 

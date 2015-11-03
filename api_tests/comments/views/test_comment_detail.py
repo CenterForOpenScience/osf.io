@@ -435,7 +435,7 @@ class TestCommentDetailView(ApiTestCase):
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.get(url, auth=self.contributor.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
+        assert_is_none(res.json['data']['attributes']['content'])
 
     def test_private_node_logged_out_user_cannot_see_deleted_comment(self):
         self._set_up_private_project_with_comment()
@@ -464,7 +464,7 @@ class TestCommentDetailView(ApiTestCase):
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.get(url, auth=self.contributor.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
+        assert_is_none(res.json['data']['attributes']['content'])
 
     def test_public_node_non_contributor_cannot_view_other_users_deleted_comment(self):
         public_project = ProjectFactory(is_public=True, creator=self.user)
@@ -474,7 +474,7 @@ class TestCommentDetailView(ApiTestCase):
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.get(url, auth=self.non_contributor.auth)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
+        assert_is_none(res.json['data']['attributes']['content'])
 
     def test_public_node_logged_out_user_cannot_view_deleted_comments(self):
         public_project = ProjectFactory(is_public=True, creator=self.user)
@@ -484,4 +484,4 @@ class TestCommentDetailView(ApiTestCase):
         url = '/{}comments/{}/'.format(API_BASE, comment._id)
         res = self.app.get(url)
         assert_equal(res.status_code, 200)
-        assert_equal(res.json['data']['attributes']['content'], 'Comment deleted.')
+        assert_is_none(res.json['data']['attributes']['content'])
