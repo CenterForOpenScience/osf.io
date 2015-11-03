@@ -69,6 +69,21 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
     bulk delete
     """
 
+    # Retrieves resources in request body
+    def get_requested_resources(self, request):
+        model_cls = request.parser_context['view'].model_class
+        requested_ids = [data['id'] for data in request.data]
+        resource_object_list = model_cls.find(Q('_id', 'in', requested_ids))
+
+        if len(resource_object_list) != len(request.data):
+            raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
+
+        return resource_object_list
+
+    # Ensures user has permission to bulk delete resources in request body. Override if not deleting relationships.
+    def allow_bulk_destroy_resources(self, user, resource_list):
+        return True
+
     # Overrides BulkDestroyAPIView
     def bulk_destroy(self, request, *args, **kwargs):
         """
@@ -84,27 +99,20 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
                                    detail='Bulk operation limit is {}, got {}.'.format(bulk_limit, num_items))
 
         user = self.request.user
-        model_cls = request.parser_context['view'].model_class
         object_type = self.serializer_class.Meta.type_
 
         if not request.data:
             raise ValidationError('Request must contain array of resource identifier objects.')
 
-        requested_ids = [data['id'] for data in request.data]
-        resource_object_list = model_cls.find(Q('_id', 'in', requested_ids))
-
-        if len(resource_object_list) != len(request.data):
-            raise ValidationError({'non_field_errors': 'Could not find all objects to delete.'})
+        resource_object_list = self.get_requested_resources(request)
 
         for item in request.data:
             item_type = item[u'type']
             if item_type != object_type:
                 raise Conflict()
 
-        if 'node_id' not in kwargs:
-            for resource_object in resource_object_list:
-                if not resource_object.can_edit(Auth(user)):
-                    raise PermissionDenied
+        if not self.allow_bulk_destroy_resources(user, resource_object_list):
+            raise PermissionDenied
 
         self.perform_bulk_destroy(resource_object_list)
 
