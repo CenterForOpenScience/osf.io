@@ -120,9 +120,9 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                                     link_type='related', lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
 
     """
+    json_api_link = True  # serializes to a links object
 
     def __init__(self, view_name=None, **kwargs):
-        self.json_api_link = True  # serializes to a links object
         self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedIdentityField, self).__init__(view_name=view_name, **kwargs)
@@ -180,8 +180,9 @@ class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
                                                     lookup_url_kwarg='node_id', read_only=True, link_type='related')
 
     """
+    json_api_link = True  # serializes to a links object
+
     def __init__(self, view_name=None, **kwargs):
-        self.json_api_link = True  # serializes to a links object
         self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedRelatedField, self).__init__(view_name=view_name, **kwargs)
@@ -208,8 +209,9 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
         target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
 
     """
+    json_api_link = True  # serializes to a links object
+
     def __init__(self, **kwargs):
-        self.json_api_link = True  # serializes to a links object
         self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
