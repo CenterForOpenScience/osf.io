@@ -376,7 +376,8 @@ class JSONAPISerializer(ser.Serializer):
                 if attribute is None:
                     # We skip `to_representation` for `None` values so that
                     # fields do not have to explicitly deal with that case.
-                    data['attributes'][field.field_name] = None
+                    # data['attributes'][field.field_name] = None
+                    continue
                 else:
                     data['attributes'][field.field_name] = field.to_representation(attribute)
 
