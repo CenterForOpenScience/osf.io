@@ -28,9 +28,9 @@ class ListBulkCreateJSONAPIView(bulk_generics.ListBulkCreateAPIView):
                 raise ValidationError('Request must contain array of resource identifier objects.')
 
         response = super(ListBulkCreateJSONAPIView, self).create(request, *args, **kwargs)
-        if 'data' in response.data:
-            return response
-        return Response({'data': response.data}, status=status.HTTP_201_CREATED)
+        if 'data' not in response.data:
+            response.data = {'data': response.data}
+        return response
 
     # overrides ListBulkCreateAPIView
     def get_serializer(self, *args, **kwargs):
@@ -59,7 +59,8 @@ class BulkUpdateJSONAPIView(bulk_generics.BulkUpdateAPIView):
             raise ValidationError('Request must contain array of resource identifier objects.')
 
         response = super(BulkUpdateJSONAPIView, self).bulk_update(request, *args, **kwargs)
-        return Response({'data': response.data}, status=status.HTTP_200_OK)
+        response.data = {'data': response.data}
+        return response
 
 
 class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
