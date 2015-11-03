@@ -965,7 +965,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         try:
             node.rm_pointer(pointer, auth=auth)
         except ValueError as err:  # pointer doesn't belong to node
-            raise ValidationError(err.message)
+            raise NotFound(err.message)
         node.save()
 
 

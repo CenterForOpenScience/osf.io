@@ -234,6 +234,7 @@ class TestNodeSearch(SearchTestCase):
         assert_in('license', node)
         assert_equal(node['license']['id'], self.node.node_license.id)
 
+    @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
     @retry_assertion(retries=10)
     def test_node_license_propogates_to_children(self):
         docs = query(self.query)['results']
@@ -244,6 +245,7 @@ class TestNodeSearch(SearchTestCase):
         assert_in('license', child)
         assert_equal(child['license'].get('id'), self.node.node_license.id)
 
+    @unittest.skip("Elasticsearch latency seems to be causing theses tests to fail randomly.")
     @retry_assertion(retries=10)
     def test_node_license_updates_correctly(self):
         other_license = NodeLicense.find_one(

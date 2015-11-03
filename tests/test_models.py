@@ -3294,7 +3294,8 @@ class TestForkNode(OsfTestCase):
         fork_date = datetime.datetime.utcnow()
 
         # Fork node
-        fork = self.project.fork_node(auth=self.auth)
+        with mock.patch.object(Node, 'bulk_update_search'):
+            fork = self.project.fork_node(auth=self.auth)
 
         # Compare fork to original
         self._cmp_fork_original(self.user, fork_date, fork, self.project)
