@@ -160,22 +160,13 @@ class CasClient(object):
 
     def revoke_application_tokens(self, client_id, client_secret):
         """Revoke all tokens associated with a given CAS client_id"""
+        self.revoke_tokens(payload={'client_id': client_id, 'client_secret': client_secret})
+
+    def revoke_tokens(self, payload):
+        """Revoke a tokens based on payload"""
         url = self.get_auth_token_revocation_url()
-        data = {'client_id': client_id,
-                'client_secret': client_secret}
 
-        resp = requests.post(url, data=data)
-        if resp.status_code == 204:
-            return True
-        else:
-            self._handle_error(resp)
-
-    def revoke_personal_token(self, token_id):
-        """Revoke a single personal access token by token_id"""
-        url = self.get_auth_token_revocation_url()
-        data = {'token': token_id}
-
-        resp = requests.post(url, data)
+        resp = requests.post(url, payload)
         if resp.status_code == 204:
             return True
         else:

@@ -477,7 +477,7 @@ class ApiOAuth2PersonalToken(StoredObject):
         # Will raise a CasHttpError if deletion fails for any reason other than the token
         # not yet being created. This will also stop setting of active=False.
         try:
-            resp = client.revoke_personal_token(self.token_id)  # noqa
+            resp = client.revoke_tokens({'token_id': self.token_id,})  # noqa
         except cas.CasHTTPError as e:
             if e.code == 400:
                 pass  # Token hasn't been used yet, so not created in cas
