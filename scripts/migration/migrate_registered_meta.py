@@ -9,7 +9,9 @@ import logging
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
+from framework.mongo import database as db
 from framework.mongo.utils import from_mongo
+from framework.transactions.context import TokuTransaction
 
 from website.models import Node, MetaSchema
 from website.app import init_app
@@ -19,11 +21,10 @@ from scripts import utils as scripts_utils
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-def get_old_registered_nodes(dry_run=True):
-    if not dry_run:
-        # nullify old registered_schema refs
-        MetaSchema.remove(Q('schema_version', 'eq', 1))
-        ensure_schemas()
+def get_old_registered_nodes():
+    # nullify old registered_schema refs
+    MetaSchema.remove(Q('schema_version', 'eq', 1))
+    ensure_schemas()
 
     return Node.find(
         Q('is_registration', 'eq', True)
@@ -32,11 +33,12 @@ def get_old_registered_nodes(dry_run=True):
 def main(dry_run):
     init_app(routes=False)
     count = 0
+    skipped = 0
     if not dry_run:
         scripts_utils.add_file_logger(logger, __file__)
         logger.info("Iterating over all registrations")
 
-    for node in get_old_registered_nodes(dry_run):
+    for node in get_old_registered_nodes():
         schemas = node.registered_meta
         if not schemas:
             logger.info('Node: {0} is registered but has no registered_meta'.format(node._id))
@@ -45,7 +47,13 @@ def main(dry_run):
         for name, schema in schemas.iteritems():
             name = from_mongo(name)
 
-            schema = json.loads(schema)
+            try:
+                schema = json.loads(schema) if schema else {}
+            except TypeError as e:
+                if isinstance(schema, dict):
+                    pass
+                else:
+                    raise e
             schema_data = {
                 'embargoEndDate': schema.get('embargoEndDate', ''),
                 'registrationChoice': schema.get('registrationChoice', ''),
@@ -59,6 +67,7 @@ def main(dry_run):
             except NoResultsFound:
                 logger.error('No MetaSchema matching name: {0}, version: {1} found'.format(name, 2))
                 # Skip over missing schemas
+                skipped += 1
                 continue
             node.registered_schema = meta_schema
             node.registered_meta = {
@@ -67,11 +76,13 @@ def main(dry_run):
                 }
                 for key, value in schema_data.iteritems()
             }
-            if not dry_run:
-                node.save()
+            node.save()
         count = count + 1
-    logger.info('Done with {} nodes migrated'.format(count))
+    logger.info('Done with {0} nodes migrated and {1} nodes skipped.'.format(count, skipped))
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
-    main(dry_run)
+    with TokuTransaction():
+        main(dry_run)
+        if dry_run:
+            raise RuntimeError('Dry run, rolling back transaction.')
