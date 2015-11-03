@@ -381,6 +381,51 @@ var Modals = {
                         ])
                     ])
                 )
+            ),
+            m('#renameColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="renameCollLabel"][aria-hidden="true"]',
+                m('.modal-dialog',
+                    m('.modal-content', [
+                        m('.modal-header', [
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                                m('span[aria-hidden="true"]','×'),
+                            ]),
+                            m('h3.modal-title#renameCollLabel', 'Rename Collection')
+                        ]),
+                        m('.modal-body', [
+                            m('p', 'Collections are groups of projects that help you organize your work. [Learn more] about how to use Collections to organize your workflow. '),
+                            m('.form-inline', [
+                                m('.form-group', [
+                                    m('label[for="addCollInput]', 'Collection Name'),
+                                    m('input[type="text"].form-control#addCollInput')
+                                ])
+                            ]),
+                        ]),
+                        m('.modal-footer', [
+                            m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
+                            m('button[type="button"].btn.btn-success', 'Rename')
+                        ])
+                    ])
+                )
+            ),
+            m('#removeColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="removeCollLabel"][aria-hidden="true"]',
+                m('.modal-dialog',
+                    m('.modal-content', [
+                        m('.modal-header alert-danger', [
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                                m('span[aria-hidden="true"]','×'),
+                            ]),
+                            m('h3.modal-title#removeCollLabel', 'Delete Collection ....... ')
+                        ]),
+                        m('.modal-body', [
+                            m('p', 'You sure?'),
+
+                        ]),
+                        m('.modal-footer', [
+                            m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
+                            m('button[type="button"].btn.btn-danger', 'Delete')
+                        ])
+                    ])
+                )
             )
         ]);
     }
