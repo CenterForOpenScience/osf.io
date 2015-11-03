@@ -132,7 +132,7 @@ var ViewModel = function(params) {
         });
     });
     self.selectedLicenses = ko.pureComputed(function() {
-        return self.licenses().filter(function(license) {
+        return (self.licenses() || []).filter(function(license) {
             return license.active();
         });
     });
@@ -167,7 +167,7 @@ var ViewModel = function(params) {
     });
 
     self.totalPages = ko.pureComputed(function() {
-        var resultsCount = Math.max(self.resultsPerPage(),1); // No Divide by Zero
+        var resultsCount = Math.max(self.resultsPerPage(), 1); // No Divide by Zero
         var countOfPages = Math.ceil(self.totalResults() / resultsCount);
         return countOfPages;
     });
@@ -410,8 +410,18 @@ var ViewModel = function(params) {
             self.categories(self.categories().sort(self.sortCategories));
 
             // If our category is named attempt to load its total else set it to the total total
+            var selectedLicenses = self.selectedLicenses();
             if (self.category().name !== undefined) {
-                self.totalResults(data.counts[self.category().name] || 0);
+                if (selectedLicenses.length) {
+                    var total = 0;
+                    $.each(selectedLicenses, function(i, license) {
+                        total += license.count();
+                    });
+                    self.totalResults(total);
+                }
+                else {
+                    self.totalResults(data.counts[self.category().name] || 0);
+                }
             } else {
                 self.totalResults(self.self.categories()[0].count);
             }
@@ -450,7 +460,7 @@ var ViewModel = function(params) {
 
     self.paginate = function(val) {
         window.scrollTo(0, 0);
-        self.currentPage(self.currentPage()+val);
+        self.currentPage(self.currentPage() + val);
         self.search();
     };
 
