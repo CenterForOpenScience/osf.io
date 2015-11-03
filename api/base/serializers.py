@@ -223,8 +223,6 @@ class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
         If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
         the link is represented as a links object with 'href' and 'meta' members.
         """
-        if value._name in self.parent.Meta.type_:
-            self.link_type = 'self'
         meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
         return {'links': {self.link_type: {'href': value.get_absolute_url(), 'meta': meta}}}
 
