@@ -161,7 +161,7 @@ def node_register_template_page(auth, node, **kwargs):
 @must_not_be_registration
 def project_before_register(auth, node, **kwargs):
     """Returns prompt informing user that addons, if any, won't be registered."""
-
+    # TODO: Avoid generating HTML code in Python; all HTML should be in display layer
     messages = {
         'full': {
             'addons': set(),

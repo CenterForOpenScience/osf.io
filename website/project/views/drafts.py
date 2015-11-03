@@ -1,7 +1,8 @@
-from flask import request, redirect
-import httplib as http
-from dateutil.parser import parse as parse_date
 import functools
+import httplib as http
+
+from dateutil.parser import parse as parse_date
+from flask import request, redirect
 
 from modularodm import Q
 from modularodm.exceptions import ValidationValueError
@@ -23,6 +24,8 @@ from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
 from website.project.utils import serialize_node
+from website.util import rapply
+from website.util.sanitize import strip_html
 
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
@@ -149,6 +152,7 @@ def create_draft_registration(auth, node, *args, **kwargs):
 
     schema_version = data.get('schema_version', 1)
     schema_data = data.get('schema_data', {})
+    schema_data = rapply(schema_data, strip_html)
 
     meta_schema = get_schema_or_fail(
         Q('name', 'eq', schema_name) &
@@ -226,6 +230,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     data = request.get_json()
 
     schema_data = data.get('schema_data', {})
+    schema_data = rapply(schema_data, strip_html)
 
     schema_name = data.get('schema_name')
     schema_version = data.get('schema_version', 1)
@@ -255,9 +260,10 @@ def delete_draft_registration(auth, node, draft, *args, **kwargs):
     return None, http.NO_CONTENT
 
 def get_metaschemas(*args, **kwargs):
-    """List metaschemas with which a draft registration may be created
+    """
+    List metaschemas with which a draft registration may be created. Only fetch the newest version for each schema.
 
-    :return: list a serialized metaschemas
+    :return: serialized metaschemas
     :rtype: dict
     """
 
