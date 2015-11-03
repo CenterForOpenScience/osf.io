@@ -33,7 +33,7 @@
 ##           <button id="register-submit" type="button" class="btn btn-primary pull-right" data-toggle="tooltip" data-placement="top" title="Not eligible for the Pre-Registration Challenge" data-bind="click: registerDraft">Register without review</button>
 ##         </span>
 
-            <button id="register-submit" type="button" class="btn btn-primary pull-right" data-bind="click: registerDraft">Register</button>
+            <button id="register-submit" type="button" class="btn btn-success pull-right" data-bind="click: registerDraft">Register</button>
 ## TODO(lyndsysimon): This button is not applicable until prereg is merged in.
 ##             <button id="register-submit" type="button" class="btn btn-primary pull-right" data-bind="click: submitForReview, visible: draft.requiresApproval">Submit for review</button>
     </div>
@@ -62,7 +62,7 @@
   <em class="text-danger" data-bind="validationMessage: $root.pikaday"></em>
   <div class="modal-footer">
     <button class="btn btn-default" data-bind="click: close">Cancel</button>
-    <button class="btn btn-primary" data-bind="click: register, enable: canRegister">
+    <button class="btn btn-success" data-bind="click: register, enable: canRegister">
       Register
     </button>
   </div>

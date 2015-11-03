@@ -30,13 +30,13 @@ var makeMetaSchema = function() {
     var makeQuestions = function() {
         var questions = {};
 
-        [1, 1, 1].map(function() {
+        for (var i = 0; i < 3; i++) {
             qid = faker.internet.ip();
             questions[qid] = {
                 type: 'string',
                 format: 'text'
             };
-        });
+        }
         return questions;
     };
 

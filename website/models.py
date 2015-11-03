@@ -40,6 +40,7 @@ MODELS = (
     Embargo, Retraction, RegistrationApproval,
     ArchiveJob, ArchiveTarget, BlacklistGuid, Sanction,
     QueuedMail,
+    DraftRegistration, DraftRegistrationApproval,
     NodeLicense, NodeLicenseRecord
 )
 

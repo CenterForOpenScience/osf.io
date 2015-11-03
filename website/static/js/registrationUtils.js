@@ -209,7 +209,7 @@ var Draft = function(params, metaSchema) {
 
     self.urls = params.urls || {};
 
-
+    // TODO (abought): "fulfills" defined again several lines down. Pick one.
     self.fulfills = params.fulfills || [];
     self.isPendingReview = params.is_pending_review;
     self.isApproved = params.is_approved;
@@ -272,6 +272,7 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     };
     viewModel.preRegisterPrompts = response.prompts || [];
     bootbox.dialog({
+        // TODO: Check button language here
         size: 'large',
         title: language.registerConfirm,
         message: function() {
@@ -280,24 +281,29 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     });
 };
 Draft.prototype.preRegisterErrors = function(response, confirm) {
-    bootbox.confirm(
-        $osf.joinPrompts(
+    bootbox.confirm({
+        message: $osf.joinPrompts(
             response.errors,
             'Before you continue...'
         ) + '<br />' + language.registerSkipAddons,
-        function(result) {
+        callback: function(result) {
             if (result) {
                 confirm();
-            }
-        }
-    );
+            }},
+        buttons: {
+            confirm: {
+                label:'Continue with registration',
+                className:'btn-primary'
+            }}
+    });
 };
 Draft.prototype.beforeRegister = function(data) {
     var self = this;
 
     $osf.block();
 
-    return $.getJSON(self.urls.before_register).then(function(response) {
+    var request = $.getJSON(self.urls.before_register);
+    request.done(function(response) {
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(response, self.preRegisterPrompts.bind(self, response, self.register.bind(self)));
         } else if (response.prompts && response.prompts.length) {
@@ -306,23 +312,24 @@ Draft.prototype.beforeRegister = function(data) {
             self.register(data);
         }
     }).always($osf.unblock);
+    return request;
 };
-Draft.prototype.onRegisterFail = bootbox.dialog.bind(null, {
-    title: 'Registration failed',
-    message: language.registerFail
-});
+Draft.prototype.onRegisterFail = $osf.growl.bind(null, 'Registration failed',
+    language.registerFail, 'danger');
+
 Draft.prototype.register = function(data) {
     var self = this;
 
     $osf.block();
-    $osf.postJSON(self.urls.register, data)
-        .done(function(response) {
-            if (response.status === 'initiated') {
-                window.location.assign(response.urls.registrations);
-            } else if (response.status === 'error') {
-                self.onRegisterFail();
-            }
-    }).always($osf.unblock).fail(self.onRegisterFail);
+    var request = $osf.postJSON(self.urls.register, data);
+    request.done(function(response) {
+        if (response.status === 'initiated') {
+            window.location.assign(response.urls.registrations);
+        }
+    });
+    request.fail(self.onRegisterFail());
+    request.always($osf.unblock).fail(self.onRegisterFail);
+    return request;
 };
 
 
@@ -331,7 +338,7 @@ Draft.prototype.register = function(data) {
  *
  * @param {Object} urls
  * @param {String} urls.update: endpoint to update a draft instance
- * @param {String} editorID: id of editor DOM node
+ * @param {String} editorId: id of editor DOM node
  * @property {ko.observable[Boolean]} readonly
  * @property {ko.observable[Draft]} draft
  * @property {ko.observable[Question]} currentQuestion
@@ -436,6 +443,7 @@ var RegistrationEditor = function(urls, editorId) {
         return draft && draft.isApproved;
     });
 
+    // TODO (abought): add back iterObject from prereg code
     self.iterObject = $osf.iterObject;
 
     // TODO: better extensions system?
@@ -508,8 +516,8 @@ RegistrationEditor.prototype.check = function() {
                     message: 'There are errors in your registration. Please double check it and submit again.',
                     buttons: {
                         success: {
-                            label: 'Ok',
-                            className: 'btn-success',
+                            label: 'Return',
+                            className: 'btn-primary',
                             callback: function() {
                                 self.showValidation(true);
                             }
@@ -543,7 +551,7 @@ RegistrationEditor.prototype.selectPage = function(page) {
 
 RegistrationEditor.prototype.nextPage = function () {
     var self = this;
-    if (self.onLastPage() || self.pages().length < 2) {
+    if (self.onLastPage() || self.pages().length <= 1) {
         return;
     }
 
@@ -559,26 +567,38 @@ RegistrationEditor.prototype.submitForReview = function() {
     var beforeSubmitForApprovalMessage = messages.beforeSubmitForApproval || '';
     var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';
 
-    bootbox.confirm(beforeSubmitForApprovalMessage, function(confirmed) {
-        if (confirmed) {
-            $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {}).then(function() {
-                bootbox.dialog({
-                    closeButton: false,
-                    message: afterSubmitForApprovalMessage,
-                    title: 'Pre-Registration Prize Submission',
-                    buttons: {
-                        registrations: {
-                            label: 'Return to registrations page',
-                            className: 'btn-primary pull-right',
-                            callback: function() {
-                                window.location.href = self.draft().urls.registrations;
+    bootbox.confirm({
+            message: beforeSubmitForApprovalMessage,
+            callback: function(confirmed) {
+                if (confirmed) {
+                    var request = $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {});
+                    request.done(function() {
+                        bootbox.dialog({
+                            closeButton: false,
+                            message: afterSubmitForApprovalMessage,
+                            title: 'Pre-Registration Prize Submission',
+                            buttons: {
+                                registrations: {
+                                    label: 'Return to registrations page',
+                                    className: 'btn-primary pull-right',
+                                    callback: function() {
+                                        window.location.href = self.draft().urls.registrations;
+                                    }
+                                }
                             }
-                        }
-                    }
-                });
-            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+                        });
+                    });
+                    request.fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+                }
+            },
+            buttons: {
+                confirm: {
+                    label:'Continue with registration',
+                    className:'btn-primary'
+                }
+            }
         }
-    });
+    );
 };
 RegistrationEditor.prototype.submit = function() {
     var self = this;
@@ -587,10 +607,11 @@ RegistrationEditor.prototype.submit = function() {
     var messages = self.draft().messages;
     bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
         if (result) {
-            $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
+            var request = $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
                 node: currentNode,
                 auth: currentUser
-            }).then(function() {
+            });
+            request.done(function() {
                 bootbox.dialog({
                     message: messages.afterSubmitForApproval,
                     title: 'Pre-Registration Prize Submission',
@@ -604,7 +625,8 @@ RegistrationEditor.prototype.submit = function() {
                         }
                     }
                 });
-            }).fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
+            });
+        request.fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
         }
     });
 };
@@ -616,15 +638,17 @@ RegistrationEditor.prototype.create = function(schemaData) {
 
     var metaSchema = self.draft().metaSchema;
 
-    return $osf.postJSON(self.urls.create, {
+    var request = $osf.postJSON(self.urls.create, {
         schema_name: metaSchema.name,
         schema_version: metaSchema.version,
         schema_data: schemaData
-    }).then(function(response) {
+    });
+    request.done(function(response) {
         var draft = self.draft();
         draft.pk = response.pk;
         self.draft(draft);
     });
+    return request;
 };
 
 /**
@@ -772,7 +796,7 @@ RegistrationManager.prototype.init = function() {
 
     var getSchemas = self.getSchemas();
 
-    getSchemas.then(function(response) {
+    getSchemas.done(function(response) {
         self.schemas(
             $.map(response.meta_schemas, function(schema) {
                 return new MetaSchema(schema);
@@ -782,7 +806,7 @@ RegistrationManager.prototype.init = function() {
 
     var getDraftRegistrations = self.getDraftRegistrations();
 
-    getDraftRegistrations.then(function(response) {
+    getDraftRegistrations.done(function(response) {
         self.drafts(
             $.map(response.drafts, function(draft) {
                 return new Draft(draft);
@@ -790,7 +814,7 @@ RegistrationManager.prototype.init = function() {
         );
     });
 
-    $.when(getSchemas, getDraftRegistrations).then(function() {
+    $.when(getSchemas, getDraftRegistrations).done(function() {
         self.loading(false);
     });
 };
@@ -802,18 +826,26 @@ RegistrationManager.prototype.init = function() {
 RegistrationManager.prototype.deleteDraft = function(draft) {
     var self = this;
 
-    bootbox.confirm('Are you sure you want to delete this draft registration?', function(confirmed) {
-        if (confirmed) {
-            $.ajax({
-                url: self.urls.delete.replace('{draft_pk}', draft.pk),
-                method: 'DELETE'
-            }).then(function() {
-                self.drafts.remove(function(item) {
-                    return item.pk === draft.pk;
+    bootbox.confirm({
+        message: 'Are you sure you want to delete this draft registration?',
+        callback: function(confirmed) {
+            if (confirmed) {
+                $.ajax({
+                    url: self.urls.delete.replace('{draft_pk}', draft.pk),
+                    method: 'DELETE'
+                }).done(function() {
+                    self.drafts.remove(function(item) {
+                        return item.pk === draft.pk;
+                    });
                 });
-            });
-        }
-    });
+            }},
+        buttons: {
+            confirm: {
+                label: 'Delete',
+                className: 'btn-danger'
+            }
+        }}
+    );
 };
 /**
  * Show the draft registration preview pane
