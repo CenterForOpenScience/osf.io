@@ -22,7 +22,9 @@ class CommentReport(object):
 class CommentSerializer(JSONAPISerializer):
 
     filterable_fields = frozenset([
-        'deleted'
+        'deleted',
+        'date_created',
+        'date_modified'
     ])
 
     id = IDField(source='_id', read_only=True)

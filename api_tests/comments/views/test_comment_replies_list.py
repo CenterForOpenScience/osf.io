@@ -1,5 +1,7 @@
 from nose.tools import *  # flake8: noqa
 
+from framework.auth import core
+
 from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
 from tests.factories import ProjectFactory, AuthUserFactory, CommentFactory, RegistrationFactory
@@ -258,6 +260,10 @@ class TestCommentRepliesFiltering(ApiTestCase):
         self.deleted_reply = CommentFactory(node=self.project, target=self.comment, user=self.user, is_deleted=True)
         self.base_url = '/{}comments/{}/replies/'.format(API_BASE, self.comment._id)
 
+        self.formatted_date_created = self.reply.date_created.strftime('%Y-%m-%d %H:%M:%S.%f')
+        self.reply.edit('Edited comment', auth=core.Auth(self.user), save=True)
+        self.formatted_date_modified = self.reply.date_modified.strftime('%Y-%m-%d %H:%M:%S.%f')
+
     def test_node_comments_replies_with_no_filter_returns_all(self):
         res = self.app.get(self.base_url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)
@@ -273,3 +279,33 @@ class TestCommentRepliesFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 1)
         assert_false(res.json['data'][0]['attributes']['deleted'])
+
+    def test_filtering_comments_replies_created_before_date(self):
+        url = self.base_url + '?filter[date_created][lt]={}'.format(self.formatted_date_created)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 0)
+
+    def test_filtering_comment_replies_created_on_date(self):
+        url = self.base_url + '?filter[date_created][eq]={}'.format(self.formatted_date_created)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
+
+    def test_filtering_comment_replies_created_after_date(self):
+        url = self.base_url + '?filter[date_created][gt]={}'.format(self.formatted_date_created)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+
+    def test_filtering_comment_replies_modified_before_date(self):
+        url = self.base_url + '?filter[date_modified][lt]={}'.format(self.formatted_date_modified)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+
+    def test_filtering_comment_replies_modified_on_date(self):
+        url = self.base_url + '?filter[date_modified][eq]={}'.format(self.formatted_date_modified)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+
+    def test_filtering_comment_replies_modified_after_date(self):
+        url = self.base_url + '?filter[date_modified][gt]={}'.format(self.formatted_date_modified)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 0)

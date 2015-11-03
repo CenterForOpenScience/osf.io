@@ -103,6 +103,12 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixi
     filtered using truthy values, such as `true`, `false`, `0`, or `1`. Note that quoting `true` or `false` in
     the query will cause the match to fail regardless.
 
+    + `filter[date_created][comparison_operator]=YYYY-MM-DD H:M:S` -- filter comment replies based on date created.
+
+    Comment replies can also be filtered based on their `date_created` and `date_modified` fields. Possible comparison
+    operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'
+    (less than or equal to). The date must be in the format YYYY-MM-DD and the time is optional.
+
     #This Request/Response
     """
 
