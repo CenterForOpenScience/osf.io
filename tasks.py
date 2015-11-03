@@ -59,7 +59,7 @@ def server(host=None, port=5000, debug=True, live=False):
 @task
 def apiserver(port=8000, live=False):
     """Run the API server."""
-    cmd = 'python manage.py runserver {}'.format(port)
+    cmd = 'python manage.py runserver {} --nothreading'.format(port)
     if live:
         cmd += ' livereload'
     run(cmd, echo=True, pty=True)
