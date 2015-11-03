@@ -13,6 +13,27 @@ from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict
 
 
+class CheckRetraction(ser.Field):
+    """
+    If node is retracted, this field will return None.
+    """
+    def __init__(self, field, **kwargs):
+        super(CheckRetraction, self).__init__(**kwargs)
+        self.field = field
+
+    def get_attribute(self, instance):
+        if instance.is_retracted:
+            return None
+        return self.field.get_attribute(instance)
+
+    def bind(self, field_name, parent):
+        super(CheckRetraction, self).bind(field_name, parent)
+        self.field.bind(field_name, self)
+
+    def to_representation(self, value):
+        return self.field.to_representation(value)
+
+
 class AllowMissing(ser.Field):
 
     def __init__(self, field, **kwargs):
