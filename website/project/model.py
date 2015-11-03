@@ -175,7 +175,7 @@ class Comment(GuidStoredObject):
     def get_absolute_url(self):
         return self.absolute_api_v2_url
 
-    def return_content(self, auth):
+    def get_content(self, auth):
         """ Returns the comment content if the user is allowed to see it. Deleted comments
         can only be viewed by the user who created the comment."""
         if (not auth or auth.user.is_anonymous()) and not self.node.is_public:

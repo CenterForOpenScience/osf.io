@@ -95,7 +95,7 @@ class AuthorizedCharField(ser.CharField):
     defined as the field source.
 
     Example:
-        content = AuthorizedCharField(source='return_content')
+        content = AuthorizedCharField(source='get_content')
     """
     def __init__(self, source=None, **kwargs):
         assert source is not None, 'The `source` argument is required.'
