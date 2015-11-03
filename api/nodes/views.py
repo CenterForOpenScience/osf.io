@@ -277,6 +277,7 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
         user = self.request.user
         serializer.save(creator=user)
 
+    # overrides BulkDestroyJSONAPIView
     def allow_bulk_destroy_resources(self, user, resource_list):
         for node in resource_list:
             if not node.has_permission(user, 'admin'):

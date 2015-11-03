@@ -66,9 +66,10 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
     Custom BulkDestroyAPIView that handles validation and permissions for
     bulk delete
     """
-
-    # Retrieves resources in request body
     def get_requested_resources(self, request):
+        """
+        Retrieves resources in request body
+        """
         model_cls = request.parser_context['view'].model_class
         requested_ids = [data['id'] for data in request.data]
         resource_object_list = model_cls.find(Q('_id', 'in', requested_ids))
@@ -78,8 +79,10 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
 
         return resource_object_list
 
-    # Ensures user has permission to bulk delete resources in request body. Override if not deleting relationships.
     def allow_bulk_destroy_resources(self, user, resource_list):
+        """
+        Ensures user has permission to bulk delete resources in request body. Override if not deleting relationships.
+        """
         return True
 
     # Overrides BulkDestroyAPIView
@@ -87,7 +90,7 @@ class BulkDestroyJSONAPIView(bulk_generics.BulkDestroyAPIView):
         """
         Handles bulk destroy of resource objects.
 
-        Handles some permissions, validation, and enforces bulk limit.
+        Handles some validation and enforces bulk limit.
         """
         num_items = len(request.data)
         bulk_limit = BULK_SETTINGS['DEFAULT_BULK_LIMIT']
