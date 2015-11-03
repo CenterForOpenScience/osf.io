@@ -270,6 +270,7 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
             embargoEndDate: viewModel.embargoEndDate()
         });
     };
+    viewModel.preRegisterPrompts = response.prompts || [];
     bootbox.dialog({
         size: 'large',
         title: language.registerConfirm,

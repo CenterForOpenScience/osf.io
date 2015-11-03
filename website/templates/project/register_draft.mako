@@ -40,8 +40,8 @@
 </div>
 
 <script type="text/html" id="preRegistrationTemplate">
-  <ul>
-    <li>The content and version history of <strong>Wiki and OSF Storage</strong> will be copied to the registration.</li>
+  <ul data-bind="foreach: preRegisterPrompts">
+    <li data-bind="html: $data"></li>
   </ul>
   <div class="form-group">
     <label class="control-label">Registration Choice</label>
