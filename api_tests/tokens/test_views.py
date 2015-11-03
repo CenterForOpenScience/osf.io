@@ -56,7 +56,7 @@ class TestTokenList(ApiTestCase):
         assert_equal(len(res.json['data']),
                      len(self.user2_tokens))
 
-    @mock.patch('framework.auth.cas.CasClient.revoke_personal_token')
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_deleting_token_should_hide_it_from_api_list(self, mock_method):
         mock_method.return_value(True)
         api_token = self.user1_tokens[0]
@@ -165,7 +165,7 @@ class TestTokenDetail(ApiTestCase):
         res = self.app.get(self.user1_token_url, expect_errors=True)
         assert_equal(res.status_code, 401)
 
-    @mock.patch('framework.auth.cas.CasClient.revoke_personal_token')
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_owner_can_delete(self, mock_method):
         mock_method.return_value(True)
         res = self.app.delete(self.user1_token_url, auth=self.user1.auth)
@@ -177,7 +177,7 @@ class TestTokenDetail(ApiTestCase):
                               expect_errors=True)
         assert_equal(res.status_code, 403)
 
-    @mock.patch('framework.auth.cas.CasClient.revoke_personal_token')
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_deleting_tokens_makes_api_view_inaccessible(self, mock_method):
         mock_method.return_value(True)
         res = self.app.delete(self.user1_token_url, auth=self.user1.auth)
@@ -189,7 +189,7 @@ class TestTokenDetail(ApiTestCase):
         new_name = "The token formerly known as Prince"
         res = self.app.patch_json_api(self.user1_token_url,
                              {'data': {'attributes':
-                                  {'name': new_name},
+                                  {'name': new_name, 'scopes':'osf.full_write'},
                               'id': self.user1_token._id,
                               'type': 'tokens'
                              }}, auth=self.user1.auth, expect_errors=True)
@@ -207,7 +207,7 @@ class TestTokenDetail(ApiTestCase):
         new_name = "The token formerly known as Prince"
         res = self.app.patch_json_api(self.user1_token_url,
                                       {'data': {
-                                          'attributes': {"name": new_name},
+                                          'attributes': {"name": new_name, 'scopes':'osf.full_write'},
                                           'id': self.user1_token._id,
                                           'type': 'tokens'}}, auth=self.user1.auth)
         assert_equal(res.status_code, 200)
@@ -218,7 +218,7 @@ class TestTokenDetail(ApiTestCase):
         assert_equal(len(res.json['data']),
                      1)
 
-    @mock.patch('framework.auth.cas.CasClient.revoke_personal_token')
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
     def test_deleting_token_flags_instance_inactive(self, mock_method):
         mock_method.return_value(True)
         res = self.app.delete(self.user1_token_url, auth=self.user1.auth)
