@@ -211,7 +211,8 @@ var FileBrowser = {
             m('.fb-main', { config: ctrl.updateList, style : poStyle },
                 m('#poOrganizer', m('.spinner-loading-wrapper', m('.logo-spin.logo-md')))
             ),
-            infoPanel
+            infoPanel,
+            m.component(Modals)
         ];
     }
 };
@@ -232,8 +233,8 @@ var Collections  = {
                         'title':  'Collections are groups of projects. You can create new collections and add any project you are a collaborator on or a public project.',
                         'data-placement' : 'bottom'
                     }, ''),
-                    m('.pull-right', m('button.btn.btn-xs.btn-success', m('i.fa.fa-plus')))
-                ]),
+                    m('.pull-right', m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')))
+        ]),
                 args.list.map(function(item){
                     selectedCSS = item.id === args.activeFilter() ? 'active' : '';
                     return m('li', { className : selectedCSS},
@@ -347,6 +348,32 @@ var Information = {
     }
 };
 
+/**
+ * Modals views.
+ * @constructor
+ */
 
+var Modals = {
+    view : function() {
+        return m('.fb-Modals', [
+            m('#addColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addCollLabel"][aria-hidden="true"]',
+                m('.modal-dialog',
+                    m('.modal-content', [
+                        m('.modal-header', [
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                                m('span[aria-hidden="true"]','×'),
+                            ]),
+                            m('h3.modal-title#addCollLabel', 'Add New Collection')
+                        ]),
+                        m('.modal-body', 'One fine body'),
+                        m('.modal-footer', [
+                            m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close')
+                        ])
+                    ])
+                )
+            )
+        ]);
+    }
+};
 
 module.exports = FileBrowser;
