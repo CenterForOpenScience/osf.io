@@ -28,13 +28,11 @@ def get_targets():
 
 
 def do_migration(records):
-    count = 0
+    logger.info('Updating {} comments'.format(len(records)))
     for comment in records:
         logger.info('Updating comment {}'.format(comment._id))
-        count +=1
         comment.modified = False
         comment.save()
-    logger.info('{} comments updated'.format(count))
 
 
 if __name__ == '__main__':
