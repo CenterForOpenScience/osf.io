@@ -5,6 +5,7 @@ from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
 from api.base.exceptions import Gone
+from api.base.filters import ODMFilterMixin
 from api.base import permissions as base_permissions
 from api.comments.permissions import (
     CanCommentOrPublic,
@@ -43,7 +44,7 @@ class CommentMixin(object):
         return comment
 
 
-class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
+class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixin):
     """List of replies to a comment. *Writeable*.
 
     Paginated list of comment replies ordered by their `date_created.` Each resource contains the full representation
@@ -118,8 +119,12 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin):
 
     ordering = ('-date_created', )  # default ordering
 
+    # overrides ODMFilterMixin
+    def get_default_odm_query(self):
+        return Q('target', 'eq', self.get_comment())
+
     def get_queryset(self):
-        return Comment.find(Q('target', 'eq', self.get_comment()))
+        return Comment.find(self.get_query_from_request())
 
     # overrides ListCreateAPIView
     def perform_create(self, serializer):

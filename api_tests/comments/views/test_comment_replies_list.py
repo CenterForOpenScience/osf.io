@@ -245,3 +245,31 @@ class TestCommentRepliesCreate(ApiTestCase):
         self._set_up_public_project_comment_reply()
         res = self.app.post_json_api(self.public_url, self.payload, auth=self.non_contributor.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
+
+
+class TestCommentRepliesFiltering(ApiTestCase):
+
+    def setUp(self):
+        super(TestCommentRepliesFiltering, self).setUp()
+        self.user = AuthUserFactory()
+        self.project = ProjectFactory(creator=self.user)
+        self.comment = CommentFactory(node=self.project, user=self.user)
+        self.reply = CommentFactory(node=self.project, target=self.comment, user=self.user)
+        self.deleted_reply = CommentFactory(node=self.project, target=self.comment, user=self.user, is_deleted=True)
+        self.base_url = '/{}comments/{}/replies/'.format(API_BASE, self.comment._id)
+
+    def test_node_comments_replies_with_no_filter_returns_all(self):
+        res = self.app.get(self.base_url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 2)
+
+    def test_filtering_for_deleted_comment_replies(self):
+        url = self.base_url + '?filter[deleted]=True'
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_true(res.json['data'][0]['attributes']['deleted'])
+
+    def test_filtering_for_non_deleted_comment_replies(self):
+        url = self.base_url + '?filter[deleted]=False'
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+        assert_false(res.json['data'][0]['attributes']['deleted'])
