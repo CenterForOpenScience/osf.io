@@ -1382,6 +1382,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
+        new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
         if (new.title == self.title
