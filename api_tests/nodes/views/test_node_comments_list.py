@@ -257,9 +257,9 @@ class TestCommentFiltering(ApiTestCase):
         self.deleted_comment = CommentFactory(node=self.project, user=self.user, is_deleted=True)
         self.base_url = '/{}nodes/{}/comments/'.format(API_BASE, self.project._id)
 
-        self.formatted_date_created = self.comment.date_created.strftime('%Y-%m-%d %H:%M:%S.%f')
+        self.formatted_date_created = self.comment.date_created.strftime('%Y-%m-%dT%H:%M:%S.%f')
         self.comment.edit('Edited comment', auth=core.Auth(self.user), save=True)
-        self.formatted_date_modified = self.comment.date_modified.strftime('%Y-%m-%d %H:%M:%S.%f')
+        self.formatted_date_modified = self.comment.date_modified.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     def test_node_comments_with_no_filter_returns_all_comments(self):
         res = self.app.get(self.base_url, auth=self.user.auth)
@@ -285,7 +285,7 @@ class TestCommentFiltering(ApiTestCase):
     def test_filtering_comments_created_on_date(self):
         url = self.base_url + '?filter[date_created][eq]={}'.format(self.formatted_date_created)
         res = self.app.get(url, auth=self.user.auth)
-        assert_equal(len(res.json['data']), 2)
+        assert_equal(len(res.json['data']), 1)
 
     def test_filtering_comments_created_on_or_before_date(self):
         url = self.base_url + '?filter[date_created][lte]={}'.format(self.formatted_date_created)

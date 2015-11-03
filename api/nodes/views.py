@@ -1452,7 +1452,7 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     filtered using truthy values, such as `true`, `false`, `0`, or `1`. Note that quoting `true` or `false` in
     the query will cause the match to fail regardless.
 
-    + `filter[date_created][comparison_operator]=YYYY-MM-DD H:M:S` -- filter comments based on date created.
+    + `filter[date_created][comparison_operator]=YYYY-MM-DDTH:M:S` -- filter comments based on date created.
 
     Comments can also be filtered based on their `date_created` and `date_modified` fields. Possible comparison
     operators include 'gt' (greater than), 'gte'(greater than or equal to), 'lt' (less than) and 'lte'

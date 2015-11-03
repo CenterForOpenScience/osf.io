@@ -260,9 +260,9 @@ class TestCommentRepliesFiltering(ApiTestCase):
         self.deleted_reply = CommentFactory(node=self.project, target=self.comment, user=self.user, is_deleted=True)
         self.base_url = '/{}comments/{}/replies/'.format(API_BASE, self.comment._id)
 
-        self.formatted_date_created = self.reply.date_created.strftime('%Y-%m-%d %H:%M:%S.%f')
+        self.formatted_date_created = self.reply.date_created.strftime('%Y-%m-%dT%H:%M:%S.%f')
         self.reply.edit('Edited comment', auth=core.Auth(self.user), save=True)
-        self.formatted_date_modified = self.reply.date_modified.strftime('%Y-%m-%d %H:%M:%S.%f')
+        self.formatted_date_modified = self.reply.date_modified.strftime('%Y-%m-%dT%H:%M:%S.%f')
 
     def test_node_comments_replies_with_no_filter_returns_all(self):
         res = self.app.get(self.base_url, auth=self.user.auth)
@@ -285,8 +285,13 @@ class TestCommentRepliesFiltering(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 0)
 
-    def test_filtering_comment_replies_created_on_date(self):
+    def test_filtering_comment_replies_created_on_datetime(self):
         url = self.base_url + '?filter[date_created][eq]={}'.format(self.formatted_date_created)
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(len(res.json['data']), 1)
+
+    def test_filtering_comment_replies_created_on_date(self):
+        url = self.base_url + '?filter[date_created][eq]={}'.format(self.reply.date_created.strftime('%Y-%m-%d'))
         res = self.app.get(url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)
 
