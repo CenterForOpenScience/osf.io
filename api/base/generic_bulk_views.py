@@ -4,8 +4,6 @@ from rest_framework.response import Response
 from rest_framework_bulk import generics as bulk_generics
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
-from framework.auth.core import Auth
-
 from website.project.model import Q
 from api.base.settings import BULK_SETTINGS
 from api.base.exceptions import Conflict, JSONAPIException
