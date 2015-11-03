@@ -365,9 +365,19 @@ var Modals = {
                             ]),
                             m('h3.modal-title#addCollLabel', 'Add New Collection')
                         ]),
-                        m('.modal-body', 'One fine body'),
+                        m('.modal-body', [
+                            m('p', 'Collections are groups of projects that help you organize your work. [Learn more] about how to use Collections to organize your workflow. '),
+                            m('.form-inline', [
+                                m('.form-group', [
+                                    m('label[for="addCollInput]', 'Collection Name'),
+                                    m('input[type="text"].form-control#addCollInput')
+                                ])
+                            ]),
+                            m('p', 'After you create your collection drag and drop projects to the collection. ')
+                        ]),
                         m('.modal-footer', [
-                            m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close')
+                            m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
+                            m('button[type="button"].btn.btn-success', 'Add')
                         ])
                     ])
                 )
