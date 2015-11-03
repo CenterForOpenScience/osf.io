@@ -71,6 +71,23 @@
                         </div>
                         <br />
                         <!-- /ko -->
+                        <div class="row" class="hidden-xs" data-bind="if: showLicenses" class="row">
+                            <div class="col-md-12">
+                                <h4> Filter by license:</h4>
+                                <span data-bind="if: licenses">
+                                <ul class="nav nav-pills nav-stacked"
+                                    data-bind="foreach: {data: licenses, as: 'license'}">
+                                  <li data-bind="css: {'active': license.active(), 'disabled': !license.count()}">
+                                    <a data-bind="click: license.toggleActive">
+                                      <span style="display: inline-block; max-width: 85%;">{{license.name}}</span>
+                                      <span data-bind="text: license.count" class="badge pull-right"></span>
+                                    </a>
+                                  </li>                                 
+                                </ul>
+                                </span>
+                            </div>
+                        </div>
+                        <br />
                     </div>
                     <!-- /ko -->
                     <div class="col-md-9">
@@ -131,6 +148,15 @@
         <button class="btn btn-primary pull-right" data-bind="click: $parents[1].claim.bind($data, _id)">Curate This</button>
         <br>
         <!-- /ko -->
+    </script>
+    <script type="text/html" id="file">
+        <h4><a href="{{ deep_url }}">{{ name }}</a> (<span data-bind="if: is_registration">Registration </span>File)</h4>
+        <h5>
+            <!-- ko if: parent_url --> From: <a data-bind="attr.href: parent_url">{{ parent_title }} /</a> <!-- /ko -->
+            <!-- ko if: !parent_url --> From: <span data-bind="if: parent_title">{{ parent_title }} /</span> <!-- /ko -->
+            <a data-bind="attr.href: node_url">{{ node_title }}</a>
+        </h5>
+        <!-- ko if: tags.length > 0 --> <div data-bind="template: 'tag-cloud'"></div> <!-- /ko -->
     </script>
     <script type="text/html" id="user">
 
@@ -199,7 +225,7 @@
       <!-- ko if: parent_url -->
       <h4><a data-bind="attr.href: parent_url">{{ parent_title}}</a> / <a data-bind="attr.href: url">{{title }}</a></h4>
         <!-- /ko -->
-        <!-- ko if: !parent_url -->
+        <!-- ko if: !parent_url -->        
         <h4><span data-bind="if: parent_title">{{ parent_title }} /</span> <a data-bind="attr.href: url">{{title }}</a></h4>
         <!-- /ko -->
 

@@ -73,12 +73,14 @@
             id: ${ user_id | sjson, n },
             urls: {api: userApiUrl},
             isContributor: ${ user.get('is_contributor', False) | sjson, n },
-            fullname: ${ user['fullname'] | sjson, n }
+            fullname: ${ user['fullname'] | sjson, n },
+            isAdmin: ${ user.get('is_admin', False) | sjson, n}
         },
         node: {
             ## TODO: Abstract me
             id: nodeId,
             title: ${ node['title'] | sjson, n },
+            license: ${ node['license'] | sjson, n},
             urls: {
                 api: nodeApiUrl,
                 web: ${ node['url'] | sjson, n },
