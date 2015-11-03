@@ -6,7 +6,6 @@ from api.nodes.serializers import NodeSerializer
 from api.base.serializers import IDField, JSONAPIHyperlinkedIdentityField, LinksField, CheckRetraction
 
 
-
 class RegistrationSerializer(NodeSerializer):
 
     filterable_fields = frozenset([

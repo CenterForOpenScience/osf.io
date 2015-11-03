@@ -63,8 +63,8 @@ class NodeSerializer(JSONAPISerializer):
                                         'to everyone. Private nodes require explicit read '
                                         'permission. Write and admin access are the same for '
                                         'public and private nodes. Administrators on a parent '
-                                        'node have implicit read permissions for all child nodes',
-                              ))
+                                        'node have implicit read permissions for all child nodes')
+                             )
 
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
