@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.exceptions import APIException
 
 
-def dict_error_formatting(error, index=None):
+def dict_error_formatting(errors, index=None):
     """
     Formats all dictionary error messages for both single and bulk requests
     """
@@ -22,7 +22,7 @@ def dict_error_formatting(error, index=None):
     else:
         index = str(index) + '/'
 
-    for error_key, error_description in error.iteritems():
+    for error_key, error_description in errors.iteritems():
         if isinstance(error_description, basestring):
             error_description = [error_description]
 
