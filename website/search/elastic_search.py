@@ -454,8 +454,9 @@ def update_file(file_, index=None, delete=False):
     node_url = '/{node_id}/'.format(node_id=file_.node._id)
 
     parent_url = '/{}/'.format(file_.node.parent_node._id) if file_.node.parent_node else None,
-    if parent_url:
-        parent_url = parent_url if file_.node.parent_node.is_public else '-- private project --'
+    parent_title = file_.node.parent_node.title if file_.node.parent_node else None,
+    if parent_title:
+        parent_title = parent_title if file_.node.parent_node.is_public else '-- private project --'
 
     file_doc = {
         'id': file_._id,
@@ -466,7 +467,7 @@ def update_file(file_, index=None, delete=False):
         'node_url': node_url,
         'node_title': file_.node.title,
         'parent_url': parent_url if file_.node.parent_node.is_public else None,
-        'parent_title': file_.node.parent_node.title if file_.node.parent_node else None,
+        'parent_title': parent_title,
         'is_registration': file_.node.is_registration,
     }
 
