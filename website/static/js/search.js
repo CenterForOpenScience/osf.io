@@ -18,6 +18,10 @@ ko.punches.enableAll();
 // Disable IE Caching of JSON
 $.ajaxSetup({ cache: false });
 
+var eq_insensitive = function(str1, str2) {
+    return str1.toUpperCase() === str2.toUpperCase();
+};
+
 var Category = function(name, count, display){
     var self = this;
 
@@ -221,7 +225,7 @@ var ViewModel = function(params) {
                 }
             };     
             if (selectedLicenses.filter(function(l) {
-                return l.id === DEFAULT_LICENSE.id;
+                return eq_insensitive(l.id, DEFAULT_LICENSE.id);
             }).length) {
                 filters = {
                     or: [
@@ -360,7 +364,7 @@ var ViewModel = function(params) {
             for(var i = 0; i < licenseCounts.length; i++) {
                 var l = licenseCounts[i];
                 l.count(0);
-                if (l.id === DEFAULT_LICENSE.id) {
+                if (eq_insensitive(l.id, DEFAULT_LICENSE.id)) {
                     noneLicense = l;
                 }
             }
@@ -369,7 +373,7 @@ var ViewModel = function(params) {
             if ((data.aggs || {}).licenses)  {
                 $.each(data.aggs.licenses, function(key, value) {
                     licenseCounts.filter(function(l) {
-                        return l.id === key;
+                        return eq_insensitive(l.id, key);
                     })[0].count(value);
                     nullLicenseCount -= value;
                 });
