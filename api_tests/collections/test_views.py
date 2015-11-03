@@ -871,16 +871,12 @@ class TestCollectionNodeLinkDetail(ApiTestCase):
         assert_in(self.url, url)
 
     def test_delete_node_link_no_permissions_for_target_node(self):
-        """Note: this differs from how nodes/node_links works because collections are inherently personal rather than
-        shared. Therefore, if there are links to nodes you no longer have access to, the collections views won't
-        return those links. In a node, some people will be able to see links and other people won't, and that's fine.
-        """
         pointer_project = FolderFactory(creator=self.user_two)
         pointer = self.collection.add_pointer(pointer_project, auth=Auth(self.user_one), save=True)
         assert_in(pointer, self.collection.nodes)
-        url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.collection._id, pointer._id)
-        res = self.app.delete_json_api(url, auth=self.user_one.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
+        url = '/{}collections/{}/node_links/{}/'.format(API_BASE, self.collection._id, pointer._id)
+        res = self.app.delete_json_api(url, auth=self.user_one.auth)
+        assert_equal(res.status_code, 204)
 
     def test_can_not_delete_collection_public_node_link_unauthenticated(self):
         res = self.app.delete(self.url_public, expect_errors=True)
