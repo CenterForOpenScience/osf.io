@@ -262,6 +262,37 @@ ko.bindingHandlers.groupOptions = {
     }
 };
 
+/**
+ * Creates a pikaday date picker in place. Optionally takes in a function
+ * that verifies the selected date is valid
+ * Example:
+ * <input type="text" data-bind="datePicker: value">
+ * or
+ * <input type="text" data-bind="datePicker: {value: value, value: isValid}">
+ */
+ko.bindingHandlers.datePicker = {
+    init: function(elem, valueAccessor) {
+        var opts = valueAccessor();
+        var value;
+        var valid = function() { return true; };
+        if ($.isFunction(opts)) {
+            value = opts;
+        }
+        else {
+            value = opts.value;
+            valid = opts.valid || valid;
+        }
+        var picker = new pikaday({
+            bound: true,
+            field: elem,
+            onSelect: function(){
+                value(picker.toString());
+                valid();
+            }
+        });
+    }
+};
+
 // Expose public utilities
 module.exports = {
     makeExtender: makeExtender,
