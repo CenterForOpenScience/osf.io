@@ -328,7 +328,7 @@ function _fangornResolveToggle(item) {
     var toggleMinus = m('i.fa.fa-minus', ' '),
         togglePlus = m('i.fa.fa-plus', ' '),
     // padding added so that this overlaps the toggle-icon div and prevent cursor change into pointer for checkout icons.
-        checkedByUser = m('i.fa.fa-sign-out[style="color: #337ab7; font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', ''),
+        checkedByUser = m('i.fa.fa-sign-out.text-muted[style="font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', ''),
         checkedByOther = m('i.fa.fa-sign-out[style="color: #d9534f; font-size: 120%; cursor: default; padding-top: 10px; padding-bottom: 10px; padding-right: 4px;"]', '');
     // check if folder has children whether it's lazyloaded or not.
     if (item.kind === 'folder' && item.depth > 1) {

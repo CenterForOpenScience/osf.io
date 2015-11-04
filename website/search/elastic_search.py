@@ -453,7 +453,11 @@ def update_file(file_, index=None, delete=False):
     )
     node_url = '/{node_id}/'.format(node_id=file_.node._id)
 
-    parent_url = '/{}/'.format(file_.node.parent_node._id) if file_.node.parent_node else None,
+    parent_url = '/{}/'.format(file_.node.parent_node._id) if file_.node.parent_node and file_.node.parent_node.is_public else None
+    parent_title = file_.node.parent_node.title if file_.node.parent_node else None
+    if parent_title:
+        parent_title = parent_title if file_.node.parent_node.is_public else '-- private project --'
+
     file_doc = {
         'id': file_._id,
         'deep_url': file_deep_url,
@@ -463,7 +467,7 @@ def update_file(file_, index=None, delete=False):
         'node_url': node_url,
         'node_title': file_.node.title,
         'parent_url': parent_url,
-        'parent_title': file_.node.parent_node.title if file_.node.parent_node else None,
+        'parent_title': parent_title,
         'is_registration': file_.node.is_registration,
     }
 
@@ -491,7 +495,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user']
+    document_types = ['project', 'component', 'registration', 'user', 'file']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 
