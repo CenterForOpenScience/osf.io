@@ -84,7 +84,7 @@ class TestTokenList(ApiTestCase):
         bad_text = "<a href='http://sanitized.name'>User_text</a>"
         cleaned_text = sanitize.strip_html(bad_text)
 
-        payload = copy.copy(self.sample_data)
+        payload = copy.deepcopy(self.sample_data)
         payload['data']['attributes']['name'] = bad_text
 
         res = self.app.post_json_api(self.user1_list_url, payload, auth=self.user1.auth)
