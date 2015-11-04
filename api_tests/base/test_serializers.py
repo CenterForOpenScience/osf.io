@@ -37,6 +37,8 @@ class TestApiBaseSerializers(ApiTestCase):
         relationships = res.json['data']['relationships']
         for key, relation in relationships.iteritems():
             field = NodeSerializer._declared_fields[key]
+            if getattr(field, 'field', None):
+                field = field.field
             if (field.meta or {}).get('count'):
                 link = relation['links'].values()[0]
                 assert_in('count', link['meta'])
