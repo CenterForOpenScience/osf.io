@@ -63,7 +63,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                 ondataloaderror: function(err){
                     self.loading(false);
                     self.destroyPicker();
-                    if (err.status == 403) {
+                    if (err.status === 403) {
                         var message;
                         if (self.userIsOwner()) {
                             message = self.messages.invalidCredOwner();
