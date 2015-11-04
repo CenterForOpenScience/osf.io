@@ -39,7 +39,7 @@ class TestTokenList(ApiTestCase):
                 'type': 'tokens',
                 'attributes': {
                     'name': 'A shiny new token',
-                    'scopes': ['osf.full_write'],
+                    'scopes': 'osf.full_write',
                     'owner': 'Value discarded',
                     'token_id': 'Value discarded',
                 }
@@ -127,7 +127,7 @@ class TestTokenDetail(ApiTestCase):
             'data': {
                 'attributes': {
                     'name': 'A shiny updated token',
-                    'scopes': ['osf.full_write'],
+                    'scopes': 'osf.full_write',
                 }
             }
         }
@@ -137,7 +137,7 @@ class TestTokenDetail(ApiTestCase):
                 'type': 'Wrong type.',
                 'attributes': {
                     'name': 'A shiny updated token',
-                    'scopes': ['osf.full_write'],
+                    'scopes': 'osf.full_write',
                 }
             }
         }
@@ -147,7 +147,7 @@ class TestTokenDetail(ApiTestCase):
                 'type': 'tokens',
                 'attributes': {
                     'name': 'A shiny updated token',
-                    'scopes': ['osf.full_write'],
+                    'scopes': 'osf.full_write',
                 }
             }
         }
