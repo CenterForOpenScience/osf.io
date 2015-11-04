@@ -109,3 +109,12 @@
     width: 260px;
     position: relative;
 }
+
+/* Responsive Style */
+@media (max-width : 767px) {
+    .fb-sidebar, .fb-infobar {
+        position: absolute;
+        z-index: 9;
+        width: 100%;
+    }
+}
