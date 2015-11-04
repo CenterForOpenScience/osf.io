@@ -59,6 +59,7 @@ var FileBrowser = {
 
         // VIEW STATES
         self.showInfo = m.prop(false);
+        self.showSidebar = m.prop(true);
         self.showCollectionMenu = m.prop(false); // Show hide ellipsis menu for collections
         self.collectionMenuObject = m.prop({item : {label:null}, x : 0, y : 0}); // Collection object to complete actions on menu
 
@@ -205,9 +206,15 @@ var FileBrowser = {
                         onclick : function () {
                             ctrl.showInfo(!ctrl.showInfo());
                         }
-                    }, m('.fa.fa-info'))
+                    }, m('.fa.fa-info')),
+                    m('button.btn.btn-default', {
+                        onclick : function () {
+                            ctrl.showSidebar(!ctrl.showSidebar());
+                        }
+                    }, m('.fa.fa-cubes'))
                 ])
             ]),
+            ctrl.showSidebar()?
             m('.fb-sidebar', { config : ctrl.sidebarInit}, [
                 m.component(Collections, {
                     list : ctrl.collections,
@@ -223,7 +230,7 @@ var FileBrowser = {
                     nameFilters : ctrl.nameFilters,
                     tagFilters : ctrl.tagFilters
                 })
-            ]),
+            ]) : '',
             m('.fb-main', { config: ctrl.updateList, style : poStyle },
                 m('#poOrganizer', m('.spinner-loading-wrapper', m('.logo-spin.logo-md')))
             ),
