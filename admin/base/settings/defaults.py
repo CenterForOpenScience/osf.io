@@ -105,6 +105,8 @@ STATICFILES_DIRS = (
 LANGUAGE_CODE = 'en-us'
 
 WEBPACK_LOADER = {
-    'BUNDLE_DIR_NAME': 'public/js/',
-    'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
+    'DEFAULT': {
+        'BUNDLE_DIR_NAME': 'public/js/',
+        'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
+    }
 }
