@@ -19,6 +19,8 @@ var editor;
 ko.bindingHandlers.ace = {
     init: function (element, valueAccessor) {
         editor = ace.edit(element.id);  // jshint ignore: line
+        editor.renderer.setShowGutter(true);
+        editor.renderer.setOption('showLineNumbers', true);
 
         editor.getPosition = function(x, y) {
 
@@ -294,9 +296,9 @@ function ViewModel(url, viewText) {
 
     self.wikisDiffer = function(wiki1, wiki2) {
         // Handle inconsistencies in newline notation
-        var clean1 = typeof wiki1 === 'string' ?
+        var clean1 = typeof wiki1 === 'string' ? 
             wiki1.replace(/(\r\n|\n|\r)/gm, '\n') : '';
-        var clean2 = typeof wiki2 === 'string' ?
+         var clean2 = typeof wiki2 === 'string' ? 
             wiki2.replace(/(\r\n|\n|\r)/gm, '\n') : '';
 
         return clean1 !== clean2;
