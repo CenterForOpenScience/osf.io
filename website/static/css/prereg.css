@@ -1,0 +1,91 @@
+/* PREREG PAGES */
+
+.prereg-container ol, .prereg-container p,  .prereg-button {
+    font-size: 16px;
+}
+
+.prereg-button {
+    height: 76px;
+    cursor: pointer;
+    text-align: center;
+    font-weight: 500;
+}
+
+.prereg-button:hover {
+    background-color: #E0EBF3;
+}
+
+.prereg-button.active {
+    background-color: #204762;
+    color: white;
+}
+
+@media (max-width: 767px) {
+    .prereg-button {
+        line-height: 48px;
+    }
+}
+
+@media (min-width: 992px) {
+    div[class^='col']:first-of-type .prereg-button {
+        line-height: 48px;
+    }
+}
+
+/* CONSENT PAGE */
+
+.checkbox-box {
+    background-color: #F5F5F5;
+    padding: 9px 9px 9px 20px;
+    border-left: 3px solid #F56565;
+    font-size: 16px;
+}
+
+#consentList li {
+    padding: 5px 0;
+}
+
+
+/* LOGIN PAGE */
+.toggle-box {
+height: 320px;
+    border: 1px solid #EEE;
+}
+
+.toggle-box-left {
+    border-right: none;
+}
+.toggle-box-right {
+
+}
+
+.toggle-box-active {
+    z-index: 1;
+}
+.toggle-box-active.toggle-box-left {
+    box-shadow: 3px 0px 6px -2px #AAA;
+    border-left: 3px solid #5CB85C;
+}
+.toggle-box-active.toggle-box-right {
+    box-shadow: -3px 0px 6px -2px #AAA;
+    border-right: 3px solid #5CB85C;
+}
+
+.toggle-box-muted {
+    background-color: #F5F5F5;
+    color: #ccc;
+}
+.toggle-box-muted .btn.btn-default {
+    color: #ccc;
+    border-color: #eee;
+}
+.toggle-box-muted input {
+    color: #ccc;
+    border-color: #eee;
+}
+.toggle-box-muted .btn-success {
+    background-color: #CCC;
+    border-color: #BBB;
+}
+
+
