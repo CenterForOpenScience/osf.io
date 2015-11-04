@@ -55,6 +55,10 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
     def update(self, instance, validated_data):
         validate_requested_scopes(validated_data)
         assert isinstance(instance, ApiOAuth2PersonalToken), 'instance must be an ApiOAuth2PersonalToken'
+
+        instance.deactivate(save=False)  # This will cause CAS to revoke the existing token but still allow it to be used in the future, new scopes will be updated properly at that time.
+        instance.reload()
+
         for attr, value in validated_data.iteritems():
             if attr == 'token_id':  # Do not allow user to update token_id
                 continue
