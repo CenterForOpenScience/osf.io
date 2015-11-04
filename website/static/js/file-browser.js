@@ -173,8 +173,13 @@ var FileBrowser = {
         };
 
         self.updateCollectionMenu = function (item, event) {
-            var x = event.clientX-4;
-            var y = event.clientY-260;
+            var x = event.x - 4;
+            var y = event.y-205;
+            if (event.view.innerWidth < 767){
+                x = x-115;
+                y = y-30;
+            }
+            console.log(event.view.innerWidth < 767);
             self.showCollectionMenu(true);
             self.collectionMenuObject({
                 item : item,
