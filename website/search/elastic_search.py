@@ -496,7 +496,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user', 'files']
+    document_types = ['project', 'component', 'registration', 'user', 'file']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 
