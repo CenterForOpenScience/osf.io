@@ -58,6 +58,8 @@ var FileBrowser = {
 
         // VIEW STATES
         self.showInfo = m.prop(false);
+        self.showCollectionMenu = m.prop(false); // Show hide ellipsis menu for collections
+        self.currentCollectionMenu = m.prop(null); // Collection object to complete actions on menu
 
         // DEFAULT DATA -- to be switched with server response
         self.collections = [
@@ -199,7 +201,8 @@ var FileBrowser = {
                 m.component(Collections, {
                     list : ctrl.collections,
                     activeFilter : ctrl.activeFilter,
-                    updateFilter : ctrl.updateFilter
+                    updateFilter : ctrl.updateFilter,
+                    showCollectionMenu : ctrl.showCollectionMenu
                 }),
                 m.component(Filters, {
                     activeFilter : ctrl.activeFilter,
@@ -234,13 +237,26 @@ var Collections  = {
                         'data-placement' : 'bottom'
                     }, ''),
                     m('.pull-right', m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')))
-        ]),
+                ]),
                 args.list.map(function(item){
                     selectedCSS = item.id === args.activeFilter() ? 'active' : '';
                     return m('li', { className : selectedCSS},
-                        m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label)
+                        [
+                            m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label),
+                            m('i.fa.fa-ellipsis-v.pull-right.text-muted', {
+                                onclick : function () {
+                                    args.showCollectionMenu(!args.showCollectionMenu());
+                                }
+                            })
+                        ]
                     );
-                })
+                }),
+                args.showCollectionMenu() ? m('.collectionMenu', [
+                    m('ul', [
+                        m('li', 'Item One'),
+                        m('li', 'Item Two')
+                    ])
+                ]) : ''
             ]),
 
         ]);
