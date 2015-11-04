@@ -453,6 +453,8 @@ class ApiOAuth2PersonalToken(StoredObject):
     _id = fields.StringField(primary=True,
                              default=lambda: str(ObjectId()))
 
+    # Name of the field being `token_id` is a CAS requirement.
+    # This is the actual value of the token that's used to authenticate
     token_id = fields.StringField(default=functools.partial(random_string, length=70),
                                unique=True)
 
@@ -463,6 +465,7 @@ class ApiOAuth2PersonalToken(StoredObject):
 
     name = fields.StringField(required=True, index=True)
 
+    # This field is a space delimited list of scopes, e.g. "osf.full_read osf.full_write"
     scopes = fields.StringField(required=True)
 
     is_active = fields.BooleanField(default=True, index=True)
