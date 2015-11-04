@@ -7,6 +7,8 @@ var Markdown = require('pagedown-ace-converter');
 Markdown.getSanitizingConverter = require('pagedown-ace-sanitizer').getSanitizingConverter;
 require('imports?Markdown=pagedown-ace-converter!pagedown-ace-editor');
 
+var waterbutler = require('js/waterbutler');
+
 
 /**
  * Binding handler that instantiates an ACE editor.
@@ -18,11 +20,190 @@ ko.bindingHandlers.ace = {
     init: function (element, valueAccessor) {
         editor = ace.edit(element.id);  // jshint ignore: line
 
+        editor.getPosition = function(x, y) {
+
+            var config = editor.renderer.$markerFront.config;
+            var height = config.lineHeight;
+            var width = config.characterWidth;
+            var row = Math.floor(y/height) < editor.session.getScreenLength() ? Math.floor(y/height) : editor.session.getScreenLength() - 1;
+            var column = Math.floor(x/width) < editor.session.getScreenLastRowColumn(row) ? Math.floor(x/width) : editor.session.getScreenLastRowColumn(row);
+            return {row: row, column: column}
+
+        };
         // Updates the view model based on changes to the editor
         editor.getSession().on('change', function () {
             valueAccessor()(editor.getValue());
         });
+
+        editor.marker = {};
+        editor.marker.cursor = {};
+        editor.marker.active = false;
+        editor.marker.update = function(html, markerLayer, session, config) {
+            var height = config.lineHeight;
+            var width = config.characterWidth;
+            var top = markerLayer.$getTop(this.cursor.row, config);
+            var left = markerLayer.$padding + this.cursor.column * width;
+            html.push(
+                '<div class=\'drag-drop-cursor\' style=\'',
+                'height:', height, 'px;',
+                'top:', top, 'px;',
+                'left:', left, 'px; width:', width, 'px\'></div>'
+            );
+        };
+
+        editor.marker.redraw = function() {
+            this.session._signal("changeFrontMarker");
+        };
+
+        element.addEventListener('dragenter', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }, false);
+
+        element.addEventListener('dragover', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!editor.marker.active) {
+                editor.marker.active = true;
+                editor.marker.session = editor.session;
+                editor.marker.session.addDynamicMarker(editor.marker, true);
+            }
+            editor.marker.cursor = editor.getPosition(event.offsetX, event.offsetY);
+            editor.marker.redraw();
+            var effect;
+                try {
+                  effect = event.dataTransfer.effectAllowed;
+                } catch (_error) {}
+                event.dataTransfer.dropEffect = 'move' === effect || 'linkMove' === effect ? 'move' : 'copy';
+        }, false);
+
+        element.addEventListener('drop', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            var position = editor.session.screenToDocumentPosition(editor.marker.cursor.row, editor.marker.cursor.column);
+            var url = event.dataTransfer.getData('text/html');
+            if (!!url) {
+                var getImage = /(src=")(.*?)(")/;
+                var imgURL = getImage.exec(url)[2];
+                if (imgURL.substring(0,10) === 'data:image') {
+                    imgURL = event.dataTransfer.getData('URL');
+                    var exp = /(imgurl=)(.*?)(&)/;
+                    imgURL = exp.exec(imgURL)[2];
+
+                }
+                else {
+                    var re = /(?:\.([^.]+))?$/;
+                    var ext = re.exec(imgURL)[1];
+                    var extensions = ['jpg', 'png', 'gif'];
+                    if (extensions.indexOf(ext) <= -1) {
+                        alert('File type not supported');
+                        imgURL = undefined;
+                    }
+                }
+                if (!!imgURL) {
+                    var refOut = editor.marker.addLinkDef('[999]: ' + imgURL);
+                    editor.session.insert(position, '![enter image description here][' + refOut + ']');
+                }
+            }
+            else {
+                var file = event.dataTransfer.files[0];
+                var waterbutler_url = waterbutler.buildUploadUrl('/', 'osfstorage', window.contextVars.node.id, file);
+                $.ajax({
+                    url: waterbutler_url,
+                    type: 'PUT',
+                    processData: false,
+                    contentType: false,
+                    beforeSend: $osf.setXHRAuthorization,
+                    data: file
+                }).done(function(data) {
+                    alert('success');
+                }).fail(function(data) {
+                    alert('fail');
+                });
+            }
+            editor.marker.session.removeMarker(editor.marker.id);
+            editor.marker.redraw();
+            editor.marker.active = false;
+        }, false);
+
+        element.addEventListener('dragleave', function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            editor.marker.session.removeMarker(editor.marker.id);
+            editor.marker.redraw();
+            editor.marker.active = false;
+        });
+
+        editor.marker.addLinkDef = function(linkDef) {
+            var Range = ace.require('ace/range').Range;
+            var before = editor.session.getTextRange(new Range(0, 0, this.cursor.row, this.cursor.column));
+            var after = editor.session.getTextRange(new Range(this.cursor.row, this.cursor.column, Number.MAX_VALUE, Number.MAX_VALUE));
+            var refNumber = 0; // The current reference number
+            var defsToAdd = {}; //
+            // Start with a clean slate by removing all previous link definitions.
+            before = this.stripLinkDefs(before, defsToAdd);
+            after = this.stripLinkDefs(after, defsToAdd);
+
+            var defs = "";
+            var regex = /(\[)((?:\[[^\]]*\]|[^\[\]])*)(\][ ]?(?:\n[ ]*)?\[)(\d+)(\])/g;
+
+            var addDefNumber = function (def) {
+                refNumber++;
+                def = def.replace(/^[ ]{0,3}\[(\d+)\]:/, "  [" + refNumber + "]:");
+                defs += "\n" + def;
+            };
+
+            // note that
+            // a) the recursive call to getLink cannot go infinite, because by definition
+            //    of regex, inner is always a proper substring of wholeMatch, and
+            // b) more than one level of nesting is neither supported by the regex
+            //    nor making a lot of sense (the only use case for nesting is a linked image)
+            var getLink = function (wholeMatch, before, inner, afterInner, id, end) {
+                inner = inner.replace(regex, getLink);
+                if (defsToAdd[id]) {
+                    addDefNumber(defsToAdd[id]);
+                    return before + inner + afterInner + refNumber + end;
+                }
+                return wholeMatch;
+            };
+
+            before = before.replace(regex, getLink);
+
+            if (linkDef) {
+                addDefNumber(linkDef);
+                var refOut = refNumber;
+            }
+
+            after = after.replace(regex, getLink);
+
+            if (after) {
+                after = after.replace(/\n*$/, "");
+            }
+
+            after += "\n\n" + defs;
+
+            editor.setValue(before + after);
+
+            return refOut;
+        };
+
+        editor.marker.stripLinkDefs = function (text, defsToAdd) {
+
+            text = text.replace(/^[ ]{0,3}\[(\d+)\]:[ \t]*\n?[ \t]*<?(\S+?)>?[ \t]*\n?[ \t]*(?:(\n*)["(](.+?)[")][ \t]*)?(?:\n+|$)/gm,
+                function (totalMatch, id, link, newlines, title) {
+                    defsToAdd[id] = totalMatch.replace(/\s*$/, "");
+                    if (newlines) {
+                        // Strip the title and return that separately.
+                        defsToAdd[id] = totalMatch.replace(/["(](.+?)[")]$/, "");
+                        return newlines + title;
+                    }
+                    return "";
+                });
+
+            return text
+        }
     },
+
     update: function (element, valueAccessor) {
         var content = editor.getValue();        // Content of ace editor
         var value = ko.unwrap(valueAccessor()); // Value from view model
