@@ -166,7 +166,7 @@ class CasClient(object):
         """Revoke a tokens based on payload"""
         url = self.get_auth_token_revocation_url()
 
-        resp = requests.post(url, payload)
+        resp = requests.post(url, data=payload)
         if resp.status_code == 204:
             return True
         else:
