@@ -1,6 +1,7 @@
 from rest_framework import serializers as ser
 from rest_framework import exceptions
 
+from framework.auth.oauth_scopes import public_scopes
 from website.models import ApiOAuth2PersonalToken
 
 from api.base.serializers import JSONAPISerializer, LinksField, IDField, TypeField
@@ -63,5 +64,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         return instance
 
 def validate_data_not_injected(validated_data):
-    if 'osf.admin' in validated_data['scopes']:
-        raise exceptions.ParseError
+    scopes_set = set(validated_data['scopes'].split(' '))
+    for scope in scopes_set:
+        if scope not in public_scopes or not public_scopes[scope].is_public:
+            raise exceptions.ParseError
