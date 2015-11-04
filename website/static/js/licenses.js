@@ -1,6 +1,7 @@
 var $ = require('jquery');
 
 var licenses = require('json!list-of-licenses');
+delete licenses.AFL3;
 var DEFAULT_LICENSE, OTHER_LICENSE;
 var list = $.map(licenses, function(value, key) {
     value.id = key;
