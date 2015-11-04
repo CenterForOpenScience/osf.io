@@ -107,9 +107,9 @@ var FileViewPage = {
                 if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
                         m('strong', 'File is checked out.'),
-                        'nThis file has been checked out by a ',
+                        ' This file has been checked out by a ',
                         m('a[href="/' + self.file.checkoutUser + '"]', 'collaborator'),
-                        '. It needs to be checked back in before any changes can be made.'
+                        '. It needs to be checked in before any changes can be made.'
                     ])));
                 }
             });
@@ -125,7 +125,7 @@ var FileViewPage = {
                 return self.context.currentUser.canEdit;
             };
         }
-        
+
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
@@ -260,7 +260,7 @@ var FileViewPage = {
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
-                        $osf.growl('Error', 'Unable to force check in file, make sure you have admin privileges.');
+                        $osf.growl('Error', 'Unable to force check in file. Make sure you have admin privileges.');
                     });
                 }
 
@@ -416,7 +416,7 @@ var FileViewPage = {
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check-in')
+                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in')
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && ctrl.requestDone && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out')
