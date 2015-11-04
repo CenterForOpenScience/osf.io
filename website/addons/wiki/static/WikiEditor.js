@@ -83,7 +83,7 @@ ko.bindingHandlers.ace = {
             event.preventDefault();
             event.stopPropagation();
             var re = /(?:\.([^.]+))?$/;
-            var extensions = ['jpg', 'png', 'gif'];
+            var extensions = ['jpg', 'png', 'gif', 'bmp'];
             var ext;
             var position = editor.session.screenToDocumentPosition(editor.marker.cursor.row, editor.marker.cursor.column);
             var url = event.dataTransfer.getData('text/html');
