@@ -10,7 +10,7 @@ from modularodm.exceptions import ValidationValueError
 
 import framework.auth
 
-from framework.auth import cas
+from framework.auth import cas, campaigns
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
 from framework.auth import exceptions
@@ -183,9 +183,11 @@ def confirm_email_get(token, auth=None, **kwargs):
     if auth and auth.user and auth.user in (user, user.merged_by):
         if not is_merge:
             # determine if the user registered through a campaign
-            if 'prereg' in user.system_tags:
-                return redirect('/prereg/')  #redirect(web_url_for('dashboard'))
-
+            campaign = campaigns.campaign_for_user(user)
+            if campaign:
+                return redirect(
+                    campaigns.campaign_url_for(campaign)
+                )
             status.push_status_message(language.WELCOME_MESSAGE, 'default', jumbotron=True)
             # Go to dashboard
             return redirect(web_url_for('dashboard'))
@@ -251,10 +253,8 @@ def send_confirm_email(user, email):
     # Choose the appropriate email template to use
     if merge_target:
         mail_template = mails.CONFIRM_MERGE
-    elif campaign == 'prereg':
-        mail_template = mails.CONFIRM_EMAIL_PREREG
     else:
-        mail_template = mails.CONFIRM_EMAIL
+        mail_template = campaigns.email_template_for_campaign(campaign, default=mails.CONFIRM_EMAIL)
 
     mails.send_mail(
         email,
@@ -274,6 +274,7 @@ def register_user(**kwargs):
     :param-json str email2:
     :param-json str password:
     :param-json str fullName:
+    :param-json str campaign:
     :raises: HTTPError(http.BAD_REQUEST) if validation fails or user already
         exists
 
