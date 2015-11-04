@@ -107,7 +107,9 @@ class TestTokenDetail(ApiTestCase):
         res = self.app.get(self.user1_token_url, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
 
-    def test_updating_one_field_should_not_blank_others_on_patch_update(self):
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
+    def test_updating_one_field_should_not_blank_others_on_patch_update(self, mock_revoke):
+        mock_revoke.return_value = True
         user1_token = self.user1_token
         new_name = "The token formerly known as Prince"
         res = self.app.patch_json_api(self.user1_token_url,
@@ -126,7 +128,9 @@ class TestTokenDetail(ApiTestCase):
                                     res.json['data']['attributes'])
         assert_equal(res.json['data']['id'], user1_token._id)
 
-    def test_updating_an_instance_does_not_change_the_number_of_instances(self):
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
+    def test_updating_an_instance_does_not_change_the_number_of_instances(self, mock_revoke):
+        mock_revoke.return_value = True
         new_name = "The token formerly known as Prince"
         res = self.app.patch_json_api(self.user1_token_url,
                                       {'data': {
@@ -169,12 +173,16 @@ class TestTokenDetail(ApiTestCase):
         res = self.app.put_json_api(self.user1_token_url, self.nonsense_scope, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
 
-    def test_update_token_does_not_return_token_id(self):
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
+    def test_update_token_does_not_return_token_id(self, mock_revoke):
+        mock_revoke.return_value = True
         res = self.app.put_json_api(self.user1_token_url, self.correct, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
         assert_false(res.json['data']['attributes'].has_key('token_id'))
 
-    def test_update_token(self):
+    @mock.patch('framework.auth.cas.CasClient.revoke_tokens')
+    def test_update_token(self, mock_revoke):
+        mock_revoke.return_value = True
         res = self.app.put_json_api(self.user1_token_url, self.correct, auth=self.user1.auth, expect_errors=True)
         assert_equal(res.status_code, 200)
 
