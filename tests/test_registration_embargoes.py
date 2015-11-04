@@ -793,12 +793,14 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         subproject = ProjectFactory(
             creator=self.user,
             parent=public_project,
-            title='Subproject'
+            title='Subproject',
+            is_public=True
         )
         subproject_component = NodeFactory(
             creator=self.user,
             parent=subproject,
-            title='Subcomponent'
+            title='Subcomponent',
+            is_public=True
         )
         res = self.app.post(
             public_project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
