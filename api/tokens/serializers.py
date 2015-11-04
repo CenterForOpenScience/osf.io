@@ -67,4 +67,4 @@ def validate_data_not_injected(validated_data):
     scopes_set = set(validated_data['scopes'].split(' '))
     for scope in scopes_set:
         if scope not in public_scopes or not public_scopes[scope].is_public:
-            raise exceptions.ParseError
+            raise exceptions.ValidationError('User requested invalid scope')
