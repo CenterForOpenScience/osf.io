@@ -22,7 +22,7 @@ var Breadcrumb = function (label, url, type) {
     this.type = 'breadcrumb' || type;
 };
 
-var Collection = function(label, path, pathQuery) {
+var Collection = function(label, path, pathQuery, systemCollection) {
     this.id = getUID();
     this.type = 'collection';
     this.label = label || 'New Collection';
@@ -30,6 +30,7 @@ var Collection = function(label, path, pathQuery) {
         path: path,
         pathQuery: pathQuery
     };
+    this.systemCollection = systemCollection || false;
 };
 var Filter = function (label, data, type) {
     this.id = getUID();
@@ -59,12 +60,12 @@ var FileBrowser = {
         // VIEW STATES
         self.showInfo = m.prop(false);
         self.showCollectionMenu = m.prop(false); // Show hide ellipsis menu for collections
-        self.collectionMenuObject = m.prop({item : null, x : 0, y : 0}); // Collection object to complete actions on menu
+        self.collectionMenuObject = m.prop({item : {label:null}, x : 0, y : 0}); // Collection object to complete actions on menu
 
         // DEFAULT DATA -- to be switched with server response
         self.collections = [
-            new Collection('All My Projects', 'users/me/nodes/', { 'related_counts' : true }),
-            new Collection('All My Registrations', 'registrations/', { 'related_counts' : true }),
+            new Collection('All My Projects', 'users/me/nodes/', { 'related_counts' : true }, true),
+            new Collection('All My Registrations', 'registrations/', { 'related_counts' : true }, true),
             new Collection('Everything', 'users/me/nodes/', { 'related_counts' : true })
         ];
         self.breadcrumbs = m.prop([
@@ -173,7 +174,6 @@ var FileBrowser = {
         self.updateCollectionMenu = function (item, event) {
             var x = event.clientX-4;
             var y = event.clientY-260;
-            console.log(item, event);
             self.showCollectionMenu(true);
             self.collectionMenuObject({
                 item : item,
@@ -228,7 +228,7 @@ var FileBrowser = {
                 m('#poOrganizer', m('.spinner-loading-wrapper', m('.logo-spin.logo-md')))
             ),
             infoPanel,
-            m.component(Modals)
+            m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject})
         ];
     }
 };
@@ -256,11 +256,11 @@ var Collections  = {
                     return m('li', { className : selectedCSS},
                         [
                             m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label),
-                            m('i.fa.fa-ellipsis-v.pull-right.text-muted', {
+                            !item.systemCollection ? m('i.fa.fa-ellipsis-v.pull-right.text-muted', {
                                 onclick : function (e) {
                                     args.updateCollectionMenu(item, e);
                                 }
-                            })
+                            }) : ''
                         ]
                     );
                 }),
@@ -268,8 +268,22 @@ var Collections  = {
                     style : 'top: ' + args.collectionMenuObject().y + 'px;left: ' + args.collectionMenuObject().x + 'px;'
                 }, [
                     m('ul', [
-                        m('li', args.collectionMenuObject().item.label),
-                        m('li', 'Item Two')
+                        m('li[data-toggle="modal"][data-target="#renameColl"]',{
+                            onclick : function (e) {
+                                args.showCollectionMenu(false);
+                            }
+                        }, [
+                            m('i.fa.fa-pencil'),
+                            ' Rename'
+                        ]),
+                        m('li[data-toggle="modal"][data-target="#removeColl"]',{
+                            onclick : function (e) {
+                                args.showCollectionMenu(false);
+                            }
+                        }, [
+                            m('i.fa.fa-trash'),
+                            ' Delete'
+                        ])
                     ])
                 ]) : ''
             ]),
@@ -385,7 +399,7 @@ var Information = {
  */
 
 var Modals = {
-    view : function() {
+    view : function(ctrl, args) {
         return m('.fb-Modals', [
             m('#addColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="addCollLabel"][aria-hidden="true"]',
                 m('.modal-dialog',
@@ -427,7 +441,7 @@ var Modals = {
                             m('.form-inline', [
                                 m('.form-group', [
                                     m('label[for="addCollInput]', 'Collection Name'),
-                                    m('input[type="text"].form-control#addCollInput')
+                                    m('input[type="text"].form-control#addCollInput', { value : args.collectionMenuObject().item.label})
                                 ])
                             ]),
                         ]),
@@ -445,7 +459,7 @@ var Modals = {
                             m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
-                            m('h3.modal-title#removeCollLabel', 'Delete Collection ....... ')
+                            m('h3.modal-title#removeCollLabel', 'Delete Collection ' + args.collectionMenuObject().item.label)
                         ]),
                         m('.modal-body', [
                             m('p', 'You sure?'),

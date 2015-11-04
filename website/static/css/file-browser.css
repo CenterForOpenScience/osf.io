@@ -59,6 +59,7 @@
 .fb-collections ul li , .fb-filters ul li {
     padding: 3px 0;
     border-left: 3px solid #FFFFFF;
+    position: relative;
 }
 .fb-collections h4 , .fb-filters h4 {
     border-bottom: 1px solid #eee;
