@@ -691,7 +691,8 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_not_equal(registration.registration_approval, None)
 
     # Regression test for https://openscience.atlassian.net/browse/OSF-5039
-    def test_POST_register_make_public_immediately_creates_private_pending_registration_for_public_project(self):
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_POST_register_make_public_immediately_creates_private_pending_registration_for_public_project(self, mock_enqueue):
         public_project = ProjectFactory(is_public=True, creator=self.user)
         res = self.app.post(
             public_project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
