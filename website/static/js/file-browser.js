@@ -195,8 +195,11 @@ var FileBrowser = {
         var infoClass = 'btn-default';
         if (ctrl.showInfo()){
             infoPanel = m('.fb-infobar', m.component(Information, { selected : ctrl.selected }));
-            poStyle = 'width : 50%';
             infoClass = 'btn-primary';
+            poStyle = 'width : 50%';
+        }
+        if ( window.innerWidth < 767) {
+            poStyle = 'width : 100%';
         }
         return [
             m('.fb-header.m-b-xs.row', [
