@@ -24,21 +24,17 @@ var Draft = registrationUtils.Draft;
 var RegistrationEditor = registrationUtils.RegistrationEditor;
 var RegistrationManager = registrationUtils.RegistrationManager;
 
-var makeMetaSchema = function() {
+var mkMetaSchema = function() {
+    var questions = [];
     var qid;
-
-    var makeQuestions = function() {
-        var questions = {};
-
-        for (var i = 0; i < 3; i++) {
-            qid = faker.internet.ip();
-            questions[qid] = {
-                type: 'string',
-                format: 'text'
-            };
-        }
-        return questions;
-    };
+    for ( var i = 0; i < 3; i++ ) {
+        qid = 'q' + i;
+        questions.push({
+            qid: qid,
+            type: 'string',
+            format: 'text'
+        });
+    }
 
     var params = {
         schema_name: 'My Schema',
@@ -53,7 +49,7 @@ var makeMetaSchema = function() {
                 return {
                     id: faker.internet.ip(),
                     title: 'Page',
-                    questions: makeQuestions()
+                    questions: questions
                 };
             })
         },
@@ -136,7 +132,7 @@ describe('Question', () => {
 });
 
 describe('Draft', () => {
-    var ms = makeMetaSchema()[2];
+    var ms = mkMetaSchema()[2];
     
     var beforeRegisterUrl = faker.internet.ip();
     var registerUrl = faker.internet.ip();
@@ -166,8 +162,16 @@ describe('Draft', () => {
             assert.equal(draft.updated.toString(), params.updated.toString());
         });
         it('calculates a percent completion based on the passed registration_metadata', () => {
+            var ms = mkMetaSchema()[2];
 
             var data = {};
+
+            var questions = ms.flatQuestions();
+            $.each(questions, function(i, q) {
+                data[q.id] = {
+                    value: 'value'
+                };
+            });
 
             var params = {
                 pk: faker.random.number(),
@@ -181,13 +185,6 @@ describe('Draft', () => {
             };
 
             var draft = new Draft(params, ms);
-
-            $.each(draft.pages(), function(_, page) {
-                $.each(page.questions(), function(_, question) {
-                    question.value('value');
-                });
-            });
-
             assert.equal(draft.completion(), 100);
         });
     });
@@ -296,8 +293,8 @@ describe('Draft', () => {
 });
 
 describe('RegistrationEditor', () => {
-    var ms = makeMetaSchema()[2];
-    var questions = [];
+    var ms = mkMetaSchema()[2];
+    var questions = ms.flatQuestions();
 
     var metaData = {};
     $.each(questions, function(i, q) {
@@ -371,29 +368,42 @@ describe('RegistrationEditor', () => {
         });
     });
     describe('#save', () => {
-        var putJSONStub;
+        var putSaveDataStub;
+        var onSaveSucces;
         beforeEach(() => {
-            putJSONStub = sinon.stub($osf, 'putJSON', function() {
+            putSaveDataStub = sinon.stub(editor, 'putSaveData', function() {
                 var ret = $.Deferred();
                 ret.resolve({pk: '12345'}, 1, {});
-                return ret;
+                return ret.promise();
             });
+            sinon.stub(editor, 'onSaveSucces');
         });
         afterEach(() => {
-            putJSONStub.restore();
+            editor.putSaveData.restore();
+            editor.onSaveSucces.restore();
         });
-        it('PUTs to the update URL with the current draft state', (done) => {
-            var question = draft.pages()[0].questions()[0];
-            question.value('Updated');
-            editor.save().always(function() {
-                assert.equal(
-                    putJSONStub.args[0][1].schema_data[question.id].value,
-                    'Updated'
-                );
-                done();
+        it('PUTs to the update URL with the current draft state', () => {
+            var metaSchema = draft.metaSchema;
+            questions[0].value('Updated');
+            editor.save();
+
+            var data = {};
+            $.each(questions, function(i, q) {
+                data[q.id] = {
+                    value: q.value()
+                    // comments: []
+                };
             });
 
-
+            assert.isTrue(
+                putSaveDataStub.calledWith(
+                    {
+                        schema_name: metaSchema.name,
+                        schema_version: metaSchema.version,
+                        schema_data: data
+                    }
+                )
+            );
         });
     });
 });
