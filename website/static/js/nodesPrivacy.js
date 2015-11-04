@@ -72,6 +72,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
 function patchNodesPrivacyV1(nodes) {
     var index;
     for (var key in nodes) {
+        setTimeout(function(){ console.log("Timeout"); }, 3000);
         var node = nodes[key];
         if (node.changed) {
             index = index + 1;
@@ -97,113 +98,6 @@ function patchNodesPrivacyV1(nodes) {
     }
     //window.location.reload();
 }
-
-//function patchNodesPrivacy(nodes) {
-//    for (var node in nodes) {
-//
-//        if (nodes[node].changed) {
-//                var url = API_BASE + nodes[node].id + '/';
-//                $.ajax({
-//                    url: url,
-//                    type: 'PATCH',
-//                    dataType: 'json',
-//                    contentType: 'application/vnd.api+json',
-//                    crossOrigin: true,
-//                    xhrFields: {withCredentials: true},
-//                    processData: false,
-//                    data: JSON.stringify(
-//                        {
-//                            'data': {
-//                                'type': 'nodes',
-//                                'id': nodes[node].id,
-//                                'attributes': {
-//                                    'public': nodes[node].public
-//                                }
-//                            }
-//                        })
-//                }).done(function (response) {
-//                    console.log("success!" + event.timeStamp )
-//                }).fail(function (xhr, status, error) {
-//                    //$privacysMsg.addClass('text-danger');
-//                    //$privacysMsg.text('Could not retrieve project settings.');
-//                    Raven.captureMessage('Could not PATCH project settings.', {
-//                        url: url, status: status, error: error
-//                    });
-//                });
-//        }
-//
-//    }
-//    window.location.reload();
-//}
-
-//function patchNodePrivacy(node) {
-//        if (node.changed) {
-//            var url = API_BASE + node.id + '/';
-//            $.ajax({
-//                url: url,
-//                type: 'PATCH',
-//                dataType: 'json',
-//                contentType: 'application/vnd.api+json',
-//                crossOrigin: true,
-//                xhrFields: {withCredentials: true},
-//                processData: false,
-//                data: JSON.stringify(
-//                    {
-//                        'data': {
-//                            'type': 'nodes',
-//                            'id': node.id,
-//                            'attributes': {
-//                                'public': node.public
-//                            }
-//                        }
-//                    })
-//            }).done(function (response) {
-//                console.log("success!" + event.timeStamp )
-//            }).fail(function (xhr, status, error) {
-//                //$privacysMsg.addClass('text-danger');
-//                //$privacysMsg.text('Could not retrieve project settings.');
-//                Raven.captureMessage('Could not PATCH project settings.', {
-//                    url: url, status: status, error: error
-//                });
-//            });
-//        }
-//}
-//
-//function patchNodesPrivacy(node) {
-//        if (nodes[node].changed) {
-//            osfHelpers.throttle(function() {
-//                var url = API_BASE + nodes[node].id + '/';
-//                $.ajax({
-//                    url: url,
-//                    type: 'PATCH',
-//                    dataType: 'json',
-//                    contentType: 'application/vnd.api+json',
-//                    crossOrigin: true,
-//                    xhrFields: {withCredentials: true},
-//                    processData: false,
-//                    data: JSON.stringify(
-//                        {
-//                            'data': {
-//                                'type': 'nodes',
-//                                'id': nodes[node].id,
-//                                'attributes': {
-//                                    'public': nodes[node].public
-//                                }
-//                            }
-//                        })
-//                }).done(function (response) {
-//                    console.log("success!" + event.timeStamp )
-//                }).fail(function (xhr, status, error) {
-//                    //$privacysMsg.addClass('text-danger');
-//                    //$privacysMsg.text('Could not retrieve project settings.');
-//                    Raven.captureMessage('Could not PATCH project settings.', {
-//                        url: url, status: status, error: error
-//                    });
-//                });
-//            }, 30000)();
-//        }
-//        setTimeout(function(){console.log("hi")}, 10000);
-//}
 
 
 var NodesPrivacyViewModel = function(data, parentIsPublic) {
@@ -240,7 +134,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         nodesOriginal = getNodesOriginal(response[0], nodesOriginal);
         var nodesState = nodesOriginal
         self.nodeParent(response[0].node.id);
-        nodesState[self.nodeParent()].public = parentIsPublic();
+        nodesState[self.nodeParent()].public = !nodesOriginal[self.nodeParent()].public;
         nodesState[self.nodeParent()].changed = true;
         //Modify nodeState to reflect the new parent node permissions
         console.log('nodesState is ' + JSON.stringify(nodesState));
@@ -305,60 +199,6 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         self.page('addon');
     };
 
-
-//function log( event ) {
-//  console.log( $(window).scrollTop(), event.timeStamp );
-//};
-//
-//// Console logging happens on window scroll, WAAAY more often
-//// than you want it to.
-//$(window).scroll( log );
-//
-//// Console logging happens on window scroll, but no more than
-//// once every 250ms.
-//$(window).scroll( $.osfhelpers.throttle( 250, log ) );
-//
-//// Note that in jQuery 1.4+ you can unbind by reference using
-//// either the throttled function, or the original function.
-//$(window).unbind( 'scroll', log );
-//
-
-    //self.confirmChanges =  function() {
-    //    var nodesState = ko.toJS(self.nodesState());
-    //    var node = nodesState[self.nodeParent()];
-    //        for (var i = 0; i < 10; i++) {
-    //            var url = API_BASE + node.id + '/';
-    //            $.ajax({
-    //                url: url,
-    //                type: 'PATCH',
-    //                dataType: 'json',
-    //                contentType: 'application/vnd.api+json',
-    //                crossOrigin: true,
-    //                xhrFields: {withCredentials: true},
-    //                processData: false,
-    //                data: JSON.stringify(
-    //                    {
-    //                        'data': {
-    //                            'type': 'nodes',
-    //                            'id': node.id,
-    //                            'attributes': {
-    //                                'public': node.public
-    //                            }
-    //                        }
-    //                    })
-    //            }).done(function (response) {
-    //                console.log("success!" + event.timeStamp )
-    //            }).fail(function (xhr, status, error) {
-    //                //$privacysMsg.addClass('text-danger');
-    //                //$privacysMsg.text('Could not retrieve project settings.');
-    //                Raven.captureMessage('Could not PATCH project settings.', {
-    //                    url: url, status: status, error: error
-    //                });
-    //            });
-    //        }
-    //    window.location.reload();
-    //};
-    //
     self.confirmChanges =  function() {
         var nodesState = ko.toJS(self.nodesState());
             //for (var key in nodesState) {
@@ -367,9 +207,32 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
             //}
         //$osf.throttle( 300000, patchNodesPrivacyV1(nodesState))
         patchNodesPrivacyV1(nodesState);
+
         window.location.reload();
+       $.ajax({
+        url: treebeardUrl,
+        type: 'GET',
+        dataType: 'json'
+    }).done(function(response) {
+        nodesOriginal = getNodesOriginal(response[0], nodesOriginal);
+        var nodesState = nodesOriginal
+        self.nodeParent(response[0].node.id);
+        nodesState[self.nodeParent()].public = !nodesOriginal[self.nodeParent()].public;
+        nodesState[self.nodeParent()].changed = true;
+        //Modify nodeState to reflect the new parent node permissions
+        console.log('after reload, nodesState is ' + JSON.stringify(nodesState));
+        self.nodesState(nodesState);
+        new NodesPrivacyTreebeard(response, self.nodesState, nodesOriginal);
+    }).fail(function(xhr, status, error) {
+        $privacysMsg.addClass('text-danger');
+        $privacysMsg.text('Could not retrieve project settings.');
+        Raven.captureMessage('Could not GET project settings.', {
+            url: treebeardUrl, status: status, error: error
+        });
+    });
+
     };
-    //
+
     self.clear = function() {
         self.page('warning');
         self.nodesState(nodesOriginal);

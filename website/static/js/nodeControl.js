@@ -57,70 +57,6 @@ var PROJECT = 'project';
 var COMPONENT = 'component';
 
 
-function setPermissions(permissions, nodeType) {
-
-    var msgKey;
-    var isRegistration = window.contextVars.node.isRegistration;
-
-    if (permissions === PUBLIC && isRegistration) { msgKey = 'makeRegistrationPublicWarning'; }
-    else if(permissions === PUBLIC && nodeType === PROJECT) { msgKey = 'makeProjectPublicWarning'; }
-    else if(permissions === PUBLIC && nodeType === COMPONENT) { msgKey = 'makeComponentPublicWarning'; }
-    else if(permissions === PRIVATE && nodeType === PROJECT) { msgKey = 'makeProjectPrivateWarning'; }
-    else { msgKey = 'makeComponentPrivateWarning'; }
-
-    var urlKey = permissions === PUBLIC ? 'makePublic' : 'makePrivate';
-    var buttonText = permissions === PUBLIC ? 'Make Public' : 'Make Private';
-
-    var message = MESSAGES[msgKey];
-
-    //var confirmModal = function (message) {
-    //    bootbox.dialog({
-    //        title: 'Warning',
-    //        message: message,
-    //        buttons: {
-    //            cancel : {
-    //                label : 'Cancel',
-    //                className : 'btn-default',
-    //                callback : function() {
-    //                }
-    //            },
-    //            success: {
-    //                label: buttonText,
-    //                className: 'btn-primary',
-    //                callback: function() {
-    //                    osfHelpers.postJSON(
-    //                        URLS[urlKey],
-    //                        {permissions: permissions}
-    //                    ).done(function() {
-    //                            window.location.reload();
-    //                    }).fail(
-    //                        osfHelpers.handleJSONError
-    //                    );
-    //                }
-    //            }
-    //        }
-    //    });
-    //};
-    //
-    //if (permissions === PUBLIC) {
-    //    $.getJSON(
-    //        window.nodeApiUrl + 'permissions/beforepublic/',
-    //        {},
-    //        function(data) {
-    //            var alerts = '';
-    //            var addonMessages = data.prompts;
-    //                for(var i=0; i<addonMessages.length; i++) {
-    //                    alerts += '<div class="alert alert-warning">' +
-    //                                addonMessages[i] + '</div>';
-    //                }
-    //            confirmModal(alerts + message);
-    //        }
-    //    );
-    //} else {
-    //    confirmModal(message);
-    //}
-}
-
 /**
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} data The parsed project data returned from the project's API url.
@@ -149,7 +85,7 @@ var ProjectViewModel = function(data) {
     self.isRegistration = data.node.is_registration;
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
-
+    self.ParentIsPublic = ko.observable(data.node.is_public);
     self.nodeType = data.node.node_type;
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.pureComputed(function() {
@@ -163,14 +99,7 @@ var ProjectViewModel = function(data) {
         return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
 
-    self.ParentIsPublic = ko.observable(data.node.is_public);
 
-    self.ParentIsPublic.subscribe(function(newValue) {
-        console.log('self.ParentIsPublic is ' + JSON.stringify(newValue));
-    });
-
-
-    new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data, self.ParentIsPublic);
 
     // Add icon to title
     self.icon = '';
@@ -287,11 +216,9 @@ var ProjectViewModel = function(data) {
     };
 
     self.makePublic = function() {
-        self.ParentIsPublic(true);
     };
 
     self.makePrivate = function() {
-        self.ParentIsPublic(false);
     };
 
     self.forkNode = function() {
