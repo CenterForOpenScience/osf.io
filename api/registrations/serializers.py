@@ -62,7 +62,9 @@ class RegistrationSerializer(NodeSerializer):
         return obj.absolute_url
 
     def get_registration_supplement(self, obj):
-        return obj.registered_meta.keys()[0]
+        if obj.registered_meta:
+            return obj.registered_meta.keys()[0]
+        return None
 
     def update(self, *args, **kwargs):
         raise exceptions.APIException('Registrations cannot be modified.')

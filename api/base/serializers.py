@@ -20,6 +20,7 @@ class CheckRetraction(ser.Field):
     def __init__(self, field, **kwargs):
         super(CheckRetraction, self).__init__(**kwargs)
         self.field = field
+        self.required = False
 
     def get_attribute(self, instance):
         if instance.is_retracted:
@@ -29,6 +30,11 @@ class CheckRetraction(ser.Field):
     def bind(self, field_name, parent):
         super(CheckRetraction, self).bind(field_name, parent)
         self.field.bind(field_name, self)
+
+    def to_internal_value(self, data):
+        if getattr(self.field, 'child', None):
+            return self.field.child.to_internal_value(data)
+        return self.field.to_internal_value(data)
 
     def to_representation(self, value):
         if getattr(self.field.root, 'child', None):
@@ -384,7 +390,7 @@ class JSONAPISerializer(ser.Serializer):
             elif field.field_name == 'links':
                 data['links'] = field.to_representation(attribute)
             else:
-                 data['attributes'][field.field_name] = field.to_representation(attribute)
+                data['attributes'][field.field_name] = field.to_representation(attribute)
 
         if not data['relationships']:
             del data['relationships']
