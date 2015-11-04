@@ -3,6 +3,7 @@
 .fileBrowser {
     height: 500px;
     width: 100%;
+    font-family: "Open Sans", 'Helvetica Neue', sans-serif;
 }
 
 /* Header with breadcrumbs and cuttons */
@@ -12,7 +13,6 @@
     padding: 5px;
 }
 .fb-breadcrumbs {
-    width: 60%;
     display : inline-block;
 }
 .fb-breadcrumbs ul, .fb-collections ul, .fb-filters ul {
@@ -45,7 +45,7 @@
 
 /* Sidebar with Collections and filters*/
 .fb-sidebar {
-    width: 20%;
+    width: 25%;
     display: block;
     height: 535px;
     float: left;

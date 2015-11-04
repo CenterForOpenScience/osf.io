@@ -44,6 +44,7 @@
     ${parent.stylesheets()}
     <link rel="stylesheet" href="/static/css/file-browser.css">
     <link rel="stylesheet" href="/static/css/pages/dashboard-page.css">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,600,300,700' rel='stylesheet' type='text/css'>
 </%def>
 
 <%def name="javascript_bottom()">
