@@ -9,7 +9,7 @@ var $osf = require('js/osfHelpers');
 var ko = require('knockout');
 var bootbox = require('bootbox');
 var Raven = require('raven-js');
-var nodesPrivacy = require('js/nodesPrivacy');
+var NodesPrivacy = require('js/nodesPrivacy');
 require('bootstrap-editable');
 require('knockout.punches');
 ko.punches.enableAll();
@@ -149,6 +149,7 @@ var ProjectViewModel = function(data) {
     self.isRegistration = data.node.is_registration;
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
+
     self.nodeType = data.node.node_type;
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.pureComputed(function() {
@@ -161,6 +162,15 @@ var ProjectViewModel = function(data) {
     self.canBeOrganized = ko.pureComputed(function() {
         return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
+
+    self.ParentIsPublic = ko.observable(data.node.is_public);
+
+    self.ParentIsPublic.subscribe(function(newValue) {
+        console.log('self.ParentIsPublic is ' + JSON.stringify(newValue));
+    });
+
+
+    new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data, self.ParentIsPublic);
 
     // Add icon to title
     self.icon = '';
@@ -277,11 +287,11 @@ var ProjectViewModel = function(data) {
     };
 
     self.makePublic = function() {
-        return setPermissions(PUBLIC, self.nodeType);
+        self.ParentIsPublic(true);
     };
 
     self.makePrivate = function() {
-        return setPermissions(PRIVATE, self.nodeType);
+        self.ParentIsPublic(false);
     };
 
     self.forkNode = function() {
