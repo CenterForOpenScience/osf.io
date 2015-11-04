@@ -47,7 +47,7 @@ class NodeSerializer(JSONAPISerializer):
     category_choices_string = ', '.join(["'{}'".format(choice) for choice in category_choices])
 
     title = ser.CharField(required=True)
-    description = CheckRetraction(ser.CharField(required=False, allow_blank=True, allow_null=True))
+    description = ser.CharField(required=False, allow_blank=True, allow_null=True)
     category = CheckRetraction(ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string))
     date_created = ser.DateTimeField(read_only=True)
     date_modified = CheckRetraction(ser.DateTimeField(read_only=True))
