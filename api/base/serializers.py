@@ -31,6 +31,11 @@ class CheckRetraction(ser.Field):
         self.field.bind(field_name, self)
 
     def to_representation(self, value):
+        if getattr(self.field.root, 'child', None):
+            self.field.parent = self.field.root.child
+        else:
+            self.field.parent = self.field.root
+
         return self.field.to_representation(value)
 
 
