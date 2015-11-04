@@ -190,6 +190,7 @@ var FileBrowser = {
 
     },
     view : function (ctrl) {
+        var mobile = window.innerWidth < 767; // true if mobile view
         var infoPanel = '';
         var poStyle = 'width : 80%';
         var infoClass = 'btn-default';
@@ -198,7 +199,7 @@ var FileBrowser = {
             infoClass = 'btn-primary';
             poStyle = 'width : 50%';
         }
-        if ( window.innerWidth < 767) {
+        if (mobile) {
             poStyle = 'width : 100%';
         }
         return [
@@ -215,11 +216,11 @@ var FileBrowser = {
                             ctrl.showInfo(!ctrl.showInfo());
                         }
                     }, m('.fa.fa-info')),
-                    m('button.btn.btn-default', {
+                    mobile ? m('button.btn.btn-default', {
                         onclick : function () {
                             ctrl.showSidebar(!ctrl.showSidebar());
                         }
-                    }, m('.fa.fa-cubes'))
+                    }, m('.fa.fa-cubes')) : ''
                 ])
             ]),
             ctrl.showSidebar()?
