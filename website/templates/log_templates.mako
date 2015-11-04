@@ -85,7 +85,9 @@ deleted
 
 <script type="text/html" id="created_from">
 created
-<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a> based on <a class="log-node-title-link overflow" data-bind="attr: {href: params.template_node.url}">another</a>
+<a class="log-node-title-link overflow" data-bind="text: nodeTitle, attr: {href: nodeUrl}"></a>
+based on <a class="log-node-title-link overflow"
+data-bind="text: params.template_node.title || 'another', attr: {href: params.template_node.url}"></a>
 </script>
 
 <script type="text/html" id="node_created">
@@ -169,6 +171,10 @@ created fork from
 
 <script type="text/html" id="edit_description">
 edited description of  <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
+</script>
+
+<script type="text/html" id="license_changed">
+updated the license of <a class="log-node-title-link" data-bind="attr: {href: nodeUrl}, text: nodeTitle"></a>
 </script>
 
 <script type="text/html" id="updated_fields">

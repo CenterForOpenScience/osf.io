@@ -11,7 +11,6 @@ var FileEditor = require('./editor.js');
 var makeClient = require('js/clipboard');
 var FileRevisionsTable = require('./revisions.js');
 var storageAddons = require('json!storageAddons.json');
-var language = require('js/osfLanguage.js');
 
 // Sanity
 var Panel = utils.Panel;
@@ -95,9 +94,38 @@ var FileViewPage = {
         self.file = self.context.file;
         self.node = self.context.node;
         self.editorMeta = self.context.editor;
-        //Force canEdit into a bool
-        self.canEdit = m.prop(!!self.context.currentUser.canEdit);
-
+        self.file.checkoutUser = null;
+        self.requestDone = false;
+        self.isCheckoutUser = function() {
+            $.ajax({
+                method: 'get',
+                url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                beforeSend: $osf.setXHRAuthorization
+            }).done(function(resp) {
+                self.requestDone = true;
+                self.file.checkoutUser = resp.data.relationships.checkout.links.related.href ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
+                if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
+                    m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
+                        m('strong', 'File is checked-out.'),
+                        'This file has been checked-out by a ',
+                        m('a[href="/' + self.file.checkoutUser + '"]', 'collaborator'),
+                        '. It beeds to be checked back in before any changes can be made.'
+                    ])));
+                }
+            });
+        };
+        if (self.file.provider === 'osfstorage'){
+            self.canEdit = function() {
+                return ((!self.file.checkoutUser) || (self.file.checkoutUser === self.context.currentUser.id)) ? self.context.currentUser.canEdit : false;
+            };
+            self.isCheckoutUser();
+        } else {
+            self.requestDone = true;
+            self.canEdit = function() {
+                return self.context.currentUser.canEdit;
+            };
+        }
+        
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
@@ -139,7 +167,105 @@ var FileViewPage = {
                 }
             });
         });
+        $(document).on('fileviewpage:checkout', function() {
+            bootbox.confirm({
+                title: 'Confirm file check-out?',
+                message: 'This would mean ' +
+                    'other contributors cannot edit, delete or upload new versions of this file ' +
+                    'as long as it is checked-out. You can check it back in at anytime.',
+                callback: function(confirm) {
+                    if (!confirm) {
+                        return;
+                    }
+                    $.ajax({
+                        method: 'put',
+                        url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                        beforeSend: $osf.setXHRAuthorization,
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        data: JSON.stringify({
+                            data: {
+                                id: self.file.path.replace('/', ''),
+                                type: 'files',
+                                attributes: {
+                                    checkout: self.context.currentUser.id
+                                }
+                            }
+                        })
+                    }).done(function(resp) {
+                        window.location.reload();
+                    }).fail(function(resp) {
+                        $osf.growl('Error', 'Unable to check out file');
+                    });
+                },
+                buttons:{
+                    confirm:{
+                        label: 'Check out file',
+                        className: 'btn-warning'
+                    }
+                }
+            });
+        });
+        $(document).on('fileviewpage:checkin', function() {
+            $.ajax({
+                method: 'put',
+                url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                beforeSend: $osf.setXHRAuthorization,
+                contentType: 'application/json',
+                dataType: 'json',
+                data: JSON.stringify({
+                    data: {
+                        id: self.file.path.replace('/', ''),
+                        type: 'files',
+                        attributes: {
+                            checkout: null
+                        }
+                    }
+                })
+            }).done(function(resp) {
+                window.location.reload();
+            }).fail(function(resp) {
+                $osf.growl('Error', 'Unable to check in file');
+            });
+        });
+        $(document).on('fileviewpage:force_checkin', function() {
+            bootbox.confirm({
+                title: 'Force check-in file?',
+                message: 'This will check in the file for all users, allowing it to be edited. Are you sure?',
+                buttons: {
+                    confirm:{
+                        label: 'Force check-in',
+                        className: 'btn-danger'
+                    }
+                },
+                callback: function(confirm) {
+                    if (!confirm) {
+                        return;
+                    }
+                    $.ajax({
+                        method: 'put',
+                        url: window.contextVars.apiV2Prefix + 'files' + self.file.path + '/',
+                        beforeSend: $osf.setXHRAuthorization,
+                        contentType: 'application/json',
+                        dataType: 'json',
+                        data: JSON.stringify({
+                            data: {
+                                id: self.file.path.replace('/', ''),
+                                type: 'files',
+                                attributes: {
+                                    checkout: null
+                                }
+                            }
+                        })
+                    }).done(function(resp) {
+                        window.location.reload();
+                    }).fail(function(resp) {
+                        $osf.growl('Error', 'Unable to force check-in file, make sure you have admin privileges.');
+                    });
+                }
 
+            });
+        });
         $(document).on('fileviewpage:download', function() {
             //replace mode=render with action=download for download count incrementation
             window.location = self.file.urls.content.replace('mode=render', 'action=download');
@@ -227,71 +353,6 @@ var FileViewPage = {
         }, 1000);
 
         self.mfrIframeParent = $('#mfrIframeParent');
-
-        if(self.canEdit) {
-            var $fileName = $('#fileName');
-            var conflict = 'warn';
-            var to = {
-                data: {
-                    nodeId: self.node.id,
-                    path: null,
-                    provider: self.file.provider,
-                }
-            };
-            var from = $.extend(true, {}, to);
-            from.data.path = self.file.path;
-            $fileName.editable({
-                type: 'text',
-                mode: 'inline',
-                send: 'always',
-                url: waterbutler.moveUrl(),
-                ajaxOptions:{
-                    beforeSend: $osf.setXHRAuthorization,
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                },
-                params: function(params) {
-                    params = JSON.stringify({
-                        'rename': params.value,
-                        'conflict': conflict,
-                        'source': waterbutler.toJsonBlob(from),
-                        'destination': waterbutler.toJsonBlob(to),
-                    });
-                    return params;
-                },
-                validate: function(value) {
-                    if($.trim(value) === ''){
-                        return 'Name cannot be blank.';
-                    } else if(value.length > 100){
-                        return 'Please enter a name less than 100 characters.';
-                    }
-                },
-                success: function(response, value) {
-                    window.location.reload();
-                },
-                error: function(response) {
-                    var msg = $osf.htmlEscape(response.responseJSON.message);
-                    var msgLong = response.responseJSON.message_long;
-                    if (msgLong) {
-                        $osf.growl('Error', msgLong);
-                        return ' ';
-                    } else if (msg) {
-                        $osf.growl('Error', msg);
-                        return ' ';
-                    } else {
-                        // Log unexpected error with Raven
-                        Raven.captureMessage('Error in renaming file', {
-                            url: waterbutler.moveUrl(),
-                            responseText: response.responseText,
-                            statusText: response.statusText
-                        });
-                        $osf.growl('Error', language.Addons.rename.generalError);
-                        return ' ';
-                    }
-                }
-            });
-        }
     },
     view: function(ctrl) {
         //This code was abstracted into a panel toggler at one point
@@ -351,8 +412,17 @@ var FileViewPage = {
 
         m.render(document.getElementById('toggleBar'), m('.btn-toolbar.m-t-md', [
             // Special case whether or not to show the delete button for published Dataverse files
-            (ctrl.canEdit() && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
+            (ctrl.canEdit() && (ctrl.file.provider !== 'osfstorage' || !ctrl.file.checkoutUser) && ctrl.requestDone && $(document).context.URL.indexOf('version=latest-published') < 0 ) ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
+            ]) : '',
+            ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check-in')
+            ]) : '',
+            ctrl.canEdit() && (!ctrl.file.checkoutUser) && ctrl.requestDone && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out')
+            ]) : '',
+            (ctrl.canEdit() && (ctrl.file.checkoutUser === ctrl.context.currentUser.id) && ctrl.requestDone) ? m('.btn-group.m-l-xs.m-t-xs', [
+                m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkin')}, 'Check in')
             ]) : '',
             window.contextVars.node.isPublic? m('.btn-group.m-t-xs', [
                 m.component(SharePopover, {link: link, height: height})

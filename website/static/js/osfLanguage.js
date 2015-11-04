@@ -65,11 +65,7 @@ module.exports = {
                 'This will revoke access to Google Drive for all projects you have ' +
                 'associated with this account.',
             deauthError: 'Could not disconnect the Google Drive account at this time',
-        },
-        rename: {
-            generalError: 'Error in renaming file. If error persists please contact ' +
-                SUPPORT_LINK,
-        },
+        }
     },
     apiOauth2Application: {
         discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
@@ -77,8 +73,14 @@ module.exports = {
         deactivateError: 'Could not deactivate application. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         dataFetchError: 'Data not loaded. ' + REFRESH_OR_SUPPORT,
         dataListFetchError: 'Could not load list of developer applications at this time. ' + REFRESH_OR_SUPPORT,
-        dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
+        dataSendError: 'Error sending data to the server. Check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
         creationSuccess: 'Successfully registered new application',
         dataUpdated: 'Application data updated'
+    },
+    projectSettings: {
+        updateSuccessMessage: 'Successfully updated project settings.',
+        updateErrorMessage400: 'Error updating project settings. Check that all fields are valid.',
+        updateErrorMessage: 'Could not update project settings. ' + REFRESH_OR_SUPPORT,
+        instantiationErrorMessage: 'Trying to instantiate ProjectSettings view model without an update URL'
     }
 };

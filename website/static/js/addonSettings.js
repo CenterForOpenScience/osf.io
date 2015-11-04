@@ -108,7 +108,7 @@ var OAuthAddonSettingsViewModel = oop.defclass({
             },
             buttons:{
                 confirm:{
-                    label:'Delete',
+                    label:'Disconnect',
                     className:'btn-danger'
                 }
             }

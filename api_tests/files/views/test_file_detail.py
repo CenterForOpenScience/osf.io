@@ -1,27 +1,18 @@
 from __future__ import unicode_literals
 
-import mock
-from urlparse import urlparse
 from nose.tools import *  # flake8: noqa
 
-from website.models import Node
-from website.views import find_dashboard
-from framework.auth.core import Auth
-from website.addons.github import model
-from website.util.sanitize import strip_html
 from api.base.settings.defaults import API_BASE
+from website.files.exceptions import FileNodeCheckedOutError
 from website.addons.osfstorage import settings as osfstorage_settings
 
-from tests.base import ApiTestCase, fake
+from tests.base import ApiTestCase
 from tests.factories import (
-    DashboardFactory,
-    FolderFactory,
-    NodeFactory,
     ProjectFactory,
-    RegistrationFactory,
     UserFactory,
     AuthUserFactory
 )
+
 
 class TestFileView(ApiTestCase):
     def setUp(self):
