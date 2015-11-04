@@ -114,6 +114,7 @@ def auth_login(auth, **kwargs):
     login form passsed; else send forgot password email.
 
     """
+    campaign = request.args.get('c')
     next_url = request.args.get('next')
     if auth.logged_in:
         if not request.args.get('logout'):
@@ -132,21 +133,18 @@ def auth_login(auth, **kwargs):
     if next_url:
         status.push_status_message(language.MUST_LOGIN)
         # Don't raise error if user is being logged out
-        if not request.args.get('logout'):
-            code = http.UNAUTHORIZED
+        # if not request.args.get('logout'):
+        #    code = http.UNAUTHORIZED
     # set login_url to form action, upon successful authentication specifically w/o logout=True,
-    # allows for next to be followed or a redirect to the dashboard.
+    # allows for next to be followed or a redirect to the dashboard.X
+    if campaign:
+        next_url = campaigns.campaign_url_for(campaign)
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
-    login_url = cas.get_login_url(redirect_url, auto=True)
 
-    data = {
-        'login_url': login_url,
-        'campaign': None,
-    }
-
-    campaign = request.args.get('c')
-    if campaign and campaign in framework.auth.VALID_CAMPAIGNS:
+    data = {}
+    if campaign and campaign in campaigns.VALID_CAMPAIGNS:
         data['campaign'] = campaign
+    data['login_url'] = cas.get_login_url(redirect_url, auto=True)
 
     return data, http.OK
 
@@ -246,7 +244,7 @@ def send_confirm_email(user, email):
 
     campaign = None
     for tag in user.system_tags:
-        if tag in framework.auth.VALID_CAMPAIGNS:
+        if tag in campaigns.VALID_CAMPAIGNS:
             campaign = tag
             break
 
@@ -291,7 +289,7 @@ def register_user(**kwargs):
         full_name = strip_html(full_name)
 
         campaign = json_data.get('campaign')
-        if campaign and campaign not in framework.auth.VALID_CAMPAIGNS:
+        if campaign and campaign not in campaigns.VALID_CAMPAIGNS:
             campaign = None
 
         user = framework.auth.register_unconfirmed(

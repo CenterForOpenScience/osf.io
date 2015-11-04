@@ -79,7 +79,3 @@ def register_unconfirmed(username, password, fullname, campaign=None):
     else:
         raise DuplicateEmailError('User {0!r} already exists'.format(username))
     return user
-
-VALID_CAMPAIGNS = (
-    'prereg',
-)
