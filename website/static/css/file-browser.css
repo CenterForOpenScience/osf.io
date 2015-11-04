@@ -53,6 +53,9 @@
     background-color: #fff;
     padding: 10px;
 }
+.fb-collections ul {
+    position: relative;
+}
 .fb-collections ul li , .fb-filters ul li {
     padding: 3px 0;
     border-left: 3px solid #FFFFFF;
@@ -68,6 +71,15 @@
 
 .fb-collections ul>li, .fb-filters ul>li {
     padding: 5px;
+}
+.collectionMenu {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    background: #fff;
+    z-index: 9;
+    box-shadow: 0 0 3px #ccc;
 }
 
 .fb-sidebar h5>.fa {

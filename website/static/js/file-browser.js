@@ -59,7 +59,7 @@ var FileBrowser = {
         // VIEW STATES
         self.showInfo = m.prop(false);
         self.showCollectionMenu = m.prop(false); // Show hide ellipsis menu for collections
-        self.currentCollectionMenu = m.prop(null); // Collection object to complete actions on menu
+        self.collectionMenuObject = m.prop({item : null, x : 0, y : 0}); // Collection object to complete actions on menu
 
         // DEFAULT DATA -- to be switched with server response
         self.collections = [
@@ -170,6 +170,17 @@ var FileBrowser = {
             }
         };
 
+        self.updateCollectionMenu = function (item, event) {
+            var x = event.clientX-4;
+            var y = event.clientY-260;
+            console.log(item, event);
+            self.showCollectionMenu(true);
+            self.collectionMenuObject({
+                item : item,
+                x : x,
+                y : y
+            });
+        };
 
     },
     view : function (ctrl) {
@@ -202,7 +213,9 @@ var FileBrowser = {
                     list : ctrl.collections,
                     activeFilter : ctrl.activeFilter,
                     updateFilter : ctrl.updateFilter,
-                    showCollectionMenu : ctrl.showCollectionMenu
+                    showCollectionMenu : ctrl.showCollectionMenu,
+                    updateCollectionMenu : ctrl.updateCollectionMenu,
+                    collectionMenuObject : ctrl.collectionMenuObject
                 }),
                 m.component(Filters, {
                     activeFilter : ctrl.activeFilter,
@@ -244,16 +257,18 @@ var Collections  = {
                         [
                             m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label),
                             m('i.fa.fa-ellipsis-v.pull-right.text-muted', {
-                                onclick : function () {
-                                    args.showCollectionMenu(!args.showCollectionMenu());
+                                onclick : function (e) {
+                                    args.updateCollectionMenu(item, e);
                                 }
                             })
                         ]
                     );
                 }),
-                args.showCollectionMenu() ? m('.collectionMenu', [
+                args.showCollectionMenu() ? m('.collectionMenu',{
+                    style : 'top: ' + args.collectionMenuObject().y + 'px;left: ' + args.collectionMenuObject().x + 'px;'
+                }, [
                     m('ul', [
-                        m('li', 'Item One'),
+                        m('li', args.collectionMenuObject().item.label),
                         m('li', 'Item Two')
                     ])
                 ]) : ''
