@@ -257,7 +257,6 @@ var Collections  = {
     view : function (ctrl, args) {
         var selectedCSS;
         return m('.fb-collections', [
-            m('h4', 'Browse'),
             m('h5', [
                 'Collections ',
                 m('i.fa.fa-question-circle.text-muted', {
