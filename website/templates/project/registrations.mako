@@ -1,12 +1,6 @@
 <%inherit file="project/project_base.mako"/>
 <%def name="title()">${node['title']} Registrations</%def>
 <div id="registrationsListScope">
-  <form id="newDraftRegistrationForm" method="POST" style="display:none">
-    <!-- ko if: selectedSchema() -->
-    <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name">
-    <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version">
-    <!-- /ko -->
-  </form>
 <ul id="registrationsTabs" class="nav nav-tabs" role="tablist">
   <li role="presentation" class="active">
     <a id="registrationsControl" aria-controls="registrations" href="#registrations">Registrations</a>
@@ -49,18 +43,23 @@
         To register the entire project "${parent_node['title']}" instead, click <a href="${parent_node['registrations_url']}">here.</a>
         %endif
       </div>
-
-        % if 'admin' in user['permissions'] and not disk_saving_mode:
-            <div class="col-md-3">
+      % if 'admin' in user['permissions'] and not disk_saving_mode:
+      <div class="col-md-3">
         <a data-bind="click: createDraftModal, css: {disabled: loading}" id="registerNode" class="btn btn-default" type="button">
           New Registration
         </a>
-            </div>
-        % endif
+      </div>
+      % endif
     </div>
   </div>
   <div role="tabpanel" class="tab-pane" id="drafts">
-    <div class="row" style="min-height: 150px;padding-top:20px;">
+    <div id="draftRegistrationsScope" class="row" style="min-height: 150px;padding-top:20px;">
+      <form id="newDraftRegistrationForm" method="POST" style="display:none">
+        <!-- ko if: selectedSchema() -->
+        <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name">
+        <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version">
+        <!-- /ko -->
+      </form>
       <div data-bind="visible: !preview()">
         <div class="col-md-9">
           <div class="scripted" data-bind="foreach: drafts">
@@ -111,6 +110,7 @@
           </div>
         </div>
       </div>
+      <!--
       <div data-bind="if: preview">
         <br />
         <button data-bind="click: preview.bind($root, false)"
@@ -172,6 +172,7 @@
         <div class="row" data-bind="template: {data: previewSchema, name: 'registrationPreview'}">
         </div>
       </div>
+      -->
     </div>
   </div>
 </div>

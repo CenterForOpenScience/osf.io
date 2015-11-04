@@ -314,21 +314,23 @@ Draft.prototype.beforeRegister = function(data) {
     }).always($osf.unblock);
     return request;
 };
-Draft.prototype.onRegisterFail = $osf.growl.bind(null, 'Registration failed',
-    language.registerFail, 'danger');
+Draft.prototype.onRegisterFail = $osf.growl.bind(null, 'Registration failed', language.registerFail, 'danger');
 
 Draft.prototype.register = function(data) {
     var self = this;
 
     $osf.block();
     var request = $osf.postJSON(self.urls.register, data);
-    request.done(function(response) {
-        if (response.status === 'initiated') {
-            window.location.assign(response.urls.registrations);
-        }
-    });
-    request.fail(self.onRegisterFail());
-    request.always($osf.unblock).fail(self.onRegisterFail);
+    request
+        .done(function(response) {
+            if (response.status === 'initiated') {
+                window.location.assign(response.urls.registrations);
+            }
+        })
+        .fail(function() {
+            self.onRegisterFail();
+        })
+        .always($osf.unblock);
     return request;
 };
 
@@ -760,7 +762,7 @@ RegistrationEditor.prototype.saveForLater = function () {
  * @param {String} urls.edit:
  * @param {String} urls.schemas:
  **/
-var RegistrationManager = function(node, draftsSelector, urls) {
+var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     var self = this;
 
     self.node = node;
@@ -788,6 +790,10 @@ var RegistrationManager = function(node, draftsSelector, urls) {
     // bound functions
     self.getDraftRegistrations = $.getJSON.bind(null, self.urls.list);
     self.getSchemas = $.getJSON.bind(null, self.urls.schemas);
+
+    if (createButton) {
+        createButton.on('click', self.createDraftModal.bind(self));
+    }
 };
 RegistrationManager.prototype.init = function() {
     var self = this;
