@@ -23,9 +23,8 @@ class RegistrationSerializer(NodeSerializer):
     ])
     retracted = ser.BooleanField(source='is_retracted', read_only=True,
         help_text='Whether this registration has been retracted.')
-    date_registered = CheckRetraction(ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.'))
+    date_registered = ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.')
     justification = ser.CharField(source='retraction.justification', read_only=True)
-    
     pending_retraction = CheckRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
         help_text='Is this registration pending retraction?'))
     pending_registration_approval = CheckRetraction(ser.BooleanField(source='sanction.pending_approval', read_only=True,
@@ -34,6 +33,7 @@ class RegistrationSerializer(NodeSerializer):
         help_text='Is this registration pending embargo?'))
     registered_meta = CheckRetraction(ser.DictField(read_only=True,
         help_text='Includes a dictionary with registration schema, embargo end date, and supplemental registration questions'))
+    registration_supplement = ser.SerializerMethodField()
 
     registered_by = CheckRetraction(JSONAPIHyperlinkedIdentityField(
         view_name='users:user-detail',
@@ -60,6 +60,9 @@ class RegistrationSerializer(NodeSerializer):
 
     def get_absolute_url(self, obj):
         return obj.absolute_url
+
+    def get_registration_supplement(self, obj):
+        return obj.registered_meta.keys()[0]
 
     def update(self, *args, **kwargs):
         raise exceptions.APIException('Registrations cannot be modified.')
