@@ -273,11 +273,11 @@ var Collections  = {
                     return m('li', { className : selectedCSS},
                         [
                             m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label),
-                            !item.systemCollection ? m('i.fa.fa-ellipsis-v.pull-right.text-muted', {
+                            !item.systemCollection ? m('', {
                                 onclick : function (e) {
                                     args.updateCollectionMenu(item, e);
                                 }
-                            }) : ''
+                            }, m('i.fa.fa-ellipsis-v.pull-right.text-muted')) : ''
                         ]
                     );
                 }),
@@ -343,7 +343,7 @@ var Filters = {
         var selectedCSS;
         return m('.fb-filters.m-t-lg',
             [
-                m('h5', [m('i.fa.fa-user'), 'Contributors']),
+                m('h5', 'Contributors'),
                 m('ul', [
                     args.nameFilters.map(function(item, index){
                         selectedCSS = item.id === args.activeFilter() ? '.active' : '';
@@ -352,7 +352,7 @@ var Filters = {
                         );
                     })
                 ]),
-                m('h5', [m('i.fa.fa-tags'), 'Tags']),
+                m('h5', 'Tags'),
                 m('ul', [
                     args.tagFilters.map(function(item){
                         selectedCSS = item.id === args.activeFilter() ? '.active' : '';
