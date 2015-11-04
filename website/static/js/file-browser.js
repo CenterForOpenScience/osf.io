@@ -193,12 +193,12 @@ var FileBrowser = {
             infoClass = 'btn-primary';
         }
         return [
-            m('.fb-header.m-b-xs', [
-                m.component(Breadcrumbs, {
+            m('.fb-header.m-b-xs.row', [
+                m('.col-xs-12.col-sm-6', m.component(Breadcrumbs, {
                     data : ctrl.breadcrumbs,
                     updateFilesData : ctrl.updateFilesData
-                }),
-                m('.fb-buttonRow', [
+                })),
+                m('.fb-buttonRow.col-xs-12.col-sm-6', [
                     m('#poFilter.m-r-xs'),
                     m('button.btn', {
                         'class' : infoClass,
