@@ -192,12 +192,12 @@ var FileBrowser = {
     view : function (ctrl) {
         var mobile = window.innerWidth < 767; // true if mobile view
         var infoPanel = '';
-        var poStyle = 'width : 80%';
+        var poStyle = 'width : 75%';
         var infoClass = 'btn-default';
         if (ctrl.showInfo()){
             infoPanel = m('.fb-infobar', m.component(Information, { selected : ctrl.selected }));
             infoClass = 'btn-primary';
-            poStyle = 'width : 50%';
+            poStyle = 'width : 45%';
         }
         if (mobile) {
             poStyle = 'width : 100%';
