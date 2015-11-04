@@ -147,7 +147,7 @@ class ApiOAuth2PersonalTokenFactory(ModularOdmFactory):
 
     owner = SubFactory(UserFactory)
 
-    scopes = ['osf.full_write']
+    scopes = 'osf.full_write osf.full_read'
 
     name = Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
 

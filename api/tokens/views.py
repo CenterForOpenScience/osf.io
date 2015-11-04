@@ -1,5 +1,5 @@
 """
-Views related to person access tokens. Intended for OSF internal use only
+Views related to personal access tokens. Intended for OSF internal use only
 """
 from rest_framework.exceptions import APIException
 from rest_framework import generics

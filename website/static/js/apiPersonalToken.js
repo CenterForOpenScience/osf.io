@@ -38,7 +38,7 @@ var TokenData = oop.defclass({
 
         this.token_id = ko.observable(attributes.token_id);
 
-        // Other fields. Owner and client ID should never change within this view.
+        // Other fields. Owner and ID should never change within this view.
         this.id = data.id;
 
         this.owner = attributes.user_id;
