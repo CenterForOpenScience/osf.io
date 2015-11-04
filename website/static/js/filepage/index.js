@@ -106,10 +106,10 @@ var FileViewPage = {
                 self.file.checkoutUser = resp.data.relationships.checkout.links.related.href ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
                 if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
-                        m('strong', 'File is checked-out.'),
-                        'This file has been checked-out by a ',
+                        m('strong', 'File is checked out.'),
+                        'nThis file has been checked out by a ',
                         m('a[href="/' + self.file.checkoutUser + '"]', 'collaborator'),
-                        '. It beeds to be checked back in before any changes can be made.'
+                        '. It needs to be checked back in before any changes can be made.'
                     ])));
                 }
             });
@@ -169,10 +169,10 @@ var FileViewPage = {
         });
         $(document).on('fileviewpage:checkout', function() {
             bootbox.confirm({
-                title: 'Confirm file check-out?',
+                title: 'Confirm file check out?',
                 message: 'This would mean ' +
                     'other contributors cannot edit, delete or upload new versions of this file ' +
-                    'as long as it is checked-out. You can check it back in at anytime.',
+                    'as long as it is checked out. You can check it back in at anytime.',
                 callback: function(confirm) {
                     if (!confirm) {
                         return;
@@ -230,11 +230,11 @@ var FileViewPage = {
         });
         $(document).on('fileviewpage:force_checkin', function() {
             bootbox.confirm({
-                title: 'Force check-in file?',
+                title: 'Force check in file?',
                 message: 'This will check in the file for all users, allowing it to be edited. Are you sure?',
                 buttons: {
                     confirm:{
-                        label: 'Force check-in',
+                        label: 'Force check in',
                         className: 'btn-danger'
                     }
                 },
@@ -260,7 +260,7 @@ var FileViewPage = {
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
-                        $osf.growl('Error', 'Unable to force check-in file, make sure you have admin privileges.');
+                        $osf.growl('Error', 'Unable to force check in file, make sure you have admin privileges.');
                     });
                 }
 
