@@ -694,18 +694,41 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_POST_register_make_public_immediately_creates_private_pending_registration_for_public_project(self, mock_enqueue):
         public_project = ProjectFactory(is_public=True, creator=self.user)
+        component = NodeFactory(
+            creator=self.user,
+            parent=public_project,
+            title='Component',
+            is_public=True
+        )
+        subproject = ProjectFactory(
+            creator=self.user,
+            parent=public_project,
+            title='Subproject',
+            is_public=True
+        )
+        subproject_component = NodeFactory(
+            creator=self.user,
+            parent=subproject,
+            title='Subcomponent',
+            is_public=True
+        )
         res = self.app.post(
             public_project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
             self.valid_make_public_payload,
             content_type='application/json',
             auth=self.user.auth
         )
+        public_project.reload()
         assert_equal(res.status_code, 201)
 
-        registration = Node.find().sort('-registered_date')[0]
+        # Last node directly registered from self.project
+        registration = Node.load(public_project.node__registrations[-1])
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
+        for node in registration.get_descendants_recursive():
+            assert_true(node.is_registration)
+            assert_false(node.is_public)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_POST_register_make_public_does_not_make_children_public(self, mock_enqueue):
@@ -756,6 +779,47 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         assert_false(registration.is_public)
         assert_true(registration.is_pending_embargo_for_existing_registration)
         assert_is_not_none(registration.embargo)
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-5071
+    @mock.patch('framework.tasks.handlers.enqueue_task')
+    def test_POST_register_embargo_does_not_make_project_or_children_public(self, mock_enqueue):
+        public_project = ProjectFactory(creator=self.user, is_public=True)
+        component = NodeFactory(
+            creator=self.user,
+            parent=public_project,
+            title='Component',
+            is_public=True
+        )
+        subproject = ProjectFactory(
+            creator=self.user,
+            parent=public_project,
+            title='Subproject'
+        )
+        subproject_component = NodeFactory(
+            creator=self.user,
+            parent=subproject,
+            title='Subcomponent'
+        )
+        res = self.app.post(
+            public_project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            self.valid_embargo_payload,
+            content_type='application/json',
+            auth=self.user.auth
+        )
+        public_project.reload()
+        assert_equal(res.status_code, 201)
+
+        # Last node directly registered from self.project
+        registration = Node.load(public_project.node__registrations[-1])
+
+        assert_true(registration.is_registration)
+        assert_false(registration.is_public)
+        assert_true(registration.is_pending_embargo_for_existing_registration)
+        assert_is_not_none(registration.embargo)
+
+        for node in registration.get_descendants_recursive():
+            assert_true(node.is_registration)
+            assert_false(node.is_public)
 
     @mock.patch('framework.tasks.handlers.enqueue_task')
     def test_POST_invalid_embargo_end_date_returns_HTTPBad_Request(self, mock_enqueue):
