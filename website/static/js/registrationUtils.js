@@ -760,7 +760,7 @@ RegistrationEditor.prototype.saveForLater = function () {
  * @param {String} urls.edit:
  * @param {String} urls.schemas:
  **/
-var RegistrationManager = function(node, draftsSelector, urls) {
+var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     var self = this;
 
     self.node = node;
@@ -788,6 +788,10 @@ var RegistrationManager = function(node, draftsSelector, urls) {
     // bound functions
     self.getDraftRegistrations = $.getJSON.bind(null, self.urls.list);
     self.getSchemas = $.getJSON.bind(null, self.urls.schemas);
+
+    if (createButton) {
+        createButton.on('click', self.createDraftModal.bind(self));
+    }
 };
 RegistrationManager.prototype.init = function() {
     var self = this;
