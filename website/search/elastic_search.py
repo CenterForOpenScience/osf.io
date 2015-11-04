@@ -453,8 +453,8 @@ def update_file(file_, index=None, delete=False):
     )
     node_url = '/{node_id}/'.format(node_id=file_.node._id)
 
-    parent_url = '/{}/'.format(file_.node.parent_node._id) if file_.node.parent_node else None,
-    parent_title = file_.node.parent_node.title if file_.node.parent_node else None,
+    parent_url = '/{}/'.format(file_.node.parent_node._id) if file_.node.parent_node else None
+    parent_title = file_.node.parent_node.title if file_.node.parent_node else None
     if parent_title:
         parent_title = parent_title if file_.node.parent_node.is_public else '-- private project --'
 
