@@ -47,13 +47,13 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         return data
 
     def create(self, validated_data):
-        validate_data_not_injected(validated_data)
+        validate_requested_scopes(validated_data)
         instance = ApiOAuth2PersonalToken(**validated_data)
         instance.save()
         return instance
 
     def update(self, instance, validated_data):
-        validate_data_not_injected(validated_data)
+        validate_requested_scopes(validated_data)
         assert isinstance(instance, ApiOAuth2PersonalToken), 'instance must be an ApiOAuth2PersonalToken'
         for attr, value in validated_data.iteritems():
             if attr == 'token_id':  # Do not allow user to update token_id
@@ -63,7 +63,7 @@ class ApiOAuth2PersonalTokenSerializer(JSONAPISerializer):
         instance.save()
         return instance
 
-def validate_data_not_injected(validated_data):
+def validate_requested_scopes(validated_data):
     scopes_set = set(validated_data['scopes'].split(' '))
     for scope in scopes_set:
         if scope not in public_scopes or not public_scopes[scope].is_public:
