@@ -198,11 +198,15 @@ def format_results(results):
     for result in results:
         if result.get('category') == 'user':
             result['url'] = '/profile/' + result['id']
+        elif result.get('category') == 'file':
+            parent_info = load_parent(result.get('parent_id'))
+            if parent_info:
+                result['parent_url'] = parent_info.get('url') or None
+                result['parent_title'] = parent_info.get('title') or None
         elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
         ret.append(result)
     return ret
-
 
 def format_result(result, parent_id=None):
     parent_info = load_parent(parent_id)
@@ -453,11 +457,6 @@ def update_file(file_, index=None, delete=False):
     )
     node_url = '/{node_id}/'.format(node_id=file_.node._id)
 
-    parent_url = '/{}/'.format(file_.node.parent_node._id) if file_.node.parent_node and file_.node.parent_node.is_public else None
-    parent_title = file_.node.parent_node.title if file_.node.parent_node else None
-    if parent_title:
-        parent_title = parent_title if file_.node.parent_node.is_public else '-- private project --'
-
     file_doc = {
         'id': file_._id,
         'deep_url': file_deep_url,
@@ -466,8 +465,7 @@ def update_file(file_, index=None, delete=False):
         'category': 'file',
         'node_url': node_url,
         'node_title': file_.node.title,
-        'parent_url': parent_url,
-        'parent_title': parent_title,
+        'parent_id': file_.node.parent_node._id if file_.node.parent_node else None,
         'is_registration': file_.node.is_registration,
     }
 
