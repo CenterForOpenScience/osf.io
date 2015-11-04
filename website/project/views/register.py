@@ -271,7 +271,6 @@ def node_register_template_page_post(auth, node, **kwargs):
             embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
             register.embargo_registration(auth.user, embargo_end_date)
         else:
-            register.is_public = False
             register.require_approval(auth.user)
         register.save()
     except ValidationValueError as err:

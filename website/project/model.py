@@ -1917,6 +1917,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
         registered = original.clone()
 
+        registered.is_public = False
         registered.is_registration = True
         registered.registered_date = when
         registered.registered_user = auth.user
@@ -1949,6 +1950,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                 child_registration = node_contained.register_node(
                     schema, auth, template, data, parent=registered
                 )
+                child_registration.is_public = False
                 if child_registration and not child_registration.primary:
                     registered.nodes.append(child_registration)
 
