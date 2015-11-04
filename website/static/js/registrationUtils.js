@@ -473,6 +473,12 @@ RegistrationEditor.prototype.init = function(draft) {
     self.currentPage(self.draft().pages()[0]);
 
     self.serialized.subscribe(self.autoSave.bind(self));
+
+    $(window).on('beforeunload', function(e) {
+        if (self.isDirty()) {
+             return 'You have unsaved changes.';
+        }
+    });
 };
 /**
  * Creates a template context for editor type subtemplates. Looks for the data type
