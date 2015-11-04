@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import httplib as http
+import contextlib
+import mock
 
 from nose.tools import *  # flake8: noqa
 
@@ -8,8 +10,62 @@ from tests import factories
 from tests.utils import make_drf_request
 
 from api.base.settings.defaults import API_BASE
-from api.base.serializers import JSONAPISerializer
+from api.base import serializers as base_serializers
 from api.nodes.serializers import NodeSerializer, JSONAPIHyperlinkedIdentityField
+
+class FakeModel(object):
+
+    def null_field(self):
+        return None
+
+    def valued_field(self):
+        return 'Some'
+
+    null = None
+    foo = 'bar'
+
+    pk = '1234'
+
+class FakeSerializer(base_serializers.JSONAPISerializer):
+
+    class Meta:
+        type_ = 'foos'
+
+    links = base_serializers.LinksField({
+        'null_field': 'null_field',
+        'valued_field': 'valued_field',
+    })
+    
+    null_link_field = base_serializers.JSONAPIHyperlinkedIdentityField(
+        'nodes:node-detail',
+        lookup_field='null',
+        lookup_url_kwarg='node_id',
+        link_type='related'
+    )
+    valued_link_field = base_serializers.JSONAPIHyperlinkedIdentityField(
+        'nodes:node-detail',
+        lookup_field='foo',
+        lookup_url_kwarg='node_id',
+        link_type='related'
+    )
+
+    def null_field(*args, **kwargs):
+        return None
+
+    def valued_field(*args, **kwargs):
+        return 'http://foo.com'
+
+class TestNullLinks(ApiTestCase):
+
+    def test_null_links_are_omitted(self):
+        req = make_drf_request()
+        rep = FakeSerializer(FakeModel, context={'request': req}).data['data']
+
+        assert_not_in('null_field', rep['links'])
+        assert_in('valued_field', rep['links'])
+        assert_not_in('null_link_field', rep['relationships'])
+        assert_in('valued_link_field', rep['relationships'])
+
 
 class TestApiBaseSerializers(ApiTestCase):
 
@@ -28,6 +84,8 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url)
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
+            if relation == {}:
+                continue
             link = relation['links'].values()[0]
             assert_not_in('count', link['meta'])
 
@@ -36,6 +94,8 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': True})
         relationships = res.json['data']['relationships']
         for key, relation in relationships.iteritems():
+            if relation == {}:
+                continue
             field = NodeSerializer._declared_fields[key]
             if (field.meta or {}).get('count'):
                 link = relation['links'].values()[0]
@@ -46,6 +106,8 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': False})
         relationships = res.json['data']['relationships']
         for relation in relationships.values():
+            if relation == {}:
+                continue
             link = relation['links'].values()[0]
             assert_not_in('count', link['meta'])
 
@@ -58,7 +120,50 @@ class TestApiBaseSerializers(ApiTestCase):
 class TestJSONAPIHyperlinkedIdentityField(DbTestCase):
 
     # We need a Serializer to test the JSONHyperlinkedIdentity field (needs context)
-    class BasicNodeSerializer(JSONAPISerializer):
+    class BasicNodeSerializer(base_serializers.JSONAPISerializer):
+        parent = JSONAPIHyperlinkedIdentityField(
+            view_name='nodes:node-detail',
+            lookup_field='pk',
+            lookup_url_kwarg='node_id',
+            link_type='related'
+        )
+
+        parent_with_meta = JSONAPIHyperlinkedIdentityField(
+            view_name='nodes:node-detail',
+            lookup_field='pk',
+            lookup_url_kwarg='node_id',
+            link_type='related',
+            meta={'count': 'get_count', 'extra': 'get_extra'}
+        )
+
+        class Meta:
+            type_ = 'nodes'
+
+        def get_count(self, obj):
+            return 1
+
+        def get_extra(self, obj):
+            return 'foo'
+
+    # TODO: Expand tests
+
+    # Regression test for https://openscience.atlassian.net/browse/OSF-4832
+    def test_serializing_meta(self):
+        req = make_drf_request()
+        project = factories.ProjectFactory()
+        node = factories.NodeFactory(parent=project)
+        data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
+
+        meta = data['relationships']['parent_with_meta']['links']['related']['meta']
+        assert_not_in('count', meta)
+        assert_in('extra', meta)
+        assert_equal(meta['extra'], 'foo')
+
+
+class TestJSONAPIHyperlinkedIdentityField(DbTestCase):
+
+    # We need a Serializer to test the JSONHyperlinkedIdentity field (needs context)
+    class BasicNodeSerializer(base_serializers.JSONAPISerializer):
         parent = JSONAPIHyperlinkedIdentityField(
             view_name='nodes:node-detail',
             lookup_field='pk',

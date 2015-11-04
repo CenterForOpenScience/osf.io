@@ -7,7 +7,7 @@ from rest_framework import serializers as ser
 
 from website import settings
 from website.util.sanitize import strip_html
-from website.util import waterbutler_api_url_for
+from website import util as website_utils
 
 from api.base import utils
 from api.base.exceptions import InvalidQueryStringError, Conflict
@@ -40,18 +40,22 @@ class AllowMissing(ser.Field):
         return self.field.to_internal_value(data)
 
 
-from website.util import rapply as _rapply
-
 def _url_val(val, obj, serializer, **kwargs):
     """Function applied by `HyperlinksField` to get the correct value in the
     schema.
     """
+    url = None
     if isinstance(val, Link):  # If a Link is passed, get the url value
-        return val.resolve_url(obj, **kwargs)
+        url = val.resolve_url(obj, **kwargs)
     elif isinstance(val, basestring):  # if a string is passed, it's a method of the serializer
-        return getattr(serializer, val)(obj)
+        url = getattr(serializer, val)(obj)
     else:
-        return val
+        url = val
+
+    if not url:
+        raise SkipField
+    else:
+        return url
 
 
 class IDField(ser.CharField):
@@ -144,13 +148,15 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         the link is represented as a links object with 'href' and 'meta' members.
         """
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
+        if not url:
+            raise SkipField
 
         meta = {}
         for key in self.meta or {}:
             if key == 'count':
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
                 if utils.is_truthy(show_related_counts):
-                    meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+                    meta[key] = website_utils.rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
                 elif utils.is_falsy(show_related_counts):
                     continue
                 else:
@@ -159,8 +165,10 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                         parameter='related_counts'
                     )
             else:
-                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
-
+                meta[key] = website_utils.rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+        # JSON-API requires that the self link is just a URL
+        if self.link_type == 'self':
+            return {'links': {self.link_type: url}}
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
 
 
@@ -198,7 +206,14 @@ class LinksField(ser.Field):
         return obj
 
     def to_representation(self, obj):
-        ret = _rapply(self.links, _url_val, obj=obj, serializer=self.parent)
+        ret = {}
+        for name, value in self.links.iteritems():
+            try:
+                url = _url_val(value, obj=obj, serializer=self.parent)
+            except SkipField:
+                continue
+            else:
+                ret[name] = url
         if hasattr(obj, 'get_absolute_url') and 'self' not in self.links:
             ret['self'] = obj.get_absolute_url()
         return ret
@@ -254,7 +269,7 @@ class Link(object):
         # Presumably, if you have are expecting a value but the value is empty, then the link is invalid.
         for item in kwarg_values:
             if kwarg_values[item] is None:
-                return None
+                raise SkipField
         return utils.absolute_reverse(
             self.endpoint,
             args=arg_values,
@@ -277,11 +292,14 @@ class WaterbutlerLink(Link):
         """Reverse URL lookup for WaterButler routes
         """
         if self.must_be_folder is True and not obj.path.endswith('/'):
-            return None
+            raise SkipField
         if self.must_be_file is True and obj.path.endswith('/'):
-            return None
-        return waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
-
+            raise SkipField
+        url = website_utils.waterbutler_api_url_for(obj.node._id, obj.provider, obj.path, **self.kwargs)
+        if not url:
+            raise SkipField
+        else:
+            return url
 
 class NodeFileHyperLink(JSONAPIHyperlinkedIdentityField):
     def __init__(self, kind=None, kwargs=None, **kws):
@@ -296,7 +314,7 @@ class NodeFileHyperLink(JSONAPIHyperlinkedIdentityField):
 
     def get_url(self, obj, view_name, request, format):
         if self.kind and obj.kind != self.kind:
-            return None
+            raise SkipField
         return reverse(view_name, kwargs={attr_name: getattr(obj, attr) for (attr_name, attr) in self.kwargs}, request=request, format=format)
 
 
@@ -346,7 +364,10 @@ class JSONAPISerializer(ser.Serializer):
                 continue
 
             if isinstance(field, JSONAPIHyperlinkedIdentityField):
-                data['relationships'][field.field_name] = field.to_representation(attribute)
+                try:
+                    data['relationships'][field.field_name] = field.to_representation(attribute)
+                except SkipField:
+                    continue
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':
@@ -379,7 +400,7 @@ class JSONAPISerializer(ser.Serializer):
         ret = super(JSONAPISerializer, self).is_valid(**kwargs)
 
         if clean_html is True:
-            self._validated_data = _rapply(self.validated_data, strip_html)
+            self._validated_data = website_utils.rapply(self.validated_data, strip_html)
 
         self._validated_data.pop('type', None)
         self._validated_data.pop('target_type', None)
