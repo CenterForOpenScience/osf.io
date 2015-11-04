@@ -314,21 +314,23 @@ Draft.prototype.beforeRegister = function(data) {
     }).always($osf.unblock);
     return request;
 };
-Draft.prototype.onRegisterFail = $osf.growl.bind(null, 'Registration failed',
-    language.registerFail, 'danger');
+Draft.prototype.onRegisterFail = $osf.growl.bind(null, 'Registration failed', language.registerFail, 'danger');
 
 Draft.prototype.register = function(data) {
     var self = this;
 
     $osf.block();
     var request = $osf.postJSON(self.urls.register, data);
-    request.done(function(response) {
-        if (response.status === 'initiated') {
-            window.location.assign(response.urls.registrations);
-        }
-    });
-    request.fail(self.onRegisterFail());
-    request.always($osf.unblock).fail(self.onRegisterFail);
+    request
+        .done(function(response) {
+            if (response.status === 'initiated') {
+                window.location.assign(response.urls.registrations);
+            }
+        })
+        .fail(function() {
+            self.onRegisterFail();
+        })
+        .always($osf.unblock);
     return request;
 };
 
