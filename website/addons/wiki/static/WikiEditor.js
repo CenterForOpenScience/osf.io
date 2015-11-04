@@ -82,6 +82,9 @@ ko.bindingHandlers.ace = {
         element.addEventListener('drop', function(event) {
             event.preventDefault();
             event.stopPropagation();
+            var re = /(?:\.([^.]+))?$/;
+            var extensions = ['jpg', 'png', 'gif'];
+            var ext;
             var position = editor.session.screenToDocumentPosition(editor.marker.cursor.row, editor.marker.cursor.column);
             var url = event.dataTransfer.getData('text/html');
             if (!!url) {
@@ -94,11 +97,9 @@ ko.bindingHandlers.ace = {
 
                 }
                 else {
-                    var re = /(?:\.([^.]+))?$/;
-                    var ext = re.exec(imgURL)[1];
-                    var extensions = ['jpg', 'png', 'gif'];
+                    ext = re.exec(imgURL)[1];
                     if (extensions.indexOf(ext) <= -1) {
-                        alert('File type not supported');
+                        $osf.growl('Error', 'File type not supported', 'danger');
                         imgURL = undefined;
                     }
                 }
@@ -109,19 +110,29 @@ ko.bindingHandlers.ace = {
             }
             else {
                 var file = event.dataTransfer.files[0];
-                var waterbutler_url = waterbutler.buildUploadUrl('/', 'osfstorage', window.contextVars.node.id, file);
-                $.ajax({
-                    url: waterbutler_url,
-                    type: 'PUT',
-                    processData: false,
-                    contentType: false,
-                    beforeSend: $osf.setXHRAuthorization,
-                    data: file
-                }).done(function(data) {
-                    alert('success');
-                }).fail(function(data) {
-                    alert('fail');
-                });
+                ext = re.exec(file.name)[1];
+                if (extensions.indexOf(ext) <= -1) {
+                    $osf.growl('Error', 'File type not supported', 'danger');
+                }
+                else {
+                    var waterbutler_url = waterbutler.buildUploadUrl('/', 'osfstorage', window.contextVars.node.id, file);
+                    $.ajax({
+                        url: waterbutler_url,
+                        type: 'PUT',
+                        processData: false,
+                        contentType: false,
+                        beforeSend: $osf.setXHRAuthorization,
+                        data: file
+                    }).done(function(data) {
+                        url = window.contextVars.waterbutlerURL + 'v1/resources/' + window.contextVars.node.id + '/providers/' + data.provider + data.path + '?mode=render';
+                        var refOut = editor.marker.addLinkDef('[999]: ' + url);
+                        editor.session.insert(position, '![enter image description here][' + refOut + ']');
+                    }).fail(function(data) {
+                        $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
+                        'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                        'if the problem persists.', 'danger');
+                    });
+                }
             }
             editor.marker.session.removeMarker(editor.marker.id);
             editor.marker.redraw();
