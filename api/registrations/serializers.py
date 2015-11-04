@@ -25,6 +25,16 @@ class RegistrationSerializer(NodeSerializer):
         help_text='Whether this registration has been retracted.')
     date_registered = CheckRetraction(ser.DateTimeField(source='registered_date', read_only=True, help_text='Date time of registration.'))
     justification = ser.CharField(source='retraction.justification', read_only=True)
+    
+    pending_retraction = CheckRetraction(ser.BooleanField(source='is_pending_retraction', read_only=True,
+        help_text='Is this registration pending retraction?'))
+    pending_registration_approval = CheckRetraction(ser.BooleanField(source='sanction.pending_approval', read_only=True,
+        help_text='Does this registration have a sanction pending approval?'))
+    pending_embargo = CheckRetraction(ser.BooleanField(read_only=True, source='is_pending_embargo',
+        help_text='Is this registration pending embargo?'))
+    registered_meta = CheckRetraction(ser.DictField(read_only=True,
+        help_text='Includes a dictionary with registration schema, embargo end date, and supplemental registration questions'))
+
     registered_by = CheckRetraction(JSONAPIHyperlinkedIdentityField(
         view_name='users:user-detail',
         lookup_field='registered_user_id',
