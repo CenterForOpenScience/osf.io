@@ -257,16 +257,17 @@ var Collections  = {
     view : function (ctrl, args) {
         var selectedCSS;
         return m('.fb-collections', [
+            m('h4', 'Browse'),
+            m('h5', [
+                'Collections ',
+                m('i.fa.fa-question-circle.text-muted', {
+                    'data-toggle':  'tooltip',
+                    'title':  'Collections are groups of projects. You can create new collections and add any project you are a collaborator on or a public project.',
+                    'data-placement' : 'bottom'
+                }, ''),
+                m('.pull-right', m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')))
+            ]),
             m('ul', [
-                m('h4', [
-                    'Collections ',
-                    m('i.fa.fa-question-circle.text-muted', {
-                        'data-toggle':  'tooltip',
-                        'title':  'Collections are groups of projects. You can create new collections and add any project you are a collaborator on or a public project.',
-                        'data-placement' : 'bottom'
-                    }, ''),
-                    m('.pull-right', m('button.btn.btn-xs.btn-success[data-toggle="modal"][data-target="#addColl"]', m('i.fa.fa-plus')))
-                ]),
                 args.list.map(function(item){
                     selectedCSS = item.id === args.activeFilter() ? 'active' : '';
                     return m('li', { className : selectedCSS},
