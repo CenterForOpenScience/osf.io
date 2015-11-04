@@ -160,7 +160,7 @@ class CasClient(object):
 
     def revoke_application_tokens(self, client_id, client_secret):
         """Revoke all tokens associated with a given CAS client_id"""
-        self.revoke_tokens(payload={'client_id': client_id, 'client_secret': client_secret})
+        return self.revoke_tokens(payload={'client_id': client_id, 'client_secret': client_secret})
 
     def revoke_tokens(self, payload):
         """Revoke a tokens based on payload"""
