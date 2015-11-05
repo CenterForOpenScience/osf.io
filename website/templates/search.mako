@@ -189,6 +189,16 @@
                             <i class="fa social-icons" data-toggle="tooltip" title="ResearcherID">R</i>
                         </a>
                     </li>
+                    <li data-bind="visible: social.academic">
+                        <a data-bind="attr.href: social.academic">
+                            <i class="fa fa-globe social-icons" data-toggle="tooltip" title="Academic.edu"></i>
+                        </a>
+                    </li>
+                    <li data-bind="visible: social.researchgate">
+                        <a data-bind="attr.href: social.researchgate">
+                            <i class="fa social-icons" data-toggle="tooltip" title="ResearchGate">R</i>
+                        </a>
+                    </li>
                 </ul>
                 <!-- /ko -->
             </div>

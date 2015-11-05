@@ -35,6 +35,8 @@ class UserSerializer(JSONAPISerializer):
     impactStory = ser.CharField(required=False, source='social.impactStory', allow_blank=True, help_text='ImpactStory Account')
     orcid = ser.CharField(required=False, label='ORCID', source='social.orcid', allow_blank=True, help_text='ORCID')
     researcherId = ser.CharField(required=False, label='ResearcherID', source='social.researcherId', allow_blank=True, help_text='ResearcherId Account')
+    academic = ser.URLField(required=False, source='social.academic', allow_blank=True, help_text='Academic.edu Account')
+    researchgate = ser.CharField(required=False, label='ResearchGate', source='social.researchgate', allow_blank=True, help_text='ResearchGate Account')
 
     links = LinksField({'html': 'absolute_url'})
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
