@@ -110,7 +110,6 @@ Question.prototype.toggleUploader = function() {
     this.showUploader(!this.showUploader());
 };
 
-
 /**
  * @class Page
  * A single page within a draft registration
@@ -195,7 +194,6 @@ MetaSchema.prototype.flatQuestions = function() {
     });
     return flat;
 };
-
 
 /**
  * @class Draft
@@ -421,10 +419,9 @@ var RegistrationEditor = function(urls, editorId) {
             // Note that if a save request has not happened, the form is considered dirty.
             return true;
         }
-        if (request.payload === undefined) {
-            // If the payload is not attached, the .done() handler hasn't been called;
-            //      therefore the request has not successfully completed.
-            return false;
+        var schema = draft.schema();
+        if (!schema) {
+            return [];
         }
         return JSON.stringify(request.payload) !== JSON.stringify(self.serialized());
     });

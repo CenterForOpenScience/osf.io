@@ -131,9 +131,42 @@ describe('Question', () => {
     });
 });
 
+describe('MetaSchema', () => {
+    describe('#constructor', () => {
+        it('loads optional instantion data and maps question data to Question instances', () => {
+
+            var ctx = mkMetaSchema();
+            var qid = ctx[0];
+            var params = ctx[1];
+            var ms = ctx[2];
+            assert.equal(ms.name, params.schema_name);
+            assert.equal(ms.version, params.schema_version);
+            assert.equal(ms.schema.pages[0].id, params.schema.pages[0].id);
+
+            assert.isDefined(ms.schema.pages[2].questions.q0.value);
+        });
+    });
+    describe('#flatQuestions', () => {
+        it('creates a flat array of the schema questions', () => {
+            var ctx = mkMetaSchema();
+            var qid = ctx[0];
+            var params = ctx[1];
+            var ms = ctx[2];
+
+            var questions = [];
+            $.each(params.schema.pages, function(i, page) {
+                $.each(page.questions, function(qid, question) {
+                    questions.push(question);
+                });
+            });
+            assert.deepEqual(questions, ms.flatQuestions());
+        });
+    });
+});
+
 describe('Draft', () => {
     var ms = mkMetaSchema()[2];
-    
+
     var beforeRegisterUrl = faker.internet.ip();
     var registerUrl = faker.internet.ip();
     var params = {
@@ -274,20 +307,20 @@ describe('Draft', () => {
         });
         it('POSTS the data passed into beforeRegister, and redirects on a success response', (done) => {
             server.respondWith(
-                beforeRegisterUrl, 
+                beforeRegisterUrl,
                 '{}'
             );
             var data = {some: 'data'};
-            draft.beforeRegister(data).always(() => {                
+            draft.beforeRegister(data).always(() => {
                 assert.isTrue(
-                    postJSONStub.calledOnce && 
+                    postJSONStub.calledOnce &&
                     postJSONStub.calledWith(
                         registerUrl,
                         data
                     )
                 );
                 done();
-            });            
+            });
         });
     });
 });
