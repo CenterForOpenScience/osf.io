@@ -501,33 +501,9 @@ RegistrationEditor.prototype.init = function(draft) {
 
     $(window).on('beforeunload', function(e) {
         if (self.isDirty()) {
-            return 'You have unsaved changes.';
+             return 'You have unsaved changes.';
         }
     });
-
-    var questions = self.flatQuestions();
-    $.each(questions, function(i, question) {
-        var val = schemaData[question.id];
-        if (val) {
-            if (question.type === 'object') {
-                $.each(question.properties, function(prop, subQuestion) {
-                    val = schemaData[question.id][prop];
-                    if (val) {
-                        subQuestion.value(val.value);
-                        // subQuestion.comments($.map(val.comments || [], function(data) {
-                        //     return new Comment(data);
-                        // }));
-                    }
-                });
-            } else {
-                question.value(val.value);
-                // question.comments($.map(val.comments || [], function(data) {
-                //     return new Comment(data);
-                // }));
-            }
-        }
-    });
-    self.currentQuestion(questions.shift());
 };
 /**
  * @returns {Question[]} flat list of the current schema's questions
@@ -650,6 +626,7 @@ RegistrationEditor.prototype.selectPage = function(page) {
 
     var firstQuestion = page.questions[Object.keys(page.questions)[0]];
     self.currentQuestion(firstQuestion);
+	self.currentPage(page);
     self.viewComments();
 };
 
