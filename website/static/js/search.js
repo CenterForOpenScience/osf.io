@@ -208,12 +208,13 @@ var ViewModel = function(params) {
         e.stopPropagation();
         var query = self.query();
         var tagRegExp = /(?:AND)?\s*tags\:\([\'\"](.+?)[\'\"]\)/g;
-        var matches = query.match(tagRegExp);
         var dirty = false;
-        while (matches.length) {
-            var match = matches.pop();
-            if ((match.match(tagName) || []).length) {
-                query = query.replace(match, '');
+        while (tagRegExp.test(query)) {
+            var match = tagRegExp.exec(query);
+            var block = match.shift();
+            var tag = match.shift().trim();
+            if (tag === tagName) {
+                query = query.replace(block, '').trim();
                 dirty = true;
             }
         }
