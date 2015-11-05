@@ -265,13 +265,16 @@ def node_register_template_page_post(auth, node, **kwargs):
     register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
+    register.is_public = False
+    for node in register.get_descendants_recursive():
+        node.is_public = False
+        node.save()
     try:
         if data.get('registrationChoice', 'immediate') == 'embargo':
             # Initiate embargo
             embargo_end_date = parse_date(data['embargoEndDate'], ignoretz=True)
             register.embargo_registration(auth.user, embargo_end_date)
         else:
-            register.is_public = False
             register.require_approval(auth.user)
         register.save()
     except ValidationValueError as err:
