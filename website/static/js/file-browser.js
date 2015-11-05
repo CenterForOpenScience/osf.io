@@ -39,6 +39,12 @@ var Filter = function (label, data, type) {
     this.type = type;
 };
 
+var Activity = function(date, text, meta) {
+    this.date = date;
+    this.text = text;
+    this.meta = meta;
+};
+
 if (!window.fileBrowserCounter) {
     window.fileBrowserCounter = 0;
 }
@@ -82,6 +88,9 @@ var FileBrowser = {
             self.collections[0].data.path,
             { query : self.collections[0].data.pathQuery }
         ));
+        self.activityLogs = m.prop([
+            new Activity('2015-08-19 01:34 PM', 'Caner Uguz added a comment to Dashboard Redesign Proposal', {}),
+        ]);
 
         self.updateFilesData = function(linkObject) {
             linkObject.link = self.generateLinks(linkObject);
@@ -96,10 +105,14 @@ var FileBrowser = {
         // INFORMATION PANEL
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){
-            selectedList.map(function(item){
-                // get information
 
-            });
+            // If single project is selected, get activity
+            if(selectedList.length === 1){
+                self.activityLogs([
+                    new Activity('2015-08-19 01:34 PM', 'Caner Uguz added a comment to Dashboard Redesign Proposal', {}),
+                    new Activity('2015-08-19 01:34 PM', 'John Chandler added a page to Dashboard Redesign Proposal wiki', {})
+                ]);
+            }
             self.selected(selectedList);
         };
 
@@ -197,7 +210,7 @@ var FileBrowser = {
         var infoButtonClass = 'btn-default';
         var sidebarButtonClass = 'btn-default';
         if (ctrl.showInfo()){
-            infoPanel = m('.fb-infobar', m.component(Information, { selected : ctrl.selected }));
+            infoPanel = m('.fb-infobar', m.component(Information, { selected : ctrl.selected, activityLogs : ctrl.activityLogs  }));
             infoButtonClass = 'btn-primary';
             poStyle = 'width : 45%';
         }
@@ -446,18 +459,19 @@ var Information = {
                 m('p', [
                     m('span', item.data.attributes.description)
                 ]),
-                m('p', [
+                m('p.m-t-md', [
                     m('h5', 'Tags'),
                     item.data.attributes.tags.map(function(tag){
                         return m('span.tag', tag);
                     })
                 ]),
-                m('p', [
+                m('p.m-t-md', [
                     m('h5', 'Jump to Page'),
                     m('a.p-xs', { href : item.data.links.html + 'wiki/home'}, 'Wiki'),
                     m('a.p-xs', { href : item.data.links.html + 'files/'}, 'Files'),
                     m('a.p-xs', { href : item.data.links.html + 'settings/'}, 'Settings'),
-                ])
+                ]),
+                m.component(ActivityLogs, { activityLogs : args.activityLogs })
             ]);
         }
         if (args.selected().length > 1) {
@@ -472,6 +486,18 @@ var Information = {
                 })]);
         }
         return m('.fb-information', template);
+    }
+};
+
+
+var ActivityLogs = {
+    view : function (ctrl, args) {
+        return m('.fb-activity-list.m-t-md', [
+            m('h5', 'Activity Logs'),
+            args.activityLogs ? args.activityLogs().map(function(item){
+                return m('.fb-activity-item.osf-box.p-sm', item.date + ' ' + item.text);
+            }) : ''
+        ]);
     }
 };
 
