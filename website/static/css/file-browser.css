@@ -139,6 +139,14 @@
 @media only screen and (min-width : 767px) and (max-width : 991px) {
 
 }
+
+@media only screen and (min-width : 767px) {
+    .fb-buttonRow {
+        text-align:right;
+    }
+}
+
+
 @media only screen and (min-width : 321px) and (max-width : 767px) {
     .fb-sidebar, .fb-infobar {
         position: absolute;
