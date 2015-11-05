@@ -352,16 +352,25 @@ var Breadcrumbs = {
                                 m('h4', 'Parent Projects'),
                                 args.data().map(function(item, index, array){
                                     if(index === array.length-1){
-                                        return m('.fb-parent-row',  item.label);
+                                        return m('.fb-parent-row.btn', {
+                                            style : 'margin-left:' + (index*20) + 'px;',
+                                        },  [
+                                            m('i.fa.fa-angle-right.m-r-xs'),
+                                            item.label
+                                        ]);
                                     }
                                     var linkObject = new LinkObject(item.type, item, item.label, index);
                                     return m('.fb-parent-row',
                                         m('span.btn.btn-link', {
+                                            style : 'margin-left:' + (index*20) + 'px;',
                                             onclick : function() {
                                                 args.updateFilesData(linkObject);
                                                 $('.modal').modal('hide');
                                             }
-                                        },  item.label)
+                                        },  [
+                                            m('i.fa.fa-angle-right.m-r-xs'),
+                                            item.label
+                                        ])
                                     );
                                 })
                             ]),
