@@ -29,7 +29,6 @@ var MESSAGES = {
     makeProjectPublicWarning: 'Please review your project for sensitive or restricted information before making it public.  ' +
                         'Once a project is made public, you should assume it will always be public. You can ' +
                         'return it to private later, but search engines or others may access files before you do so.  ' +
-                        '\n' +
                         'Making a project private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Are you sure you would like to continue?',
