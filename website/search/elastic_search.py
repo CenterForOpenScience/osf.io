@@ -200,9 +200,8 @@ def format_results(results):
             result['url'] = '/profile/' + result['id']
         elif result.get('category') == 'file':
             parent_info = load_parent(result.get('parent_id'))
-            if parent_info:
-                result['parent_url'] = parent_info.get('url') or None
-                result['parent_title'] = parent_info.get('title') or None
+            result['parent_url'] = parent_info.get('url') if parent_info else None
+            result['parent_title'] = parent_info.get('title') if parent_info else None
         elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
         ret.append(result)
