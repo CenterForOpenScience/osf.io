@@ -21,6 +21,7 @@ class CheckRetraction(ser.Field):
         super(CheckRetraction, self).__init__(**kwargs)
         self.field = field
         self.required = False
+        self.source = field.source
 
     def get_attribute(self, instance):
         if instance.is_retracted:
@@ -32,8 +33,8 @@ class CheckRetraction(ser.Field):
         self.field.bind(field_name, self)
 
     def to_internal_value(self, data):
-        if getattr(self.field, 'child', None):
-            return self.field.child.to_internal_value(data)
+        # if getattr(self.field, 'child', None):
+        #     return self.field.child.to_internal_value(data)
         return self.field.to_internal_value(data)
 
     def to_representation(self, value):
