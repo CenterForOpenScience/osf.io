@@ -89,7 +89,7 @@ def migrate_uuid(node, wname):
 
 def share_db():
     """Generate db client for sharejs db"""
-    client = MongoClient(settings.DB_HOST, settings.DB_PORT)
+    client = MongoClient(wiki_settings.SHAREJS_DB_URL)
     return client[wiki_settings.SHAREJS_DB_NAME]
 
 
