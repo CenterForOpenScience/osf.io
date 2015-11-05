@@ -38,7 +38,7 @@
                         <div class="osf-treebeard">
                             <div id="grid">
                                 <div class="spinner-loading-wrapper">
-                                    <div class="logo-spin logo-lg"></div>
+                                    <div class="logo-spin logo-md"></div>
                                     <p class="m-t-sm fg-load-message"> Loading projects and components...  </p>
                                 </div>
                             </div>
@@ -53,33 +53,30 @@
 
                 <div data-bind="if: page() == 'addon'">
 
-                    <span data-bind="visible: changedAddons().length > 0">The following addons will be effected by this change:</span>
-                    <div>
+                    <div class="m-b-md box p-xs" data-bind="visible: changedAddons().length > 0">
+                        <span class="text-bigger">The following addons will be effected by this change:</span>
                         <ul data-bind="foreach: { data: changedAddons, as: 'item' }">
                             <li>
-                                <span data-bind="text: item"></span>
+                                <h4 class="f-w-lg" data-bind="text: item"></h4>
                             </li>
                         </ul>
                     </div>
-                    <div>
-                    <span data-bind="visible: nodesChangedPublic().length > 0">The following nodes will be made public:</span>
-                    <ul data-bind="foreach: { data: nodesChangedPublic, as: 'item' }">
+                    <div class="m-b-md box p-xs" data-bind="visible: nodesChangedPublic().length > 0">
+                        <span  class="text-bigger">The following nodes will be made public:</span>
+                        <ul data-bind="foreach: { data: nodesChangedPublic, as: 'item' }">
                         <li>
-                            <span data-bind="text: item"></span>
+                            <h4 class="f-w-lg" data-bind="text: item"></h4>
                         </li>
                     </ul>
                     </div>
-                    <div>
-
-                    <span data-bind="visible: nodesChangedPrivate().length > 0">The following nodes will be made private:</span>
-                    <ul data-bind="foreach: { data: nodesChangedPrivate, as: 'item' }">
-                        <li>
-                            <span data-bind="text: item"></span>
-                        </li>
-                    </ul>
+                    <div class="m-b-md box p-xs" data-bind="visible: nodesChangedPrivate().length > 0">
+                        <span class="text-bigger">The following nodes will be made private:</span>
+                        <ul data-bind="foreach: { data: nodesChangedPrivate, as: 'item' }">
+                            <li>
+                                <h4 class="f-w-lg" data-bind="text: item"></h4>
+                            </li>
+                        </ul>
                     </div>
-                    <span>Are you sure you would like to continue?</span>
-
                     <!-- end addon and projects changed warning page -->
 
                 </div>

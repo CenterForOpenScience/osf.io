@@ -1,5 +1,5 @@
 /**
- * Controller for the Add Contributor modal.
+ * Controller for changing privacy settings for a node and its children.
  */
 'use strict';
 

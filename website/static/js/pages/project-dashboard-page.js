@@ -34,7 +34,6 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
-
 });
 
 // Initialize comment pane w/ it's viewmodel

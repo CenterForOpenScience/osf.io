@@ -3,8 +3,6 @@ import logging
 import httplib as http
 import math
 from itertools import islice
-from sets import Set
-
 
 from flask import request
 from modularodm import Q
@@ -47,7 +45,6 @@ from website.util import rapply
 
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
-
 logger = logging.getLogger(__name__)
 
 @must_be_valid_project
@@ -1016,10 +1013,7 @@ def get_children(auth, node, **kwargs):
 
 
 def node_privacy_tree(user, node_ids):
-    """ Format subscriptions data for project settings page
-    :param user: modular odm User object
-    :param node_ids: list of parent project ids
-    :return: treebeard-formatted data
+    """ Format data to test for node privacy settings for use in treebeard.
     """
     items = []
     addons = []
