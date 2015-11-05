@@ -29,6 +29,7 @@ from api.nodes.permissions import (
     ContributorOrPublicForPointers,
     ContributorDetailPermissions,
     ReadOnlyIfRegistration,
+    LimitRetractions
 )
 from api.base.exceptions import ServiceUnavailableError
 
@@ -358,6 +359,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
+        LimitRetractions,
     )
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
@@ -668,6 +670,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        LimitRetractions
     )
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]
@@ -766,6 +769,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
+        LimitRetractions
     )
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
@@ -866,6 +870,7 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
         ContributorOrPublic,
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
+        LimitRetractions,
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -936,6 +941,7 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
         ReadOnlyIfRegistration,
+        LimitRetractions
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
@@ -1190,6 +1196,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
         base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
         base_permissions.TokenHasScope,
+        LimitRetractions
     )
 
     serializer_class = FileSerializer
@@ -1221,6 +1228,7 @@ class NodeFileDetail(generics.RetrieveAPIView, WaterButlerMixin, NodeMixin):
         base_permissions.PermissionWithGetter(ContributorOrPublic, 'node'),
         base_permissions.PermissionWithGetter(ReadOnlyIfRegistration, 'node'),
         base_permissions.TokenHasScope,
+        LimitRetractions
     )
 
     serializer_class = FileSerializer
@@ -1369,6 +1377,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
     permission_classes = (
         drf_permissions.IsAuthenticatedOrReadOnly,
         ContributorOrPublic,
+        LimitRetractions,
         base_permissions.TokenHasScope,
     )
 
