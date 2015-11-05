@@ -451,6 +451,12 @@ var Information = {
                     item.data.attributes.tags.map(function(tag){
                         return m('span.tag', tag);
                     })
+                ]),
+                m('p', [
+                    m('h5', 'Jump to Page'),
+                    m('a.p-xs', { href : item.data.links.html + 'wiki/home'}, 'Wiki'),
+                    m('a.p-xs', { href : item.data.links.html + 'files/'}, 'Files'),
+                    m('a.p-xs', { href : item.data.links.html + 'settings/'}, 'Settings'),
                 ])
             ]);
         }
