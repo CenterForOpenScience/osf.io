@@ -11,7 +11,7 @@
                 <!-- warning page -->
 
                 <div data-bind="if: page() == 'warning'">
-                    <span data-bind="text:message"></span>
+                    <span data-bind="html:message"></span>
                 </div>
 
                 <!-- end warning page -->
@@ -20,7 +20,7 @@
                     <div class="row">
                         <div class="col-md-10">
                             <div class="m-b-md box p-sm">
-                                <span data-bind="text:message"></span>
+                                <span data-bind="html:message"></span>
                             </div>
                         </div>
                     </div>

@@ -23,17 +23,18 @@ var ctx = window.contextVars;
 var NODE_OFFSET = 25;
 
 //Todo (billyhunt): change url to dev or production as needed
-var API_BASE = 'http://localhost:8000/v2/nodes/'
+var API_BASE = 'http://localhost:8000/v2/nodes/';
 
 var MESSAGES = {
     makeProjectPublicWarning: 'Please review your project for sensitive or restricted information before making it public.  ' +
                         'Once a project is made public, you should assume it will always be public. You can ' +
                         'return it to private later, but search engines or others may access files before you do so.  ' +
-                        'Making a project private will prevent users from viewing it on this site, ' +
+                        '<br><br>Making a project private will prevent users from viewing it on this site, ' +
                         'but will have no impact on external sites, including Google\'s cache. ' +
                         'Are you sure you would like to continue?',
 
-    selectNodes: 'Choose which of your projects and components to make public or private. Checked projects and components will be public, unchecked is private.',
+    selectNodes: 'Please select the components you’d like to make <b>public</b> by checking the boxes below. ' +
+                        'Checked components will be <b>public</b>; unchecked components will be <b>private</b>.',
 
     addonWarning: 'The following addons will be effected by this change.',
 };
@@ -51,7 +52,8 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
         addons: nodeTree.node.addons,
         title: nodeTree.node.title,
         changed: false
-    }
+    };
+
     if (nodeTree.children) {
         for (i in nodeTree.children) {
             nodesOriginal = getNodesOriginal(nodeTree.children[i], nodesOriginal);
@@ -145,7 +147,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     }).done(function(response) {
         nodesOriginal = getNodesOriginal(response[0], nodesOriginal);
         self.nodesOriginal(nodesOriginal);
-        var nodesState = jQuery.extend(true, {}, nodesOriginal);
+        var nodesState = $.extend(true, {}, nodesOriginal);
         self.nodeParent(response[0].node.id);
         //change node state to reflect button push by user on project page (make public | make private)
         nodesState[self.nodeParent()].public = !parentIsPublic;
@@ -153,8 +155,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         self.nodesState(nodesState);
         new NodesPrivacyTreebeard(response, self.nodesState, nodesOriginal);
     }).fail(function(xhr, status, error) {
-        $privacysMsg.addClass('text-danger');
-        $privacysMsg.text('Could not retrieve project settings.');
+        $osf.growl('Error', 'Unable to retrieve project settings');
         Raven.captureMessage('Could not GET project settings.', {
             url: treebeardUrl, status: status, error: error
         });
