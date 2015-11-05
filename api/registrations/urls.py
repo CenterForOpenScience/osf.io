@@ -27,4 +27,3 @@ if settings.DEV_MODE:
         url(r'^(?P<node_id>\w+)/node_links/(?P<node_link_id>\w+)/', node_views.NodeLinksDetail.as_view(), name='registration-pointer-detail'),
         url(r'^(?P<node_id>\w+)/registrations/$', node_views.NodeRegistrationsList.as_view(), name='registration-registrations'),
     ])
-

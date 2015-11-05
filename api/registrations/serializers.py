@@ -18,8 +18,6 @@ class RegistrationSerializer(NodeSerializer):
         'date_created',
         'date_modified',
         'retracted',
-        'registered_by',
-        'registered_from'
     ])
     retracted = ser.BooleanField(source='is_retracted', read_only=True,
         help_text='Whether this registration has been retracted.')
