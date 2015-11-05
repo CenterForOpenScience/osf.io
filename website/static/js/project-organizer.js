@@ -254,7 +254,7 @@ function _poResolveRows(item) {
             data : 'name',
             filter : false,
             custom : function (row){
-                return m('[data-toggle="modal"][data-target="#infoModal"]', {
+                return m('[data-toggle="modal"][data-target="#infoModal"]',{ style : 'width:100%'}, {
                 }, m('i.fa.fa-info-circle.text-muted'));
             }
         });

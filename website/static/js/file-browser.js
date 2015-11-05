@@ -90,6 +90,7 @@ var FileBrowser = {
                 self.isLoadedUrl = false; // check if in fact changed
                 self.updateBreadcrumbs(linkObject);
             }
+            self.showSidebar(false);
         };
 
         // INFORMATION PANEL
@@ -229,8 +230,15 @@ var FileBrowser = {
                     }, m('.fa.fa-info')) : ''
                 ])
             ]),
-            ctrl.showSidebar()?
+            ctrl.showSidebar() ?
             m('.fb-sidebar', { config : ctrl.sidebarInit}, [
+                mobile ? m('.fb-dismiss', m('button.close[aria-label="Close"]', {
+                    onclick : function () {
+                        ctrl.showSidebar(false);
+                    }
+                }, [
+                    m('span[aria-hidden="true"]','×'),
+                ])) : '',
                 m.component(Collections, {
                     list : ctrl.collections,
                     activeFilter : ctrl.activeFilter,
@@ -250,7 +258,8 @@ var FileBrowser = {
                 m('#poOrganizer', m('.spinner-loading-wrapper', m('.logo-spin.logo-md')))
             ),
             infoPanel,
-            m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected})
+            m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected}),
+            mobile && ctrl.showSidebar() ? m('.fb-overlay') : ''
         ];
     }
 };
