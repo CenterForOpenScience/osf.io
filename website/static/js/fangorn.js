@@ -1756,42 +1756,12 @@ var FGToolbar = {
         if(items.length > 1 && ctrl.tb.multiselected()[0].data.provider !== 'github' && ctrl.tb.options.placement !== 'fileview' && !(ctrl.tb.multiselected()[0].data.provider === 'dataverse' && ctrl.tb.multiselected()[0].parent().data.version === 'latest-published') ) {
             // Special cased to not show 'delete multiple' for github or published dataverses
             var showDelete = false;
-            var showCheckout = true;
-            var showCheckin = true;
             var each, i, len;
             // Only show delete button if user has edit permissions on at least one selected file
             for (i = 0, len = items.length; i < len; i++) {
                 each = items[i];
                 if (each.data.permissions.edit && !each.data.isAddonRoot && !each.data.nodeType) {
                     showDelete = true;
-                    break;
-                }
-            }
-            for (i = 0, len = items.length; i < len; i++) {
-                each = items[i];
-                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && (!each.data.extra.checkout || each.data.extra.checkout === window.contextVars.currentUser.id))) {
-                    showCheckout = false;
-                    break;
-                }
-            }
-            //Additional check to not show the button if all the files are already checkedout by user
-            if (showCheckout){
-                var allChecked = true;
-                for (i = 0, len = items.length; i < len; i++) {
-                    each = items[i];
-                    if (!each.data.extra.checkout) {
-                        allChecked = false;
-                        break;
-                    }
-                }
-                if (allChecked) {
-                    showCheckout = false;
-                }
-            }
-            for (i = 0, len = items.length; i < len; i++) {
-                each = items[i];
-                if (!(each.data.permissions.edit && each.data.provider === 'osfstorage' && each.kind === 'file' && each.data.extra.checkout === window.contextVars.currentUser.id)) {
-                    showCheckin = false;
                     break;
                 }
             }
@@ -1805,35 +1775,6 @@ var FGToolbar = {
                         icon: 'fa fa-trash',
                         className : 'text-danger'
                     }, 'Delete Multiple')
-                );
-            }
-            if (showCheckout){
-                generalButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() {
-                            items.forEach(function(each) {
-                                doCheckout(each, window.contextVars.currentUser.id, false);
-                            });
-                            window.location.reload();
-                        },
-                        icon: 'fa fa-sign-out',
-                        className: 'text-warning'
-                    }, 'Check out Multiple')
-                );
-            }
-            if (showCheckin){
-                generalButtons.push(
-                    m.component(FGButton, {
-                        onclick: function() {
-                            for (var i = 0, len = items.length; i < len; i++) {
-                                var each = items[i];
-                                doCheckout(each, null, false);
-                            }
-                            window.location.reload();
-                        },
-                        icon: 'fa fa-sign-in',
-                        className: 'text-warning'
-                    }, 'Check in Multiple')
                 );
             }
         }
