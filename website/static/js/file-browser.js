@@ -376,27 +376,19 @@ var Information = {
             var item = args.selected()[0];
             template = m('', [
                 m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
+                m('p.fb-info-meta.text-muted', [
+                    m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
+                    m('span', ', Last Modified on ' + item.data.date.local)
+
+                ]),
                 m('p', [
-                    m('span', 'Description: '),
                     m('span', item.data.attributes.description)
                 ]),
                 m('p', [
-                    m('span', 'Category: '),
-                    m('span', item.data.attributes.category)
-                ]),
-                m('p', [
-                    m('', 'Tags'),
+                    m('h5', 'Tags'),
                     item.data.attributes.tags.map(function(tag){
                         return m('span.tag', tag);
                     })
-                ]),
-                m('p', [
-                    m('span', 'Last Modified: '),
-                    m('span', item.data.attributes.date_modified)
-                ]),
-                m('p', [
-                    m('span', 'Visibility: '),
-                    m('span', item.data.attributes.public ? 'Public' : 'Private')
                 ])
             ]);
         }
