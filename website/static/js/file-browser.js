@@ -202,6 +202,7 @@ var FileBrowser = {
         if (mobile) {
             poStyle = 'width : 100%';
         }
+
         return [
             m('.fb-header.m-b-xs.row', [
                 m('.col-xs-12.col-sm-6', m.component(Breadcrumbs, {
@@ -209,18 +210,18 @@ var FileBrowser = {
                     updateFilesData : ctrl.updateFilesData
                 })),
                 m('.fb-buttonRow.col-xs-12.col-sm-6', [
-                    m('#poFilter.m-r-xs'),
-                    m('button.btn', {
-                        'class' : infoClass,
-                        onclick : function () {
-                            ctrl.showInfo(!ctrl.showInfo());
-                        }
-                    }, m('.fa.fa-info')),
                     mobile ? m('button.btn.btn-default', {
                         onclick : function () {
                             ctrl.showSidebar(!ctrl.showSidebar());
                         }
-                    }, m('.fa.fa-cubes')) : ''
+                    }, m('.fa.fa-bars')) : '',
+                    m('#poFilter.m-r-xs'),
+                    !mobile ? m('button.btn', {
+                        'class' : infoClass,
+                        onclick : function () {
+                            ctrl.showInfo(!ctrl.showInfo());
+                        }
+                    }, m('.fa.fa-info')) : ''
                 ])
             ]),
             ctrl.showSidebar()?
