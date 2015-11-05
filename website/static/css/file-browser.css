@@ -11,6 +11,8 @@
 .fb-header {
     background-color: #f8f8f8;
     padding: 5px;
+    margin-right: 0px !important;
+    margin-left: 0px !important;
 }
 .fb-breadcrumbs {
     display : inline-block;
