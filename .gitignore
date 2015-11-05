@@ -100,9 +100,12 @@ celerybeat-schedule.db
 celery_beat.py.db
 
 # Admin Specific
+#################
 admin/static/public/
 # web_loader stat file
 admin/webpack-stats.json
+# bower
+admin/static/vendor/
 
 # Diff (used during merge resolution)
 *.orig
