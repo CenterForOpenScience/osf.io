@@ -342,9 +342,7 @@ var FileViewPage = {
         };
 
         $.fn.editable.defaults.mode = 'inline';
-        if(self.canEdit() && (
-            self.file.provider !== 'dataverse' ||
-            self.file.provider !== 'figshare')
+        if(self.canEdit() && self.file.provider == 'osfstorage'
         ) {
             var $fileName = $('#fileName');
             var conflict = 'warn';
@@ -384,9 +382,7 @@ var FileViewPage = {
                     }
                 },
                 success: function(response, value) {
-                    if(self.file.provider === 'osfstorage') {
-                        window.location.reload();
-                    }
+                    window.location.reload();
                 },
                 error: function(response) {
                     var code = response.responseJSON.code;
