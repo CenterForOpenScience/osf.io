@@ -13,8 +13,7 @@ from website.project.model import (
     Retraction, Embargo, RegistrationApproval,
     Sanction
 )
-
-from website.oauth.models import ApiOAuth2Application, ExternalAccount
+from website.oauth.models import ApiOAuth2Application, ExternalAccount, ApiOAuth2PersonalToken
 from website.identifiers.model import Identifier
 from website.citations.models import CitationStyle
 
@@ -30,7 +29,7 @@ from website.project.licenses import NodeLicense, NodeLicenseRecord
 
 # All models
 MODELS = (
-    User, ApiOAuth2Application, Node,
+    User, ApiOAuth2Application, ApiOAuth2PersonalToken, Node,
     NodeLog, StoredFileNode, TrashedFileNode, FileVersion,
     Tag, WatchConfig, Session, Guid, MetaSchema, Pointer,
     MailRecord, Comment, PrivateLink, MetaData, Conference,

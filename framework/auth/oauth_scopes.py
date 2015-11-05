@@ -47,6 +47,9 @@ class CoreScopes(object):
     APPLICATIONS_READ = 'applications_read'
     APPLICATIONS_WRITE = 'applications_write'
 
+    TOKENS_READ = 'tokens_read'
+    TOKENS_WRITE = 'tokens_write'
+
 
 class ComposedScopes(object):
     """
@@ -60,6 +63,10 @@ class ComposedScopes(object):
     # Applications collection
     APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ,)
     APPLICATIONS_WRITE = APPLICATIONS_READ + (CoreScopes.APPLICATIONS_WRITE,)
+
+    # Tokens collection
+    TOKENS_READ = (CoreScopes.TOKENS_READ,)
+    TOKENS_WRITE = TOKENS_READ + (CoreScopes.TOKENS_WRITE,)
 
     # Comment reports collection
     COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
@@ -92,7 +99,7 @@ class ComposedScopes(object):
     FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
-    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + COMMENT_REPORTS_WRITE
+    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE
 
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.
