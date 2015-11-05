@@ -48,7 +48,7 @@ class FilterMixin(object):
     NUMERIC_FIELDS = (ser.IntegerField, ser.DecimalField, ser.FloatField)
 
     DATE_FIELDS = (ser.DateTimeField, ser.DateField)
-    DATETIME_PATTERN = re.compile(r'^\d{4}\-\d{2}\-\d{2}(?P<time>T\d{2}:\d{2}(:\d{2}(:\d{1,6})?)?)$')
+    DATETIME_PATTERN = re.compile(r'^\d{4}\-\d{2}\-\d{2}(?P<time>T\d{2}:\d{2}(:\d{2}(\.\d{1,6})?)?)$')
 
     COMPARISON_OPERATORS = ('gt', 'gte', 'lt', 'lte')
     COMPARABLE_FIELDS = NUMERIC_FIELDS + DATE_FIELDS

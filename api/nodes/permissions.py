@@ -6,6 +6,7 @@ from website.util import permissions as osf_permissions
 
 from api.base.utils import get_user_auth
 
+
 class ContributorOrPublic(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
@@ -71,6 +72,7 @@ class ContributorOrPublicForPointers(permissions.BasePermission):
         else:
             has_auth = parent_node.can_edit(auth)
             return has_auth
+
 
 class ReadOnlyIfRegistration(permissions.BasePermission):
     """Makes PUT and POST forbidden for registrations."""
