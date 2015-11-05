@@ -367,10 +367,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
-        node = self.get_node()
-        if node.is_registration:
-            raise ValidationError('This is a registration.')
-        return node
+        return self.get_node()
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_serializer_context(self):
