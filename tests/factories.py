@@ -26,7 +26,7 @@ from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
-from website.oauth.models import ApiOAuth2Application, ExternalAccount, ExternalProvider
+from website.oauth.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ExternalAccount, ExternalProvider
 from website.project.model import (
     Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig
 )
@@ -140,6 +140,16 @@ class ApiOAuth2ApplicationFactory(ModularOdmFactory):
 
     home_url = 'ftp://ftp.ncbi.nlm.nimh.gov/'
     callback_url = 'http://example.uk'
+
+
+class ApiOAuth2PersonalTokenFactory(ModularOdmFactory):
+    FACTORY_FOR = ApiOAuth2PersonalToken
+
+    owner = SubFactory(UserFactory)
+
+    scopes = 'osf.full_write osf.full_read'
+
+    name = Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
 
 
 class PrivateLinkFactory(ModularOdmFactory):
