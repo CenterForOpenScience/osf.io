@@ -221,30 +221,45 @@ function _poModified(item) {
  * @private
  */
 function _poResolveRows(item) {
+    var mobile = window.innerWidth < 767; // true if mobile view
 
     var css = '',
-        default_columns;
+        default_columns = [];
     if(this.isMultiselected(item.id)){
         item.css = 'fangorn-selected';
     } else {
         item.css = '';
     }
 
-     default_columns = [{
+    default_columns.push({
         data : 'name',  // Data field name
         folderIcons : true,
         filter : true,
         css : 'po-draggable', // All projects are draggable since we separated collections from the grid
         custom : _poTitleColumn
-    }, {
-        data : 'contributors',
-        filter : false,
-        custom : _poContributors
-    }, {
-        data : 'dateModified',
-        filter : false,
-        custom : _poModified
-    }];
+    });
+
+    if (!mobile) {
+        default_columns.push({
+            data : 'contributors',
+            filter : false,
+            custom : _poContributors
+        }, {
+            data : 'dateModified',
+            filter : false,
+            custom : _poModified
+        });
+    } else {
+        default_columns.push({
+            data : 'name',
+            filter : false,
+            custom : function (row){
+                return m('[data-toggle="modal"][data-target="#infoModal"]', {
+                }, m('i.fa.fa-info-circle.text-muted'));
+            }
+        });
+    }
+
     return default_columns;
 }
 
@@ -255,20 +270,35 @@ function _poResolveRows(item) {
  */
 function _poColumnTitles() {
     var columns = [];
-    columns.push({
-        title: 'Name',
-        width : '50%',
-        sort : true,
-        sortType : 'text'
-    }, {
-        title : 'Contributors',
-        width : '25%',
-        sort : false
-    }, {
-        title : 'Modified',
-        width : '25%',
-        sort : false
-    });
+    var mobile = window.innerWidth < 767; // true if mobile view
+    if(!mobile){
+        columns.push({
+            title: 'Name',
+            width : '50%',
+            sort : true,
+            sortType : 'text'
+        },{
+            title : 'Contributors',
+            width : '25%',
+            sort : false
+        }, {
+            title : 'Modified',
+            width : '25%',
+            sort : false
+        });
+    } else {
+        columns.push({
+            title: 'Name',
+            width : '90%',
+            sort : true,
+            sortType : 'text'
+        },{
+            title : '',
+            width : '10%',
+            sort : false
+        });
+    }
+
     return columns;
 }
 

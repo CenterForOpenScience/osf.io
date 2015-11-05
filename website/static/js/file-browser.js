@@ -245,7 +245,7 @@ var FileBrowser = {
                 m('#poOrganizer', m('.spinner-loading-wrapper', m('.logo-spin.logo-md')))
             ),
             infoPanel,
-            m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject})
+            m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected})
         ];
     }
 };
@@ -478,6 +478,18 @@ var Modals = {
                             m('button[type="button"].btn.btn-default[data-dismiss="modal"]', 'Close'),
                             m('button[type="button"].btn.btn-danger', 'Delete')
                         ])
+                    ])
+                )
+            ),
+            m('#infoModal.modal.fade[tabindex=-1][role="dialog"][aria-hidden="true"]',
+                m('.modal-dialog',
+                    m('.modal-content', [
+                        m('.modal-body', [
+                            m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                                m('span[aria-hidden="true"]','×'),
+                            ]),
+                            m.component(Information, { selected : args.selected })
+                        ]),
                     ])
                 )
             )
