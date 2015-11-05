@@ -483,6 +483,7 @@ var tbOptions = {
     onselectrow : function(row){
         console.log(row);
     },
+    hScroll : 300,
     filterTemplate : function() {
         var tb = this;
         return [
