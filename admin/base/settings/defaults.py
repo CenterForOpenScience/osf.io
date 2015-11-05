@@ -32,9 +32,9 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.staticfiles',
-
     # 3rd party
     'raven.contrib.django.raven_compat',
+    'admin.common_auth',
 )
 
 # TODO: Are there more granular ways to configure reporting specifically related to the API?
@@ -75,6 +75,15 @@ TEMPLATES = [
         'DIRS': [os.path.join(BASE_DIR, 'templates')],
         'APP_DIRS': True
     }]
+
+# Database - TODO[Zak]: change to postgres
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
 
 
 ROOT_URLCONF = 'admin.base.urls'
