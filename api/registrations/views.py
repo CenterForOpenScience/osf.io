@@ -59,11 +59,13 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
 
     ###Registered from
 
-    The registration is branched from this node.
+    The registration is branched from this node. The source can be found at `/registered_from/links/related/href`.
 
     ###Registered by
 
-    The registration was initiated by this user.
+    The registration was initiated by this user, accessed at `/registered_by/links/related/href`.
+
+    ### (+) all relationships from Node Detail
 
     ##Links
 
@@ -134,11 +136,13 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
 
     ###Registered from
 
-    The registration is branched from this node.
+    The registration is branched from this node. The source can be found at `/registered_from/links/related/href`.
 
     ###Registered by
 
-    The registration was initiated by this user.
+    The registration was initiated by this user, accessed at `/registered_by/links/related/href`.
+
+    ### (+) all relationships from Node Detail
 
     ##Links
 

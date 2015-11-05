@@ -129,7 +129,7 @@ class WaterButlerMixin(object):
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
-    Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
+    Paginated list of nodes are ordered by their `date_modified`.  Each resource contains the full representation of the
     node, meaning additional requests to an individual node's detail view are not necessary.
 
     <!--- Copied Spiel from NodeDetail -->
@@ -155,10 +155,49 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         date_created   iso8601 timestamp  timestamp that the node was created
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
-        registration   boolean            is this is a registration?
+        registration   boolean            has this project been registered?
+        fork           boolean            is this node a fork?
         collection     boolean            is this node a collection of other nodes?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
+
+    ##Node Relationships
+
+    ###Children
+
+    List of nodes that are children of this node.  New child nodes may be added through this endpoint,
+    `/children/links/related/href`.
+
+    ###Contributors
+
+    List of users who are contributors to this node.  Contributors may have "read", "write", or "admin" permissions.  A
+    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint,
+    `/contributors/links/related/href`.
+
+    ###Files
+
+    List of top-level folders (actually cloud-storage providers) associated with this node. `/files/links/related/href`
+    is the starting point for accessing the actual files stored within this node.
+
+    ###Forked From
+
+    If this node is a fork of another node, the original node will be available in
+    `/forked_from/links/related/href`. Otherwise, it will be null.
+
+    ###Node-Links
+
+    List of node links, or pointers from the current node to other nodes.  New links to other nodes can be added through
+    this endpoint, `/node_links/links/related/href`.
+
+    ###Parent
+
+    If this node is a child node of another node, the parent's canonical endpoint will be available in
+    `/parent/links/related/href`.  Otherwise, it will be null.
+
+    ###Registrations
+
+    List of registrations of the current node. Registrations can be accessed through this endpoint,
+    `/registrations/links/related/href`.
 
     ##Links
 
@@ -169,7 +208,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     ###Creating New Nodes
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -189,7 +228,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  `public` defaults
     to false.  All other fields not listed above will be ignored.  If the node creation is successful the API will
     return a 201 response with the representation of the new node in the body.  For the new node's canonical URL, see
-    the `links.self` field of the response.
+    the `/links/self` field of the response.
 
     ##Query Params
 
@@ -197,10 +236,10 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `title`, `category`, `description`, `public` or `tags`.  `title`,
+    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` is
+    a boolean, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 
@@ -277,6 +316,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
         registration   boolean            has this project been registered?
+        fork           boolean            is this node a fork?
         collection     boolean            is this node a collection of other nodes?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
@@ -285,22 +325,40 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
 
     ###Children
 
-    List of nodes that are children of this node.  New child nodes may be added through this endpoint.
+    List of nodes that are children of this node.  New child nodes may be added through this endpoint,
+    `/children/links/related/href`.
 
     ###Contributors
 
     List of users who are contributors to this node.  Contributors may have "read", "write", or "admin" permissions.  A
-    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint.
+    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint,
+    `/contributors/links/related/href`.
 
     ###Files
 
-    List of top-level folders (actually cloud-storage providers) associated with this node. This is the starting point
-    for accessing the actual files stored within this node.
+    List of top-level folders (actually cloud-storage providers) associated with this node. `/files/links/related/href`
+    is the starting point for accessing the actual files stored within this node.
+
+    ###Forked From
+
+    If this node is a fork of another node, the original node will be available in
+    `/forked_from/links/related/href`. Otherwise, it will be null.
+
+    ###Node-Links
+
+    List of node links, or pointers from the current node to other nodes.  New links to other nodes can be added through
+    this endpoint, `/node_links/links/related/href`.
 
     ###Parent
 
-    If this node is a child node of another node, the parent's canonical endpoint will be available in the
-    `parent.links.self.href` key.  Otherwise, it will be null.
+    If this node is a child node of another node, the parent's canonical endpoint will be available in
+    `/parent/links/related/href`.  Otherwise, it will be null.
+
+    ###Registrations
+
+    List of registrations of the current node. Registrations can be accessed through this endpoint,
+    `/registrations/links/related/href`.
+
 
     ##Links
 
@@ -312,7 +370,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     ###Update
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -329,7 +387,7 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
                        }
         Success:       200 OK + node representation
 
-    To update a node, issue either a PUT or a PATCH request against the `links.self` URL.  The `title` and `category`
+    To update a node, issue either a PUT or a PATCH request against the `/links/self` URL.  The `title` and `category`
     fields are mandatory if you PUT and optional if you PATCH.  The `tags` parameter must be an array of strings.
     Non-string values will be accepted and stringified, but we make no promises about the stringification output.  So
     don't do that.
@@ -337,11 +395,11 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     ###Delete
 
         Method:   DELETE
-        URL:      links.self
+        URL:      /links/self
         Params:   <none>
         Success:  204 No Content
 
-    To delete a node, issue a DELETE request against `links.self`.  A successful delete will return a 204 No Content
+    To delete a node, issue a DELETE request against `/links/self`.  A successful delete will return a 204 No Content
     response. Attempting to delete a node you do not own will result in a 403 Forbidden.
 
     ##Query Params
@@ -407,21 +465,21 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         bibliographic  boolean  Whether the user will be included in citations for this node. Default is true.
         permission     string   User permission level. Must be "read", "write", or "admin". Default is "write".
 
+    ##Node Contributor Relationships
+
+    ###Users
+
+    This endpoint, `/users/links/related/href`, shows the contributor user detail.
+
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
-    ##Relationships
-
-    ###Users
-
-    This endpoint shows the contributor user detail.
     ##Actions
-
     ###Adding Contributors
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON): {
                       "data": {
@@ -449,7 +507,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
     with a "data" member, containing the user `type` and user `id` must be included.  The id must be a valid user id.
     All other fields not listed above will be ignored.  If the request is successful the API will return
     a 201 response with the representation of the new node contributor in the body.  For the new node contributor's
-    canonical URL, see the `links.self` field of the response.
+    canonical URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -457,7 +515,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     + `filter[<fieldname>]=<Str>` -- fields and values to filter the search results on.
 
-    NodeContributors may be filtered by `bibliographic`, or `permission` attributes.  `bibliographic` is a boolean, and
+    NodeContributors may be filtered by `bibliographic` or `permission` attributes.  `bibliographic` is a boolean, and
     can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true` or `false` in
     the query will cause the match to fail regardless.
 
@@ -530,7 +588,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
 
     ###Users
 
-    This endpoint shows the contributor user detail.
+    This endpoint, `/users/links/related/href`, shows the contributor's user detail.
 
     ##Links
 
@@ -543,7 +601,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
     ###Update Contributor
 
         Method:        PUT / PATCH
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -558,7 +616,7 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
         Success:       200 OK + node representation
 
     To update a contributor's bibliographic preferences or access permissions for the node, issue a PUT request to the
-    `self` link. Since this endpoint has no mandatory attributes, PUT and PATCH are functionally the same.  If the given
+    `/links/self` link. Since this endpoint has no mandatory attributes, PUT and PATCH are functionally the same.  If the given
     user is not already in the contributor list, a 404 Not Found error will be returned.  A node must always have at
     least one admin, and any attempt to downgrade the permissions of a sole admin will result in a 400 Bad Request
     error.
@@ -566,11 +624,11 @@ class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, Us
     ###Remove Contributor
 
         Method:        DELETE
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Success:       204 No Content
 
-    To remove a contributor from a node, issue a DELETE request to the `self` link.  Attempting to remove the only admin
+    To remove a contributor from a node, issue a DELETE request to the `/links/self` link.  Attempting to remove the only admin
     from a node will result in a 400 Bad Request response.  This request will only remove the relationship between the
     node and the user, not the user itself.
 
@@ -625,7 +683,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
     Registrations are read-only snapshots of a project. This view is a list of all the registrations of the current node.
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
-    registrations's detail view are not necessary.
+    registration's detail view are not necessary.
 
     ##Registration Attributes
 
@@ -648,16 +706,17 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         date_registered    iso8601 timestamp  timestamp that the registration was created
 
 
-    ##Relationships
+    ##Registration Relationships
 
     ###Registered from
 
-    The registration is branched from this node.
+    The registration is branched from this node. The source can be found at `/registered_from/links/related/href`.
 
     ###Registered by
 
-    The registration was initiated by this user.
+    The registration was initiated by this user, accessed at `/registered_by/links/related/href`.
 
+    ### (+) all relationships from Node Detail
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
@@ -710,10 +769,49 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
         date_created   iso8601 timestamp  timestamp that the node was created
         date_modified  iso8601 timestamp  timestamp when the node was last updated
         tags           array of strings   list of tags that describe the node
+        fork           boolean            is this node a fork?
         registration   boolean            has this project been registered?
         collection     boolean            is this node a collection of other nodes?
         dashboard      boolean            is this node visible on the user dashboard?
         public         boolean            has this node been made publicly-visible?
+
+    ##Node Relationships
+
+    ###Children
+
+    List of nodes that are children of this node.  New child nodes may be added through this endpoint,
+    `/children/links/related/href`.
+
+    ###Contributors
+
+    List of users who are contributors to this node.  Contributors may have "read", "write", or "admin" permissions.  A
+    node must always have at least one "admin" contributor.  Contributors may be added via this endpoint,
+    `/contributors/links/related/href`.
+
+    ###Files
+
+    List of top-level folders (actually cloud-storage providers) associated with this node. `/files/links/related/href`
+    is the starting point for accessing the actual files stored within this node.
+
+    ###Forked From
+
+    If this node is a fork of another node, the original node will be available in
+    `/forked_from/links/related/href`. Otherwise, it will be null.
+
+    ###Node-Links
+
+    List of node links, or pointers from the current node to other nodes.  New links to other nodes can be added through
+    this endpoint, `/node_links/links/related/href`.
+
+    ###Parent
+
+    The parent's canonical endpoint will be available in `/parent/links/related/href`.
+
+    ###Registrations
+
+    List of registrations of the current node. Registrations can be accessed through this endpoint,
+    `/registrations/links/related/href`.
+
 
     ##Links
 
@@ -726,7 +824,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
     <!--- Copied Creating New Node from NodeList -->
 
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON):   {
                          "data": {
@@ -743,8 +841,8 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 
     To create a child node of the current node, issue a POST request to this endpoint.  The `title` and `category`
     fields are mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  If the
-    node creation is successful the API will return a 201 response with the respresentation of the new node in the body.
-    For the new node's canonical URL, see the `links.self` field of the response.
+    node creation is successful the API will return a 201 response with the representation of the new node in the body.
+    For the new node's canonical URL, see the `/links/self` field of the response.
 
     ##Query Params
 
@@ -754,10 +852,10 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 
     <!--- Copied Query Params from NodeList -->
 
-    Nodes may be filtered by their `title`, `category`, `description`, `public`, `registration`, or `tags`.  `title`,
-    `description`, and `category` are string fields and will be filtered using simple substring matching.  `public` and
-    `registration` are booleans, and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note
-    that quoting `true` or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
+    Nodes may be filtered by their `title`, `category`, `description`, `public`, or `tags`.  `title`, `description`, and
+    `category` are string fields and will be filtered using simple substring matching.  `public` is a boolean,
+    and can be filtered using truthy values, such as `true`, `false`, `0`, or `1`.  Note that quoting `true`
+    or `false` in the query will cause the match to fail regardless.  `tags` is an array of simple strings.
 
     #This Request/Response
 
@@ -819,21 +917,21 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
 
         None
 
-    ##Links
-
-    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
-
-    ##Relationships
+    ##Node Link Relationships
 
     ### Target Node
 
-    This endpoint shows the target node detail.
+    This endpoint, `/target_node/links/related/href`, shows the target node detail.
+
+    ##Links
+
+    See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
 
     ##Actions
 
     ###Adding Node Links
         Method:        POST
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Body (JSON): {
                        "data": {
@@ -902,24 +1000,22 @@ class NodeLinksDetail(generics.RetrieveDestroyAPIView, NodeMixin):
 
         None
 
+    ##Relationships
+
+    ### Target Node
+
+    This endpoint, `/target_node/links/related/href`, shows the target node detail.
+
     ##Links
 
         self:  the detail url for this node link
-        html:  this node's page on the OSF website
-        profile_image: this contributor's gravatar
-
-    ##Relationships
-
-    ###Target node
-
-    This endpoint shows the target node detail.
 
     ##Actions
 
     ###Remove Node Link
 
         Method:        DELETE
-        URL:           links.self
+        URL:           /links/self
         Query Params:  <none>
         Success:       204 No Content
 
@@ -975,7 +1071,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
     This gives a list of all of the files and folders that are attached to your project for the given storage provider.
     If the provider is not "osfstorage", the metadata for the files in the storage will be retrieved and cached whenever
     this endpoint is accessed.  To see the cached metadata, GET the endpoint for the file directly (available through
-    its `links.info` attribute).
+    its `/links/info` attribute).
 
     When a create/update/delete action is performed against the file or folder, the action is handled by an external
     service called WaterButler.  The WaterButler response format differs slightly from the OSF's.
@@ -1005,11 +1101,11 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
         size          integer    size of file in bytes
         extra         object     may contain additional data beyond what's describe here,
                                  depending on the provider
-          version     integer    version number of file. will be 1 on initial upload
-          downloads   integer    count of the number times the file has been downloaded
-          hashes      object
-            md5       string     md5 hash of file
-            sha256    string     SHA-256 hash of file
+        version     integer    version number of file. will be 1 on initial upload
+        downloads   integer    count of the number times the file has been downloaded
+        hashes      object
+        md5         string     md5 hash of file
+        sha256      string     SHA-256 hash of file
 
     ####Folder Entity
 
@@ -1059,7 +1155,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
     ###Get Info (*files, folders*)
 
         Method:   GET
-        URL:      links.info
+        URL:      /links/info
         Params:   <none>
         Success:  200 OK + file representation
 
@@ -1069,7 +1165,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
     ###Download (*files*)
 
         Method:   GET
-        URL:      links.download
+        URL:      /links/download
         Params:   <none>
         Success:  200 OK + file body
 
@@ -1079,7 +1175,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
     ###Create Subfolder (*folders*)
 
         Method:       PUT
-        URL:          links.new_folder
+        URL:          /links/new_folder
         Query Params: ?kind=folder&name={new_folder_name}
         Body:         <empty>
         Success:      201 Created + new folder representation
@@ -1093,7 +1189,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
     ###Upload New File (*folders*)
 
         Method:       PUT
-        URL:          links.upload
+        URL:          /links/upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
         Success:      201 Created or 200 OK + new file representation
@@ -1107,7 +1203,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
     ###Update Existing File (*file*)
 
         Method:       PUT
-        URL:          links.upload
+        URL:          /links/upload
         Query Params: ?kind=file
         Body (Raw):   <file data (not form-encoded)>
         Success:      200 OK + updated file representation
@@ -1119,7 +1215,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
     ###Rename (*files, folders*)
 
         Method:        POST
-        URL:           links.move
+        URL:           /links/move
         Query Params:  <none>
         Body (JSON):   {
                         "action": "rename",
@@ -1134,7 +1230,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
     ###Move & Copy (*files, folders*)
 
         Method:        POST
-        URL:           links.move
+        URL:           /links/move
         Query Params:  <none>
         Body (JSON):   {
                         // mandatory
@@ -1168,7 +1264,7 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
     ###Delete (*file, folders*)
 
         Method:        DELETE
-        URL:           links.delete
+        URL:           /links/delete
         Query Params:  <none>
         Success:       204 No Content
 
@@ -1264,7 +1360,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
 
     In the OSF filesystem model, providers are treated as folders, but with special properties that distinguish them
     from regular folders.  Every provider folder is considered a root folder, and may not be deleted through the regular
-    file API.  To see the contents of the provider, issue a GET request to the `relationships.files.links.related.href`
+    file API.  To see the contents of the provider, issue a GET request to the `/relationships/files/links/related/href`
     attribute of the provider resource.  The `new_folder` and `upload` actions are handled by another service called
     WaterButler, whose response format differs slightly from the OSF's.
 
@@ -1293,11 +1389,11 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         size          integer    size of file in bytes
         extra         object     may contain additional data beyond what's describe here,
                                  depending on the provider
-          version     integer    version number of file. will be 1 on initial upload
-          downloads   integer    count of the number times the file has been downloaded
-          hashes      object
-            md5       string     md5 hash of file
-            sha256    string     SHA-256 hash of file
+        version       integer    version number of file. will be 1 on initial upload
+        downloads     integer    count of the number times the file has been downloaded
+        hashes        object
+        md5           string     md5 hash of file
+        sha256        string     SHA-256 hash of file
 
     ####Folder Entity
 
@@ -1324,6 +1420,11 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
         node      string  node this provider belongs to
         provider  string  provider id, same as "name"
 
+    ##Provider Relationships
+
+    ### Files
+    This endpoint `/relationships/files/links/related/href` is a list of all files from the provider.
+
     ##Links
 
     See the [JSON-API spec regarding pagination](http://jsonapi.org/format/1.0/#fetching-pagination).
@@ -1335,7 +1436,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
     ###Create Subfolder (*folders*)
 
         Method:       PUT
-        URL:          links.new_folder
+        URL:          /link/new_folder
         Query Params: ?kind=folder&name={new_folder_name}
         Body:         <empty>
         Success:      201 Created + new folder representation
@@ -1349,7 +1450,7 @@ class NodeProvidersList(generics.ListAPIView, NodeMixin):
     ###Upload New File (*folders*)
 
         Method:       PUT
-        URL:          links.upload
+        URL:          /links/upload
         Query Params: ?kind=file&name={new_file_name}
         Body (Raw):   <file data (not form-encoded)>
         Success:      201 Created or 200 OK + new file representation
