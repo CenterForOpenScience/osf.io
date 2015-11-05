@@ -459,7 +459,7 @@ class JSONAPISerializer(ser.Serializer):
 
             nested_field = getattr(field, 'field', None)
 
-            if isinstance(field, JSONAPIHyperlinkedIdentityField) or isinstance(nested_field, JSONAPIHyperlinkedIdentityField):
+            if getattr(field, 'json_api_link', False) or getattr(nested_field, 'json_api_link', False):
                 if attribute is None:
                     continue
                 data['relationships'][field.field_name] = field.to_representation(attribute)

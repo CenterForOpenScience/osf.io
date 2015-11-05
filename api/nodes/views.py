@@ -1472,6 +1472,7 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
         drf_permissions.IsAuthenticatedOrReadOnly,
         CanCommentOrPublic,
         base_permissions.TokenHasScope,
+        LimitRetractions
     )
 
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
