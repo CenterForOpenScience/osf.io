@@ -258,42 +258,7 @@ var Draft = function(params, metaSchema) {
                     if (q && (q.value || '').trim() !== '') {
                         complete++;
                     }
-                    total++;var mkMetaSchema = function() {
-    var questions = [];
-    var qid;
-    for ( var i = 0; i < 3; i++ ) {
-        qid = 'q' + i;
-        questions.push({
-            qid: qid,
-            type: 'string',
-            format: 'text'
-        });
-    }
-
-    var params = {
-        schema_name: 'My Schema',
-        schema_version: 1,
-        title: 'A schema',
-        schema: {
-            title: 'A schema',
-            version: 1,
-            description: 'A very interesting schema',
-            fulfills: [],
-            pages: [1, 1, 1].map(function() {
-                return {
-                    id: faker.internet.ip(),
-                    title: 'Page',
-                    questions: questions
-                };
-            })
-        },
-        id: 'asdfg'
-    };
-
-    var ms = new MetaSchema(params);
-    return [qid, params, ms];
-};
-
+                    total++;
                 });
             });
             return Math.ceil(100 * (complete / total));
