@@ -30,30 +30,39 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
     """Node Registrations.
 
     Registrations are read-only snapshots of a project. This view is a list of all current registrations for which a user
-    has access.
+    has access.  A retracted registration will display a limited subset of information, namely, title, description,
+    date_created, registration, retracted, date_registered, justification, and registration supplement. All other fields
+    will be displayed as null. Additionally, the only relationships permitted to be accessed for a retraction are the
+    contributors.
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
-    registrations's detail view are not necessary.
+    registrations's detail view are not necessary.  Nodes cannot be accessed through this endpoint.
 
     ##Registration Attributes
 
     Registrations have the "registrations" `type`.
 
-        name               type               description
-        ---------------------------------------------------------------------------------
-        title              string             title of the registered project or component
-        description        string             description of the registered node
-        category           string             node category, must be one of the allowed values
-        date_created       iso8601 timestamp  timestamp that the node was created
-        date_modified      iso8601 timestamp  timestamp when the node was last updated
-        tags               array of strings   list of tags that describe the registered node
-        fork               boolean            is this project a fork?
-        registration       boolean            has this project been registered?
-        collection         boolean            is this registered node a collection of other nodes?
-        dashboard          boolean            is this registered node visible on the user dashboard?
-        public             boolean            has this registration been made publicly-visible?
-        retracted          boolean            has this registration been retracted?
-        date_registered    iso8601 timestamp  timestamp that the registration was created
+        name                            type               description
+        -------------------------------------------------------------------------------------------------------
+        title                           string             title of the registered project or component
+        description                     string             description of the registered node
+        category                        string             node category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the registered node
+        fork                            boolean            is this project a fork?
+        registration                    boolean            has this project been registered?
+        collection                      boolean            is this registered node a collection of other nodes?
+        dashboard                       boolean            is this registered node visible on the user dashboard?
+        public                          boolean            has this registration been made publicly-visible?
+        retracted                       boolean            has this registration been retracted?
+        date_registered                 iso8601 timestamp  timestamp that the registration was created
+        justification                   string             reasons for retracting the registration
+        pending_retraction              boolean            is this registration pending retraction?
+        pending_registration_approval   boolean            is this registration pending approval?
+        pending_embargo                 boolean            is this registration pending an embargo?
+        registered_meta                 dictionary         registration supplementary information
+        registration_supplement         string             registration template
 
     ##Relationships
 
@@ -108,27 +117,36 @@ class RegistrationDetail(generics.RetrieveAPIView, RegistrationMixin):
     Registrations are read-only snapshots of a project. This view shows details about the given registration.
 
     Each resource contains the full representation of the registration, meaning additional requests to an individual
-    registrations's detail view are not necessary.
+    registrations's detail view are not necessary. A retracted registration will display a limited subset of information, namely, title, description,
+    date_created, registration, retracted, date_registered, justification, and registration supplement. All other fields
+    will be displayed as null. Additionally, the only relationships permitted to be accessed for a retraction are the
+    contributors.
 
     ##Registration Attributes
 
     Registrations have the "registrations" `type`.
 
-        name               type               description
-        ---------------------------------------------------------------------------------
-        title              string             title of the registered project or component
-        description        string             description of the registered node
-        category           string             node category, must be one of the allowed values
-        date_created       iso8601 timestamp  timestamp that the node was created
-        date_modified      iso8601 timestamp  timestamp when the node was last updated
-        tags               array of strings   list of tags that describe the registered node
-        fork               boolean            is this project a fork?
-        registration       boolean            has this project been registered?
-        collection         boolean            is this registered node a collection of other nodes?
-        dashboard          boolean            is this registered node visible on the user dashboard?
-        public             boolean            has this registration been made publicly-visible?
-        retracted          boolean            has this registration been retracted?
-        date_registered    iso8601 timestamp  timestamp that the registration was created
+        name                            type               description
+        -------------------------------------------------------------------------------------------------------
+        title                           string             title of the registered project or component
+        description                     string             description of the registered node
+        category                        string             node category, must be one of the allowed values
+        date_created                    iso8601 timestamp  timestamp that the node was created
+        date_modified                   iso8601 timestamp  timestamp when the node was last updated
+        tags                            array of strings   list of tags that describe the registered node
+        fork                            boolean            is this project a fork?
+        registration                    boolean            has this project been registered?
+        collection                      boolean            is this registered node a collection of other nodes?
+        dashboard                       boolean            is this registered node visible on the user dashboard?
+        public                          boolean            has this registration been made publicly-visible?
+        retracted                       boolean            has this registration been retracted?
+        date_registered                 iso8601 timestamp  timestamp that the registration was created
+        justification                   string             reasons for retracting the registration
+        pending_retraction              boolean            is this registration pending retraction?
+        pending_registration_approval   boolean            is this registration pending approval?
+        pending_embargo                 boolean            is this registration pending an embargo?
+        registered_meta                 dictionary         registration supplementary information
+        registration_supplement         string             registration template
 
     ##Relationships
 

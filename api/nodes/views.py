@@ -141,7 +141,8 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     is that a project is the top-level node, and components are children of the project. There is also a [category
     field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project.
+    a category other than project, and children nodes may have a category of project.  Registrations can be accessed
+    from this endpoint, but retracted registrations are excluded.
 
     ##Node Attributes
 
