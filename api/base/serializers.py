@@ -377,7 +377,9 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if isinstance(field, JSONAPIHyperlinkedIdentityField) or isinstance(getattr(field, 'field', None), JSONAPIHyperlinkedIdentityField):
+            nested_field = getattr(field, 'field', None)
+
+            if isinstance(field, JSONAPIHyperlinkedIdentityField) or isinstance(nested_field, JSONAPIHyperlinkedIdentityField):
                 if attribute is None:
                     continue
                 data['relationships'][field.field_name] = field.to_representation(attribute)
@@ -389,7 +391,6 @@ class JSONAPISerializer(ser.Serializer):
                 if attribute is None:
                     # We skip `to_representation` for `None` values so that
                     # fields do not have to explicitly deal with that case.
-                    # data['attributes'][field.field_name] = None
                     data['attributes'][field.field_name] = None
                 else:
                     data['attributes'][field.field_name] = field.to_representation(attribute)
