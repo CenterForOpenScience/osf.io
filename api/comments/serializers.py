@@ -9,7 +9,7 @@ from api.base.serializers import (JSONAPISerializer,
                                   JSONAPIHyperlinkedGuidRelatedField,
                                   JSONAPIHyperlinkedIdentityField,
                                   IDField, TypeField, LinksField,
-                                  WritableMethodField)
+                                  AuthorizedCharField)
 
 
 class CommentReport(object):
@@ -29,7 +29,7 @@ class CommentSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = WritableMethodField(write_method_name='write_content')
+    content = AuthorizedCharField(source='get_content')
 
     user = JSONAPIHyperlinkedRelatedField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id', link_type='related', read_only=True)
     node = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk', lookup_url_kwarg='node_id', link_type='related', read_only=True)
@@ -48,14 +48,6 @@ class CommentSerializer(JSONAPISerializer):
     class Meta:
         type_ = 'comments'
 
-    def get_content(self, data):
-        auth = Auth(self.context['request'].user)
-        comment = self.context['view'].get_comment()
-        return comment.get_content(auth=auth)
-
-    def write_content(self, data):
-        return data
-
     def create(self, validated_data):
         user = validated_data['user']
         auth = Auth(user)
@@ -72,8 +64,8 @@ class CommentSerializer(JSONAPISerializer):
         assert isinstance(comment, Comment), 'comment must be a Comment'
         auth = Auth(self.context['request'].user)
         if validated_data:
-            if 'content' in validated_data:
-                comment.edit(validated_data['content'], auth=auth, save=True)
+            if 'get_content' in validated_data:
+                comment.edit(validated_data['get_content'], auth=auth, save=True)
             if validated_data.get('is_deleted', None) is True:
                 comment.delete(auth, save=True)
             elif comment.is_deleted:

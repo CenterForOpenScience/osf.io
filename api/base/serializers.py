@@ -5,6 +5,7 @@ from rest_framework.fields import SkipField
 from rest_framework.reverse import reverse
 from rest_framework import serializers as ser
 
+from framework.auth import core as auth_core
 from website import settings
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
@@ -105,26 +106,24 @@ class JSONAPIListField(ser.ListField):
         return super(JSONAPIListField, self).to_internal_value(data)
 
 
-class WritableMethodField(ser.SerializerMethodField):
+class AuthorizedCharField(ser.CharField):
     """
-    Writable SerializerMethodField that gets its internal value
-    by calling a method (`write_method`name`) on the parent serializer class.
+    Passes auth of the logged-in user to the object's method
+    defined as the field source.
 
     Example:
-
-        content = WritableMethodField(write_method_name='write_content')
+        content = AuthorizedCharField(source='get_content')
     """
+    def __init__(self, source=None, **kwargs):
+        assert source is not None, 'The `source` argument is required.'
+        self.source = source
+        super(AuthorizedCharField, self).__init__(source=self.source, **kwargs)
 
-    def __init__(self, method_name=None, write_method_name=None, **kwargs):
-        assert write_method_name is not None, 'must provide write_method_name'
-        self.write_method_name = write_method_name
-        super(WritableMethodField, self).__init__(method_name=method_name, **kwargs)
-        self.read_only = False
-        self.source = None
-
-    def to_internal_value(self, data):
-        method = getattr(self.parent, self.write_method_name)
-        return method(data)
+    def get_attribute(self, obj):
+        user = self.context['request'].user
+        auth = auth_core.Auth(user)
+        field_source_method = getattr(obj, self.source)
+        return field_source_method(auth=auth)
 
 
 class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
