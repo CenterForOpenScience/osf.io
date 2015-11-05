@@ -442,7 +442,6 @@ var Information = {
                 m('p.fb-info-meta.text-muted', [
                     m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
                     m('span', ', Last Modified on ' + item.data.date.local)
-
                 ]),
                 m('p', [
                     m('span', item.data.attributes.description)
@@ -456,8 +455,14 @@ var Information = {
             ]);
         }
         if (args.selected().length > 1) {
-            template = m('', [ 'There are multiple items: ', args.selected().map(function(item){
-                    return m('p', item.data.attributes.title);
+            template = m('', [ '', args.selected().map(function(item){
+                    return m('.fb-info-multi', [
+                        m('h4', m('a', { href : item.data.links.html}, item.data.attributes.title)),
+                        m('p.fb-info-meta.text-muted', [
+                            m('span', item.data.attributes.public ? 'Public' : 'Private' + ' ' + item.data.attributes.category),
+                            m('span', ', Last Modified on ' + item.data.date.local)
+                        ]),
+                    ]);
                 })]);
         }
         return m('.fb-information', template);
