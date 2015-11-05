@@ -40,12 +40,9 @@ function openAncestors (tb, item) {
 }
 
 function NodesPrivacyTreebeard(data, nodesState, nodesOriginal) {
-    /** nodesChanged and nodesState are knockout variables.  nodesChanged will keep track of the nodes that have
+    /**
+     * nodesChanged and nodesState are knockout variables.  nodesChanged will keep track of the nodes that have
      *  changed state.  nodeState is all the nodes in their current state.
-     *
-     *
-     *
-     *
      * */
     var tbOptions = $.extend({}, projectSettingsTreebeardBase.defaults, {
         divID: 'grid',
@@ -82,7 +79,6 @@ function NodesPrivacyTreebeard(data, nodesState, nodesOriginal) {
                     custom : function () {
                         return m('input[type=checkbox]', {
                             onclick : function() {
-                                /* nodesChanged is a knockout variable tracking necessary changes */
                                 item.data.node.is_public = !item.data.node.is_public;
                                 item.open = true;
                                 nodesStateLocal[id].public = item.data.node.is_public;

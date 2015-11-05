@@ -18,45 +18,6 @@ var osfHelpers = require('js/osfHelpers');
 var NodeActions = require('js/project.js');
 var iconmap = require('js/iconmap');
 
-// Modal language
-var MESSAGES = {
-    makeProjectPublicWarning: '<p>Please review your project for sensitive or restricted information before making it public.</p>' +
-                        'Once a project is made public, you should assume it will always be public. You can ' +
-                        'return it to private later, but search engines or others may access files before you do so.  ' +
-                        '<p>Are you sure you would like to continue?</p>',
-
-    makeProjectPrivateWarning: 'Making a project private will prevent users from viewing it on this site, ' +
-                        'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Would you like to continue?',
-
-    makeComponentPublicWarning: '<p>Please review your component for sensitive or restricted information before making it public.</p>' +
-                        'Once a component is made public, you should assume it will always be public. You can ' +
-                        'return it to private later, but search engines or others may access files before you do so.  ' +
-                        'Are you sure you would like to continue?',
-
-    makeComponentPrivateWarning: 'Making a component private will prevent users from viewing it on this site, ' +
-                        'but will have no impact on external sites, including Google\'s cache. ' +
-                        'Would you like to continue?',
-
-    makeRegistrationPublicWarning: 'Once a registration is made public, you will not be able to make the ' +
-                        'registration private again.  After making the registration public, if you '  +
-                        'discover material in it that should have remained private, your only option ' +
-                        'will be to retract the registration.  This will eliminate the registration, ' +
-                        'leaving only basic information of the project title, description, and '  +
-                        'contributors with a notice of retraction.'
-};
-
-// TODO(sloria): Fix this external dependency on nodeApiUrl
-var URLS = {
-    makePublic: window.nodeApiUrl + 'permissions/public/',
-    makePrivate: window.nodeApiUrl + 'permissions/private/'
-};
-var PUBLIC = 'public';
-var PRIVATE = 'private';
-var PROJECT = 'project';
-var COMPONENT = 'component';
-
-
 /**
  * The ProjectViewModel, scoped to the project header.
  * @param {Object} data The parsed project data returned from the project's API url.
@@ -85,7 +46,6 @@ var ProjectViewModel = function(data) {
     self.isRegistration = data.node.is_registration;
     self.user = data.user;
     self.nodeIsPublic = data.node.is_public;
-    self.ParentIsPublic = ko.observable(data.node.is_public);
     self.nodeType = data.node.node_type;
     // The button text to display (e.g. "Watch" if not watching)
     self.watchButtonDisplay = ko.pureComputed(function() {
@@ -99,7 +59,7 @@ var ProjectViewModel = function(data) {
         return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
 
-
+    new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data, self.nodeIsPublic);
 
     // Add icon to title
     self.icon = '';
@@ -213,12 +173,6 @@ var ProjectViewModel = function(data) {
                 osfHelpers.handleJSONError
             );
         }
-    };
-
-    self.makePublic = function() {
-    };
-
-    self.makePrivate = function() {
     };
 
     self.forkNode = function() {

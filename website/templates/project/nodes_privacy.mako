@@ -11,10 +11,10 @@
                 <div data-bind="if: page() == 'warning'">
                     <span data-bind="text:message"></span>
                 </div>
+
                 <div data-bind="if: page() == 'addon'">
 
-
-                    <span data-bind="visible: changedAddons().length > 0">The following addons will be changed:</span>
+                    <span data-bind="visible: changedAddons().length > 0">The following addons will be effected by this change:</span>
                     <div>
                         <ul data-bind="foreach: { data: changedAddons, as: 'item' }">
                             <li>
@@ -23,7 +23,7 @@
                         </ul>
                     </div>
                     <div>
-                    <span data-bind="visible: nodesChangedPublic().length > 0">The following nodes will be make public:</span>
+                    <span data-bind="visible: nodesChangedPublic().length > 0">The following nodes will be made public:</span>
                     <ul data-bind="foreach: { data: nodesChangedPublic, as: 'item' }">
                         <li>
                             <span data-bind="text: item"></span>
@@ -32,7 +32,7 @@
                     </div>
                     <div>
 
-                    <span data-bind="visible: nodesChangedPrivate().length > 0">The following nodes will be make private:</span>
+                    <span data-bind="visible: nodesChangedPrivate().length > 0">The following nodes will be made private:</span>
                     <ul data-bind="foreach: { data: nodesChangedPrivate, as: 'item' }">
                         <li>
                             <span data-bind="text: item"></span>
