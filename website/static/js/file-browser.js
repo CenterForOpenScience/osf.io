@@ -201,12 +201,15 @@ var FileBrowser = {
             infoButtonClass = 'btn-primary';
             poStyle = 'width : 45%';
         }
-        if(ctrl.showSidebar){
+        if(ctrl.showSidebar()){
             sidebarButtonClass = 'btn-primary';
         }
         if (mobile) {
             poStyle = 'width : 100%';
+        } else {
+            ctrl.showSidebar(true);
         }
+
 
         return [
             m('.fb-header.m-b-xs.row', [
