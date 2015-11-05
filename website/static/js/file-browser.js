@@ -175,10 +175,10 @@ var FileBrowser = {
 
         self.updateCollectionMenu = function (item, event) {
             var x = event.x - 4;
-            var y = event.y-205;
+            var y = event.y-275;
             if (event.view.innerWidth < 767){
                 x = x-115;
-                y = y-30;
+                y = y-80;
             }
             console.log(event.view.innerWidth < 767);
             self.showCollectionMenu(true);
@@ -288,11 +288,11 @@ var Collections  = {
                     return m('li', { className : selectedCSS},
                         [
                             m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label),
-                            !item.systemCollection ? m('', {
+                            !item.systemCollection ? m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
                                 onclick : function (e) {
                                     args.updateCollectionMenu(item, e);
                                 }
-                            }, m('i.fa.fa-ellipsis-v.pull-right.text-muted')) : ''
+                            }) : ''
                         ]
                     );
                 }),

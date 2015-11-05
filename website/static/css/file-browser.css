@@ -82,7 +82,7 @@
     width: 100px;
     background: #fff;
     z-index: 9;
-    box-shadow: 0 0 3px #ccc;
+    box-shadow: 0 0 12px -2px #555;
 }
 
 .fb-sidebar h5>.fa {
