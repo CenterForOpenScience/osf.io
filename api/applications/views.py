@@ -39,7 +39,7 @@ class ApplicationList(generics.ListCreateAPIView, ODMFilterMixin):
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        OwnerOnly,
+        base_permissions.OwnerOnly,
         base_permissions.TokenHasScope,
     )
 
@@ -77,7 +77,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ApplicationMixin)
     """
     permission_classes = (
         drf_permissions.IsAuthenticated,
-        OwnerOnly,
+        base_permissions.OwnerOnly,
         base_permissions.TokenHasScope,
     )
 

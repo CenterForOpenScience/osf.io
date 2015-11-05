@@ -79,6 +79,16 @@ module.exports = {
         resetSecretConfirm: 'Are you sure you want to reset the client secret? This cannot be reversed. Your application will be unusable until it is updated with the new client secret, and all users must reauthorize access. Previously issued access tokens will no longer work.',
         resetSecretError: 'Could not reset client secret. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + 'if the problem persists.',
     },
+    apiOauth2Token: {
+        discardUnchanged: 'Are you sure you want to discard your unsaved changes?',
+        deactivateConfirm: 'Are you sure you want to deactivate this token? This cannot be reversed.',
+        deactivateError: 'Could not deactivate token. Please wait a few minutes and try again, or contact ' + SUPPORT_LINK + ' if the problem persists.',
+        dataFetchError: 'Data not loaded. ' + REFRESH_OR_SUPPORT,
+        dataListFetchError: 'Could not load list of personal access tokens at this time. ' + REFRESH_OR_SUPPORT,
+        dataSendError: 'Error sending data to the server: check that all fields are valid, or contact ' + SUPPORT_LINK + ' if the problem persists.',
+        creationSuccess: 'Successfully generated new personal access token. This token will never expire. This token should never be shared with others. If it is accidentally revealed publicly, it should be deactivated immediately.',
+        dataUpdated: 'Token data updated'
+    },
     projectSettings: {
         updateSuccessMessage: 'Successfully updated project settings.',
         updateErrorMessage400: 'Error updating project settings. Check that all fields are valid.',
