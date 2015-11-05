@@ -12,7 +12,9 @@ from tests.factories import (
 
 
 class TestRegistrationDetail(ApiTestCase):
+
     def setUp(self):
+        self.maxDiff = None
         super(TestRegistrationDetail, self).setUp()
         self.user = AuthUserFactory()
 
@@ -66,3 +68,48 @@ class TestRegistrationDetail(ApiTestCase):
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'], "This is not a registration.")
+
+    def test_retractions_display_limited_fields(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project, public=True)
+        url = '/{}registrations/{}/'.format(API_BASE, registration._id)
+        registration.retract_registration(self.user)
+        retraction = registration.retraction
+        retraction.justification = 'We made a major error.'
+        token = retraction.approval_state.values()[0]['approval_token']
+        retraction.approve_retraction(self.user, token)
+        registration.save()
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+
+        assert_items_equal(res.json['data']['attributes'], {
+            'title': registration.title,
+            'description': registration.description,
+            'date_created': registration.date_created,
+            'date_registered': registration.registered_date,
+            'justification': registration.retraction.justification,
+            'public': None,
+            'category': None,
+            'date_modified': None,
+            "registration": True,
+            'fork': None,
+            'collection': None,
+            'dashboard': None,
+            'tags': None,
+            'retracted': True,
+            'pending_retraction': None,
+            'pending_registration_approval': None,
+            "pending_embargo": None,
+            "registered_meta": None,
+            "registration_supplement": registration.registered_meta.keys()[0]
+        })
+
+
+        contributors = urlparse(res.json['data']['relationships']['contributors']['links']['related']['href']).path
+        assert_equal(contributors, '/{}registrations/{}/contributors/'.format(API_BASE, registration._id))
+
+        assert_not_in('children', res.json['data']['relationships'])
+        assert_not_in('node_links', res.json['data']['relationships'])
+        assert_not_in('registrations', res.json['data']['relationships'])
+        assert_not_in('parent', res.json['data']['relationships'])
+        assert_not_in('forked_from', res.json['data']['relationships'])
+        assert_not_in('files', res.json['data']['relationships'])

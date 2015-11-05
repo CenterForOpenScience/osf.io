@@ -62,8 +62,14 @@ class TestNodeRegistrationList(ApiTestCase):
         assert_equal(res.content_type, 'application/vnd.api+json')
         assert_equal(res.json['data'][0]['type'], 'registrations')
 
-    def test_return_private_registrations_logged_in_non_contributor(self):
-        res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
+    def test_cannot_access_retracted_registrations_list(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        url = '/{}nodes/{}/registrations/'.format(API_BASE, registration._id)
+        registration.retract_registration(self.user)
+        retraction = registration.retraction
+        token = retraction.approval_state.values()[0]['approval_token']
+        retraction.approve_retraction(self.user, token)
+        registration.save()
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
-        assert 'detail' in res.json['errors'][0]
 

@@ -10,7 +10,8 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    UserFactory
+    UserFactory,
+    RegistrationFactory
 )
 
 from tests.utils import assert_logs
@@ -102,6 +103,18 @@ class TestNodeContributorList(NodeCRUDTestCase):
         res = self.app.get(self.private_url, auth=self.user_two.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
         assert 'detail' in res.json['errors'][0]
+
+    def test_can_access_retracted_contributors(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        url = '/{}nodes/{}/contributors/'.format(API_BASE, registration._id)
+        registration.retract_registration(self.user)
+        retraction = registration.retraction
+        token = retraction.approval_state.values()[0]['approval_token']
+        retraction.approve_retraction(self.user, token)
+        registration.save()
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 200)
+        assert_equal(res.json['data'][0]['id'], self.user._id)
 
 
 class TestNodeContributorFiltering(ApiTestCase):

@@ -12,7 +12,8 @@ from api.base.settings.defaults import API_BASE
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RegistrationFactory
 )
 
 def prepare_mock_wb_response(
@@ -95,6 +96,17 @@ class TestNodeFilesList(ApiTestCase):
 
     def _prepare_mock_wb_response(self, node=None, **kwargs):
         prepare_mock_wb_response(node=node or self.project, **kwargs)
+
+    def test_cannot_access_retracted_files_list(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        url = '/{}nodes/{}/files/'.format(API_BASE, registration._id)
+        registration.retract_registration(self.user)
+        retraction = registration.retraction
+        token = retraction.approval_state.values()[0]['approval_token']
+        retraction.approve_retraction(self.user, token)
+        registration.save()
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_returns_public_files_logged_out(self):
         res = self.app.get(self.public_url, expect_errors=True)

@@ -30,12 +30,23 @@ class TestNodeLinkDetail(ApiTestCase):
 
         self.user_two = AuthUserFactory()
 
-        self.public_project = ProjectFactory(is_public=True)
+        self.public_project = ProjectFactory(creator=self.user, is_public=True)
         self.public_pointer_project = ProjectFactory(is_public=True)
         self.public_pointer = self.public_project.add_pointer(self.public_pointer_project,
                                                               auth=Auth(self.user),
                                                               save=True)
         self.public_url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, self.public_project._id, self.public_pointer._id)
+
+    def test_cannot_access_retracted_node_links_detail(self):
+        registration = RegistrationFactory(creator=self.user, project=self.public_project)
+        url = '/{}nodes/{}/node_links/{}/'.format(API_BASE, registration._id, self.public_pointer._id)
+        registration.retract_registration(self.user)
+        retraction = registration.retraction
+        token = retraction.approval_state.values()[0]['approval_token']
+        retraction.approve_retraction(self.user, token)
+        registration.save()
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 403)
 
     def test_returns_public_node_pointer_detail_logged_out(self):
         res = self.app.get(self.public_url)
