@@ -474,6 +474,8 @@ var tbOptions = {
             item.kind = 'folder';
             item.uid = item.id;
             item.name = item.attributes.title;
+            item.date = new $osf.FormattableDate(item.attributes.date_modified);
+
             // TODO: Dummy data, remove this when api is ready
             item.contributors = [{
                 id: '8q36f',
