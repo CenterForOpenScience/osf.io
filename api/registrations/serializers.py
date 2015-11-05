@@ -62,7 +62,7 @@ class RegistrationSerializer(NodeSerializer):
     node_links = CheckRetraction(DevOnly(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-pointers', lookup_field='pk', link_type='related',
                                                   lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})))
 
-    parent = CheckRetraction(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-detail', lookup_field='parent_id', link_type='related',
+    parent = CheckRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
                                               lookup_url_kwarg='node_id'))
 
     registrations = CheckRetraction(DevOnly(JSONAPIHyperlinkedIdentityField(view_name='registrations:registration-registrations', lookup_field='pk', link_type='related',
