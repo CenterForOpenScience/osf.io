@@ -563,7 +563,7 @@ var Modals = {
             m('#removeColl.modal.fade[tabindex=-1][role="dialog"][aria-labelledby="removeCollLabel"][aria-hidden="true"]',
                 m('.modal-dialog',
                     m('.modal-content', [
-                        m('.modal-header alert-danger', [
+                        m('.modal-header', [
                             m('button.close[data-dismiss="modal"][aria-label="Close"]', [
                                 m('span[aria-hidden="true"]','×'),
                             ]),
