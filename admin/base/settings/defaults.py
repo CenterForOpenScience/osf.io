@@ -97,7 +97,7 @@ TEMPLATES = [
 ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'admin.base.wsgi.application'
 ADMIN_BASE = 'admin/'
-STATIC_URL = '{}static/'.format(ADMIN_BASE)
+STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static_root')
 
