@@ -103,6 +103,7 @@ var ViewModel = function(params) {
         $.map(licenses, function(license) {
             var l = new License(license.name, license.id, 0);
             l.active.subscribe(function() {
+                self.currentPage(1);
                 self.search();
             });
             return l;
