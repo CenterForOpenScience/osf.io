@@ -209,8 +209,6 @@ var FileBrowser = {
         } else {
             ctrl.showSidebar(true);
         }
-
-
         return [
             m('.fb-header.m-b-xs.row', [
                 m('.col-xs-12.col-sm-6', m.component(Breadcrumbs, {
@@ -333,15 +331,53 @@ var Collections  = {
 
 var Breadcrumbs = {
     view : function (ctrl, args) {
+        var mobile = window.innerWidth < 767; // true if mobile view
+        var items = args.data();
+        if (mobile && items.length > 1) {
+            return m('.fb-breadcrumbs', [
+                m('ul', [
+                    m('li', [
+                        m('.btn.btn-link[data-toggle="modal"][data-target="#parentsModal"]', '...'),
+                        m('i.fa.fa-angle-right')
+                    ]),
+                    m('li', items[items.length-1].label)
+                ]),
+                m('#parentsModal.modal.fade[tabindex=-1][role="dialog"][aria-hidden="true"]',
+                    m('.modal-dialog',
+                        m('.modal-content', [
+                            m('.modal-body', [
+                                m('button.close[data-dismiss="modal"][aria-label="Close"]', [
+                                    m('span[aria-hidden="true"]','×'),
+                                ]),
+                                m('h4', 'Parent Projects'),
+                                args.data().map(function(item, index, array){
+                                    if(index === array.length-1){
+                                        return m('.fb-parent-row',  item.label);
+                                    }
+                                    var linkObject = new LinkObject(item.type, item, item.label, index);
+                                    return m('.fb-parent-row',
+                                        m('span.btn.btn-link', {
+                                            onclick : function() {
+                                                args.updateFilesData(linkObject);
+                                                $('.modal').modal('hide');
+                                            }
+                                        },  item.label)
+                                    );
+                                })
+                            ]),
+                        ])
+                    )
+                )
+            ]);
+        }
         return m('.fb-breadcrumbs', m('ul', [
             args.data().map(function(item, index, array){
                 if(index === array.length-1){
                     return m('li',  item.label);
                 }
                 var linkObject = new LinkObject(item.type, item, item.label, index);
-
                 return m('li',
-                    m('a', { href : '#', onclick : args.updateFilesData.bind(null, linkObject)},  item.label),
+                    m('span.btn.btn-link', { onclick : args.updateFilesData.bind(null, linkObject)},  item.label),
                     m('i.fa.fa-angle-right')
                 );
             })
