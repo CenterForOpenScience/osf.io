@@ -212,7 +212,7 @@ var AdminView = function(adminSelector, user, reviewers) {
     self.user = user;
     self.reviewers = reviewers;
 
-    self.getDrafts = $.getJSON.bind(null, "/get-drafts/");
+    self.getDrafts = $.getJSON.bind(null, "get_drafts/");
 
     self.drafts = ko.observableArray();
     self.loading = ko.observable(true);

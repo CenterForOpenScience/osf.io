@@ -1,3 +1,4 @@
+
 import httplib as http
 
 from modularodm import Q
@@ -17,6 +18,8 @@ def get_all_drafts():
     # TODO[lauren]: add query parameters to only retrieve submitted drafts
     # they will have an approval associated with them
     all_drafts = DraftRegistration.find()
+
+    # import ipdb; ipdb.set_trace()
 
     serialized_drafts = {
         'drafts': [utils.serialize_draft_registration(d) for d in all_drafts]

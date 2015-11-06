@@ -53,10 +53,15 @@ def prereg(request):
     #     'username': str(request.user.username),
     #     'admin': json.dumps(prereg_admin)
     # }
+    user = {
+        'username': 'user_placeholder',
+        'admin': 'admin_placeholder'
+    }
     #reviewers = get_prereg_users()
+    reviewers = ['admin_placeholder']
 
     #context = {'user_info': user, 'reviewers': reviewers, 'user': request.user}
-    context = {}
+    context = {'user_info': user, 'reviewers': reviewers}
     return render(request, 'prereg.html', context)
 
 
