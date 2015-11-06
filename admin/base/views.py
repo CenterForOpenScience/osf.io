@@ -1,5 +1,7 @@
-from django.http import HttpResponse
+from django.shortcuts import render
 
 
 def root(request):
-    return HttpResponse("Will probably need to put some front end Auth on this.")
+
+    return render(request, 'home.html')
+    # return HttpResponse("Will probably need to put some front end Auth on this.")
