@@ -427,7 +427,7 @@ class JSONAPISerializer(ser.Serializer):
         embeds = self.context.get('embed', {})
         fields = [field for field in self.fields.values() if not field.write_only]
 
-        for item in set(embeds.keys()) - set([f.field_name for f in fields]):
+        for item in set(embeds.keys()) - set([f.field_name for f in fields if getattr(f, 'json_api_link', False)]):
             raise InvalidQueryStringError(
                 detail="Field '{0}' is not embeddable.".format(item),
                 parameter='embed'
