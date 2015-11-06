@@ -22,7 +22,7 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
         kwargs['lookup_field'] = 'pk'
         kwargs['lookup_url_kwarg'] = 'user_id'
 
-        self.meta = None
+        self.meta = {}
         self.link_type = 'related'
 
         super(ser.HyperlinkedIdentityField, self).__init__('users:user-detail', **kwargs)
