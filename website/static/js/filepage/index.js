@@ -342,15 +342,15 @@ var FileViewPage = {
         };
 
         $.fn.editable.defaults.mode = 'inline';
-        if(self.canEdit() && self.file.provider == 'osfstorage'
+        if(self.canEdit() // && self.file.provider == 'osfstorage'
         ) {
             var $fileName = $('#fileName');
             var conflict = 'warn';
+            var path = self.file.path.split("/");
             var to = {
                 data: {
                     nodeId: self.node.id,
-                    //path: self.file.path,
-                    path: null,
+                    path: "/" + path.slice(1, -1).join("/") +"/",
                     provider: self.file.provider,
                 }
             };
@@ -382,7 +382,8 @@ var FileViewPage = {
                     }
                 },
                 success: function(response, value) {
-                    window.location.reload();
+                    console.log(response);
+                    //window.location.reload();
                 },
                 error: function(response) {
                     var code = response.responseJSON.code;
