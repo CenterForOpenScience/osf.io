@@ -132,8 +132,9 @@ class WaterButlerMixin(object):
 class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
-    Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
-    node, meaning additional requests to an individual node's detail view are not necessary.
+    Paginated list of nodes ordered by their `date_modified`.  Each node contains the full representation of the
+    node, meaning additional requests to an individual node's detail view are not necessary.  For a registration,
+    however, navigate to the individual registration's detail view for registration-specific information.
 
     <!--- Copied Spiel from NodeDetail -->
 
@@ -260,8 +261,8 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
     is that a project is the top-level node, and components are children of the project. There is also a [category
     field](/v2/#osf-node-categories) that includes 'project' as an option. The categorization essentially determines
     which icon is displayed by the node in the front-end UI and helps with search organization. Top-level nodes may have
-    a category other than project, and children nodes may have a category of project. Registrations cannot be accessed
-    through this endpoint.
+    a category other than project, and children nodes may have a category of project. Registrations can be accessed through
+    this endpoint, though registration-specific fields must be retrieved through a registration's detail view.
 
     ###Permissions
 
