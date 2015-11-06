@@ -52,7 +52,8 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory
+    AuthUserFactory, DashboardFactory, FolderFactory,
+    NodeLicenseRecordFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -1477,6 +1478,12 @@ class TestNode(OsfTestCase):
         result = self.parent.api_url_for('view_project', _absolute=True)
         assert_in(settings.DOMAIN, result)
 
+    def test_get_absolute_url(self):
+        assert_equal(self.node.get_absolute_url(),
+                     '{}v2/nodes/{}/'
+                     .format(settings.API_DOMAIN, self.node._id)
+                     )
+
     def test_node_factory(self):
         node = NodeFactory()
         assert_equal(node.category, 'hypothesis')
@@ -2801,6 +2808,13 @@ class TestProject(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.is_registration_of(self.project))
 
+    def test_registration_preserves_license(self):
+        license = NodeLicenseRecordFactory()
+        self.project.node_license = license
+        self.project.save()
+        with mock_archive(self.project, autocomplete=True) as registration:
+            assert_equal(registration.node_license.id, license.id)
+
     def test_is_contributor_unregistered(self):
         unreg = UnregUserFactory()
         self.project.add_unregistered_contributor(
@@ -3042,6 +3056,17 @@ class TestTemplateNode(OsfTestCase):
         assert_not_equal(new.date_created, self.project.date_created)
         self._verify_log(new)
 
+    def test_use_as_template_preserves_license(self):
+        license = NodeLicenseRecordFactory()
+        self.project.node_license = license
+        self.project.save()
+        new = self.project.use_as_template(
+            auth=self.auth
+        )
+
+        assert_equal(new.license.node_license._id, license.node_license._id)
+        self._verify_log(new)
+
     def _create_complex(self):
         # create project connected via Pointer
         self.pointee = ProjectFactory(creator=self.user)
@@ -3279,7 +3304,8 @@ class TestForkNode(OsfTestCase):
         fork_date = datetime.datetime.utcnow()
 
         # Fork node
-        fork = self.project.fork_node(auth=self.auth)
+        with mock.patch.object(Node, 'bulk_update_search'):
+            fork = self.project.fork_node(auth=self.auth)
 
         # Compare fork to original
         self._cmp_fork_original(self.user, fork_date, fork, self.project)
@@ -3367,6 +3393,13 @@ class TestForkNode(OsfTestCase):
         # Forker has admin permissions
         assert_equal(len(fork.contributors), 1)
         assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
+
+    def test_fork_preserves_license(self):
+        license = NodeLicenseRecordFactory()
+        self.project.node_license = license
+        self.project.save()
+        fork = self.project.fork_node(self.auth)
+        assert_equal(fork.node_license.id, license.id)
 
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)
@@ -3573,6 +3606,12 @@ class TestRegisterNode(OsfTestCase):
 
     def test_registered_from(self):
         assert_equal(self.registration.registered_from, self.project)
+
+    def test_registered_get_absolute_url(self):
+        assert_equal(self.registration.get_absolute_url(),
+                     '{}v2/registrations/{}/'
+                        .format(settings.API_DOMAIN, self.registration._id)
+        )
 
     def test_registration_list(self):
         assert_in(self.registration._id, self.project.node__registrations)

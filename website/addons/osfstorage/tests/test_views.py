@@ -14,6 +14,7 @@ from website.addons.osfstorage.tests import factories
 from framework.auth import signing
 from website.util import rubeus
 
+from website.models import Tag
 from website.files import models
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import views
@@ -249,6 +250,18 @@ class TestUploadFileHook(HookTestCase):
         assert_in(version, record.versions)
         assert_equals(record.name, name)
         assert_equals(record.parent, parent)
+
+    def test_upload_fail_to_create_version_due_to_checkout(self):
+        user = factories.AuthUserFactory()
+        name = 'Gunter\'s noise.mp3'
+        self.node_settings.get_root().append_file(name)
+        root = self.node_settings.get_root()
+        file = root.find_child_by_name(name)
+        file.checkout = user
+        file.save()
+        res = self.send_upload_hook(root, self.make_payload(name=name), expect_errors=True)
+
+        assert_equal(res.status_code, 403)
 
     def test_update_nested_child(self):
         name = 'ლ(ಠ益ಠლ).unicode'
@@ -553,3 +566,114 @@ class TestDeleteHook(HookTestCase):
         resp = self.delete(self.root_node, expect_errors=True)
 
         assert_equal(resp.status_code, 400)
+
+    def test_attempt_delete_rented_file(self):
+        user = factories.AuthUserFactory()
+        file_checked = self.root_node.append_file('Newfile')
+        file_checked.checkout = user
+        file_checked.save()
+
+        res = self.delete(file_checked, expect_errors=True)
+        assert_equal(res.status_code, 403)
+
+class TestMoveHook(HookTestCase):
+
+    def setUp(self):
+        super(TestMoveHook, self).setUp()
+        self.root_node = self.node_settings.get_root()
+
+    def test_move_hook(self):
+
+        file = self.root_node.append_file('Ain\'t_got_no,_I_got_life')
+        folder = self.root_node.append_folder('Nina Simone')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': file._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': folder.name,
+                }
+            },
+            method='post_json',)
+        assert_equal(res.status_code, 200)
+
+    def test_move_checkedout_file(self):
+
+        file = self.root_node.append_file('Ain\'t_got_no,_I_got_life')
+        file.checkout = self.user
+        file.save()
+        folder = self.root_node.append_folder('Nina Simone')
+        res = self.send_hook(
+            'osfstorage_move_hook',
+            {'nid': self.root_node.node._id},
+            payload={
+                'source': file._id,
+                'node': self.root_node._id,
+                'user': self.user._id,
+                'destination': {
+                    'parent': folder._id,
+                    'node': folder.node._id,
+                    'name': folder.name,
+                }
+            },
+            method='post_json',
+            expect_errors=True,
+        )
+        assert_equal(res.status_code, 405)
+
+class TestFileTags(StorageTestCase):
+
+    def test_file_add_tag(self):
+        file = self.node_settings.get_root().append_file('Good Morning.mp3')
+        assert_not_in('Kanye_West', file.tags)
+
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        self.app.post_json(url, {'tag': 'Kanye_West'}, auth=self.user.auth)
+        file.reload()
+        assert_in('Kanye_West', file.tags)
+
+    def test_file_add_non_ascii_tag(self):
+        file = self.node_settings.get_root().append_file('JapaneseCharacters.txt')
+        assert_not_in('コンサート', file.tags)
+
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        self.app.post_json(url, {'tag': 'コンサート'}, auth=self.user.auth)
+        file.reload()
+        assert_in('コンサート', file.tags)
+
+    def test_file_remove_tag(self):
+        file = self.node_settings.get_root().append_file('Champion.mp3')
+        tag = Tag(_id='Graduation')
+        tag.save()
+        file.tags.append(tag)
+        file.save()
+        assert_in('Graduation', file.tags)
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        self.app.delete_json(url, {'tag': 'Graduation'}, auth=self.user.auth)
+        file.reload()
+        assert_not_in('Graduation', file.tags)
+
+    def test_tag_the_same_tag(self):
+        file = self.node_settings.get_root().append_file('Lie,Cheat,Steal.mp3')
+        tag = Tag(_id='Run_the_Jewels')
+        tag.save()
+        file.tags.append(tag)
+        file.save()
+        assert_in('Run_the_Jewels', file.tags)
+        url = self.project.api_url_for('osfstorage_add_tag', fid=file._id)
+        res = self.app.post_json(url, {'tag': 'Run_the_Jewels'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['status'], 'failure')
+
+    def test_remove_nonexistent_tag(self):
+        file = self.node_settings.get_root().append_file('WonderfulEveryday.mp3')
+        assert_not_in('Chance', file.tags)
+        url = self.project.api_url_for('osfstorage_remove_tag', fid=file._id)
+        res = self.app.delete_json(url, {'tag': 'Chance'}, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['status'], 'failure')
