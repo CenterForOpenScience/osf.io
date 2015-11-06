@@ -37,6 +37,7 @@ from api.nodes.permissions import (
 from api.base.exceptions import ServiceUnavailableError
 
 from website.exceptions import NodeStateError
+from website.util.permissions import ADMIN
 from website.files.models import FileNode
 from website.files.models import OsfStorageFileNode
 from website.models import Node, Pointer, Comment
@@ -281,8 +282,9 @@ class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIVi
 
     # overrides BulkDestroyJSONAPIView
     def allow_bulk_destroy_resources(self, user, resource_list):
+        """User must have admin permissions to delete nodes."""
         for node in resource_list:
-            if not node.has_permission(user, 'admin'):
+            if not node.has_permission(user, ADMIN):
                 return False
         return True
 
