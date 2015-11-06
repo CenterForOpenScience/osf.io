@@ -209,7 +209,7 @@ var FileBrowser = {
         var poStyle = 'width : 75%';
         var infoButtonClass = 'btn-default';
         var sidebarButtonClass = 'btn-default';
-        if (ctrl.showInfo()){
+        if (ctrl.showInfo() && !mobile){
             infoPanel = m('.fb-infobar', m.component(Information, { selected : ctrl.selected, activityLogs : ctrl.activityLogs  }));
             infoButtonClass = 'btn-primary';
             poStyle = 'width : 45%';
