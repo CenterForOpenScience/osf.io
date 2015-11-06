@@ -68,11 +68,6 @@ var Question = function(data, id) {
             required: false
         });
     }
-    // A computed to allow rate-limiting save calls
-    self.delayedValue = ko.computed(function() {
-        return self.value();
-    }).extend({ rateLimit: { method: 'notifyWhenChangesStop', timeout: 1000 } });
-
     self.extra = {};
 
     self.showExample = ko.observable(false);
@@ -383,10 +378,6 @@ var RegistrationEditor = function(urls, editorId) {
     self.draft = ko.observable();
 
     self.currentQuestion = ko.observable();
-    // When the currentQuestion changes, save when it's rate-limited value changes
-    self.currentQuestion.subscribe(function(question) {
-         question.delayedValue.subscribe(self.save.bind(self));
-    });
     self.showValidation = ko.observable(false);
 
     self.pages = ko.computed(function () {
@@ -548,7 +539,7 @@ RegistrationEditor.prototype.check = function() {
             // Validation passed for all applicable questions
             
             if (self.lastSaveRequest) {
-                self.lastSaveRequest().always(function () {
+                self.lastSaveRequest.always(function () {
                     self.toPreview();
                 });
             } else {
@@ -604,7 +595,7 @@ RegistrationEditor.prototype.selectPage = function(page) {
     var firstQuestion = page.questions[Object.keys(page.questions)[0]];
     self.currentQuestion(firstQuestion);
 	self.currentPage(page);
-    self.viewComments();
+    // self.viewComments();
 };
 
 RegistrationEditor.prototype.nextPage = function () {
@@ -780,7 +771,7 @@ RegistrationEditor.prototype.toDraft = function () {
         window.location = self.urls.draftRegistrations;
     });
 };
-
+/*
 RegistrationEditor.prototype.saveForLater = function () {
     var self = this;
 
@@ -793,6 +784,7 @@ RegistrationEditor.prototype.saveForLater = function () {
         self.toDraft();
     }
 };
+*/
 
 /**
  * @class RegistrationManager
