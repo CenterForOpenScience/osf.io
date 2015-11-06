@@ -172,7 +172,7 @@ var MetaSchema = function(params) {
     $.each(self.schema.pages, function(i, page) {
         var mapped = {};
         $.each(page.questions, function(_, question) {
-            var questionId = question.id;
+            var questionId = question.qid;
             mapped[questionId]  = new Question(question, questionId);
         });
         self.schema.pages[i].questions = mapped;
@@ -244,6 +244,7 @@ var Draft = function(params, metaSchema) {
         self.pages.push(new Page(pageData, self.schemaData));
     });
 
+    /*
     self.completion = ko.computed(function() {
         var total = 0;
         var complete = 0;
@@ -261,6 +262,21 @@ var Draft = function(params, metaSchema) {
             return Math.ceil(100 * (complete / total));
         }
         return 0;
+    });
+    */
+    self.completion = ko.computed(function() {
+        var total = 0;
+        var complete = 0;
+        var schema = self.schema();
+        $.each(schema.pages, function(i, page) {
+            $.each(page.questions, function(_, question) {
+                if ((question.value() || '').trim() !== '') {
+                    complete++;
+                }
+                total++;
+            });
+        });
+        return Math.ceil(100 * (complete / total));
     });
 };
 Draft.prototype.preRegisterPrompts = function(response, confirm) {
@@ -408,7 +424,7 @@ var RegistrationEditor = function(urls, editorId) {
             schema_data: data
         };
     }.bind(self));
-    
+
     self.dirtyCount = ko.observable(0);
     self.isDirty = ko.observable(false);
     self.needsSave = ko.computed(function() {
@@ -461,6 +477,21 @@ RegistrationEditor.prototype.init = function(draft) {
         schemaData = draft.schemaData || {};
     }
 
+    self.lastSaveTime = ko.computed(function() {
+        if (!self.draft()) {
+            return null;
+        }
+        return self.draft().updated;
+    });
+    self.lastSaved = ko.computed(function() {
+        var t = self.lastSaveTime();
+        if (t) {
+            return t.toGMTString();
+        } else {
+            return 'never';
+        }
+    });
+
     // Set currentPage to the first page
     self.currentPage(self.draft().pages()[0]);
 
@@ -503,12 +534,8 @@ RegistrationEditor.prototype.context = function(data) {
 };
 
 RegistrationEditor.prototype.toPreview = function () {
-    // save the form
     var self = this;
-    self.save().done(function () {
-        // go to the preview
-        window.location = self.draft().urls.register_page;
-    });
+    window.location = self.draft().urls.register_page;
 };
 
 /**
@@ -537,14 +564,7 @@ RegistrationEditor.prototype.check = function() {
                 return;
             }
             // Validation passed for all applicable questions
-            
-            if (self.lastSaveRequest) {
-                self.lastSaveRequest.always(function () {
-                    self.toPreview();
-                });
-            } else {
-                self.toPreview();
-            }
+            self.toPreview();
         });
     });
 };
