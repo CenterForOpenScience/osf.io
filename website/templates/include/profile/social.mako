@@ -120,24 +120,22 @@
 
     <div data-bind="if: mode() === 'view'">
 
-        <div data-bind="if: hasValues()">
-            <table class="table" data-bind="if: hasValues()">
-                <tbody>
-                    <tr data-bind="if: hasProfileWebsites()">
-                        <td data-bind="visible: profileWebsites().length > 1">Personal Websites</td>
-                        <td data-bind="visible: profileWebsites().length === 1">Personal Website</td>
-                        <td data-bind="foreach: profileWebsites"><a target="_blank" data-bind="attr.href: $data">{{ $data }}</a></br></td>
-                    </tr>
-                </tbody>
+        <table class="table" data-bind="if: hasValues()">
+            <tbody>
+                <tr data-bind="if: hasProfileWebsites()">
+                    <td data-bind="visible: profileWebsites().length > 1">Personal websites</td>
+                    <td data-bind="visible: profileWebsites().length === 1">Personal website</td>
+                    <td data-bind="foreach: profileWebsites"><a target="_blank" data-bind="attr.href: $data">{{ $data }}</a></br></td>
+                </tr>
+            </tbody>
 
-                <tbody data-bind="foreach: values">
-                    <tr data-bind="if: value">
-                        <td>{{ label }}</td>
-                        <td><a target="_blank" data-bind="attr.href: value">{{ text }}</a></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+            <tbody data-bind="foreach: values">
+                <tr data-bind="if: value">
+                    <td>{{ label }}</td>
+                    <td><a target="_blank" data-bind="attr.href: value">{{ text }}</a></td>
+                </tr>
+            </tbody>
+        </table>
 
         <div data-bind="ifnot: hasValues()">
             <div class="well well-sm">Not provided</div>

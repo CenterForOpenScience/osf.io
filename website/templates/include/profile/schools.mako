@@ -46,7 +46,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Start Date</label>
+                        <label>Start date</label>
                         <div class="row">
                             <div class ="col-md-3">
                                 <select class="form-control" data-bind="options: months,
@@ -61,7 +61,7 @@
                     </div>
 
                     <div class="form-group" data-bind="ifnot: ongoing">
-                        <label>End Date</label>
+                        <label>End date</label>
                             <div class="row">
                                 <div class ="col-md-3">
                                     <select class="form-control" data-bind="options: months,

@@ -31,7 +31,6 @@ from framework.sessions.utils import remove_sessions_for_user
 
 from website import mails, settings, filters, security
 
-
 name_formatters = {
     'long': lambda user: user.fullname,
     'surname': lambda user: user.family_name if user.family_name else user.fullname,
@@ -193,12 +192,12 @@ class User(GuidStoredObject, AddonModelMixin):
     #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
-        'orcid': u'http://orcid.com/{}',
+        'orcid': u'http://orcid.org/{}',
         'github': u'http://github.com/{}',
-        'scholar': u'http://scholar.google.com/citation?user={}',
+        'scholar': u'http://scholar.google.com/citations?user={}',
         'twitter': u'http://twitter.com/{}',
         'profileWebsites': [],
-        'linkedIn': u'https://www.linkedin.com/profile/view?id={}',
+        'linkedIn': u'https://www.linkedin.com/{}',
         'impactStory': u'https://impactstory.org/{}',
         'researcherId': u'http://researcherid.com/rid/{}',
     }
@@ -287,8 +286,20 @@ class User(GuidStoredObject, AddonModelMixin):
     #              'expiration': <datetime>}
     # }
 
-    # email lists to which the user has chosen a subscription setting
+    # TODO remove this field once migration (scripts/migration/migrate_mailing_lists_to_mailchimp_fields.py)
+    # has been run. This field is deprecated and replaced with mailchimp_mailing_lists
     mailing_lists = fields.DictionaryField()
+
+    # email lists to which the user has chosen a subscription setting
+    mailchimp_mailing_lists = fields.DictionaryField()
+    # Format: {
+    #   'list1': True,
+    #   'list2: False,
+    #    ...
+    # }
+
+    # email lists to which the user has chosen a subscription setting, being sent from osf, rather than mailchimp
+    osf_mailing_lists = fields.DictionaryField(default=lambda: {settings.OSF_HELP_LIST: True})
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -355,7 +366,7 @@ class User(GuidStoredObject, AddonModelMixin):
     # hashed password used to authenticate to Piwik
     piwik_token = fields.StringField()
 
-    # date the user last logged in via the web interface
+    # date the user last sent a request
     date_last_login = fields.DateTimeField()
 
     # date the user first successfully confirmed an email address
@@ -449,6 +460,7 @@ class User(GuidStoredObject, AddonModelMixin):
         user.is_registered = True
         user.is_claimed = True
         user.date_confirmed = user.date_registered
+        user.emails.append(username)
         return user
 
     @classmethod
@@ -1173,9 +1185,9 @@ class User(GuidStoredObject, AddonModelMixin):
         security_messages.update(self.security_messages)
         self.security_messages = security_messages
 
-        for key, value in user.mailing_lists.iteritems():
+        for key, value in user.mailchimp_mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            subscription = value or self.mailing_lists.get(key)
+            subscription = value or self.mailchimp_mailing_lists.get(key)
             signals.user_merged.send(self, list_name=key, subscription=subscription)
 
             # clear subscriptions for merged user
@@ -1216,6 +1228,11 @@ class User(GuidStoredObject, AddonModelMixin):
             user_settings.merge(addon)
             user_settings.save()
 
+        # Disconnect signal to prevent emails being sent about being a new contributor when merging users
+        # be sure to reconnect it at the end of this code block. Import done here to prevent circular import error.
+        from website.project.signals import contributor_added
+        from website.project.views.contributor import notify_added_contributor
+        contributor_added.disconnect(notify_added_contributor)
         # - projects where the user was a contributor
         for node in user.node__contributed:
             # Skip dashboard node
@@ -1253,11 +1270,18 @@ class User(GuidStoredObject, AddonModelMixin):
                     user._id, node._id
                 ))
             node.save()
+        contributor_added.connect(notify_added_contributor)
 
         # - projects where the user was the creator
         for node in user.node__created:
             node.creator = self
             node.save()
+
+        # - file that the user has checked_out, import done here to prevent import error
+        from website.files.models.base import FileNode
+        for file_node in FileNode.files_checked_out(user=user):
+            file_node.checkout = self
+            file_node.save()
 
         # finalize the merge
 
@@ -1268,6 +1292,7 @@ class User(GuidStoredObject, AddonModelMixin):
         user.username = None
         user.password = None
         user.verification_key = None
+        user.osf_mailing_lists = {}
         user.merged_by = self
 
         user.save()

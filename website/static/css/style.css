@@ -366,6 +366,7 @@ a {
 
 .user-settings-addon-auth {
     font-size: 13.5px;
+    border-bottom: 2px solid #DDD;
 }
 
 .default-authorized-by {
