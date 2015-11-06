@@ -402,18 +402,15 @@ describe('RegistrationEditor', () => {
     });
     describe('#save', () => {
         var putSaveDataStub;
-        var onSaveSucces;
         beforeEach(() => {
             putSaveDataStub = sinon.stub(editor, 'putSaveData', function() {
                 var ret = $.Deferred();
                 ret.resolve({pk: '12345'}, 1, {});
                 return ret.promise();
             });
-            sinon.stub(editor, 'onSaveSucces');
         });
         afterEach(() => {
             editor.putSaveData.restore();
-            editor.onSaveSucces.restore();
         });
         it('PUTs to the update URL with the current draft state', () => {
             var metaSchema = draft.metaSchema;
