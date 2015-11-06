@@ -190,8 +190,8 @@
     <span data-bind="foreach: schemas">
     <div class="radio">
         <label>
-          <input type="radio" name="chosenDraftRegistrationTemplate" 
-                 data-bind="value: id, checked: $root.selectedSchemaId"/>
+          <input type="radio" name="selectedDraftSchema" 
+                 data-bind="attr {value: id}, checked: $root.selectedSchemaId" />
           {{ schema.title }}
           <!-- ko if: schema.description -->
           <i data-bind="tooltip: {title: schema.description}" class="fa fa-info-circle"> </i>

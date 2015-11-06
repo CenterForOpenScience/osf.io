@@ -167,6 +167,9 @@ var MetaSchema = function(params) {
     self.schema = params.schema || {};
     self.id = [self.name, self.version].join('_');
 
+    // Used for initally selecting a schema
+    self._selected = ko.observable(false);
+
     self.requiresApproval = params.requires_approval || false;
     self.fulfills = params.fulfills || [];
     self.messages = params.messages || {};
@@ -813,9 +816,30 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     self.urls = urls;
 
     self.schemas = ko.observableArray();
-    self.selectedSchema = ko.observable();
-    self.selectedSchemaId = ko.computed(function() {
-        return (self.selectedSchema() || {description: ''}).id;
+    self.selectedSchema = ko.computed({
+        read: function() {
+            return self.schemas().filter(function(s) {
+                return s._selected();
+            })[0];
+        },
+        write: function(schema) {
+            $.each(self.schemas(), function(_, s) {
+                s._selected(false);
+            });
+            schema._selected(true);
+        }
+    });
+    self.selectedSchemaId = ko.computed({
+        read: function() {
+            return (self.selectedSchema() || {}).id;
+        },
+        write: function(id) {
+            var schemas = self.schemas();
+            var schema = schemas.filter(function(s) {
+                return s.id === id;
+            })[0];
+            self.selectedSchema(schema);
+        }
     });
 
     // TODO: convert existing registration UI to frontend impl.
