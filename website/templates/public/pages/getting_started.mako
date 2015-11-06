@@ -143,6 +143,7 @@
             <div class="col-md-12">
                 <%include file="/public/pages/help/contributors.mako"/>
                 <%include file="/public/pages/help/privacy.mako"/>
+                <%include file="/public/pages/help/licenses.mako"/>
                 <%include file="/public/pages/help/citations.mako"/>
                 <%include file="/public/pages/help/view_only.mako"/>
                 <%include file="/public/pages/help/comments.mako"/>
