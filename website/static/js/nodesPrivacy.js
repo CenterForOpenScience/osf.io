@@ -133,7 +133,6 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     });
 
     //Parent node is public or not
-    var ctx = window.contextVars;
     var treebeardUrl = data.node.api_url  + 'get_node_tree/';
     /**
      * get node free for treebeard from API V1
