@@ -6,20 +6,6 @@
         <div class="col-md-9">
           <h3>Register</h3>
         </div>
-        <div class="col-md-3" data-bind="with: draft">
-          <span class="btn-group" data-bind="if: requiresApproval">
-            <a data-bind="click: $root.submitForReview,
-                          css: {
-                          'disable': isPendingReview
-                          },
-                          tooltip: {
-                          position: 'top',
-                          title: isPendingReview ? 'Request for review already sent' : 'Submit for review'
-                          }" class="btn btn-default" type="button">
-              <i class="fa fa"></i> Submit for review
-            </a>
-          </span>
-        </div>
     </div>
     <hr />
     <div class="row">
@@ -38,6 +24,18 @@
                   <!-- /ko -->
               </div>
               <div class="span8 col-md-9 columns eight large-8">
+                <br />
+                <br />
+                <span data-bind="with: draft">
+                    <div class="progress progress-bar-md">
+                        <div data-bind="progress: completion"></div>
+                        <div class="progress-bar progress-bar-success" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                             data-bind="attr.aria-completion: completion,
+                                        style: {width: completion() + '%'}">
+                        </div>
+                    </div>
+                </span>
+
                 <!-- EDITOR -->
                 <div data-bind="if: currentPage">
                    <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
@@ -55,10 +53,10 @@
                                    title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
                                  }" type="button" class="pull-right btn btn-success">Preview for submission
                     </a>
-                  <!-- /ko -->
-                  <!-- ko ifnot: onLastPage -->
-                    <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
-                  <!-- /ko -->
+                    <!-- /ko -->
+                    <!-- ko ifnot: onLastPage -->
+                      <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
+                    <!-- /ko -->
               </div>
             </div>
           </div>

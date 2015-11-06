@@ -11,6 +11,7 @@ require('js/koHelpers');
 var $osf = require('js/osfHelpers');
 var language = require('js/osfLanguage').registrations;
 
+var SaveManager = require('js/saveManager');
 var editorExtensions = require('js/registrationEditorExtensions');
 var registrationEmbargo = require('js/registrationEmbargo');
 
@@ -34,9 +35,9 @@ var registrationEmbargo = require('js/registrationEmbargo');
 var Question = function(data, id) {
     var self = this;
 
-    self.id = id || -1;
+    self.id = id;
 
-    if (data.value && typeof(data.value) === 'function') {
+    if ($.isFunction(data.value)) {
         // For subquestions, this could be an observable
         _value = data.value();
     } else {
@@ -67,11 +68,6 @@ var Question = function(data, id) {
             required: false
         });
     }
-    // A computed to allow rate-limiting save calls
-    self.delayedValue = ko.computed(function() {
-        return self.value();
-    }).extend({ rateLimit: { method: 'notifyWhenChangesStop', timeout: 1000 } });
-
     self.extra = {};
 
     self.showExample = ko.observable(false);
@@ -126,14 +122,12 @@ var Page = function(schemaPage, data) {
     self.title = schemaPage.title;
     self.id = schemaPage.id;
 
-    $.each(schemaPage.questions, function(id, questionSchema) {
+    $.each(schemaPage.questions, function(id, question) {
         if (data[id] && data[id].value) {
-            questionSchema.value = data[id].value;
+            question.value(data[id].value);
         }
 
-        self.questions.push(
-            new Question(questionSchema, id)
-        );
+        self.questions.push(question);
     });
 };
 
@@ -168,18 +162,27 @@ var MetaSchema = function(params) {
     self.schema = params.schema || {};
     self.id = [self.name, self.version].join('_');
 
+    // Used for initally selecting a schema
+    self._selected = ko.observable(false);
+
     self.requiresApproval = params.requires_approval || false;
     self.fulfills = params.fulfills || [];
     self.messages = params.messages || {};
 
     $.each(self.schema.pages, function(i, page) {
         var mapped = {};
-        $.each(page.questions, function(qid, question) {
+        $.each(page.questions, function(_, question) {
             var questionId = question.qid;
             mapped[questionId]  = new Question(question, questionId);
         });
         self.schema.pages[i].questions = mapped;
     });
+};
+/**
+ * @returns {Question[]} a flat list of the schema's questions
+ **/
+MetaSchema.prototype.flatQuestions = function() {
+    var self = this;
 
     var flat = [];
     $.each(self.schema.pages, function(i, page) {
@@ -243,20 +246,16 @@ var Draft = function(params, metaSchema) {
     self.completion = ko.computed(function() {
         var total = 0;
         var complete = 0;
-        if (self.schemaData) {
-            var schema = self.schema();
-            $.each(schema.pages, function(i, page) {
-                $.each(page.questions, function(qid, question) {
-                    var q = self.schemaData[qid];
-                    if (q && (q.value || '').trim() !== '') {
-                        complete++;
-                    }
-                    total++;
-                });
+        var schema = self.schema();
+        $.each(schema.pages, function(i, page) {
+            $.each(page.questions, function(_, question) {
+                if ((question.value() || '').trim() !== '') {
+                    complete++;
+                }
+                total++;
             });
-            return Math.ceil(100 * (complete / total));
-        }
-        return 0;
+        });
+        return Math.ceil(100 * (complete / total));
     });
 };
 Draft.prototype.preRegisterPrompts = function(response, confirm) {
@@ -295,7 +294,6 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
     });
 };
 Draft.prototype.preRegisterErrors = function(response, confirm) {
-	// TODO(samchrisinger): Does this work?
     bootbox.confirm({
         message: $osf.joinPrompts(
             response.errors,
@@ -322,7 +320,7 @@ Draft.prototype.beforeRegister = function(data) {
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(response, self.preRegisterPrompts.bind(self, response, self.register.bind(self)));
         } else if (response.prompts && response.prompts.length) {
-            self.preRegisterPrompts(response, self.register.bind(self, data));
+            self.preRegisterPrompts(response, self.register.bind(self));
         } else {
             self.register(data);
         }
@@ -374,10 +372,6 @@ var RegistrationEditor = function(urls, editorId) {
     self.draft = ko.observable();
 
     self.currentQuestion = ko.observable();
-    // When the currentQuestion changes, save when it's rate-limited value changes
-    self.currentQuestion.subscribe(function(question) {
-         question.delayedValue.subscribe(self.save.bind(self));
-    });
     self.showValidation = ko.observable(false);
 
     self.pages = ko.computed(function () {
@@ -396,7 +390,9 @@ var RegistrationEditor = function(urls, editorId) {
 
         $.each(self.pages(), function (_, page) {
             $.each(page.questions(), function (_, question) {
-                data[question.id] = {value: question.value()};
+                data[question.id] = {
+                    value: question.value()
+                };
             });
         });
 
@@ -407,59 +403,22 @@ var RegistrationEditor = function(urls, editorId) {
         };
     }.bind(self));
 
-    self.isDirty = ko.pureComputed(function() {
-        // TODO(lyndsysimon): Test this.
-        var request = self.lastSaveRequest();
-        if (request === undefined) {
-            // Note that if a save request has not happened, the form is considered dirty.
-            return true;
-        }
-        if (request.payload === undefined) {
-            // If the payload is not attached, the .done() handler hasn't been called;
-            //      therefore the request has not successfully completed.
-            return false;
-        }
-        return JSON.stringify(request.payload) !== JSON.stringify(self.serialized());
+    self.dirtyCount = ko.observable(0);
+    self.isDirty = ko.observable(false);
+    self.needsSave = ko.computed(function() {
+        return self.isDirty() && self.dirtyCount();
+    }).extend({
+        rateLimit: 3000,
+        method: 'notifyWhenChangesStop'
     });
-
-    /* The last autosave request that was sent to the server. */
-    self.lastSaveRequest = ko.observable();
-    self.lastSaveAge = ko.pureComputed(function () {
-        // TODO(lyndsysimon): Test this.
-        var request = self.lastSaveRequest();
-        if (request === undefined) {
-            // not yet saved
-            return;
-        } else if (request.completedDate === undefined) {
-            // request in flight
-            return -1;
-        } else {
-            return (new Date() - request.completedDate);
-        }
-    });
-
-
-    self.lastSaved = ko.computed(function() {
-        var request = self.lastSaveRequest();
-        if (request !== undefined) {
-            // If an autosave event has already occurred during this pageview
-            if (request.completedDate !== undefined) {
-                return request.completedDate.toUTCString();
-            } else {
-                return 'pending';
-            }
-        } else {
-            // If viewing a new or previously worked on draft registration. Note that "updated" is never undefined,
-            //  even for a newly created registration
-            var draft = self.draft();
-            var startDate = draft ? self.draft().initiated : undefined;
-            var updateDate = draft ? self.draft().updated : undefined;
-            if (updateDate && startDate.getTime() !== updateDate.getTime()) {
-                return updateDate.toUTCString();
-            } else {
-                return 'never';
-            }
-        }
+    self.currentPage.subscribe(function(page) {
+        // lazily apply subscriptions to question values
+        $.each(page.questions(), function(_, question) {
+            question.value.subscribe(function() {
+                self.dirtyCount(self.dirtyCount() + 1);
+                self.isDirty(true);
+            });
+        });
     });
 
     self.canRegister = ko.computed(function() {
@@ -485,22 +444,46 @@ RegistrationEditor.prototype.init = function(draft) {
     self.draft(draft);
     var metaSchema = draft.metaSchema;
 
+    self.saveManager = null;
     var schemaData = {};
     if (draft) {
+        self.saveManager = new SaveManager(
+            self.urls.update.replace('{draft_pk}', draft.pk),
+            null, null,
+            self.isDirty
+        );
         schemaData = draft.schemaData || {};
     }
+
+    self.lastSaveTime = ko.computed(function() {
+        if (!self.draft()) {
+            return null;
+        }
+        return self.draft().updated;
+    });
+    self.lastSaved = ko.computed(function() {
+        var t = self.lastSaveTime();
+        if (t) {
+            return t.toGMTString();
+        } else {
+            return 'never';
+        }
+    });
 
     // Set currentPage to the first page
     self.currentPage(self.draft().pages()[0]);
 
-    self.serialized.subscribe(self.autoSave.bind(self));
-
-    $(window).on('beforeunload', function(e) {
-        if (self.isDirty()) {
-             return 'You have unsaved changes.';
+    self.needsSave.subscribe(function(dirty) {
+        if (dirty) {
+            self.save().then(function(last) {
+                if (self.dirtyCount() === last){
+                    self.isDirty(false);
+                }
+            }.bind(self, self.dirtyCount()));
         }
     });
-    self.currentQuestion(questions.shift());
+    
+    self.currentQuestion(self.flatQuestions().shift());
 };
 /**
  * @returns {Question[]} flat list of the current schema's questions
@@ -531,12 +514,35 @@ RegistrationEditor.prototype.context = function(data) {
 };
 
 RegistrationEditor.prototype.toPreview = function () {
-    // save the form
     var self = this;
-    self.save().done(function () {
-        // go to the preview
-        window.location = self.draft().urls.register_page;
+    window.location = self.draft().urls.register_page;
+};
+
+RegistrationEditor.prototype.viewComments = function() {
+    var self = this;
+
+    var comments = self.currentQuestion().comments();
+    $.each(comments, function(index, comment) {
+        if (comment.seenBy().indexOf($osf.currentUser().id) === -1) {
+            comment.seenBy.push($osf.currentUser().id);
+        }
     });
+};
+RegistrationEditor.prototype.getUnseenComments = function(qid) {
+    var self = this;
+
+    var question = self.draft().schemaData[qid];
+    var comments = question.comments || [];
+    for (var key in question) {
+        if (key === 'comments') {
+            for (var i = 0; i < question[key].length - 1; i++) {
+                if (question[key][i].indexOf($osf.currentUser().id) === -1) {
+                    comments.push(question[key][i]);
+                }
+            }
+        }
+    }
+    return comments;
 };
 
 /**
@@ -565,15 +571,7 @@ RegistrationEditor.prototype.check = function() {
                 return;
             }
             // Validation passed for all applicable questions
-
-            // wait for the last autosave to complete
-            if (self.lastSaveRequest()) {
-                self.lastSaveRequest().always(function () {
-                    self.toPreview();
-                });
-            } else {
-                self.toPreview();
-            }
+            self.toPreview();
         });
     });
 };
@@ -591,11 +589,10 @@ RegistrationEditor.prototype.nextQuestion = function() {
     });
     if (index + 1 === questions.length) {
         self.currentQuestion(questions.shift());
-        self.viewComments();
     } else {
         self.currentQuestion(questions[index + 1]);
-        self.viewComments();
     }
+    self.viewComments();
 };
 /**
  * Load the previous question into the editor, wrapping around if needed
@@ -611,11 +608,10 @@ RegistrationEditor.prototype.previousQuestion = function() {
     });
     if (index - 1 < 0) {
         self.currentQuestion(questions.pop());
-        self.viewComments();
     } else {
         self.currentQuestion(questions[index - 1]);
-        self.viewComments();
     }
+    self.viewComments();
 };
 /**
  * Select a page, selecting the first question on that page
@@ -625,6 +621,7 @@ RegistrationEditor.prototype.selectPage = function(page) {
 
     var firstQuestion = page.questions[Object.keys(page.questions)[0]];
     self.currentQuestion(firstQuestion);
+    self.currentPage(page);
     self.viewComments();
 };
 
@@ -637,7 +634,6 @@ RegistrationEditor.prototype.nextPage = function () {
     self.currentPage(self.pages()[ self.pages().indexOf(self.currentPage()) + 1 ]);
     window.scrollTo(0,0);
 };
-// TODO(samchrisinger): check if needed
 /**
  * Update draft primary key and updated time on server response
  **/
@@ -738,104 +734,67 @@ RegistrationEditor.prototype.create = function(schemaData) {
         var draft = self.draft();
         draft.pk = response.pk;
         self.draft(draft);
+        self.saveManager = new SaveManager(
+            self.urls.update.replace('{draft_pk}', draft.pk),
+            null, null,
+            self.isDirty
+        );
     });
     return request;
 };
 
-/**
- * Autosave the form state, immediately or deferred.
- *
- **/
-RegistrationEditor.prototype.autoSave = $osf.throttle(function () {
-    // TODO(lyndsysimon): Test this.
+RegistrationEditor.prototype.putSaveData = function(payload) {
     var self = this;
-    // Delay between the completion of a save and the next request
-    var delay = 5000;
-
-    if (!self.isDirty()) {
-        return;
-    }
-
-    var hasBeenSaved = function() {
-        // bool
-        return self.lastSaveRequest() !== undefined;
-    };
-    var delayRemaining = function () {
-        // milliseconds
-        return delay - self.lastSaveAge();
-    };
-    var delaySatisfied = function () {
-        // bool
-        return delayRemaining() <= 0;
-    };
-
-    if(!hasBeenSaved()) {
-        self.save().always(function() {
-            self.autoSave();
-        });
-    } else if (delaySatisfied()) {
-        self.save().always(function() {
-            self.autoSave();
-        });
-    } else {
-        window.setTimeout(self.autoSave.bind(self), delayRemaining());
-    }
-}, 1000);
+    return self.saveManager.save(payload).then(self.updateData.bind(self));
+};
 
 /**
  * Save the current Draft
  **/
 RegistrationEditor.prototype.save = function() {
     var self = this;
-    var request;
-
-    var payload = self.serialized();
-    if (typeof self.draft().pk === 'undefined') {
-        // Draft has not yet been assigned a PK; create a new DraftRegistration
-        request = $osf.postJSON(self.urls.create, payload);
-        request.done(function(data) { self.draft().pk = data.pk; }.bind(self));
-    } else {
-        // Update an existing DraftRegistration
-        var url = self.urls.update.replace('{draft_pk}', self.draft().pk);
-        console.log('save: begin');
-        request = $osf.putJSON(url, payload);
-    }
-
-    self.lastSaveRequest(request);
-
-    request.done(function(data, status, xhr) {
-        xhr.completedDate = new Date();
-        xhr.payload = payload;
-        // Explicitly set the observable to tell KO it changed.
-        self.lastSaveRequest(xhr);
-        console.log('save: complete');
+    var metaSchema = self.draft().metaSchema;
+    var schema = metaSchema.schema;
+    var data = {};
+    $.each(schema.pages, function(i, page) {
+        $.each(page.questions, function(_, question) {
+            var qid = question.id;
+            if (question.type === 'object') {
+                var value = {};
+                $.each(question.properties, function(prop, subQuestion) {
+                    value[prop] = {
+                        value: subQuestion.value()
+                        // comments: ko.toJS(subQuestion.comments())
+                    };
+                });
+                data[qid] = value;
+            } else {
+                data[qid] = {
+                    value: question.value()
+                    // comments: ko.toJS(question.comments())
+                };
+            }
+        });
     });
-
+    var request;
+    if (typeof self.draft().pk === 'undefined') {
+        request = self.create(self);
+    } else {
+        request = self.putSaveData({
+            schema_name: metaSchema.name,
+            schema_version: metaSchema.version,
+            schema_data: data
+        });
+    }
+    self.lastSaveRequest = request;
     return request;
 };
 
-
 RegistrationEditor.prototype.toDraft = function () {
-    // save the form
     var self = this;
-    self.save().done(function() {
-        window.location = self.urls.draftRegistrations;
-    });
+    window.location = self.urls.draftRegistrations;
 };
 
-RegistrationEditor.prototype.saveForLater = function () {
-    var self = this;
-
-    if (self.lastSaveRequest()) {
-        // wait for the last autosave to complete
-        self.lastSaveRequest().always(function() {
-            self.toDraft();
-        });
-    } else {
-        self.toDraft();
-    }
-
-};
 
 /**
  * @class RegistrationManager
@@ -859,9 +818,30 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     self.urls = urls;
 
     self.schemas = ko.observableArray();
-    self.selectedSchema = ko.observable();
-    self.selectedSchemaId = ko.computed(function() {
-        return (self.selectedSchema() || {description: ''}).id;
+    self.selectedSchema = ko.computed({
+        read: function() {
+            return self.schemas().filter(function(s) {
+                return s._selected();
+            })[0];
+        },
+        write: function(schema) {
+            $.each(self.schemas(), function(_, s) {
+                s._selected(false);
+            });
+            schema._selected(true);
+        }
+    });
+    self.selectedSchemaId = ko.computed({
+        read: function() {
+            return (self.selectedSchema() || {}).id;
+        },
+        write: function(id) {
+            var schemas = self.schemas();
+            var schema = schemas.filter(function(s) {
+                return s.id === id;
+            })[0];
+            self.selectedSchema(schema);
+        }
     });
 
     // TODO: convert existing registration UI to frontend impl.
@@ -879,13 +859,15 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     self.getDraftRegistrations = $.getJSON.bind(null, self.urls.list);
     self.getSchemas = $.getJSON.bind(null, self.urls.schemas);
 
-	self.previewSchema = ko.computed(function() {
+    /*
+    self.previewSchema = ko.computed(function() {
         var schema = self.selectedSchema();
         return {
             schema: schema.schema,
             readonly: true
         };
     });
+     */
 
     if (createButton) {
         createButton.on('click', self.createDraftModal.bind(self));

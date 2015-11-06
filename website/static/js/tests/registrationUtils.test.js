@@ -217,13 +217,6 @@ describe('Draft', () => {
             };
 
             var draft = new Draft(params, ms);
-
-            $.each(draft.pages(), function(_, page) {
-                $.each(page.questions(), function(_, question) {
-                    question.value('value');
-                });
-            });
-
             assert.equal(draft.completion(), 100);
         });
     });
@@ -411,18 +404,16 @@ describe('RegistrationEditor', () => {
     });
     describe('#save', () => {
         var putSaveDataStub;
-        var updateDataStub;
         beforeEach(() => {
             putSaveDataStub = sinon.stub(editor, 'putSaveData', function() {
                 var ret = $.Deferred();
-                ret.resolve();
-                return ret;
+                ret.resolve({pk: '12345'}, 1, {});
+                return ret.promise();
             });
             updateDataStub = sinon.stub(editor, 'updateData');
         });
         afterEach(() => {
             editor.putSaveData.restore();
-            editor.updateData.restore();
         });
         it('PUTs to the update URL with the current draft state', () => {
             var metaSchema = draft.metaSchema;
@@ -432,8 +423,8 @@ describe('RegistrationEditor', () => {
             var data = {};
             $.each(questions, function(i, q) {
                 data[q.id] = {
-                    value: q.value(),
-                    comments: []
+                    value: q.value()
+                    // comments: []
                 };
             });
 

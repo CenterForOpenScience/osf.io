@@ -266,7 +266,6 @@ def get_metaschemas(*args, **kwargs):
     :return: serialized metaschemas
     :rtype: dict
     """
-
     count = request.args.get('count', 100)
     include = request.args.get('include', 'latest')
 
