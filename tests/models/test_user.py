@@ -7,7 +7,7 @@ from nose.tools import *  # flake8: noqa (PEP8 asserts)
 from framework import auth
 from framework.auth import exceptions
 from framework.exceptions import PermissionsError
-from website import models
+from website import models, project
 from tests import base
 from tests.base import fake
 from tests import factories
@@ -255,12 +255,12 @@ class TestUserMerging(base.OsfTestCase):
         self.user.external_accounts = [factories.ExternalAccountFactory()]
         other_user.external_accounts = [factories.ExternalAccountFactory()]
 
-        self.user.mailing_lists = {
+        self.user.mailchimp_mailing_lists = {
             'user': True,
             'shared_gt': True,
             'shared_lt': False,
         }
-        other_user.mailing_lists = {
+        other_user.mailchimp_mailing_lists = {
             'other': True,
             'shared_gt': False,
             'shared_lt': True,
@@ -312,6 +312,7 @@ class TestUserMerging(base.OsfTestCase):
             'suffix',
             'timezone',
             'username',
+            'mailing_lists',
             'verification_key',
             'contributor_added_email_records'
         ]
@@ -335,11 +336,14 @@ class TestUserMerging(base.OsfTestCase):
                 self.user.external_accounts[0]._id,
                 other_user.external_accounts[0]._id,
             ],
-            'mailing_lists': {
+            'mailchimp_mailing_lists': {
                 'user': True,
                 'other': True,
                 'shared_gt': True,
                 'shared_lt': True,
+            },
+            'osf_mailing_lists': {
+                'Open Science Framework Help': True
             },
             'security_messages': {
                 'user': today,
@@ -369,7 +373,7 @@ class TestUserMerging(base.OsfTestCase):
         # mock mailchimp
         mock_client = mock.MagicMock()
         mock_get_mailchimp_api.return_value = mock_client
-        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailing_lists)]}
+        mock_client.lists.list.return_value = {'data': [{'id': x, 'list_name': list_name} for x, list_name in enumerate(self.user.mailchimp_mailing_lists)]}
 
         # perform the merge
         self.user.merge_user(other_user)
@@ -433,3 +437,11 @@ class TestUserMerging(base.OsfTestCase):
 
         assert_in(self.user, self.project_with_unreg_contrib.contributors)
 
+    @mock.patch('website.project.views.contributor.mails.send_mail')
+    def test_merge_doesnt_send_signal(self, mock_notify):
+        #Explictly reconnect signal as it is disconnected by default for test
+        project.signals.contributor_added.connect(project.views.contributor.notify_added_contributor)
+        other_user = factories.UserFactory()
+        self.user.merge_user(other_user)
+        assert_equal(other_user.merged_by._id, self.user._id)
+        mock_notify.assert_not_called()

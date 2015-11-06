@@ -1,6 +1,6 @@
 <div class="col-sm-12">
     <span id="viewonly" class="anchor"></span>
-    <h4 class="m-t-lg f-w-lg">View-only Links</h4>
+    <h4 class="m-t-lg f-w-lg">View-only links</h4>
     <p>View-only links can be created for sharing your private projects or components so that people can view&mdash;but
     not edit&mdash;them. These links can be anonymized, to remove contributors' names from the project and associated logs, for use
         in blinded peer review. </p>

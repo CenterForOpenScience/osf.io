@@ -1,39 +1,35 @@
 # -*- coding: utf-8 -*-
 """Factory boy factories for the Google Drive addon."""
-from datetime import datetime
+import datetime
 
 from framework.auth import Auth
+from dateutil.relativedelta import relativedelta
 
 from factory import SubFactory, Sequence, post_generation
 from tests.factories import (
     ModularOdmFactory,
     UserFactory,
     ProjectFactory,
-)
+    ExternalAccountFactory)
 
 from website.addons.googledrive.model import (
     GoogleDriveUserSettings,
     GoogleDriveNodeSettings,
-    GoogleDriveOAuthSettings,
 )
 
 
-class GoogleDriveOAuthSettingsFactory(ModularOdmFactory):
-    FACTORY_FOR = GoogleDriveOAuthSettings
-
-    username = 'Den'
-    user_id = 'b4rn311'
-    expires_at = datetime(2045, 1, 1)
-    access_token = Sequence(lambda n: 'abcdef{0}'.format(n))
-    refresh_token = Sequence(lambda n: 'abcdef{0}'.format(n))
-
+class GoogleDriveAccountFactory(ExternalAccountFactory):
+    provider = 'googledrive'
+    provider_id = Sequence(lambda n: 'id-{0}'.format(n))
+    oauth_key = Sequence(lambda n: 'key-{0}'.format(n))
+    oauth_secret = Sequence(lambda n: 'secret-{0}'.format(n))
+    expires_at = datetime.datetime.now() + relativedelta(days=1)
 
 # TODO(sloria): make an abstract UserSettingsFactory that just includes the owner field
 class GoogleDriveUserSettingsFactory(ModularOdmFactory):
     FACTORY_FOR = GoogleDriveUserSettings
 
     owner = SubFactory(UserFactory)
-    oauth_settings = SubFactory(GoogleDriveOAuthSettingsFactory)
 
 
 class GoogleDriveNodeSettingsFactory(ModularOdmFactory):
@@ -42,4 +38,5 @@ class GoogleDriveNodeSettingsFactory(ModularOdmFactory):
     owner = SubFactory(ProjectFactory)
     user_settings = SubFactory(GoogleDriveUserSettingsFactory)
     folder_id = '12345'
+    folder_name = 'Folder'
     folder_path = 'Drive/Camera Uploads'

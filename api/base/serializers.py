@@ -1,10 +1,11 @@
 import re
 import collections
 
-from rest_framework.reverse import reverse
 from rest_framework.fields import SkipField
+from rest_framework.reverse import reverse
 from rest_framework import serializers as ser
 
+from framework.auth import core as auth_core
 from website import settings
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
@@ -69,6 +70,7 @@ class IDField(ser.CharField):
 
 
 class TypeField(ser.CharField):
+
     def __init__(self, **kwargs):
         kwargs['write_only'] = True
         kwargs['required'] = True
@@ -80,12 +82,48 @@ class TypeField(ser.CharField):
         return super(TypeField, self).to_internal_value(data)
 
 
+class TargetTypeField(ser.CharField):
+    """
+    Enforces that the related resource has the correct type
+    """
+    def __init__(self, **kwargs):
+        kwargs['write_only'] = True
+        kwargs['required'] = True
+        self.target_type = kwargs.pop('target_type')
+        super(TargetTypeField, self).__init__(**kwargs)
+
+    def to_internal_value(self, data):
+        if self.target_type != data:
+            raise Conflict()
+        return super(TargetTypeField, self).to_internal_value(data)
+
+
 class JSONAPIListField(ser.ListField):
     def to_internal_value(self, data):
         if not isinstance(data, list):
             self.fail('not_a_list', input_type=type(data).__name__)
 
         return super(JSONAPIListField, self).to_internal_value(data)
+
+
+class AuthorizedCharField(ser.CharField):
+    """
+    Passes auth of the logged-in user to the object's method
+    defined as the field source.
+
+    Example:
+        content = AuthorizedCharField(source='get_content')
+    """
+    def __init__(self, source=None, **kwargs):
+        assert source is not None, 'The `source` argument is required.'
+        self.source = source
+        super(AuthorizedCharField, self).__init__(source=self.source, **kwargs)
+
+    def get_attribute(self, obj):
+        user = self.context['request'].user
+        auth = auth_core.Auth(user)
+        field_source_method = getattr(obj, self.source)
+        return field_source_method(auth=auth)
 
 
 class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
@@ -100,9 +138,10 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
 
     """
     embeddable = True
+    json_api_link = True  # serializes to a links object
 
     def __init__(self, view_name=None, **kwargs):
-        self.meta = kwargs.pop('meta', None)
+        self.meta = kwargs.pop('meta', {})
         self.link_type = kwargs.pop('link_type', 'url')
         super(JSONAPIHyperlinkedIdentityField, self).__init__(view_name=view_name, **kwargs)
 
@@ -130,8 +169,8 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
         url = super(JSONAPIHyperlinkedIdentityField, self).to_representation(value)
 
         meta = {}
-        for key in self.meta or {}:
-            if key == 'count':
+        for key in self.meta:
+            if key in {'count', 'unread'}:
                 show_related_counts = self.context['request'].query_params.get('related_counts', False)
                 if utils.is_truthy(show_related_counts):
                     meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
@@ -142,7 +181,68 @@ class JSONAPIHyperlinkedIdentityField(ser.HyperlinkedIdentityField):
                         detail="Acceptable values for the related_counts query param are 'true' or 'false'; got '{0}'".format(show_related_counts),
                         parameter='related_counts'
                     )
+            else:
+                meta[key] = _rapply(self.meta[key], _url_val, obj=value, serializer=self.parent)
+
         return {'links': {self.link_type: {'href': url, 'meta': meta}}}
+
+
+class JSONAPIHyperlinkedRelatedField(ser.HyperlinkedRelatedField):
+    """
+    HyperlinkedRelated field that returns a nested dict with url,
+    optional meta information, and link_type.
+
+    Example:
+
+        branched_from = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk',
+                                                    lookup_url_kwarg='node_id', read_only=True, link_type='related')
+
+    """
+    json_api_link = True  # serializes to a links object
+
+    def __init__(self, view_name=None, **kwargs):
+        self.meta = kwargs.pop('meta', {})
+        self.link_type = kwargs.pop('link_type', 'url')
+        super(JSONAPIHyperlinkedRelatedField, self).__init__(view_name=view_name, **kwargs)
+
+    def to_representation(self, value):
+        """
+        Returns nested dictionary in format {'links': {'self.link_type': ... }
+
+        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
+        the link is represented as a links object with 'href' and 'meta' members.
+        """
+        url = super(JSONAPIHyperlinkedRelatedField, self).to_representation(value)
+        meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
+        return {'links': {self.link_type: {'href': url, 'meta': meta}}}
+
+
+class JSONAPIHyperlinkedGuidRelatedField(ser.Field):
+    """
+    Field that returns a nested dict with the url (constructed based
+    on the object's type), optional meta information, and link_type.
+
+    Example:
+
+        target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
+
+    """
+    json_api_link = True  # serializes to a links object
+
+    def __init__(self, **kwargs):
+        self.meta = kwargs.pop('meta', {})
+        self.link_type = kwargs.pop('link_type', 'url')
+        super(JSONAPIHyperlinkedGuidRelatedField, self).__init__(read_only=True, **kwargs)
+
+    def to_representation(self, value):
+        """
+        Returns nested dictionary in format {'links': {'self.link_type': ... }
+
+        If no meta information, self.link_type is equal to a string containing link's URL.  Otherwise,
+        the link is represented as a links object with 'href' and 'meta' members.
+        """
+        meta = _rapply(self.meta, _url_val, obj=value, serializer=self.parent)
+        return {'links': {self.link_type: {'href': value.get_absolute_url(), 'meta': meta}}}
 
 
 class LinksField(ser.Field):
@@ -339,7 +439,7 @@ class JSONAPISerializer(ser.Serializer):
             except SkipField:
                 continue
 
-            if isinstance(field, JSONAPIHyperlinkedIdentityField):
+            if getattr(field, 'json_api_link', False):
                 # If embed=field_name is appended to the query string, directly embed the
                 # results rather than adding a relationship link
                 if field.field_name in embeds:
@@ -381,6 +481,7 @@ class JSONAPISerializer(ser.Serializer):
             self._validated_data = _rapply(self.validated_data, strip_html)
 
         self._validated_data.pop('type', None)
+        self._validated_data.pop('target_type', None)
 
         update_methods = ['PUT', 'PATCH']
         if self.context['request'].method in update_methods:
