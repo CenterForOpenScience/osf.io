@@ -17,6 +17,7 @@ urlpatterns = [
     url(r'^(?P<node_id>\w+)/files/(?P<provider>\w+)(?P<path>/.+[^/])$', views.NodeFileDetail.as_view(), name='node-file-detail'),
     url(r'^(?P<node_id>\w+)/citations/$', views.NodeAlternativeCitationsList.as_view(), name='alternative-citations'),
     url(r'^(?P<node_id>\w+)/citations/(?P<citation_id>\w+)/$', views.NodeAlternativeCitationDetail.as_view(), name='alternative-citation-detail'),
+    url(r'^(?P<node_id>\w+)/comments/$', views.NodeCommentsList.as_view(), name='node-comments'),
 ]
 
 # Routes only active in local/staging environments

@@ -3,6 +3,7 @@
 import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
+import functools
 
 import pytz
 import datetime
@@ -52,7 +53,8 @@ from tests.factories import (
     ProjectFactory, NodeLogFactory, WatchConfigFactory,
     NodeWikiFactory, RegistrationFactory, UnregUserFactory,
     ProjectWithAddonFactory, UnconfirmedUserFactory, CommentFactory, PrivateLinkFactory,
-    AuthUserFactory, DashboardFactory, FolderFactory
+    AuthUserFactory, DashboardFactory, FolderFactory,
+    NodeLicenseRecordFactory
 )
 from tests.test_features import requires_piwik
 from tests.utils import mock_archive
@@ -2807,6 +2809,13 @@ class TestProject(OsfTestCase):
         project = ProjectFactory()
         assert_false(project.is_registration_of(self.project))
 
+    def test_registration_preserves_license(self):
+        license = NodeLicenseRecordFactory()
+        self.project.node_license = license
+        self.project.save()
+        with mock_archive(self.project, autocomplete=True) as registration:
+            assert_equal(registration.node_license.id, license.id)
+
     def test_is_contributor_unregistered(self):
         unreg = UnregUserFactory()
         self.project.add_unregistered_contributor(
@@ -3285,7 +3294,8 @@ class TestForkNode(OsfTestCase):
         fork_date = datetime.datetime.utcnow()
 
         # Fork node
-        fork = self.project.fork_node(auth=self.auth)
+        with mock.patch.object(Node, 'bulk_update_search'):
+            fork = self.project.fork_node(auth=self.auth)
 
         # Compare fork to original
         self._cmp_fork_original(self.user, fork_date, fork, self.project)
@@ -3373,6 +3383,13 @@ class TestForkNode(OsfTestCase):
         # Forker has admin permissions
         assert_equal(len(fork.contributors), 1)
         assert_equal(fork.get_permissions(user2), ['read', 'write', 'admin'])
+
+    def test_fork_preserves_license(self):
+        license = NodeLicenseRecordFactory()
+        self.project.node_license = license
+        self.project.save()
+        fork = self.project.fork_node(self.auth)
+        assert_equal(fork.node_license.id, license.id)
 
     def test_fork_registration(self):
         self.registration = RegistrationFactory(project=self.project)
@@ -4110,6 +4127,35 @@ class TestComments(OsfTestCase):
         project.save()
 
         assert_true(project.can_comment(Auth(user=user)))
+
+    def test_get_content_for_not_deleted_comment(self):
+        project = ProjectFactory(is_public=True)
+        comment = CommentFactory(node=project)
+        content = comment.get_content(auth=Auth(comment.user))
+        assert_equal(content, comment.content)
+
+    def test_get_content_returns_deleted_content_to_commenter(self):
+        comment = CommentFactory(is_deleted=True)
+        content = comment.get_content(auth=Auth(comment.user))
+        assert_equal(content, comment.content)
+
+    def test_get_content_does_not_return_deleted_content_to_non_commenter(self):
+        user = AuthUserFactory()
+        comment = CommentFactory(is_deleted=True)
+        content = comment.get_content(auth=Auth(user))
+        assert_is_none(content)
+
+    def test_get_content_public_project_does_not_return_deleted_content_to_logged_out_user(self):
+        project = ProjectFactory(is_public=True)
+        comment = CommentFactory(node=project, is_deleted=True)
+        content = comment.get_content(auth=None)
+        assert_is_none(content)
+
+    def test_get_content_private_project_throws_permissions_error_for_logged_out_users(self):
+        project = ProjectFactory(is_public=False)
+        comment = CommentFactory(node=project, is_deleted=True)
+        with assert_raises(PermissionsError):
+            comment.get_content(auth=None)
 
 
 class TestPrivateLink(OsfTestCase):

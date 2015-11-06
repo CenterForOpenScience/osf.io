@@ -17,6 +17,15 @@ from api.base.exceptions import Gone
 TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
 FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
 
+UPDATE_METHODS = ['PUT', 'PATCH']
+
+def is_bulk_request(request):
+    """
+    Returns True if bulk request.  Can be called as early as the parser.
+    """
+    content_type = request.content_type
+    return 'ext=bulk' in content_type
+
 def is_truthy(value):
     return value in TRUTHY
 

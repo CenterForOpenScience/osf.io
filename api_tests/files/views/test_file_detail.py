@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 from nose.tools import *  # flake8: noqa
 
 from api.base.settings.defaults import API_BASE
+from website.files.exceptions import FileNodeCheckedOutError
 from website.addons.osfstorage import settings as osfstorage_settings
 
 from tests.base import ApiTestCase
@@ -77,7 +78,7 @@ class TestFileView(ApiTestCase):
     def test_checkout_file_no_type(self):
         res = self.app.put_json_api(
             '/{}files/{}/'.format(API_BASE, self.file._id),
-            {'id': self.file._id, 'attributes': {'checkout': self.user._id}},
+            {'data': {'id': self.file._id, 'attributes': {'checkout': self.user._id}}},
             auth=self.user.auth, expect_errors=True
         )
         assert_equal(res.status_code, 400)
@@ -85,7 +86,7 @@ class TestFileView(ApiTestCase):
     def test_checkout_file_no_id(self):
         res = self.app.put_json_api(
             '/{}files/{}/'.format(API_BASE, self.file._id),
-            {'type': 'files', 'attributes': {'checkout': self.user._id}},
+            {'data': {'type': 'files', 'attributes': {'checkout': self.user._id}}},
             auth=self.user.auth, expect_errors=True
         )
         assert_equal(res.status_code, 400)
@@ -109,7 +110,7 @@ class TestFileView(ApiTestCase):
     def test_checkout_file_no_attributes(self):
         res = self.app.put_json_api(
             '/{}files/{}/'.format(API_BASE, self.file._id),
-            {'id': self.file._id, 'type': 'files'},
+            {'data': {'id': self.file._id, 'type': 'files'}},
             auth=self.user.auth, expect_errors=True
         )
         assert_equal(res.status_code, 400)
@@ -119,7 +120,7 @@ class TestFileView(ApiTestCase):
         assert_equal(self.file.checkout, None)
         res = self.app.put_json_api(
             '/{}files/{}/'.format(API_BASE, self.file._id),
-            {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': user._id}},
+            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
             auth=self.user.auth,
             expect_errors=True,
         )
@@ -133,7 +134,7 @@ class TestFileView(ApiTestCase):
         self.file.save()
         res = self.app.put_json_api(
             '/{}files/{}/'.format(API_BASE, self.file._id),
-            {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': user._id}},
+            {'data': {'id': self.file._id, 'type': 'files', 'attributes': {'checkout': user._id}}},
             auth=user.auth,
             expect_errors=True,
         )

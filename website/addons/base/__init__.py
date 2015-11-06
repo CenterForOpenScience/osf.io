@@ -11,6 +11,7 @@ from time import sleep
 import requests
 from modularodm import Q
 
+from framework.auth.decorators import must_be_logged_in
 from framework.mongo import StoredObject
 from framework.routing import process_rules
 from framework.exceptions import (
@@ -369,13 +370,23 @@ class AddonOAuthUserSettingsBase(AddonUserSettingsBase):
 
         self.save()
 
-    def revoke_oauth_access(self, external_account):
+    @must_be_logged_in
+    def revoke_oauth_access(self, external_account, auth):
         """Revoke all access to an ``ExternalAccount``.
 
         TODO: This should accept node and metadata params in the future, to
             allow fine-grained revocation of grants. That's not yet been needed,
             so it's not yet been implemented.
         """
+        for node in self.get_nodes_with_oauth_grants(external_account):
+            try:
+                addon_settings = node.get_addon(external_account.provider)
+            except AttributeError:
+                # No associated addon settings despite oauth grant
+                pass
+            else:
+                addon_settings.deauthorize(auth=auth)
+
         for key in self.oauth_grants:
             self.oauth_grants[key].pop(external_account._id, None)
 
@@ -794,6 +805,14 @@ class AddonOAuthNodeSettingsBase(AddonNodeSettingsBase):
         self.external_account = external_account
 
         self.save()
+
+    def deauthorize(self, auth=None, add_log=False):
+        """Remove authorization from this node.
+
+        This method should be overridden for addon-specific behavior,
+        such as logging and clearing non-generalizable settings.
+        """
+        self.clear_auth()
 
     def clear_auth(self):
         """Disconnect the node settings from the user settings.

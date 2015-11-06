@@ -38,7 +38,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
             return (userHasAuth && selected) ? selected.type : '';
         });
         self.messages.submitSettingsSuccess =  ko.pureComputed(function() {
-            return 'Successfully linked "' + $osf.htmlEscape(self.folder().name) + '". Go to the <a href="' +
+            return 'Successfully linked "' + $osf.htmlEscape(self.options.decodeFolder(self.folder().name)) + '". Go to the <a href="' +
                 self.urls().files + '">Files page</a> to view your content.';
         });
         var defaults = {
@@ -77,6 +77,9 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                     });
                 };
                 window.open(self.urls().auth);
+            },
+            decodeFolder: function(folder_name) {
+                return folder_name;
             }
         };
         // Overrides
@@ -113,7 +116,7 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         self.updateAccounts().then(function () {
             if (self.accounts().length > 1) {
                 bootbox.prompt({
-                    title: 'Choose ' + self.addonName + ' Access Token to Import',
+                    title: 'Choose ' + self.addonName + ' Account to Import',
                     inputType: 'select',
                     inputOptions: ko.utils.arrayMap(
                         self.accounts(),
@@ -125,15 +128,25 @@ var OauthAddonFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                         }
                     ),
                     value: self.accounts()[0].id,
-                    callback: (self.connectExistingAccount.bind(self))
+                    callback: (self.connectExistingAccount.bind(self)),
+                    buttons: {
+                        confirm:{
+                            label:'Import',
+                        }
+                    }
                 });
             } else {
                 bootbox.confirm({
-                    title: 'Import ' + self.addonName + ' Access Token?',
+                    title: 'Import ' + self.addonName + ' Account?',
                     message: self.messages.confirmAuth(),
                     callback: function(confirmed) {
                         if (confirmed) {
                             self.connectExistingAccount.call(self, (self.accounts()[0].id));
+                        }
+                    },
+                    buttons: {
+                        confirm: {
+                            label:'Import',
                         }
                     }
                 });

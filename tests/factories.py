@@ -14,16 +14,19 @@ Factory boy docs: http://factoryboy.readthedocs.org/
 
 """
 import datetime
+import functools
 from factory import base, Sequence, SubFactory, post_generation, LazyAttribute
 
 from mock import patch, Mock
+from modularodm import Q
+from modularodm.exceptions import NoResultsFound
 
 from framework.mongo import StoredObject
 from framework.auth import User, Auth
 from framework.auth.utils import impute_names_model
 from framework.sessions.model import Session
 from website.addons import base as addons_base
-from website.oauth.models import ApiOAuth2Application, ExternalAccount, ExternalProvider
+from website.oauth.models import ApiOAuth2Application, ApiOAuth2PersonalToken, ExternalAccount, ExternalProvider
 from website.project.model import (
     Comment, Embargo, Node, NodeLog, Pointer, PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig,
     AlternativeCitation
@@ -31,6 +34,8 @@ from website.project.model import (
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
 from website.archiver import ARCHIVER_SUCCESS
+from website.project.licenses import NodeLicense, NodeLicenseRecord, ensure_licenses
+ensure_licenses = functools.partial(ensure_licenses, warn=False)
 
 from website.addons.wiki.model import NodeWikiPage
 from tests.base import fake
@@ -136,6 +141,16 @@ class ApiOAuth2ApplicationFactory(ModularOdmFactory):
 
     home_url = 'ftp://ftp.ncbi.nlm.nimh.gov/'
     callback_url = 'http://example.uk'
+
+
+class ApiOAuth2PersonalTokenFactory(ModularOdmFactory):
+    FACTORY_FOR = ApiOAuth2PersonalToken
+
+    owner = SubFactory(UserFactory)
+
+    scopes = 'osf.full_write osf.full_read'
+
+    name = Sequence(lambda n: 'Example OAuth2 Personal Token #{}'.format(n))
 
 
 class PrivateLinkFactory(ModularOdmFactory):
@@ -535,7 +550,6 @@ class ArchiveTargetFactory(ModularOdmFactory):
 class ArchiveJobFactory(ModularOdmFactory):
     FACTORY_FOR = ArchiveJob
 
-
 class AlternativeCitationFactory(ModularOdmFactory):
     FACTORY_FOR = AlternativeCitation
 
@@ -550,3 +564,22 @@ class AlternativeCitationFactory(ModularOdmFactory):
         print instance
         instance.save()
         return instance
+
+class NodeLicenseRecordFactory(ModularOdmFactory):
+    FACTORY_FOR = NodeLicenseRecord
+
+    @classmethod
+    def _create(cls, *args, **kwargs):
+        try:
+            NodeLicense.find_one(
+                Q('name', 'eq', 'No license')
+            )
+        except NoResultsFound:
+            ensure_licenses()
+        kwargs['node_license'] = kwargs.get(
+            'node_license',
+            NodeLicense.find_one(
+                Q('name', 'eq', 'No license')
+            )
+        )
+        return super(NodeLicenseRecordFactory, cls)._create(*args, **kwargs)

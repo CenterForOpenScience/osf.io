@@ -92,7 +92,7 @@ class TestOAuthScopedAccess(ApiTestCase):
     def test_user_read_scope_cant_write_user_view(self, mock_user_info):
         mock_user_info.return_value = self._scoped_response(['osf.users.all_read'])
         url = api_v2_url('users/me/', base_route='/', base_prefix='v2/')
-        payload = {u'suffix': u'VIII'}
+        payload = {'data': {'type': 'users', 'id': self.user._id, 'attributes': {u'suffix': u'VIII'}}}
 
         res = self.app.patch_json_api(url, params=payload,
                              auth='some_valid_token', auth_type='jwt', expect_errors=True)
