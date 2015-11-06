@@ -23,8 +23,8 @@ class RegistrationForm(ModelForm):
 
 	def clean_password(self):
 		password = self.cleaned_data['password']
-		if len(password) < 5:
-			raise forms.ValidationError("Password must be at least 5 characters in length.")
+		if len(password) < 5 or len(password) > 256:
+			raise forms.ValidationError("Password must be 6-256 characters in length.")
 		return password
 
 class LoginForm(forms.Form):
