@@ -18,8 +18,6 @@ var Treebeard = require('treebeard');
 var $osf = require('js/osfHelpers');
 var NodesPrivacyTreebeard = require('js/nodesPrivacySettingsTreebeard');
 
-var ctx = window.contextVars;
-
 var NODE_OFFSET = 25;
 
 //Todo (billyhunt): change url to dev or production as needed
@@ -127,15 +125,15 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
      */
     self.nodesOriginal.subscribe(function(newValue) {
     });
-
-    self.nodeParent = ko.observable();
     /**
      * id of parent node
      */
-    self.nodeParent.subscribe(function(newValue) {
+    $('#nodesPrivacy').on('hidden.bs.modal', function () {
+        self.clear();
     });
 
     //Parent node is public or not
+    var ctx = window.contextVars;
     var treebeardUrl = ctx.node.urls.api  + 'get_node_tree/';
     /**
      * get node free for treebeard from API V1
@@ -145,13 +143,14 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
         type: 'GET',
         dataType: 'json'
     }).done(function(response) {
+        var nodeParent = {};
         nodesOriginal = getNodesOriginal(response[0], nodesOriginal);
         self.nodesOriginal(nodesOriginal);
         var nodesState = $.extend(true, {}, nodesOriginal);
-        self.nodeParent(response[0].node.id);
+        nodeParent = response[0].node.id;
         //change node state to reflect button push by user on project page (make public | make private)
-        nodesState[self.nodeParent()].public = !parentIsPublic;
-        nodesState[self.nodeParent()].changed = true;
+        nodesState[nodeParent].public = !parentIsPublic;
+        nodesState[nodeParent].changed = true;
         self.nodesState(nodesState);
         new NodesPrivacyTreebeard(response, self.nodesState, nodesOriginal);
     }).fail(function(xhr, status, error) {
@@ -226,7 +225,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
 
     self.clear = function() {
         self.page('warning');
-        self.nodesState(nodesOriginal);
+        self.nodesState(self.nodesOriginal());
     };
 
     self.selectAll = function() {
