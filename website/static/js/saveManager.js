@@ -1,7 +1,7 @@
 'use strict';
 var $ = require('jquery');
 
-var SaveManager = function(url, method, xhrOpts, dirty) {
+var SaveManager = function(url, method, xhrOpts, dirty, warn) {
     var self = this;
     self.url = url;
     self.method = method || 'PUT';
@@ -10,16 +10,20 @@ var SaveManager = function(url, method, xhrOpts, dirty) {
         dataType: 'json'
     }, xhrOpts || {});
     self.dirty = dirty || function(){return false;};
+    warn = warn || true;
 
     self.queued = null;
     self.queuedPromise = null;
 
-    self.blocking = null;        
-    $(window).on('beforeunload', function() {
-        if (self.blocking || self.dirty())  {
-            return "You have unsaved changes.";
-        }
-    });
+    self.blocking = null;
+    if (warn) {
+        $(window).on('beforeunload', function() {
+            if (self.blocking || self.dirty())  {
+                return 'You have unsaved changes.';
+            }
+            return;
+        });
+    }
 };
 SaveManager.prototype.enqueue = function(opts, promise) {
     var self = this;
@@ -33,7 +37,7 @@ SaveManager.prototype.enqueue = function(opts, promise) {
         };
         self.queuedPromise = promise;
     }
-    return promise.promise();        
+    return promise.promise();
 };
 SaveManager.prototype.dequeue = function(opts, promise) {
     var self = this;
