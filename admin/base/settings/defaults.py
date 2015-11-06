@@ -37,6 +37,9 @@ INSTALLED_APPS = (
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.staticfiles',
+    'admin.base',
+    'admin.pre-reg',
+    'admin.spam',
 
     # 3rd party
     'raven.contrib.django.raven_compat',
@@ -94,7 +97,7 @@ TEMPLATES = [
 ROOT_URLCONF = 'admin.base.urls'
 WSGI_APPLICATION = 'admin.base.wsgi.application'
 ADMIN_BASE = 'admin/'
-STATIC_URL = '{}static/'.format(ADMIN_BASE)
+STATIC_URL = '/static/'
 
 STATIC_ROOT = os.path.join(os.path.dirname(BASE_DIR), 'static_root')
 
@@ -105,6 +108,8 @@ STATICFILES_DIRS = (
 LANGUAGE_CODE = 'en-us'
 
 WEBPACK_LOADER = {
-    'BUNDLE_DIR_NAME': 'public/js/',
-    'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
+    'DEFAULT': {
+        'BUNDLE_DIR_NAME': 'public/js/',
+        'STATS_FILE': os.path.join(BASE_DIR, 'webpack-stats.json'),
+    }
 }
