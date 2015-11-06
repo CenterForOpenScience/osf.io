@@ -16,6 +16,7 @@ var waterbutler = require('js/waterbutler');
  * Example: <div data-bind="ace: currentText" id="editor"></div>
  */
 var editor;
+
 ko.bindingHandlers.ace = {
     init: function (element, valueAccessor) {
         editor = ace.edit(element.id);  // jshint ignore: line
@@ -93,7 +94,14 @@ ko.bindingHandlers.ace = {
                 if (imgURL.substring(0,10) === 'data:image') {
                     imgURL = event.dataTransfer.getData('URL');
                     var exp = /(imgurl=)(.*?)(&)/;
-                    imgURL = exp.exec(imgURL)[2];
+                    if (!!exp.exec(imgURL)) {
+                        imgURL = exp.exec(imgURL)[2];
+                    }
+                    else {
+                        //alert('cant do this');
+                        $osf.growl('Error', 'Please find a prettier URL to give us or download to your computer and drop it in from there');
+                        imgURL = undefined;
+                    }
 
                 }
                 else {
@@ -124,6 +132,7 @@ ko.bindingHandlers.ace = {
                         beforeSend: $osf.setXHRAuthorization,
                         data: file
                     }).done(function(data) {
+                        //url = waterbutler.buildDownloadUrl(data.path, data.provider, window.contextVars.node.id, {mode: 'render'});
                         url = window.contextVars.waterbutlerURL + 'v1/resources/' + window.contextVars.node.id + '/providers/' + data.provider + data.path + '?mode=render';
                         var refOut = editor.marker.addLinkDef('[999]: ' + url);
                         editor.session.insert(position, '![enter image description here][' + refOut + ']');
