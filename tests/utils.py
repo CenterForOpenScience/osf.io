@@ -66,7 +66,7 @@ def assert_not_logs(log_action, node_key, index=-1):
     return outer_wrapper
 
 @contextlib.contextmanager
-def mock_archive(project, schema=None, auth=None, template=None, data=None, parent=None,
+def mock_archive(project, schema=None, auth=None, data=None, parent=None,
                  autocomplete=True, autoapprove=False):
     """ A context manager for registrations. When you want to call Node#register_node in
     a test but do not want to deal with any of this side effects of archiver, this
@@ -95,7 +95,6 @@ def mock_archive(project, schema=None, auth=None, template=None, data=None, pare
     """
     schema = schema or None
     auth = auth or Auth(project.creator)
-    template = template or ''
     data = data or ''
 
     with mock.patch('framework.tasks.handlers.enqueue_task'):
@@ -103,7 +102,6 @@ def mock_archive(project, schema=None, auth=None, template=None, data=None, pare
             schema=schema,
             auth=auth,
             data=data,
-            template=template,
             parent=parent,
         )
     registration.root.require_approval(project.creator)

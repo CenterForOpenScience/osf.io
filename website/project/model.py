@@ -3,7 +3,6 @@ import itertools
 import functools
 import os
 import re
-import urllib
 import logging
 import pymongo
 import datetime
@@ -34,7 +33,7 @@ from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
 from framework.auth.utils import privacy_info_handle
 from framework.analytics import tasks as piwik_tasks
-from framework.mongo.utils import to_mongo, to_mongo_key, unique_on
+from framework.mongo.utils import to_mongo_key, unique_on
 from framework.analytics import (
     get_basic_counters, increment_user_activity_counters
 )
@@ -568,8 +567,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             ('is_deleted', pymongo.ASCENDING),
         ]
     }]
-
-    is_draft_registration = False
 
     # Node fields that trigger an update to Solr on save
     SOLR_UPDATE_FIELDS = {
@@ -1913,7 +1910,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             self.save()
         return draft
 
-    def register_node(self, schema, auth, data, template=None, parent=None):
+    def register_node(self, schema, auth, data, parent=None):
         """Make a frozen copy of a node.
 
         :param schema: Schema object
@@ -1922,6 +1919,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         :param data: Form data
         :param parent Node: parent registration of registration to be created
         """
+        # TODO(lyndsysimon): "template" param is not necessary - use schema.name?
         # NOTE: Admins can register child nodes even if they don't have write access them
         if not self.can_edit(auth=auth) and not self.is_admin_parent(user=auth.user):
             raise PermissionsError(
@@ -1930,10 +1928,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
             )
         if self.is_folder:
             raise NodeStateError("Folders may not be registered")
-
-        template = template or ''
-        template = urllib.unquote_plus(template)
-        template = to_mongo(template)
 
         when = datetime.datetime.utcnow()
 
@@ -1956,7 +1950,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.registered_from = original
         if not registered.registered_meta:
             registered.registered_meta = {}
-        registered.registered_meta[template] = data
+        registered.registered_meta = data
 
         registered.contributors = self.contributors
         registered.forked_from = self.forked_from
@@ -1982,7 +1976,6 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
                     schema=schema,
                     auth=auth,
                     data=data,
-                    template=template,
                     parent=registered,
                 )
                 if child_registration and not child_registration.primary:
@@ -3180,7 +3173,11 @@ class Sanction(StoredObject):
     state = fields.StringField(
         default=UNAPPROVED,
         validate=validators.choice_in((
+            # Allowed values according to source code comment
             'unapproved',
+            'approved',
+            'rejected',
+            # Possible values, origin unclear. May be required, incl for unit tests TODO: review later
             'active',
             'cancelled',
             'completed',
@@ -3219,8 +3216,6 @@ class Sanction(StoredObject):
     #     'rejection_token': 'TwozClTFOic2PYxHDStby94bCQMwJy'}
     # }
     approval_state = fields.DictionaryField()
-    # One of 'unapproved', 'approved', or 'rejected'
-    state = fields.StringField(default='unapproved')
 
     def __repr__(self):
         return '<Sanction(end_date={self.end_date!r}) with _id {self._id!r}>'.format(self=self)
@@ -3820,16 +3815,14 @@ class DraftRegistrationApproval(Sanction):
 
     mode = Sanction.ANY
 
-    def _on_complete(self, user, token):
+    def _on_complete(self, *args, **kwargs):
         pass  # draft approval state gets loaded dynamically from this record
 
-    def _on_reject(self, user, token):
+    def _on_reject(self, *args, **kwargs):
         pass  # draft approval state gets loaded dynamically from this record
 
 
 class DraftRegistration(AddonModelMixin, StoredObject):
-
-    is_draft_registration = True
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -3925,12 +3918,13 @@ class DraftRegistration(AddonModelMixin, StoredObject):
                     return question
 
     def register(self, auth, save=False):
-
         node = self.branched_from
 
         # Create the registration
         register = node.register_node(
-            self.registration_schema, auth, self.registration_metadata
+            schema=self.registration_schema,
+            auth=auth,
+            data=self.registration_metadata
         )
         self.registered_node = register
         if save:

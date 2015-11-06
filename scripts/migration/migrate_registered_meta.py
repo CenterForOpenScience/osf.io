@@ -26,8 +26,7 @@ def get_old_registered_nodes(dry_run=True):
         ensure_schemas()
 
     return Node.find(
-        Q('is_registration', 'eq', True) &
-        Q('registered_schema', 'eq', None)
+        Q('is_registration', 'eq', True)
     )
 
 def main(dry_run):
