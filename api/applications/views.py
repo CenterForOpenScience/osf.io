@@ -106,7 +106,7 @@ class ApplicationDetail(generics.RetrieveUpdateDestroyAPIView, ApplicationMixin)
         serializer.save(owner=self.request.user)
 
 
-class ApplicationReset(generics.UpdateAPIView, ApplicationMixin):
+class ApplicationReset(generics.CreateAPIView, ApplicationMixin):
     """
     Resets client secret of a specific API application (eg OAuth2) that the user has registered
 
@@ -128,7 +128,9 @@ class ApplicationReset(generics.UpdateAPIView, ApplicationMixin):
     def get_object(self):
         return self.get_app()
 
-    def perform_update(self, serializer):
+    def perform_create(self, serializer):
         """Resets the application client secret, revokes all tokens"""
         app = self.get_object()
         app.reset_secret(save=True)
+        app.reload()
+        serializer.validated_data['client_secret'] = app.client_secret

@@ -141,7 +141,7 @@ var ApplicationDataClient = oop.defclass({
     },
     resetOne: function (appData){
         var url = appData.apiResetUrl;
-        return this._sendData(appData, url, 'PATCH');
+        return this._sendData(appData, url, 'POST');
     },
     unserialize: function (apiData) {
         var result;
