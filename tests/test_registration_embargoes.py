@@ -716,17 +716,17 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             is_public=True
         )
         res = self.app.post(
-            public_project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            public_project.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_make_public_payload,
             content_type='application/json',
             auth=self.user.auth
         )
         public_project.reload()
-        assert_equal(res.status_code, 201)
+        assert_equal(res.status_code, 202)
         assert_equal(res.json['urls']['registrations'], public_project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
-        registration = Node.load(public_project.node__registrations[-1])
+        registration = Node.find().sort('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
@@ -807,17 +807,17 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
             is_public=True
         )
         res = self.app.post(
-            public_project.api_url_for('node_register_template_page_post', template=u'Open-Ended_Registration'),
+            public_project.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_embargo_payload,
             content_type='application/json',
             auth=self.user.auth
         )
         public_project.reload()
-        assert_equal(res.status_code, 201)
+        assert_equal(res.status_code, 202)
         assert_equal(res.json['urls']['registrations'], public_project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
-        registration = Node.load(public_project.node__registrations[-1])
+        registration = Node.find().sort('-registered_date')[0]
 
         assert_true(registration.is_registration)
         assert_false(registration.is_public)
