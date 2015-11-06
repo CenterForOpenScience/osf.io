@@ -346,11 +346,15 @@ var FileViewPage = {
         ) {
             var $fileName = $('#fileName');
             var conflict = 'warn';
-            var path = self.file.path.split("/");
+            var prePath = self.file.path.split("/").slice(1, -1);
+            var path = "/";
+            if(prePath.length > 0) {
+                path = "/" + prePath.join("/") + "/";
+            }
             var to = {
                 data: {
                     nodeId: self.node.id,
-                    path: "/" + path.slice(1, -1).join("/") +"/",
+                    path: path,
                     provider: self.file.provider,
                 }
             };
@@ -382,7 +386,6 @@ var FileViewPage = {
                     }
                 },
                 success: function(response, value) {
-                    console.log(response);
                     //window.location.reload();
                 },
                 error: function(response) {
