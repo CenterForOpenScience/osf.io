@@ -140,7 +140,7 @@ class FileVersionSerializer(JSONAPISerializer):
     })
 
     class Meta:
-        type_ = 'file_version'
+        type_ = 'file_versions'
 
     def self_url(self, obj):
         return absolute_reverse('files:version-detail', kwargs={

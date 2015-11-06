@@ -233,6 +233,9 @@ a {
  * affix scrolling into columns on small devices/affix
  * needs to be relative any smaller. See above @media.
  */
+.osf-affix {
+    display: none;
+}
 @media (min-width: 769px) {
     .osf-affix.profile-affix {
         top: 80px;
@@ -363,6 +366,7 @@ a {
 
 .user-settings-addon-auth {
     font-size: 13.5px;
+    border-bottom: 2px solid #DDD;
 }
 
 .default-authorized-by {

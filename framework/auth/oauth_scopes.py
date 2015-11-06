@@ -38,8 +38,17 @@ class CoreScopes(object):
     NODE_REGISTRATIONS_READ = 'nodes.registrations_read'
     NODE_REGISTRATIONS_WRITE = 'nodes.registrations_write'
 
+    NODE_COMMENTS_READ = 'comments.data_read'
+    NODE_COMMENTS_WRITE = 'comments.data_write'
+
+    COMMENT_REPORTS_READ = 'comments.reports_read'
+    COMMENT_REPORTS_WRITE = 'comments.reports_write'
+
     APPLICATIONS_READ = 'applications_read'
     APPLICATIONS_WRITE = 'applications_write'
+
+    TOKENS_READ = 'tokens_read'
+    TOKENS_WRITE = 'tokens_write'
 
 
 class ComposedScopes(object):
@@ -55,16 +64,26 @@ class ComposedScopes(object):
     APPLICATIONS_READ = (CoreScopes.APPLICATIONS_READ,)
     APPLICATIONS_WRITE = APPLICATIONS_READ + (CoreScopes.APPLICATIONS_WRITE,)
 
+    # Tokens collection
+    TOKENS_READ = (CoreScopes.TOKENS_READ,)
+    TOKENS_WRITE = TOKENS_READ + (CoreScopes.TOKENS_WRITE,)
+
+    # Comment reports collection
+    COMMENT_REPORTS_READ = (CoreScopes.COMMENT_REPORTS_READ,)
+    COMMENT_REPORTS_WRITE = COMMENT_REPORTS_READ + (CoreScopes.COMMENT_REPORTS_WRITE,)
+
     # Nodes collection.
     # Base node data includes node metadata, links, and children.
-    NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ)
+    NODE_METADATA_READ = (CoreScopes.NODE_BASE_READ, CoreScopes.NODE_CHILDREN_READ, CoreScopes.NODE_LINKS_READ,
+                          CoreScopes.NODE_COMMENTS_READ)
     NODE_METADATA_WRITE = NODE_METADATA_READ + \
-                    (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE)
+                    (CoreScopes.NODE_BASE_WRITE, CoreScopes.NODE_CHILDREN_WRITE, CoreScopes.NODE_LINKS_WRITE,
+                     CoreScopes.NODE_COMMENTS_WRITE)
 
     # Privileges relating to editing content uploaded under that node # TODO: Add wiki etc when implemented
-    NODE_DATA_READ = (CoreScopes.NODE_FILE_READ,)
+    NODE_DATA_READ = (CoreScopes.NODE_FILE_READ, )
     NODE_DATA_WRITE = NODE_DATA_READ + \
-                        (CoreScopes.NODE_FILE_WRITE,)
+                        (CoreScopes.NODE_FILE_WRITE, )
 
     # Privileges relating to who can access a node (via contributors or registrations)
     NODE_ACCESS_READ = (CoreScopes.NODE_CONTRIBUTORS_READ, CoreScopes.NODE_REGISTRATIONS_READ)
@@ -80,7 +99,7 @@ class ComposedScopes(object):
     FULL_WRITE = NODE_ALL_WRITE + USERS_WRITE
 
     # Admin permissions- includes functionality not intended for third-party use
-    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE
+    ADMIN_LEVEL = FULL_WRITE + APPLICATIONS_WRITE + TOKENS_WRITE + COMMENT_REPORTS_WRITE
 
 
 # List of all publicly documented scopes, mapped to composed scopes defined above.

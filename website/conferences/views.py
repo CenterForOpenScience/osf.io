@@ -3,6 +3,7 @@
 import json
 import httplib
 import logging
+from datetime import datetime
 
 from modularodm import Q
 from modularodm.exceptions import ModularOdmException
@@ -13,13 +14,13 @@ from framework.transactions.context import TokuTransaction
 from framework.transactions.handlers import no_auto_transaction
 
 from website import settings
-from website.models import Node
+from website.models import Node, Tag
 from website.util import web_url_for
 from website.mails import send_mail
 from website.files.models import StoredFileNode
 from website.mails import CONFERENCE_SUBMITTED, CONFERENCE_INACTIVE, CONFERENCE_FAILED
 
-from website.conferences import utils
+from website.conferences import utils, signals
 from website.conferences.message import ConferenceMessage, ConferenceError
 from website.conferences.model import Conference
 
@@ -80,17 +81,22 @@ def add_poster_by_email(conference, message):
         )
         if user_created:
             created.append(user)
+            user.system_tags.append('osf4m')
             set_password_url = web_url_for(
                 'reset_password',
                 verification_key=user.verification_key,
                 _absolute=True,
             )
+            user.date_last_login = datetime.utcnow()
+            user.save()
         else:
             set_password_url = None
 
         node, node_created = utils.get_or_create_node(message.subject, user)
         if node_created:
             created.append(node)
+            node.system_tags.append('osf4m')
+            node.save()
 
         utils.provision_node(conference, message, node, user)
         utils.record_message(message, created)
@@ -124,6 +130,8 @@ def add_poster_by_email(conference, message):
         presentation_type=message.conference_category.lower(),
         is_spam=message.is_spam,
     )
+    if node_created and user_created:
+        signals.osf4m_user_created.send(user, conference=conference, node=node)
 
 
 def _render_conference_node(node, idx, conf):
@@ -155,9 +163,9 @@ def _render_conference_node(node, idx, conf):
         'id': idx,
         'title': node.title,
         'nodeUrl': node.url,
-        'author': author.family_name,
+        'author': author.family_name if author.family_name else author.fullname,
         'authorUrl': node.creator.url,
-        'category': 'talk' if 'talk' in node.system_tags else 'poster',
+        'category': conf.field_names['submission1'] if conf.field_names['submission1'] in node.system_tags else conf.field_names['submission2'],
         'download': download_count,
         'downloadUrl': download_url,
         'dateCreated': str(node.date_created),
@@ -215,16 +223,21 @@ def conference_view(**kwargs):
     meetings = []
     submissions = []
     for conf in Conference.find():
-        query = (
-            Q('tags', 'iexact', conf.endpoint)
-            & Q('is_public', 'eq', True)
-            & Q('is_deleted', 'eq', False)
-        )
-        projects = Node.find(query)
+        # For efficiency, we filter by tag first, then node
+        # instead of doing a single Node query
+        projects = set()
+        for tag in Tag.find(Q('_id', 'iexact', conf.endpoint)):
+            for node in tag.node__tagged:
+                if not node:
+                    continue
+                if not node.is_public or node.is_deleted:
+                    continue
+                projects.add(node)
+
         for idx, node in enumerate(projects):
             submissions.append(_render_conference_node(node, idx, conf))
-        num_submissions = projects.count()
-        if num_submissions < settings.CONFERNCE_MIN_COUNT:
+        num_submissions = len(projects)
+        if num_submissions < settings.CONFERENCE_MIN_COUNT:
             continue
         meetings.append({
             'name': conf.name,

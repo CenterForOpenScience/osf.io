@@ -8,7 +8,7 @@ import furl
 
 from website import util as website_util  # noqa
 from website import settings as website_settings
-from framework.auth import Auth
+from framework.auth import Auth, User
 from api.base.exceptions import Gone
 
 # These values are copied from rest_framework.fields.BooleanField
@@ -16,6 +16,15 @@ from api.base.exceptions import Gone
 # ImproperlyConfigured error
 TRUTHY = set(('t', 'T', 'true', 'True', 'TRUE', '1', 1, True))
 FALSY = set(('f', 'F', 'false', 'False', 'FALSE', '0', 0, 0.0, False))
+
+UPDATE_METHODS = ['PUT', 'PATCH']
+
+def is_bulk_request(request):
+    """
+    Returns True if bulk request.  Can be called as early as the parser.
+    """
+    content_type = request.content_type
+    return 'ext=bulk' in content_type
 
 def is_truthy(value):
     return value in TRUTHY
@@ -58,8 +67,15 @@ def get_object_or_error(model_cls, query_or_pk, display_name=None):
                 raise Gone
             else:
                 raise Gone(detail='The requested {name} is no longer available.'.format(name=display_name))
-        if hasattr(obj, 'is_active'):
-            if not getattr(obj, 'is_active', False):
+        # For objects that have been disabled (is_active is False), return a 410.
+        # The User model is an exception because we still want to allow
+        # users who are unconfirmed or unregistered, but not users who have been
+        # disabled.
+        if model_cls is User:
+            if obj.is_disabled:
+                raise Gone(detail='The requested user is no longer available.')
+        else:
+            if not getattr(obj, 'is_active', True) or getattr(obj, 'is_deleted', False):
                 if display_name is None:
                     raise Gone
                 else:
@@ -95,3 +111,11 @@ def waterbutler_url_for(request_type, provider, path, node_id, token, obj_args=N
 
     url.args.update(query)
     return url.url
+
+def add_dev_only_items(items, dev_only_items):
+    """Add some items to a dictionary if in ``DEV_MODE``.
+    """
+    items = items.copy()
+    if website_settings.DEV_MODE:
+        items.update(dev_only_items)
+    return items

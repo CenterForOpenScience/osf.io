@@ -32,14 +32,18 @@ from website.project.decorators import (
 from website.tokens import process_token_or_pass
 from website.util.permissions import ADMIN, READ, WRITE
 from website.util.rubeus import collect_addon_js
-from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError
+from website.project.model import has_anonymous_link, get_pointer_parent, NodeUpdateError, validate_title
 from website.project.forms import NewNodeForm
 from website.models import Node, Pointer, WatchConfig, PrivateLink
 from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
 from website.project import new_folder
+from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
+from website.util import rapply
+
+r_strip_html = lambda collection: rapply(collection, strip_html)
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +53,8 @@ logger = logging.getLogger(__name__)
 def edit_node(auth, node, **kwargs):
     post_data = request.json
     edited_field = post_data.get('name')
-    value = strip_html(post_data.get('value', ''))
+    value = post_data.get('value', '')
+
     if edited_field == 'title':
         try:
             node.set_title(value, auth=auth)
@@ -464,10 +469,6 @@ def project_statistics_redirect(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 def project_before_set_public(node, **kwargs):
     prompt = node.callback('before_make_public')
-    anonymous_link_warning = any(private_link.anonymous for private_link in node.private_links_active)
-    if anonymous_link_warning:
-        prompt.append('Anonymized view-only links <b>DO NOT</b> anonymize '
-                      'contributors after a project or component is made public.')
 
     return {
         'prompts': prompt
@@ -570,19 +571,24 @@ def togglewatch_post(auth, node, **kwargs):
 def update_node(auth, node, **kwargs):
     # in node.update() method there is a key list node.WRITABLE_WHITELIST only allow user to modify
     # category, title, and discription which can be edited by write permission contributor
+    data = r_strip_html(request.get_json())
     try:
-        return {
-            'updated_fields': {
-                key: getattr(node, key)
-                for key in
-                node.update(request.get_json(), auth=auth)
-            }
-        }
+        updated_field_names = node.update(data, auth=auth)
     except NodeUpdateError as e:
         raise HTTPError(400, data=dict(
             message_short="Failed to update attribute '{0}'".format(e.key),
             message_long=e.reason
         ))
+    # Need to cast tags to a string to make them JSON-serialiable
+    updated_fields_dict = {
+        key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
+        for key in updated_field_names
+        if key != 'logs'
+    }
+    return {
+        'updated_fields': updated_fields_dict
+    }
+
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -719,6 +725,7 @@ def _view_project(node, auth, primary=False):
             'category_short': node.category,
             'node_type': node.project_or_component,
             'description': node.description or '',
+            'license': serialize_node_license_record(node.license),
             'url': node.url,
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,
@@ -785,10 +792,11 @@ def _view_project(node, auth, primary=False):
         },
         'user': {
             'is_contributor': node.is_contributor(user),
+            'is_admin': node.has_permission(user, ADMIN),
             'is_admin_parent': parent.is_admin_parent(user) if parent else False,
             'can_edit': (node.can_edit(auth)
                          and not node.is_registration),
-            'has_read_permissions': node.has_permission(user, 'read'),
+            'has_read_permissions': node.has_permission(user, READ),
             'permissions': node.get_permissions(user) if user else [],
             'is_watching': user.is_watching(node) if user else False,
             'piwik_token': user.piwik_token if user else '',
@@ -827,7 +835,7 @@ def _get_children(node, auth, indent=0):
     children = []
 
     for child in node.nodes_primary:
-        if not child.is_deleted and child.has_permission(auth.user, 'admin'):
+        if not child.is_deleted and child.has_permission(auth.user, ADMIN):
             children.append({
                 'id': child._primary_key,
                 'title': child.title,
@@ -1031,6 +1039,7 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     node_ids = request.json.get('node_ids', [])
     name = request.json.get('name', '')
+
     anonymous = request.json.get('anonymous', False)
 
     if node._id not in node_ids:
@@ -1038,17 +1047,14 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     nodes = [Node.load(node_id) for node_id in node_ids]
 
-    has_public_node = any(node.is_public for node in nodes)
-
-    new_link = new_private_link(
-        name=name, user=auth.user, nodes=nodes, anonymous=anonymous
-    )
-
-    if anonymous and has_public_node:
-        status.push_status_message(
-            'Anonymized view-only links <b>DO NOT</b> '
-            'anonymize contributors of public projects or components.',
-            trust=True
+    try:
+        new_link = new_private_link(
+            name=name, user=auth.user, nodes=nodes, anonymous=anonymous
+        )
+    except ValidationValueError as e:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=e.message)
         )
 
     return new_link
@@ -1057,12 +1063,29 @@ def project_generate_private_link_post(auth, node, **kwargs):
 @must_be_valid_project
 @must_have_permission(ADMIN)
 def project_private_link_edit(auth, **kwargs):
-    new_name = request.json.get('value', '')
+    name = request.json.get('value', '')
+    try:
+        validate_title(name)
+    except ValidationValueError as e:
+        message = 'Invalid link name.' if e.message == 'Invalid title.' else e.message
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long=message)
+        )
+
     private_link_id = request.json.get('pk', '')
     private_link = PrivateLink.load(private_link_id)
+
     if private_link:
+        new_name = strip_html(name)
         private_link.name = new_name
         private_link.save()
+        return new_name
+    else:
+        raise HTTPError(
+            http.BAD_REQUEST,
+            data=dict(message_long='View-only link not found.')
+        )
 
 
 def _serialize_node_search(node):

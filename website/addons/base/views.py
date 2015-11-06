@@ -1,8 +1,10 @@
 import os
 import uuid
 import httplib
-import functools
+import datetime
 
+import jwe
+import jwt
 import furl
 from flask import request
 from flask import redirect
@@ -16,6 +18,8 @@ from framework.auth import oauth_scopes
 from framework.routing import json_renderer
 from framework.sentry import log_exception
 from framework.exceptions import HTTPError
+from framework.transactions.context import TokuTransaction
+from framework.transactions.handlers import no_auto_transaction
 from framework.auth.decorators import must_be_logged_in, must_be_signed, collect_auth
 from website import mails
 from website import settings
@@ -38,11 +42,14 @@ from website.notifications.events.files import FileEvent  # noqa
 FILE_GONE_ERROR_MESSAGE = u'''
 <style>
 .file-download{{display: none;}}
+.file-share{{display: none;}}
 .file-delete{{display: none;}}
 </style>
 <div class="alert alert-info" role="alert">
-This link to the file "{file_name}" is not longer valid.
+This link to the file "{file_name}" is no longer valid.
 </div>'''
+
+WATERBUTLER_JWE_KEY = jwe.kdf(settings.WATERBUTLER_JWE_SECRET.encode('utf-8'), settings.WATERBUTLER_JWE_SALT.encode('utf-8'))
 
 
 @decorators.must_have_permission('write')
@@ -146,23 +153,7 @@ def make_auth(user):
     return {}
 
 
-def restrict_addrs(*addrs):
-    def wrapper(func):
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            remote = request.remote_addr
-            if remote not in addrs:
-                raise HTTPError(httplib.FORBIDDEN)
-            return func(*args, **kwargs)
-        return wrapped
-    return wrapper
-
-
-restrict_waterbutler = restrict_addrs(*settings.WATERBUTLER_ADDRS)
-
-
 @collect_auth
-@restrict_waterbutler
 def get_auth(auth, **kwargs):
     cas_resp = None
     if not auth.user:
@@ -180,13 +171,23 @@ def get_auth(auth, **kwargs):
             if cas_resp.authenticated:
                 auth.user = User.load(cas_resp.user)
 
-        if not auth.user:
-            auth.user = User.from_cookie(request.args.get('cookie'))
+    try:
+        data = jwt.decode(
+            jwe.decrypt(request.args.get('payload', '').encode('utf-8'), WATERBUTLER_JWE_KEY),
+            settings.WATERBUTLER_JWT_SECRET,
+            options={'require_exp': True},
+            algorithm=settings.WATERBUTLER_JWT_ALGORITHM
+        )['data']
+    except (jwt.InvalidTokenError, KeyError):
+        raise HTTPError(httplib.FORBIDDEN)
+
+    if not auth.user:
+        auth.user = User.from_cookie(data.get('cookie', ''))
 
     try:
-        action = request.args['action']
-        node_id = request.args['nid']
-        provider_name = request.args['provider']
+        action = data['action']
+        node_id = data['nid']
+        provider_name = data['provider']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
@@ -202,20 +203,23 @@ def get_auth(auth, **kwargs):
 
     try:
         credentials = provider_settings.serialize_waterbutler_credentials()
-        settings = provider_settings.serialize_waterbutler_settings()
+        waterbutler_settings = provider_settings.serialize_waterbutler_settings()
     except exceptions.AddonError:
         log_exception()
         raise HTTPError(httplib.BAD_REQUEST)
 
-    return {
-        'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
-        'credentials': credentials,
-        'settings': settings,
-        'callback_url': node.api_url_for(
-            ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
-            _absolute=True,
-        ),
-    }
+    return {'payload': jwe.encrypt(jwt.encode({
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=settings.WATERBUTLER_JWT_EXPIRATION),
+        'data': {
+            'auth': make_auth(auth.user),  # A waterbutler auth dict not an Auth object
+            'credentials': credentials,
+            'settings': waterbutler_settings,
+            'callback_url': node.api_url_for(
+                ('create_waterbutler_log' if not node.is_registration else 'registration_callbacks'),
+                _absolute=True,
+            ),
+        }
+    }, settings.WATERBUTLER_JWT_SECRET, algorithm=settings.WATERBUTLER_JWT_ALGORITHM), WATERBUTLER_JWE_KEY)}
 
 
 LOG_ACTION_MAP = {
@@ -230,122 +234,130 @@ LOG_ACTION_MAP = {
 
 
 @must_be_signed
-@restrict_waterbutler
+@no_auto_transaction
 @must_be_valid_project
 def create_waterbutler_log(payload, **kwargs):
-    try:
-        auth = payload['auth']
-        action = LOG_ACTION_MAP[payload['action']]
-    except KeyError:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    user = User.load(auth['id'])
-    if user is None:
-        raise HTTPError(httplib.BAD_REQUEST)
-
-    auth = Auth(user=user)
-    node = kwargs['node'] or kwargs['project']
-
-    if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
-
-        for bundle in ('source', 'destination'):
-            for key in ('provider', 'materialized', 'name', 'nid'):
-                if key not in payload[bundle]:
-                    raise HTTPError(httplib.BAD_REQUEST)
-
-        dest = payload['destination']
-        src = payload['source']
-
-        if src is not None and dest is not None:
-            dest_path = dest['materialized']
-            src_path = src['materialized']
-            if dest_path.endswith('/') and src_path.endswith('/'):
-                dest_path = os.path.dirname(dest_path)
-                src_path = os.path.dirname(src_path)
-            if (
-                os.path.split(dest_path)[0] == os.path.split(src_path)[0] and
-                dest['provider'] == src['provider'] and
-                dest['nid'] == src['nid'] and
-                dest['name'] != src['name']
-            ):
-                action = LOG_ACTION_MAP['rename']
-
-        destination_node = node  # For clarity
-        source_node = Node.load(payload['source']['nid'])
-
-        source = source_node.get_addon(payload['source']['provider'])
-        destination = node.get_addon(payload['destination']['provider'])
-
-        payload['source'].update({
-            'materialized': payload['source']['materialized'].lstrip('/'),
-            'addon': source.config.full_name,
-            'url': source_node.web_url_for(
-                'addon_view_or_download_file',
-                path=payload['source']['path'].lstrip('/'),
-                provider=payload['source']['provider']
-            ),
-            'node': {
-                '_id': source_node._id,
-                'url': source_node.url,
-                'title': source_node.title,
-            }
-        })
-
-        payload['destination'].update({
-            'materialized': payload['destination']['materialized'].lstrip('/'),
-            'addon': destination.config.full_name,
-            'url': destination_node.web_url_for(
-                'addon_view_or_download_file',
-                path=payload['destination']['path'].lstrip('/'),
-                provider=payload['destination']['provider']
-            ),
-            'node': {
-                '_id': destination_node._id,
-                'url': destination_node.url,
-                'title': destination_node.title,
-            }
-        })
-
-        payload.update({
-            'node': destination_node._id,
-            'project': destination_node.parent_id,
-        })
-
-        if not payload.get('errors'):
-            destination_node.add_log(
-                action=action,
-                auth=auth,
-                params=payload
-            )
-
-        if payload.get('email') is True or payload.get('errors'):
-            mails.send_mail(
-                user.username,
-                mails.FILE_OPERATION_FAILED if payload.get('errors')
-                else mails.FILE_OPERATION_SUCCESS,
-                action=payload['action'],
-                source_node=source_node,
-                destination_node=destination_node,
-                source_path=payload['source']['path'],
-                destination_path=payload['source']['path'],
-                source_addon=payload['source']['addon'],
-                destination_addon=payload['destination']['addon'],
-            )
-    else:
+    with TokuTransaction():
         try:
-            metadata = payload['metadata']
-            node_addon = node.get_addon(payload['provider'])
+            auth = payload['auth']
+            action = LOG_ACTION_MAP[payload['action']]
         except KeyError:
             raise HTTPError(httplib.BAD_REQUEST)
 
-        if node_addon is None:
+        user = User.load(auth['id'])
+        if user is None:
             raise HTTPError(httplib.BAD_REQUEST)
 
-        metadata['path'] = metadata['path'].lstrip('/')
+        auth = Auth(user=user)
+        node = kwargs['node'] or kwargs['project']
 
-        node_addon.create_waterbutler_log(auth, action, metadata)
+        if action in (NodeLog.FILE_MOVED, NodeLog.FILE_COPIED):
 
-    file_signals.file_updated.send(node=node, user=user, event_type=action, payload=payload)
+            for bundle in ('source', 'destination'):
+                for key in ('provider', 'materialized', 'name', 'nid'):
+                    if key not in payload[bundle]:
+                        raise HTTPError(httplib.BAD_REQUEST)
+
+            dest = payload['destination']
+            src = payload['source']
+
+            if src is not None and dest is not None:
+                dest_path = dest['materialized']
+                src_path = src['materialized']
+                if dest_path.endswith('/') and src_path.endswith('/'):
+                    dest_path = os.path.dirname(dest_path)
+                    src_path = os.path.dirname(src_path)
+                if (
+                    os.path.split(dest_path)[0] == os.path.split(src_path)[0] and
+                    dest['provider'] == src['provider'] and
+                    dest['nid'] == src['nid'] and
+                    dest['name'] != src['name']
+                ):
+                    action = LOG_ACTION_MAP['rename']
+
+            destination_node = node  # For clarity
+            source_node = Node.load(payload['source']['nid'])
+
+            source = source_node.get_addon(payload['source']['provider'])
+            destination = node.get_addon(payload['destination']['provider'])
+
+            payload['source'].update({
+                'materialized': payload['source']['materialized'].lstrip('/'),
+                'addon': source.config.full_name,
+                'url': source_node.web_url_for(
+                    'addon_view_or_download_file',
+                    path=payload['source']['path'].lstrip('/'),
+                    provider=payload['source']['provider']
+                ),
+                'node': {
+                    '_id': source_node._id,
+                    'url': source_node.url,
+                    'title': source_node.title,
+                }
+            })
+
+            payload['destination'].update({
+                'materialized': payload['destination']['materialized'].lstrip('/'),
+                'addon': destination.config.full_name,
+                'url': destination_node.web_url_for(
+                    'addon_view_or_download_file',
+                    path=payload['destination']['path'].lstrip('/'),
+                    provider=payload['destination']['provider']
+                ),
+                'node': {
+                    '_id': destination_node._id,
+                    'url': destination_node.url,
+                    'title': destination_node.title,
+                }
+            })
+
+            payload.update({
+                'node': destination_node._id,
+                'project': destination_node.parent_id,
+            })
+
+            if not payload.get('errors'):
+                destination_node.add_log(
+                    action=action,
+                    auth=auth,
+                    params=payload
+                )
+
+            if payload.get('email') is True or payload.get('errors'):
+                mails.send_mail(
+                    user.username,
+                    mails.FILE_OPERATION_FAILED if payload.get('errors')
+                    else mails.FILE_OPERATION_SUCCESS,
+                    action=payload['action'],
+                    source_node=source_node,
+                    destination_node=destination_node,
+                    source_path=payload['source']['path'],
+                    destination_path=payload['source']['path'],
+                    source_addon=payload['source']['addon'],
+                    destination_addon=payload['destination']['addon'],
+                )
+
+            if payload.get('error'):
+                # Action failed but our function succeeded
+                # Bail out to avoid file_signals
+                return {'status': 'success'}
+
+        else:
+            try:
+                metadata = payload['metadata']
+                node_addon = node.get_addon(payload['provider'])
+            except KeyError:
+                raise HTTPError(httplib.BAD_REQUEST)
+
+            if node_addon is None:
+                raise HTTPError(httplib.BAD_REQUEST)
+
+            metadata['path'] = metadata['path'].lstrip('/')
+
+            node_addon.create_waterbutler_log(auth, action, metadata)
+
+    with TokuTransaction():
+        file_signals.file_updated.send(node=node, user=user, event_type=action, payload=payload)
 
     return {'status': 'success'}
 
@@ -488,13 +500,14 @@ def addon_view_or_download_file(auth, path, provider, **kwargs):
             'message_long': 'This file does not exist'
         })
 
+    # TODO clean up these urls and unify what is used as a version identifier
     if request.method == 'HEAD':
         return make_response(('', 200, {
-            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None))
+            'Location': file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier))
         }))
 
     if action == 'download':
-        return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None)))
+        return redirect(file_node.generate_waterbutler_url(**dict(extras, direct=None, version=version.identifier)))
 
     if len(request.path.strip('/').split('/')) > 1:
         guid = file_node.get_guid(create=True)
@@ -552,6 +565,7 @@ def addon_view_file(auth, node, file_node, version):
         'extra': version.metadata.get('extra', {}),
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
+        'file_tags': [tag._id for tag in file_node.tags],
     })
 
     ret.update(rubeus.collect_addon_assets(node))

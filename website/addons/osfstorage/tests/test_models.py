@@ -17,59 +17,7 @@ from modularodm import exceptions as modm_errors
 from website.files import models
 from website.addons.osfstorage import utils
 from website.addons.osfstorage import settings
-
-
-# class TestFileGuid(OsfTestCase):
-#     def setUp(self):
-#         super(OsfTestCase, self).setUp()
-#         self.user = factories.AuthUserFactory()
-#         self.project = ProjectFactory(creator=self.user)
-#         self.node_addon = self.project.get_addon('osfstorage')
-
-#     def test_provider(self):
-#         assert_equal('osfstorage', models.OsfStorageGuidFile().provider)
-
-#     def test_correct_path(self):
-#         guid = models.OsfStorageGuidFile(node=self.project, path='/baz/foo/bar')
-
-#         assert_equals(guid.path, '/baz/foo/bar')
-#         assert_equal(guid.path, guid.waterbutler_path)
-#         assert_equals(guid.waterbutler_path, '/baz/foo/bar')
-
-#     @mock.patch('website.addons.base.requests.get')
-#     def test_unique_identifier(self, mock_get):
-#         mock_response = mock.Mock(ok=True, status_code=200)
-#         mock_get.return_value = mock_response
-#         mock_response.json.return_value = {
-#             'data': {
-#                 'name': 'Morty',
-#                 'extra': {
-#                     'version': 'Terran it up'
-#                 }
-#             }
-#         }
-
-#         guid = models.OsfStorageGuidFile(node=self.project, path='/foo/bar')
-
-#         guid.enrich()
-#         assert_equals('Terran it up', guid.unique_identifier)
-
-#     def test_node_addon_get_or_create(self):
-#         guid, created = self.node_addon.find_or_create_file_guid('/baz/foo/bar')
-
-#         assert_true(created)
-#         assert_equal(guid.path, '/baz/foo/bar')
-#         assert_equal(guid.path, guid.waterbutler_path)
-#         assert_equal(guid.waterbutler_path, '/baz/foo/bar')
-
-#     def test_node_addon_get_or_create_finds(self):
-#         guid1, created1 = self.node_addon.find_or_create_file_guid('/foo/bar')
-#         guid2, created2 = self.node_addon.find_or_create_file_guid('/foo/bar')
-
-#         assert_true(created1)
-#         assert_false(created2)
-#         assert_equals(guid1, guid2)
-
+from website.files.exceptions import FileNodeCheckedOutError
 
 class TestOsfstorageFileNode(StorageTestCase):
 
@@ -117,6 +65,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             u'size': None,
             u'modified': None,
             u'contentType': None,
+            u'checkout': None,
             u'md5': None,
             u'sha256': None,
         })
@@ -142,6 +91,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             'size': 1234,
             'modified': None,
             'contentType': 'text/plain',
+            'checkout': None,
             'md5': None,
             'sha256': None,
         })
@@ -161,6 +111,7 @@ class TestOsfstorageFileNode(StorageTestCase):
             'size': 1234,
             'modified': date.isoformat(),
             'contentType': 'text/plain',
+            'checkout': None,
             'md5': None,
             'sha256': None,
         })
@@ -530,3 +481,61 @@ class TestOsfStorageFileVersion(StorageTestCase):
             },
             metadata={'sha256': 'existing'}
         )._find_matching_archive())
+
+
+class TestOsfStorageCheckout(StorageTestCase):
+
+    def setUp(self):
+        super(TestOsfStorageCheckout, self).setUp()
+        self.user = factories.AuthUserFactory()
+        self.node = ProjectFactory(creator=self.user)
+        self.osfstorage = self.node.get_addon('osfstorage')
+        self.root_node = self.osfstorage.get_root()
+        self.file = self.root_node.append_file('3005')
+
+    def test_delete_checked_out_file(self):
+        self.file.checkout = self.user
+        self.file.save()
+        with assert_raises(FileNodeCheckedOutError):
+            self.file.delete()
+
+    def test_delete_folder_with_checked_out_file(self):
+
+        folder = self.root_node.append_folder('folder')
+        self.file.move_under(folder)
+        self.file.checkout = self.user
+        self.file.save()
+        with assert_raises(FileNodeCheckedOutError):
+            folder.delete()
+
+    def test_move_checked_out_file(self):
+        self.file.checkout = self.user
+        self.file.save()
+        folder = self.root_node.append_folder('folder')
+        with assert_raises(FileNodeCheckedOutError):
+            self.file.move_under(folder)
+
+    def test_checked_out_merge(self):
+        user = factories.AuthUserFactory()
+        node = ProjectFactory(creator=user)
+        osfstorage = node.get_addon('osfstorage')
+        root_node = osfstorage.get_root()
+        file = root_node.append_file('test_file')
+        user_merge_target = factories.AuthUserFactory()
+        file.checkout = user
+        file.save()
+        user_merge_target.merge_user(user)
+        file.reload()
+        assert_equal(user_merge_target, file.checkout)
+
+    def test_remove_contributor_with_checked_file(self):
+        user = factories.AuthUserFactory()
+        self.node.contributors.append(user)
+        self.node.add_permission(user, 'admin')
+        self.node.visible_contributor_ids.append(user._id)
+        self.node.save()
+        self.file.checkout = self.user
+        self.file.save()
+        self.file.node.remove_contributors([self.user], save=True)
+        self.file.reload()
+        assert_equal(self.file.checkout, None)

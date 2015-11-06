@@ -580,6 +580,28 @@ def make_url_map(app):
             OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
         ),
 
+        Rule(
+            '/settings/tokens/',
+            'get',
+            profile_views.personal_access_token_list,
+            OsfWebRenderer('profile/personal_tokens_list.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/create/',
+            'get',
+            profile_views.personal_access_token_register,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/<_id>/',
+            'get',
+            profile_views.personal_access_token_detail,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
+
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
@@ -1151,16 +1173,6 @@ def make_url_map(app):
             project_views.contributor.project_manage_contributors,
             json_renderer,
         ),
-
-        Rule([
-            '/project/<pid>/get_most_in_common_contributors/',
-            '/project/<pid>/node/<nid>/get_most_in_common_contributors/',
-        ], 'get', project_views.contributor.get_most_in_common_contributors, json_renderer),
-
-        Rule([
-            '/project/<pid>/get_recently_added_contributors/',
-            '/project/<pid>/node/<nid>/get_recently_added_contributors/',
-        ], 'get', project_views.contributor.get_recently_added_contributors, json_renderer),
 
         Rule([
             '/project/<pid>/get_editable_children/',
