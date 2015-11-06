@@ -723,6 +723,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         public_project.reload()
         assert_equal(res.status_code, 201)
+        assert_equal(res.json['urls']['registrations'], public_project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
         registration = Node.load(public_project.node__registrations[-1])
@@ -813,6 +814,7 @@ class RegistrationEmbargoViewsTestCase(OsfTestCase):
         )
         public_project.reload()
         assert_equal(res.status_code, 201)
+        assert_equal(res.json['urls']['registrations'], public_project.web_url_for('node_registrations'))
 
         # Last node directly registered from self.project
         registration = Node.load(public_project.node__registrations[-1])
