@@ -167,7 +167,7 @@ class Comment(GuidStoredObject):
 
     date_created = fields.DateTimeField(auto_now_add=datetime.datetime.utcnow)
     date_modified = fields.DateTimeField(auto_now=datetime.datetime.utcnow)
-    modified = fields.BooleanField()
+    modified = fields.BooleanField(default=False)
 
     is_deleted = fields.BooleanField(default=False)
     content = fields.StringField()
@@ -178,6 +178,43 @@ class Comment(GuidStoredObject):
     #   'cdi38': {'category': 'spam', 'message': 'godwins law'},
     # }
     reports = fields.DictionaryField(validate=validate_comment_reports)
+
+    # For Django compatibility
+    @property
+    def pk(self):
+        return self._id
+
+    @property
+    def absolute_api_v2_url(self):
+        return absolute_reverse('comments:comment-detail', kwargs={'comment_id': self._id})
+
+    # used by django and DRF
+    def get_absolute_url(self):
+        return self.absolute_api_v2_url
+
+    def get_content(self, auth):
+        """ Returns the comment content if the user is allowed to see it. Deleted comments
+        can only be viewed by the user who created the comment."""
+        if (not auth or auth.user.is_anonymous()) and not self.node.is_public:
+            raise PermissionsError
+
+        if self.is_deleted and (((not auth or auth.user.is_anonymous()) and self.node.is_public)
+                                or (auth and not auth.user.is_anonymous() and self.user._id != auth.user._id)):
+            return None
+
+        return self.content
+
+    @classmethod
+    def find_unread(cls, user, node):
+        default_timestamp = datetime.datetime(1970, 1, 1, 12, 0, 0)
+        n_unread = 0
+        if node.is_contributor(user):
+            view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
+            n_unread = Comment.find(Q('node', 'eq', node) &
+                                    Q('user', 'ne', user) &
+                                    Q('date_created', 'gt', view_timestamp) &
+                                    Q('date_modified', 'gt', view_timestamp)).count()
+        return n_unread
 
     @classmethod
     def create(cls, auth, **kwargs):

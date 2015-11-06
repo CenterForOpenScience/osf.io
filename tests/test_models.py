@@ -4175,6 +4175,35 @@ class TestComments(OsfTestCase):
 
         assert_true(project.can_comment(Auth(user=user)))
 
+    def test_get_content_for_not_deleted_comment(self):
+        project = ProjectFactory(is_public=True)
+        comment = CommentFactory(node=project)
+        content = comment.get_content(auth=Auth(comment.user))
+        assert_equal(content, comment.content)
+
+    def test_get_content_returns_deleted_content_to_commenter(self):
+        comment = CommentFactory(is_deleted=True)
+        content = comment.get_content(auth=Auth(comment.user))
+        assert_equal(content, comment.content)
+
+    def test_get_content_does_not_return_deleted_content_to_non_commenter(self):
+        user = AuthUserFactory()
+        comment = CommentFactory(is_deleted=True)
+        content = comment.get_content(auth=Auth(user))
+        assert_is_none(content)
+
+    def test_get_content_public_project_does_not_return_deleted_content_to_logged_out_user(self):
+        project = ProjectFactory(is_public=True)
+        comment = CommentFactory(node=project, is_deleted=True)
+        content = comment.get_content(auth=None)
+        assert_is_none(content)
+
+    def test_get_content_private_project_throws_permissions_error_for_logged_out_users(self):
+        project = ProjectFactory(is_public=False)
+        comment = CommentFactory(node=project, is_deleted=True)
+        with assert_raises(PermissionsError):
+            comment.get_content(auth=None)
+
 
 class TestPrivateLink(OsfTestCase):
 
