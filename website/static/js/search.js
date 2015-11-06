@@ -309,8 +309,8 @@ var ViewModel = function(params) {
         var query = self.query();
         var tagRegExp = /(?:AND)?\s*tags\:\([\'\"](.+?)[\'\"]\)/g;
         var dirty = false;
-        while (tagRegExp.test(query)) {
-            var match = tagRegExp.exec(query);
+        var match;
+        while ((match = tagRegExp.exec(query))) {
             var block = match.shift();
             var tag = match.shift().trim();
             if (tag === tagName) {
