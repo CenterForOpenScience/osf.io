@@ -1,5 +1,8 @@
-{% load render_bundle from webpack_loader %}
 {% load staticfiles %}
+<script src="{% static 'vendor/bower_components/raven-js/dist/raven.min.js' %}"></script>
+<script src="{% static 'vendor/bower_components/jquery/dist/jquery.js' %}"></script>
+{% load render_bundle from webpack_loader %}
+
 
 <!DOCTYPE html>
 <html>
@@ -98,8 +101,6 @@
 
     <!-- REQUIRED JS SCRIPTS -->
 
-    <!-- jQuery 2.1.4 -->
-    <!--<script src="{% static 'js/jquery.min.js' %}"></script>-->
     <!-- Bootstrap 3.3.2 JS -->
     {% render_bundle 'vendor' %}
     <!-- AdminLTE App -->
