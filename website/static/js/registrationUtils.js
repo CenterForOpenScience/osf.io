@@ -342,7 +342,7 @@ Draft.prototype.beforeRegister = function(data) {
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(response, self.preRegisterPrompts.bind(self, response, self.register.bind(self)));
         } else if (response.prompts && response.prompts.length) {
-            self.preRegisterPrompts(response, self.register.bind(self, data));
+            self.preRegisterPrompts(response, self.register.bind(self));
         } else {
             self.register(data);
         }
