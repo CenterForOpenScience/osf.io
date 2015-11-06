@@ -60,6 +60,62 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     return nodesOriginal;
 }
 
+//function patchNodesPrivacy(nodes) {
+//    /**
+//     * patche all the nodes in a changed state.
+//     * we will use API V2 bulk requests when it becomes available
+//     */
+//    var promise;
+//    for (var key in nodes) {
+//        var node = nodes[key];
+//        var url = API_BASE + node.id + '/';
+//        nodesPatch = []
+//        nodesPatch.push({
+//        JSON.stringify(
+//            {
+//                'data': {
+//                    'type': 'nodes',
+//                    'id': node.id,
+//                    'attributes': {
+//                        'public': node.public
+//                    }
+//                }
+//            })}
+//        });
+//    }
+//
+//        promise = $.when(promise,
+//            $.ajax({
+//                url: url,
+//                type: 'PATCH',
+//                dataType: 'json',
+//                contentType: 'application/json',
+//                crossOrigin: true,
+//                xhrFields: {withCredentials: true},
+//                processData: false,
+//                data: JSON.stringify(
+//                    {
+//                        'data': {
+//                            'type': 'nodes',
+//                            'id': node.id,
+//                            'attributes': {
+//                                'public': node.public
+//                            }
+//                        }
+//                    })
+//            }).done(function (response) {
+//            }).fail(function (xhr, status, error) {
+//                $osf.growl('Error', 'Unable to update Projects and/or Components');
+//                Raven.captureMessage('Could not PATCH project settings.', {
+//                    url: url, status: status, error: error
+//                });
+//            }));
+//
+//
+//    return promise;
+//
+//}
+
 function patchNodesPrivacy(nodes) {
     /**
      * patche all the nodes in a changed state.
@@ -128,9 +184,6 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     /**
      * id of parent node
      */
-    $('#nodesPrivacy').on('hidden.bs.modal', function () {
-        self.clear();
-    });
 
     //Parent node is public or not
     var treebeardUrl = data.node.api_url  + 'get_node_tree/';
