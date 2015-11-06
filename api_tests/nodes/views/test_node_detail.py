@@ -17,7 +17,8 @@ from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
     AuthUserFactory,
-    FolderFactory
+    FolderFactory,
+    CommentFactory
 )
 
 from tests.utils import assert_logs, assert_not_logs
@@ -115,6 +116,24 @@ class TestNodeDetail(ApiTestCase):
         url = res.json['data']['relationships']['files']['links']['related']['href']
         expected_url = self.public_url + 'files/'
         assert_equal(urlparse(url).path, expected_url)
+
+    def test_node_has_comments_link(self):
+        res = self.app.get(self.public_url)
+        url = res.json['data']['relationships']['comments']['links']['related']['href']
+        expected_url = self.public_url + 'comments/'
+        assert_equal(urlparse(url).path, expected_url)
+
+    def test_node_has_correct_unread_comments_count(self):
+        res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
+        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
+        assert_equal(unread_comments, 0)
+
+        contributor = AuthUserFactory()
+        self.public_project.add_contributor(contributor=contributor, auth=Auth(self.user), save=True)
+        comment = CommentFactory(node=self.public_project, target=self.public_project, user=contributor)
+        res = self.app.get(self.public_url + '?related_counts=True', auth=self.user.auth)
+        unread_comments = res.json['data']['relationships']['comments']['links']['related']['meta']['unread']
+        assert_equal(unread_comments, 1)
 
     def test_node_properties(self):
         res = self.app.get(self.public_url)
