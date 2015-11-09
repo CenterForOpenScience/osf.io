@@ -141,10 +141,10 @@ var FileBrowser = {
                 return linkObject.data.url;
             }
             else if (linkObject.type === 'user') {
-                return $osf.apiV2Url('users/' + linkObject.data + '/nodes', { query : {'related_counts' : true}});
+                return $osf.apiV2Url('users/' + linkObject.data + '/nodes/', { query : {'related_counts' : true}});
             }
             else if (linkObject.type === 'node') {
-                return $osf.apiV2Url('nodes/' + linkObject.data.uid + '/children', { query : { 'related_counts' : true }});
+                return $osf.apiV2Url('nodes/' + linkObject.data.uid + '/children/', { query : { 'related_counts' : true }});
             }
             // If nothing
             throw new Error('Link could not be generated from linkObject data');
