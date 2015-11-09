@@ -1012,7 +1012,7 @@ def make_url_map(app):
 
         Rule('/mailchimp/hooks/', 'post', profile_views.sync_data_from_mailchimp, json_renderer),
 
-        # Create project, used by projectCreator.js
+        # Create project, used by [coming replacement]
         Rule('/project/new/', 'post', project_views.node.project_new_post, json_renderer),
 
         Rule([

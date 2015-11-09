@@ -9,7 +9,6 @@ var Treebeard = require('treebeard');
 // CSS
 require('css/typeahead.css');
 require('css/fangorn.css');
-require('css/projectorganizer.css');
 
 var $ = require('jquery');
 var m = require('mithril');
@@ -47,6 +46,7 @@ var projectOrganizerCategories = $.extend({}, {
     link:  'Link'
 }, nodeCategories);
 
+var LinkObject;
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
  * @type {Bloodhound}
@@ -114,11 +114,7 @@ function _poTitleColumn(item) {
     } else if(node.links.html){
         return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title),
             m('span', { ondblclick : function(){
-                var linkObject = {
-                    type : 'node',
-                    data : node,
-                    label : node.attributes.title
-                };
+                var linkObject = new LinkObject('node', node, node.attributes.title);
                 tb.options.updateFilesData(linkObject);
             }}, ' -Open')
         ];
@@ -126,51 +122,6 @@ function _poTitleColumn(item) {
         return  m('span', { 'class' : css}, node.attributes.title);
     }
 }
-
-/**
- * Links for going to project pages on the action column
- * @param event Click event
- * @param {Object} item A Treebeard _item object for the row involved. Node information is inside item.data
- * @param {Object} col Column options
- * @this Treebeard.controller Check Treebeard API for methods available
- * @private
- */
-function _gotoEvent(event, item) {
-    var tb = this;
-    var node = item.data;
-    if (COMMAND_KEYS.indexOf(tb.pressedKey) !== -1) {
-        window.open(node.urls.html, '_blank');
-    } else {
-        window.open(node.urls.html, '_self');
-    }
-}
-
-
-/**
- * Watching for escape key press
- * @param {String} nodeID Unique ID of the node
- */
-function addFormKeyBindings(nodeID) {
-    $('#ptd-' + nodeID).keyup(function (e) {
-        if (e.which === 27) {
-            $('#ptd-' + nodeID).find('.cancel-button-' + nodeID).filter(':visible').click();
-            return false;
-        }
-    });
-}
-
-
-function triggerClickOnItem(item, force) {
-    var row = $('.tb-row[data-id="' + item.id + '"]');
-    if (force) {
-        row.trigger('click');
-    }
-
-    if (row.hasClass(this.options.hoverClassMultiselect)) {
-        row.trigger('click');
-    }
-}
-
 
 /**
  * Contributors have first person's name and then number of contributors. This function returns the proper html
@@ -529,6 +480,7 @@ var ProjectOrganizer = {
             },
             tbOptions
         );
+        LinkObject = args.LinkObject;
         this.tb = new Treebeard(poOptions, true);
     },
     view : function (ctrl, args) {

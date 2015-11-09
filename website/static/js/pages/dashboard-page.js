@@ -5,7 +5,6 @@
 'use strict';
 
 var Raven = require('raven-js');
-var ko = require('knockout');
 var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
@@ -39,25 +38,8 @@ var ensureUserTimezone = function(savedTimezone, savedLocale, id) {
 };
 
 $(document).ready(function() {
-    $('#projectOrganizerScope').tooltip({selector: '[data-toggle=tooltip]'});
-    //var request = $.ajax({
-    //    url:  'http://localhost:8000/v2/users/me/nodes',
-    //    crossOrigin: true,
-    //    xhrFields: { withCredentials: true}
-    //});
-    //request.done(function(result) {
-
-        m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {wrapperSelector : '#fileBrowser'}));
-        // TODO: new data does not have timezone information
-        //ensureUserTimezone(result.timezone, result.locale, result.id);
-    //});
-    //request.fail(function(xhr, textStatus, error) {
-    //    Raven.captureMessage('Failed to populate user dashboard', {
-    //        url: url,
-    //        textStatus: textStatus,
-    //        error: error
-    //    });
-    //});
-
+    m.mount(document.getElementById('fileBrowser'), m.component(FileBrowser, {wrapperSelector : '#fileBrowser'}));
+    // TODO: new data does not have timezone information
+    //ensureUserTimezone(result.timezone, result.locale, result.id);
 });
 
