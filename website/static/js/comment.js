@@ -399,13 +399,26 @@ CommentModel.prototype.startDelete = function() {
 
 CommentModel.prototype.submitDelete = function() {
     var self = this;
-    $.ajax({
-        type: 'DELETE',
-        url: nodeApiUrl + 'comment/' + self.id() + '/',
-    }).done(function() {
+    var request = osfHelpers.ajaxJSON(
+        'PATCH',
+        osfHelpers.apiV2Url('comments/' + self.id() + '/', {}),
+        {
+            'isCors': true,
+            'data': {
+                'data': {
+                    'id': self.id(),
+                    'type': 'comments',
+                    'attributes': {
+                        'deleted': true
+                    }
+                }
+            }
+        });
+    request.done(function() {
         self.isDeleted(true);
         self.deleting(false);
-    }).fail(function() {
+    });
+    request.fail(function() {
         self.deleting(false);
     });
 };
@@ -420,12 +433,25 @@ CommentModel.prototype.startUndelete = function() {
 
 CommentModel.prototype.submitUndelete = function() {
     var self = this;
-    osfHelpers.putJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/undelete/',
-        {}
-    ).done(function() {
+    var request = osfHelpers.ajaxJSON(
+        'PATCH',
+        osfHelpers.apiV2Url('comments/' + self.id() + '/', {}),
+        {
+            'isCors': true,
+            'data': {
+                'data': {
+                    'id': self.id(),
+                    'type': 'comments',
+                    'attributes': {
+                        'deleted': false
+                    }
+                }
+            }
+        });
+    request.done(function() {
         self.isDeleted(false);
-    }).fail(function() {
+    });
+    request.fail(function() {
         self.undeleting(false);
     });
 };
