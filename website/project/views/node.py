@@ -39,6 +39,7 @@ from website import settings
 from website.views import _render_nodes, find_dashboard, validate_page_num
 from website.profile import utils
 from website.project import new_folder
+from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
 
@@ -468,10 +469,6 @@ def project_statistics_redirect(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 def project_before_set_public(node, **kwargs):
     prompt = node.callback('before_make_public')
-    anonymous_link_warning = any(private_link.anonymous for private_link in node.private_links_active)
-    if anonymous_link_warning:
-        prompt.append('Anonymized view-only links <b>DO NOT</b> anonymize '
-                      'contributors after a project or component is made public.')
 
     return {
         'prompts': prompt
@@ -577,20 +574,21 @@ def update_node(auth, node, **kwargs):
     data = r_strip_html(request.get_json())
     try:
         updated_field_names = node.update(data, auth=auth)
-        # Need to cast tags to a string to make them JSON-serialiable
-        updated_fields_dict = {
-            key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
-            for key in updated_field_names
-            if key != 'logs'
-        }
-        return {
-            'updated_fields': updated_fields_dict
-        }
     except NodeUpdateError as e:
         raise HTTPError(400, data=dict(
             message_short="Failed to update attribute '{0}'".format(e.key),
             message_long=e.reason
         ))
+    # Need to cast tags to a string to make them JSON-serialiable
+    updated_fields_dict = {
+        key: getattr(node, key) if key != 'tags' else [str(tag) for tag in node.tags]
+        for key in updated_field_names
+        if key != 'logs'
+    }
+    return {
+        'updated_fields': updated_fields_dict
+    }
+
 
 @must_be_valid_project
 @must_have_permission(ADMIN)
@@ -727,6 +725,7 @@ def _view_project(node, auth, primary=False):
             'category_short': node.category,
             'node_type': node.project_or_component,
             'description': node.description or '',
+            'license': serialize_node_license_record(node.license),
             'url': node.url,
             'api_url': node.api_url,
             'absolute_url': node.absolute_url,
@@ -1048,8 +1047,6 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     nodes = [Node.load(node_id) for node_id in node_ids]
 
-    has_public_node = any(node.is_public for node in nodes)
-
     try:
         new_link = new_private_link(
             name=name, user=auth.user, nodes=nodes, anonymous=anonymous
@@ -1058,13 +1055,6 @@ def project_generate_private_link_post(auth, node, **kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long=e.message)
-        )
-
-    if anonymous and has_public_node:
-        status.push_status_message(
-            'Anonymized view-only links <b>DO NOT</b> '
-            'anonymize contributors of public projects or components.',
-            trust=True
         )
 
     return new_link

@@ -84,7 +84,7 @@ class OsfStorageFileNode(FileNode):
     def save(self):
         self.path = ''
         self.materialized_path = ''
-        super(OsfStorageFileNode, self).save()
+        return super(OsfStorageFileNode, self).save()
 
 
 class OsfStorageFile(OsfStorageFileNode, File):
@@ -143,6 +143,17 @@ class OsfStorageFile(OsfStorageFileNode, File):
                 raise exceptions.VersionNotFoundError(version)
             return None
 
+    def delete(self, user=None, parent=None):
+        from website.search import search
+        search.update_file(self, delete=True)
+        return super(OsfStorageFile, self).delete(user, parent)
+
+    def save(self, skip_search=False):
+        from website.search import search
+        ret = super(OsfStorageFile, self).save()
+        if not skip_search:
+            search.update_file(self)
+        return ret
 
 class OsfStorageFolder(OsfStorageFileNode, Folder):
 

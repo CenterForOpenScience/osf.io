@@ -6,6 +6,7 @@ from website.files.models import FileNode
 class CheckedOutOrAdmin(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         assert isinstance(obj, FileNode), 'obj must be a FileNode, got {}'.format(obj)
+
         if request.method in permissions.SAFE_METHODS:
             return True
 
