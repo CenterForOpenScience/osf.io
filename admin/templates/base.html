@@ -1,0 +1,19 @@
+{# simple base #}
+
+{% load static %}
+
+<html>
+<head>
+    <title>
+        {% block title %} OSF Admin {% endblock title %}
+    </title>
+    {# stylesheets #}
+</head>
+<body>
+    <div class="content">
+        {%  block content %}
+            <h2>OSF Admin</h2>
+        {% endblock content %}
+    </div>
+</body>
+</html>

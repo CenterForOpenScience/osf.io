@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}List of Spam{% endblock title %}
+{# stylesheets #}
+{% block content %}
+    {{ block.super }}
+    <h2>List of Spam</h2>
+    <table>
+    <thead>
+        <tr>
+            <th><input type="checkbox"></th>
+            <th>Author</th>
+            <th>Reporter</th>
+            <th>Date</th>
+            <th>Content</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for comment in comments %}
+    <tr>
+        <td>
+            <input type="checkbox">
+        </td>
+        <td>
+            {{ comment.author.fullname }}
+        </td>
+        <td>
+            {% with comment.reports|first as first_report %}
+                {{ first_report.reporter.fullname }}
+            {% endwith %}
+        </td>
+        <td>
+            {{ comment.created|date }}
+        </td>
+        <td>
+            {{ comment.content|truncatechars:30 }}
+        </td>
+        <td>
+            <a href="{% url 'spam:detail' comment.id %}">
+                <input type="button" value="Detail">
+            </a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td>No more Spam!</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+    </table>
+{% endblock content %}
