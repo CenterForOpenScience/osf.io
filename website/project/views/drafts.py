@@ -39,7 +39,6 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     :return: serialized registration
     :rtype: dict
     """
-    # TODO(lyndsysimon): Is this view is called for all schemas?
     approval = DraftRegistrationApproval(
         initiated_by=auth.user,
         end_date=None,

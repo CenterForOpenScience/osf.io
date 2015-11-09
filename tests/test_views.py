@@ -4909,5 +4909,31 @@ class TestDraftRegistrationViews(OsfTestCase):
         assert_equal(res.status_code, http.OK)
         assert_equal(len(res.json['meta_schemas']), MetaSchema.find().count())
 
+    def test_node_register_page_not_registration_redirects(self):
+        url = self.node.web_url_for('node_register_page')
+        res = self.app.get(url, auth=self.user.auth)
+        assert_equal(res.status_code, http.FOUND)
+
+    def test_non_admin_can_view_node_register_page(self):
+        non_admin = AuthUserFactory()
+        self.node.add_contributor(
+            non_admin,
+            permissions.DEFAULT_CONTRIBUTOR_PERMISSIONS,
+            auth=Auth(self.user),
+            save=True
+        )
+        reg = RegistrationFactory(project=self.node)
+        url = reg.web_url_for('node_register_page')
+        res = self.app.get(url, auth=non_admin.auth)
+        assert_equal(res.status_code, http.OK)
+
+    def test_is_public_node_register_page(self):
+        self.node.is_public = True
+        self.node.save()
+        reg = RegistrationFactory(project=self.node)
+        url = reg.web_url_for('node_register_page')
+        res = self.app.get(url, auth=None)
+        assert_equal(res.status_code, http.OK)
+
 if __name__ == '__main__':
     unittest.main()

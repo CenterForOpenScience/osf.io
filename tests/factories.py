@@ -34,7 +34,8 @@ from website.oauth.models import (
 )
 from website.project.model import (
     Comment, DraftRegistration, Embargo, MetaSchema, Node, NodeLog, Pointer,
-    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig
+    PrivateLink, RegistrationApproval, Retraction, Sanction, Tag, WatchConfig,
+    ensure_schemas
 )
 from website.notifications.model import NotificationSubscription, NotificationDigest
 from website.archiver.model import ArchiveTarget, ArchiveJob
@@ -569,7 +570,10 @@ class DraftRegistrationFactory(ModularOdmFactory):
                 project_params['creator'] = initiator
             branched_from = ProjectFactory(**project_params)
         initiator = branched_from.creator
-        registration_schema = registration_schema or MetaSchema.find()[0]
+        try:
+            registration_schema = registration_schema or MetaSchema.find()[0]
+        except IndexError:
+            ensure_schemas()
         registration_metadata = registration_metadata or {}
         draft = branched_from.create_draft_registration(
             user=initiator,

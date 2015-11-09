@@ -37,7 +37,7 @@ from website.identifiers.client import EzidClient
 from .node import _view_project
 
 @must_be_valid_project
-@must_have_permission(ADMIN)
+@must_be_contributor_or_public
 def node_register_page(auth, node, **kwargs):
     """Display the registration metadata for a registration.
 
