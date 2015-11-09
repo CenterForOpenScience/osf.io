@@ -198,6 +198,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         if self_view:
             assert self_kwargs is not None, 'Must provide self view kwargs.'
 
+        super(RelationshipField, self).__init__(self.views, **kwargs)
 
     # For retrieving meta values, otherwise returns {}
     def get_meta_information(self, meta_data, value):
@@ -243,6 +244,10 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                     urls[view_name] = {}
                 else:
                     urls[view_name] = self.reverse(view, kwargs=kwargs, request=request, format=format)
+
+        if not urls['self'] and not urls['related']:
+            urls = {}
+
         return urls
 
     # Overrides HyperlinkedIdentityField
@@ -251,7 +256,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         urls = super(RelationshipField, self).to_representation(value)
 
         if urls == {}:
-            ret = format_relationship_links()
+            ret = None
         else:
             related_url = urls['related']
             related_meta = self.get_meta_information(self.related_meta, value)
@@ -544,9 +549,12 @@ class JSONAPISerializer(ser.Serializer):
                 continue
 
             if getattr(field, 'json_api_link', False):
-                data['relationships'][field.field_name] = field.to_representation(attribute)
-                if data['relationships'][field.field_name] == {'links': {}}:
-                    del data['relationships'][field.field_name]
+                result = field.to_representation(attribute)
+                if result:
+                    data['relationships'][field.field_name] = result
+                # data['relationships'][field.field_name] = field.to_representation(attribute)
+                # if data['relationships'][field.field_name] == {'links': {}}:
+                #     del data['relationships'][field.field_name]
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':
