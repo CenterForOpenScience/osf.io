@@ -45,16 +45,23 @@ def migrate(delete, index=None, app=None):
     app = app or init_app("website.settings", set_backends=True, routes=True)
 
     script_utils.add_file_logger(logger, __file__)
-    with app.test_request_context():
-        new_index = set_up_index(index)
+    # NOTE: We do NOT use the app.text_request_context() as a
+    # context manager because we don't want the teardown_request
+    # functions to be triggered
+    ctx = app.test_request_context()
+    ctx.push()
 
-        migrate_nodes(new_index)
-        migrate_users(new_index)
+    new_index = set_up_index(index)
 
-        set_up_alias(index, new_index)
+    migrate_nodes(new_index)
+    migrate_users(new_index)
 
-        if delete:
-            delete_old(new_index)
+    set_up_alias(index, new_index)
+
+    if delete:
+        delete_old(new_index)
+
+    ctx.pop()
 
 def set_up_index(idx):
     alias = es.indices.get_aliases(index=idx)
