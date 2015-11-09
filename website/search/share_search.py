@@ -36,8 +36,9 @@ def search(query, raw=False, index='share'):
 
     for hit in results['hits']['hits']:
         hit['_source']['highlight'] = hit.get('highlight', {})
-        hit['shareProperties']['docID'] = hit['shareProperties'].get('docID') or hit['_id']
-        hit['shareProperties']['source'] = hit['shareProperties'].get('source') or hit['_type']
+        if hit.get('shareProperties'):
+            hit['shareProperties']['docID'] = hit['shareProperties'].get('docID') or hit['_id']
+            hit['shareProperties']['source'] = hit['shareProperties'].get('source') or hit['_type']
     return results if raw else {
         'results': [hit['_source'] for hit in results['hits']['hits']],
         'count': results['hits']['total'],
