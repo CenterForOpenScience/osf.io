@@ -306,7 +306,7 @@ class LinkedNodesList(generics.ListAPIView, CollectionMixin):
     )
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
-    required_write_scopes = None
+    required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeSerializer
 
