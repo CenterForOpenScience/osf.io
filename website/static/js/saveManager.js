@@ -13,7 +13,6 @@ var SaveManager = function(url, method, xhrOpts, dirty, warn) {
     warn = warn || true;
 
     self.queued = null;
-    self.queuedPromise = null;
 
     self.blocking = null;
     if (warn) {
@@ -29,13 +28,11 @@ SaveManager.prototype.enqueue = function(opts, promise) {
     var self = this;
     if (self.queued) {
         self.queued = self.dequeue.bind(self, opts, promise);
-        self.queuedPromise = promise;
     }
     else {
         self.queued = function() {
             return self.dequeue(opts, promise);
         };
-        self.queuedPromise = promise;
     }
     return promise.promise();
 };
