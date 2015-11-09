@@ -209,6 +209,108 @@ ko.bindingHandlers.fadeVisible = {
     }
 };
 
+var tooltip = function(el, valueAccessor) {
+    var params = valueAccessor();
+    $(el).tooltip(params);
+};
+// Run Bootstrap tooltip JS automagically
+// http://getbootstrap.com/javascript/#tooltips
+ko.bindingHandlers.tooltip = {
+    init: tooltip,
+    update: tooltip
+};
+// Attach view model logic to global keypress events
+ko.bindingHandlers.onKeyPress = {
+    init: function(el, valueAccessor) {
+        $(window).keydown(function(e) {
+            var params = valueAccessor();
+            if (e.keyCode === params.keyCode) {
+                params.listener(e);
+            }
+        });
+    }
+};
+
+/* A binding handler to convert lists into formatted lists, e.g.:
+ * [dog] -> dog
+ * [dog, cat] -> dog and cat
+ * [dog, cat, fish] -> dog, cat, and fish
+ *
+ * This handler should not be used for user inputs.
+ *
+ * Example use:
+ * <span data-bind="listing: {data: ['Alpha', 'Beta', 'Gamma'],
+ *                            map: function(item) {return item.charAt(0) + '.';}}"></span>
+ * yields
+ * <span ...>A., B., and G.</span>
+ */
+ko.bindingHandlers.listing = {
+    update: function(element, valueAccessor, allBindings, viewModel, bindingContext) {
+        var value = valueAccessor();
+        var valueUnwrapped = ko.unwrap(value);
+        var map = valueUnwrapped.map || function(item) {return item;};
+        var data = valueUnwrapped.data || [];
+        var keys = [];
+        if (!Array.isArray(data)) {
+            keys = Object.keys(data);
+        }
+        else {
+            keys = data;
+        }
+        var list = ko.utils.arrayMap(keys, function(key, index) {
+            var ret;
+            if (index === 0){
+                ret = '';
+            }
+            else if (index === 1){
+                if (valueUnwrapped.length === 2) {
+                    ret = ' and ';
+                }
+                else {
+                    ret = ', ';
+                }
+            }
+            else {
+                ret = ', and ';
+            }
+            ret += map(key, data[key]);
+            return ret;
+        }).join('');
+        $(element).text(list);
+    }
+};
+
+/**
+ * Takes over anchor scrolling and scrolls to anchor positions within elements
+ * Example:
+ * <span data-bind='anchorScroll'></span>
+ */
+ko.bindingHandlers.anchorScroll = {
+    init: function(elem, valueAccessor) {
+        var buffer = valueAccessor().buffer || 100;
+        var element = valueAccessor().elem || elem;
+        var offset;
+        $(element).on('click', 'a[href^="#"]', function (event) {
+            var $item = $(this);
+            var $element = $(element);
+            if(!$item.attr('data-model') && $item.attr('href') !== '#') {
+                event.preventDefault();
+                // get location of the target
+                var target = $item.attr('href');
+                // if target has a scrollbar scroll it, otherwise scroll the page
+                if ( $element.get(0).scrollHeight > $element.innerHeight() ) {
+                    offset = $(target).position();
+                    $element.scrollTop(offset.top - buffer);
+                } else {
+                    offset = $(target).offset();
+                    $(window).scrollTop(offset.top - 100); // This is fixed to 100 because of the fixed navigation menus on the page
+                }
+            }
+        });
+    }
+};
+
+
 ko.bindingHandlers.groupOptions = {
     /** Map a list of lists to a select with optgroup headings
      *
