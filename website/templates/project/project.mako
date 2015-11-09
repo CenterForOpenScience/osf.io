@@ -125,7 +125,7 @@
                     <span data-bind="text: dateForked.local, tooltip: {title: dateForked.utc}"></span>
                     </p>
                 % endif
-                % if node['is_registration'] and node['registered_meta']:
+                % if node['is_registration']:
                     <br />Registration Supplement:
                     <a href="${node['url']}register/">${node['registered_schema']['schema']['title']}</a>
                 % endif
@@ -146,8 +146,8 @@
                 <span data-bind="if: hasIdentifiers()" class="scripted">
                   <br />
                     Identifiers:
-                    DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
-                    ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
+                  DOI <a href="#" data-bind="text: doi, attr.href: doiUrl"></a> |
+                  ARK <a href="#" data-bind="text: ark, attr.href: arkUrl"></a>
                 </span>
                 <span data-bind="if: canCreateIdentifiers()" class="scripted">
                   <!-- ko if: idCreationInProgress() -->
