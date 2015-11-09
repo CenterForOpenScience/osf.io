@@ -59,7 +59,6 @@ class TokuTransactionsMiddleware(object):
             except OperationFailure:
                 pass
             else:
-                pass
                 raise err
         commands.disconnect()
         return response
