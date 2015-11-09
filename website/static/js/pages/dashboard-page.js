@@ -5,7 +5,6 @@
 'use strict';
 
 var Raven = require('raven-js');
-var ko = require('knockout');
 var $ = require('jquery');
 var jstz = require('jstimezonedetect').jstz;
 
