@@ -241,6 +241,7 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         lookup_field = lookup_field.split('.')
         self.source_attrs = lookup_field
+        self.required = True
         return ser.Field.get_attribute(self, obj)
 
     def kwargs_lookup(self, obj, kwargs_dict):
