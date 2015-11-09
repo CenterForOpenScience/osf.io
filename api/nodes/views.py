@@ -217,6 +217,7 @@ class NodeList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin):
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = NodeSerializer
+    view_name = 'nodes:node-list'
 
     ordering = ('-date_modified', )  # default ordering
 
@@ -365,6 +366,7 @@ class NodeDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, NodeMix
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = NodeDetailSerializer
+    view_name = 'nodes:node-detail'
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):
@@ -471,6 +473,7 @@ class NodeContributorsList(JSONAPIBaseView, generics.ListCreateAPIView, ListFilt
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
 
     serializer_class = NodeContributorsSerializer
+    view_name = 'nodes:node-contributors'
 
     def get_default_queryset(self):
         node = self.get_node()
@@ -588,6 +591,7 @@ class NodeContributorDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIVi
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
 
     serializer_class = NodeContributorDetailSerializer
+    view_name = 'nodes:node-contributor-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -671,6 +675,7 @@ class NodeRegistrationsList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_REGISTRATIONS_WRITE]
 
     serializer_class = RegistrationSerializer
+    view_name = 'nodes:node-registrations'
 
     # overrides ListAPIView
     # TODO: Filter out retractions by default
@@ -764,6 +769,7 @@ class NodeChildrenList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin, O
         ReadOnlyIfRegistration,
         base_permissions.TokenHasScope,
     )
+    view_name = 'nodes:node-children'
 
     required_read_scopes = [CoreScopes.NODE_CHILDREN_READ]
     required_write_scopes = [CoreScopes.NODE_CHILDREN_WRITE]
@@ -869,6 +875,7 @@ class NodeLinksList(JSONAPIBaseView, generics.ListCreateAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeLinksSerializer
+    view_name = 'nodes:node-pointers'
 
     def get_queryset(self):
         return [
@@ -938,6 +945,8 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
 
     serializer_class = NodeLinksSerializer
+    view_name = 'nodes:node-pointer-detail'
+
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -1141,7 +1150,7 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
                         "resource": {node_id},        // defaults to current {node_id}
                         "provider": {provider}        // defaults to current {provider}
                        }
-        Succes:        200 OK + new entity representation
+        Success:        200 OK + new entity representation
 
     Move and copy actions both use the same request structure, a POST to the `move` url, but with different values for
     the `action` body parameters.  The `path` parameter is also required and should be the OSF `path` attribute of the
@@ -1193,6 +1202,9 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
+    view_name = 'nodes:node-files'
+
+
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
         files_list = self.fetch_from_waterbutler()
@@ -1223,6 +1235,7 @@ class NodeFileDetail(JSONAPIBaseView, generics.RetrieveAPIView, WaterButlerMixin
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
+    view_name = 'nodes:node-file-detail'
 
     def get_object(self):
         fobj = self.fetch_from_waterbutler()
@@ -1372,6 +1385,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     serializer_class = NodeProviderSerializer
+    view_name = 'nodes:node-providers'
 
     def get_provider_item(self, provider):
         return NodeProvider(provider, self.get_node())
@@ -1463,6 +1477,8 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentSerializer
+    view_name = 'nodes:node-comments'
+
 
     ordering = ('-date_created', )  # default ordering
 

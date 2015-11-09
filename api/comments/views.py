@@ -121,6 +121,7 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixi
     required_read_scopes = [CoreScopes.NODE_COMMENTS_READ]
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
+    view_name = 'comments:comment-replies'
     serializer_class = CommentSerializer
 
     ordering = ('-date_created', )  # default ordering
@@ -232,6 +233,7 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
     required_write_scopes = [CoreScopes.NODE_COMMENTS_WRITE]
 
     serializer_class = CommentDetailSerializer
+    view_name = 'comments:comment-detail'
 
     # overrides RetrieveAPIView
     def get_object(self):
@@ -301,6 +303,8 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
     required_write_scopes = [CoreScopes.COMMENT_REPORTS_WRITE]
 
     serializer_class = CommentReportSerializer
+    view_name = 'comments:comment-reports'
+
 
     def get_queryset(self):
         user_id = self.request.user._id
@@ -382,6 +386,8 @@ class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     required_write_scopes = [CoreScopes.COMMENT_REPORTS_WRITE]
 
     serializer_class = CommentReportDetailSerializer
+    view_name = 'comments:report-detail'
+
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):

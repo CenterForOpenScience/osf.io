@@ -35,6 +35,8 @@ class ApplicationList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixi
 
     serializer_class = ApiOAuth2ApplicationSerializer
 
+    view_name = 'applications:application-list'
+
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 
     def get_default_odm_query(self):
@@ -72,6 +74,7 @@ class ApplicationDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView):
     required_write_scopes = [CoreScopes.APPLICATIONS_WRITE]
 
     serializer_class = ApiOAuth2ApplicationDetailSerializer
+    view_name = 'applications:application-detail'
 
     renderer_classes = [renderers.JSONRenderer]  # Hide from web-browsable API tool
 
