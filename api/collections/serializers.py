@@ -9,7 +9,7 @@ from website.models import Node
 from api.base.serializers import LinksField, JSONAPIHyperlinkedIdentityField, DevOnly
 from api.base.serializers import JSONAPISerializer, IDField, TypeField
 from api.base.exceptions import InvalidModelValueError
-from api.base.utils import absolute_reverse
+from api.base.utils import absolute_reverse, get_user_auth
 from api.nodes.serializers import NodeLinksSerializer
 
 
@@ -38,14 +38,6 @@ class CollectionSerializer(JSONAPISerializer):
     def get_absolute_url(self, obj):
         return obj.absolute_url
 
-    def get_user_auth(self, request):
-        user = request.user
-        if user.is_anonymous():
-            auth = Auth(None)
-        else:
-            auth = Auth(user)
-        return auth
-
     def get_node_links_count(self, obj):
         return len(obj.nodes_pointer)
 
@@ -62,7 +54,7 @@ class CollectionSerializer(JSONAPISerializer):
         the request to be in the serializer context.
         """
         assert isinstance(node, Node), 'collection must be a Node'
-        auth = self.get_user_auth(self.context['request'])
+        auth = get_user_auth(self.context['request'])
 
         if validated_data:
             try:
