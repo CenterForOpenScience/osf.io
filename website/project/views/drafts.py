@@ -39,19 +39,32 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     :return: serialized registration
     :rtype: dict
     """
-    # TODO(lyndsysimon): Is this view is called for all schemas?
+    data = request.get_json()
+    meta = {}
+    registration_choice = data.get('registrationChoice', 'immediate')
+    if registration_choice == 'embargo':
+        # Initiate embargo
+        meta['embargo_end_date'] = parse_date(data['embargoEndDate'], ignoretz=True)
+    meta['registration_choice'] = registration_choice
     approval = DraftRegistrationApproval(
         initiated_by=auth.user,
         end_date=None,
+        meta=meta
     )
     approval.save()
     draft.approval = approval
     draft.approval.ask(node.active_contributors())
     draft.save()
 
-    ret = project_utils.serialize_node(node, auth)
-    ret['success'] = True
-    return ret
+    push_status_message(language.AFTER_SUBMIT_FOR_REVIEW,
+                        kind='info',
+                        trust=False)
+    return {
+        'status': 'initiated',
+        'urls': {
+            'registrations': node.web_url_for('node_registrations')
+        }
+    }, http.ACCEPTED
 
 @autoload_draft
 @must_have_permission(ADMIN)
@@ -73,7 +86,6 @@ def draft_before_register_page(auth, node, draft, *args, **kwargs):
 @http_error_if_disk_saving_mode
 def register_draft_registration(auth, node, draft, *args, **kwargs):
     """Initiate a registration from a draft registration
-
 
     :return: success message; url to registrations page
     :rtype: dict

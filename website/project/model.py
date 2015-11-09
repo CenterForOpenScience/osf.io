@@ -99,16 +99,28 @@ class MetaSchema(StoredObject):
     schema_version = fields.IntegerField()
 
     @property
+    def _config(self):
+        return self.schema.get('config', {})
+
+    @property
     def requires_approval(self):
-        return self.schema.get('config', {}).get('requiresApproval', False)
+        return self._config.get('requiresApproval', False)
 
     @property
     def fulfills(self):
-        return self.schema.get('config', {}).get('fulfills', [])
+        return self._config.get('fulfills', [])
 
     @property
     def messages(self):
-        return self.schema.get('config', {}).get('messages', {})
+        return self._config.get('messages', {})
+
+    @property
+    def consent(self):
+        return self._config.get('consent', '')
+
+    @property
+    def requires_consent(self):
+        return self.consent != ''
 
 def ensure_schema(schema, name, version=1):
     try:
@@ -3931,11 +3943,43 @@ class DraftRegistrationApproval(Sanction):
 
     mode = Sanction.ANY
 
-    def _on_complete(self, *args, **kwargs):
-        pass  # draft approval state gets loaded dynamically from this record
+    # TODO(samchrisinger): document
+    meta = fields.DictionaryField(default=dict)
+
+    def _on_complete(self, user):
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        auth = Auth(user) if user else None
+        registration = draft.register(
+            auth=auth,
+            save=True
+        )
+        registration_choice = self.meta['registration_choice']
+        try:
+            {
+                'immediate': functools.partial(registration.require_approval, user),
+                'embargo': functools.partial(
+                    user,
+                    registration.embargo_registration, self.meta['embargo_end_date']
+                )
+            }[registration_choice]()
+        except KeyError:
+            raise ValueError("'registration_choice' must be either 'emebargo' or 'immediate'")
+        except NodeStateError as e:
+            raise e
+            # TODO(samchrisinger)
+            #  raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
+        except ValidationValueError as e:
+            raise e
+            # TODO(samchrisinger):
+            # raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
     def _on_reject(self, *args, **kwargs):
-        pass  # draft approval state gets loaded dynamically from this record
+        # clear out previous registration options
+        self.meta = {}
+        self.save()
+        # TODO(samchrisinger): email author?
 
 
 class DraftRegistration(AddonModelMixin, StoredObject):

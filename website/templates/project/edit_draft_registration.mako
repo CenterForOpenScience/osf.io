@@ -16,7 +16,7 @@
               <div class="span8 col-md-2 columns eight large-8">
                 <ul class="nav nav-stacked list-group" data-bind="foreach: {data: pages, as: 'page'}, visible: pages().length > 1">
                   <li class="re-navbar">
-                    <a class="registration-editor-page" id="top-nav" style="text-align: left; font-weight:bold;" data-bind="text: title, click: $root.selectPage">
+                    <a class="registration-editor-page" id="top-nav" style="text-align: left;" data-bind="text: title, click: $root.selectPage, style:{'font-weight': active() ? 'bold' : 'normal'}">
                       <i class="fa fa-caret-right"></i>
                     </a>
                   </li>
@@ -47,11 +47,9 @@
                 <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
                 </button>
                     <!-- ko if: onLastPage -->
-                    <a data-bind="css: {'disabled': !canRegister()},
-                                click: $root.check,
-                                tooltip: {
-                                   title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
-                                 }" type="button" class="pull-right btn btn-success">Preview for submission
+                    <a data-bind="css: {disabled: !canSubmit()},
+                                  click: $root.check"
+                       type="button" class="pull-right btn btn-success">Preview for submission
                     </a>
                     <!-- /ko -->
                     <!-- ko ifnot: onLastPage -->
