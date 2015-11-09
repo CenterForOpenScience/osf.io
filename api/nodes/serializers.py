@@ -14,8 +14,7 @@ from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHy
     TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly)
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
-from api.base.serializers import (LinksField, JSONAPIHyperlinkedIdentityField, DevOnly,
-                                  JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink,
+from api.base.serializers import (LinksField, DevOnly,JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField,
                                   IDField, TypeField, TargetTypeField, JSONAPIListField)
 
 
@@ -77,12 +76,12 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': 'pk'},
         related_meta={'count': 'get_node_count'},
     )
-    
+
     comments = RelationshipField(
         related_view = 'nodes:node-comments',
         related_view_kwargs = {'node_id': 'pk'},
-        related_meta = {'unread': 'get_unread_comments_count'}
-      
+        related_meta = {'unread': 'get_unread_comments_count'})
+
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': 'pk'},
