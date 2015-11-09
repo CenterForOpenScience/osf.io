@@ -75,7 +75,7 @@ class TestApiBaseViews(ApiTestCase):
     def test_view_classes_support_embeds(self):
         for view in VIEW_CLASSES:
             assert_true(hasattr(view, '_get_embed_partial'))
-            
+
     @mock.patch('framework.auth.core.User.is_confirmed', mock.PropertyMock(return_value=False))
     def test_unconfirmed_user_gets_error(self):
 
@@ -106,7 +106,7 @@ class TestJSONAPIBaseView(ApiTestCase):
         for i in range(5):
             factories.ProjectFactory(parent=self.node)
 
-    @mock.patch('api.base.serializers.JSONAPISerializer.to_representation', autospec=True)    
+    @mock.patch('api.base.serializers.JSONAPISerializer.to_representation', autospec=True)
     def test_request_added_to_serializer_context(self, mock_to_representation):
         self.app.get(self.url, auth=self.user.auth)
         assert_in('request', mock_to_representation.call_args[0][0].context)

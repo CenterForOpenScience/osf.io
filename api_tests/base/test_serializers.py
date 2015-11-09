@@ -54,11 +54,10 @@ class TestApiBaseSerializers(ApiTestCase):
         res = self.app.get(self.url, params={'related_counts': 'fish'}, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
 
-    def test_invalid_embed_valud_raise_bad_request(self):
+    def test_invalid_embed_value_raise_bad_request(self):
         res = self.app.get(self.url, params={'embed': 'foo'}, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
         assert_equal(res.json['errors'][0]['detail'], "Field 'foo' is not embeddable.")
-        
 
 
 class TestJSONAPIHyperlinkedIdentityField(DbTestCase):
