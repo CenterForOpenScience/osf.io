@@ -85,6 +85,12 @@ class TestRelationshipField(DbTestCase):
             related_view_kwargs={'node_id': 'pk', 'node_link_id': 'pk'},
         )
 
+        not_attribute_on_target = RelationshipField(
+            # fake url, for testing purposes
+            related_view = 'nodes:node-children',
+            related_view_kwargs = {'node_id': '<12345>'}
+        )
+
         class Meta:
             type_ = 'nodes'
 
@@ -125,3 +131,11 @@ class TestRelationshipField(DbTestCase):
         data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
         field = data['relationships']['two_url_kwargs']['links']
         assert_in('/v2/nodes/{}/node_links/{}/'.format(node._id, node._id), field['related']['href'])
+
+    def test_field_with_non_attribute(self):
+        req = make_drf_request()
+        project = factories.ProjectFactory()
+        node = factories.NodeFactory(parent=project)
+        data = self.BasicNodeSerializer(node, context={'request': req}).data['data']
+        field = data['relationships']['not_attribute_on_target']['links']
+        assert_in('/v2/nodes/{}/children/'.format('12345'), field['related']['href'])

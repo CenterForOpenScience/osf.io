@@ -2,7 +2,6 @@ import re
 import collections
 
 from rest_framework import exceptions
-from rest_framework.reverse import reverse
 from rest_framework import serializers as ser
 from rest_framework.fields import SkipField
 
@@ -180,9 +179,19 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         self_view_kwargs={'node_id': 'pk'},
         related_meta={'count': 'get_node_count'}
     )
+
+    If you surround the lookup_field in angular brackets, it will not attempt to find that attribute on the target, but rather
+    return the lookup_field name verbatim.
+    Example:
+     wiki_home = RelationshipField(
+        related_view='addon:addon-detail',
+        related_view_kwargs={'node_id': '_id', 'provider': '<wiki>'},
+    )
+    'wiki' is enclosed in angular brackets, so the serialized result would be '/nodes/abc12/addons/wiki'.
     """
+
     json_api_link = True  # serializes to a links object
-    
+
     def __init__(self, **kwargs):
         related_view = kwargs.pop('related_view', None)
         self_view = kwargs.pop('self_view', None)
@@ -200,8 +209,10 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
         super(RelationshipField, self).__init__(self.views, **kwargs)
 
-    # For retrieving meta values, otherwise returns {}
     def get_meta_information(self, meta_data, value):
+        """
+        For retrieving meta values, otherwise returns {}
+        """
         meta = {}
         for key in meta_data or {}:
             if key == 'count':
@@ -219,12 +230,23 @@ class RelationshipField(ser.HyperlinkedIdentityField):
                 meta[key] = _rapply(meta_data[key], _url_val, obj=value, serializer=self.parent)
         return meta
 
-    # For returning kwargs dictionary of format {"lookup_url_kwarg": lookup_value}
+    def lookup_attribute(self, obj, lookup_field):
+        """
+        Returns attribute from target object unless attribute surrounded in angular brackets where it returns the lookup field.
+        """
+        bracket_check = lookup_field.partition('<')[-1].rpartition('>')[0]
+        if bracket_check:
+            return bracket_check
+        return getattr(obj, lookup_field)
+
     def kwargs_lookup(self, obj, kwargs_dict):
+        """
+        For returning kwargs dictionary of format {"lookup_url_kwarg": lookup_value}
+        """
         kwargs_retrieval = {}
         for lookup_url_kwarg, lookup_field in kwargs_dict.items():
             try:
-                lookup_value = getattr(obj, lookup_field)
+                lookup_value = self.lookup_attribute(obj, lookup_field)
             except AttributeError as exc:
                 raise AssertionError(exc)
             if lookup_value is None:

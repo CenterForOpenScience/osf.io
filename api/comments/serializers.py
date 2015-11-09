@@ -34,8 +34,8 @@ class CommentSerializer(JSONAPISerializer):
     user = JSONAPIHyperlinkedRelatedField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id', link_type='related', read_only=True)
     node = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk', lookup_url_kwarg='node_id', link_type='related', read_only=True)
     target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
-    replies = RelationshipField(self_view='comments:comment-replies', self_view_kwargs = {'comment_id': 'pk'})
-    reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs = {'comment_id': 'pk'})
+    replies = RelationshipField(self_view='comments:comment-replies', self_view_kwargs={'comment_id': 'pk'})
+    reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': 'pk'})
 
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
