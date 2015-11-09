@@ -41,12 +41,26 @@ class CommentSerializer(JSONAPISerializer):
     date_modified = ser.DateTimeField(read_only=True)
     modified = ser.BooleanField(read_only=True, default=False)
     deleted = ser.BooleanField(read_only=True, source='is_deleted', default=False)
+    is_abuse = ser.SerializerMethodField()
+    has_children = ser.SerializerMethodField()
+    can_edit = ser.SerializerMethodField()
 
     # LinksField.to_representation adds link to "self"
     links = LinksField({})
 
     class Meta:
         type_ = 'comments'
+
+    def get_is_abuse(self, obj):
+        auth = Auth(self.context['request'].user)
+        return auth.user and auth.user._id in obj.reports
+
+    def get_can_edit(self, obj):
+        auth = Auth(self.context['request'].user)
+        return obj.user == auth.user
+
+    def get_has_children(self, obj):
+        return bool(getattr(obj, 'commented', []))
 
     def create(self, validated_data):
         user = validated_data['user']
