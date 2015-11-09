@@ -19,11 +19,11 @@ $(function(){
         $osf.postJSON(
             '/api/v1/project/new/', { title: title }
         ).done( function(response) {
-                window.location = response.newNode + 'registrations/';
+                window.location = response.projectUrl + 'registrations/';
             }
-        ).fail(
-            //handle failure without reloading page
-        );
+        ).fail( function() {
+                $osf.growl('Project creation failed. Reload the page and try again.')
+            });
     });
 
     // Activate "existing projects" typeahead.
@@ -48,7 +48,7 @@ $(function(){
     // Activate autocomplete for draft registrations
     $.getJSON('/api/v1/prereg/draft_registrations/').done(function(response){
         if (response.draftRegistrations.length) {
-            $osf.applyBindings({drafts: response}, '#existingPrereg');
+            $osf.applyBindings({}, '#existingPrereg');
         }
     });
 });

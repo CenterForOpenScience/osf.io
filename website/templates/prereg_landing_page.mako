@@ -44,10 +44,8 @@
             <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round prereg" data-qtoggle-group="prereg" data-qtoggle-target="#newPrereg">Start a new preregistration</div>
             <div id="newPrereg" class="p-md osf-box box-round clearfix m-b-lg" style="display:none">
                 <p>Give a title to the presentation, like the title of a paper that may come out of this work
-                <form>
                     <input type="text" id="newProjectTitle" class="form-control" placeholder="Title">
                     <button type="submit" id="newProject" class="btn btn-primary pull-right m-t-md">Continue <i class="fa fa-angle-right"></i></button>
-                </form>
             </div>
         </div>
         %if has_draft_registration:
@@ -57,7 +55,7 @@
                 <p>Go to an existing preregistration
                 <form>
                     <osf-draft-registrations-search
-                        params="data: drafts">
+                        params="data: '/api/v1/prereg/draft_registrations/'">
                     </osf-draft-registrations-search>
                 </form>
             </div>
