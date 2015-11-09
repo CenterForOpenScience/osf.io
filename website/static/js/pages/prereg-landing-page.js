@@ -19,7 +19,7 @@ $(function(){
         $osf.postJSON('/api/v1/project/new/', { title: title }).done(function(response) {
             window.location = response.projectUrl + 'registrations/';
         }).fail(function() {
-            $osf.growl('Project creation failed. Reload the page and try again.')
+            $osf.growl('Project creation failed. Reload the page and try again.');
         });
     });
 
@@ -38,7 +38,7 @@ $(function(){
         }, '#existingProject');
     }).fail(function(xhr, textStatus, error) {
         Raven.captureMessage('Could not fetch dashboard nodes.', {
-            url: url, textStatus: textStatus, error: error
+            url: '/api/v1/dashboard/get_nodes/', textStatus: textStatus, error: error
         });
     });
 
