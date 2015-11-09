@@ -60,102 +60,42 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
     return nodesOriginal;
 }
 
-//function patchNodesPrivacy(nodes) {
-//    /**
-//     * patche all the nodes in a changed state.
-//     * we will use API V2 bulk requests when it becomes available
-//     */
-//    var promise;
-//    for (var key in nodes) {
-//        var node = nodes[key];
-//        var url = API_BASE + node.id + '/';
-//        nodesPatch = []
-//        nodesPatch.push({
-//        JSON.stringify(
-//            {
-//                'data': {
-//                    'type': 'nodes',
-//                    'id': node.id,
-//                    'attributes': {
-//                        'public': node.public
-//                    }
-//                }
-//            })}
-//        });
-//    }
-//
-//        promise = $.when(promise,
-//            $.ajax({
-//                url: url,
-//                type: 'PATCH',
-//                dataType: 'json',
-//                contentType: 'application/json',
-//                crossOrigin: true,
-//                xhrFields: {withCredentials: true},
-//                processData: false,
-//                data: JSON.stringify(
-//                    {
-//                        'data': {
-//                            'type': 'nodes',
-//                            'id': node.id,
-//                            'attributes': {
-//                                'public': node.public
-//                            }
-//                        }
-//                    })
-//            }).done(function (response) {
-//            }).fail(function (xhr, status, error) {
-//                $osf.growl('Error', 'Unable to update Projects and/or Components');
-//                Raven.captureMessage('Could not PATCH project settings.', {
-//                    url: url, status: status, error: error
-//                });
-//            }));
-//
-//
-//    return promise;
-//
-//}
-
 function patchNodesPrivacy(nodes) {
     /**
      * patche all the nodes in a changed state.
      * we will use API V2 bulk requests when it becomes available
      */
-    var promise;
+    var nodesPatch = []
     for (var key in nodes) {
         var node = nodes[key];
-        var url = API_BASE + node.id + '/';
+        nodesPatch.push({
+                    'type': 'nodes',
+                    'id': node.id,
+                    'attributes': {
+                        'public': node.public
+                    }
+            });
+        }
 
-        promise = $.when(promise,
             $.ajax({
-                url: url,
+                url: API_BASE,
                 type: 'PATCH',
                 dataType: 'json',
-                contentType: 'application/json',
+                contentType: 'application/vnd.api+json; ext=bulk',
                 crossOrigin: true,
                 xhrFields: {withCredentials: true},
                 processData: false,
-                data: JSON.stringify(
-                    {
-                        'data': {
-                            'type': 'nodes',
-                            'id': node.id,
-                            'attributes': {
-                                'public': node.public
-                            }
-                        }
-                    })
+                data: JSON.stringify({
+                    data: nodesPatch
+                })
             }).done(function (response) {
+                window.location.reload();
             }).fail(function (xhr, status, error) {
                 $osf.growl('Error', 'Unable to update Projects and/or Components');
                 Raven.captureMessage('Could not PATCH project settings.', {
-                    url: url, status: status, error: error
+                    url: API_BASE, status: status, error: error
                 });
-            }));
-
-    }
-    return promise;
-
+            });
 }
 
 var NodesPrivacyViewModel = function(data, parentIsPublic) {
@@ -269,10 +209,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
          * reloading the page
          */
         var nodesState = ko.toJS(self.nodesState());
-        var promise = patchNodesPrivacy(nodesState);
-        promise.then(function () {
-            window.location.reload();
-        });
+        patchNodesPrivacy(nodesState);
     };
 
     self.clear = function() {
