@@ -963,7 +963,7 @@ class TestMergingUsers(OsfTestCase):
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
         self._merge_dupe()
         handlers.celery_teardown_request()
-        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username})
+        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username}, send_goodbye=False)
         assert_false(self.dupe.mailchimp_mailing_lists[list_name])
 
     def test_inherits_projects_contributed_by_dupe(self):

@@ -8,13 +8,15 @@ from rest_framework.status import is_server_error
 from framework.auth.core import Auth
 from framework.auth.oauth_scopes import CoreScopes
 
+from api.base import generic_bulk_views as bulk_views
 from api.base import permissions as base_permissions
 from api.base.filters import ODMFilterMixin, ListFilterMixin
-from api.base.utils import get_object_or_error
+from api.base.utils import get_object_or_error, is_bulk_request
 from api.files.serializers import FileSerializer
 from api.comments.serializers import CommentSerializer
 from api.comments.permissions import CanCommentOrPublic
 from api.users.views import UserMixin
+
 from api.nodes.serializers import (
     NodeSerializer,
     NodeLinksSerializer,
@@ -35,9 +37,11 @@ from api.nodes.permissions import (
 from api.base.exceptions import ServiceUnavailableError
 
 from website.exceptions import NodeStateError
+from website.util.permissions import ADMIN
 from website.files.models import FileNode
 from website.files.models import OsfStorageFileNode
 from website.models import Node, Pointer, Comment
+from framework.auth.core import User
 from website.util import waterbutler_api_url_for
 
 
@@ -128,7 +132,7 @@ class WaterButlerMixin(object):
             raise ServiceUnavailableError(detail='Could not retrieve files information at this time.')
 
 
-class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
+class NodeList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ODMFilterMixin):
     """Nodes that represent projects and components. *Writeable*.
 
     Paginated list of nodes ordered by their `date_modified`.  Each resource contains the full representation of the
@@ -214,6 +218,7 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
 
     required_read_scopes = [CoreScopes.NODE_BASE_READ]
     required_write_scopes = [CoreScopes.NODE_BASE_WRITE]
+    model_class = Node
 
     serializer_class = NodeSerializer
 
@@ -234,12 +239,38 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         query = base_query & permission_query
         return query
 
-    # overrides ListCreateAPIView
+    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
-        query = self.get_query_from_request()
-        return Node.find(query)
+        # For bulk requests, queryset is formed from request body.
+        if is_bulk_request(self.request):
+            query = Q('_id', 'in', [node['id'] for node in self.request.data])
 
-    # overrides ListCreateAPIView
+            user = self.request.user
+            if user.is_anonymous():
+                auth = Auth(None)
+            else:
+                auth = Auth(user)
+
+            nodes = Node.find(query)
+            for node in nodes:
+                if not node.can_edit(auth):
+                    raise PermissionDenied
+            return nodes
+        else:
+            query = self.get_query_from_request()
+            return Node.find(query)
+
+    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDestroyJSONAPIView
+    def get_serializer_class(self):
+        """
+        Use NodeDetailSerializer which requires 'id'
+        """
+        if self.request.method in ('PUT', 'PATCH', 'DELETE'):
+            return NodeDetailSerializer
+        else:
+            return NodeSerializer
+
+    # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         """Create a node.
 
@@ -248,6 +279,24 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
         # On creation, make sure that current user is the creator
         user = self.request.user
         serializer.save(creator=user)
+
+    # overrides BulkDestroyJSONAPIView
+    def allow_bulk_destroy_resources(self, user, resource_list):
+        """User must have admin permissions to delete nodes."""
+        for node in resource_list:
+            if not node.has_permission(user, ADMIN):
+                return False
+        return True
+
+    # Overrides BulkDestroyJSONAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        try:
+            instance.remove_node(auth=auth)
+        except NodeStateError as err:
+            raise ValidationError(err.message)
+        instance.save()
 
 
 class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
@@ -390,8 +439,8 @@ class NodeDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin):
         node.save()
 
 
-class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixin):
-    """Contributors (users) for a node. *Writeable*.
+class NodeContributorsList(bulk_views.BulkUpdateJSONAPIView, bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, ListFilterMixin, NodeMixin):
+    """Contributors (users) for a node.
 
     Contributors are users who can make changes to the node or, in the case of private nodes,
     have read access to the node. Contributors are divided between 'bibliographic' and 'non-bibliographic'
@@ -474,6 +523,7 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
 
     required_read_scopes = [CoreScopes.NODE_CONTRIBUTORS_READ]
     required_write_scopes = [CoreScopes.NODE_CONTRIBUTORS_WRITE]
+    model_class = User
 
     serializer_class = NodeContributorsSerializer
 
@@ -488,15 +538,27 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
             contributors.append(contributor)
         return contributors
 
+    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView, BulkDeleteJSONAPIView
     def get_serializer_class(self):
-        if self.request.method == 'POST':
+        """
+        Use NodeContributorDetailSerializer which requires 'id'
+        """
+        if self.request.method == 'PUT' or self.request.method == 'PATCH' or self.request.method == 'DELETE':
+            return NodeContributorDetailSerializer
+        elif self.request.method == 'POST':
             return NodeContributorsCreateSerializer
         else:
             return NodeContributorsSerializer
 
-    # overrides ListAPIView
+    # overrides ListBulkCreateJSONAPIView, BulkUpdateJSONAPIView
     def get_queryset(self):
-        return self.get_queryset_from_request()
+        queryset = self.get_queryset_from_request()
+
+        # If bulk request, queryset only contains contributors in request
+        if is_bulk_request(self.request):
+            contrib_ids = [item['id'] for item in self.request.data]
+            queryset[:] = [contrib for contrib in queryset if contrib._id in contrib_ids]
+        return queryset
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
@@ -506,6 +568,19 @@ class NodeContributorsList(generics.ListCreateAPIView, ListFilterMixin, NodeMixi
         res = super(NodeContributorsList, self).get_parser_context(http_request)
         res['is_relationship'] = True
         return res
+
+    # Overrides BulkDestroyJSONAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        node = self.get_node()
+        if len(node.visible_contributors) == 1 and node.get_visible(instance):
+            raise ValidationError("Must have at least one visible contributor")
+        if instance not in node.contributors:
+                raise NotFound('{} cannot be found in the list of contributors.'.format(user))
+        removed = node.remove_contributor(instance, auth)
+        if not removed:
+            raise ValidationError("Must have at least one registered admin contributor")
 
 
 class NodeContributorDetail(generics.RetrieveUpdateDestroyAPIView, NodeMixin, UserMixin):
@@ -691,7 +766,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         return registrations
 
 
-class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
+class NodeChildrenList(bulk_views.ListBulkCreateJSONAPIView, NodeMixin, ODMFilterMixin):
     """Children of the current node. *Writeable*.
 
     This will get the next level of child nodes for the selected node if the current user has read access for those
@@ -745,7 +820,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 
     To create a child node of the current node, issue a POST request to this endpoint.  The `title` and `category`
     fields are mandatory. `category` must be one of the [permitted node categories](/v2/#osf-node-categories).  If the
-    node creation is successful the API will return a 201 response with the respresentation of the new node in the body.
+    node creation is successful the API will return a 201 response with the representation of the new node in the body.
     For the new node's canonical URL, see the `links.self` field of the response.
 
     ##Query Params
@@ -783,7 +858,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
             Q('is_folder', 'ne', True)
         )
 
-    # overrides ListAPIView
+    # overrides ListBulkCreateJSONAPIView
     def get_queryset(self):
         node = self.get_node()
         req_query = self.get_query_from_request()
@@ -801,7 +876,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
         children = [each for each in nodes if each.can_view(auth)]
         return children
 
-    # overrides ListCreateAPIView
+    # overrides ListBulkCreateJSONAPIView
     def perform_create(self, serializer):
         user = self.request.user
         serializer.save(creator=user, parent=self.get_node())
@@ -810,7 +885,7 @@ class NodeChildrenList(generics.ListCreateAPIView, NodeMixin, ODMFilterMixin):
 # TODO: Make NodeLinks filterable. They currently aren't filterable because we have can't
 # currently query on a Pointer's node's attributes.
 # e.g. Pointer.find(Q('node.title', 'eq', ...)) doesn't work
-class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
+class NodeLinksList(bulk_views.BulkDestroyJSONAPIView, bulk_views.ListBulkCreateJSONAPIView, NodeMixin):
     """Node Links to other nodes. *Writeable*.
 
     Node Links act as pointers to other nodes. Unlike Forks, they are not copies of nodes;
@@ -873,6 +948,7 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
 
     required_read_scopes = [CoreScopes.NODE_LINKS_READ]
     required_write_scopes = [CoreScopes.NODE_LINKS_WRITE]
+    model_class = Pointer
 
     serializer_class = NodeLinksSerializer
 
@@ -882,6 +958,17 @@ class NodeLinksList(generics.ListCreateAPIView, NodeMixin):
             self.get_node().nodes_pointer
             if not pointer.node.is_deleted
         ]
+
+    # Overrides BulkDestroyJSONAPIView
+    def perform_destroy(self, instance):
+        user = self.request.user
+        auth = Auth(user)
+        node = self.get_node()
+        try:
+            node.rm_pointer(instance, auth=auth)
+        except ValueError as err:  # pointer doesn't belong to node
+            raise ValidationError(err.message)
+        node.save()
 
     # overrides ListCreateAPIView
     def get_parser_context(self, http_request):
