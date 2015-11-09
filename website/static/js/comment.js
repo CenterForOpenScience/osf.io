@@ -186,16 +186,30 @@ BaseComment.prototype.submitReply = function() {
         return;
     }
     self.submittingReply(true);
-    osfHelpers.postJSON(
-        nodeApiUrl + 'comment/',
+    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {});
+    if (self.id() !== undefined) {
+        url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {});
+    }
+    var request = osfHelpers.ajaxJSON(
+        'POST',
+        url,
         {
-            target: self.id(),
-            content: self.replyContent(),
-        }
-    ).done(function(response) {
+            'isCors': true,
+            'data': {
+                'data': {
+                    'type': 'comments',
+                    'attributes': {
+                        'content': self.replyContent()
+                    }
+                }
+            }
+        });
+    request.done(function(response) {
         self.cancelReply();
         self.replyContent(null);
-        self.comments.unshift(new CommentModel(response.comment, self, self.$root));
+        self.onSubmitSuccess(response);
+        updateCommentUserData(response.data, self);
+//        self.comments.unshift(new CommentModel(response.comment, self, self.$root));
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
@@ -206,8 +220,8 @@ BaseComment.prototype.submitReply = function() {
             self.$root.fetchDiscussion();
             self.$root.commented(true);
         }
-        self.onSubmitSuccess(response);
-    }).fail(function() {
+    });
+    request.fail(function() {
         self.cancelReply();
         self.errorMessage('Could not submit comment');
     });
