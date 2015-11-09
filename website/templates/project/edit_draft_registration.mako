@@ -24,6 +24,8 @@
                   <!-- /ko -->
               </div>
               <div class="span8 col-md-9 columns eight large-8">
+                <!-- Progress Bar -->
+                % if draft['registration_schema']['schema_name'] != 'Open-Ended Registration':
                 <br />
                 <br />
                 <span data-bind="with: draft">
@@ -35,7 +37,7 @@
                         </div>
                     </div>
                 </span>
-
+                % endif
                 <!-- EDITOR -->
                 <div data-bind="if: currentPage">
                    <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
