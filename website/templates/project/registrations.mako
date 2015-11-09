@@ -78,29 +78,27 @@
                 <p>started: <span data-bind="text: initiated"></span></p>
                 <p>last updated: <span data-bind="text: updated"></span></p>
                 <span data-bind="if: requiresApproval">
-                    <div data-bind="if: isApproved">
-                        <div class="draft-status-badge bg-success"> Approved</div>
-                    </div>
-                    <div data-bind="ifnot: isApproved">
-                        <div class="draft-status-badge bg-warning"> Pending Approval </div>
-                    </div>
-                    <div data-bind="if: isPendingReview">
+                    <div data-bind="if: isPendingApproval">
                         <div class="draft-status-badge bg-warning"> Pending Review</div>
                     </div>
                 </span>
                 </small>
                 <div class="row">
                   <div class="col-md-10">
-                    <a class="btn btn-info"
-                       data-bind="click: $root.maybeWarn"><i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit</a>
+                    <button class="btn btn-info"
+                       data-bind="click: $root.maybeWarn">
+                      <i style="margin-right: 5px;" class="fa fa-pencil"></i>Edit
+                    </button>
                     <button class="btn btn-danger"
-                            data-bind="click: $root.deleteDraft"><i style="margin-right: 5px;" class="fa fa-times"></i>Delete</button>
+                            data-bind="click: $root.deleteDraft">
+                      <i style="margin-right: 5px;" class="fa fa-times"></i>Delete
+                    </button>
                   </div>
                   <div class="col-md-1">
-                     <a class="btn btn-success" data-bind="attr.href: urls.register_page,
-                                                           tooltip: {
-                                                             placement: 'top',
-                                                             title: isApproved ? 'Finalize this draft' : 'This draft must be approved before it can be registered'
+                    <a class="btn btn-success" data-bind="attr.href: urls.register_page,
+                                                          tooltip: {
+                                                            placement: 'top',
+                                                            title: isApproved ? 'Finalize this draft' : 'This draft must be approved before it can be registered'
                                                            },
                                                            css: {'disabled': !isApproved}">Register</a>
                   </div>
@@ -110,69 +108,6 @@
           </div>
         </div>
       </div>
-      <!--
-      <div data-bind="if: preview">
-        <br />
-        <button data-bind="click: preview.bind($root, false)"
-                class="btn btn-primary"><i class="fa fa-arrow-circle-o-left"></i>&nbsp;&nbsp;&nbsp;Back</button>
-        <br />
-        <br />
-        <p> Select a registration template to continue ... </p>
-        <div class="row">
-          <form name="createDraft" method="post">
-            <div class="col-md-9">
-              <div class="form-group">
-                <select class="form-control" data-bind="options: schemas,
-                                                        optionsText: 'name',
-                                                        value: selectedSchema">
-                </select>
-                <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name" />
-                <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version" />
-              </div>
-            </div>
-            <div class="col-md-3">
-              <button type="submit" class="btn btn-success"> Start </button>
-            </div>
-          </form>
-        </div>
-        <hr />
-        <div class="row" data-bind="if: selectedSchema">
-          <div class="col-md-12" data-bind="with: selectedSchema">
-            <span data-bind="if: requiresApproval">
-              <div class="row">
-                <div class="col-md-12 schema-fulfillment">
-                  <span class="well" data-bind="tooltip: {
-                                                  placement: 'top',
-                                                  title: 'Site administrations will need to approve this draft before it can be registered'
-                                                }">
-                    <span>Requires Approval</span>&nbsp;&nbsp;
-                    <i class="fa fa-exclamation-triangle" target="_blank"></i>
-                  </span>              
-                </div>
-              </div>
-            </span>
-            <span data-bind="if: fulfills.length">
-              <h4> Fulfills: </h4>
-              <div class="row">
-                <div class="col-md-12 schema-fulfillment" data-bind="foreach: fulfills">
-                  <span class="well">
-                    <span data-bind="text: name"></span>&nbsp;&nbsp;
-                    <a class="fa fa-info-circle" target="_blank" data-bind="attr.href: info"></a>
-                  </span>
-                </div>
-              </div>
-            </span>
-            <h4> Description: </h4>
-            <blockquote>
-              <p data-bind="text: schema.description"></p>
-            </blockquote>
-          </div>
-        </div>
-        <hr />
-        <div class="row" data-bind="template: {data: previewSchema, name: 'registrationPreview'}">
-        </div>
-      </div>
-      -->
     </div>
   </div>
 </div>

@@ -4,18 +4,21 @@
     "flags": {
         "isApproved": false,
         "isPendingReview": false,
-        "paymentSent": false
+        "paymentSent": false,
+        "hasConsent": true
     },
     "config": {
         "requiresApproval": true,
         "messages": {
             "beforeSubmitForApproval": "You are about to submit your study and analysis for review. This will notify Prereg Challenge Administrators who will begin to review it. You will still be able to edit this registration but must submit again. Are you sure you are ready for review?",
-            "afterSubmitForApproval": "<img src=\"https://i.imgur.com/0aCtj3b.png\"><br><p>You have successfully submitted your study and analysis plans. Next, staff from the Center for Open Science will have the plans reviewed to assure that enough detail was included. Reviewers may accept your plans or request revisions. Remember, in order to be eligible for the Prere Challenge, your plans must be accepted through this review process. We will contact you within five business days with a status update. If you have any questions, please contact <a href=\"mailto:prereg@cos.io\">prereg@cos.io</a> and we will be happy to help you.\\n"
+            "afterSubmitForApproval": "<img src=\"https://i.imgur.com/0aCtj3b.png\"><br><p>You have successfully submitted your study and analysis plans. Next, staff from the Center for Open Science will have the plans reviewed to assure that enough detail was included. Reviewers may accept your plans or request revisions. Remember, in order to be eligible for the Prere Challenge, your plans must be accepted through this review process. We will contact you within five business days with a status update. If you have any questions, please contact <a href=\"mailto:prereg@cos.io\">prereg@cos.io</a> and we will be happy to help you.\\n",
+            "beforeSkipReview": "You are about to register your project without having its content reviewed. This preregistration will NOT BE ELIGIBLE for the Preregistration Challenge. You may click “Continue” to register your project or “Cancel” to return to the form and then “Submit for review” to enter the Preregistration Challenge."
         },
         "fulfills": [{
             "name": "Prereg Challenge",
             "info": "http://centerforopenscience.org/prereg/"
-        }]
+        }],
+        "consent": "<div class='text-center m-t-lg'><h3>Preregistration Challenge </h3> <hr> <h2> Notice of Consent </h2></div><div class='row m-t-xl'><div class='col-lg-10 col-lg-offset-1'><p> We made this Challenge to encourage the practice of pre-registration while being as fair and transparent as possible. Below are eight items that we need to make sure you understand before you begin. <strong> We welcome questions (prereg@cos.io).</strong> </p> <ol id='consentList'><li>Research plans that you submit through this process will be <a href='https://osf.io/x5w7h/wiki/09%20Review/'>reviewed </a> by Pre-Reg administrators and reviewers.</li><li>You must also submit your published article for review before receiving the prize, and the article must meet these <a href='https://osf.io/x5w7h/wiki/06%20Discrepancies%20Between%20Submitted%20Plans%20and%20Final%20MS/'> guidelines</a>. </li><li>Prizes will be awarded at <a href='https://osf.io/x5w7h/wiki/01%20How%20to%20earn%20the%20prize/'>pre-determined dates</a> to eligible entrants. If more eligible entrants exist than available prizes, entrants will be ranked based on date of registration. </li><li>Articles can only be published in these <a href='https://osf.io/x5w7h/wiki/07%20Eligible%20Journals%20for%20Publication/'> eligible journals</a>. </li><li>The use of <a href='https://osf.io/x5w7h/wiki/04%20FAQ/'> pre-existing data</a> may prohibit you from entering the Pre-Reg Challenge. </li><li>Prizes are given to the person who submits the research plan, who must be listed as an author on the published article.</li><li>Residents of countries on <a href='http://www.pmddtc.state.gov/embargoed_countries/'> this list</a> cannot receive a prize. </li><li>You must read and agree to the <a href='https://osf.io/x5w7h/wiki/02%20Eligibility%20Requirements/'> complete terms and conditions</a>.</li></ol></div></div>"
     },
     "description": "Pre-Registration Challenge (pre-data collection): You will be asked a series of questions to ensure that your sampling, design, and analysis plans are solidified prior to beginning your study. Publications that pre-register with this template may be eligible for a $1,000 prize. See project page for complete information.",
     "pages": [{
@@ -351,7 +354,7 @@
             "type": "osf-upload",
             "format": "osf-upload-open",
             "description": "Optional) Upload an analysis script with clear comments. This optional step is helpful in order to create a process that is completely transparent and increase the likelihood that your analysis can be replicated. We recommend that you run the code on a simulated dataset in order to check that it will run without errors.",
-            "help": "Here is a link to the R script that we will use to run the ANOVA. It also contains the code for the Tukey HSD we will run if needed. https://osf.io/kexgi/ ",
+            "help": "Here is a link to the R script that we will use to run the ANOVA. It also contains the code for the Tukey HSD we will run if needed. https://osf.io/kexgi/ "
         }]
     }, {
         "id": "page7",
