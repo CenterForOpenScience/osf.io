@@ -11,12 +11,10 @@
       ## Split file name into two parts: with and without extension
       <%
        import os
-       part1, part2 = os.path.splitext(file_name)
+       file_name_title, file_name_ext = os.path.splitext(file_name)
        ## POSIX standard for chars in a fully portable filename
-       validFileExtension = all(i.isalnum() or i in ['.', '_', '-'] for i in part2)
-       if validFileExtension:
-        file_name_title, file_name_ext = part1, part2  
-       else:
+       valid_ext = all(i.isalnum() or i in ['.', '_', '-'] for i in file_name_ext)
+       if not valid_ext:
         file_name_title = file_name
         file_name_ext = ''
       %> 
