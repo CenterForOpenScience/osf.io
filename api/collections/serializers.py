@@ -29,7 +29,9 @@ class CollectionSerializer(JSONAPISerializer):
 
     node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='collections:node-pointers', lookup_field='pk', link_type='related',
                                                   lookup_url_kwarg='collection_id', meta={'count': 'get_node_links_count'}))
-
+    # TODO: Add a self link to this when it's available
+    linked_nodes = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='collections:linked-nodes', lookup_field='pk', link_type='related',
+                                                  lookup_url_kwarg='collection_id', meta={'count': 'get_node_links_count'}))
     class Meta:
         type_ = 'collections'
 
