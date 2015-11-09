@@ -9,10 +9,11 @@ from website.models import Node, User, Comment
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
-from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
-from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField,
-    TargetTypeField, JSONAPIListField, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly)
 from api.base.exceptions import InvalidModelValueError
+from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
+from api.base.serializers import (LinksField, JSONAPIHyperlinkedIdentityField, DevOnly,
+                                  JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink,
+                                  IDField, TypeField, TargetTypeField, JSONAPIListField)
 
 
 class NodeTagField(ser.Field):
@@ -36,7 +37,8 @@ class NodeSerializer(JSONAPISerializer):
         'tags',
         'category',
         'date_created',
-        'date_modified'
+        'date_modified',
+        'registration'
     ])
 
     id = IDField(source='_id', read_only=True)

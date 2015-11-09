@@ -106,10 +106,10 @@ var FileViewPage = {
                 self.file.checkoutUser = resp.data.relationships.checkout.links.related.href ? ((resp.data.relationships.checkout.links.related.href).split('users/')[1]).replace('/', ''): null;
                 if ((self.file.checkoutUser) && (self.file.checkoutUser !== self.context.currentUser.id)) {
                     m.render(document.getElementById('alertBar'), m('.alert.alert-warning[role="alert"]', m('span', [
-                        m('strong', 'File is checked-out.'),
-                        'This file has been checked-out by a ',
+                        m('strong', 'File is checked out.'),
+                        ' This file has been checked out by a ',
                         m('a[href="/' + self.file.checkoutUser + '"]', 'collaborator'),
-                        '. It beeds to be checked back in before any changes can be made.'
+                        '. It needs to be checked in before any changes can be made.'
                     ])));
                 }
             });
@@ -125,7 +125,7 @@ var FileViewPage = {
                 return self.context.currentUser.canEdit;
             };
         }
-        
+
         $.extend(self.file.urls, {
             delete: waterbutler.buildDeleteUrl(self.file.path, self.file.provider, self.node.id),
             metadata: waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id),
@@ -169,10 +169,10 @@ var FileViewPage = {
         });
         $(document).on('fileviewpage:checkout', function() {
             bootbox.confirm({
-                title: 'Confirm file check-out?',
+                title: 'Confirm file check out?',
                 message: 'This would mean ' +
                     'other contributors cannot edit, delete or upload new versions of this file ' +
-                    'as long as it is checked-out. You can check it back in at anytime.',
+                    'as long as it is checked out. You can check it back in at anytime.',
                 callback: function(confirm) {
                     if (!confirm) {
                         return;
@@ -230,11 +230,11 @@ var FileViewPage = {
         });
         $(document).on('fileviewpage:force_checkin', function() {
             bootbox.confirm({
-                title: 'Force check-in file?',
+                title: 'Force check in file?',
                 message: 'This will check in the file for all users, allowing it to be edited. Are you sure?',
                 buttons: {
                     confirm:{
-                        label: 'Force check-in',
+                        label: 'Force check in',
                         className: 'btn-danger'
                     }
                 },
@@ -260,7 +260,7 @@ var FileViewPage = {
                     }).done(function(resp) {
                         window.location.reload();
                     }).fail(function(resp) {
-                        $osf.growl('Error', 'Unable to force check-in file, make sure you have admin privileges.');
+                        $osf.growl('Error', 'Unable to force check in file. Make sure you have admin privileges.');
                     });
                 }
 
@@ -416,7 +416,7 @@ var FileViewPage = {
                 m('button.btn.btn-sm.btn-danger.file-delete', {onclick: $(document).trigger.bind($(document), 'fileviewpage:delete')}, 'Delete')
             ]) : '',
             ctrl.context.currentUser.canEdit && (!ctrl.canEdit()) && ctrl.requestDone && (ctrl.context.currentUser.isAdmin) ? m('.btn-group.m-l-xs.m-t-xs', [
-                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check-in')
+                m('.btn.btn-sm.btn-danger', {onclick: $(document).trigger.bind($(document), 'fileviewpage:force_checkin')}, 'Force check in')
             ]) : '',
             ctrl.canEdit() && (!ctrl.file.checkoutUser) && ctrl.requestDone && (ctrl.file.provider === 'osfstorage') ? m('.btn-group.m-l-xs.m-t-xs', [
                 m('.btn.btn-sm.btn-warning', {onclick: $(document).trigger.bind($(document), 'fileviewpage:checkout')}, 'Check out')
