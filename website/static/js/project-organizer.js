@@ -9,7 +9,6 @@ var Treebeard = require('treebeard');
 // CSS
 require('css/typeahead.css');
 require('css/fangorn.css');
-require('css/projectorganizer.css');
 
 var $ = require('jquery');
 var m = require('mithril');
