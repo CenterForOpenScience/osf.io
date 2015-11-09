@@ -21,10 +21,14 @@ logger = logging.getLogger(__name__)
 
 def migrate_nodes(index):
     logger.info("Migrating nodes to index: {}".format(index))
+    n_iter = 0
     nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
-    count = nodes.count()
-    Node.bulk_update_search(nodes)
-    logger.info('Nodes migrated: {}'.format(count))
+    for node in nodes:
+        logger.info('Updating node {}'.format(node._id))
+        search.update_node(node, index=index, async=False)
+        n_iter += 1
+
+    logger.info('Nodes migrated: {}'.format(n_iter))
 
 
 def migrate_users(index):
