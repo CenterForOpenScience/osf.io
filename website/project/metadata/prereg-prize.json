@@ -174,7 +174,6 @@
             "format": "textarea",
             "title": "Indices",
             "description": "If any measurements are  going to be combined into an index (or even a mean), what measures will you use and how will they be combined? Include either a formula or a precise description of your method. If your are using a more complicated statistical method to combine measures (e.g. a factor analysis), you can note that here but describe the exact method in the analysis plan section. ",
-
             "help": "We will take the mean of the two questions above to create a single measure of ‘brownie enjoyment.’ \n How responses will be evaluated: If you are using multiple pieces of data to construct a single variable, how will this occur? Both the data that are included and the formula or weights for each measure m. Standard summary statistics, such as “means” do not require a formula, though more complicated indices require either the exact formula or, if it is an established index in the field, the index must be unambiguously defined. For example, “biodiversity index” is too broad, whereas “Shannon’s biodiversity index” is appropriate.",
             "required": true
         }]
@@ -343,9 +342,8 @@
             "help": "We will test the assumption of the ANOVA on equal group variance using the Bartlett test and use a Kruskal-Wallis as an alternative to the ANOVA if p<.05.\n How responses will be evaluated: Again, any reasonable answer here is acceptable, meaning that you are free to follow or ignore the assumptions of the test as they see fit.",
             "type": "string",
             "format": "textarea"
-        }
-        ]
-    },{
+        }]
+    }, {
         "id": "page6",
         "title": "Scripts",
         "type": "object",
