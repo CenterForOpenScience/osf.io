@@ -380,15 +380,25 @@ CommentModel.prototype.cancelAbuse = function() {
 
 CommentModel.prototype.submitAbuse = function() {
     var self = this;
-    osfHelpers.postJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/report/',
+    var request = osfHelpers.ajaxJSON(
+        'POST',
+        osfHelpers.apiV2Url('comments/' + self.id() + '/reports/', {}),
         {
-            category: self.abuseCategory(),
-            text: self.abuseText()
-        }
-    ).done(function() {
+            'isCors': true,
+            'data': {
+                'data': {
+                    'type': 'comment_reports',
+                    'attributes': {
+                        'category': self.abuseCategory(),
+                        'message': self.abuseText()
+                    }
+                }
+            }
+        });
+    request.done(function() {
         self.isAbuse(true);
-    }).fail(function() {
+    });
+    request.fail(function() {
         self.errorMessage('Could not report abuse.');
     });
 };
@@ -466,12 +476,15 @@ CommentModel.prototype.startUnreportAbuse = function() {
 
 CommentModel.prototype.submitUnreportAbuse = function() {
     var self = this;
-    osfHelpers.postJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/unreport/',
-        {}
-    ).done(function() {
+    var request = osfHelpers.ajaxJSON(
+        'DELETE',
+        osfHelpers.apiV2Url('comments/' + self.id() + '/reports/' + window.contextVars.currentUser.id + '/', {}),
+        {'isCors': true}
+    );
+    request.done(function() {
         self.isAbuse(false);
-    }).fail(function() {
+    });
+    request.fail(function() {
         self.unreporting(false);
     });
 };
