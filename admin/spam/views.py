@@ -8,13 +8,19 @@ def spam_list(request):
     comments = serialize_comments()
     context = {'comments': comments}
     return render(request, 'spam/spam.html', context)
-    # return HttpResponse('This is a list of spam:{}'.format(' *** '.join(serialize_comments())))
 
 
 def spam_detail(request, spam_id):
     comment = retrieve_comment(spam_id)
     context = {'comment': comment}
     return render(request, 'spam/comment.html', context)
+
+
+def spam_sub_list(request, spam_ids):
+    comments = None
+    context = {'comments': comments}
+    # should test for impossibilities such as many users. Return error page.
+    return render(request, 'spam/sub_list.html', context)
 
 
 def email(request, spam_id):
