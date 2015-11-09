@@ -685,7 +685,7 @@ class TestNodeLinksBulkCreate(ApiTestCase):
 
         res = self.app.post_json_api(self.private_url, fake_payload,
                                      auth=self.user.auth, expect_errors=True, bulk=True)
-        assert_equal(res.status_code, 404)
+        assert_equal(res.status_code, 400)
         assert_in('detail', res.json['errors'][0])
 
     def test_bulk_creates_fake_nodes_pointing_to_contributing_node(self):
@@ -736,7 +736,7 @@ class TestNodeLinksBulkCreate(ApiTestCase):
 
         res = self.app.post_json_api(self.public_url, self.public_payload, auth=self.user.auth, expect_errors=True, bulk=True)
         assert_equal(res.status_code, 400)
-        assert_in('Node link to node {} already in list'.format(self.public_pointer_project._id), res.json['errors'][0]['detail'])
+        assert_in("Target Node '{}' already pointed to by '{}'.".format(self.public_pointer_project._id, self.public_project._id), res.json['errors'][0]['detail'])
 
     def test_bulk_cannot_add_link_to_registration(self):
         registration = RegistrationFactory(creator=self.user)
