@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Comment{% endblock title %}
+{# stylesheets #}
+{% block content %}
+    {{ block.super }}
+
+    <div>
+        <a href="{% url 'spam:spam' %}">
+            <input type="button" value="Back">
+        </a>
+    </div>
+    <div>
+        <a href="{% url 'spam:email' comment.id %}">
+            <input type="button" value="Email">
+        </a>
+    </div>
+
+    {% for comment in comments %}
+        {% if forloop.first %}
+            <div><strong>Author:</strong> {{ comment.author.fullname }} </div>
+        {% endif %}
+
+        <h2>Comment: {{ comment.id }}</h2>
+        <div><strong>Comment:</strong> {{ comment.content }} </div>
+        <div>
+            <div><h3>Reports:</h3></div>
+            {{ comment.reports|length }}
+        </div>
+        {% for report in comment.reports %}
+            <div><strong>Reporter: </strong> {{ report.reporter.fullname }}</div>
+            <div><strong>Category: </strong> {{ report.category }}</div>
+            <div><strong>Reason: </strong> {{ report.reason|default:"--Nothing--" }}</div>
+        {% empty %}
+            <div>Empty!</div>
+        {% endfor %}
+    {% endfor %}
+
+{% endblock content %}
