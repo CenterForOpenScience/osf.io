@@ -82,6 +82,7 @@ var BaseComment = function() {
     self.submittingReply = ko.observable(false);
 
     self.comments = ko.observableArray();
+
     self.unreadComments = ko.observable(0);
 
     self.displayCount = ko.computed(function() {
@@ -138,22 +139,41 @@ BaseComment.prototype.fetch = function() {
     if (self._loaded) {
         deferred.resolve(self.comments());
     }
-    $.getJSON(
-        nodeApiUrl + 'comments/',
-        {target: self.id()},
-        function(response) {
-            self.comments(
-                ko.utils.arrayMap(response.comments.reverse(), function(comment) {
-                    return new CommentModel(comment, self, self.$root);
-                })
-            );
-            self.unreadComments(response.nUnread);
-            deferred.resolve(self.comments());
-            self._loaded = true;
+    var url = osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/comments/', {});
+    if (self.id() !== undefined) {
+        url = osfHelpers.apiV2Url('comments/' + self.id() + '/replies/', {});
+    }
+    var request = osfHelpers.ajaxJSON(
+        'GET',
+        url,
+        {'isCors': true});
+    request.done(function(response) {
+        for (var i=0; i < response.data.length; i++) {
+            updateCommentUserData(response.data[i], self);
         }
-    );
+//        self.unreadComments(response.nUnread);
+        deferred.resolve(self.comments());
+        self._loaded = true;
+    });
     return deferred;
 };
+
+var updateCommentUserData = function(commentJSON, self) {
+    var userRequest = osfHelpers.ajaxJSON(
+        'GET',
+        commentJSON.relationships.user.links.related.href,
+        {'isCors': true});
+    userRequest.done(function(response) {
+        commentJSON.relationships.user = response;
+        var commentModel = new CommentModel(commentJSON, self, self.$root);
+        self.comments.push(commentModel);
+        self.comments.sort(function (left, right) {
+            return left.dateCreated() === right.dateCreated() ? 0 : (left.dateCreated() > right.dateCreated() ? -1 : 1);
+        });
+    });
+    return self.comments;
+};
+
 
 BaseComment.prototype.submitReply = function() {
     var self = this;
@@ -198,13 +218,26 @@ var CommentModel = function(data, $parent, $root) {
     BaseComment.prototype.constructor.call(this);
 
     var self = this;
+    var userData = data.relationships.user.data;
 
     self.$parent = $parent;
     self.$root = $root;
 
-    // Note: assigns observables: canEdit, content, dateCreated, dateModified
-    //       hasChildren, id, isAbuse, isDeleted. Leaves out author.
-    $.extend(self, koHelpers.mapJStoKO(data, {exclude: ['author']}));
+    self.id = ko.observable(data.id);
+    self.content = ko.observable(data.attributes.content);
+    self.dateCreated = ko.observable(data.attributes.date_created);
+    self.dateModified = ko.observable(data.attributes.date_modified);
+    self.isDeleted = ko.observable(data.attributes.deleted);
+    self.modified = ko.observable(data.attributes.modified);
+    self.isAbuse = ko.observable(data.attributes.is_abuse);
+    self.canEdit = ko.observable(data.attributes.can_edit);
+    self.hasChildren = ko.observable(data.attributes.has_children);
+    self.author = {
+        'id': data.relationships.user.data.id,
+        'url': userData.links.html,
+        'name': userData.attributes.full_name,
+        'gravatarUrl': userData.links.profile_image
+    };
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
