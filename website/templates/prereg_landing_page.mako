@@ -45,8 +45,8 @@
             <div id="newPrereg" class="p-md osf-box box-round clearfix m-b-lg" style="display:none">
                 <p>Give a title to the presentation, like the title of a paper that may come out of this work
                 <form>
-                    <input type="text" class="form-control" placeholder="Title">
-                    <button type="submit" class="btn btn-primary pull-right m-t-md">Continue <i class="fa fa-angle-right"></i></button>
+                    <input type="text" id="newProjectTitle" class="form-control" placeholder="Title">
+                    <button type="submit" id="newProject" class="btn btn-primary pull-right m-t-md">Continue <i class="fa fa-angle-right"></i></button>
                 </form>
             </div>
         </div>
@@ -57,7 +57,7 @@
                 <p>Go to an existing preregistration
                 <form>
                     <osf-draft-registrations-search
-                        params="data: '/api/v1/prereg/draft_registrations/'">
+                        params="data: drafts">
                     </osf-draft-registrations-search>
                 </form>
             </div>
