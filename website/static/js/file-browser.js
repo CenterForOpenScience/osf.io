@@ -10,10 +10,31 @@ var ProjectOrganizer = require('js/project-organizer');
 var $osf = require('js/osfHelpers');
 
 var LinkObject = function (type, data, label, index) {
-    this.type = type;
-    this.data = data;
-    this.label = label;
-    this.index = index;  // For breadcrumbs to cut off when clicking parent level
+    var self = this;
+    self.type = type;
+    self.data = data;
+    self.label = label;
+    self.index = index;  // For breadcrumbs to cut off when clicking parent level
+    self.generateLink = function () {
+        if (self.type === 'collection'){
+            return $osf.apiV2Url(self.data.path, {
+                    query : self.data.pathQuery
+                }
+            );
+        }
+        else if (self.type === 'breadcrumb') {
+            return self.data.url;
+        }
+        else if (self.type === 'user') {
+            return $osf.apiV2Url('users/' + self.data + '/nodes/', { query : {'related_counts' : true}});
+        }
+        else if (self.type === 'node') {
+            return $osf.apiV2Url('nodes/' + self.data.uid + '/children/', { query : { 'related_counts' : true }});
+        }
+        // If nothing
+        throw new Error('Link could not be generated from linkObject data');
+    };
+    self.link = self.generateLink();
 };
 
 var Breadcrumb = function (label, url, type) {
@@ -69,7 +90,6 @@ var FileBrowser = {
         ));
 
         self.updateFilesData = function(linkObject) {
-            linkObject.link = self.generateLinks(linkObject);
             if (linkObject.link !== self.filesData()) {
                 self.filesData(linkObject.link);
                 self.isLoadedUrl = false; // check if in fact changed
@@ -108,8 +128,9 @@ var FileBrowser = {
                     m.component( ProjectOrganizer, {
                         filesData : self.filesData,
                         updateSelected : self.updateSelected,
-                        updateFilesData : self.updateFilesData}
-                    )
+                        updateFilesData : self.updateFilesData,
+                        LinkObject : LinkObject
+                    })
                 );
                 self.isLoadedUrl = true;
             }
@@ -129,28 +150,6 @@ var FileBrowser = {
             }
             self.breadcrumbs().push(crumb);
         }.bind(self);
-
-        self.generateLinks = function (linkObject) {
-            if (linkObject.type === 'collection'){
-                return $osf.apiV2Url(linkObject.data.path, {
-                        query : linkObject.data.pathQuery
-                    }
-                );
-            }
-            else if (linkObject.type === 'breadcrumb') {
-                return linkObject.data.url;
-            }
-            else if (linkObject.type === 'user') {
-                return $osf.apiV2Url('users/' + linkObject.data + '/nodes/', { query : {'related_counts' : true}});
-            }
-            else if (linkObject.type === 'node') {
-                return $osf.apiV2Url('nodes/' + linkObject.data.uid + '/children/', { query : { 'related_counts' : true }});
-            }
-            // If nothing
-            throw new Error('Link could not be generated from linkObject data');
-        };
-
-
 
     },
     view : function (ctrl) {

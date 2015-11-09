@@ -46,6 +46,7 @@ var projectOrganizerCategories = $.extend({}, {
     link:  'Link'
 }, nodeCategories);
 
+var LinkObject;
 /**
  * Bloodhound is a typeahead suggestion engine. Searches here for public projects
  * @type {Bloodhound}
@@ -113,11 +114,7 @@ function _poTitleColumn(item) {
     } else if(node.links.html){
         return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title),
             m('span', { ondblclick : function(){
-                var linkObject = {
-                    type : 'node',
-                    data : node,
-                    label : node.attributes.title
-                };
+                var linkObject = new LinkObject('node', node, node.attributes.title);
                 tb.options.updateFilesData(linkObject);
             }}, ' -Open')
         ];
@@ -429,6 +426,7 @@ var ProjectOrganizer = {
             },
             tbOptions
         );
+        LinkObject = args.LinkObject;
         this.tb = new Treebeard(poOptions, true);
     },
     view : function (ctrl, args) {
