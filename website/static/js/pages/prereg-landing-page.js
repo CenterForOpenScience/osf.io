@@ -11,19 +11,16 @@ $(function(){
     $('.prereg-button').qToggle();
     $('.prereg-button').click(function(){
         var target = $(this).attr('data-qToggle-target');
-        $(target).find('input').first().focus();
+        var input = $(target).find('input').first().focus();
     });
 
     $('#newProject').click( function() {
         var title = $('#newProjectTitle').val();
-        $osf.postJSON(
-            '/api/v1/project/new/', { title: title }
-        ).done( function(response) {
-                window.location = response.projectUrl + 'registrations/';
-            }
-        ).fail( function() {
-                $osf.growl('Project creation failed. Reload the page and try again.')
-            });
+        $osf.postJSON('/api/v1/project/new/', { title: title }).done(function(response) {
+            window.location = response.projectUrl + 'registrations/';
+        }).fail(function() {
+            $osf.growl('Project creation failed. Reload the page and try again.')
+        });
     });
 
     // Activate "existing projects" typeahead.
