@@ -237,7 +237,11 @@ class RelationshipField(ser.HyperlinkedIdentityField):
         bracket_check = lookup_field.partition('<')[-1].rpartition('>')[0]
         if bracket_check:
             return bracket_check
-        return getattr(obj, lookup_field)
+        # return getattr(obj, lookup_field)
+
+        lookup_field = lookup_field.split('.')
+        self.source_attrs = lookup_field
+        return ser.Field.get_attribute(self, obj)
 
     def kwargs_lookup(self, obj, kwargs_dict):
         """
