@@ -255,7 +255,7 @@ var CommentModel = function(data, $parent, $root) {
 
     self.contentDisplay = ko.observable(markdown.full.render(self.content()));
 
-    // Update contentDisplay with rednered markdown whenever content changes
+    // Update contentDisplay with rendered markdown whenever content changes
     self.content.subscribe(function(newContent) {
         self.contentDisplay(markdown.full.render(newContent));
     });
@@ -336,19 +336,33 @@ CommentModel.prototype.submitEdit = function(data, event) {
         self.errorMessage('Please enter a comment');
         return;
     }
-    osfHelpers.putJSON(
-        nodeApiUrl + 'comment/' + self.id() + '/',
-        {content: self.content()}
-    ).done(function(response) {
-        self.content(response.content);
-        self.dateModified(response.dateModified);
+    var request = osfHelpers.ajaxJSON(
+        'PUT',
+        osfHelpers.apiV2Url('comments/' + self.id() + '/', {}),
+        {
+            'isCors': true,
+            'data': {
+                'data': {
+                    'id': self.id(),
+                    'type': 'comments',
+                    'attributes': {
+                        'content': self.content(),
+                        'deleted': false
+                    }
+                }
+            }
+        });
+    request.done(function(response) {
+        self.content(response.data.attributes.content);
+        self.dateModified(response.data.attributes.date_modified);
         self.editing(false);
         self.modified(true);
         self.editErrorMessage('');
         self.$root.editors -= 1;
         // Refresh tooltip on date modified, if present
         $tips.tooltip('destroy').tooltip();
-    }).fail(function() {
+    });
+    request.fail(function() {
         self.cancelEdit();
         self.errorMessage('Could not submit comment');
     });
