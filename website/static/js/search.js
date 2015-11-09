@@ -44,7 +44,7 @@ var License = function(name, id, count) {
     this.name = name;
     this.id = id;
     this.count = ko.observable(count);
-    
+
     this.active = ko.observable(false);
 };
 License.prototype.toggleActive = function() {
@@ -219,13 +219,13 @@ var ViewModel = function(params) {
                         return l.id;
                     })
                 }
-            };     
+            };
             if (selectedLicenses.filter(function(l) {
                 return l.id === DEFAULT_LICENSE.id;
             }).length) {
                 filters = {
                     or: [
-                        filters, 
+                        filters,
                         {
                             missing: {field: 'license'}
                         }
@@ -285,7 +285,7 @@ var ViewModel = function(params) {
     };
 
     self._makeTagString = function(tagName) {
-        return 'tags:("' + tagName.replace(/"/g, '\\\"') + '")';        
+        return 'tags:("' + tagName.replace(/"/g, '\\\"') + '")';
     };
     self.addTag = function(tagName) {
         var tagString = self._makeTagString(tagName);
@@ -295,20 +295,21 @@ var ViewModel = function(params) {
                 query += ' AND ';
             }
             query += tagString;
-            self.query(query); 
-            self.onUpdateTags();                      
-        }     
+            self.query(query);
+            self.onUpdateTags();
+        }
     };
     self.removeTag = function(tagName, _, e) {
-        e.stopPropagation();            
+        e.stopPropagation();
         var query = self.query();
         var tagRegExp = /(?:AND)?\s*tags\:\([\'\"](.+?)[\'\"]\)/g;
-        var matches = query.match(tagRegExp);
         var dirty = false;
-        while (matches.length) {
-            var match = matches.pop();
-            if ((match.match(tagName) || []).length) {
-                query = query.replace(match, '');   
+        while (tagRegExp.test(query)) {
+            var match = tagRegExp.exec(query);
+            var block = match.shift();
+            var tag = match.shift().trim();
+            if (tag === tagName) {
+                query = query.replace(block, '').trim();
                 dirty = true;
             }
         }
@@ -340,7 +341,7 @@ var ViewModel = function(params) {
 
         var jsonData = {
             query: self.fullQuery(self.filters()),
-            from: self.currentIndex(), 
+            from: self.currentIndex(),
             size: self.resultsPerPage()
         };
         var url = self.queryUrl + self.category().url();
@@ -353,7 +354,7 @@ var ViewModel = function(params) {
             self.results.removeAll();
             self.categories.removeAll();
             self.shareCategory('');
-            
+
             // Deep copy license list
             var licenseCounts = self.licenses().slice();
             var noneLicense;
@@ -373,7 +374,7 @@ var ViewModel = function(params) {
                     })[0].count(value);
                     nullLicenseCount -= value;
                 });
-            }            
+            }
             noneLicense.count(noneLicense.count() + nullLicenseCount);
             self.licenses(licenseCounts);
 

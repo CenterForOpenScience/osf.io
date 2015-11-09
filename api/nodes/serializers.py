@@ -5,7 +5,7 @@ from modularodm.exceptions import ValidationValueError
 from framework.auth.core import Auth
 from framework.exceptions import PermissionsError
 
-from website.models import Node, User
+from website.models import Node, User, Comment
 from website.exceptions import NodeStateError
 from website.util import permissions as osf_permissions
 
@@ -13,6 +13,10 @@ from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_i
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLinkField, IDField, TypeField,
     TargetTypeField, JSONAPIListField, LinksField, RelationshipField, DevOnly)
 from api.base.exceptions import InvalidModelValueError
+from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
+from api.base.serializers import (LinksField, JSONAPIHyperlinkedIdentityField, DevOnly,
+                                  JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink,
+                                  IDField, TypeField, TargetTypeField, JSONAPIListField)
 
 
 class NodeTagField(ser.Field):
@@ -73,7 +77,12 @@ class NodeSerializer(JSONAPISerializer):
         related_view_kwargs={'node_id': 'pk'},
         related_meta={'count': 'get_node_count'},
     )
-
+    
+    comments = RelationshipField(
+        related_view = 'nodes:node-comments',
+        related_view_kwargs = {'node_id': 'pk'},
+        related_meta = {'unread': 'get_unread_comments_count'}
+      
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
         related_view_kwargs={'node_id': 'pk'},
@@ -138,6 +147,11 @@ class NodeSerializer(JSONAPISerializer):
 
     def get_pointers_count(self, obj):
         return len(obj.nodes_pointer)
+
+    def get_unread_comments_count(self, obj):
+        auth = self.get_user_auth(self.context['request'])
+        user = auth.user
+        return Comment.find_unread(user=user, node=obj)
 
     def create(self, validated_data):
         node = Node(**validated_data)

@@ -4,8 +4,44 @@ from rest_framework import status
 from rest_framework.exceptions import APIException
 
 
+def dict_error_formatting(errors, index=None):
+    """
+    Formats all dictionary error messages for both single and bulk requests
+    """
+
+    formatted_error_list = []
+
+    # Error objects may have the following members. Title and id removed to avoid clash with "title" and "id" field errors.
+    top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
+
+    # Resource objects must contain at least 'id' and 'type'
+    resource_object_identifiers = ['type', 'id']
+
+    if index is None:
+        index = ''
+    else:
+        index = str(index) + '/'
+
+    for error_key, error_description in errors.iteritems():
+        if isinstance(error_description, basestring):
+            error_description = [error_description]
+
+        if error_key in top_level_error_keys:
+            formatted_error_list.extend({error_key: description} for description in error_description)
+        elif error_key in resource_object_identifiers:
+            formatted_error_list.extend([{'source': {'pointer': '/data/{}'.format(index) + error_key}, 'detail': reason} for reason in error_description])
+        elif error_key == 'non_field_errors':
+            formatted_error_list.extend([{'detail': description for description in error_description}])
+        else:
+            formatted_error_list.extend([{'source': {'pointer': '/data/{}attributes/'.format(index) + error_key}, 'detail': reason} for reason in error_description])
+
+    return formatted_error_list
+
+
 def json_api_exception_handler(exc, context):
-    """ Custom exception handler that returns errors object as an array """
+    """
+    Custom exception handler that returns errors object as an array
+    """
 
     # We're deliberately not stripping html from exception detail.
     # This creates potential vulnerabilities to script injection attacks
@@ -17,43 +53,26 @@ def json_api_exception_handler(exc, context):
 
     # Import inside method to avoid errors when the OSF is loaded without Django
     from rest_framework.views import exception_handler
+
     response = exception_handler(exc, context)
 
-    # Error objects may have the following members. Title and id removed to avoid clash with "title" and "id" field errors.
-    top_level_error_keys = ['links', 'status', 'code', 'detail', 'source', 'meta']
-    resource_object_identifiers = ['type', 'id']
     errors = []
 
     if response:
         message = response.data
 
         if isinstance(exc, JSONAPIException):
-            errors.extend([
-                {
-                    'source': exc.source or {},
-                    'detail': exc.detail,
-                }
-            ])
+            errors.extend([{'source': exc.source or {}, 'detail': exc.detail}])
         elif isinstance(message, dict):
-            for error_key, error_description in message.iteritems():
-                if error_key in top_level_error_keys:
-                    errors.append({error_key: error_description})
-                elif error_key in resource_object_identifiers:
-                    if isinstance(error_description, basestring):
-                        error_description = [error_description]
-                    errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
-                elif error_key == 'attributes':
-                    if isinstance(error_description, list):
-                        errors.extend([{'source': {'pointer': '/data/' + error_key}, 'detail': reason} for reason in error_description])
-                else:
-                    if isinstance(error_description, basestring):
-                        error_description = [error_description]
-                    errors.extend([{'source': {'pointer': '/data/attributes/' + error_key}, 'detail': reason} for reason in error_description])
-
+            errors.extend(dict_error_formatting(message, None))
         else:
             if isinstance(message, basestring):
                 message = [message]
-            errors.extend([{'detail': error} for error in message])
+            for index, error in enumerate(message):
+                if isinstance(error, dict):
+                    errors.extend(dict_error_formatting(error, index))
+                else:
+                    errors.append({'detail': error})
 
         response.data = {'errors': errors}
 
@@ -77,6 +96,7 @@ class JSONAPIException(APIException):
     def __init__(self, detail=None, source=None):
         super(JSONAPIException, self).__init__(detail=detail)
         self.source = source
+
 
 # Custom Exceptions the Django Rest Framework does not support
 class Gone(APIException):
