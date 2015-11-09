@@ -742,6 +742,14 @@ RegistrationEditor.prototype.putSaveData = function(payload) {
     return self.saveManager.save(payload).then(self.updateData.bind(self));
 };
 
+RegistrationEditor.prototype.saveForLater = function() {
+    var self = this;
+    $osf.block('Saving...');
+    self.save().then(function() {
+        window.location = self.urls.draftRegistrations;
+    }); // TODO(samchrisinger): on fail
+};
+
 /**
  * Save the current Draft
  **/
