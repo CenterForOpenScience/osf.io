@@ -291,9 +291,9 @@ def update_node(node, index=None, bulk=False):
             # Skip orphaned components
             return
 
-    #TODO @hmoco, make this a celery task that takes care of updating files
-    from website.files.models.base import FileNode
-    for file_ in FileNode.find(Q('node', 'eq', node) & Q('provider', 'eq', 'osfstorage') & Q('is_file', 'eq', True)):
+    from website.files.models.osfstorage import OsfStorageFileNode
+    for file_ in OsfStorageFileNode.find(Q('node', 'eq', node) &
+                                         Q('is_file', 'eq', True)):
         update_file(file_)
 
     if node.is_deleted or not node.is_public or node.archiving:
@@ -358,6 +358,7 @@ def bulk_update_nodes(serialize, nodes, index=None):
     index = index or INDEX
     actions = []
     for node in nodes:
+        logger.info('Updating node {}'.format(node._id))
         serialized = serialize(node)
         if serialized:
             actions.append({
