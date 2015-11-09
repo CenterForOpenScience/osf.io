@@ -99,6 +99,8 @@ class UserList(JSONAPIBaseView, generics.ListAPIView, ODMFilterMixin):
 
     ordering = ('-date_registered')
 
+    view_name = 'users:user-list'
+
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         return (
@@ -194,6 +196,8 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
 
     required_read_scopes = [CoreScopes.USERS_READ]
     required_write_scopes = [CoreScopes.USERS_WRITE]
+    view_name = 'users:user-detail'
+
 
     serializer_class = UserDetailSerializer
 
@@ -267,6 +271,8 @@ class UserNodes(JSONAPIBaseView, generics.ListAPIView, UserMixin, ODMFilterMixin
     required_write_scopes = [CoreScopes.USERS_WRITE, CoreScopes.NODE_BASE_WRITE]
 
     serializer_class = NodeSerializer
+
+    view_name = 'users:user-nodes'
 
     # overrides ODMFilterMixin
     def get_default_odm_query(self):

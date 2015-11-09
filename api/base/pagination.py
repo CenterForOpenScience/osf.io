@@ -54,19 +54,41 @@ class EmbeddedPagination(JSONAPIPagination):
         url = self.request.build_absolute_uri(url)
         return remove_query_param(url, self.page_query_param)
 
+    def get_last_real_link(self, url):
+        if not self.page.has_next():
+            return None
+        url = self.request.build_absolute_uri(url)
+        page_number = self.page.paginator.num_pages
+        return replace_query_param(url, self.page_query_param, page_number)
+
+    def get_previous_real_link(self, url):
+        if not self.page.has_previous():
+            return None
+        url = self.request.build_absolute_uri(url)
+        page_number = self.page.previous_page_number()
+        if page_number == 1:
+            return remove_query_param(url, self.page_query_param)
+        return replace_query_param(url, self.page_query_param, page_number)
+
+    def get_next_real_link(self, url):
+        if not self.page.has_next():
+            return None
+        url = self.request.build_absolute_uri(url)
+        page_number = self.page.next_page_number()
+        return replace_query_param(url, self.page_query_param, page_number)
+
     def get_paginated_response(self, data):
-        kwargs = self.request.parser_context['kwargs']
-        del kwargs['no_embeds']
-        view = type(self.request.parser_context['view']).as_view()
-        path = self.request.path
+        kwargs = self.request.parser_context['kwargs'].copy()
+        kwargs.pop('no_embeds', None)
+        view_name = self.request.parser_context['view'].view_name
 
         response_dict = OrderedDict([
              ('data', data),
             ('links', OrderedDict([
-                ('first', self.get_first_real_link(reverse(view, kwargs=kwargs, urlconf='api.users.urls'))), #urlconf=resolve(path)))),
-                ('last', self.get_last_link()),
-                ('prev', self.get_previous_link()),
-                ('next', self.get_next_link()),
+                ('first', self.get_first_real_link(reverse(view_name, kwargs=kwargs))),
+                ('last', self.get_last_real_link(reverse(view_name, kwargs=kwargs))),
+                ('prev', self.get_previous_real_link(reverse(view_name, kwargs=kwargs))),
+                ('next', self.get_next_real_link(reverse(view_name, kwargs=kwargs))),
                 ('meta', OrderedDict([
                     ('total', self.page.paginator.count),
                     ('per_page', self.page.paginator.per_page),
