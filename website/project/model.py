@@ -1814,7 +1814,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def bulk_update_search(cls, nodes):
         from website import search
         try:
-            serialize = functools.partial(search.search.update_node, bulk=True)
+            serialize = functools.partial(search.search.update_node, bulk=True, async=False)
             search.search.bulk_update_nodes(serialize, nodes)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
