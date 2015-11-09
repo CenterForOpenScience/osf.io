@@ -9,7 +9,9 @@ var URI = require('URIjs');
 require('js/koHelpers');
 
 var $osf = require('js/osfHelpers');
-var language = require('js/osfLanguage').registrations;
+var osfLanguage = require('js/osfLanguage');
+var SUPPORT_LINK = osfLanguage.SUPPORT_LINK;
+var language = osfLanguage.registrations;
 
 var SaveManager = require('js/saveManager');
 var editorExtensions = require('js/registrationEditorExtensions');
@@ -745,9 +747,14 @@ RegistrationEditor.prototype.putSaveData = function(payload) {
 RegistrationEditor.prototype.saveForLater = function() {
     var self = this;
     $osf.block('Saving...');
-    self.save().then(function() {
-        window.location = self.urls.draftRegistrations;
-    }); // TODO(samchrisinger): on fail
+    self.save()
+        .then(function() {
+            window.location = self.urls.draftRegistrations;
+        })
+        .fail(function() {
+            $osf.unblock();
+            $osf.growl('There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
+        }); 
 };
 
 /**
