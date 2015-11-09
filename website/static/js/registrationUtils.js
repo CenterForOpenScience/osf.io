@@ -427,10 +427,12 @@ var RegistrationEditor = function(urls, editorId) {
         };
     }.bind(self));
 
+    // An incrementing dirty flag. The 0 state represents not-dirty.
+    // States greater than 0 imply dirty, and incrementing the number 
+    // allows for reliable mutations of the ko.observable.
     self.dirtyCount = ko.observable(0);
-    self.isDirty = ko.observable(false);
     self.needsSave = ko.computed(function() {
-        return self.isDirty() && self.dirtyCount();
+        return self.dirtyCount();
     }).extend({
         rateLimit: 3000,
         method: 'notifyWhenChangesStop'
@@ -440,7 +442,6 @@ var RegistrationEditor = function(urls, editorId) {
         $.each(page.questions(), function(_, question) {
             question.value.subscribe(function() {
                 self.dirtyCount(self.dirtyCount() + 1);
-                self.isDirty(true);
             });
         });
     });
@@ -474,7 +475,7 @@ RegistrationEditor.prototype.init = function(draft) {
         self.saveManager = new SaveManager(
             self.urls.update.replace('{draft_pk}', draft.pk),
             null, null,
-            self.isDirty
+            self.dirtyCount
         );
         schemaData = draft.schemaData || {};
     }
@@ -501,7 +502,7 @@ RegistrationEditor.prototype.init = function(draft) {
         if (dirty) {
             self.save().then(function(last) {
                 if (self.dirtyCount() === last){
-                    self.isDirty(false);
+                    self.dirtyCount(0);
                 }
             }.bind(self, self.dirtyCount()));
         }
@@ -733,7 +734,7 @@ RegistrationEditor.prototype.create = function(schemaData) {
         self.saveManager = new SaveManager(
             self.urls.update.replace('{draft_pk}', draft.pk),
             null, null,
-            self.isDirty
+            self.dirtyCount
         );
     });
     return request;
