@@ -235,3 +235,6 @@ WELCOME = Mail(
     'welcome',
     subject='Welcome to the Open Science Framework'
 )
+
+
+EMPTY = Mail('empty', subject='${subject}')
