@@ -1,10 +1,13 @@
 import os
 import json
 
+def _name_to_id(name):
+    return ' '.join(name).split('_')
+
 
 def ensure_schema_structure(schema):
     schema['pages'] = schema.get('pages', [])
-    schema['title'] = ' '.join(schema.get('name', '').split('_'))
+    schema['title'] = schema['name']
     schema['version'] = schema.get('version', 1)
     return schema
 
