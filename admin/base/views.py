@@ -1,5 +1,5 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
-
 
 #def root(request):
 #   return HttpResponse("Will probably need to put some front end Auth on this.")
