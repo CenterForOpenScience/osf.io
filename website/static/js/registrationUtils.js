@@ -473,9 +473,10 @@ RegistrationEditor.prototype.init = function(draft) {
     var schemaData = {};
     if (draft) {
         self.saveManager = new SaveManager(
-            self.urls.update.replace('{draft_pk}', draft.pk),
-            null, null,
-            self.dirtyCount
+            self.urls.update.replace('{draft_pk}', draft.pk), 
+            null, {
+                dirty: self.dirtyCount
+            }
         );
         schemaData = draft.schemaData || {};
     }
@@ -538,7 +539,7 @@ RegistrationEditor.prototype.context = function(data) {
 
 RegistrationEditor.prototype.toPreview = function () {
     var self = this;
-    window.location = self.draft().urls.register_page;
+    self.save().then(window.location.assign.bind(window.location, self.draft().urls.register_page));
 };
 
 /**
@@ -572,44 +573,6 @@ RegistrationEditor.prototype.check = function() {
     });
 };
 /**
- * Load the next question into the editor, wrapping around if needed
- **/
-RegistrationEditor.prototype.nextQuestion = function() {
-    var self = this;
-
-    var currentQuestion = self.currentQuestion();
-
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q) {
-        return q.id === currentQuestion.id;
-    });
-    if (index + 1 === questions.length) {
-        self.currentQuestion(questions.shift());
-    } else {
-        self.currentQuestion(questions[index + 1]);
-    }
-    // self.viewComments();
-};
-/**
- * Load the previous question into the editor, wrapping around if needed
- **/
-RegistrationEditor.prototype.previousQuestion = function() {
-    var self = this;
-
-    var currentQuestion = self.currentQuestion();
-
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q) {
-        return q.id === currentQuestion.id;
-    });
-    if (index - 1 < 0) {
-        self.currentQuestion(questions.pop());
-    } else {
-        self.currentQuestion(questions[index - 1]);
-    }
-    // self.viewComments();
-};
-/**
  * Select a page, selecting the first question on that page
  **/
 RegistrationEditor.prototype.selectPage = function(page) {
@@ -630,7 +593,6 @@ RegistrationEditor.prototype.nextPage = function () {
     self.currentPage(self.pages()[ self.pages().indexOf(self.currentPage()) + 1 ]);
     window.scrollTo(0,0);
 };
-// TODO(samchrisinger): check if needed
 /**
  * Update draft primary key and updated time on server response
  **/
@@ -642,78 +604,7 @@ RegistrationEditor.prototype.updateData = function(response) {
     draft.updated = new Date(response.updated);
     self.draft(draft);
 };
-RegistrationEditor.prototype.submitForReview = function() {
-    var self = this;
 
-    var draft = self.draft();
-    var metaSchema = draft.metaSchema;
-    var messages = metaSchema.messages;
-    var beforeSubmitForApprovalMessage = messages.beforeSubmitForApproval || '';
-    var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';
-
-    bootbox.confirm({
-            message: beforeSubmitForApprovalMessage,
-            callback: function(confirmed) {
-                if (confirmed) {
-                    var request = $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {});
-                    request.done(function() {
-                        bootbox.dialog({
-                            closeButton: false,
-                            message: afterSubmitForApprovalMessage,
-                            title: 'Pre-Registration Prize Submission',
-                            buttons: {
-                                registrations: {
-                                    label: 'Return to registrations page',
-                                    className: 'btn-primary pull-right',
-                                    callback: function() {
-                                        window.location.href = self.draft().urls.registrations;
-                                    }
-                                }
-                            }
-                        });
-                    });
-                    request.fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
-                }
-            },
-            buttons: {
-                confirm: {
-                    label:'Continue with registration',
-                    className:'btn-primary'
-                }
-            }
-        }
-    );
-};
-RegistrationEditor.prototype.submit = function() {
-    var self = this;
-    var currentNode = window.contextVars.node;
-    var currentUser = $osf.currentUser();
-    var messages = self.draft().messages;
-    bootbox.confirm(messages.beforeSubmitForApproval, function(result) {
-        if (result) {
-            var request = $osf.postJSON(self.urls.submit.replace('{draft_pk}', self.draft().pk), {
-                node: currentNode,
-                auth: currentUser
-            });
-            request.done(function() {
-                bootbox.dialog({
-                    message: messages.afterSubmitForApproval,
-                    title: 'Pre-Registration Prize Submission',
-                    buttons: {
-                        registrations: {
-                            label: 'Return to registrations page',
-                            className: 'btn-primary pull-right',
-                            callback: function() {
-                                window.location.href = self.draft().urls.registrations;
-                            }
-                        }
-                    }
-                });
-            });
-        request.fail($osf.growl.bind(null, 'Error submitting for review', language.submitForReviewFail));
-        }
-    });
-};
 /**
  * Create a new draft
  **/
@@ -733,8 +624,10 @@ RegistrationEditor.prototype.create = function(schemaData) {
         self.draft(draft);
         self.saveManager = new SaveManager(
             self.urls.update.replace('{draft_pk}', draft.pk),
-            null, null,
-            self.dirtyCount
+            null, 
+            {
+                dirty: self.dirtyCount
+            }
         );
     });
     return request;
@@ -742,20 +635,19 @@ RegistrationEditor.prototype.create = function(schemaData) {
 
 RegistrationEditor.prototype.putSaveData = function(payload) {
     var self = this;
-    return self.saveManager.save(payload).then(self.updateData.bind(self));
+    return self.saveManager.save(payload)
+        .then(self.updateData.bind(self));
 };
 
 RegistrationEditor.prototype.saveForLater = function() {
     var self = this;
     $osf.block('Saving...');
     self.save()
+        .always($osf.unblock)
         .then(function() {
-            window.location = self.urls.draftRegistrations;
-        })
-        .fail(function() {
-            $osf.unblock();
-            $osf.growl('There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
-        }); 
+            self.dirtyCount(0);
+            window.location.assign(self.urls.draftRegistrations);
+        });
 };
 
 /**
@@ -797,30 +689,9 @@ RegistrationEditor.prototype.save = function() {
         });
     }
     self.lastSaveRequest = request;
+    request.fail($osf.growl.bind(null, 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.'));
     return request;
 };
-
-RegistrationEditor.prototype.toDraft = function () {
-    // save the form
-    var self = this;
-    self.save().done(function() {
-        window.location = self.urls.draftRegistrations;
-    });
-};
-/*
-RegistrationEditor.prototype.saveForLater = function () {
-    var self = this;
-
-    if (self.lastSaveRequest()) {
-        // wait for the last autosave to complete
-        self.lastSaveRequest().always(function() {
-            self.toDraft();
-        });
-    } else {
-        self.toDraft();
-    }
-};
-*/
 
 /**
  * @class RegistrationManager
@@ -983,7 +854,7 @@ RegistrationManager.prototype.createDraftModal = function() {
  **/
 RegistrationManager.prototype.maybeWarn = function(draft) {
     var redirect = function() {
-        window.location.href = draft.urls.edit;
+        window.location.assign(draft.urls.edit);
     };
     var callback = function(confirmed) {
         if (confirmed) {
