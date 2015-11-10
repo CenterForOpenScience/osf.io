@@ -24,6 +24,7 @@ def migrate_nodes(index):
     n_iter = 0
     nodes = Node.find(Q('is_public', 'eq', True) & Q('is_deleted', 'eq', False))
     for node in nodes:
+        logger.info('Updating node {}'.format(node._id))
         search.update_node(node, index=index, async=False)
         n_iter += 1
 
@@ -48,8 +49,12 @@ def migrate(delete, index=None, app=None):
     app = app or init_app("website.settings", set_backends=True, routes=True)
 
     script_utils.add_file_logger(logger, __file__)
+    # NOTE: We do NOT use the app.text_request_context() as a
+    # context manager because we don't want the teardown_request
+    # functions to be triggered
     ctx = app.test_request_context()
     ctx.push()
+
     new_index = set_up_index(index)
 
     migrate_nodes(new_index)
@@ -61,7 +66,6 @@ def migrate(delete, index=None, app=None):
         delete_old(new_index)
 
     ctx.pop()
-
 
 def set_up_index(idx):
     alias = es.indices.get_aliases(index=idx)
