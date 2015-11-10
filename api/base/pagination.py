@@ -48,10 +48,20 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
 class EmbeddedPagination(JSONAPIPagination):
 
+    def query_param_generator(self, url, page_number):
+        embedded = self.request.parser_context['kwargs'].get('embedded')
+        if 'embed' in self.request.query_params:
+            if not embedded:
+                url = replace_query_param(url, 'embed', self.request.query_params['embed'])
+
+        url = replace_query_param(url, self.page_query_param, page_number)
+
+        return url
+
     def get_first_real_link(self, url):
         if not self.page.has_previous():
             return None
-        url = self.request.build_absolute_uri(url)
+        url = self.query_param_generator(self.request.build_absolute_uri(url))
         return remove_query_param(url, self.page_query_param)
 
     def get_last_real_link(self, url):
