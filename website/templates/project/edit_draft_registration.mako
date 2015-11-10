@@ -40,10 +40,10 @@
                   <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
                     <div data-bind="template: {data: question, name: 'editor'}"></div>
                   </div>
-                  <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
-                      <!-- ko if: $index() == 0 -->
-                      <div class="well" data-bind="template: {data: question, name: 'commentable'}"></div>
-                      <!-- /ko -->
+                  <div class="row">
+                    <div class="col-md-12">
+                        <div class="well" data-bind="template: {data: currentQuestion(), name: 'commentable'}"></div>
+                    </div>
                   </div>
                 </div>
 

@@ -264,7 +264,7 @@ var Page = function(schemaPage, data) {
         if (data[id] && data[id].comments) {
             var comment = $.map(data[id].comments || [], function(comment) {
                 return new Comment(comment);
-            })
+            });
             question.comments(comment);
         }
 
@@ -635,13 +635,14 @@ var RegistrationEditor = function(urls, editorId) {
         });
         currentPage.active(true);
     });
+    self.currentPage.subscribe(function(currentPage) {
+        self.currentQuestion(currentPage.questions()[0]);
+    });
+    
     self.onLastPage = ko.pureComputed(function() {
         return self.currentPage() === self.pages()[self.pages().length - 1];
     });
 
-    self.currentQuestion1 = ko.computed(function() {
-        return (self.currentPage() ? self.currentPage().questions : false )? self.currentPage().questions[0] : null;
-    });
     self.serialized = ko.pureComputed(function () {
         // TODO(lyndsysimon): Test this.
         var self = this;
