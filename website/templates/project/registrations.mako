@@ -5,7 +5,7 @@
   <li role="presentation" class="active">
     <a id="registrationsControl" aria-controls="registrations" href="#registrations">Registrations</a>
   </li>
-  % if 'admin' in user['permissions']:
+  % if 'admin' in user['permissions'] and node['has_draft_registrations']:
   <li role="presentation" data-bind="visible: hasDrafts">
       <a id="draftsControl" aria-controls="drafts" href="#drafts">Draft Registrations</a>
   </li>
@@ -53,7 +53,7 @@
     </div>
   </div>
   <div role="tabpanel" class="tab-pane" id="drafts">
-    <div id="draftRegistrationsScope" class="row" style="min-height: 150px;padding-top:20px;">
+    <div id="draftRegistrationsScope" class="row scripted" style="min-height: 150px;padding-top:20px;">
       <form id="newDraftRegistrationForm" method="POST" style="display:none">
         <!-- ko if: selectedSchema() -->
         <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name">
@@ -110,69 +110,6 @@
           </div>
         </div>
       </div>
-      <!--
-      <div data-bind="if: preview">
-        <br />
-        <button data-bind="click: preview.bind($root, false)"
-                class="btn btn-primary"><i class="fa fa-arrow-circle-o-left"></i>&nbsp;&nbsp;&nbsp;Back</button>
-        <br />
-        <br />
-        <p> Select a registration template to continue ... </p>
-        <div class="row">
-          <form name="createDraft" method="post">
-            <div class="col-md-9">
-              <div class="form-group">
-                <select class="form-control" data-bind="options: schemas,
-                                                        optionsText: 'name',
-                                                        value: selectedSchema">
-                </select>
-                <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name" />
-                <input type="hidden" name="schema_version" data-bind="value: selectedSchema().version" />
-              </div>
-            </div>
-            <div class="col-md-3">
-              <button type="submit" class="btn btn-success"> Start </button>
-            </div>
-          </form>
-        </div>
-        <hr />
-        <div class="row" data-bind="if: selectedSchema">
-          <div class="col-md-12" data-bind="with: selectedSchema">
-            <span data-bind="if: requiresApproval">
-              <div class="row">
-                <div class="col-md-12 schema-fulfillment">
-                  <span class="well" data-bind="tooltip: {
-                                                  placement: 'top',
-                                                  title: 'Site administrations will need to approve this draft before it can be registered'
-                                                }">
-                    <span>Requires Approval</span>&nbsp;&nbsp;
-                    <i class="fa fa-exclamation-triangle" target="_blank"></i>
-                  </span>              
-                </div>
-              </div>
-            </span>
-            <span data-bind="if: fulfills.length">
-              <h4> Fulfills: </h4>
-              <div class="row">
-                <div class="col-md-12 schema-fulfillment" data-bind="foreach: fulfills">
-                  <span class="well">
-                    <span data-bind="text: name"></span>&nbsp;&nbsp;
-                    <a class="fa fa-info-circle" target="_blank" data-bind="attr.href: info"></a>
-                  </span>
-                </div>
-              </div>
-            </span>
-            <h4> Description: </h4>
-            <blockquote>
-              <p data-bind="text: schema.description"></p>
-            </blockquote>
-          </div>
-        </div>
-        <hr />
-        <div class="row" data-bind="template: {data: previewSchema, name: 'registrationPreview'}">
-        </div>
-      </div>
-      -->
     </div>
   </div>
 </div>

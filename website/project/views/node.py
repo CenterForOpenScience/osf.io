@@ -468,10 +468,6 @@ def project_statistics_redirect(auth, node, **kwargs):
 @must_have_permission(ADMIN)
 def project_before_set_public(node, **kwargs):
     prompt = node.callback('before_make_public')
-    anonymous_link_warning = any(private_link.anonymous for private_link in node.private_links_active)
-    if anonymous_link_warning:
-        prompt.append('Anonymized view-only links <b>DO NOT</b> anonymize '
-                      'contributors after a project or component is made public.')
 
     return {
         'prompts': prompt
@@ -774,6 +770,7 @@ def _view_project(node, auth, primary=False):
                 'doi': node.get_identifier_value('doi'),
                 'ark': node.get_identifier_value('ark'),
             },
+            'has_draft_registrations': bool(node.draft_registrations)
         },
         'parent_node': {
             'exists': parent is not None,
@@ -1045,8 +1042,6 @@ def project_generate_private_link_post(auth, node, **kwargs):
 
     nodes = [Node.load(node_id) for node_id in node_ids]
 
-    has_public_node = any(node.is_public for node in nodes)
-
     try:
         new_link = new_private_link(
             name=name, user=auth.user, nodes=nodes, anonymous=anonymous
@@ -1055,13 +1050,6 @@ def project_generate_private_link_post(auth, node, **kwargs):
         raise HTTPError(
             http.BAD_REQUEST,
             data=dict(message_long=e.message)
-        )
-
-    if anonymous and has_public_node:
-        status.push_status_message(
-            'Anonymized view-only links <b>DO NOT</b> '
-            'anonymize contributors of public projects or components.',
-            trust=True
         )
 
     return new_link

@@ -296,18 +296,14 @@ def mongorestore(path, drop=False):
 
 
 @task
-def sharejs(host=None, port=None, db_host=None, db_port=None, db_name=None, cors_allow_origin=None):
+def sharejs(host=None, port=None, db_url=None, cors_allow_origin=None):
     """Start a local ShareJS server."""
     if host:
         os.environ['SHAREJS_SERVER_HOST'] = host
     if port:
         os.environ['SHAREJS_SERVER_PORT'] = port
-    if db_host:
-        os.environ['SHAREJS_DB_HOST'] = db_host
-    if db_port:
-        os.environ['SHAREJS_DB_PORT'] = db_port
-    if db_name:
-        os.environ['SHAREJS_DB_NAME'] = db_name
+    if db_url:
+        os.environ['SHAREJS_DB_URL'] = db_url
     if cors_allow_origin:
         os.environ['SHAREJS_CORS_ALLOW_ORIGIN'] = cors_allow_origin
 
