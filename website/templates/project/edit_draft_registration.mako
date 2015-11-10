@@ -14,14 +14,14 @@
           <div class="container">
             <div class="row">
               <div class="span8 col-md-2 columns eight large-8">
-                <ul class="nav nav-stacked list-group" data-bind="foreach: {data: currentPages, as: 'page'}">
+                <ul class="nav nav-stacked list-group" data-bind="foreach: {data: pages, as: 'page'}, visible: pages().length > 1">
                   <li class="re-navbar">
                     <a class="registration-editor-page" id="top-nav" style="text-align: left;" data-bind="text: title, click: $root.selectPage, style:{'font-weight': active() ? 'bold' : 'normal'}">
                       <i class="fa fa-caret-right"></i>
                     </a>
                   </li>
                 </ul>
-              </div>
+              </div>             
               <div class="span8 col-md-9 columns eight large-8">
                 <br />
                 <br />
@@ -37,22 +37,23 @@
 
                 <!-- EDITOR -->
                 <div data-bind="if: currentPage">
-                   <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
-                       <div data-bind="template: {data: question, name: 'editor'}"></div>
-                   </div>
+                  <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
+                    <div data-bind="template: {data: question, name: 'editor'}"></div>
+                  </div>
                 </div>
                 <p>Last saved: <span data-bind="text: $root.lastSaved"></span>
                 </p>
                 <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
                 </button>
-                <span data-bind="tooltip: {
-                                   title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
-                                 }">
-                  <a data-bind="css: {'disabled': !canRegister()},
-                                click: $root.check" type="button" class="pull-right btn btn-success">Register
-                  </a>
-                </span>
-                
+                <!-- ko if: onLastPage -->
+                <a data-bind="css: {disabled: !canSubmit()},
+                              click: $root.check"
+                   type="button" class="pull-right btn btn-success">Preview for submission
+                </a>
+                <!-- /ko -->
+                <!-- ko ifnot: onLastPage -->
+                <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
+                <!-- /ko -->
               </div>
             </div>
           </div>

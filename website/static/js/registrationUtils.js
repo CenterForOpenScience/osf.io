@@ -250,13 +250,15 @@ var Page = function(schemaPage, data) {
     self.title = schemaPage.title;
     self.id = schemaPage.id;
 
+    self.active = ko.observable(false);
+
     self.comments = ko.observableArray(
         $.map(data.comments || [], function(comment) {
             return new Comment(comment);
         })
     );
 
-    $.each(schemaPage.questions, function(id, questionSchema) {
+    $.each(schemaPage.questions, function(id, question) {
         if (data[id] && data[id].value) {
             question.value(data[id].value);
         }
@@ -616,16 +618,9 @@ var RegistrationEditor = function(urls, editorId) {
         self.contributors(data);
     });
 
-    self.currentPages = ko.computed(function() {
-        var draft = self.draft();
-        if (!draft) {
-            return [];
-        }
-        var schema = draft.schema();
-        if (!schema) {
-            return [];
-        }
-        return schema.pages;
+    self.pages = ko.computed(function () {
+        // empty array if self.draft is not set.
+        return self.draft() ? self.draft().pages() : [];
     });
     self.currentPage = ko.observable();
     self.currentPage.subscribe(function(currentPage) {
