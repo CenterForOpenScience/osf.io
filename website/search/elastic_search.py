@@ -291,8 +291,8 @@ def update_node(node, index=None, bulk=False):
             # Skip orphaned components
             return
 
-    from website.files.models.osfstorage import OsfStorageFileNode
-    for file_ in OsfStorageFileNode.find(Q('node', 'eq', node)):
+    from website.files.models.osfstorage import OsfStorageFile
+    for file_ in OsfStorageFile.find(Q('node', 'eq', node)):
         update_file(file_)
 
     if node.is_deleted or not node.is_public or node.archiving:
