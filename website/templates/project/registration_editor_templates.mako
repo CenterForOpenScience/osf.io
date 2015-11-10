@@ -83,6 +83,10 @@
                     </ul>
                   </span>
                   <div data-bind="template: {data: $data, name: type}"></div>
+                  <br />
+                  <button data-bind="click: $root.authorDialog,
+                                     visible: $root.currentQuestion().title === 'Authorship' && $root.contributors().length > 1"  type="button" class="btn btn-primary">Import Contributors
+                  </button>
                 </span>
               </div>
           </div>
@@ -152,6 +156,21 @@
                            enable: allowAddNext">Add</button>
       </span>
     </div>
+</script>
+
+<script type="text/html" id="importContributors">
+    <div col-lg-12>
+        <p>Select: <a data-bind="click: setContributorBoxes(true) " >All</a> | <a data-bind="click: setContributorBoxes(false)">None</a></p>
+    </div>
+    <div data-bind="foreach: {data: contributors, as: 'contrib'}">
+        <div class="checkbox" id="contribBoxes">
+            <label>
+                <input type="checkbox" data-bind="value: contrib">
+                <span data-bind="text: contrib"></span>
+            </label>
+        </div>
+    </div>
+    <p>If you would like to add contributors to your OSF project, you can do that on your <a href="${web_url_for('node_contributors', pid=node['id'])}">Contributors Page</a> </p>
 </script>
 
 <%include file="registration_editor_extensions.mako" />
