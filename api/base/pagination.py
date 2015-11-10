@@ -47,16 +47,10 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 
 class EmbeddedPagination(JSONAPIPagination):
 
-    def query_param_generator(self, url, page_number):
+    def page_number_query(self, url, page_number):
         """
-        Adds query params to paginated urls, such as page and embed.
-
-        If embedded resource, does not add embed query param.
+        Adds page param to paginated urls.
         """
-        embedded = self.request.parser_context['kwargs'].get('no_embeds')
-        if 'embed' in self.request.query_params:
-            if not embedded:
-                url = replace_query_param(url, 'embed', self.request.query_params['embed'])
 
         url = replace_query_param(url, self.page_query_param, page_number)
 
@@ -68,40 +62,42 @@ class EmbeddedPagination(JSONAPIPagination):
     def get_first_real_link(self, url):
         if not self.page.has_previous():
             return None
-        return self.query_param_generator(self.request.build_absolute_uri(url), 1)
+        return self.page_number_query(self.request.build_absolute_uri(url), 1)
 
     def get_last_real_link(self, url):
         if not self.page.has_next():
             return None
         url = self.request.build_absolute_uri(url)
         page_number = self.page.paginator.num_pages
-        return self.query_param_generator(url, page_number)
+        return self.page_number_query(url, page_number)
 
     def get_previous_real_link(self, url):
         if not self.page.has_previous():
             return None
         url = self.request.build_absolute_uri(url)
         page_number = self.page.previous_page_number()
-        return self.query_param_generator(url, page_number)
+        return self.page_number_query(url, page_number)
 
     def get_next_real_link(self, url):
         if not self.page.has_next():
             return None
         url = self.request.build_absolute_uri(url)
         page_number = self.page.next_page_number()
-        return self.query_param_generator(url, page_number)
+        return self.page_number_query(url, page_number)
 
     def get_paginated_response(self, data):
         """
         Formats paginated response in accordance with JSON API.
 
-        Creates pagination links from the view_name rather than the
-        location used in the request.
+        Creates pagination links from the view_name if embedded resource,
+        rather than the location used in the request.
         """
         kwargs = self.request.parser_context['kwargs'].copy()
-        kwargs.pop('no_embeds', None)
+        embedded = kwargs.pop('no_embeds', None)
         view_name = self.request.parser_context['view'].view_name
-        reversed_url = reverse(view_name, kwargs=kwargs)
+        reversed_url = None
+        if embedded:
+            reversed_url = reverse(view_name, kwargs=kwargs)
 
         response_dict = OrderedDict([
             ('data', data),
