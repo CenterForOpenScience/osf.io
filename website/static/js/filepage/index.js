@@ -134,6 +134,18 @@ var FileViewPage = {
         });
 
         if ($osf.urlParams().branch) {
+            var newFileBranchUrl = waterbutler.buildMetadataUrl(self.file.path, self.file.provider, self.node.id, {branch : $osf.urlParams().branch});
+            $.ajax({
+                dataType: 'json',
+                async: true,
+                url: newFileBranchUrl,
+                beforeSend: $osf.setXHRAuthorization,
+                success:function(response) {
+                    window.contextVars.file.urls.external = response.data.extra.webView;
+                    console.log(response);
+                    console.log(response.data.extra.webView);
+                }
+            });
             self.file.urls.revisions = waterbutler.buildRevisionsUrl(self.file.path, self.file.provider, self.node.id, {sha: $osf.urlParams().branch});
             self.file.urls.content = waterbutler.buildDownloadUrl(self.file.path, self.file.provider, self.node.id, {accept_url: false, mode: 'render', branch: $osf.urlParams().branch});
         }
