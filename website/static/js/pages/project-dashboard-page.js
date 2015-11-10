@@ -16,7 +16,6 @@ var LogFeed = require('js/logFeed');
 var pointers = require('js/pointers');
 var Comment = require('js/comment'); //jshint ignore:line
 var NodeControl = require('js/nodeControl');
-var NodesPrivacy = require('js/nodesPrivacy');
 var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
@@ -34,6 +33,7 @@ $('body').on('nodeLoad', function(event, data) {
     }
     // Initialize nodeControl
     new NodeControl.NodeControl('#projectScope', data);
+
 });
 
 // Initialize comment pane w/ it's viewmodel

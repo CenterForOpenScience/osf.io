@@ -59,7 +59,6 @@ var ProjectViewModel = function(data) {
         return !!(self.user.username && (self.nodeIsPublic || self.user.has_read_permissions));
     });
 
-    new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data, self.nodeIsPublic);
 
     // Add icon to title
     self.icon = '';
@@ -254,6 +253,7 @@ var defaults = {
 
 function NodeControl (selector, data, options) {
     var self = this;
+    new NodesPrivacy.NodesPrivacy('#nodesPrivacy', data, self.nodeIsPublic);
     self.selector = selector;
     self.$element = $(self.selector);
     self.data = data;

@@ -39,7 +39,7 @@ var MESSAGES = {
 
 function getNodesOriginal(nodeTree, nodesOriginal) {
     /**
-     * take treebeard tree structure of nodes and get a dictionary of parent node and its
+     * take treebeard tree structure of nodes and get a dictionary of parent node and all its
      * children
      */
     var i;
@@ -62,10 +62,10 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
 
 function patchNodesPrivacy(nodes) {
     /**
-     * patche all the nodes in a changed state.
+     * patches all the nodes in a changed state
      * uses API v2 bulk requests
      */
-    var nodesPatch = []
+    var nodesPatch = [];
     for (var key in nodes) {
         var node = nodes[key];
         nodesPatch.push({
@@ -108,6 +108,7 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     var nodesOriginal = {};
 
     self.nodesState = ko.observableArray();
+
     /**
      * state of current nodes
      */
@@ -116,17 +117,15 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     });
 
     self.nodesOriginal = ko.observableArray();
+
     /**
      * original node state on page load
      */
     self.nodesOriginal.subscribe(function(newValue) {
     });
-    /**
-     * id of parent node
-     */
 
-    //Parent node is public or not
     var treebeardUrl = data.node.api_url  + 'get_node_tree/';
+
     /**
      * get node free for treebeard from API V1
      */
@@ -204,10 +203,6 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     };
 
     self.confirmChanges =  function() {
-        /**
-         * confirmChanges forces a promise to make sure all requests are returned before
-         * reloading the page
-         */
         var nodesState = ko.toJS(self.nodesState());
         patchNodesPrivacy(nodesState);
     };
