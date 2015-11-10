@@ -16,7 +16,8 @@ from modularodm import Q
 from website import mails
 from website.app import init_app
 from website.project.model import Node
-from website.addons.osfstorage import model
+from website.files.models import OsfStorageFile
+from website.files.models import TrashedFileNode
 
 from scripts import utils as scripts_utils
 
@@ -50,10 +51,9 @@ def add_to_white_list(gtg):
 
 
 def get_usage(node):
-    addon = node.get_addon('osfstorage')
     usage = (
-        sum([v.size or 0 for file_node in model.OsfStorageFileNode.find(Q('node_settings', 'eq', addon)) for v in file_node.versions]),  # Sum all versions of all files of this node
-        sum([v.size or 0 for file_node in model.OsfStorageTrashedFileNode.find(Q('node_settings', 'eq', addon)) for v in file_node.versions]),  # Sum all versions of all deleted files of this node
+        sum([v.size or 0 for file_node in OsfStorageFile.find(Q('node', 'eq', node)) for v in file_node.versions]),  # Sum all versions of all files of this node
+        sum([v.size or 0 for file_node in TrashedFileNode.find(Q('node', 'eq', node) & Q('is_file', 'eq', True) & Q('provider', 'eq', 'osfstorage')) for v in file_node.versions]),  # Sum all versions of all deleted files of this node
     )
     return map(sum, zip(*([usage] + [get_usage(child) for child in node.nodes])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
@@ -90,7 +90,7 @@ def main(send_email=False):
             mails.send_mail('support@osf.io', mails.EMPTY, body='\n'.join(lines), subject='Script: OsfStorage usage audit')
         else:
             logger.info('send_email is False, not sending email'.format(len(lines)))
-        logger.info('{} offending projects and users found'.format(len(lines)))
+        logger.info('{} offending project(s) and user(s) found'.format(len(lines)))
     else:
         logger.info('No offending projects or users found')
 
