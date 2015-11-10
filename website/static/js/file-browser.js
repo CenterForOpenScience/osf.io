@@ -25,7 +25,10 @@ var LinkObject = function (type, data, label, index) {
         else if (self.type === 'breadcrumb') {
             return self.data.url;
         }
-        else if (self.type === 'user') {
+        else if (self.type === 'tag') {
+            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data , 'related_counts' : true}});
+        }
+        else if (self.type === 'name') {
             return $osf.apiV2Url('users/' + self.data + '/nodes/', { query : {'related_counts' : true}});
         }
         else if (self.type === 'node') {
