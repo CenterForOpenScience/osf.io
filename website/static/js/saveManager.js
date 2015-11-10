@@ -1,16 +1,16 @@
 'use strict';
 var $ = require('jquery');
 
-var SaveManager = function(url, method, xhrOpts, dirty, warn) {
+var SaveManager = function(url, method, opts) {
     var self = this;
     self.url = url;
     self.method = method || 'PUT';
     self.xhrOpts = $.extend({}, {
         contentType: 'application/json',
         dataType: 'json'
-    }, xhrOpts || {});
-    self.dirty = dirty || function(){return false;};
-    warn = warn || true;
+    }, opts.xhrOpts || {});
+    self.dirty = opts.dirty || function(){return false;};
+    var warn = opts.warn || true;
 
     self.queued = null;
 
@@ -20,7 +20,6 @@ var SaveManager = function(url, method, xhrOpts, dirty, warn) {
             if (self.blocking || self.dirty())  {
                 return 'You have unsaved changes.';
             }
-            return;
         });
     }
 };

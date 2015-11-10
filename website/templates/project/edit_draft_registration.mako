@@ -50,10 +50,8 @@
                 </button>
                     <!-- ko if: onLastPage -->
                     <a data-bind="css: {'disabled': !canRegister()},
-                                click: $root.check,
-                                tooltip: {
-                                   title: canRegister() ? 'Register' : 'This draft requires approval before it can be registered'
-                                 }" type="button" class="pull-right btn btn-success">Preview for submission
+                                click: $root.check" 
+                       type="button" class="pull-right btn btn-success">Preview for submission
                     </a>
                     <!-- /ko -->
                     <!-- ko ifnot: onLastPage -->

@@ -9,7 +9,6 @@ import logging
 from modularodm import Q
 from modularodm.exceptions import NoResultsFound
 
-from framework.mongo import database as db
 from framework.mongo.utils import from_mongo
 from framework.transactions.context import TokuTransaction
 
@@ -30,7 +29,7 @@ def get_old_registered_nodes():
         Q('is_registration', 'eq', True)
     )
 
-def main(dry_run):
+def main(dry_run, dev=False):
     init_app(routes=False)
     count = 0
     skipped = 0
@@ -76,13 +75,23 @@ def main(dry_run):
                 }
                 for key, value in schema_data.iteritems()
             }
-            node.save()
+            try:
+                node.save()
+            except TypeError as e:
+                logger.info('TypeError when saving node ({0}): {1}'.format(node._id, e.message))
+                if not dev:
+                    raise e
+            except AttributeError as e:
+                logger.info('AttributeError when saving node ({0}): {1}'.format(node._id, e.message))
+                if not dev:
+                    raise e
         count = count + 1
     logger.info('Done with {0} nodes migrated and {1} nodes skipped.'.format(count, skipped))
 
 if __name__ == '__main__':
     dry_run = 'dry' in sys.argv
+    dev = 'dev' in sys.argv
     with TokuTransaction():
-        main(dry_run)
+        main(dry_run, dev)
         if dry_run:
             raise RuntimeError('Dry run, rolling back transaction.')
