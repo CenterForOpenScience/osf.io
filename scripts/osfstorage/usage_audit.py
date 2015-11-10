@@ -55,7 +55,7 @@ def get_usage(node):
         sum([v.size or 0 for file_node in OsfStorageFile.find(Q('node', 'eq', node)) for v in file_node.versions]),  # Sum all versions of all files of this node
         sum([v.size or 0 for file_node in TrashedFileNode.find(Q('node', 'eq', node) & Q('is_file', 'eq', True) & Q('provider', 'eq', 'osfstorage')) for v in file_node.versions]),  # Sum all versions of all deleted files of this node
     )
-    return map(sum, zip(*([usage] + [get_usage(child) for child in node.nodes])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
+    return map(sum, zip(*([usage] + [get_usage(child) for child in node.nodes_primary])))  # Adds tuples together, map(sum, zip((a, b), (c, d))) -> (a+c, b+d)
 
 
 def limit_filter(limit, (item, usage)):
