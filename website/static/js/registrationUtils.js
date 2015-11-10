@@ -401,7 +401,6 @@ var Draft = function(params, metaSchema) {
         $.each(schema.pages, function(i, page) {
             $.each(page.questions, function(_, question) {
                 if (question.type === 'object') {
-                    var value = {};
                     $.each(question.properties, function(prop, subQuestion) {
                         if (subQuestion.isComplete())
                             complete++;
