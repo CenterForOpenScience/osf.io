@@ -251,7 +251,6 @@ var Page = function(schemaPage, data) {
     self.id = schemaPage.id;
 
     self.active = ko.observable(false);
-
     self.comments = ko.observableArray(
         $.map(data.comments || [], function(comment) {
             return new Comment(comment);
@@ -262,10 +261,17 @@ var Page = function(schemaPage, data) {
         if (data[id] && data[id].value) {
             question.value(data[id].value);
         }
+        if (data[id] && data[id].comments) {
+            var comment = $.map(data[id].comments || [], function(comment) {
+                return new Comment(comment);
+            })
+            question.comments(comment);
+        }
 
         self.questions.push(question);
     });
 };
+
 
 /**
  * @class MetaSchema
@@ -633,6 +639,9 @@ var RegistrationEditor = function(urls, editorId) {
         return self.currentPage() === self.pages()[self.pages().length - 1];
     });
 
+    self.currentQuestion1 = ko.computed(function() {
+        return (self.currentPage() ? self.currentPage().questions : false )? self.currentPage().questions[0] : null;
+    });
     self.serialized = ko.pureComputed(function () {
         // TODO(lyndsysimon): Test this.
         var self = this;
@@ -1077,15 +1086,15 @@ RegistrationEditor.prototype.save = function() {
                 var value = {};
                 $.each(question.properties, function(prop, subQuestion) {
                     value[prop] = {
-                        value: subQuestion.value()
-                        // comments: ko.toJS(subQuestion.comments())
+                        value: subQuestion.value(),
+                        comments: ko.toJS(subQuestion.comments())
                     };
                 });
                 data[qid] = value;
             } else {
                 data[qid] = {
-                    value: question.value()
-                    // comments: ko.toJS(question.comments())
+                    value: question.value(),
+                    comments: ko.toJS(question.comments())
                 };
             }
         });

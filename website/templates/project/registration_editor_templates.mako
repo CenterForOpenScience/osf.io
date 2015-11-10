@@ -89,14 +89,10 @@
       </div>
     </div>
   </div>
+  </div>
 </script>
 <script type="text/html" id="editor">
   <span data-bind="template: {data: $data, name: 'editorBase'}"></span>
-  <div class="row">
-    <div class="col-md-12">
-      <div class="well" data-bind="template: {data: $data, name: 'commentable'}"></div>
-    </div>
-  </div>
 </script>
 
 <!-- Commnetable -->
@@ -135,16 +131,14 @@
                 </div>
               </div>
             </div>
+          </div>
         </li>
     </ul>
     <div class="input-group">
       <input class="form-control registration-editor-comment" type="text"
              data-bind="value: nextComment,
                         valueUpdate: 'keyup',
-                        onKeyPress: {
-                          keyCode: 13,
-                          listener: addComment.bind($data, $root.save.bind($root))
-                        }" />
+                        " />
       <span class="input-group-btn">
         <button class="btn btn-primary"
                 data-bind="click: addComment.bind($data, $root.save.bind($root)),
