@@ -2,6 +2,7 @@ from collections import OrderedDict
 from django.core.urlresolvers import reverse, resolve, _urlconfs, get_urlconf, set_urlconf, ResolverMatch, get_callable
 from django.core.urlresolvers import get_resolver, RegexURLPattern, RegexURLResolver
 from django.conf.urls import patterns, url
+from django.core.paginator import InvalidPage, Paginator as DjangoPaginator
 
 from api.base.utils import absolute_reverse
 from rest_framework import pagination
@@ -107,3 +108,20 @@ class EmbeddedPagination(JSONAPIPagination):
             ])),
         ])
         return Response(response_dict)
+
+    def paginate_queryset(self, queryset, request, view=None):
+        """
+        Paginate a queryset if required, either returning a
+        page object, or `None` if pagination is not configured for this view.
+        """
+        if request.parser_context['kwargs'].get('no_embeds'):
+            page_size = self.get_page_size(request)
+
+            paginator = DjangoPaginator(queryset, page_size)
+            page_number = 1
+            self.page = paginator.page(page_number)
+            self.request = request
+            return list(self.page)
+
+        else:
+            return super(EmbeddedPagination, self).paginate_queryset(queryset, request, view=None)
