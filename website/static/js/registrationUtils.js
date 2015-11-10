@@ -539,7 +539,11 @@ RegistrationEditor.prototype.context = function(data) {
 
 RegistrationEditor.prototype.toPreview = function () {
     var self = this;
-    self.save().then(window.location.assign.bind(window.location, self.draft().urls.register_page));
+    $osf.block('Saving...');
+    self.save().then(function() {
+        self.dirtyCount(0);
+        window.location.assign(self.draft().urls.register_page);
+    });
 };
 
 /**
