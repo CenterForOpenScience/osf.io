@@ -27,6 +27,11 @@ class ODMOrderingFilter(OrderingFilter):
     def filter_queryset(self, request, queryset, view):
         ordering = self.get_ordering(request, queryset, view)
         if ordering:
+            if isinstance(queryset, list) and isinstance(ordering, tuple):
+                # for lists call sorted, list.sort doesn't take a key
+                order_key = ordering[0]
+                sorted_list = sorted(list(queryset), key=operator.attrgetter(order_key))
+                return sorted_list
             return queryset.sort(*ordering)
         return queryset
 
