@@ -107,6 +107,12 @@ var NodesPrivacyViewModel = function(data, parentIsPublic) {
     var self = this;
     var nodesOriginal = {};
 
+    $('#nodesPrivacy').on('hidden.bs.modal', function () {
+        self.clear();
+    });
+
+
+
     self.nodesState = ko.observableArray();
 
     /**
