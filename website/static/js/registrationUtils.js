@@ -400,8 +400,16 @@ var Draft = function(params, metaSchema) {
         var schema = self.schema();
         $.each(schema.pages, function(i, page) {
             $.each(page.questions, function(_, question) {
-                if (question.isComplete()) {
-                    complete++;
+                if (question.type === 'object') {
+                    var value = {};
+                    $.each(question.properties, function(prop, subQuestion) {
+                        if (subQuestion.isComplete())
+                            complete++;
+                    });
+                } else {
+                    if (question.isComplete()) {
+                        complete++;
+                    }
                 }
                 total++;
             });
