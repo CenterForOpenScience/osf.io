@@ -914,6 +914,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def nodes_active(self):
         return [x for x in self.nodes if not x.is_deleted]
 
+    @property
+    def draft_registrations_active(self):
+        return self.draft_registrations.find(
+            Q('registered_node', 'eq', None)
+        )
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).

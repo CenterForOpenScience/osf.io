@@ -127,9 +127,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
     """
 
     count = request.args.get('count', 100)
-    drafts = node.draft_registrations.find(
-        Q('registered_node', 'eq', None)
-    )[:count]
+    drafts = node.draft_registrations_active[:count]
     return {
         'drafts': [serialize_draft_registration(d, auth) for d in drafts]
     }, http.OK
