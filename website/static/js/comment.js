@@ -151,7 +151,7 @@ BaseComment.prototype.fetch = function() {
         for (var i=0; i < response.data.length; i++) {
             updateCommentUserData(response.data[i], self);
         }
-//        self.unreadComments(response.nUnread);
+        setUnreadCommentCount(self);
         deferred.resolve(self.comments());
         self._loaded = true;
     });
@@ -172,6 +172,16 @@ var updateCommentUserData = function(commentJSON, self) {
         });
     });
     return self.comments;
+};
+
+var setUnreadCommentCount = function(self) {
+    var request = osfHelpers.ajaxJSON(
+        'GET',
+        osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/?related_counts=True', {query: 'related_counts=True'}),
+        {'isCors': true});
+    request.done(function(response) {
+        self.unreadComments(response.data.relationships.comments.links.related.meta.unread);
+    });
 };
 
 
@@ -209,7 +219,6 @@ BaseComment.prototype.submitReply = function() {
         self.replyContent(null);
         self.onSubmitSuccess(response);
         updateCommentUserData(response.data, self);
-//        self.comments.unshift(new CommentModel(response.comment, self, self.$root));
         if (!self.hasChildren()) {
             self.hasChildren(true);
         }
