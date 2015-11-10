@@ -4053,6 +4053,23 @@ class DraftRegistration(AddonModelMixin, StoredObject):
 
             old_value = self.registration_metadata.get(question_id)
 
+            if old_value:
+                old_comments = old_value.get('comments', [])
+                new_comments = value.get('comments', [])
+
+                #  we are using the `created` attribute sort of as a primary key
+                old_comment_ids = [comment['created'] for comment in old_comments]
+
+                # Handle comment conflicts
+                for old_comment in old_comments:
+                    for new_comment in new_comments:
+                        new_id = new_comment.get('created', [])
+                        # if the primary key is already in use and the old comment is more recent,
+                        if new_id in old_comment_ids and old_comment['lastModified'] > new_comment['lastModified']:
+                            # use the old one instead
+                            loc = new_comments.index(new_comment)
+                            new_comments[loc] = old_comment
+
             if not old_value or old_value.get('value') != value.get('value'):
                 changes.append(question_id)
 
@@ -4076,6 +4093,26 @@ class DraftRegistration(AddonModelMixin, StoredObject):
             for question_id, question in page['questions'].iteritems():
                 if question_id == qid:
                     return question
+
+    def get_comments(self):
+        """ Returns a list of all comments made on a draft in the format of :
+        [{
+          [QUESTION_ID]: {
+            'question': [QUESTION],
+            'comments': [LIST_OF_COMMENTS]
+           }
+        },]
+       """
+
+        all_comments = []
+        for question_id, value in self.registration_metadata.iteritems():
+            all_comments.append({
+                question_id: {
+                    'question': self.find_question(question_id),
+                    'comments': value['comments'] if 'comments' in value else ''
+                }
+            })
+        return all_comments
 
     def register(self, auth, save=False):
         node = self.branched_from

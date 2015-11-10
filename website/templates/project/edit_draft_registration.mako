@@ -4,7 +4,7 @@
 <div id="draftRegistrationScope" class="scripted">
     <div class="row">
         <div class="col-md-9">
-          <h3>Register</h3>
+          <h3>Edit draft registration</h3>
         </div>
     </div>
     <hr />
@@ -21,8 +21,7 @@
                     </a>
                   </li>
                 </ul>
-                  <!-- /ko -->
-              </div>
+              </div>             
               <div class="span8 col-md-9 columns eight large-8">
                 <br />
                 <br />
@@ -38,29 +37,30 @@
 
                 <!-- EDITOR -->
                 <div data-bind="if: currentPage">
-                   <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
-                       <div data-bind="template: {data: question, name: 'editor'}"></div>
-                   </div>
+                  <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
+                    <div data-bind="template: {data: question, name: 'editor'}"></div>
+                  </div>
                 </div>
                 <p>Last saved: <span data-bind="text: $root.lastSaved"></span>
                 </p>
                 <button data-bind="click: saveForLater" type="button" class="btn btn-primary">Save as Draft
                 </button>
-                    <!-- ko if: onLastPage -->
-                    <a data-bind="css: {disabled: !canSubmit()},
-                                  click: $root.check"
-                       type="button" class="pull-right btn btn-success">Preview for submission
-                    </a>
-                    <!-- /ko -->
-                    <!-- ko ifnot: onLastPage -->
-                      <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
-                    <!-- /ko -->
+                <!-- ko if: onLastPage -->
+                <a data-bind="css: {disabled: !canSubmit()},
+                              click: $root.check"
+                   type="button" class="pull-right btn btn-success">Preview for submission
+                </a>
+                <!-- /ko -->
+                <!-- ko ifnot: onLastPage -->
+                <a data-bind="click: nextPage" class="btn btn-primary pull-right">Next Page</a>
+                <!-- /ko -->
               </div>
             </div>
           </div>
         </div>
       </div>
     </div>
+  </div>
 </div>
 
 <%def name="javascript_bottom()">

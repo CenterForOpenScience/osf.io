@@ -70,6 +70,17 @@ function Comment(data) {
     });
 
     /**
+     * Returns 'You' if the current user is the commenter, else the commenter's name
+     */
+    self.getAuthor = ko.pureComputed(function() {
+        if (self.user.id === $osf.currentUser().id) {
+            return 'You';
+        } else {
+            return self.user.fullname;
+        }
+    });
+
+    /**
      * Returns true if the current user is the comment creator
      **/
     self.canDelete = ko.pureComputed(function() {
@@ -82,7 +93,7 @@ function Comment(data) {
         return !self.isDeleted() && self.saved() && self.user.id === $osf.currentUser().id;
     });
 }
-    /** Toggle the comment's save state **/
+/** Toggle the comment's save state **/
 Comment.prototype.toggleSaved = function(save) {
     var self = this;
 
@@ -195,6 +206,22 @@ Question.prototype.init = function() {
     }
 };
 /**
+ * Creates a new comment from the current value of Question.nextComment and clears nextComment
+ *
+ * @param {function}: save: save function for the current registrationDraft
+ **/
+Question.prototype.addComment = function(save) {
+    var self = this;
+
+    var comment = new Comment({
+        value: self.nextComment()
+    });
+    comment.seenBy.push($osf.currentUser().id);
+    self.comments.push(comment);
+    self.nextComment('');
+    save();
+};
+/**
  * Shows/hides the Question example
  **/
 Question.prototype.toggleExample = function() {
@@ -224,6 +251,12 @@ var Page = function(schemaPage, data) {
     self.id = schemaPage.id;
 
     self.active = ko.observable(false);
+
+    self.comments = ko.observableArray(
+        $.map(data.comments || [], function(comment) {
+            return new Comment(comment);
+        })
+    );
 
     $.each(schemaPage.questions, function(id, question) {
         if (data[id] && data[id].value) {
@@ -347,6 +380,18 @@ var Draft = function(params, metaSchema) {
     self.pages = ko.observableArray([]);
     $.each(self.schema().pages, function(id, pageData) {
         self.pages.push(new Page(pageData, self.schemaData));
+    });
+
+    self.userHasUnseenComment = ko.computed(function() {
+        var user = $osf.currentUser();
+        var ret = false;
+        $.each(self.pages(), function(i, page) {
+            $.each(page.comments(), function(idx, comment) {
+                if ( comment.seenBy().indexOf(user) === -1 )
+                    ret = true;
+            });
+        });
+        return ret;
     });
 
     self.completion = ko.computed(function() {
@@ -567,6 +612,11 @@ var RegistrationEditor = function(urls, editorId) {
 
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
+
+    self.contributors = ko.observable([]);
+    self.getContributors().done(function(data) {
+        self.contributors(data);
+    });
 
     self.pages = ko.computed(function () {
         // empty array if self.draft is not set.
@@ -794,6 +844,73 @@ RegistrationEditor.prototype.check = function() {
         });
     });
 };
+
+RegistrationEditor.prototype.viewComments = function() {
+    var self = this;
+
+    var comments = self.currentQuestion().comments();
+    $.each(comments, function(index, comment) {
+        if (comment.seenBy().indexOf($osf.currentUser().id) === -1) {
+            comment.seenBy.push($osf.currentUser().id);
+        }
+    });
+};
+RegistrationEditor.prototype.getUnseenComments = function(qid) {
+    var self = this;
+
+    var question = self.draft().schemaData[qid];
+    var comments = question.comments || [];
+    for (var key in question) {
+        if (key === 'comments') {
+            for (var i = 0; i < question[key].length - 1; i++) {
+                if (question[key][i].indexOf($osf.currentUser().id) === -1) {
+                    comments.push(question[key][i]);
+                }
+            }
+        }
+    }
+    return comments;
+};
+/**
+ * Load the next question into the editor, wrapping around if needed
+ **/
+RegistrationEditor.prototype.nextQuestion = function() {
+    var self = this;
+
+    var currentQuestion = self.currentQuestion();
+
+    var questions = self.flatQuestions();
+    var index = $osf.indexOf(questions, function(q) {
+        return q.id === currentQuestion.id;
+    });
+    if (index + 1 === questions.length) {
+        self.currentQuestion(questions.shift());
+        self.viewComments();
+    } else {
+        self.currentQuestion(questions[index + 1]);
+        self.viewComments();
+    }
+};
+/**
+ * Load the previous question into the editor, wrapping around if needed
+ **/
+RegistrationEditor.prototype.previousQuestion = function() {
+    var self = this;
+
+    var currentQuestion = self.currentQuestion();
+
+    var questions = self.flatQuestions();
+    var index = $osf.indexOf(questions, function(q) {
+        return q.id === currentQuestion.id;
+    });
+    if (index - 1 < 0) {
+        self.currentQuestion(questions.pop());
+        self.viewComments();
+    } else {
+        self.currentQuestion(questions[index - 1]);
+        self.viewComments();
+    }
+};
 /**
  * Load the next question into the editor, wrapping around if needed
  **/
@@ -986,13 +1103,69 @@ RegistrationEditor.prototype.save = function() {
     self.lastSaveRequest = request;
     return request;
 };
-
-RegistrationEditor.prototype.toDraft = function () {
+/**
+ * Makes ajax request for a project's contributors
+ */
+RegistrationEditor.prototype.makeContributorsRequest = function() {
     var self = this;
-    window.location = self.urls.draftRegistrations;
+    var contributorsUrl = window.contextVars.node.urls.api + 'contributors_abbrev/';
+    return $.getJSON(contributorsUrl);
 };
+/**
+ * Returns the `user_fullname` of each contributor attached to a node.
+ **/
+RegistrationEditor.prototype.getContributors = function() {
+    var self = this;
+    return self.makeContributorsRequest()
+        .then(function(data) {
+            return $.map(data.contributors, function(c) { return c.user_fullname; });
+        }).fail(function() {
+            $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
+                       'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                       'problem persists.');
+        });
+};
+/**
+ * Opens a bootbox dialog with a checkbox list of each contributor
+ * the user has the option to import all contributors or to select
+ * each one individually.
+ **/
+RegistrationEditor.prototype.authorDialog = function() {
+    var self = this;
 
+    bootbox.dialog({
+        title: 'Choose which contributors to import:',
+        message: function() {
+            ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
+        },
+        buttons: {
+            select: {
+                label: 'Import',
+                className: 'btn-primary pull-left',
+                callback: function() {
+                    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+                    var authors = [];
+                    $.each(boxes, function(i, box) {
+                        if( this.checked ) {
+                            authors.push(this.value);
+                        }
+                    });
+                    if ( authors ) {
+                        self.currentQuestion().setValue(authors.join(', '));
+                        self.save();
+                    }
+                }
+            }
 
+        }
+    });
+};
+RegistrationEditor.prototype.setContributorBoxes = function(value) {
+    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+    $.each(boxes, function(i, box) {
+        this.checked = value;
+    });
+};
 /**
  * @class RegistrationManager
  * Model for listing DraftRegistrations
@@ -1173,6 +1346,7 @@ RegistrationManager.prototype.maybeWarn = function(draft) {
 };
 
 module.exports = {
+    Comment: Comment,
     Question: Question,
     MetaSchema: MetaSchema,
     Draft: Draft,
