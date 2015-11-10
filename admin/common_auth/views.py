@@ -1,7 +1,4 @@
-from django.contrib import messages
-from django.contrib.auth import authenticate, logout as logout_user, login as auth_login, views
-from django.contrib.auth.decorators import login_required, user_passes_test
-from django.contrib.auth.models import User
+from django.contrib.auth import authenticate, logout as logout_user, login as auth_login
 from django.shortcuts import render, redirect
 
 from forms import LoginForm
