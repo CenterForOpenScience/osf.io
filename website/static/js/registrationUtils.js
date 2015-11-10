@@ -70,6 +70,17 @@ function Comment(data) {
     });
 
     /**
+     * Returns 'You' if the current user is the commenter, else the commenter's name
+     */
+    self.getAuthor = ko.pureComputed(function() {
+        if (self.user.id === $osf.currentUser().id) {
+            return 'You';
+        } else {
+            return self.user.fullname;
+        }
+    });
+
+    /**
      * Returns true if the current user is the comment creator
      **/
     self.canDelete = ko.pureComputed(function() {
@@ -82,7 +93,7 @@ function Comment(data) {
         return !self.isDeleted() && self.saved() && self.user.id === $osf.currentUser().id;
     });
 }
-    /** Toggle the comment's save state **/
+/** Toggle the comment's save state **/
 Comment.prototype.toggleSaved = function(save) {
     var self = this;
 
@@ -600,9 +611,21 @@ var RegistrationEditor = function(urls, editorId) {
     self.currentQuestion = ko.observable();
     self.showValidation = ko.observable(false);
 
-    self.pages = ko.computed(function () {
-        // empty array if self.draft is not set.
-        return self.draft() ? self.draft().pages() : [];
+    self.contributors = ko.observable([]);
+    self.getContributors().done(function(data) {
+        self.contributors(data);
+    });
+
+    self.currentPages = ko.computed(function() {
+        var draft = self.draft();
+        if (!draft) {
+            return [];
+        }
+        var schema = draft.schema();
+        if (!schema) {
+            return [];
+        }
+        return schema.pages;
     });
     self.currentPage = ko.observable();
     self.currentPage.subscribe(function(currentPage) {
@@ -1085,13 +1108,69 @@ RegistrationEditor.prototype.save = function() {
     self.lastSaveRequest = request;
     return request;
 };
-
-RegistrationEditor.prototype.toDraft = function () {
+/**
+ * Makes ajax request for a project's contributors
+ */
+RegistrationEditor.prototype.makeContributorsRequest = function() {
     var self = this;
-    window.location = self.urls.draftRegistrations;
+    var contributorsUrl = window.contextVars.node.urls.api + 'contributors_abbrev/';
+    return $.getJSON(contributorsUrl);
 };
+/**
+ * Returns the `user_fullname` of each contributor attached to a node.
+ **/
+RegistrationEditor.prototype.getContributors = function() {
+    var self = this;
+    return self.makeContributorsRequest()
+        .then(function(data) {
+            return $.map(data.contributors, function(c) { return c.user_fullname; });
+        }).fail(function() {
+            $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
+                       'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                       'problem persists.');
+        });
+};
+/**
+ * Opens a bootbox dialog with a checkbox list of each contributor
+ * the user has the option to import all contributors or to select
+ * each one individually.
+ **/
+RegistrationEditor.prototype.authorDialog = function() {
+    var self = this;
 
+    bootbox.dialog({
+        title: 'Choose which contributors to import:',
+        message: function() {
+            ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
+        },
+        buttons: {
+            select: {
+                label: 'Import',
+                className: 'btn-primary pull-left',
+                callback: function() {
+                    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+                    var authors = [];
+                    $.each(boxes, function(i, box) {
+                        if( this.checked ) {
+                            authors.push(this.value);
+                        }
+                    });
+                    if ( authors ) {
+                        self.currentQuestion().setValue(authors.join(', '));
+                        self.save();
+                    }
+                }
+            }
 
+        }
+    });
+};
+RegistrationEditor.prototype.setContributorBoxes = function(value) {
+    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+    $.each(boxes, function(i, box) {
+        this.checked = value;
+    });
+};
 /**
  * @class RegistrationManager
  * Model for listing DraftRegistrations
