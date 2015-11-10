@@ -1,4 +1,3 @@
-from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth import authenticate, logout as logout_user, login as auth_login, views
 from django.contrib.auth.decorators import login_required, user_passes_test
