@@ -1,16 +1,14 @@
+from django.utils import six
 from collections import OrderedDict
-from django.core.urlresolvers import reverse, resolve, _urlconfs, get_urlconf, set_urlconf, ResolverMatch, get_callable
-from django.core.urlresolvers import get_resolver, RegexURLPattern, RegexURLResolver
-from django.conf.urls import patterns, url
+from django.core.urlresolvers import reverse
 from django.core.paginator import InvalidPage, Paginator as DjangoPaginator
 
-from api.base.utils import absolute_reverse
 from rest_framework import pagination
+from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.utils.urls import (
     replace_query_param, remove_query_param
 )
-from api.base.urls import patterns as base_patterns
 
 class JSONAPIPagination(pagination.PageNumberPagination):
     """Custom paginator that formats responses in a JSON-API compatible format."""
@@ -50,6 +48,11 @@ class JSONAPIPagination(pagination.PageNumberPagination):
 class EmbeddedPagination(JSONAPIPagination):
 
     def query_param_generator(self, url, page_number):
+        """
+        Adds query params to paginated urls, such as page and embed.
+
+        If embedded resource, does not add embed query param.
+        """
         embedded = self.request.parser_context['kwargs'].get('no_embeds')
         if 'embed' in self.request.query_params:
             if not embedded:
@@ -89,6 +92,12 @@ class EmbeddedPagination(JSONAPIPagination):
         return self.query_param_generator(url, page_number)
 
     def get_paginated_response(self, data):
+        """
+        Formats paginated response in accordance with JSON API.
+
+        Creates pagination links from the view_name rather than the
+        location used in the request.
+        """
         kwargs = self.request.parser_context['kwargs'].copy()
         kwargs.pop('no_embeds', None)
         view_name = self.request.parser_context['view'].view_name
@@ -111,15 +120,29 @@ class EmbeddedPagination(JSONAPIPagination):
 
     def paginate_queryset(self, queryset, request, view=None):
         """
-        Paginate a queryset if required, either returning a
-        page object, or `None` if pagination is not configured for this view.
+        Custom pagination of queryset. Returns page object or `None` if not configured for view.
+
+        If this is an embedded resource, returns first page, ignoring query params.
         """
         if request.parser_context['kwargs'].get('no_embeds'):
+            self._handle_backwards_compat(view)
             page_size = self.get_page_size(request)
-
+            if not page_size:
+                return None
             paginator = DjangoPaginator(queryset, page_size)
             page_number = 1
-            self.page = paginator.page(page_number)
+            try:
+                self.page = paginator.page(page_number)
+            except InvalidPage as exc:
+                msg = self.invalid_page_message.format(
+                    page_number=page_number, message=six.text_type(exc)
+                )
+                raise NotFound(msg)
+
+            if paginator.count > 1 and self.template is not None:
+                # The browsable API should display pagination controls.
+                self.display_page_controls = True
+
             self.request = request
             return list(self.page)
 
