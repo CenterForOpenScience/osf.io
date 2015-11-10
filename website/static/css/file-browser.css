@@ -35,14 +35,14 @@
     padding: 6px;
 }
 .filterReset {
-    font-size: 20px;
-    color: #aaa;
+    font-size: 22px;
+    color: #BBB;
     margin-right: 7px;
     cursor: default;
     font-weight: bold;
     position: absolute;
     right: 0;
-    top: 0;
+    top: 1px;
 }
 
 
