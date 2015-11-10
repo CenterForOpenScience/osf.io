@@ -4,6 +4,7 @@ from nose.tools import *  # flake8: noqa
 from framework.auth import core
 
 from api.base.settings.defaults import API_BASE
+from api.base.settings import osf_settings
 from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
@@ -181,6 +182,26 @@ class TestNodeCommentCreate(ApiTestCase):
         res = self.app.post_json_api(url, self.payload, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 404)
         assert_equal(res.json['errors'][0]['detail'], 'Not found.')
+
+    def test_create_comment_exceeds_max_length(self):
+        self._set_up_private_project()
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': ('contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontent'
+                    + 'contentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcon'
+                    + 'tentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentconten'
+                    + 'tcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentco'
+                    + 'ntentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentcontentconte'
+                    + 'ntcontentcontentcontentcontentcontentcontent')
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'],
+                     'Ensure this field has no more than ' + str(osf_settings.COMMENT_MAXLENGTH) + ' characters.')
 
     def test_private_node_logged_in_admin_can_comment(self):
         self._set_up_private_project()

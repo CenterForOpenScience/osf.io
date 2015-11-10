@@ -4,6 +4,7 @@ from website.project.model import Comment
 from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse
+from api.base.settings import osf_settings
 from api.base.serializers import (JSONAPISerializer,
                                   JSONAPIHyperlinkedRelatedField,
                                   JSONAPIHyperlinkedGuidRelatedField,
@@ -29,7 +30,7 @@ class CommentSerializer(JSONAPISerializer):
 
     id = IDField(source='_id', read_only=True)
     type = TypeField()
-    content = AuthorizedCharField(source='get_content')
+    content = AuthorizedCharField(source='get_content', max_length=osf_settings.COMMENT_MAXLENGTH)
 
     user = JSONAPIHyperlinkedRelatedField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id', link_type='related', read_only=True)
     node = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk', lookup_url_kwarg='node_id', link_type='related', read_only=True)
