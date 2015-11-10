@@ -31,7 +31,7 @@ from framework.bcrypt import check_password_hash
 from website import filters, language, settings, mailchimp_utils
 from website.exceptions import NodeStateError
 from website.profile.utils import serialize_user
-from website.project.signals import contributor_added
+from website.project.signals import contributor_added, comment_added
 from website.project.model import (
     Comment, Node, NodeLog, Pointer, ensure_schemas, has_anonymous_link,
     get_pointer_parent, Embargo,
@@ -4051,6 +4051,17 @@ class TestComments(OsfTestCase):
         assert_equal(comment.target, self.comment.target)
         assert_equal(len(comment.node.logs), 2)
         assert_equal(comment.node.logs[-1].action, NodeLog.COMMENT_ADDED)
+
+    def test_create_sends_comment_added_signal(self):
+        with capture_signals() as mock_signals:
+            comment = Comment.create(
+                auth=self.auth,
+                user=self.comment.user,
+                node=self.comment.node,
+                target=self.comment.target,
+                is_public=True,
+            )
+        assert_equal(mock_signals.signals_sent(), set([comment_added]))
 
     def test_edit(self):
         self.comment.edit(

@@ -16,6 +16,7 @@ from website.notifications.emails import notify
 from website.filters import gravatar
 from website.models import Guid, Comment
 from website.project.decorators import must_be_contributor_or_public
+from website.project.signals import comment_added
 from datetime import datetime
 from website.project.model import has_anonymous_link
 
@@ -148,9 +149,18 @@ def add_comment(auth, node, **kwargs):
     )
     comment.save()
 
+    return {
+        'comment': serialize_comment(comment, auth)
+    }, http.CREATED
+
+@comment_added.connect
+def send_comment_added_notification(comment, auth):
+    node = comment.node
+    target = comment.target
+
     context = dict(
         gravatar_url=auth.user.profile_image_url(),
-        content=content,
+        content=comment.content,
         target_user=target.user if is_reply(target) else None,
         parent_comment=target.content if is_reply(target) else "",
         url=node.absolute_url
@@ -173,10 +183,6 @@ def add_comment(auth, node, **kwargs):
                 timestamp=time_now,
                 **context
             )
-
-    return {
-        'comment': serialize_comment(comment, auth)
-    }, http.CREATED
 
 
 def is_reply(target):

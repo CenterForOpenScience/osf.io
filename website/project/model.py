@@ -223,6 +223,7 @@ class Comment(GuidStoredObject):
         )
 
         comment.node.save()
+        project_signals.comment_added.send(comment, auth=auth)
 
         return comment
 
