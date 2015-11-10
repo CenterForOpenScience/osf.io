@@ -189,7 +189,20 @@ var Question = function(data, id) {
      * @returns {Boolean} true if the value <input> is not blank
      **/
     self.isComplete = ko.computed(function() {
-        return (self.value() || '').trim() !== '';
+        if (self.type === 'object') {
+            var ret = true;
+            $.each(self.properties, function(_, subQuestion) {
+                if( subQuestion.type !== 'osf-upload') {
+                    if ( (subQuestion.value || '').trim() === '' ) {
+                        ret = false;
+                        return;
+                    }
+                }
+            });
+            return ret;
+        } else {
+            return (self.value() || '').trim() !== '';
+        }
     });
 
     self.init();
@@ -400,15 +413,8 @@ var Draft = function(params, metaSchema) {
         var schema = self.schema();
         $.each(schema.pages, function(i, page) {
             $.each(page.questions, function(_, question) {
-                if (question.type === 'object') {
-                    $.each(question.properties, function(prop, subQuestion) {
-                        if (subQuestion.isComplete())
-                            complete++;
-                    });
-                } else {
-                    if (question.isComplete()) {
-                        complete++;
-                    }
+                if (question.isComplete()) {
+                    complete++;
                 }
                 total++;
             });
