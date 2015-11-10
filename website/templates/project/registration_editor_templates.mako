@@ -85,7 +85,7 @@
                   <div data-bind="template: {data: $data, name: type}"></div>
                   <br />
                   <button data-bind="click: $root.authorDialog,
-                                     visible: $root.currentQuestion().title === 'Authorship' && $root.contributors.length > 1"  type="button" class="btn btn-primary">Import Contributors
+                                     visible: $root.currentQuestion().title === 'Authorship' && $root.contributors().length > 1"  type="button" class="btn btn-primary">Import Contributors
                   </button>
                 </span>
               </div>
@@ -158,18 +158,9 @@
     </div>
 </script>
 
-<script>
- function setAllBoxes(value) {
-     var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
-     $.each(boxes, function(i, box) {
-         this.checked = value;
-     });
- }
-</script>
-
 <script type="text/html" id="importContributors">
     <div col-lg-12>
-        <p>Select: <a onClick="setAllBoxes(true)">All</a> | <a onClick="setAllBoxes(false)">None</a></p>
+        <p>Select: <a data-bind="click: setContributorBoxes(true) " >All</a> | <a data-bind="click: setContributorBoxes(false)">None</a></p>
     </div>
     <div data-bind="foreach: {data: contributors, as: 'contrib'}">
         <div class="checkbox" id="contribBoxes">

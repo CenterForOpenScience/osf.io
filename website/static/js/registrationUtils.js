@@ -439,7 +439,10 @@ var RegistrationEditor = function(urls, editorId) {
     });
     self.showValidation = ko.observable(false);
 
-    self.contributors = self.getContributors();
+    self.contributors = ko.observable([]);
+    self.getContributors().done(function(data) {
+        self.contributors(data);
+    });
 
     self.currentPages = ko.computed(function() {
         var draft = self.draft();
@@ -767,7 +770,7 @@ RegistrationEditor.prototype.save = function() {
                     comments: ko.toJS(question.comments())
                 };
             }
-        });
+         });
     });
 
     if (typeof self.draft().pk === 'undefined') {
@@ -787,25 +790,21 @@ RegistrationEditor.prototype.save = function() {
 RegistrationEditor.prototype.makeContributorsRequest = function() {
     var self = this;
     var contributorsUrl = window.contextVars.node.urls.api + 'contributors_abbrev/';
-    return $osf.ajaxJSON('get', contributorsUrl);
+    return $.getJSON(contributorsUrl);
 };
 /**
  * Returns the `user_fullname` of each contributor attached to a node.
  **/
 RegistrationEditor.prototype.getContributors = function() {
     var self = this;
-    var contributorNames = [];
-    self.makeContributorsRequest()
-        .done(function(data) {
-            $.map(data.contributors, function(val, i) {
-                contributorNames.push(val.user_fullname);
-            });
+    return self.makeContributorsRequest()
+        .then(function(data) {
+            return $.map(data.contributors, function(c) { return c.user_fullname; });
         }).fail(function() {
             $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
                        'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
                        'problem persists.');
         });
-    return contributorNames;
 };
 /**
  * Opens a bootbox dialog with a checkbox list of each contributor
@@ -840,6 +839,12 @@ RegistrationEditor.prototype.authorDialog = function() {
             }
 
         }
+    });
+};
+RegistrationEditor.prototype.setContributorBoxes = function(value) {
+    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+    $.each(boxes, function(i, box) {
+        this.checked = value;
     });
 };
 /**
