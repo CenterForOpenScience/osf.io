@@ -3479,6 +3479,7 @@ class EmailApprovableSanction(Sanction):
     APPROVE_URL_TEMPLATE = ''
     REJECT_URL_TEMPLATE = ''
 
+    notify_initiator_on_complete = fields.BooleanField(default=False)
     # Store a persistant copy of urls for use when needed outside of a request context.
     # This field gets automagically updated whenever models approval_state is modified
     # and the model is saved
@@ -3548,8 +3549,28 @@ class EmailApprovableSanction(Sanction):
         }
         self.save()
 
+    def _notify_initiator(self):
+        raise NotImplementedError
 
-class Embargo(EmailApprovableSanction):
+    def _on_complete(self, *args):
+        super(EmailApprovableSanction, self).on_complete(*args)
+        if self.notify_initiator_on_complete:
+            self._notify_initiator()
+
+
+class PreregCallbackMixin(object):
+
+    def _notify_initiator(self):
+        registration = self._get_registration()
+        if registration.registered_schema.name == 'Prereg Challenge':
+            mails.send_mail(
+                self.initiator.username,
+                template=mails.PREREG_CHALLENGE_ACCEPTED,
+                user=self.initiator,
+                registration_url=registration.url
+            )
+
+class Embargo(EmailApprovableSanction, PreregCallbackMixin):
     """Embargo object for registrations waiting to go public."""
 
     COMPLETED = 'completed'
@@ -3598,8 +3619,11 @@ class Embargo(EmailApprovableSanction):
             self._id
         )
 
+    def _get_registration(self):
+        return Node.find_one(Q('embargo', 'eq', self))
+
     def _view_url_context(self, user_id):
-        registration = Node.find_one(Q('embargo', 'eq', self))
+        registration = self._get_registration()
         return {
             'node_id': registration._id
         }
@@ -3607,7 +3631,7 @@ class Embargo(EmailApprovableSanction):
     def _approval_url_context(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': approval_token,
@@ -3616,7 +3640,7 @@ class Embargo(EmailApprovableSanction):
     def _rejection_url_context(self, user_id):
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': rejection_token,
@@ -3630,7 +3654,7 @@ class Embargo(EmailApprovableSanction):
             disapproval_link = urls.get('reject', '')
             approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
 
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = self._get_registration()
 
             return {
                 'is_initiator': self.initiated_by == user,
@@ -3650,11 +3674,11 @@ class Embargo(EmailApprovableSanction):
             }
 
     def _validate_authorizer(self, user):
-        registration = Node.find_one(Q('embargo', 'eq', self))
+        registration = self._get_registration()
         return registration.has_permission(user, ADMIN)
 
     def _on_reject(self, user, token):
-        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
@@ -3677,7 +3701,7 @@ class Embargo(EmailApprovableSanction):
         self.reject(user, token)
 
     def _on_complete(self, user):
-        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
             params={
@@ -3823,7 +3847,7 @@ class Retraction(EmailApprovableSanction):
         self.reject(user, token)
 
 
-class RegistrationApproval(EmailApprovableSanction):
+class RegistrationApproval(EmailApprovableSanction, PreregCallbackMixin):
 
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
@@ -3837,8 +3861,11 @@ class RegistrationApproval(EmailApprovableSanction):
 
     initiated_by = fields.ForeignField('user', backref='registration_approved')
 
+    def _get_registration(self):
+        return Node.find_one(Q('registration_approval', 'eq', self))
+
     def _view_url_context(self, user_id):
-        registration = Node.find_one(Q('registration_approval', 'eq', self))
+        registration = self._get_registration()
         return {
             'node_id': registration._id
         }
@@ -3846,7 +3873,7 @@ class RegistrationApproval(EmailApprovableSanction):
     def _approval_url_context(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
-            registration = Node.find_one(Q('registration_approval', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': approval_token,
@@ -3855,7 +3882,7 @@ class RegistrationApproval(EmailApprovableSanction):
     def _rejection_url_context(self, user_id):
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
-            registration = Node.find_one(Q('registration_approval', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': rejection_token,
@@ -3870,7 +3897,7 @@ class RegistrationApproval(EmailApprovableSanction):
 
             approval_time_span = settings.REGISTRATION_APPROVAL_TIME.days * 24
 
-            registration = Node.find_one(Q('registration_approval', 'eq', self))
+            registration = self._get_registration()
 
             return {
                 'is_initiator': self.initiated_by == user,
@@ -3903,7 +3930,7 @@ class RegistrationApproval(EmailApprovableSanction):
 
     def _on_complete(self, user):
         self.state = Sanction.APPROVED
-        register = Node.find_one(Q('registration_approval', 'eq', self))
+        register = self._get_registration()
         registered_from = register.registered_from
         auth = Auth(self.initiated_by)
         register.set_privacy('public', auth, log=False)
@@ -3926,7 +3953,7 @@ class RegistrationApproval(EmailApprovableSanction):
         self.save()
 
     def _on_reject(self, user, token):
-        register = Node.find_one(Q('registration_approval', 'eq', self))
+        register = self._get_registration()
         registered_from = register.registered_from
         register.delete_registration_tree(save=True)
         registered_from.add_log(
@@ -3943,8 +3970,23 @@ class DraftRegistrationApproval(Sanction):
 
     mode = Sanction.ANY
 
-    # TODO(samchrisinger): document
+    # Since draft registrations that require approval are not immediately registered,
+    # meta stores registration_choice and embargo_end_date (when applicable)
     meta = fields.DictionaryField(default=dict)
+
+    def _send_rejection_email(self, user, draft):
+        schema = draft.registration_schema
+        if schema.name == 'Prereg Challenge':
+            mails.send_mail(
+                user.username,
+                mails.PREREG_CHALLENGE_REJECTED,
+                user=user,
+                **{}
+            )
+        else:
+            raise NotImplementedError(
+                'TODO: add a generic email template for registration approvals'
+            )
 
     def _on_complete(self, user):
         draft = DraftRegistration.find_one(
@@ -3961,7 +4003,8 @@ class DraftRegistrationApproval(Sanction):
                 'immediate': functools.partial(registration.require_approval, user),
                 'embargo': functools.partial(
                     user,
-                    registration.embargo_registration, self.meta['embargo_end_date']
+                    registration.embargo_registration,
+                    parse_date(self.meta['embargo_end_date'], ignoretz=True)
                 )
             }[registration_choice]()
         except KeyError:
@@ -3975,11 +4018,17 @@ class DraftRegistrationApproval(Sanction):
             # TODO(samchrisinger):
             # raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
-    def _on_reject(self, *args, **kwargs):
+    def _on_reject(self, user, *args, **kwargs):
         # clear out previous registration options
         self.meta = {}
         self.save()
-        # TODO(samchrisinger): email author?
+        # remove reference to approval from draft
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        draft.approval = None
+        draft.save()
+        self._send_rejection_email(user, draft)
 
 
 class DraftRegistration(AddonModelMixin, StoredObject):

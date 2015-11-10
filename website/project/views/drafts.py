@@ -44,7 +44,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     registration_choice = data.get('registrationChoice', 'immediate')
     if registration_choice == 'embargo':
         # Initiate embargo
-        meta['embargo_end_date'] = parse_date(data['embargoEndDate'], ignoretz=True)
+        meta['embargo_end_date'] = data['embargoEndDate']
     meta['registration_choice'] = registration_choice
     approval = DraftRegistrationApproval(
         initiated_by=auth.user,
