@@ -351,7 +351,7 @@ var Breadcrumbs = {
                         m('.btn.btn-link[data-toggle="modal"][data-target="#parentsModal"]', '...'),
                         m('i.fa.fa-angle-right')
                     ]),
-                    m('li', items[items.length-1].label)
+                    m('li', m('span.btn', items[items.length-1].label))
                 ]),
                 m('#parentsModal.modal.fade[tabindex=-1][role="dialog"][aria-hidden="true"]',
                     m('.modal-dialog',
@@ -393,7 +393,7 @@ var Breadcrumbs = {
         return m('.fb-breadcrumbs', m('ul', [
             args.data().map(function(item, index, array){
                 if(index === array.length-1){
-                    return m('li',  item.label);
+                    return m('li',  m('span.btn', item.label));
                 }
                 var linkObject = new LinkObject(item.type, item, item.label, index);
                 return m('li',

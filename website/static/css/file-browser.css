@@ -10,7 +10,6 @@
 
 .fb-header {
     background-color: #f8f8f8;
-    padding: 5px;
     margin-right: 0px !important;
     margin-left: 0px !important;
 }
@@ -33,6 +32,7 @@
 }
 .fb-buttonRow {
     display: inline-block;
+    padding: 6px;
 }
 .filterReset {
     font-size: 20px;
