@@ -115,6 +115,17 @@ function _poTitleColumn(item) {
         return [ m('a.fg-file-links', { 'class' : css, href : node.links.html, onclick : preventSelect}, node.attributes.title),
             m('span', { ondblclick : function(){
                 var linkObject = new LinkObject('node', node, node.attributes.title);
+
+                // Get ancestors
+                linkObject.ancestors = [];
+                function getAncestors (item) {
+                    var parent = item.parent();
+                    if(parent && parent.id > 0) {
+                        linkObject.ancestors.unshift(parent);
+                        getAncestors(parent);
+                    }
+                }
+                getAncestors(item);
                 tb.options.updateFilesData(linkObject);
             }}, ' -Open')
         ];

@@ -11,6 +11,7 @@ var $osf = require('js/osfHelpers');
 
 var LinkObject = function (type, data, label, index) {
     var self = this;
+    self.id = getUID();
     self.type = type;
     self.data = data;
     self.label = label;
@@ -76,6 +77,12 @@ function getUID() {
     window.fileBrowserCounter = window.fileBrowserCounter + 1;
     return window.fileBrowserCounter;
 }
+
+// TODO CHANGE Structure
+// Link is object for everything
+// filesdata update only gets link
+// breadcrumb update gets the whole linkobject 
+
 
 /**
  * Initialize File Browser. Prepeares an option object within FileBrowser
@@ -175,6 +182,12 @@ var FileBrowser = {
             if (linkObject.type === 'breadcrumb'){
                 self.breadcrumbs().splice(linkObject.index+1, self.breadcrumbs().length-linkObject.index-1);
                 return;
+            }
+            if(linkObject.ancestors.length > 0){
+                linkObject.ancestors.forEach(function(item){
+                    var ancestorLink = new LinkObject('node', item.data, item.data.name);
+                    self.breadcrumbs().push(new Breadcrumb(ancestorLink.label, ancestorLink.url, 'node'));
+                });
             }
             self.breadcrumbs().push(crumb);
         }.bind(self);
