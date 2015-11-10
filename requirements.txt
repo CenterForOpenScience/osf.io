@@ -37,6 +37,7 @@ git+https://github.com/CenterForOpenScience/modular-odm.git@develop
 # Issue: certifi-2015.9.6.1 and 2015.9.6.2 fail verification (https://github.com/certifi/python-certifi/issues/26)
 # MailChimp Ticket: LTK1218902287135X, Domain: https://us9.api.mailchimp.com
 certifi==2015.4.28
+sendgrid==1.5.13
 
 requests==2.5.3
 urllib3==1.10.4

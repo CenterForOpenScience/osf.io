@@ -43,11 +43,15 @@ class Mail(object):
 
     :param str tpl_prefix: The template name prefix.
     :param str subject: The subject of the email.
+    :param iterable categories: Categories to add to the email using SendGrid's
+        SMTPAPI. Used for email analytics.
+        See https://sendgrid.com/docs/User_Guide/Statistics/categories.html
     """
 
-    def __init__(self, tpl_prefix, subject):
+    def __init__(self, tpl_prefix, subject, categories=None):
         self.tpl_prefix = tpl_prefix
         self._subject = subject
+        self.categories = categories
 
     def html(self, **context):
         """Render the HTML email message."""
@@ -70,7 +74,8 @@ def render_message(tpl_name, **context):
 
 
 def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
-            username=None, password=None, mail_server=None, callback=None, **context):
+            username=None, password=None, mail_server=None, callback=None,
+            **context):
     """Send an email from the OSF.
     Example: ::
 
@@ -107,7 +112,8 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
         login=login,
         username=username,
         password=password,
-        mail_server=mail_server
+        mail_server=mail_server,
+        categories=mail.categories,
     )
 
     if settings.USE_EMAIL:
@@ -122,7 +128,7 @@ def send_mail(to_addr, mail, mimetype='plain', from_addr=None, mailer=None,
 
 # Predefined Emails
 
-TEST = Mail('test', subject='A test email to ${name}')
+TEST = Mail('test', subject='A test email to ${name}', categories=['test'])
 
 CONFIRM_EMAIL = Mail('confirm', subject='Open Science Framework Account Verification')
 CONFIRM_MERGE = Mail('confirm_merge', subject='Confirm account merge')
@@ -136,7 +142,7 @@ FORWARD_INVITE = Mail('forward_invite', subject='Please forward to ${fullname}')
 FORWARD_INVITE_REGISTERED = Mail('forward_invite_registered', subject='Please forward to ${fullname}')
 
 FORGOT_PASSWORD = Mail('forgot_password', subject='Reset Password')
-PENDING_VERIFICATION = Mail('pending_invite', subject="Your account is almost ready!")
+PENDING_VERIFICATION = Mail('pending_invite', subject='Your account is almost ready!')
 PENDING_VERIFICATION_REGISTERED = Mail('pending_registered', subject='Received request to be a contributor')
 
 REQUEST_EXPORT = Mail('support_request', subject='[via OSF] Export Request')
@@ -155,8 +161,14 @@ CONFERENCE_FAILED = Mail(
     subject='Open Science Framework Error: No files attached',
 )
 
-DIGEST = Mail('digest', subject='OSF Notifications')
-TRANSACTIONAL = Mail('transactional', subject='OSF: ${subject}')
+DIGEST = Mail(
+    'digest', subject='OSF Notifications',
+    categories=['notifications', 'notifications-digest']
+)
+TRANSACTIONAL = Mail(
+    'transactional', subject='OSF: ${subject}',
+    categories=['notifications', 'notifications-transactional']
+)
 
 # Retraction related Mail objects
 PENDING_RETRACTION_ADMIN = Mail(
