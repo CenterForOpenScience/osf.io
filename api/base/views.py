@@ -6,11 +6,9 @@ from rest_framework import generics
 
 from api.users.serializers import UserSerializer
 from .utils import absolute_reverse
-from api.base.pagination import EmbeddedPagination
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
-    pagination_class = EmbeddedPagination
 
     def _get_embed_partial(self, field_name, field):
         """Create a partial function to fetch the values of an embedded field. A basic
