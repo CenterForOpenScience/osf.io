@@ -5,6 +5,7 @@ var SaveManager = function(url, method, opts) {
     var self = this;
     self.url = url;
     self.method = method || 'PUT';
+    opts = opts || {};
     self.xhrOpts = $.extend({}, {
         contentType: 'application/json',
         dataType: 'json'
