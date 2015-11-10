@@ -62,7 +62,7 @@
                         </ul>
                     </div>
                     <div class="m-b-md box p-xs" data-bind="visible: nodesChangedPublic().length > 0">
-                        <span  class="text-bigger">The following nodes will be made public:</span>
+                        <span  class="text-bigger">The following projects and/or components will be made public:</span>
                         <ul data-bind="foreach: { data: nodesChangedPublic, as: 'item' }">
                         <li>
                             <h4 class="f-w-lg" data-bind="text: item"></h4>
@@ -70,7 +70,7 @@
                     </ul>
                     </div>
                     <div class="m-b-md box p-xs" data-bind="visible: nodesChangedPrivate().length > 0">
-                        <span class="text-bigger">The following nodes will be made private:</span>
+                        <span class="text-bigger">The following projects and/or components will be made private:</span>
                         <ul data-bind="foreach: { data: nodesChangedPrivate, as: 'item' }">
                             <li>
                                 <h4 class="f-w-lg" data-bind="text: item"></h4>
