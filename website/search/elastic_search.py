@@ -292,8 +292,7 @@ def update_node(node, index=None, bulk=False):
             return
 
     from website.files.models.osfstorage import OsfStorageFileNode
-    for file_ in OsfStorageFileNode.find(Q('node', 'eq', node) &
-                                         Q('is_file', 'eq', True)):
+    for file_ in OsfStorageFileNode.find(Q('node', 'eq', node)):
         update_file(file_)
 
     if node.is_deleted or not node.is_public or node.archiving:
