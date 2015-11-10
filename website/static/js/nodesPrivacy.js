@@ -63,7 +63,7 @@ function getNodesOriginal(nodeTree, nodesOriginal) {
 function patchNodesPrivacy(nodes) {
     /**
      * patche all the nodes in a changed state.
-     * we will use API V2 bulk requests when it becomes available
+     * uses API v2 bulk requests
      */
     var nodesPatch = []
     for (var key in nodes) {
@@ -77,25 +77,25 @@ function patchNodesPrivacy(nodes) {
             });
         }
 
-            $.ajax({
-                url: API_BASE,
-                type: 'PATCH',
-                dataType: 'json',
-                contentType: 'application/vnd.api+json; ext=bulk',
-                crossOrigin: true,
-                xhrFields: {withCredentials: true},
-                processData: false,
-                data: JSON.stringify({
-                    data: nodesPatch
-                })
-            }).done(function (response) {
-                window.location.reload();
-            }).fail(function (xhr, status, error) {
-                $osf.growl('Error', 'Unable to update Projects and/or Components');
-                Raven.captureMessage('Could not PATCH project settings.', {
-                    url: API_BASE, status: status, error: error
-                });
+        $.ajax({
+            url: API_BASE,
+            type: 'PATCH',
+            dataType: 'json',
+            contentType: 'application/vnd.api+json; ext=bulk',
+            crossOrigin: true,
+            xhrFields: {withCredentials: true},
+            processData: false,
+            data: JSON.stringify({
+                data: nodesPatch
+            })
+        }).done(function (response) {
+            window.location.reload();
+        }).fail(function (xhr, status, error) {
+            $osf.growl('Error', 'Unable to update Projects and/or Components');
+            Raven.captureMessage('Could not PATCH project settings.', {
+                url: API_BASE, status: status, error: error
             });
+        });
 }
 
 var NodesPrivacyViewModel = function(data, parentIsPublic) {
