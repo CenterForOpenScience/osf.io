@@ -22,7 +22,7 @@ class CheckoutField(JSONAPIHyperlinkedIdentityField):
         kwargs['lookup_field'] = 'pk'
         kwargs['lookup_url_kwarg'] = 'user_id'
 
-        self.meta = None
+        self.meta = {'id': 'user_id'}
         self.link_type = 'related'
 
         super(ser.HyperlinkedIdentityField, self).__init__('users:user-detail', **kwargs)
@@ -68,6 +68,7 @@ class FileSerializer(JSONAPISerializer):
     size = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
     provider = ser.CharField(read_only=True, help_text='The Add-on service this file originates from')
     last_touched = ser.DateTimeField(read_only=True, help_text='The last time this file had information fetched about it via the OSF')
+    date_modified = ser.SerializerMethodField(read_only=True, help_text='The size of this file at this version')
 
     files = NodeFileHyperLink(kind='folder', link_type='related', view_name='nodes:node-files', kwargs=('node_id', 'path', 'provider'))
     versions = NodeFileHyperLink(kind='file', link_type='related', view_name='files:file-versions', kwargs=(('file_id', '_id'), ))
@@ -87,6 +88,22 @@ class FileSerializer(JSONAPISerializer):
     def get_size(self, obj):
         if obj.versions:
             return obj.versions[-1].size
+        return None
+
+    def get_date_modified(self, obj):
+        if obj.versions:
+            if obj.provider == 'osfstorage':
+                # Odd case osfstorage's date created is when the version was create
+                # (when the file was modified) its date modified is referencing whatever backend it is on
+                return obj.versions[-1].date_created
+            return obj.versions[-1].date_modified
+        return None
+
+    def user_id(self, obj):
+        # NOTE: obj is the user here, the meta field for
+        # Hyperlinks is weird
+        if obj:
+            return obj._id
         return None
 
     def update(self, instance, validated_data):

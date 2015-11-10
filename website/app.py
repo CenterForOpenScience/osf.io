@@ -21,8 +21,10 @@ import website.models
 from website.routes import make_url_map
 from website.addons.base import init_addon
 from website.project.model import ensure_schemas, Node
+from website.project.licenses import ensure_licenses
 # This import is necessary to set up the archiver signal listeners
 from website.archiver import listeners  # noqa
+from website.mails import listeners  # noqa
 
 
 def build_js_config_files(settings):
@@ -138,6 +140,7 @@ def init_app(settings_module='website.settings', set_backends=True, routes=True,
 
     if set_backends:
         ensure_schemas()
+        ensure_licenses()
     apply_middlewares(app, settings)
 
     return app
