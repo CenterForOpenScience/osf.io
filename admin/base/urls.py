@@ -11,7 +11,7 @@ urlpatterns = [
     ### ADMIN ###
     url(base_pattern,
         include(patterns('',
-                         url(r'^$', views.root),
+                         url(r'^$', views.home),
                          url(r'^django_admin/', include(admin.site.urls)),
                          url(r'^spam/', include('admin.spam.urls', namespace='spam')),
                          url(r'^auth/', include('admin.common_auth.urls', namespace='auth')),

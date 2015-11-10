@@ -34,6 +34,8 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.staticfiles',
+    'admin.base',
+    'admin.spam',
 
     # 3rd party
     'admin.common_auth',
