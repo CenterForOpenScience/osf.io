@@ -35,7 +35,7 @@
       <header class="main-header">
 
         <!-- Logo -->
-        <a href="{% url 'auth:home' %}" class="logo">
+        <a href="{% url 'home' %}" class="logo">
           <!-- mini logo for sidebar mini 50x50 pixels -->
           <span class="logo-mini"><b>O</b>SF</span>
           <!-- logo for regular state and mobile devices -->
@@ -55,7 +55,7 @@
                 </a>
               </li>
               <li>
-                <a href="/logout/" class="btn btn-danger btn-flat">Sign out</a>
+                <a href="{% url 'auth:logout' %}" class="btn btn-danger btn-flat">Sign out</a>
               </li>
             </ul>
           </div>
