@@ -3,7 +3,7 @@
 from nose.tools import *  # noqa (PEP8 asserts)
 import mock
 
-from website.models import MetaSchema
+from website.models import MetaSchema, DraftRegistrationApproval
 
 from tests.factories import (
     UserFactory, ApiOAuth2ApplicationFactory, NodeFactory, PointerFactory,
@@ -144,6 +144,36 @@ class TestDraftRegistrations(RegistrationsTestBase):
         assert_equal(comment_two.get('created'), '1971-01-01T00:00:00.000Z')
         assert_equal(comment_two.get('lastModified'), '2014-07-09T14:58:30.574Z')
 
+
+class TestDraftRegistrationApprovals(RegistrationsTestBase):
+
+    def setUp(self):
+        super(TestDraftRegistrationApprovals, self).setUp()
+        self.approval = DraftRegistrationApproval(
+            initiated_by=self.user,
+            meta=self.immediate_payload
+        )
+        self.authorizer1 = AuthUserFactory()
+        self.authorizer2 = AuthUserFactory()
+        for authorizer in [self.authorizer1, self.authorizer2]:
+            self.approval.add_authorizer(authorizer)
+        self.approval.save()
+
+    def test_on_complete(self):
+        pass
+
+    def test_send_rejection_email(self):
+        pass
+
+    def test_approval_requires_only_a_single_authorizer(self):
+        token = self.approval.approval_state[self.authorizer1._id]['approval_token']
+        with mock.patch.object(self.approval, '_on_complete') as mock_on_complete:
+            self.approval.approve(self.authorizer1, token)
+            assert_true(mock_on_complete.called)
+            assert_true(self.approval.is_approved)
+
+    def test_on_reject(self):
+        pass
 
 class TestPreregFunctionality(RegistrationsTestBase):
 

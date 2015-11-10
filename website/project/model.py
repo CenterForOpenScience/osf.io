@@ -6,6 +6,7 @@ import re
 import logging
 import pymongo
 import datetime
+from dateutil import parser as parse_date
 import urlparse
 from collections import OrderedDict
 import warnings
@@ -56,6 +57,7 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.metadata import authorizers
 from website.project.licenses import (
     NodeLicense,
     NodeLicenseRecord,
@@ -4095,6 +4097,9 @@ class DraftRegistration(AddonModelMixin, StoredObject):
             return self.approval.is_approved
         else:
             return True
+
+    def get_authorizers(self):
+        return authorizers.members_for(self.registration_schema.name)
 
     def update_metadata(self, metadata):
         changes = []

@@ -48,12 +48,12 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     meta['registration_choice'] = registration_choice
     approval = DraftRegistrationApproval(
         initiated_by=auth.user,
-        end_date=None,
         meta=meta
     )
+    for user in draft.get_authorizers():
+        approval.add_authorizer(user)
     approval.save()
     draft.approval = approval
-    draft.approval.ask(node.active_contributors())
     draft.save()
 
     push_status_message(language.AFTER_SUBMIT_FOR_REVIEW,

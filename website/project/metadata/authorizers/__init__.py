@@ -1,0 +1,22 @@
+import json
+import os
+import logging
+
+logger = logging.getLogger(__name__)
+
+HERE = os.path.dirname(os.path.realpath(__file__))
+
+groups = json.load(open('{0}/defaults.json'.format(HERE)))
+try:
+    fp = open('{0}/local.json'.format(HERE))
+except IOError:
+    logger.info('No local.json found to populate lists of DraftRegistrationApproval authorizers.')
+for group, members in json.load(fp).iteritems():
+    if group not in groups:
+        groups[group] = members
+    else:
+        groups[group] = set(groups[group]) | set(members)
+
+def members_for(group):
+    global_members = set(groups['global'])
+    return global_members | set(groups.get(group, []))
