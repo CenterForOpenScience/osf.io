@@ -7,7 +7,7 @@
   <div id="registrationMetaDataScope" class="container scripted">
     <div class="row">
       <div class="span8 col-md-2 columns eight large-8">        
-        <ul class="nav nav-stacked list-group" data-bind="foreach: {data: metaSchema.schema.pages, as: 'page'}">
+        <ul class="nav nav-stacked list-group" data-bind="foreach: {data: metaSchema.schema.pages, as: 'page'}, visible: metaSchema.schema.pages.length > 1">
           <li class="re-navbar">
             <a class="registration-editor-page" id="top-nav" style="text-align: left; font-weight:bold;" data-bind="text: title, attr.href: '#' + page.id">
             </a>
