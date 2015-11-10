@@ -22,6 +22,7 @@ from elasticsearch import (
 
 from framework import sentry
 from framework.tasks import app as celery_app
+from framework.mongo.utils import paginated
 
 from website import settings
 from website.filters import gravatar
@@ -198,11 +199,14 @@ def format_results(results):
     for result in results:
         if result.get('category') == 'user':
             result['url'] = '/profile/' + result['id']
+        elif result.get('category') == 'file':
+            parent_info = load_parent(result.get('parent_id'))
+            result['parent_url'] = parent_info.get('url') if parent_info else None
+            result['parent_title'] = parent_info.get('title') if parent_info else None
         elif result.get('category') in {'project', 'component', 'registration'}:
             result = format_result(result, result.get('parent_id'))
         ret.append(result)
     return ret
-
 
 def format_result(result, parent_id=None):
     parent_info = load_parent(parent_id)
@@ -288,9 +292,8 @@ def update_node(node, index=None, bulk=False):
             # Skip orphaned components
             return
 
-    #TODO @hmoco, make this a celery task that takes care of updating files
-    from website.files.models.base import FileNode
-    for file_ in FileNode.find(Q('node', 'eq', node) & Q('provider', 'eq', 'osfstorage') & Q('is_file', 'eq', True)):
+    from website.files.models.osfstorage import OsfStorageFile
+    for file_ in paginated(OsfStorageFile, Q('node', 'eq', node)):
         update_file(file_)
 
     if node.is_deleted or not node.is_public or node.archiving:
@@ -355,6 +358,7 @@ def bulk_update_nodes(serialize, nodes, index=None):
     index = index or INDEX
     actions = []
     for node in nodes:
+        logger.info('Updating node {}'.format(node._id))
         serialized = serialize(node)
         if serialized:
             actions.append({
@@ -453,7 +457,6 @@ def update_file(file_, index=None, delete=False):
     )
     node_url = '/{node_id}/'.format(node_id=file_.node._id)
 
-    parent_url = '/{}/'.format(file_.node.parent_node._id) if file_.node.parent_node else None,
     file_doc = {
         'id': file_._id,
         'deep_url': file_deep_url,
@@ -462,8 +465,7 @@ def update_file(file_, index=None, delete=False):
         'category': 'file',
         'node_url': node_url,
         'node_title': file_.node.title,
-        'parent_url': parent_url,
-        'parent_title': file_.node.parent_node.title if file_.node.parent_node else None,
+        'parent_id': file_.node.parent_node._id if file_.node.parent_node else None,
         'is_registration': file_.node.is_registration,
     }
 
@@ -491,7 +493,7 @@ def create_index(index=None):
     all of which are applied to all projects, components, and registrations.
     '''
     index = index or INDEX
-    document_types = ['project', 'component', 'registration', 'user']
+    document_types = ['project', 'component', 'registration', 'user', 'file']
     project_like_types = ['project', 'component', 'registration']
     analyzed_fields = ['title', 'description']
 

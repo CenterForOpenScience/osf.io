@@ -1419,6 +1419,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
+        new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
         if (new.title == self.title
@@ -1813,7 +1814,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def bulk_update_search(cls, nodes):
         from website import search
         try:
-            serialize = functools.partial(search.search.update_node, bulk=True)
+            serialize = functools.partial(search.search.update_node, bulk=True, async=False)
             search.search.bulk_update_nodes(serialize, nodes)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
