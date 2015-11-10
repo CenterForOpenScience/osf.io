@@ -96,6 +96,13 @@ class StoredFileNode(StoredObject):
             ('is_file', pymongo.ASCENDING),
             ('provider', pymongo.ASCENDING)
         ]
+    }, {
+        'unique': False,
+        'key_or_list': [
+            ('node', pymongo.ASCENDING),
+            ('is_file', pymongo.ASCENDING),
+            ('provider', pymongo.ASCENDING)
+        ]
     }]
 
     _id = fields.StringField(primary=True, default=lambda: str(bson.ObjectId()))
