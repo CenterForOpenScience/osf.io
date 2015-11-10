@@ -327,7 +327,6 @@ class LinkedNodesList(generics.ListAPIView, CollectionMixin):
         return res
 
 
-
 class NodeLinksList(generics.ListCreateAPIView, CollectionMixin):
     """Node Links to other nodes. *Writeable*.
 
