@@ -8,10 +8,12 @@ import unittest
 import functools
 import datetime as dt
 from flask import g
+from json import dumps
 
 import blinker
 import httpretty
 from webtest_plus import TestApp
+from webtest.utils import NoDefault
 
 import mock
 from faker import Factory
@@ -58,6 +60,7 @@ SILENT_LOGGERS = [
     'framework.auth.core',
     'website.mails',
     'website.search_migration.migrate',
+    'website.util.paths',
 ]
 for logger_name in SILENT_LOGGERS:
     logging.getLogger(logger_name).setLevel(logging.CRITICAL)
@@ -176,8 +179,58 @@ class ApiAppTestCase(unittest.TestCase):
 
     def setUp(self):
         super(ApiAppTestCase, self).setUp()
-        self.app = TestApp(django_app)
+        self.app = TestAppJSONAPI(django_app)
 
+
+class JSONAPIWrapper(object):
+    """
+    Creates wrapper with stated content_type.
+    """
+    def make_wrapper(self, url, method, content_type, params=NoDefault, **kw):
+        """
+        Helper method for generating wrapper method.
+        """
+
+        if params is not NoDefault:
+            params = dumps(params, cls=self.JSONEncoder)
+        kw.update(
+            params=params,
+            content_type=content_type,
+            upload_files=None,
+        )
+        wrapper = self._gen_request(method, url, **kw)
+
+        subst = dict(lmethod=method.lower(), method=method)
+        wrapper.__name__ = str('%(lmethod)s_json_api' % subst)
+
+        return wrapper
+
+
+class TestAppJSONAPI(TestApp, JSONAPIWrapper):
+    """
+    Extends TestApp to add json_api_methods(post, put, patch, and delete)
+    which put content_type 'application/vnd.api+json' in header. Adheres to
+    JSON API spec.
+    """
+
+    def __init__(self, app, *args, **kwargs):
+        super(TestAppJSONAPI, self).__init__(app, *args, **kwargs)
+        self.auth = None
+        self.auth_type = 'basic'
+
+    def json_api_method(method):
+
+        def wrapper(self, url, params=NoDefault, bulk=False, **kw):
+            content_type = 'application/vnd.api+json'
+            if bulk:
+                content_type = 'application/vnd.api+json; ext=bulk'
+            return JSONAPIWrapper.make_wrapper(self, url, method, content_type , params, **kw)
+        return wrapper
+
+    post_json_api = json_api_method('POST')
+    put_json_api = json_api_method('PUT')
+    patch_json_api = json_api_method('PATCH')
+    delete_json_api = json_api_method('DELETE')
 
 class UploadTestCase(unittest.TestCase):
 
@@ -253,8 +306,10 @@ class ApiTestCase(DbTestCase, ApiAppTestCase, UploadTestCase, MockRequestTestCas
     API application. Note: superclasses must call `super` in order for all setup and
     teardown methods to be called correctly.
     """
-    pass
-
+    def setUp(self):
+        super(ApiTestCase, self).setUp()
+        settings.USE_EMAIL = False
+        
 
 # From Flask-Security: https://github.com/mattupstate/flask-security/blob/develop/flask_security/utils.py
 class CaptureSignals(object):

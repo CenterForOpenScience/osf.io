@@ -5,7 +5,7 @@
 <%include file="project/modal_add_contributor.mako"/>
 
 <div class="page-header  visible-xs">
-  <h2 class="text-300">Sharing</h2>
+  <h2 class="text-300">Contributors</h2>
 </div>
 
 <div class="row">

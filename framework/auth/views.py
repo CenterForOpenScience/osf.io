@@ -9,6 +9,7 @@ from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationValueError
 
 import framework.auth
+
 from framework.auth import cas
 from framework import forms, status
 from framework.flask import redirect  # VOL-aware redirect
@@ -88,10 +89,9 @@ def forgot_password_post():
                 reset_link=reset_link
             )
         status.push_status_message(
-            ('An email with instructions on how to reset the password '
-             'for the account associated with {0} has been sent. If you '
-             'do not receive an email and believe you should have please '
-             'contact OSF Support.').format(email), 'success')
+            ('If there is an OSF account associated with {0}, an email with instructions on how to reset '
+             'the OSF password has been sent to {0}. If you do not receive an email and believe you should '
+             'have, please contact OSF Support. ').format(email), 'success')
 
     forms.push_errors_to_status(form.errors)
     return auth_login(forgot_password_form=form)
@@ -146,10 +146,14 @@ def auth_login(auth, **kwargs):
 def auth_logout(redirect_url=None):
     """Log out and delete cookie.
     """
-    redirect_url = redirect_url or request.args.get('redirect_url')
+    redirect_url = redirect_url or request.args.get('redirect_url') or web_url_for('goodbye', _absolute=True)
     logout()
-    resp = redirect(cas.get_logout_url(redirect_url if redirect_url else web_url_for('goodbye', _absolute=True)))
-    resp.delete_cookie(settings.COOKIE_NAME)
+    if 'reauth' in request.args:
+        cas_endpoint = cas.get_login_url(redirect_url)
+    else:
+        cas_endpoint = cas.get_logout_url(redirect_url)
+    resp = redirect(cas_endpoint)
+    resp.delete_cookie(settings.COOKIE_NAME, domain=settings.OSF_COOKIE_DOMAIN)
     return resp
 
 

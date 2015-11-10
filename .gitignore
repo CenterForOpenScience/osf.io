@@ -96,3 +96,11 @@ scripts/guid_blacklist.txt
 
 # Scripts
 scripts/osfstorage/usage_whitelist.json
+#
+# Scripts
+scripts/guid_blacklist.txt
+scripts/hide_extra_registration_logs.json
+
+# Celery dbs
+celerybeat-schedule.db
+celery_beat.py.db

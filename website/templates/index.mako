@@ -42,23 +42,23 @@
               <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
             <div class="col-sm-6">
-              <h2>Free. Get started today.</h2>
+              <h2>Free and open source. Start now.</h2>
 
              <div id="signUp" class="anchor"></div>
                 <div id="signUpScope">
                     <form data-bind="submit: submit">
                         <div class="form-group" data-bind="css: {'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid()}">
-                              <label class="placeholder-replace" style="display:none">Full Name</label>
+                              <label class="placeholder-replace" style="display:none">Full name</label>
                               <input class="form-control" placeholder="Full Name" data-bind=" value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName)}">
                               <p class="help-block osf-box-lt" data-bind="validationMessage: fullName" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': email1() && !email1.isValid(), 'has-success': email1() && email1.isValid()}">
-                              <label class="placeholder-replace" style="display:none">Contact Email</label>
+                              <label class="placeholder-replace" style="display:none">Contact email</label>
                               <input class="form-control" placeholder="Contact Email" data-bind=" value: email1, disable: submitted(), event: { blur: trim.bind($data, email1)}">
                               <p class="help-block osf-box-lt" data-bind="validationMessage: email1" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': email2() && !email2.isValid(),'has-success': email2() && email2.isValid()}">
-                              <label class="placeholder-replace" style="display:none">Confirm Email</label>
+                              <label class="placeholder-replace" style="display:none">Confirm email</label>
                               <input class="form-control" placeholder="Confirm Email" data-bind="value: email2, disable: submitted(), event: { blur: trim.bind($data, email2)}">
                               <p class="help-block osf-box-lt" data-bind="validationMessage: email2" style="display: none;"></p>
                           </div>
@@ -197,7 +197,7 @@
             <h3>See project changes</h3>
             <p>See the latest project changes, who is contributing and <strong>historical file versions.</strong></p>
 
-            <h3>View project statistics</h3>
+            <h3>View project analytics</h3>
             <p>Access <strong>project data</strong> ranging from visits over time to top referring websites.</p>
 
           </div>
@@ -285,7 +285,7 @@
           <div class="col-md-8">
             <h2><strong>Free and open source.</strong></h2>
             <h4>The OSF is a public good built to support your research.</h4>
-            <a href="#" class="btn btn-info btn-lg">Get Started</a>
+            <a href="#" class="btn btn-info btn-lg">Get started</a>
           </div>
           <div class="col-md-4 hidden-xs hidden-sm">
             <div id="logo">

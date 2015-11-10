@@ -212,6 +212,7 @@ def render_mako_string(tpldir, tplname, data, trust=True):
     :param trust: Optional. If ``False``, markup-save escaping will be enabled
     """
 
+    show_errors = settings.DEBUG_MODE  # thanks to abought
     # TODO: The "trust" flag is expected to be temporary, and should be removed
     #       once all templates manually set it to False.
 
@@ -223,6 +224,7 @@ def render_mako_string(tpldir, tplname, data, trust=True):
             tpl_text = f.read()
         tpl = Template(
             tpl_text,
+            format_exceptions=show_errors,
             lookup=lookup_obj,
             input_encoding='utf-8',
             output_encoding='utf-8',

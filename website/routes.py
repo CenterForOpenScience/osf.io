@@ -10,7 +10,6 @@ from framework import sentry
 from framework.auth import cas
 from framework.routing import Rule
 from framework.flask import redirect
-from framework.sessions import session
 from framework.routing import WebRenderer
 from framework.exceptions import HTTPError
 from framework.auth import get_display_name
@@ -60,6 +59,7 @@ def get_globals():
         'cookie_name': settings.COOKIE_NAME,
         'status': status.pop_status_messages(),
         'domain': settings.DOMAIN,
+        'api_domain': settings.API_DOMAIN,
         'disk_saving_mode': settings.DISK_SAVING_MODE,
         'language': language,
         'web_url_for': util.web_url_for,
@@ -72,8 +72,7 @@ def get_globals():
         'webpack_asset': paths.webpack_asset,
         'waterbutler_url': settings.WATERBUTLER_URL,
         'login_url': cas.get_login_url(request.url, auto=True),
-        'access_token': session.data.get('auth_user_access_token') or '',
-        'auth_url': cas.get_login_url(request.url),
+        'reauth_url': util.web_url_for('auth_logout', redirect_url=request.url, reauth=True),
         'profile_url': cas.get_profile_url(),
     }
 
@@ -560,6 +559,49 @@ def make_url_map(app):
             OsfWebRenderer('profile/notifications.mako', trust=False),
         ),
 
+        Rule(
+            '/settings/applications/',
+            'get',
+            profile_views.oauth_application_list,
+            OsfWebRenderer('profile/oauth_app_list.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/applications/create/',
+            'get',
+            profile_views.oauth_application_register,
+            OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/applications/<client_id>/',
+            'get',
+            profile_views.oauth_application_detail,
+            OsfWebRenderer('profile/oauth_app_detail.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/',
+            'get',
+            profile_views.personal_access_token_list,
+            OsfWebRenderer('profile/personal_tokens_list.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/create/',
+            'get',
+            profile_views.personal_access_token_register,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
+        Rule(
+            '/settings/tokens/<_id>/',
+            'get',
+            profile_views.personal_access_token_detail,
+            OsfWebRenderer('profile/personal_tokens_detail.mako', trust=False)
+        ),
+
+
         # TODO: Uncomment once outstanding issues with this feature are addressed
         # Rule(
         #     '/@<twitter_handle>/',
@@ -864,6 +906,16 @@ def make_url_map(app):
                 '/project/<pid>/node/<nid>/statistics/',
             ],
             'get',
+            project_views.node.project_statistics_redirect,
+            notemplate,
+        ),
+
+        Rule(
+            [
+                '/project/<pid>/analytics/',
+                '/project/<pid>/node/<nid>/analytics/',
+            ],
+            'get',
             project_views.node.project_statistics,
             OsfWebRenderer('project/statistics.mako', trust=False)
         ),
@@ -890,6 +942,15 @@ def make_url_map(app):
             ],
             'get',
             addon_views.addon_view_or_download_file,
+            OsfWebRenderer('project/view_file.mako', trust=False)
+        ),
+        Rule(
+            [
+                '/project/<pid>/files/deleted/<trashed_id>/',
+                '/project/<pid>/node/<nid>/files/deleted/<trashed_id>/',
+            ],
+            'get',
+            addon_views.addon_deleted_file,
             OsfWebRenderer('project/view_file.mako', trust=False)
         ),
         Rule(
@@ -1112,16 +1173,6 @@ def make_url_map(app):
             project_views.contributor.project_manage_contributors,
             json_renderer,
         ),
-
-        Rule([
-            '/project/<pid>/get_most_in_common_contributors/',
-            '/project/<pid>/node/<nid>/get_most_in_common_contributors/',
-        ], 'get', project_views.contributor.get_most_in_common_contributors, json_renderer),
-
-        Rule([
-            '/project/<pid>/get_recently_added_contributors/',
-            '/project/<pid>/node/<nid>/get_recently_added_contributors/',
-        ], 'get', project_views.contributor.get_recently_added_contributors, json_renderer),
 
         Rule([
             '/project/<pid>/get_editable_children/',

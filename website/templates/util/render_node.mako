@@ -19,15 +19,15 @@
             % endif
                 <span class="project-statuses-lg">
                   % if summary['is_pending_registration']:
-                    <span class="label label-info"><strong>Pending Registration</strong></span> |
+                    <span class="label label-info"><strong>Pending registration</strong></span> |
                   % elif summary['is_retracted']:
                     <span class="label label-danger"><strong>Retracted</strong></span> |
                   % elif summary['is_pending_retraction']:
-                    <span class="label label-info"><strong>Pending Retraction</strong></span> |
+                    <span class="label label-info"><strong>Pending retraction</strong></span> |
                   % elif summary['embargo_end_date']:
                     <span class="label label-info"><strong>Embargoed</strong></span> |
                   % elif summary['is_pending_embargo']:
-                    <span class="label label-info"><strong>Pending Embargo</strong></span> |
+                    <span class="label label-info"><strong>Pending embargo</strong></span> |
                   % endif
                   % if summary['archiving']:
                     <span class="label label-primary"><strong>Archiving</strong></span> |
@@ -102,33 +102,38 @@
         % if not summary['archiving']:
         <div class="body hide" id="body-${summary['id']}" style="overflow:hidden;">
             <hr />
-            Recent Activity
-            <!-- ko stopBinding: true -->
-            <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
-                <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
-                    <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
-                    <dd class="log-content">
-                        <span data-bind="if:log.anonymous">
-                           <span data-bind="html: $parent.anonymousUserName"></span>
-                        </span>
-                        <span data-bind="ifnot:log.anonymous">
-                            <a data-bind="text: log.userFullName || log.apiKey, attr: {href: log.userURL}"></a>
-                        </span>
+            % if summary['is_retracted']:
+                <h4>Recent activity information has been retracted.</h4>
+            % else:
+                Recent activity
+                <!-- ko stopBinding: true -->
+                    <div id="logs-${summary['id']}" class="log-container" data-uri="${summary['api_url']}log/">
+                        <dl class="dl-horizontal activity-log" data-bind="foreach: {data: logs, as: 'log'}">
+                            <dt><span class="date log-date" data-bind="text: log.date.local, tooltip: {title: log.date.utc}"></span></dt>
+                            <dd class="log-content">
+                                <span data-bind="if:log.anonymous">
+                                    <span data-bind="html: $parent.anonymousUserName"></span>
+                                </span>
 
-                        <!-- ko if: log.hasUser() -->
-                            <!-- log actions are the same as their template name -->
-                            <span data-bind="template: {name: log.action, data: log}"></span>
-                        <!-- /ko -->
+                                <!-- ko ifnot: log.anonymous -->
+                                    <a data-bind="text: log.userFullName, attr: {href: log.userURL}"></a>
+                                <!-- /ko -->
 
-                        <!-- ko ifnot: log.hasUser() -->
-                            <!-- Log actions are the same as their template name  + no_user -->
-                            <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>
-                        <!-- /ko -->
-                        </dd>
-                </dl><!-- end foreach logs -->
-            </div>
-            <!-- /ko -->
-         </div>
+                                <!-- ko if: log.hasUser() -->
+                                    <!-- log actions are the same as their template name -->
+                                    <span data-bind="template: {name: log.action, data: log}"></span>
+                                <!-- /ko -->
+
+                                <!-- ko ifnot: log.hasUser() -->
+                                    <!-- Log actions are the same as their template name  + no_user -->
+                                    <span data-bind="template: {name: log.action + '_no_user', data: log}"></span>
+                                <!-- /ko -->
+                            </dd>
+                        </dl><!-- end foreach logs -->
+                    </div>
+                <!-- /ko -->
+            % endif
+        </div>
         % endif
     </li>
 

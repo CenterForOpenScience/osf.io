@@ -9,6 +9,7 @@ require('knockout.punches');
 var $ = require('jquery');
 var Raven = require('raven-js');
 var bootbox = require('bootbox');
+require('js/osfToggleHeight');
 
 var $osf = require('js/osfHelpers');
 var oop = require('js/oop');
@@ -39,7 +40,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         });
 
         self.treebeardOptions = $.extend(
-            {}, 
+            {},
             FolderPickerViewModel.prototype.treebeardOptions,
             {
                 /** Callback for chooseFolder action.
@@ -52,9 +53,9 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
                         name: item.data.name,
                         id: item.data.id
                     });
-                    return false; // Prevent event propagation     
+                    return false; // Prevent event propagation
                 }.bind(this),
-                lazyLoadPreprocess: function(data) {    
+                lazyLoadPreprocess: function(data) {
                     return data.contents.filter(function(item) {
                     return item.kind === 'folder';
                     });
@@ -70,6 +71,7 @@ var CitationsFolderPickerViewModel = oop.extend(FolderPickerViewModel, {
         var request = $.get(self.urls().accounts);
         request.then(function(data) {
             ret.resolve(data.accounts);
+            $('.addon-auth-table').osfToggleHeight({height: 140});
         });
         request.fail(function(xhr, textStatus, error) {
             self.changeMessage(self.messages.updateAccountsError(), 'text-danger');

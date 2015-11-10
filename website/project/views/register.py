@@ -90,7 +90,11 @@ def node_registration_retraction_post(auth, node, **kwargs):
     :param auth: Authentication object for User
     :return: Redirect URL for successful POST
     """
-
+    if node.is_pending_retraction:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid Request',
+            'message_long': 'This registration is already pending retraction'
+        })
     if not node.is_registration:
         raise HTTPError(http.BAD_REQUEST, data={
             'message_short': 'Invalid Request',
@@ -261,6 +265,10 @@ def node_register_template_page_post(auth, node, **kwargs):
     register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
+    register.is_public = False
+    for child in register.get_descendants_recursive():
+        child.is_public = False
+        child.save()
     try:
         if data.get('registrationChoice', 'immediate') == 'embargo':
             # Initiate embargo

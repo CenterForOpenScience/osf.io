@@ -91,6 +91,32 @@ describe('osfHelpers', () => {
         });
     });
 
+    describe('handleEditableError', () => {
+
+        var ravenStub;
+        beforeEach(() => {
+            ravenStub = new sinon.stub(Raven, 'captureMessage');
+        });
+
+        afterEach(() => {
+            ravenStub.restore();
+        });
+        var response = {
+            responseJSON: {
+                message_short: 'Oh no!',
+                message_long: 'Something went wrong'
+            }
+        };
+        it('uses the response text if available', () => {
+            assert.equal('Error: ' + response.responseJSON.message_long, $osf.handleEditableError(response));
+        });
+
+        it('logs error with Raven', () => {
+            $osf.handleEditableError(response);
+            assert.called(ravenStub);
+        });
+    });
+
     describe('block', () => {
         var stub;
         beforeEach(() => {
@@ -195,6 +221,59 @@ describe('osfHelpers', () => {
         });
         afterEach(function() {
             stub.restore();
+        });
+
+        describe('ajaxJSON', () => {
+            it('calls $.ajax as GET request, not crossorigin by default', () => {
+                var url = '/foo';
+                $osf.ajaxJSON('GET', url);
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'GET',
+                    contentType: 'application/json',
+                    dataType: 'json'
+                });
+            });
+            it('calls $.ajax as POST request, and isCors flags sends credentials by default', () => {
+                var url = '/foo';
+                var payload = {'bar': 42};
+
+                $osf.ajaxJSON('POST', url,
+                    {data: payload, isCors: true}
+                );
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'POST',
+                    data: JSON.stringify(payload),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    crossOrigin: true,
+                    xhrFields:
+                        {withCredentials: true}
+                });
+            });
+            it('calls $.ajax as crossorigin PATCH request, omitting credentials when specified', () => {
+                var url = '/foo';
+                var payload = {'bar': 42};
+
+                $osf.ajaxJSON('PATCH', url,
+                    {data: payload, isCors: true,
+                     fields: {xhrFields: {withCredentials: false}}
+                    });
+                assert.calledOnce(stub);
+                assert.calledWith(stub, {
+                    url: url,
+                    type: 'PATCH',
+                    data: JSON.stringify(payload),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    crossOrigin: true,
+                    xhrFields:
+                        {withCredentials: false}
+                });
+            });
         });
 
         describe('postJSON', () => {

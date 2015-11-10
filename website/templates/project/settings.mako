@@ -37,11 +37,11 @@
                             <li><a href="#configureWikiAnchor">Configure Wiki</a></li>
                         % endif
 
-                        <li><a href="#configureNotificationsAnchor">Configure Notifications</a></li>
-
                         % if 'admin' in user['permissions']:
                             <li><a href="#configureCommentingAnchor">Configure Commenting</a></li>
                         % endif
+
+                        <li><a href="#configureNotificationsAnchor">Configure Email Notifications</a></li>
 
                     % endif
 
@@ -71,29 +71,38 @@
                     <div class="panel-heading clearfix">
                         <h3 id="configureNode" class="panel-title">Configure ${node['node_type'].capitalize()}</h3>
                     </div>
-                    <div id="nodeCategorySettings" class="panel-body scripted">
-                        <h5>
-                            Category: <select data-bind="attr.disabled: disabled,
-                                                        options: categories,
-                                                        optionsValue: 'value',
-                                                        optionsText: 'label',
-                                                        value: selectedCategory"></select>
-                        </h5>
-                        <p data-bind="if: !disabled">
-                            <button data-bind="css: {disabled: !dirty()},
-                                               click: cancelUpdateCategory"
-                                    class="btn btn-default">Cancel</button>
-                            <button data-bind="css: {disabled: !dirty()},
-                                               click: updateCategory"
-                                    class="btn btn-primary">Change</button>
-                        </p>
-                        <span data-bind="css: messageClass, html: message"></span>
 
-                        <span data-bind="if: disabled" class="help-block">
-                            A top-level project's category cannot be changed.
-                        </span>
-                    </div>
-
+                    <div id="projectSettings" class="panel-body">
+                        <div class="form-group">
+                            <label>Category:</label>
+                            <select data-bind="attr.disabled: disabled,
+                                                         options: categoryOptions,
+                                                         optionsValue: 'value',
+                                                         optionsText: 'label',
+                                                         value: selectedCategory"></select>
+                            <span data-bind="if: disabled" class="help-block">
+                              A top-level project's category cannot be changed
+                            </span>
+                        </div>
+                        <div class="form-group">
+                            <label for="title">Title:</label>
+                            <input class="form-control" type="text" maxlength="200" placeholder="Required" data-bind="value: title,
+                                                                                                      valueUpdate: 'afterkeydown'">
+                            <span class="text-danger" data-bind="validationMessage: title"></span>
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description:</label>
+                            <textarea placeholder="Optional" data-bind="value: description,
+                                             valueUpdate: 'afterkeydown'",
+                            class="form-control resize-vertical"></textarea>
+                        </div>
+                           <button data-bind="click: cancelAll"
+                            class="btn btn-default">Cancel</button>
+                            <button data-bind="click: updateAll"
+                            class="btn btn-success">Save changes</button>
+                        <div class="help-block">
+                            <span data-bind="css: messageClass, html: message"></span>
+                        </div>
                     % if 'admin' in user['permissions']:
                         <hr />
                         <div class="panel-body">
@@ -226,35 +235,6 @@
 
         % endif ## End Configure Wiki
 
-        % if user['has_read_permissions']:  ## Begin Configure Notifications
-
-            % if not node['is_registration']:
-
-                <div class="panel panel-default">
-                    <span id="configureNotificationsAnchor" class="anchor"></span>
-                    <div class="panel-heading clearfix">
-                        <h3 class="panel-title">Configure Notifications</h3>
-                    </div>
-                    <div class="help-block" style="padding-left: 15px">
-                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
-                    </div>
-                    <form id="notificationSettings" class="osf-treebeard-minimal">
-                        <div id="grid">
-                            <div class="spinner-loading-wrapper">
-                                <div class="logo-spin logo-lg"></div>
-                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
-                            </div>
-                        </div>
-                        <div class="help-block" style="padding-left: 15px">
-                            <p id="configureNotificationsMessage"></p>
-                        </div>
-                    </form>
-                </div>
-
-            %endif
-
-        % endif ## End Configure Notifications
-
         % if 'admin' in user['permissions']:  ## Begin Configure Commenting
 
             % if not node['is_registration']:
@@ -298,7 +278,34 @@
 
         % endif  ## End Configure Commenting
 
+        % if user['has_read_permissions']:  ## Begin Configure Email Notifications
 
+            % if not node['is_registration']:
+
+                <div class="panel panel-default">
+                    <span id="configureNotificationsAnchor" class="anchor"></span>
+                    <div class="panel-heading clearfix">
+                        <h3 class="panel-title">Configure Email Notifications</h3>
+                    </div>
+                    <div class="help-block" style="padding-left: 15px">
+                        <p class="text-info">These notification settings only apply to you. They do NOT affect any other contributor on this project.</p>
+                    </div>
+                    <form id="notificationSettings" class="osf-treebeard-minimal">
+                        <div id="grid">
+                            <div class="spinner-loading-wrapper">
+                                <div class="logo-spin logo-lg"></div>
+                                <p class="m-t-sm fg-load-message"> Loading notification settings...  </p>
+                            </div>
+                        </div>
+                        <div class="help-block" style="padding-left: 15px">
+                            <p id="configureNotificationsMessage"></p>
+                        </div>
+                    </form>
+                </div>
+
+            %endif
+
+        % endif ## End Configure Email Notifications
 
         % if 'admin' in user['permissions']:  ## Begin Retract Registration
 
@@ -379,6 +386,7 @@
     <script>
       window.contextVars = window.contextVars || {};
       window.contextVars.node = window.contextVars.node || {};
+      window.contextVars.node.description = ${node['description'] | sjson, n };
       window.contextVars.node.nodeType = ${ node['node_type'] | sjson, n };
       window.contextVars.nodeCategories = ${ categories | sjson, n };
     </script>
