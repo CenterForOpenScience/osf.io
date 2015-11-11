@@ -5,7 +5,7 @@
   <li role="presentation" class="active">
     <a id="registrationsControl" aria-controls="registrations" href="#registrations">Registrations</a>
   </li>
-  % if 'admin' in user['permissions']:
+  % if 'admin' in user['permissions'] and node['has_draft_registrations']:
   <li role="presentation" data-bind="visible: hasDrafts">
       <a id="draftsControl" aria-controls="drafts" href="#drafts">Draft Registrations</a>
   </li>
@@ -53,7 +53,7 @@
     </div>
   </div>
   <div role="tabpanel" class="tab-pane" id="drafts">
-    <div id="draftRegistrationsScope" class="row" style="min-height: 150px;padding-top:20px;">
+    <div id="draftRegistrationsScope" class="row scripted" style="min-height: 150px;padding-top:20px;">
       <form id="newDraftRegistrationForm" method="POST" style="display:none">
         <!-- ko if: selectedSchema() -->
         <input type="hidden" name="schema_name" data-bind="value: selectedSchema().name">

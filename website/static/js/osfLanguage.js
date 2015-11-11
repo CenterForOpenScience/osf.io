@@ -4,6 +4,7 @@ var SUPPORT_LINK = '<a href="mailto:' + SUPPORT_EMAIL + '">' + SUPPORT_EMAIL +'<
 var REFRESH_OR_SUPPORT = 'Please refresh the page and try again or contact ' + SUPPORT_LINK + ' if the problem persists.';
 
 module.exports = {
+    SUPPORT_LINK: SUPPORT_LINK,
     // TODO
     makePublic: null,
     makePrivate: null,
@@ -104,5 +105,5 @@ module.exports = {
         updateErrorMessage400: 'Error updating project settings. Check that all fields are valid.',
         updateErrorMessage: 'Could not update project settings. ' + REFRESH_OR_SUPPORT,
         instantiationErrorMessage: 'Trying to instantiate ProjectSettings view model without an update URL'
-    },
+    }
 };

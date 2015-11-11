@@ -50,7 +50,8 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
         initiated_by=auth.user,
         meta=meta
     )
-    for user in draft.get_authorizers():
+    authorizers = draft.get_authorizers()
+    for user in authorizers:
         approval.add_authorizer(user)
     approval.save()
     draft.approval = approval
@@ -90,7 +91,6 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     :return: success message; url to registrations page
     :rtype: dict
     """
-
     data = request.get_json()
     register = draft.register(auth)
     draft.save()
@@ -140,9 +140,7 @@ def get_draft_registrations(auth, node, *args, **kwargs):
     """
 
     count = request.args.get('count', 100)
-    drafts = node.draft_registrations.find(
-        Q('registered_node', 'eq', None)
-    )[:count]
+    drafts = node.draft_registrations_active[:count]
     return {
         'drafts': [serialize_draft_registration(d, auth) for d in drafts]
     }, http.OK
@@ -225,6 +223,11 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
     :return: serialized DraftRegistration
     :rtype: dict
     """
+    if draft.registered_node:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'This draft has already been registered.',
+            'message_long': 'This draft has already been registered and cannot be modified.'
+        })
     ret = project_utils.serialize_node(node, auth, primary=True)
     ret['draft'] = serialize_draft_registration(draft, auth)
     return ret
@@ -239,6 +242,11 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     :rtype: dict
     :raises: HTTPError
     """
+    if draft.registered_node:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'This draft has already been registered.',
+            'message_long': 'This draft has already been registered and cannot be modified.'
+        })
     data = request.get_json()
 
     schema_data = data.get('schema_data', {})

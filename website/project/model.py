@@ -928,6 +928,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def nodes_active(self):
         return [x for x in self.nodes if not x.is_deleted]
 
+    @property
+    def draft_registrations_active(self):
+        return self.draft_registrations.find(
+            Q('registered_node', 'eq', None)
+        )
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -1456,6 +1462,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
+        new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
         if (new.title == self.title
@@ -1850,7 +1857,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def bulk_update_search(cls, nodes):
         from website import search
         try:
-            serialize = functools.partial(search.search.update_node, bulk=True)
+            serialize = functools.partial(search.search.update_node, bulk=True, async=False)
             search.search.bulk_update_nodes(serialize, nodes)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
@@ -4033,7 +4040,7 @@ class DraftRegistrationApproval(Sanction):
         self._send_rejection_email(user, draft)
 
 
-class DraftRegistration(AddonModelMixin, StoredObject):
+class DraftRegistration(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 

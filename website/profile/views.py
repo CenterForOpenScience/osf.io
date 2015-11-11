@@ -499,7 +499,7 @@ def user_choose_mailing_lists(auth, **kwargs):
 
 
 @user_merged.connect
-def update_mailchimp_subscription(user, list_name, subscription):
+def update_mailchimp_subscription(user, list_name, subscription, send_goodbye=True):
     """ Update mailing list subscription in mailchimp.
 
     :param obj user: current user
@@ -510,7 +510,7 @@ def update_mailchimp_subscription(user, list_name, subscription):
         mailchimp_utils.subscribe_mailchimp(list_name, user._id)
     else:
         try:
-            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username)
+            mailchimp_utils.unsubscribe_mailchimp(list_name, user._id, username=user.username, send_goodbye=send_goodbye)
         except mailchimp_utils.mailchimp.ListNotSubscribedError:
             raise HTTPError(http.BAD_REQUEST,
                 data=dict(message_short="ListNotSubscribedError",

@@ -9,7 +9,9 @@ var URI = require('URIjs');
 require('js/koHelpers');
 
 var $osf = require('js/osfHelpers');
-var language = require('js/osfLanguage').registrations;
+var osfLanguage = require('js/osfLanguage');
+var SUPPORT_LINK = osfLanguage.SUPPORT_LINK;
+var language = osfLanguage.registrations;
 
 var SaveManager = require('js/saveManager');
 var editorExtensions = require('js/registrationEditorExtensions');
@@ -666,10 +668,12 @@ var RegistrationEditor = function(urls, editorId) {
         };
     }.bind(self));
 
+    // An incrementing dirty flag. The 0 state represents not-dirty.
+    // States greater than 0 imply dirty, and incrementing the number 
+    // allows for reliable mutations of the ko.observable.
     self.dirtyCount = ko.observable(0);
-    self.isDirty = ko.observable(false);
     self.needsSave = ko.computed(function() {
-        return self.isDirty() && self.dirtyCount();
+        return self.dirtyCount();
     }).extend({
         rateLimit: 3000,
         method: 'notifyWhenChangesStop'
@@ -679,7 +683,6 @@ var RegistrationEditor = function(urls, editorId) {
         $.each(page.questions(), function(_, question) {
             question.value.subscribe(function() {
                 self.dirtyCount(self.dirtyCount() + 1);
-                self.isDirty(true);
             });
         });
     });
@@ -718,9 +721,10 @@ RegistrationEditor.prototype.init = function(draft) {
     var schemaData = {};
     if (draft) {
         self.saveManager = new SaveManager(
-            self.urls.update.replace('{draft_pk}', draft.pk),
-            null, null,
-            self.isDirty
+            self.urls.update.replace('{draft_pk}', draft.pk), 
+            null, {
+                dirty: self.dirtyCount
+            }
         );
         schemaData = draft.schemaData || {};
     }
@@ -747,7 +751,7 @@ RegistrationEditor.prototype.init = function(draft) {
         if (dirty) {
             self.save().then(function(last) {
                 if (self.dirtyCount() === last){
-                    self.isDirty(false);
+                    self.dirtyCount(0);
                 }
             }.bind(self, self.dirtyCount()));
         }
@@ -788,16 +792,11 @@ RegistrationEditor.prototype.context = function(data) {
 
 RegistrationEditor.prototype.toPreview = function () {
     var self = this;
-    var redirect = function() {
-        window.location = self.draft().urls.register_page;
-    };
-
-    if (self.dirtyCount()) {
-        self.save.then(redirect);
-    }
-    else {
-        redirect();
-    }
+    $osf.block('Saving...');
+    self.save().then(function() {
+        self.dirtyCount(0);
+        window.location.assign(self.draft().urls.register_page);
+    });
 };
 
 RegistrationEditor.prototype.viewComments = function() {
@@ -885,84 +884,6 @@ RegistrationEditor.prototype.getUnseenComments = function(qid) {
     return comments;
 };
 /**
- * Load the next question into the editor, wrapping around if needed
- **/
-RegistrationEditor.prototype.nextQuestion = function() {
-    var self = this;
-
-    var currentQuestion = self.currentQuestion();
-
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q) {
-        return q.id === currentQuestion.id;
-    });
-    if (index + 1 === questions.length) {
-        self.currentQuestion(questions.shift());
-        self.viewComments();
-    } else {
-        self.currentQuestion(questions[index + 1]);
-        self.viewComments();
-    }
-};
-/**
- * Load the previous question into the editor, wrapping around if needed
- **/
-RegistrationEditor.prototype.previousQuestion = function() {
-    var self = this;
-
-    var currentQuestion = self.currentQuestion();
-
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q) {
-        return q.id === currentQuestion.id;
-    });
-    if (index - 1 < 0) {
-        self.currentQuestion(questions.pop());
-        self.viewComments();
-    } else {
-        self.currentQuestion(questions[index - 1]);
-        self.viewComments();
-    }
-};
-/**
- * Load the next question into the editor, wrapping around if needed
- **/
-RegistrationEditor.prototype.nextQuestion = function() {
-    var self = this;
-
-    var currentQuestion = self.currentQuestion();
-
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q) {
-        return q.id === currentQuestion.id;
-    });
-    if (index + 1 === questions.length) {
-        self.currentQuestion(questions.shift());
-    } else {
-        self.currentQuestion(questions[index + 1]);
-    }
-    self.viewComments();
-};
-/**
- * Load the previous question into the editor, wrapping around if needed
- **/
-RegistrationEditor.prototype.previousQuestion = function() {
-    var self = this;
-
-    var currentQuestion = self.currentQuestion();
-
-    var questions = self.flatQuestions();
-    var index = $osf.indexOf(questions, function(q) {
-        return q.id === currentQuestion.id;
-    });
-    if (index - 1 < 0) {
-        self.currentQuestion(questions.pop());
-    } else {
-        self.currentQuestion(questions[index - 1]);
-    }
-    self.viewComments();
-};
-/**
  * Select a page, selecting the first question on that page
  **/
 RegistrationEditor.prototype.selectPage = function(page) {
@@ -996,8 +917,6 @@ RegistrationEditor.prototype.updateData = function(response) {
     draft.updated = new Date(response.updated);
     self.draft(draft);
 };
-RegistrationEditor.prototype.submitForReview = function() {
-    var self = this;
 
 
 };
@@ -1050,8 +969,10 @@ RegistrationEditor.prototype.create = function(schemaData) {
         self.draft(draft);
         self.saveManager = new SaveManager(
             self.urls.update.replace('{draft_pk}', draft.pk),
-            null, null,
-            self.isDirty
+            null, 
+            {
+                dirty: self.dirtyCount
+            }
         );
     });
     return request;
@@ -1059,19 +980,18 @@ RegistrationEditor.prototype.create = function(schemaData) {
 
 RegistrationEditor.prototype.putSaveData = function(payload) {
     var self = this;
-    return self.saveManager.save(payload).then(self.updateData.bind(self));
+    return self.saveManager.save(payload)
+        .then(self.updateData.bind(self));
 };
 
 RegistrationEditor.prototype.saveForLater = function() {
     var self = this;
     $osf.block('Saving...');
     self.save()
+        .always($osf.unblock)
         .then(function() {
-            window.location = self.urls.draftRegistrations;
-        })
-        .fail(function() {
-            $osf.unblock();
-            $osf.growl.bind('There was a problem saving this draft. Please try again.');
+            self.dirtyCount(0);
+            window.location.assign(self.urls.draftRegistrations);
         });
 };
 
@@ -1114,71 +1034,12 @@ RegistrationEditor.prototype.save = function() {
         });
     }
     self.lastSaveRequest = request;
+    request.fail(function() {
+        $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
+    });
     return request;
 };
-/**
- * Makes ajax request for a project's contributors
- */
-RegistrationEditor.prototype.makeContributorsRequest = function() {
-    var self = this;
-    var contributorsUrl = window.contextVars.node.urls.api + 'contributors_abbrev/';
-    return $.getJSON(contributorsUrl);
-};
-/**
- * Returns the `user_fullname` of each contributor attached to a node.
- **/
-RegistrationEditor.prototype.getContributors = function() {
-    var self = this;
-    return self.makeContributorsRequest()
-        .then(function(data) {
-            return $.map(data.contributors, function(c) { return c.user_fullname; });
-        }).fail(function() {
-            $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
-                       'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
-                       'problem persists.');
-        });
-};
-/**
- * Opens a bootbox dialog with a checkbox list of each contributor
- * the user has the option to import all contributors or to select
- * each one individually.
- **/
-RegistrationEditor.prototype.authorDialog = function() {
-    var self = this;
 
-    bootbox.dialog({
-        title: 'Choose which contributors to import:',
-        message: function() {
-            ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
-        },
-        buttons: {
-            select: {
-                label: 'Import',
-                className: 'btn-primary pull-left',
-                callback: function() {
-                    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
-                    var authors = [];
-                    $.each(boxes, function(i, box) {
-                        if( this.checked ) {
-                            authors.push(this.value);
-                        }
-                    });
-                    if ( authors ) {
-                        self.currentQuestion().setValue(authors.join(', '));
-                        self.save();
-                    }
-                }
-            }
-
-        }
-    });
-};
-RegistrationEditor.prototype.setContributorBoxes = function(value) {
-    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
-    $.each(boxes, function(i, box) {
-        this.checked = value;
-    });
-};
 /**
  * @class RegistrationManager
  * Model for listing DraftRegistrations
@@ -1242,16 +1103,6 @@ var RegistrationManager = function(node, draftsSelector, urls, createButton) {
     self.getDraftRegistrations = $.getJSON.bind(null, self.urls.list);
     self.getSchemas = $.getJSON.bind(null, self.urls.schemas);
 
-    /*
-    self.previewSchema = ko.computed(function() {
-        var schema = self.selectedSchema();
-        return {
-            schema: schema.schema,
-            readonly: true
-        };
-    });
-     */
-
     if (createButton) {
         createButton.on('click', self.createDraftModal.bind(self));
     }
@@ -1302,9 +1153,14 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
                 self.drafts.remove(function(item) {
                     return item.pk === draft.pk;
                 });
-            });
-        }
-    });
+            }},
+        buttons: {
+            confirm: {
+                label: 'Delete',
+                className: 'btn-danger'
+            }
+        }}
+    );
 };
 /**
  * Show the draft registration preview pane
@@ -1342,7 +1198,7 @@ RegistrationManager.prototype.createDraftModal = function() {
  **/
 RegistrationManager.prototype.maybeWarn = function(draft) {
     var redirect = function() {
-        window.location.href = draft.urls.edit;
+        window.location.assign(draft.urls.edit);
     };
     var callback = function(confirmed) {
         if (confirmed) {
