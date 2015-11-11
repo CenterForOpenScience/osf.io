@@ -7,6 +7,7 @@ from modularodm.exceptions import NoResultsFound
 from api.base.exceptions import Gone
 from api.base.filters import ODMFilterMixin
 from api.base import permissions as base_permissions
+from api.base.views import JSONAPIBaseView
 from api.comments.permissions import (
     CanCommentOrPublic,
     CommentDetailPermissions,
@@ -44,7 +45,7 @@ class CommentMixin(object):
         return comment
 
 
-class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixin):
+class CommentRepliesList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin, ODMFilterMixin):
     """List of replies to a comment. *Writeable*.
 
     Paginated list of comment replies ordered by their `date_created.` Each resource contains the full representation
@@ -142,7 +143,7 @@ class CommentRepliesList(generics.ListCreateAPIView, CommentMixin, ODMFilterMixi
         serializer.save()
 
 
-class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
+class CommentDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, CommentMixin):
     """Details about a specific comment. *Writeable*.
 
     ###Permissions
@@ -240,7 +241,7 @@ class CommentDetail(generics.RetrieveUpdateAPIView, CommentMixin):
         return self.get_comment()
 
 
-class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
+class CommentReportsList(JSONAPIBaseView, generics.ListCreateAPIView, CommentMixin):
     """List of reports made for a comment. *Writeable*.
 
     Paginated list of reports for a comment. Each resource contains the full representation of the
@@ -316,7 +317,7 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
         return serialized_reports
 
 
-class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
+class CommentReportDetail(JSONAPIBaseView, generics.RetrieveUpdateDestroyAPIView, CommentMixin):
     """Details about a specific comment report. *Writeable*.
 
     ###Permissions

@@ -1486,7 +1486,7 @@ class NodeProvidersList(JSONAPIBaseView, generics.ListAPIView, NodeMixin):
         ]
 
 
-class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
+class NodeCommentsList(JSONAPIBaseView, generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
     """List of comments on a node. *Writeable*.
 
     Paginated list of comments ordered by their `date_created.` Each resource contains the full representation of the

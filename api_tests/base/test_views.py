@@ -9,22 +9,13 @@ import mock
 from nose import SkipTest
 from nose.tools import *  # flake8: noqa
 
-from rest_framework import generics
-from rest_framework.test import (
-    APIRequestFactory,
-    force_authenticate
-)
-
 from tests.base import ApiTestCase
 from tests import factories
 
-import api
 from api.base.settings.defaults import API_BASE
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from api.base.permissions import TokenHasScope
 from website.settings import DEBUG_MODE
-
-from framework.auth.oauth_scopes import CoreScopes
 
 import importlib
 URLS_MODULES = [importlib.import_module('api.{}.urls'.format(name)) for loader, name, _ in pkgutil.iter_modules(['api']) if name != 'base']
