@@ -37,13 +37,13 @@ var entry = {
     'wiki-edit-page': staticPath('js/pages/wiki-edit-page.js'),
     'file-page': staticPath('js/pages/file-page.js'),
     'files-page': staticPath('js/pages/files-page.js'),
+    'prereg-landing-page': staticPath('js/pages/prereg-landing-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
     'profile-settings-applications-list-page': staticPath('js/pages/profile-settings-applications-list-page.js'),
     'profile-settings-applications-detail-page': staticPath('js/pages/profile-settings-applications-detail-page.js'),
     'profile-settings-personal-tokens-list-page': staticPath('js/pages/profile-settings-personal-tokens-list-page.js'),
     'profile-settings-personal-tokens-detail-page': staticPath('js/pages/profile-settings-personal-tokens-detail-page.js'),
-    'register_1-page': staticPath('js/pages/register_1-page.js'),
     'sharing-page': staticPath('js/pages/sharing-page.js'),
     'conference-page': staticPath('js/pages/conference-page.js'),
     'meetings-page': staticPath('js/pages/meetings-page.js'),
@@ -78,7 +78,9 @@ var entry = {
         'js/citations',
         'js/osfHelpers',
         'js/osfToggleHeight',
-        'mithril'
+        'mithril',
+        'js/qToggle',
+        'js/components/autocomplete',
     ]
 };
 
