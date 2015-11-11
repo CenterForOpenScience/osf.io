@@ -54,6 +54,8 @@ class CommentSerializer(JSONAPISerializer):
 
     def get_is_abuse(self, obj):
         auth = Auth(self.context['request'].user)
+        if not auth or auth.user.is_anonymous:
+            return False
         return auth.user and auth.user._id in obj.reports
 
     def get_can_edit(self, obj):
