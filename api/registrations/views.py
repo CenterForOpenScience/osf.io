@@ -83,7 +83,6 @@ class RegistrationList(generics.ListAPIView, ODMFilterMixin):
     serializer_class = RegistrationSerializer
     view_name = 'registrations:registration-list'
 
-
     # overrides ODMFilterMixin
     def get_default_odm_query(self):
         base_query = (

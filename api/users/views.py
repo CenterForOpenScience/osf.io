@@ -198,7 +198,6 @@ class UserDetail(JSONAPIBaseView, generics.RetrieveUpdateAPIView, UserMixin):
     required_write_scopes = [CoreScopes.USERS_WRITE]
     view_name = 'users:user-detail'
 
-
     serializer_class = UserDetailSerializer
 
     # overrides RetrieveAPIView

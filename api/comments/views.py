@@ -305,7 +305,6 @@ class CommentReportsList(generics.ListCreateAPIView, CommentMixin):
     serializer_class = CommentReportSerializer
     view_name = 'comments:comment-reports'
 
-
     def get_queryset(self):
         user_id = self.request.user._id
         comment = self.get_comment()
@@ -387,7 +386,6 @@ class CommentReportDetail(generics.RetrieveUpdateDestroyAPIView, CommentMixin):
 
     serializer_class = CommentReportDetailSerializer
     view_name = 'comments:report-detail'
-
 
     # overrides RetrieveUpdateDestroyAPIView
     def get_object(self):

@@ -1035,7 +1035,6 @@ class NodeLinksDetail(JSONAPIBaseView, generics.RetrieveDestroyAPIView, NodeMixi
     serializer_class = NodeLinksSerializer
     view_name = 'nodes:node-pointer-detail'
 
-
     # overrides RetrieveAPIView
     def get_object(self):
         node_link_lookup_url_kwarg = 'node_link_id'
@@ -1291,7 +1290,6 @@ class NodeFilesList(JSONAPIBaseView, generics.ListAPIView, WaterButlerMixin, Lis
     required_write_scopes = [CoreScopes.NODE_FILE_WRITE]
 
     view_name = 'nodes:node-files'
-
 
     def get_default_queryset(self):
         # Don't bother going to waterbutler for osfstorage
@@ -1566,7 +1564,6 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
 
     serializer_class = CommentSerializer
     view_name = 'nodes:node-comments'
-
 
     ordering = ('-date_created', )  # default ordering
 

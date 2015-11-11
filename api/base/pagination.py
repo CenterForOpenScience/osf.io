@@ -116,4 +116,4 @@ class JSONAPIPagination(pagination.PageNumberPagination):
             return list(self.page)
 
         else:
-            return super(EmbeddedPagination, self).paginate_queryset(queryset, request, view=None)
+            return super(JSONAPIPagination, self).paginate_queryset(queryset, request, view=None)

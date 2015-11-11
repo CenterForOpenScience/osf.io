@@ -9,7 +9,6 @@ from .utils import absolute_reverse
 
 class JSONAPIBaseView(generics.GenericAPIView):
 
-
     def _get_embed_partial(self, field_name, field):
         """Create a partial function to fetch the values of an embedded field. A basic
         example is to include a Node's children in a single response.
