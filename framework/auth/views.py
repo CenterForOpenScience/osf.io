@@ -242,12 +242,7 @@ def send_confirm_email(user, email):
     except NoResultsFound:
         merge_target = None
 
-    campaign = None
-    for tag in user.system_tags:
-        if tag in campaigns.VALID_CAMPAIGNS:
-            campaign = tag
-            break
-
+    campaign = campaigns.campaign_for_user(user)
     # Choose the appropriate email template to use
     if merge_target:
         mail_template = mails.CONFIRM_MERGE

@@ -21,6 +21,7 @@ def email_template_for_campaign(campaign, default=None):
                 return default
             else:
                 raise e
+    return default
 
 def campaign_for_user(user):
     campaigns = [tag for tag in user.system_tags if tag in VALID_CAMPAIGNS]
