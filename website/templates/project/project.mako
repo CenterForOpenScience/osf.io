@@ -126,8 +126,10 @@
                     </p>
                 % endif
                 % if node['is_registration']:
-                    <br />Registration Supplement:
+                    <p>
+                    Registration Supplement:
                     <a href="${node['url']}register/">${node['registered_schema']['schema']['title']}</a>
+                    </p>
                 % endif
                 % if node['is_registration']:
                     <p>
