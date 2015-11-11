@@ -70,7 +70,11 @@ class CommentSerializer(JSONAPISerializer):
         auth = Auth(user)
         node = validated_data['node']
 
-        validated_data['content'] = validated_data.pop('get_content')
+        content = validated_data.pop('get_content')
+        validated_data['content'] = content.strip()
+        if not validated_data['content']:
+            raise ValidationError('Comment cannot be empty.')
+
         if node and node.can_comment(auth):
             comment = Comment.create(auth=auth, **validated_data)
         else:
@@ -82,7 +86,11 @@ class CommentSerializer(JSONAPISerializer):
         auth = Auth(self.context['request'].user)
         if validated_data:
             if 'get_content' in validated_data:
-                comment.edit(validated_data['get_content'], auth=auth, save=True)
+                content = validated_data.pop('get_content')
+                content = content.strip()
+                if not content:
+                    raise ValidationError('Comment cannot be empty.')
+                comment.edit(content, auth=auth, save=True)
             if validated_data.get('is_deleted', None) is True:
                 comment.delete(auth, save=True)
             elif comment.is_deleted:

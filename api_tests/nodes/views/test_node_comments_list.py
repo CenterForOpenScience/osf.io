@@ -12,6 +12,7 @@ from tests.factories import (
     AuthUserFactory,
     CommentFactory
 )
+from website.util.sanitize import strip_html
 
 
 class TestNodeCommentsList(ApiTestCase):
@@ -177,11 +178,33 @@ class TestNodeCommentCreate(ApiTestCase):
         assert_equal(res.json['errors'][0]['detail'], 'This field may not be blank.')
         assert_equal(res.json['errors'][0]['source']['pointer'], '/data/attributes/content')
 
-    def test_create_comment_invalid_target_node(self):
-        url = '/{}nodes/{}/comments/'.format(API_BASE, 'abcde')
-        res = self.app.post_json_api(url, self.payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, 404)
-        assert_equal(res.json['errors'][0]['detail'], 'Not found.')
+    def test_create_comment_trims_whitespace(self):
+        self._set_up_private_project()
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': '   '
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], 'Comment cannot be empty.')
+
+    def test_create_comment_sanitizes_input(self):
+        self._set_up_private_project()
+        payload = {
+            'data': {
+                'type': 'comments',
+                'attributes': {
+                    'content': '<em>Cool</em> <strong>Comment</strong>'
+                }
+            }
+        }
+        res = self.app.post_json_api(self.private_url, payload, auth=self.user.auth)
+        assert_equal(res.status_code, 201)
+        assert_equal(res.json['data']['attributes']['content'], strip_html(payload['data']['attributes']['content']))
 
     def test_create_comment_exceeds_max_length(self):
         self._set_up_private_project()
@@ -202,6 +225,12 @@ class TestNodeCommentCreate(ApiTestCase):
         assert_equal(res.status_code, 400)
         assert_equal(res.json['errors'][0]['detail'],
                      'Ensure this field has no more than ' + str(osf_settings.COMMENT_MAXLENGTH) + ' characters.')
+
+    def test_create_comment_invalid_target_node(self):
+        url = '/{}nodes/{}/comments/'.format(API_BASE, 'abcde')
+        res = self.app.post_json_api(url, self.payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, 404)
+        assert_equal(res.json['errors'][0]['detail'], 'Not found.')
 
     def test_private_node_logged_in_admin_can_comment(self):
         self._set_up_private_project()
