@@ -3847,12 +3847,6 @@ class Retraction(EmailApprovableSanction):
         for node in parent_registration.node_and_primary_descendants():
             node.set_privacy('public', auth=auth, save=True)
             node.update_search()
-        # parent_registration.update_search()
-        # Retraction status is inherited from the root project, so we
-        # need to recursively update search for every descendant node
-        # so that retracted subrojects/components don't appear in search
-        # for node in parent_registration.get_descendants_recursive():
-        #    node.update_search()
 
     def approve_retraction(self, user, token):
         self.approve(user, token)
