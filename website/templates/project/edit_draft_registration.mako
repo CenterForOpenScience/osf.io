@@ -38,10 +38,8 @@
                 </span>
                 % endif
                 <!-- EDITOR -->
-                <div data-bind="if: currentPage">
-                  <div data-bind="foreach: {data: currentPage().questions, as: 'question'}">
-                    <div data-bind="template: {data: question, name: 'editor'}"></div>
-                  </div>
+                <div data-bind="if: currentPage">                  
+                  <div data-bind="template: {data: currentPage(), name: 'editor'}"></div>
                 </div>
                 <p>Last saved: <span data-bind="text: $root.lastSaved"></span>
                 </p>

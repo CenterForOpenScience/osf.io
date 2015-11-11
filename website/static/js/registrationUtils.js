@@ -43,7 +43,12 @@ function Comment(data) {
         self.lastModified = new Date();
     });
 
-    self.created = new Date(data.created) || new Date();
+    if (data.created) {
+        self.created = new Date(data.created);
+    }
+    else {
+        self.created = new Date();
+    }
 
     self.isDeleted = ko.observable(data.isDeleted || false);
     self.isDeleted.subscribe(function(isDeleted) {
@@ -52,7 +57,7 @@ function Comment(data) {
         }
     });
 
-    self.seenBy = ko.observableArray([self.user.id] || []);
+    self.seenBy = ko.observableArray([]);
     /**
      * Returns the author as the actual user, not 'You'
      **/
@@ -107,13 +112,14 @@ Comment.prototype.toggleSaved = function(save) {
 /** Indicate that a comment is deleted **/
 Comment.prototype.delete = function(save) {
     var self = this;
-
     self.isDeleted(true);
     save();
 };
 /** Indicate that a user has seen a comment **/
 Comment.prototype.viewComment = function(user) {
-    this.seenBy.push(user.id);
+    if (this.seenBy.indexOf(user.id) === -1) {
+        this.seenBy.push(user.id);
+    }
 };
 
 /**
@@ -133,11 +139,12 @@ Comment.prototype.viewComment = function(user) {
  * @param {String} data.match: optional string that must be matched
  * @param {String} id: unique identifier
  **/
-var Question = function(data, id) {
+var Question = function(questionSchema, data) {
     var self = this;
 
-    self.id = id;
+    self.id = questionSchema.qid;
 
+    data = data || {};
     if ($.isFunction(data.value)) {
         // For subquestions, this could be an observable
         _value = data.value();
@@ -149,16 +156,16 @@ var Question = function(data, id) {
         self.value(val);
     };
 
-    self.title = data.title || 'Untitled';
-    self.nav = data.nav || 'Untitled';
-    self.type = data.type || 'string';
-    self.format = data.format || 'text';
-    self.required = data.required || false;
-    self.description = data.description || '';
-    self.help = data.help;
-    self.options = data.options || [];
-    self.properties = data.properties || {};
-    self.match = data.match || '';
+    self.title = questionSchema.title || 'Untitled';
+    self.nav = questionSchema.nav || 'Untitled';
+    self.type = questionSchema.type || 'string';
+    self.format = questionSchema.format || 'text';
+    self.required = questionSchema.required || false;
+    self.description = questionSchema.description || '';
+    self.help = questionSchema.help;
+    self.options = questionSchema.options || [];
+    self.properties = questionSchema.properties || {};
+    self.match = questionSchema.match || '';
 
     if (self.required) {
         self.value.extend({
@@ -259,31 +266,36 @@ Question.prototype.toggleUploader = function() {
  * @property {String} title
  * @property {String} id
  **/
-var Page = function(schemaPage) {
+var Page = function(schemaPage, schemaData) {
     var self = this;
     self.questions = ko.observableArray([]);
     self.title = schemaPage.title;
     self.id = schemaPage.id;
 
     self.active = ko.observable(false);
-
-    self.questions = $.map(schemaPage.questions, function(question) {
-        var questionId = question.qid;
-        return new Question(question, questionId);
+    
+    schemaData = schemaData || {};
+    self.questions = $.map(schemaPage.questions, function(questionSchema) {
+        return new Question(questionSchema, schemaData[questionSchema.qid]);
     });
 
     self.comments = ko.computed(function() {
         var comments = [];
         $.each(self.questions, function(_, question) {
-            comments.concat(question.comments());
+            comments = comments.concat(question.comments());            
         });
         comments.sort(function(a, b) {
             return a.created > b.created;
         });
         return comments;
     });
-};
 
+    // TODO: track currentQuestion based on browser focus
+    var question = self.questions[0];
+    self.nextComment = question.nextComment.bind(question);
+    self.allowAddNext = question.allowAddNext.bind(question);
+    self.addComment = question.addComment.bind(question);
+};
 /**
  * @class MetaSchema
  * Model for MetaSchema instances
@@ -306,7 +318,7 @@ var Page = function(schemaPage) {
  * @property {String} title
  * @property {Question[]} questions
  **/
-var MetaSchema = function(params) {
+var MetaSchema = function(params, schemaData) {
     var self = this;
 
     self.name = params.schema_name;
@@ -326,7 +338,7 @@ var MetaSchema = function(params) {
     self.requiresConsent = params.requires_consent || false;
 
     self.pages = $.map(self.schema.pages, function(page) {
-        return new Page(page);
+        return new Page(page, schemaData);
     });
 };
 /**
@@ -336,8 +348,8 @@ MetaSchema.prototype.flatQuestions = function() {
     var self = this;
 
     var flat = [];
-    $.each(self.schema.pages, function(i, page) {
-        flat.concat(page.questions);
+    $.each(self.pages, function(i, page) {
+        flat = flat.concat(page.questions);
     });
     return flat;
 };
@@ -365,11 +377,11 @@ var Draft = function(params, metaSchema) {
     var self = this;
 
     self.pk = params.pk;
-    self.metaSchema = metaSchema || new MetaSchema(params.registration_schema);
+    self.schemaData = params.registration_metadata || {};
+    self.metaSchema = metaSchema || new MetaSchema(params.registration_schema, self.schemaData);
     self.schema = ko.pureComputed(function() {
         return self.metaSchema.schema;
     });
-    self.schemaData = params.registration_metadata || {};
 
     self.initiator = params.initiator;
     self.initiated = new Date(params.initiated);
@@ -406,8 +418,7 @@ var Draft = function(params, metaSchema) {
     self.completion = ko.computed(function() {
         var total = 0;
         var complete = 0;
-        var schema = self.schema();
-        $.each(self.metaSchema.flatQuestions(), function(i, question) {
+        $.each(self.metaSchema.flatQuestions(), function(_, question) {
             if (question.isComplete()) {
                 complete++;
             }
@@ -672,7 +683,7 @@ var RegistrationEditor = function(urls, editorId) {
     });
     self.currentPage.subscribe(function(page) {
         // lazily apply subscriptions to question values
-        $.each(page.questions(), function(_, question) {
+        $.each(page.questions, function(_, question) {
             question.value.subscribe(function() {
                 self.dirtyCount(self.dirtyCount() + 1);
             });
@@ -993,24 +1004,23 @@ RegistrationEditor.prototype.saveForLater = function() {
 RegistrationEditor.prototype.save = function() {
     var self = this;
     var metaSchema = self.draft().metaSchema;
-    var schema = metaSchema.schema;
     var data = {};
-    $.each(schema.pages, function(i, page) {
+    $.each(metaSchema.pages, function(i, page) {
         $.each(page.questions, function(_, question) {
             var qid = question.id;
             if (question.type === 'object') {
                 var value = {};
                 $.each(question.properties, function(prop, subQuestion) {
                     value[prop] = {
-                        value: subQuestion.value()
-                        // comments: ko.toJS(subQuestion.comments())
+                        value: subQuestion.value(),
+                        comments: JSON.parse(ko.toJSON(subQuestion.comments()))
                     };
                 });
                 data[qid] = value;
             } else {
                 data[qid] = {
-                    value: question.value()
-                    // comments: ko.toJS(question.comments())
+                    value: question.value(),
+                    comments: JSON.parse(ko.toJSON(question.comments()))
                 };
             }
         });
@@ -1030,6 +1040,69 @@ RegistrationEditor.prototype.save = function() {
         $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
     });
     return request;
+};
+/**
+ * Makes ajax request for a project's contributors
+ */
+RegistrationEditor.prototype.makeContributorsRequest = function() {
+    var self = this;
+    var contributorsUrl = window.contextVars.node.urls.api + 'contributors_abbrev/';
+    return $.getJSON(contributorsUrl);
+};
+/**
+ * Returns the `user_fullname` of each contributor attached to a node.
+ **/
+RegistrationEditor.prototype.getContributors = function() {
+    var self = this;
+    return self.makeContributorsRequest()
+        .then(function(data) {
+            return $.map(data.contributors, function(c) { return c.user_fullname; });
+        }).fail(function() {
+            $osf.growl('Could not retrieve contributors.', 'Please refresh the page or ' +
+                       'contact <a href="mailto: support@cos.io">support@cos.io</a> if the ' +
+                       'problem persists.');
+        });
+};
+/**
+ * Opens a bootbox dialog with a checkbox list of each contributor
+ * the user has the option to import all contributors or to select
+ * each one individually.
+ **/
+RegistrationEditor.prototype.authorDialog = function() {
+    var self = this;
+
+    bootbox.dialog({
+        title: 'Choose which contributors to import:',
+        message: function() {
+            ko.renderTemplate('importContributors', self, {}, this, 'replaceNode');
+        },
+        buttons: {
+            select: {
+                label: 'Import',
+                className: 'btn-primary pull-left',
+                callback: function() {
+                    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+                    var authors = [];
+                    $.each(boxes, function(i, box) {
+                        if( this.checked ) {
+                            authors.push(this.value);
+                        }
+                    });
+                    if ( authors ) {
+                        self.currentQuestion().setValue(authors.join(', '));
+                        self.save();
+                    }
+                }
+            }
+
+        }
+    });
+};
+RegistrationEditor.prototype.setContributorBoxes = function(value) {
+    var boxes = document.querySelectorAll('#contribBoxes input[type="checkbox"]');
+    $.each(boxes, function(i, box) {
+        this.checked = value;
+    });
 };
 
 /**
@@ -1105,7 +1178,6 @@ RegistrationManager.prototype.init = function() {
     $osf.applyBindings(self, self.draftsSelector);
 
     var getSchemas = self.getSchemas();
-
     getSchemas.done(function(response) {
         self.schemas(
             $.map(response.meta_schemas, function(schema) {
@@ -1115,7 +1187,6 @@ RegistrationManager.prototype.init = function() {
     });
 
     var getDraftRegistrations = self.getDraftRegistrations();
-
     getDraftRegistrations.done(function(response) {
         self.drafts(
             $.map(response.drafts, function(draft) {
