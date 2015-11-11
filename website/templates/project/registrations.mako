@@ -145,3 +145,4 @@
 </%def>
 
 <%include file="project/registration_preview.mako" />
+<%include file="project/registration_utils.mako" />
