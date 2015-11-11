@@ -2,7 +2,9 @@ from website.addons.base.serializer import OAuthAddonSerializer
 
 from website.util import api_url_for, web_url_for
 
-from onedrive.client import OnedriveClient, OnedriveClientException
+# from OneDriveSDK
+import onedrivesdk
+from onedrivesdk.helpers import GetAuthCodeServer
 
 
 class OnedriveSerializer(OAuthAddonSerializer):
