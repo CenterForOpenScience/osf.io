@@ -3990,7 +3990,10 @@ class DraftRegistrationApproval(Sanction):
                 user.username,
                 mails.PREREG_CHALLENGE_REJECTED,
                 user=user,
-                **{}
+                draft_url=draft.branched_from.web_url_for(
+                    'edit_draft_registration_page',
+                    draft_id=draft._id
+                )
             )
         else:
             raise NotImplementedError(
