@@ -1878,6 +1878,29 @@ class TestNode(OsfTestCase):
         self.node.reload()
         assert_false(self.parent.nodes_active)
 
+    def test_register_node_makes_private_registration(self):
+        user = UserFactory()
+        node = NodeFactory(creator=user)
+        node.is_public = True
+        node.save()
+        registration = node.register_node(None, Auth(user), '', None)
+        assert_false(registration.is_public)
+
+    def test_register_node_makes_private_child_registrations(self):
+        user = UserFactory()
+        node = NodeFactory(creator=user)
+        node.is_public = True
+        node.save()
+        child = NodeFactory(parent=node)
+        child.is_public = True
+        child.save()
+        childchild = NodeFactory(parent=child)
+        childchild.is_public = True
+        childchild.save()
+        registration = node.register_node(None, Auth(user), '', None)
+        for node in registration.node_and_primary_descendants():
+            assert_false(node.is_public)
+
     @mock.patch('website.project.signals.after_create_registration')
     def test_register_node_propagates_schema_and_data_to_children(self, mock_signal):
         root = ProjectFactory(creator=self.user)
@@ -3523,7 +3546,7 @@ class TestRegisterNode(OsfTestCase):
         assert_false(self.registration.is_public)
         self.project.set_privacy('public')
         registration = RegistrationFactory(project=self.project)
-        assert_true(registration.is_public)
+        assert_false(registration.is_public)
 
     def test_contributors(self):
         assert_equal(self.registration.contributors, self.project.contributors)
@@ -4301,6 +4324,27 @@ class TestDraftRegistration(OsfTestCase):
             auth=self.auth,
             data=self.draft.registration_metadata,
         )
+
+    @mock.patch('framework.tasks.handlers.celery_teardown_request', mock.Mock())
+    def test_register_makes_registration_private(self):
+        self.node.is_public = True
+        self.node.save()
+        registration = self.draft.register(Auth(self.user))
+        assert_false(registration.is_public)
+
+    @mock.patch('framework.tasks.handlers.celery_teardown_request', mock.Mock())
+    def test_register_makes_registration_children_private(self):
+        self.node.is_public = True
+        self.node.save()
+        child = NodeFactory(parent=self.node)
+        child.is_public = True
+        child.save()
+        childchild = NodeFactory(parent=child)
+        childchild.is_public = True
+        childchild.save()
+        registration = self.draft.register(Auth(self.user))
+        for node in registration.node_and_primary_descendants():
+            assert_false(node.is_public)
 
     def test_update_metadata_tracks_changes(self):
         self.draft.registration_metadata = {

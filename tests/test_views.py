@@ -4881,6 +4881,28 @@ class TestDraftRegistrationViews(OsfTestCase):
         assert_equal(open_ended_schema, self.draft.registration_schema)
         assert_equal(metadata, self.draft.registration_metadata)
 
+    def test_update_draft_registration_cant_update_registered(self):
+        metadata = {
+            'summary': {'value': 'updated'}
+        }
+        assert_not_equal(metadata, self.draft.registration_metadata)
+        payload = {
+            'schema_data': metadata,
+            'schema_name': 'OSF-Standard Pre-Data Collection Registration',
+            'schema_version': 1
+        }
+        self.draft.register(Auth(self.user), save=True)
+        url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
+
+        res = self.app.put_json(url, payload, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
+    def test_edit_draft_registration_page_already_registered(self):
+        self.draft.register(Auth(self.user), save=True)
+        url = self.node.web_url_for('edit_draft_registration_page', draft_id=self.draft._id)
+        res = self.app.get(url, auth=self.user.auth, expect_errors=True)
+        assert_equal(res.status_code, http.FORBIDDEN)
+
     def test_delete_draft_registration(self):
         assert_equal(1, DraftRegistration.find().count())
         url = self.node.api_url_for('delete_draft_registration', draft_id=self.draft._id)
@@ -4931,6 +4953,8 @@ class TestDraftRegistrationViews(OsfTestCase):
         self.node.is_public = True
         self.node.save()
         reg = RegistrationFactory(project=self.node)
+        reg.is_public = True
+        reg.save()
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=None)
         assert_equal(res.status_code, http.OK)

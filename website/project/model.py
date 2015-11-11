@@ -2081,6 +2081,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.node_license = original.license.copy() if original.license else None
 
         registered.save()
+        registered.is_public = False
+        for node in registered.get_descendants_recursive():
+            node.is_public = False
+            node.save()
 
         if parent:
             registered.parent_node = parent
@@ -3801,15 +3805,16 @@ class Retraction(EmailApprovableSanction):
             )
             parent_registration.embargo.save()
         # Ensure retracted registration is public
-        if not parent_registration.is_public:
-            parent_registration.set_privacy('public')
-        parent_registration.update_search()
+        auth = Auth(self.initiated_by)
+        for node in parent_registration.node_and_primary_descendants():
+            node.set_privacy('public', auth=auth, save=True)
+            node.update_search()
+        # parent_registration.update_search()
         # Retraction status is inherited from the root project, so we
         # need to recursively update search for every descendant node
         # so that retracted subrojects/components don't appear in search
-        for node in parent_registration.get_descendants_recursive():
-            node.update_search()
-        self.save()
+        # for node in parent_registration.get_descendants_recursive():
+        #    node.update_search()
 
     def approve_retraction(self, user, token):
         self.approve(user, token)
@@ -3945,7 +3950,7 @@ class DraftRegistrationApproval(Sanction):
         pass  # draft approval state gets loaded dynamically from this record
 
 
-class DraftRegistration(AddonModelMixin, StoredObject):
+class DraftRegistration(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 

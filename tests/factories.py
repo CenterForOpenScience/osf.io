@@ -203,9 +203,9 @@ class RegistrationFactory(AbstractNodeFactory):
 
     @classmethod
     def _create(cls, target_class, project=None, schema=None, user=None,
-                data=None, archive=False, embargo=None, registration_approval=None, retraction=None, *args, **kwargs):
+                data=None, archive=False, embargo=None, registration_approval=None, retraction=None, is_public=False,
+                *args, **kwargs):
         save_kwargs(**kwargs)
-
         # Original project to be registered
         project = project or target_class(*args, **kwargs)
         project.save()
@@ -254,6 +254,8 @@ class RegistrationFactory(AbstractNodeFactory):
             dst_node=reg,
             initiator=user,
         )
+        if is_public:
+            reg.is_public = True
         reg.save()
         return reg
 

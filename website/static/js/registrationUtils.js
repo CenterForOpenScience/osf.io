@@ -552,9 +552,11 @@ RegistrationEditor.prototype.toPreview = function () {
 RegistrationEditor.prototype.check = function() {
     var self = this;
 
+    var valid = true;
     ko.utils.arrayMap(self.draft().pages(), function(page) {
         ko.utils.arrayMap(page.questions(), function(question) {
             if (question.required && !question.value.isValid()) {
+                valid = false;
                 // Validation for a question failed
                 bootbox.dialog({
                     title: 'Registration Not Complete',
@@ -569,12 +571,12 @@ RegistrationEditor.prototype.check = function() {
                         }
                     }
                 });
-                return;
             }
-            // Validation passed for all applicable questions
-            self.toPreview();
         });
     });
+    if (valid) {
+        self.toPreview();
+    }
 };
 /**
  * Select a page, selecting the first question on that page
@@ -693,7 +695,9 @@ RegistrationEditor.prototype.save = function() {
         });
     }
     self.lastSaveRequest = request;
-    request.fail($osf.growl.bind(null, 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.'));
+    request.fail(function() {
+        $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
+    });
     return request;
 };
 
