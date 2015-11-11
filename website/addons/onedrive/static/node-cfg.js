@@ -1,7 +1,7 @@
 'use strict';
 
-require('./box.css');
+require('./onedrive.css');
 var OauthAddonNodeConfig = require('js/oauthAddonNodeConfig').OauthAddonNodeConfig;
 
-var url = window.contextVars.node.urls.api + 'box/settings/';
-new OauthAddonNodeConfig('Box', '#boxScope', url, '#boxGrid');
+var url = window.contextVars.node.urls.api + 'onedrive/settings/';
+new OauthAddonNodeConfig('Onedrive', '#onedriveScope', url, '#onedriveGrid');

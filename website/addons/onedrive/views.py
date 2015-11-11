@@ -4,7 +4,9 @@ import os
 import httplib as http
 
 from flask import request
-from onedrive.client import OnedriveClient, OnedriveClientException
+# from OneDriveSDK
+import onedrivesdk
+from onedrivesdk.helpers import GetAuthCodeServer
 from urllib3.exceptions import MaxRetryError
 
 from framework.exceptions import HTTPError, PermissionsError

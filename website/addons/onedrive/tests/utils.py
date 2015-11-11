@@ -7,20 +7,20 @@ from modularodm import storage
 from framework.mongo import set_up_storage
 
 from website.addons.base.testing import AddonTestCase
-from website.addons.box import MODELS
-from website.addons.box.tests.factories import BoxAccountFactory
+from website.addons.onedrive import MODELS
+from website.addons.onedrive.tests.factories import OnedriveAccountFactory
 
 
 def init_storage():
     set_up_storage(MODELS, storage_class=storage.MongoStorage)
 
 
-class BoxAddonTestCase(AddonTestCase):
+class OnedriveAddonTestCase(AddonTestCase):
 
-    ADDON_SHORT_NAME = 'box'
+    ADDON_SHORT_NAME = 'onedrive'
 
     def set_user_settings(self, settings):
-        external_account = BoxAccountFactory()
+        external_account = OnedriveAccountFactory()
         settings.owner.external_accounts.append(external_account)
         settings.owner.save()
 
@@ -67,7 +67,7 @@ mock_responses = {
         'path': '/magnum-opus.txt',
         'rev': '362e2029684fe',
         'revision': 221922,
-        'root': 'box',
+        'root': 'onedrive',
         'size': '77 bytes',
         'thumb_exists': False
     },
@@ -81,7 +81,7 @@ mock_responses = {
         "path": "/Public",
         "is_dir": True,
         "icon": "folder_public",
-        "root": "box",
+        "root": "onedrive",
         "contents": [
             {
                 "size": "0 bytes",
@@ -93,7 +93,7 @@ mock_responses = {
                 "path": "/Public/latest.txt",
                 "is_dir": False,
                 "icon": "page_white_text",
-                "root": "box",
+                "root": "onedrive",
                 "mime_type": "text/plain",
                 "revision": 220191
             },
@@ -105,7 +105,7 @@ mock_responses = {
                 u'path': u'/datasets/New Folder',
                 u'rev': u'3fed51f002c12fc',
                 u'revision': 67032351,
-                u'root': u'box',
+                u'root': u'onedrive',
                 u'size': u'0 bytes',
                 u'thumb_exists': False
             }
@@ -137,7 +137,7 @@ mock_responses = {
                    u'path': u'/svs-v-barks.png',
                    u'rev': u'3fed741002c12fc',
                    u'revision': 67032897,
-                   u'root': u'box',
+                   u'root': u'onedrive',
                    u'size': u'0 bytes',
                    u'thumb_exists': True},
                   {u'bytes': 151164,
@@ -149,13 +149,13 @@ mock_responses = {
                    u'path': u'/svs-v-barks.png',
                    u'rev': u'3fed61a002c12fc',
                    u'revision': 67032602,
-                   u'root': u'box',
+                   u'root': u'onedrive',
                    u'size': u'147.6 KB',
                    u'thumb_exists': True}]
 }
 
 
-class MockBox(object):
+class MockOnedrive(object):
 
     def put_file(self, full_path, file_obj, overwrite=False, parent_rev=None):
         return mock_responses['put_file']
@@ -185,20 +185,20 @@ class MockBox(object):
         return ret
 
     def get_user_info(self):
-        return {'display_name': 'Mr. Box'}
+        return {'display_name': 'Mr. Onedrive'}
 
 
 @contextmanager
 def patch_client(target, mock_client=None):
-    """Patches a function that returns a BoxClient, returning an instance
-    of MockBox instead.
+    """Patches a function that returns a OnedriveClient, returning an instance
+    of MockOnedrive instead.
 
     Usage: ::
 
-        with patch_client('website.addons.box.views.BoxClient') as client:
-            # test view that uses the box client.
+        with patch_client('website.addons.onedrive.views.OnedriveClient') as client:
+            # test view that uses the onedrive client.
     """
     with mock.patch(target) as client_getter:
-        client = mock_client or MockBox()
+        client = mock_client or MockOnedrive()
         client_getter.return_value = client
         yield client

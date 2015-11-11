@@ -14,7 +14,7 @@ NODE_SETTINGS_MODEL = model.OnedriveNodeSettings
 ROUTES = [routes.api_routes]
 
 SHORT_NAME = 'onedrive'
-FULL_NAME = 'Onedrive'
+FULL_NAME = 'OneDrive'
 
 OWNERS = ['user', 'node']
 

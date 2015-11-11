@@ -3,7 +3,9 @@ import time
 import logging
 from datetime import datetime
 
-from onedrive import refresh_v2_token
+# from OneDriveSDK
+import onedrivesdk
+from onedrivesdk.helpers import GetAuthCodeServer
 
 from website.util import rubeus
 

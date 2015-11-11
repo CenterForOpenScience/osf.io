@@ -1,8 +1,12 @@
 # -*- coding: utf-8 -*-
 import logging
 
-from onedrive import CredentialsV2, OnedriveClient
-from onedrive.client import OnedriveClientException
+# from OneDriveSDK
+import onedrivesdk
+from onedrivesdk.helpers import GetAuthCodeServer
+
+#from onedrivesdk import CredentialsV2, OnedriveClient
+#from onedrivesdk.client import OnedriveClientException
 from modularodm import fields
 
 from framework.auth import Auth
@@ -24,12 +28,12 @@ class Onedrive(ExternalProvider):
     name = 'Onedrive'
     short_name = 'onedrive'
 
-    client_id = settings.BOX_KEY
-    client_secret = settings.BOX_SECRET
+    client_id = settings.ONEDRIVE_KEY
+    client_secret = settings.ONEDRIVE_SECRET
 
-    auth_url_base = settings.BOX_OAUTH_AUTH_ENDPOINT
-    callback_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
-    auto_refresh_url = settings.BOX_OAUTH_TOKEN_ENDPOINT
+    #auth_url_base = settings.ONEDRIVE_OAUTH_AUTH_ENDPOINT
+    #callback_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
+    #auto_refresh_url = settings.ONEDRIVE_OAUTH_TOKEN_ENDPOINT
     default_scopes = ['root_readwrite']
 
     def handle_callback(self, response):
@@ -40,8 +44,8 @@ class Onedrive(ExternalProvider):
         client = OnedriveClient(CredentialsV2(
             response['access_token'],
             response['refresh_token'],
-            settings.BOX_KEY,
-            settings.BOX_SECRET,
+            settings.ONEDRIVE_KEY,
+            settings.ONEDRIVE_SECRET,
         ))
 
         about = client.get_user_info()

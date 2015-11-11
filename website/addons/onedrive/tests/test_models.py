@@ -2,19 +2,19 @@
 import mock
 
 from nose.tools import *  # noqa (PEP8 asserts)
-from box import BoxClientException
+from onedrive import OnedriveClientException
 
 from framework.auth import Auth
 from framework.exceptions import HTTPError
-from website.addons.box.model import (
-    BoxUserSettings, BoxNodeSettings
+from website.addons.onedrive.model import (
+    OnedriveUserSettings, OnedriveNodeSettings
 )
 from tests.base import OsfTestCase
 from tests.factories import UserFactory, ProjectFactory
-from website.addons.box.tests.factories import (
-    BoxAccountFactory,
-    BoxUserSettingsFactory,
-    BoxNodeSettingsFactory,
+from website.addons.onedrive.tests.factories import (
+    OnedriveAccountFactory,
+    OnedriveUserSettingsFactory,
+    OnedriveNodeSettingsFactory,
 )
 from website.addons.base import exceptions
 
@@ -25,12 +25,12 @@ class TestUserSettingsModel(OsfTestCase):
         self.node = ProjectFactory()
         self.user = self.node.creator
 
-        self.external_account = BoxAccountFactory()
+        self.external_account = OnedriveAccountFactory()
 
         self.user.external_accounts.append(self.external_account)
         self.user.save()
 
-        self.user_settings = self.user.get_or_add_addon('box')
+        self.user_settings = self.user.get_or_add_addon('onedrive')
 
     def test_grant_oauth_access_no_metadata(self):
         self._prep_oauth_case()
@@ -84,7 +84,7 @@ class TestUserSettingsModel(OsfTestCase):
         assert_false(
             self.user_settings.verify_oauth_access(
                 node=self.node,
-                external_account=BoxAccountFactory()
+                external_account=OnedriveAccountFactory()
             )
         )
 
@@ -115,19 +115,19 @@ class TestUserSettingsModel(OsfTestCase):
         )
 
 
-class TestBoxNodeSettingsModel(OsfTestCase):
+class TestOnedriveNodeSettingsModel(OsfTestCase):
 
     def setUp(self):
-        super(TestBoxNodeSettingsModel, self).setUp()
+        super(TestOnedriveNodeSettingsModel, self).setUp()
         self.node = ProjectFactory()
         self.user = self.node.creator
-        self.external_account = BoxAccountFactory()
+        self.external_account = OnedriveAccountFactory()
 
-        self.user.add_addon('box')
+        self.user.add_addon('onedrive')
         self.user.external_accounts.append(self.external_account)
         self.user.save()
 
-        self.user_settings = self.user.get_addon('box')
+        self.user_settings = self.user.get_addon('onedrive')
         self.user_settings.grant_oauth_access(
             node=self.node,
             external_account=self.external_account,
@@ -135,7 +135,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         )
         self.user_settings.save()
 
-        self.node_settings = BoxNodeSettingsFactory(
+        self.node_settings = OnedriveNodeSettingsFactory(
             user_settings=self.user_settings,
             folder_id='1234567890',
             owner=self.node
@@ -144,7 +144,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         self.node_settings.save()
 
     def tearDown(self):
-        super(TestBoxNodeSettingsModel, self).tearDown()
+        super(TestOnedriveNodeSettingsModel, self).tearDown()
         self.user_settings.remove()
         self.node_settings.remove()
         self.external_account.remove()
@@ -168,7 +168,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_false(self.node_settings.complete)
 
     def test_fields(self):
-        node_settings = BoxNodeSettings(user_settings=self.user_settings)
+        node_settings = OnedriveNodeSettings(user_settings=self.user_settings)
         node_settings.save()
         assert_true(node_settings.user_settings)
         assert_equal(node_settings.user_settings.owner, self.user)
@@ -176,14 +176,14 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_true(hasattr(node_settings, 'user_settings'))
 
     def test_folder_defaults_to_none(self):
-        node_settings = BoxNodeSettings(user_settings=self.user_settings)
+        node_settings = OnedriveNodeSettings(user_settings=self.user_settings)
         node_settings.save()
         assert_is_none(node_settings.folder_id)
 
     def test_has_auth(self):
         self.user.external_accounts = []
         self.user_settings.reload()
-        settings = BoxNodeSettings(user_settings=self.user_settings)
+        settings = OnedriveNodeSettings(user_settings=self.user_settings)
         settings.save()
         assert_false(settings.has_auth)
 
@@ -192,9 +192,9 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_true(settings.has_auth)
 
     def test_clear_auth(self):
-        node_settings = BoxNodeSettingsFactory()
-        node_settings.external_account = BoxAccountFactory()
-        node_settings.user_settings = BoxUserSettingsFactory()
+        node_settings = OnedriveNodeSettingsFactory()
+        node_settings.external_account = OnedriveAccountFactory()
+        node_settings.user_settings = OnedriveUserSettingsFactory()
         node_settings.save()
 
         node_settings.clear_auth()
@@ -207,7 +207,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         settings = self.node_settings
         user = UserFactory()
         result = settings.to_json(user)
-        assert_equal(result['addon_short_name'], 'box')
+        assert_equal(result['addon_short_name'], 'onedrive')
 
     def test_delete(self):
         assert_true(self.node_settings.user_settings)
@@ -229,13 +229,13 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_is(self.node_settings.folder_id, None)
 
         last_log = self.node.logs[-1]
-        assert_equal(last_log.action, 'box_node_deauthorized')
+        assert_equal(last_log.action, 'onedrive_node_deauthorized')
         params = last_log.params
         assert_in('node', params)
         assert_in('project', params)
         assert_in('folder_id', params)
 
-    @mock.patch("website.addons.box.model.BoxNodeSettings._update_folder_data")
+    @mock.patch("website.addons.onedrive.model.OnedriveNodeSettings._update_folder_data")
     def test_set_folder(self, mock_update_folder):
         folder_id = '1234567890'
         self.node_settings.set_folder(folder_id, auth=Auth(self.user))
@@ -244,12 +244,12 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_equal(self.node_settings.folder_id, folder_id)
         # Log was saved
         last_log = self.node.logs[-1]
-        assert_equal(last_log.action, 'box_folder_selected')
+        assert_equal(last_log.action, 'onedrive_folder_selected')
 
     def test_set_user_auth(self):
-        node_settings = BoxNodeSettingsFactory()
-        user_settings = BoxUserSettingsFactory()
-        external_account = BoxAccountFactory()
+        node_settings = OnedriveNodeSettingsFactory()
+        user_settings = OnedriveUserSettingsFactory()
+        external_account = OnedriveAccountFactory()
 
         user_settings.owner.external_accounts.append(external_account)
         user_settings.save()
@@ -262,13 +262,13 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_equal(node_settings.user_settings, user_settings)
         # A log was saved
         last_log = node_settings.owner.logs[-1]
-        assert_equal(last_log.action, 'box_node_authorized')
+        assert_equal(last_log.action, 'onedrive_node_authorized')
         log_params = last_log.params
         assert_equal(log_params['folder_id'], node_settings.folder_id)
         assert_equal(log_params['node'], node_settings.owner._primary_key)
         assert_equal(last_log.user, user_settings.owner)
 
-    @mock.patch("website.addons.box.model.refresh_oauth_key")
+    @mock.patch("website.addons.onedrive.model.refresh_oauth_key")
     def test_serialize_credentials(self, mock_refresh):
         mock_refresh.return_value = True
         self.user_settings.access_token = 'key-11'
@@ -309,7 +309,7 @@ class TestBoxNodeSettingsModel(OsfTestCase):
         assert_equal(len(self.node.logs), nlog + 1)
         assert_equal(
             self.node.logs[-1].action,
-            'box_{0}'.format(action),
+            'onedrive_{0}'.format(action),
         )
         assert_equal(
             self.node.logs[-1].params['path'],
@@ -322,11 +322,11 @@ class TestNodeSettingsCallbacks(OsfTestCase):
     def setUp(self):
         super(TestNodeSettingsCallbacks, self).setUp()
         # Create node settings with auth
-        self.user_settings = BoxUserSettingsFactory(access_token='123abc')
-        self.node_settings = BoxNodeSettingsFactory(
+        self.user_settings = OnedriveUserSettingsFactory(access_token='123abc')
+        self.node_settings = OnedriveNodeSettingsFactory(
             user_settings=self.user_settings,
         )
-        self.external_account = BoxAccountFactory()
+        self.external_account = OnedriveAccountFactory()
         self.user_settings.owner.external_accounts.append(self.external_account)
         self.node_settings.external_account = self.external_account
 
@@ -338,7 +338,7 @@ class TestNodeSettingsCallbacks(OsfTestCase):
             external_account=self.external_account,
         )
 
-    def test_after_fork_by_authorized_box_user(self):
+    def test_after_fork_by_authorized_onedrive_user(self):
         fork = ProjectFactory()
         clone, message = self.node_settings.after_fork(
             node=self.project, fork=fork, user=self.user_settings.owner
@@ -346,7 +346,7 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         print(message)
         assert_equal(clone.user_settings, self.user_settings)
 
-    def test_after_fork_by_unauthorized_box_user(self):
+    def test_after_fork_by_unauthorized_onedrive_user(self):
         fork = ProjectFactory()
         user = UserFactory()
         clone, message = self.node_settings.after_fork(
@@ -368,7 +368,7 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         assert_in(self.user.fullname, message)
         assert_in(self.project.project_or_component, message)
 
-    def test_after_remove_authorized_box_user_not_self(self):
+    def test_after_remove_authorized_onedrive_user_not_self(self):
         message = self.node_settings.after_remove_contributor(
             self.project, self.user_settings.owner)
         self.node_settings.save()
@@ -376,7 +376,7 @@ class TestNodeSettingsCallbacks(OsfTestCase):
         assert_true(message)
         assert_in("You can re-authenticate", message)
 
-    def test_after_remove_authorized_box_user_self(self):
+    def test_after_remove_authorized_onedrive_user_self(self):
         auth = Auth(user=self.user_settings.owner)
         message = self.node_settings.after_remove_contributor(
             self.project, self.user_settings.owner, auth)
