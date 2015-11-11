@@ -132,9 +132,6 @@ def auth_login(auth, **kwargs):
 
     if next_url:
         status.push_status_message(language.MUST_LOGIN)
-        # Don't raise error if user is being logged out
-        # if not request.args.get('logout'):
-        #    code = http.UNAUTHORIZED
     # set login_url to form action, upon successful authentication specifically w/o logout=True,
     # allows for next to be followed or a redirect to the dashboard.X
     if campaign:
