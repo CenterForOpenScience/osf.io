@@ -9,6 +9,7 @@ from framework.auth import core as auth_core
 from website import settings
 from website.util.sanitize import strip_html
 from website.util import waterbutler_api_url_for
+from rest_framework.fields import get_attribute as get_nested_attributes
 
 from api.base import utils
 from api.base.settings import BULK_SETTINGS
@@ -233,16 +234,14 @@ class RelationshipField(ser.HyperlinkedIdentityField):
     def lookup_attribute(self, obj, lookup_field):
         """
         Returns attribute from target object unless attribute surrounded in angular brackets where it returns the lookup field.
+
+        Also handles the lookup of nested attributes.
         """
         bracket_check = lookup_field.partition('<')[-1].rpartition('>')[0]
         if bracket_check:
             return bracket_check
-        # return getattr(obj, lookup_field)
-
-        lookup_field = lookup_field.split('.')
-        self.source_attrs = lookup_field
-        self.required = True
-        return ser.Field.get_attribute(self, obj)
+        source_attrs = lookup_field.split('.')
+        return get_nested_attributes(obj, source_attrs)
 
     def kwargs_lookup(self, obj, kwargs_dict):
         """
@@ -579,9 +578,6 @@ class JSONAPISerializer(ser.Serializer):
                 result = field.to_representation(attribute)
                 if result:
                     data['relationships'][field.field_name] = result
-                # data['relationships'][field.field_name] = field.to_representation(attribute)
-                # if data['relationships'][field.field_name] == {'links': {}}:
-                #     del data['relationships'][field.field_name]
             elif field.field_name == 'id':
                 data['id'] = field.to_representation(attribute)
             elif field.field_name == 'links':

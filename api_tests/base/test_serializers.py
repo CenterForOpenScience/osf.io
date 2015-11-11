@@ -87,8 +87,8 @@ class TestRelationshipField(DbTestCase):
 
         not_attribute_on_target = RelationshipField(
             # fake url, for testing purposes
-            related_view = 'nodes:node-children',
-            related_view_kwargs = {'node_id': '<12345>'}
+            related_view='nodes:node-children',
+            related_view_kwargs={'node_id': '<12345>'}
         )
 
         class Meta:

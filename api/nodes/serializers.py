@@ -75,9 +75,9 @@ class NodeSerializer(JSONAPISerializer):
     )
 
     comments = RelationshipField(
-        related_view = 'nodes:node-comments',
-        related_view_kwargs = {'node_id': 'pk'},
-        related_meta = {'unread': 'get_unread_comments_count'})
+        related_view='nodes:node-comments',
+        related_view_kwargs={'node_id': 'pk'},
+        related_meta={'unread': 'get_unread_comments_count'})
 
     contributors = RelationshipField(
         related_view='nodes:node-contributors',
