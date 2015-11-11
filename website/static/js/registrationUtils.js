@@ -693,7 +693,9 @@ RegistrationEditor.prototype.save = function() {
         });
     }
     self.lastSaveRequest = request;
-    request.fail($osf.growl.bind(null, 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.'));
+    request.fail(function() {
+        $osf.growl('Problem saving draft', 'There was a problem saving this draft. Please try again, and if the problem persists please contact ' + SUPPORT_LINK + '.');
+    });
     return request;
 };
 
