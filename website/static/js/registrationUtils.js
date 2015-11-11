@@ -259,7 +259,7 @@ Question.prototype.toggleUploader = function() {
  * @property {String} title
  * @property {String} id
  **/
-var Page = function(schemaPage, data) {
+var Page = function(schemaPage) {
     var self = this;
     self.questions = ko.observableArray([]);
     self.title = schemaPage.title;
@@ -267,18 +267,20 @@ var Page = function(schemaPage, data) {
 
     self.active = ko.observable(false);
 
-    self.comments = ko.observableArray(
-        $.map(data.comments || [], function(comment) {
-            return new Comment(comment);
-        })
-    );
+    self.questions = $.map(schemaPage.questions, function(question) {
+        var questionId = question.qid;
+        return new Question(question, questionId);
+    });
 
-    $.each(schemaPage.questions, function(id, question) {
-        if (data[id] && data[id].value) {
-            question.value(data[id].value);
-        }
-
-        self.questions.push(question);
+    self.comments = ko.computed(function() {
+        var comments = [];
+        $.each(self.questions, function(_, question) {
+            comments.concat(question.comments());
+        });
+        comments.sort(function(a, b) {
+            return a.created > b.created;
+        });
+        return comments;
     });
 };
 
@@ -323,13 +325,8 @@ var MetaSchema = function(params) {
     self.consent = params.consent || '';
     self.requiresConsent = params.requires_consent || false;
 
-    $.each(self.schema.pages, function(i, page) {
-        var mapped = {};
-        $.each(page.questions, function(_, question) {
-            var questionId = question.qid;
-            mapped[questionId]  = new Question(question, questionId);
-        });
-        self.schema.pages[i].questions = mapped;
+    self.pages = $.map(self.schema.pages, function(page) {
+        return new Page(page);
     });
 };
 /**
@@ -340,9 +337,7 @@ MetaSchema.prototype.flatQuestions = function() {
 
     var flat = [];
     $.each(self.schema.pages, function(i, page) {
-        $.each(page.questions, function(qid, question) {
-            flat.push(question);
-        });
+        flat.concat(page.questions);
     });
     return flat;
 };
@@ -392,9 +387,8 @@ var Draft = function(params, metaSchema) {
         return self.metaSchema ? self.metaSchema.fulfills : [];
     });
 
-    self.pages = ko.observableArray([]);
-    $.each(self.schema().pages, function(id, pageData) {
-        self.pages.push(new Page(pageData, self.schemaData));
+    self.pages = ko.computed(function() {
+        return self.metaSchema.pages;
     });
 
     self.userHasUnseenComment = ko.computed(function() {
@@ -413,13 +407,11 @@ var Draft = function(params, metaSchema) {
         var total = 0;
         var complete = 0;
         var schema = self.schema();
-        $.each(schema.pages, function(i, page) {
-            $.each(page.questions, function(_, question) {
-                if (question.isComplete()) {
-                    complete++;
-                }
-                total++;
-            });
+        $.each(self.metaSchema.flatQuestions(), function(i, question) {
+            if (question.isComplete()) {
+                complete++;
+            }
+            total++;
         });
         return Math.ceil(100 * (complete / total));
     });
