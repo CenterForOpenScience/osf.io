@@ -15,7 +15,8 @@ $(function(){
     });
 
     // Activate "existing projects" typeahead.
-    $.getJSON('/api/v1/dashboard/get_nodes/').done(function(response) {
+    var url = '/api/v1/dashboard/get_nodes/';
+    $.getJSON(url).done(function(response) {
         var allNodes = response.nodes;
 
         // If we need to change what nodes can be registered, filter here

@@ -910,8 +910,6 @@ RegistrationEditor.prototype.updateData = function(response) {
     self.draft(draft);
 };
 
-
-};
 RegistrationEditor.prototype.submit = function() {
     var self = this;
     var currentNode = window.contextVars.node;
@@ -1145,14 +1143,9 @@ RegistrationManager.prototype.deleteDraft = function(draft) {
                 self.drafts.remove(function(item) {
                     return item.pk === draft.pk;
                 });
-            }},
-        buttons: {
-            confirm: {
-                label: 'Delete',
-                className: 'btn-danger'
-            }
-        }}
-    );
+            });
+        }
+    });
 };
 /**
  * Show the draft registration preview pane
