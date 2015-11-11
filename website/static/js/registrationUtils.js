@@ -552,9 +552,11 @@ RegistrationEditor.prototype.toPreview = function () {
 RegistrationEditor.prototype.check = function() {
     var self = this;
 
+    var valid = true;
     ko.utils.arrayMap(self.draft().pages(), function(page) {
         ko.utils.arrayMap(page.questions(), function(question) {
             if (question.required && !question.value.isValid()) {
+                valid = false;
                 // Validation for a question failed
                 bootbox.dialog({
                     title: 'Registration Not Complete',
@@ -569,12 +571,12 @@ RegistrationEditor.prototype.check = function() {
                         }
                     }
                 });
-                return;
             }
-            // Validation passed for all applicable questions
-            self.toPreview();
         });
     });
+    if (valid) {
+        self.toPreview();
+    }
 };
 /**
  * Select a page, selecting the first question on that page
