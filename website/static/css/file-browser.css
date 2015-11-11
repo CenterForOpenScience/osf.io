@@ -1,0 +1,67 @@
+.fileBrowser {
+    height: 500px;
+    width: 100%;
+}
+
+.fb-header {
+    background-color: #efefef;
+    padding: 10px;
+}
+.fb-breadcrumbs {
+    width: 60%;
+    display : inline-block;
+}
+
+.fb-sidebar {
+    width: 25%;
+    display: block;
+    height: 500px;
+    float: left;
+    background-color: aliceblue;
+}
+
+.fb-main {
+    float: left;
+    padding: 0 0 1px 0;
+}
+
+.fb-infobar {
+    background-color: coral;
+    height: 500px;
+    padding: 10px;
+    float: left;
+    width: 20%;
+}
+
+.fb-buttonRow {
+    width: 40%;
+    text-align: right;
+    display: inline-block;
+}
+.fb-breadcrumbs ul, .fb-collections ul, .fb-filters ul {
+    padding: 0;
+    list-style: none;
+}
+
+.fb-breadcrumbs ul li {
+    display: inline;
+    padding: 0 3px;
+}
+
+
+.fb-breadcrumbs>ul>li>.fa {
+    margin-left: 5px;
+    color: #999999;
+}
+
+.fb-collections ul li , .fb-filters ul li {
+    padding: 3px 0;
+}
+
+.fb-collections ul li.active, .fb-filters ul li.active {
+    background-color: #ccc;
+}
+
+.fb-collections ul>li {
+    padding: 7px;
+}
