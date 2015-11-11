@@ -4953,6 +4953,8 @@ class TestDraftRegistrationViews(OsfTestCase):
         self.node.is_public = True
         self.node.save()
         reg = RegistrationFactory(project=self.node)
+        reg.is_public = True
+        reg.save()
         url = reg.web_url_for('node_register_page')
         res = self.app.get(url, auth=None)
         assert_equal(res.status_code, http.OK)
