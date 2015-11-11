@@ -224,7 +224,7 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
     :rtype: dict
     """
     if draft.registered_node:
-        raise HTTPError(http.BAD_REQUEST, data={
+        raise HTTPError(http.FORBIDDEN, data={
             'message_short': 'This draft has already been registered.',
             'message_long': 'This draft has already been registered and cannot be modified.'
         })
@@ -243,7 +243,7 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     :raises: HTTPError
     """
     if draft.registered_node:
-        raise HTTPError(http.BAD_REQUEST, data={
+        raise HTTPError(http.FORBIDDEN, data={
             'message_short': 'This draft has already been registered.',
             'message_long': 'This draft has already been registered and cannot be modified.'
         })
