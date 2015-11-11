@@ -71,3 +71,11 @@ class TestNodeEmbeds(ApiTestCase):
         res = self.app.get(url, auth=self.contrib1.auth)
         assert_in('errors', res.json['data']['embeds']['parent'])
         assert_equal(res.json['data']['embeds']['parent']['errors'][0]['detail'], 'You do not have permission to perform this action.')
+
+    def test_embed_attributes_not_relationships(self):
+        url = '/{}nodes/{}/?embed=title'.format(API_BASE, self.root_node)
+
+        res = self.app.get(url, auth=self.contrib1.auth, expect_errors=True)
+        assert_equal(res.status_code, 400)
+        assert_equal(res.json['errors'][0]['detail'], "Field 'title' is not embeddable.")
+
