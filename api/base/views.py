@@ -44,9 +44,13 @@ class JSONAPIBaseView(generics.GenericAPIView):
         if self.kwargs.get('no_embeds'):
             return context
         embeds = self.request.query_params.getlist('embed')
+        fields = self.serializer_class._declared_fields
+        for field in fields:
+            if getattr(fields[field], 'always_embed', False) and field not in embeds:
+                embeds.append(unicode(field))
         embeds_partials = {}
         for embed in embeds:
-            embed_field = self.serializer_class._declared_fields.get(embed)
+            embed_field = fields.get(embed)
             embeds_partials[embed] = self._get_embed_partial(embed, embed_field)
         context.update({
             'embed': embeds_partials

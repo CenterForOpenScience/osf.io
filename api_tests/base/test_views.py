@@ -74,7 +74,7 @@ class TestApiBaseViews(ApiTestCase):
 
         res = self.app.get('/{}nodes/'.format(API_BASE), auth=user.auth, expect_errors=True)
         assert_equal(res.status_code, http.BAD_REQUEST)
-        
+
     @mock.patch('framework.auth.core.User.is_disabled', mock.PropertyMock(return_value=True))
     def test_disabled_user_gets_error(self):
 

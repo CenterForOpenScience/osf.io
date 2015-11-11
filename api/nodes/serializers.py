@@ -74,7 +74,7 @@ class NodeSerializer(JSONAPISerializer):
                                                lookup_url_kwarg='node_id', meta={'count': 'get_node_count'})
 
     contributors = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
-                                                    lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
+                                                    lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'}, always_embed=True)
 
     files = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
                                              link_type='related')
@@ -83,7 +83,7 @@ class NodeSerializer(JSONAPISerializer):
                                                link_type='related', meta={'unread': 'get_unread_comments_count'})
 
     node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
-                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}))
+                                                  lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'}, always_embed=True))
 
     parent = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
                                               lookup_url_kwarg='node_id')
