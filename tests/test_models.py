@@ -4302,6 +4302,25 @@ class TestDraftRegistration(OsfTestCase):
             data=self.draft.registration_metadata,
         )
 
+    def test_register_makes_registration_private(self):
+        self.node.is_public = True
+        self.node.save()
+        registration = self.draft.register(Auth(self.user))
+        assert_false(registration.is_public)
+
+    def test_register_makes_registration_children_private(self):
+        self.node.is_public = True
+        self.node.save()
+        child = NodeFactory(parent=self.node)
+        child.is_public = True
+        child.save()
+        childchild = NodeFactory(parent=child)
+        childchild.is_public = True
+        childchild.save()
+        registration = self.draft.register(Auth(self.user))
+        for node in registration.node_and_primary_descendants():
+            assert_false(node.is_public)
+
     def test_update_metadata_tracks_changes(self):
         self.draft.registration_metadata = {
             'foo': {

@@ -2081,6 +2081,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.node_license = original.license.copy() if original.license else None
 
         registered.save()
+        registered.is_public = False
+        for node in registered.get_descendants_recursive():
+            node.is_public = False
+            node.save()
 
         if parent:
             registered.parent_node = parent
