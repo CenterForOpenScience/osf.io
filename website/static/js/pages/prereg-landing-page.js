@@ -14,6 +14,15 @@ $(function(){
         $(target).find('input').first().focus();
     });
 
+    $('#newProject').click( function() {
+        var title = $('#newProjectTitle').val();
+        $osf.postJSON('/api/v1/project/new/', { title: title }).done(function(response) {
+            window.location = response.projectUrl + 'registrations/';
+        }).fail(function() {
+            $osf.growl('Project creation failed. Reload the page and try again.');
+        });
+    });
+
     // Activate "existing projects" typeahead.
     var url = '/api/v1/dashboard/get_nodes/';
     $.getJSON(url).done(function(response) {
@@ -30,10 +39,14 @@ $(function(){
         }, '#existingProject');
     }).fail(function(xhr, textStatus, error) {
         Raven.captureMessage('Could not fetch dashboard nodes.', {
-            url: url, textStatus: textStatus, error: error
+            url: '/api/v1/dashboard/get_nodes/', textStatus: textStatus, error: error
         });
     });
 
     // Activate autocomplete for draft registrations
-    $osf.applyBindings({}, '#existingPrereg');
+    $.getJSON('/api/v1/prereg/draft_registrations/').done(function(response){
+        if (response.draftRegistrations.length) {
+            $osf.applyBindings({}, '#existingPrereg');
+        }
+    });
 });
