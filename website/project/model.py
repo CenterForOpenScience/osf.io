@@ -3945,7 +3945,7 @@ class DraftRegistrationApproval(Sanction):
         pass  # draft approval state gets loaded dynamically from this record
 
 
-class DraftRegistration(AddonModelMixin, StoredObject):
+class DraftRegistration(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 

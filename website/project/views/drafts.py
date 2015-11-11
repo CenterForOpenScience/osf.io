@@ -77,7 +77,6 @@ def register_draft_registration(auth, node, draft, *args, **kwargs):
     :return: success message; url to registrations page
     :rtype: dict
     """
-
     data = request.get_json()
     register = draft.register(auth)
     draft.save()
@@ -210,6 +209,11 @@ def edit_draft_registration_page(auth, node, draft, **kwargs):
     :return: serialized DraftRegistration
     :rtype: dict
     """
+    if draft.registered_node:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'This draft has already been registered.',
+            'message_long': 'This draft has already been registered and cannot be modified.'
+        })
     ret = project_utils.serialize_node(node, auth, primary=True)
     ret['draft'] = serialize_draft_registration(draft, auth)
     return ret
@@ -224,6 +228,11 @@ def update_draft_registration(auth, node, draft, *args, **kwargs):
     :rtype: dict
     :raises: HTTPError
     """
+    if draft.registered_node:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'This draft has already been registered.',
+            'message_long': 'This draft has already been registered and cannot be modified.'
+        })
     data = request.get_json()
 
     schema_data = data.get('schema_data', {})
