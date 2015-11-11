@@ -4325,12 +4325,14 @@ class TestDraftRegistration(OsfTestCase):
             data=self.draft.registration_metadata,
         )
 
+    @mock.patch('framework.tasks.handlers.celery_teardown_request', mock.Mock())
     def test_register_makes_registration_private(self):
         self.node.is_public = True
         self.node.save()
         registration = self.draft.register(Auth(self.user))
         assert_false(registration.is_public)
 
+    @mock.patch('framework.tasks.handlers.celery_teardown_request', mock.Mock())
     def test_register_makes_registration_children_private(self):
         self.node.is_public = True
         self.node.save()

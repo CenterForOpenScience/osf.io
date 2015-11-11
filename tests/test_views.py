@@ -4895,13 +4895,13 @@ class TestDraftRegistrationViews(OsfTestCase):
         url = self.node.api_url_for('update_draft_registration', draft_id=self.draft._id)
 
         res = self.app.put_json(url, payload, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_edit_draft_registration_page_already_registered(self):
         self.draft.register(Auth(self.user), save=True)
         url = self.node.web_url_for('edit_draft_registration_page', draft_id=self.draft._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
-        assert_equal(res.status_code, http.BAD_REQUEST)
+        assert_equal(res.status_code, http.FORBIDDEN)
 
     def test_delete_draft_registration(self):
         assert_equal(1, DraftRegistration.find().count())
