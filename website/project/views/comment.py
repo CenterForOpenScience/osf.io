@@ -4,31 +4,19 @@ import httplib as http
 import pytz
 
 from flask import request
-from modularodm import Q
 
 from framework.exceptions import HTTPError
 from framework.auth.decorators import must_be_logged_in
 from framework.auth.utils import privacy_info_handle
-from framework.forms.utils import sanitize
 
 from website import settings
 from website.notifications.emails import notify
 from website.filters import gravatar
-from website.models import Guid, Comment
+from website.models import Comment
 from website.project.decorators import must_be_contributor_or_public
 from website.project.signals import comment_added
 from datetime import datetime
 from website.project.model import has_anonymous_link
-
-
-def resolve_target(node, guid):
-
-    if not guid:
-        return node
-    target = Guid.load(guid)
-    if target is None:
-        raise HTTPError(http.BAD_REQUEST)
-    return target.referent
 
 
 def collect_discussion(target, users=None):
@@ -74,34 +62,6 @@ def comment_discussion(auth, node, **kwargs):
     }
 
 
-def serialize_comment(comment, auth, anonymous=False):
-    return {
-        'id': comment._id,
-        'author': {
-            'id': privacy_info_handle(comment.user._id, anonymous),
-            'url': privacy_info_handle(comment.user.url, anonymous),
-            'name': privacy_info_handle(
-                comment.user.fullname, anonymous, name=True
-            ),
-            'gravatarUrl': privacy_info_handle(
-                gravatar(
-                    comment.user, use_ssl=True,
-                    size=settings.PROFILE_IMAGE_SMALL
-                ),
-                anonymous
-            ),
-        },
-        'dateCreated': comment.date_created.isoformat(),
-        'dateModified': comment.date_modified.isoformat(),
-        'content': comment.content,
-        'hasChildren': bool(getattr(comment, 'commented', [])),
-        'canEdit': comment.user == auth.user,
-        'modified': comment.modified,
-        'isDeleted': comment.is_deleted,
-        'isAbuse': auth.user and auth.user._id in comment.reports,
-    }
-
-
 def get_comment(cid, auth, owner=False):
     comment = Comment.load(cid)
     if comment is None:
@@ -110,40 +70,6 @@ def get_comment(cid, auth, owner=False):
         if auth.user != comment.user:
             raise HTTPError(http.FORBIDDEN)
     return comment
-
-
-@must_be_logged_in
-@must_be_contributor_or_public
-def add_comment(auth, node, **kwargs):
-
-    if not node.comment_level:
-        raise HTTPError(http.BAD_REQUEST)
-
-    if not node.can_comment(auth):
-        raise HTTPError(http.FORBIDDEN)
-
-    guid = request.json.get('target')
-    target = resolve_target(node, guid)
-
-    content = request.json.get('content').strip()
-    content = sanitize(content)
-    if not content:
-        raise HTTPError(http.BAD_REQUEST)
-    if len(content) > settings.COMMENT_MAXLENGTH:
-        raise HTTPError(http.BAD_REQUEST)
-
-    comment = Comment.create(
-        auth=auth,
-        node=node,
-        target=target,
-        user=auth.user,
-        content=content,
-    )
-    comment.save()
-
-    return {
-        'comment': serialize_comment(comment, auth)
-    }, http.CREATED
 
 @comment_added.connect
 def send_comment_added_notification(comment, auth):
@@ -179,52 +105,6 @@ def send_comment_added_notification(comment, auth):
 
 def is_reply(target):
     return isinstance(target, Comment)
-
-
-@must_be_logged_in
-@must_be_contributor_or_public
-def edit_comment(auth, **kwargs):
-
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth, owner=True)
-
-    content = request.json.get('content').strip()
-    content = sanitize(content)
-    if not content:
-        raise HTTPError(http.BAD_REQUEST)
-    if len(content) > settings.COMMENT_MAXLENGTH:
-        raise HTTPError(http.BAD_REQUEST)
-
-    comment.edit(
-        content=content,
-        auth=auth,
-        save=True
-    )
-
-    return serialize_comment(comment, auth)
-
-
-@must_be_logged_in
-@must_be_contributor_or_public
-def delete_comment(auth, **kwargs):
-
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth, owner=True)
-    comment.delete(auth=auth, save=True)
-
-    return {}
-
-
-@must_be_logged_in
-@must_be_contributor_or_public
-def undelete_comment(auth, **kwargs):
-
-    cid = kwargs.get('cid')
-    comment = get_comment(cid, auth, owner=True)
-    comment.undelete(auth=auth, save=True)
-
-    return {}
-
 
 @must_be_logged_in
 @must_be_contributor_or_public

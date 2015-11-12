@@ -308,46 +308,6 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/comment/',
-                '/project/<pid>/node/<nid>/comment/',
-            ],
-            'post',
-            project_views.comment.add_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/',
-                '/project/<pid>/node/<nid>/comment/<cid>/',
-            ],
-            'put',
-            project_views.comment.edit_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/',
-                '/project/<pid>/node/<nid>/comment/<cid>/',
-            ],
-            'delete',
-            project_views.comment.delete_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/undelete/',
-                '/project/<pid>/node/<nid>/comment/<cid>/undelete/',
-            ],
-            'put',
-            project_views.comment.undelete_comment,
-            json_renderer,
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/comments/timestamps/',
                 '/project/<pid>/node/<nid>/comments/timestamps/',
             ],
