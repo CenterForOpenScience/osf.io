@@ -5,6 +5,7 @@ import re
 import urllib
 import logging
 import urlparse
+from contextlib import contextmanager
 
 import furl
 
@@ -180,3 +181,9 @@ def waterbutler_api_url_for(node_id, provider, path='/', **kwargs):
     url.path.segments.extend([urllib.quote(x.encode('utf-8')) for x in segments])
     url.args.update(kwargs)
     return url.url
+
+@contextmanager
+def disconnected_signal(signal, listener):
+    signal.disconnect(listener)
+    yield
+    signal.connect(listener)
