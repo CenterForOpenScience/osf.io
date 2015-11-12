@@ -5,31 +5,32 @@
 {% block content %}
     {{ block.super }}
 
-    <div>
-        <a href="{% url 'spam:spam' %}">
-            <input type="button" value="Back">
-        </a>
-    </div>
-    <div>
-        <a href="{% url 'spam:email' comment.id %}">
-            <input type="button" value="Email">
-        </a>
-    </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="btn-group col-sm-12">
+                <a href="{% url 'spam:spam' %}" class="btn btn-primary">Back</a>
+                <a href="{% url 'spam:email' comment.id %}"
+                   class="btn btn-default">
+                    Email
+                </a>
+            </div>
+        </div>
 
-    <h2>Comment: {{ comment.id }}</h2>
+        <h2>Comment: {{ comment.id }}</h2>
 
-    <div><strong>Author:</strong> {{ comment.author.fullname }} </div>
-    <div><strong>Comment:</strong> {{ comment.content }} </div>
-    <div>
-        <div><h3>Reports:</h3></div>
-        {{ comment.reports|length }}
+        <div><strong>Author:</strong> {{ comment.author.fullname }} </div>
+        <div><strong>Comment:</strong> {{ comment.content }} </div>
+        <div>
+            <div><h3>Reports:</h3></div>
+            {{ comment.reports|length }}
+        </div>
+        {% for report in comment.reports %}
+            <div><strong>Reporter: </strong> {{ report.reporter.fullname }}</div>
+            <div><strong>Category: </strong> {{ report.category }}</div>
+            <div><strong>Reason: </strong> {{ report.reason|default:"--Nothing--" }}</div>
+        {% empty %}
+            <div>Empty!</div>
+        {% endfor %}
     </div>
-    {% for report in comment.reports %}
-        <div><strong>Reporter: </strong> {{ report.reporter.fullname }}</div>
-        <div><strong>Category: </strong> {{ report.category }}</div>
-        <div><strong>Reason: </strong> {{ report.reason|default:"--Nothing--" }}</div>
-    {% empty %}
-        <div>Empty!</div>
-    {% endfor %}
 
 {% endblock content %}
