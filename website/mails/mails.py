@@ -232,8 +232,17 @@ ARCHIVE_SUCCESS = Mail(
     subject="Registration of " + UNESCAPE + " complete"
 )
 
-
 WELCOME = Mail(
     'welcome',
     subject='Welcome to the Open Science Framework'
+)
+
+PREREG_CHALLENGE_REJECTED = Mail(
+    'prereg_challenge_rejected',
+    subject='Revisions required, your submission for the Preregistration Challenge is not yet registered'
+)
+
+PREREG_CHALLENGE_ACCEPTED = Mail(
+    'prereg_challenge_accepted',
+    subject='Your research plan has been registered and accepted for the Preregistration Challenge'
 )

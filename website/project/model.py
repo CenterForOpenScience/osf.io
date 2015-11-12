@@ -6,6 +6,7 @@ import re
 import logging
 import pymongo
 import datetime
+from dateutil import parser as parse_date
 import urlparse
 from collections import OrderedDict
 import warnings
@@ -56,6 +57,7 @@ from website.identifiers.model import IdentifierMixin
 from website.util.permissions import expand_permissions
 from website.util.permissions import CREATOR_PERMISSIONS, DEFAULT_CONTRIBUTOR_PERMISSIONS, ADMIN
 from website.project.metadata.schemas import OSF_META_SCHEMAS
+from website.project.metadata import authorizers
 from website.project.licenses import (
     NodeLicense,
     NodeLicenseRecord,
@@ -926,6 +928,12 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def nodes_active(self):
         return [x for x in self.nodes if not x.is_deleted]
 
+    @property
+    def draft_registrations_active(self):
+        return self.draft_registrations.find(
+            Q('registered_node', 'eq', None)
+        )
+
     def can_edit(self, auth=None, user=None):
         """Return if a user is authorized to edit this node.
         Must specify one of (`auth`, `user`).
@@ -1454,6 +1462,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         new.is_fork = False
         new.is_registration = False
         new.piwik_site_id = None
+        new.node_license = self.license.copy() if self.license else None
 
         # If that title hasn't been changed, apply the default prefix (once)
         if (new.title == self.title
@@ -1848,7 +1857,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     def bulk_update_search(cls, nodes):
         from website import search
         try:
-            serialize = functools.partial(search.search.update_node, bulk=True)
+            serialize = functools.partial(search.search.update_node, bulk=True, async=False)
             search.search.bulk_update_nodes(serialize, nodes)
         except search.exceptions.SearchUnavailableError as e:
             logger.exception(e)
@@ -2086,6 +2095,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
         registered.node_license = original.license.copy() if original.license else None
 
         registered.save()
+        registered.is_public = False
+        for node in registered.get_descendants_recursive():
+            node.is_public = False
+            node.save()
 
         if parent:
             registered.parent_node = parent
@@ -3479,6 +3492,8 @@ class EmailApprovableSanction(Sanction):
     APPROVE_URL_TEMPLATE = ''
     REJECT_URL_TEMPLATE = ''
 
+    # A flag to conditionally run a callback on complete
+    notify_initiator_on_complete = fields.BooleanField(default=False)
     # Store a persistant copy of urls for use when needed outside of a request context.
     # This field gets automagically updated whenever models approval_state is modified
     # and the model is saved
@@ -3548,8 +3563,28 @@ class EmailApprovableSanction(Sanction):
         }
         self.save()
 
+    def _notify_initiator(self):
+        raise NotImplementedError
 
-class Embargo(EmailApprovableSanction):
+    def _on_complete(self, *args):
+        super(EmailApprovableSanction, self).on_complete(*args)
+        if self.notify_initiator_on_complete:
+            self._notify_initiator()
+
+
+class PreregCallbackMixin(object):
+
+    def _notify_initiator(self):
+        registration = self._get_registration()
+        if registration.registered_schema.name == 'Prereg Challenge':
+            mails.send_mail(
+                self.initiator.username,
+                template=mails.PREREG_CHALLENGE_ACCEPTED,
+                user=self.initiator,
+                registration_url=registration.url
+            )
+
+class Embargo(EmailApprovableSanction, PreregCallbackMixin):
     """Embargo object for registrations waiting to go public."""
 
     COMPLETED = 'completed'
@@ -3598,8 +3633,11 @@ class Embargo(EmailApprovableSanction):
             self._id
         )
 
+    def _get_registration(self):
+        return Node.find_one(Q('embargo', 'eq', self))
+
     def _view_url_context(self, user_id):
-        registration = Node.find_one(Q('embargo', 'eq', self))
+        registration = self._get_registration()
         return {
             'node_id': registration._id
         }
@@ -3607,7 +3645,7 @@ class Embargo(EmailApprovableSanction):
     def _approval_url_context(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': approval_token,
@@ -3616,7 +3654,7 @@ class Embargo(EmailApprovableSanction):
     def _rejection_url_context(self, user_id):
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': rejection_token,
@@ -3630,7 +3668,7 @@ class Embargo(EmailApprovableSanction):
             disapproval_link = urls.get('reject', '')
             approval_time_span = settings.EMBARGO_PENDING_TIME.days * 24
 
-            registration = Node.find_one(Q('embargo', 'eq', self))
+            registration = self._get_registration()
 
             return {
                 'is_initiator': self.initiated_by == user,
@@ -3650,11 +3688,11 @@ class Embargo(EmailApprovableSanction):
             }
 
     def _validate_authorizer(self, user):
-        registration = Node.find_one(Q('embargo', 'eq', self))
+        registration = self._get_registration()
         return registration.has_permission(user, ADMIN)
 
     def _on_reject(self, user, token):
-        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_CANCELLED,
             params={
@@ -3677,7 +3715,7 @@ class Embargo(EmailApprovableSanction):
         self.reject(user, token)
 
     def _on_complete(self, user):
-        parent_registration = Node.find_one(Q('embargo', 'eq', self))
+        parent_registration = self._get_registration()
         parent_registration.registered_from.add_log(
             action=NodeLog.EMBARGO_APPROVED,
             params={
@@ -3806,15 +3844,10 @@ class Retraction(EmailApprovableSanction):
             )
             parent_registration.embargo.save()
         # Ensure retracted registration is public
-        if not parent_registration.is_public:
-            parent_registration.set_privacy('public')
-        parent_registration.update_search()
-        # Retraction status is inherited from the root project, so we
-        # need to recursively update search for every descendant node
-        # so that retracted subrojects/components don't appear in search
-        for node in parent_registration.get_descendants_recursive():
+        auth = Auth(self.initiated_by)
+        for node in parent_registration.node_and_primary_descendants():
+            node.set_privacy('public', auth=auth, save=True)
             node.update_search()
-        self.save()
 
     def approve_retraction(self, user, token):
         self.approve(user, token)
@@ -3823,7 +3856,7 @@ class Retraction(EmailApprovableSanction):
         self.reject(user, token)
 
 
-class RegistrationApproval(EmailApprovableSanction):
+class RegistrationApproval(EmailApprovableSanction, PreregCallbackMixin):
 
     DISPLAY_NAME = 'Approval'
     SHORT_NAME = 'registration_approval'
@@ -3837,8 +3870,11 @@ class RegistrationApproval(EmailApprovableSanction):
 
     initiated_by = fields.ForeignField('user', backref='registration_approved')
 
+    def _get_registration(self):
+        return Node.find_one(Q('registration_approval', 'eq', self))
+
     def _view_url_context(self, user_id):
-        registration = Node.find_one(Q('registration_approval', 'eq', self))
+        registration = self._get_registration()
         return {
             'node_id': registration._id
         }
@@ -3846,7 +3882,7 @@ class RegistrationApproval(EmailApprovableSanction):
     def _approval_url_context(self, user_id):
         approval_token = self.approval_state.get(user_id, {}).get('approval_token')
         if approval_token:
-            registration = Node.find_one(Q('registration_approval', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': approval_token,
@@ -3855,7 +3891,7 @@ class RegistrationApproval(EmailApprovableSanction):
     def _rejection_url_context(self, user_id):
         rejection_token = self.approval_state.get(user_id, {}).get('rejection_token')
         if rejection_token:
-            registration = Node.find_one(Q('registration_approval', 'eq', self))
+            registration = self._get_registration()
             return {
                 'node_id': registration._id,
                 'token': rejection_token,
@@ -3870,7 +3906,7 @@ class RegistrationApproval(EmailApprovableSanction):
 
             approval_time_span = settings.REGISTRATION_APPROVAL_TIME.days * 24
 
-            registration = Node.find_one(Q('registration_approval', 'eq', self))
+            registration = self._get_registration()
 
             return {
                 'is_initiator': self.initiated_by == user,
@@ -3903,7 +3939,7 @@ class RegistrationApproval(EmailApprovableSanction):
 
     def _on_complete(self, user):
         self.state = Sanction.APPROVED
-        register = Node.find_one(Q('registration_approval', 'eq', self))
+        register = self._get_registration()
         registered_from = register.registered_from
         auth = Auth(self.initiated_by)
         register.set_privacy('public', auth, log=False)
@@ -3926,7 +3962,7 @@ class RegistrationApproval(EmailApprovableSanction):
         self.save()
 
     def _on_reject(self, user, token):
-        register = Node.find_one(Q('registration_approval', 'eq', self))
+        register = self._get_registration()
         registered_from = register.registered_from
         register.delete_registration_tree(save=True)
         registered_from.add_log(
@@ -3943,8 +3979,26 @@ class DraftRegistrationApproval(Sanction):
 
     mode = Sanction.ANY
 
-    # TODO(samchrisinger): document
+    # Since draft registrations that require approval are not immediately registered,
+    # meta stores registration_choice and embargo_end_date (when applicable)
     meta = fields.DictionaryField(default=dict)
+
+    def _send_rejection_email(self, user, draft):
+        schema = draft.registration_schema
+        if schema.name == 'Prereg Challenge':
+            mails.send_mail(
+                user.username,
+                mails.PREREG_CHALLENGE_REJECTED,
+                user=user,
+                draft_url=draft.branched_from.web_url_for(
+                    'edit_draft_registration_page',
+                    draft_id=draft._id
+                )
+            )
+        else:
+            raise NotImplementedError(
+                'TODO: add a generic email template for registration approvals'
+            )
 
     def _on_complete(self, user):
         draft = DraftRegistration.find_one(
@@ -3961,9 +4015,10 @@ class DraftRegistrationApproval(Sanction):
                 'immediate': functools.partial(registration.require_approval, user),
                 'embargo': functools.partial(
                     user,
-                    registration.embargo_registration, self.meta['embargo_end_date']
+                    registration.embargo_registration,
+                    parse_date(self.meta['embargo_end_date'], ignoretz=True)
                 )
-            }[registration_choice]()
+            }[registration_choice](notify_initiator_on_complete=True)
         except KeyError:
             raise ValueError("'registration_choice' must be either 'emebargo' or 'immediate'")
         except NodeStateError as e:
@@ -3975,14 +4030,20 @@ class DraftRegistrationApproval(Sanction):
             # TODO(samchrisinger):
             # raise HTTPError(http.BAD_REQUEST, data=dict(message_long=err.message))
 
-    def _on_reject(self, *args, **kwargs):
+    def _on_reject(self, user, *args, **kwargs):
         # clear out previous registration options
         self.meta = {}
         self.save()
-        # TODO(samchrisinger): email author?
+        # remove reference to approval from draft
+        draft = DraftRegistration.find_one(
+            Q('approval', 'eq', self)
+        )
+        draft.approval = None
+        draft.save()
+        self._send_rejection_email(user, draft)
 
 
-class DraftRegistration(AddonModelMixin, StoredObject):
+class DraftRegistration(StoredObject):
 
     _id = fields.StringField(primary=True, default=lambda: str(ObjectId()))
 
@@ -4046,6 +4107,9 @@ class DraftRegistration(AddonModelMixin, StoredObject):
             return self.approval.is_approved
         else:
             return True
+
+    def get_authorizers(self):
+        return authorizers.members_for(self.registration_schema.name)
 
     def update_metadata(self, metadata):
         changes = []

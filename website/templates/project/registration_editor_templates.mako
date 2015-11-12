@@ -79,9 +79,12 @@
                   </span>
                   <div data-bind="template: {data: $data, name: type}"></div>
                   <br />
-                  <button data-bind="click: $root.authorDialog,
-                                     visible: $root.currentQuestion().title === 'Authorship' && $root.contributors().length > 1"  type="button" class="btn btn-primary">Import Contributors
-                  </button>
+                  <span data-bind="if: $root.currentQuestion">
+                    <!-- TODO(barbour-em): move this to custom question type (if we have time) -->
+                    <button data-bind="click: $root.authorDialog,
+                                       visible: $root.currentQuestion().title === 'Authorship' && $root.contributors().length > 1"  type="button" class="btn btn-primary">Import Contributors
+                    </button>
+                  </span>
                 </span>
               </div>
           </div>
@@ -90,20 +93,24 @@
     </div>
   </div>
 </script>
+
 <script type="text/html" id="editor">
-  <span data-bind="template: {data: $data, name: 'editorBase'}"></span>
-  <div class="row">
+  <div data-bind="foreach: {data: $data.questions, as: 'question'}">
+    <span data-bind="template: {data: $data, name: 'editorBase'}"></span>
+  </div>
+  <div class="row" >
     <div class="col-md-12">
       <div class="well" data-bind="template: {data: $data, name: 'commentable'}"></div>
     </div>
   </div>
 </script>
 
-<!-- Commnetable -->
+<!-- Commentable -->
 <script type="text/html" id="commentable">
     <h4> Comments </h4>
     <ul class="list-group" id="commentList" data-bind="foreach: {data: comments, as: 'comment'}">
         <li class="list-group-item">
+          <h3 data-bind="text: comment.isDeleted().toString()"></h3>
           <div class="row" data-bind="if: comment.isDeleted">
             <div class="col-md-12">
               <strong><span data-bind="text: comment.getAuthor"></span></strong> deleted this comment on <em data-bind="text: comment.lastModified"></em>
@@ -140,11 +147,7 @@
     <div class="input-group">
       <input class="form-control registration-editor-comment" type="text"
              data-bind="value: nextComment,
-                        valueUpdate: 'keyup',
-                        onKeyPress: {
-                          keyCode: 13,
-                          listener: addComment.bind($data, $root.save.bind($root))
-                        }" />
+                        valueUpdate: 'keyup'" />
       <span class="input-group-btn">
         <button class="btn btn-primary"
                 data-bind="click: addComment.bind($data, $root.save.bind($root)),

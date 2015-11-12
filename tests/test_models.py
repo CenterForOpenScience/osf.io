@@ -3,7 +3,6 @@
 import mock
 import unittest
 from nose.tools import *  # noqa (PEP8 asserts)
-import functools
 
 import pytz
 import datetime
@@ -963,7 +962,7 @@ class TestMergingUsers(OsfTestCase):
         list_id = mailchimp_utils.get_list_id_from_name(list_name)
         self._merge_dupe()
         handlers.celery_teardown_request()
-        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username})
+        mock_client.lists.unsubscribe.assert_called_with(id=list_id, email={'email': username}, send_goodbye=False)
         assert_false(self.dupe.mailchimp_mailing_lists[list_name])
 
     def test_inherits_projects_contributed_by_dupe(self):
@@ -1878,6 +1877,29 @@ class TestNode(OsfTestCase):
         self.node.save()
         self.node.reload()
         assert_false(self.parent.nodes_active)
+
+    def test_register_node_makes_private_registration(self):
+        user = UserFactory()
+        node = NodeFactory(creator=user)
+        node.is_public = True
+        node.save()
+        registration = node.register_node(None, Auth(user), '', None)
+        assert_false(registration.is_public)
+
+    def test_register_node_makes_private_child_registrations(self):
+        user = UserFactory()
+        node = NodeFactory(creator=user)
+        node.is_public = True
+        node.save()
+        child = NodeFactory(parent=node)
+        child.is_public = True
+        child.save()
+        childchild = NodeFactory(parent=child)
+        childchild.is_public = True
+        childchild.save()
+        registration = node.register_node(None, Auth(user), '', None)
+        for node in registration.node_and_primary_descendants():
+            assert_false(node.is_public)
 
     @mock.patch('website.project.signals.after_create_registration')
     def test_register_node_propagates_schema_and_data_to_children(self, mock_signal):
@@ -3107,6 +3129,17 @@ class TestTemplateNode(OsfTestCase):
         assert_not_equal(new.date_created, self.project.date_created)
         self._verify_log(new)
 
+    def test_use_as_template_preserves_license(self):
+        license = NodeLicenseRecordFactory()
+        self.project.node_license = license
+        self.project.save()
+        new = self.project.use_as_template(
+            auth=self.auth
+        )
+
+        assert_equal(new.license.node_license._id, license.node_license._id)
+        self._verify_log(new)
+
     def _create_complex(self):
         # create project connected via Pointer
         self.pointee = ProjectFactory(creator=self.user)
@@ -3513,7 +3546,7 @@ class TestRegisterNode(OsfTestCase):
         assert_false(self.registration.is_public)
         self.project.set_privacy('public')
         registration = RegistrationFactory(project=self.project)
-        assert_true(registration.is_public)
+        assert_false(registration.is_public)
 
     def test_contributors(self):
         assert_equal(self.registration.contributors, self.project.contributors)
@@ -4235,160 +4268,6 @@ class TestPrivateLink(OsfTestCase):
         link.nodes.extend([project, node])
         link.save()
         assert_equal(link.node_scale(node), -40)
-
-class TestDraftRegistration(OsfTestCase):
-
-    def setUp(self, *args, **kwargs):
-        super(TestDraftRegistration, self).setUp(*args, **kwargs)
-
-        self.user = AuthUserFactory()
-        self.auth = self.user.auth
-        self.node = ProjectFactory(creator=self.user)
-
-        MetaSchema.remove()
-        ensure_schemas()
-        self.meta_schema = MetaSchema.find_one(
-            Q('name', 'eq', 'Open-Ended Registration') &
-            Q('schema_version', 'eq', 1)
-        )
-        self.draft = DraftRegistration(
-            initiator=self.user,
-            branched_from=self.node,
-            registration_schema=self.meta_schema,
-            registration_metadata={
-                'summary': {'value': 'Some airy'}
-            }
-        )
-        self.draft.save()
-
-    def test_factory(self):
-        draft = DraftRegistrationFactory()
-        assert_is_not_none(draft.branched_from)
-        assert_is_not_none(draft.initiator)
-        assert_is_not_none(draft.registration_schema)
-
-        user = AuthUserFactory()
-        draft = DraftRegistrationFactory(initiator=user)
-        assert_equal(draft.initiator, user)
-
-        node = ProjectFactory()
-        draft = DraftRegistrationFactory(branched_from=node)
-        assert_equal(draft.branched_from, node)
-        assert_equal(draft.initiator, node.creator)
-
-        schema = MetaSchema.find()[1]
-        data = {'some': 'data'}
-        draft = DraftRegistrationFactory(registration_schema=schema, registration_metadata=data)
-        assert_equal(draft.registration_schema, schema)
-        assert_equal(draft.registration_metadata, data)
-
-    @mock.patch('website.project.model.Node.register_node')
-    def test_register(self, mock_register_node):
-
-        self.draft.register(self.auth)
-        mock_register_node.assert_called_with(
-            schema=self.draft.registration_schema,
-            auth=self.auth,
-            data=self.draft.registration_metadata,
-        )
-
-    def test_update_metadata_tracks_changes(self):
-        self.draft.registration_metadata = {
-            'foo': {
-                'value': 'bar',
-
-            },
-            'a': {
-                'value': 1,
-            },
-            'b': {
-                'value': True
-            },
-        }
-        changes =  self.draft.update_metadata({
-            'foo': {
-                'value': 'foobar',
-            },
-            'a': {
-                'value': 1,
-            },
-            'b': {
-                'value': True,
-            },
-            'c': {
-                'value': 2,
-            },
-        })
-        self.draft.save()
-        for key in ['foo', 'c']:
-            assert_in(key, changes)
-
-    def test_update_metadata_handles_conflicting_comments(self):
-        self.draft.registration_metadata = {
-            'item01': {
-                'value': 'foo',
-                'comments': [{
-                    'author': 'Bar',
-                    'created': '1970-01-01T00:00:00.000Z',
-                    'lastModified': '2015-08-05T14:58:30.574Z',
-                    'value': 'qux'
-                }]
-            }
-        }
-
-        # outdated comment to be ignored
-        changes1 = self.draft.update_metadata({
-            'item01': {
-                'value': 'foo',
-                'comments': [{
-                    'author': 'Bar',
-                    'created': '1970-01-01T00:00:00.000Z',
-                    'lastModified': '2015-07-05T14:58:30.574Z',
-                    'value': 'foobarbaz'
-                }]
-            }
-        })
-        assert_equal(changes1, [])
-        comment_one = self.draft.registration_metadata['item01']['comments'][0]
-        assert_equal(comment_one.get('value'), 'qux')
-        assert_equal(comment_one.get('author'), 'Bar')
-        assert_equal(comment_one.get('created'), '1970-01-01T00:00:00.000Z')
-        assert_equal(comment_one.get('lastModified'), '2015-08-05T14:58:30.574Z')
-
-        changes2 = self.draft.update_metadata({
-
-        })
-
-        # Totally new comment to be added
-        self.draft.update_metadata({
-            'item01': {
-                'value': 'foo',
-                'comments': [{
-                    'author': 'Bar',
-                    'created': '1970-01-01T00:00:00.000Z',
-                    'lastModified': '2015-08-05T14:58:30.574Z',
-                    'value': 'qux'},
-                    {
-                    'author': 'Baz',
-                    'created': '1971-01-01T00:00:00.000Z',
-                    'lastModified': '2014-07-09T14:58:30.574Z',
-                    'value': 'foobarbaz'
-                }]
-            }
-        }, save=True)
-        assert_equal(len(self.draft.registration_metadata['item01'].get('comments')), 2)
-        comment_one = self.draft.registration_metadata['item01']['comments'][0]
-        comment_two = self.draft.registration_metadata['item01']['comments'][1]
-
-        assert_equal(comment_one.get('value'), 'qux')
-        assert_equal(comment_one.get('author'), 'Bar')
-        assert_equal(comment_one.get('created'), '1970-01-01T00:00:00.000Z')
-        assert_equal(comment_one.get('lastModified'), '2015-08-05T14:58:30.574Z')
-
-        assert_equal(comment_two.get('value'), 'foobarbaz')
-        assert_equal(comment_two.get('author'), 'Baz')
-        assert_equal(comment_two.get('created'), '1971-01-01T00:00:00.000Z')
-        assert_equal(comment_two.get('lastModified'), '2014-07-09T14:58:30.574Z')
 
 
 if __name__ == '__main__':

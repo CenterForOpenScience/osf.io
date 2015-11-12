@@ -546,7 +546,7 @@ MEETING_DATA = {
 def populate_conferences():
     for meeting, attrs in MEETING_DATA.iteritems():
         meeting = meeting.strip()
-        admin_emails = attrs.pop('admins')
+        admin_emails = attrs.pop('admins', [])
         admin_objs = []
         for email in admin_emails:
             try:

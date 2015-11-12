@@ -627,7 +627,6 @@ describe('RegistrationEditor', () => {
                 ret.resolve({pk: '12345'}, 1, {});
                 return ret.promise();
             });
-            updateDataStub = sinon.stub(editor, 'updateData');
         });
         afterEach(() => {
             editor.putSaveData.restore();

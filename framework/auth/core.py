@@ -1194,7 +1194,7 @@ class User(GuidStoredObject, AddonModelMixin):
             signals.user_merged.send(self, list_name=key, subscription=subscription)
 
             # clear subscriptions for merged user
-            signals.user_merged.send(user, list_name=key, subscription=False)
+            signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
 
         for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
             if not self.comments_viewed_timestamp.get(node_id):

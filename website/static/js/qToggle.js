@@ -45,7 +45,7 @@ qToggle.prototype.init = function () {
 
         // if part of group turn off other group items
         if(self.groupID){
-            $("[data-qtoggle-group= '" + self.groupID + "']").each(function(){
+            $('[data-qtoggle-group= \'' + self.groupID + '\']').each(function(){
                 var item = $(this);
                 var targetID = item.attr('data-qtoggle-target');
                 if(targetID === self.targetID){ return; }

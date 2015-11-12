@@ -21,10 +21,15 @@ def email_template_for_campaign(campaign, default=None):
                 return default
             else:
                 raise e
+    return default
 
 def campaign_for_user(user):
     campaigns = [tag for tag in user.system_tags if tag in VALID_CAMPAIGNS]
     if campaigns:
+        # TODO: This is a bit of a one-off to support the Prereg Challenge.
+        # We should think more about the campaigns architecture and in
+        # particular define the behavior if the user has more than one
+        # campagin tag in their system_tags.
         return campaigns[0]
 
 def campaign_url_for(campaign):
