@@ -99,7 +99,7 @@ ko.bindingHandlers.ace = {
                     }
                     else {
                         //alert('cant do this');
-                        $osf.growl('Error', 'Please find a prettier URL to give us or download to your computer and drop it in from there');
+                        $osf.growl('Error', 'Unable to handle this type of link.  Please either find another link or save the image to your computer and import it from there.');
                         imgURL = undefined;
                     }
 
@@ -117,30 +117,31 @@ ko.bindingHandlers.ace = {
                 }
             }
             else {
-                var file = event.dataTransfer.files[0];
-                ext = re.exec(file.name)[1];
-                if (extensions.indexOf(ext) <= -1) {
-                    $osf.growl('Error', 'File type not supported', 'danger');
-                }
-                else {
-                    var waterbutler_url = waterbutler.buildUploadUrl('/', 'osfstorage', window.contextVars.node.id, file);
-                    $.ajax({
-                        url: waterbutler_url,
-                        type: 'PUT',
-                        processData: false,
-                        contentType: false,
-                        beforeSend: $osf.setXHRAuthorization,
-                        data: file
-                    }).done(function(data) {
-                        //url = waterbutler.buildDownloadUrl(data.path, data.provider, window.contextVars.node.id, {mode: 'render'});
-                        url = window.contextVars.waterbutlerURL + 'v1/resources/' + window.contextVars.node.id + '/providers/' + data.provider + data.path + '?mode=render';
-                        var refOut = editor.marker.addLinkDef('[999]: ' + url);
-                        editor.session.insert(position, '![enter image description here][' + refOut + ']');
-                    }).fail(function(data) {
-                        $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
-                        'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
-                        'if the problem persists.', 'danger');
-                    });
+                for (var i = 0, file; file = event.dataTransfer.files[i]; i ++) {
+                    ext = re.exec(file.name)[1];
+                    if (extensions.indexOf(ext) <= -1) {
+                        $osf.growl('Error', 'File type not supported', 'danger');
+                    }
+                    else {
+                        var waterbutler_url = waterbutler.buildUploadUrl('/', 'osfstorage', window.contextVars.node.id, file);
+                        $.ajax({
+                            url: waterbutler_url,
+                            type: 'PUT',
+                            processData: false,
+                            contentType: false,
+                            beforeSend: $osf.setXHRAuthorization,
+                            data: file
+                        }).done(function(data) {
+                            //url = waterbutler.buildDownloadUrl(data.path, data.provider, window.contextVars.node.id, {mode: 'render'});
+                            url = window.contextVars.waterbutlerURL + 'v1/resources/' + window.contextVars.node.id + '/providers/' + data.provider + data.path + '?mode=render';
+                            var refOut = editor.marker.addLinkDef('[999]: ' + url);
+                            editor.session.insert(position, '![enter image description here][' + refOut + ']');
+                        }).fail(function(data) {
+                            $osf.growl('Error', 'File not uploaded. Please refresh the page and try ' +
+                            'again or contact <a href="mailto: support@cos.io">support@cos.io</a> ' +
+                            'if the problem persists.', 'danger');
+                        });
+                    }
                 }
             }
             editor.marker.session.removeMarker(editor.marker.id);
