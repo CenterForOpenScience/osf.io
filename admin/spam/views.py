@@ -24,6 +24,6 @@ def spam_sub_list(request, spam_ids):
 
 
 def email(request, spam_id):
-    comment = retrieve_comment(spam_id)
+    comment = retrieve_comment(spam_id, full_user=True)
     context = {'comment': comment}
     return render(request, 'spam/email.html', context)

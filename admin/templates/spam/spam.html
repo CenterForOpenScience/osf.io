@@ -30,7 +30,7 @@
             {% endwith %}
         </td>
         <td>
-            {{ comment.created|date }}
+            {{ comment.date_created|date }}
         </td>
         <td>
             {{ comment.content|truncatechars:30 }}
