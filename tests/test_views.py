@@ -10,6 +10,7 @@ import mock
 import httplib as http
 import math
 import time
+import functools
 
 from nose.tools import *  # noqa PEP8 asserts
 from tests.test_features import requires_search
@@ -4700,8 +4701,8 @@ class TestDraftRegistrationViews(OsfTestCase):
         assert_equal(res.status_code, http.ACCEPTED)
         assert_equal(mock_register_draft.call_args[0][0]._id, self.draft._id)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_template_make_public_creates_pending_registration(self, mock_enquque):
+    @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
+    def test_register_template_make_public_creates_pending_registration(self):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         res = self.app.post_json(url, {'registrationChoice': 'immediate'}, auth=self.user.auth)
 
@@ -4713,8 +4714,8 @@ class TestDraftRegistrationViews(OsfTestCase):
         # The registration created is public
         assert_true(reg.is_pending_registration)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_template_make_public_makes_children_pending_registration(self, mock_enqueue):
+    @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
+    def test_register_template_make_public_makes_children_pending_registration(self):
         comp1 = NodeFactory(parent=self.node)
         NodeFactory(parent=comp1)
 
@@ -4729,8 +4730,8 @@ class TestDraftRegistrationViews(OsfTestCase):
             assert_true(node.is_registration)
             assert_true(node.is_pending_registration)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_draft_registration_with_embargo_creates_embargo(self, mock_enquque):
+    @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
+    def test_register_draft_registration_with_embargo_creates_embargo(self):
         url = self.node.api_url_for('register_draft_registration', draft_id=self.draft._id)
         res = self.app.post_json(
             url,
@@ -4751,8 +4752,8 @@ class TestDraftRegistrationViews(OsfTestCase):
         assert_true(reg.is_pending_embargo)
         assert_false(reg.embargo_end_date)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_draft_registration_with_embargo_adds_to_parent_project_logs(self, mock_enquque):
+    @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
+    def test_register_draft_registration_with_embargo_adds_to_parent_project_logs(self):
         initial_project_logs = len(self.node.logs)
         res = self.app.post_json(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
@@ -4766,8 +4767,8 @@ class TestDraftRegistrationViews(OsfTestCase):
         # Logs: Created, registered, embargo initiated
         assert_equal(len(self.node.logs), initial_project_logs + 1)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_draft_registration_with_embargo_is_not_public(self, mock_enqueue):
+    @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
+    def test_register_draft_registration_with_embargo_is_not_public(self):
         res = self.app.post_json(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.valid_embargo_payload,
@@ -4784,8 +4785,8 @@ class TestDraftRegistrationViews(OsfTestCase):
         assert_true(registration.is_pending_embargo)
         assert_is_not_none(registration.embargo)
 
-    @mock.patch('framework.tasks.handlers.enqueue_task')
-    def test_register_draft_registration_invalid_embargo_end_date_raises_HTTPError(self, mock_enqueue):
+    @mock.patch('framework.tasks.handlers.enqueue_task', mock.Mock())
+    def test_register_draft_registration_invalid_embargo_end_date_raises_HTTPError(self):
         res = self.app.post_json(
             self.node.api_url_for('register_draft_registration', draft_id=self.draft._id),
             self.invalid_embargo_date_payload,
