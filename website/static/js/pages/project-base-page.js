@@ -30,6 +30,8 @@ if (node.isPublic && node.piwikSiteID) {
 $(window).unload(function(){
     return 'Unload';
 });
+
+// TODO: See if this can be removed
 $(document).ready(function() {
     $.getJSON(node.urls.api, function(data) {    
         $('body').trigger('nodeLoad', data);
@@ -38,8 +40,8 @@ $(document).ready(function() {
     var self = this;
     var THRESHOLD_SCROLL_POSITION  = 50;
     var SMALL_SCREEN_SIZE = 767;
-    var NON_NAV_TOP_MARGIN = 50;
-    var NAV_MAX_TOP_MARGIN = 95;
+    var NON_NAV_TOP_MARGIN = 46;
+    var NAV_MAX_TOP_MARGIN = 46;
     self.adjustPanelPosition = function() {
         var bodyWidth = $(document.body).width();
         var scrollTopPosition = $(window).scrollTop();

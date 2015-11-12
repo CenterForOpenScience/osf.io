@@ -341,10 +341,6 @@ var CommentModel = function(data, $parent, $root) {
             return self.showChildren() ? 'fa fa-minus' : 'fa fa-plus';
     });
     
-    self.editHighlight = ko.pureComputed(function() {
-        return self.canEdit() && self.hoverContent() && self.mode !== 'widget';
-    });
-    
     self.canReport = ko.pureComputed(function() {
         return self.$root.canComment() && !self.canEdit();
     });

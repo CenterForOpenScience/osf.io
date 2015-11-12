@@ -85,7 +85,7 @@
 
                         <div data-bind="ifnot: editing">
                             <span class="component-overflow"
-                              data-bind="html: contentDisplay, css: {'edit-comment': editHighlight}, event: {mouseenter: startHoverContent, mouseleave: stopHoverContent}"></span>
+                              data-bind="html: contentDisplay"></span>
                             <span class="pull-right" data-bind="if: mode !== 'widget' && hasChildren() && shouldShowChildren()">
                                 <i data-bind="css: toggleIcon, click: toggle"></i>
                             </span>

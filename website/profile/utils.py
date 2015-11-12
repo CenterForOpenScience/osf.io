@@ -127,7 +127,7 @@ def serialize_user(user, node=None, admin=False, full=False, n_comments=None, an
             'numOfComments': n_comments,
             'gravatar_url': privacy_info_handle(gravatar(
                 user, use_ssl=True,
-                size=settings.GRAVATAR_SIZE_DISCUSSION
+                size=settings.PROFILE_IMAGE_SMALL
             ), anonymous),
         })
 
