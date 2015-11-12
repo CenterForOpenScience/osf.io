@@ -30,7 +30,6 @@ from framework.sessions.model import Session
 from framework.sessions.utils import remove_sessions_for_user
 
 from website import mails, settings, filters, security
-from website.util import disconnected_signal
 
 name_formatters = {
     'long': lambda user: user.fullname,
@@ -1232,8 +1231,10 @@ class User(GuidStoredObject, AddonModelMixin):
         # be sure to reconnect it at the end of this code block. Import done here to prevent circular import error.
         from website.project.signals import contributor_added
         from website.project.views.contributor import notify_added_contributor
+        from website.util import disconnected_to
+
         # - projects where the user was a contributor
-        with disconnected_signal(signal=contributor_added, listener=notify_added_contributor):
+        with disconnected_to(signal=contributor_added, listener=notify_added_contributor):
             for node in user.node__contributed:
                 # Skip dashboard node
                 if node.is_dashboard:

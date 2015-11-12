@@ -442,7 +442,6 @@ class TestUserMerging(base.OsfTestCase):
         #Explictly reconnect signal as it is disconnected by default for test
         project.signals.contributor_added.connect(project.views.contributor.notify_added_contributor)
         other_user = factories.UserFactory()
-        other_user.save()
         self.user.merge_user(other_user)
-        assert_equal(other_user.merged_by, self.user)
+        assert_equal(other_user.merged_by._id, self.user._id)
         mock_notify.assert_not_called()
