@@ -18,7 +18,8 @@ from tests.factories import (
     RegistrationFactory,
     AuthUserFactory,
     FolderFactory,
-    CommentFactory
+    CommentFactory,
+    RetractedRegistrationFactory
 )
 
 from tests.utils import assert_logs, assert_not_logs
@@ -165,11 +166,7 @@ class TestNodeDetail(ApiTestCase):
     def test_cannot_return_a_retraction_at_node_detail_endpoint(self):
         registration = RegistrationFactory(creator=self.user, project=self.public_project)
         url = '/{}nodes/{}/'.format(API_BASE, registration._id)
-        registration.retract_registration(self.user)
-        retraction = registration.retraction
-        token = retraction.approval_state.values()[0]['approval_token']
-        retraction.approve_retraction(self.user, token)
-        registration.save()
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 

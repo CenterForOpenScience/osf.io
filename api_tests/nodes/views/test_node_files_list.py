@@ -13,7 +13,8 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     AuthUserFactory,
-    RegistrationFactory
+    RegistrationFactory,
+    RetractedRegistrationFactory
 )
 
 def prepare_mock_wb_response(
@@ -100,11 +101,7 @@ class TestNodeFilesList(ApiTestCase):
     def test_cannot_access_retracted_files_list(self):
         registration = RegistrationFactory(creator=self.user, project=self.public_project)
         url = '/{}nodes/{}/files/'.format(API_BASE, registration._id)
-        registration.retract_registration(self.user)
-        retraction = registration.retraction
-        token = retraction.approval_state.values()[0]['approval_token']
-        retraction.approve_retraction(self.user, token)
-        registration.save()
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 

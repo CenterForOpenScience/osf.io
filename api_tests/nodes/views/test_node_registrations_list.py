@@ -7,7 +7,8 @@ from tests.base import ApiTestCase
 from tests.factories import (
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RetractedRegistrationFactory
 )
 
 
@@ -64,12 +65,9 @@ class TestNodeRegistrationList(ApiTestCase):
 
     def test_cannot_access_retracted_registrations_list(self):
         registration = RegistrationFactory(creator=self.user, project=self.public_project)
-        url = '/{}nodes/{}/registrations/'.format(API_BASE, registration._id)
-        registration.retract_registration(self.user)
-        retraction = registration.retraction
-        token = retraction.approval_state.values()[0]['approval_token']
-        retraction.approve_retraction(self.user, token)
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         registration.save()
+        url = '/{}nodes/{}/registrations/'.format(API_BASE, registration._id)
         res = self.app.get(url, auth=self.user.auth, expect_errors=True)
         assert_equal(res.status_code, 403)
 

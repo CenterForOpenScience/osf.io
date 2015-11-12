@@ -676,6 +676,7 @@ class NodeRegistrationsList(generics.ListAPIView, NodeMixin):
         ContributorOrPublic,
         drf_permissions.IsAuthenticatedOrReadOnly,
         base_permissions.TokenHasScope,
+        ExcludeRetractions
     )
 
     required_read_scopes = [CoreScopes.NODE_REGISTRATIONS_READ]

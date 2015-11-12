@@ -14,7 +14,8 @@ from tests.factories import (
     FolderFactory,
     ProjectFactory,
     RegistrationFactory,
-    AuthUserFactory
+    AuthUserFactory,
+    RetractedRegistrationFactory
 )
 
 
@@ -91,11 +92,7 @@ class TestNodeList(ApiTestCase):
         res = self.app.get(self.url, auth=self.user.auth)
         print res
         assert_equal(len(res.json['data']), 3)
-        registration.retract_registration(self.user)
-        retraction = registration.retraction
-        token = retraction.approval_state.values()[0]['approval_token']
-        retraction.approve_retraction(self.user, token)
-        registration.save()
+        retraction = RetractedRegistrationFactory(registration=registration, user=registration.creator)
         res = self.app.get(self.url, auth=self.user.auth)
         assert_equal(len(res.json['data']), 2)
 
