@@ -29,7 +29,8 @@ class AdminOrPublic(permissions.BasePermission):
         else:
             return node.has_permission(auth.user, osf_permissions.ADMIN)
 
-class LimitRetractions(permissions.BasePermission):
+
+class ExcludeRetractions(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         context = request.parser_context['kwargs']
