@@ -184,12 +184,22 @@ class RelationshipField(ser.HyperlinkedIdentityField):
 
     If you surround the lookup_field in angular brackets, it will not attempt to find that attribute on the target, but rather
     return the lookup_field name verbatim.
+
     Example:
      wiki_home = RelationshipField(
         related_view='addon:addon-detail',
         related_view_kwargs={'node_id': '_id', 'provider': '<wiki>'},
     )
     'wiki' is enclosed in angular brackets, so the serialized result would be '/nodes/abc12/addons/wiki'.
+
+    Field can handle nested attributes:
+
+    Example:
+    wiki_home = RelationshipField(
+        related_view='wiki:wiki-detail',
+        related_view_kwargs={'node_id': '_id', 'wiki_id': 'wiki_pages_current.home'}
+    )
+
     """
 
     json_api_link = True  # serializes to a links object
