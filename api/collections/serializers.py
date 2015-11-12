@@ -25,7 +25,7 @@ class CollectionSerializer(JSONAPISerializer):
     date_created = ser.DateTimeField(read_only=True)
     date_modified = ser.DateTimeField(read_only=True)
 
-    links = LinksField({'html': 'get_absolute_url'})
+    links = LinksField({})
 
     node_links = DevOnly(JSONAPIHyperlinkedIdentityField(view_name='collections:node-pointers', lookup_field='pk', link_type='related',
                                                   lookup_url_kwarg='collection_id', meta={'count': 'get_node_links_count'}))
