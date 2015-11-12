@@ -91,8 +91,9 @@ function getUID() {
 var FileBrowser = {
     controller : function (options) {
         var self = this;
-        self.isLoadedUrl = false;
         self.wrapperSelector = options.wrapperSelector;
+        self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
+        self.reload = m.prop(false);
 
         // VIEW STATES
         self.showInfo = m.prop(false);
@@ -121,10 +122,10 @@ var FileBrowser = {
         ]);
 
         self.updateFilesData = function(linkObject) {
-            if (linkObject.link !== self.filesData()) {
-                self.filesData(linkObject.link);
-                self.isLoadedUrl = false; // check if in fact changed
+            if (linkObject.link !== self.currentLink) {
                 self.updateBreadcrumbs(linkObject);
+                self.updateList(linkObject.link);
+                self.currentLink = linkObject.link;
             }
             self.showSidebar(false);
         };
@@ -153,13 +154,25 @@ var FileBrowser = {
 
 
         // Refresh the Grid
-        self.updateList = function(path, options){
-            var url  = $osf.apiV2Url(path, options);
+        self.updateList = function(url){
             var xhrconfig = function (xhr) {
                 xhr.withCredentials = true;
             };
             m.request({method : 'GET', url : url, config : xhrconfig}).then(self.data).then(function(value){
                 console.log(value);
+                value.data.map(function(item){
+                    item.kind = 'folder';
+                    item.uid = item.id;
+                    item.name = item.attributes.title;
+                    item.date = new $osf.FormattableDate(item.attributes.date_modified);
+
+                    // TODO: Dummy data, remove this when api is ready
+                    item.contributors = [{
+                        id: '8q36f',
+                        name : 'Dummy User'
+                    }];
+                });
+                self.reload(true);
             });
         };
 
@@ -206,9 +219,10 @@ var FileBrowser = {
             });
         };
         self.init = function () {
-            self.updateList(self.collections[0].data.path, {
+            var loadUrl = $osf.apiV2Url(self.collections[0].data.path, {
                 query : self.collections[0].data.pathQuery
             });
+            self.updateList(loadUrl);
         };
         self.init();
     },
@@ -282,7 +296,8 @@ var FileBrowser = {
                         filesData : ctrl.data,
                         updateSelected : ctrl.updateSelected,
                         updateFilesData : ctrl.updateFilesData,
-                        LinkObject : LinkObject
+                        LinkObject : LinkObject,
+                        reload : ctrl.reload
                     })
                 )
             ),

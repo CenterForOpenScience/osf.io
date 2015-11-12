@@ -482,20 +482,32 @@ var tbOptions = {
 
 var ProjectOrganizer = {
     controller : function (args) {
-        var poOptions = $.extend(
-            {
-                updateSelected : args.updateSelected,
-                updateFilesData : args.updateFilesData,
-                filesData: args.filesData().data,
-                wrapperSelector : args.wrapperSelector
-            },
-            tbOptions
-        );
         LinkObject = args.LinkObject;
-        this.tb = new Treebeard(poOptions, true);
+        var self = this;
+        self.updateTB = function(){
+            var poOptions = $.extend(
+                {
+                    updateSelected : args.updateSelected,
+                    updateFilesData : args.updateFilesData,
+                    filesData: args.filesData().data,
+                    wrapperSelector : args.wrapperSelector
+                },
+                tbOptions
+            );
+            var tb = new Treebeard(poOptions, true);
+            m.redraw.strategy('all');
+            return tb;
+        };
+        self.tb = self.updateTB();
     },
     view : function (ctrl, args) {
-        return m('.fb-project-organizer#projectOrganizer', ctrl.tb);
+        console.log(args.reload());
+        var tb = ctrl.tb;
+        if (args.reload()) {
+            tb = ctrl.updateTB();
+            args.reload(false);
+        }
+        return m('.fb-project-organizer#projectOrganizer', tb );
     }
 };
 
