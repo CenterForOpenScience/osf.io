@@ -239,6 +239,8 @@ class NodeList(generics.ListCreateAPIView, ODMFilterMixin):
     def get_queryset(self):
         query = self.get_query_from_request()
         nodes = Node.find(query)
+        # Refetching because this method needs to return a queryset instead of a
+        # list comprehension for subsequent filtering on ordering.
         non_retracted_list = [node._id for node in nodes if not node.is_retracted]
         non_retracted_nodes = Node.find(Q('_id', 'in', non_retracted_list))
         return non_retracted_nodes
