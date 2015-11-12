@@ -84,7 +84,7 @@ def has_anonymous_link(node, auth):
         if link.key == view_only_link
     )
 
-
+@unique_on(['name', 'schema_version', '_id'])
 class MetaSchema(StoredObject):
 
     _id = fields.StringField(default=lambda: str(ObjectId()))
@@ -92,9 +92,6 @@ class MetaSchema(StoredObject):
     schema = fields.DictionaryField()
     category = fields.StringField()
 
-    # Version of the Knockout metadata renderer to use (e.g. if data binds
-    # change)
-    metadata_version = fields.IntegerField()
     # Version of the schema to use (e.g. if questions, responses change)
     schema_version = fields.IntegerField()
 
@@ -111,6 +108,7 @@ class MetaSchema(StoredObject):
         return self.schema.get('config', {}).get('messages', {})
 
 def ensure_schema(schema, name, version=1):
+    schema_obj = None
     try:
         schema_obj = MetaSchema.find_one(
             Q('name', 'eq', name) &
@@ -123,7 +121,9 @@ def ensure_schema(schema, name, version=1):
             'schema': schema,
         }
         schema_obj = MetaSchema(**meta_schema)
-        schema_obj.save()
+    else:
+        schema_obj.schema = schema
+    schema_obj.save()
     return schema_obj
 
 
