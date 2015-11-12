@@ -116,6 +116,8 @@ def auth_login(auth, **kwargs):
     """
     campaign = request.args.get('c')
     next_url = request.args.get('next')
+    if campaign:
+        next_url = campaigns.campaign_url_for(campaign)
     if auth.logged_in:
         if not request.args.get('logout'):
             if next_url:
@@ -134,8 +136,6 @@ def auth_login(auth, **kwargs):
         status.push_status_message(language.MUST_LOGIN)
     # set login_url to form action, upon successful authentication specifically w/o logout=True,
     # allows for next to be followed or a redirect to the dashboard.X
-    if campaign:
-        next_url = campaigns.campaign_url_for(campaign)
     redirect_url = web_url_for('auth_login', next=next_url, _absolute=True)
 
     data = {}
