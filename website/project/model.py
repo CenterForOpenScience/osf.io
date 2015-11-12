@@ -688,8 +688,10 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
     registered_date = fields.DateTimeField(index=True)
     registered_user = fields.ForeignField('user', backref='registered')
 
-    registered_schema = fields.ForeignField('metaschema', backref='registered')
-    # Stores a flat set of <question_id>: <response> pairs-- these quesiton ids_above
+    # A list of all MetaSchemas for which this Node has registered_meta
+    registered_schema = fields.ForeignField('metaschema', backref='registered', list=True)
+    # A set of <metaschema.name>: <schema> pairs, where <schema> is a
+    # flat set of <question_id>: <response> pairs-- these quesiton ids_above
     # map the the ids in the registrations MetaSchema (see registered_schema).
     # {
     #   <question_id>: {
