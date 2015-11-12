@@ -11,7 +11,7 @@ from website.util import permissions as osf_permissions
 
 from api.base.utils import get_object_or_error, absolute_reverse, add_dev_only_items
 from api.base.serializers import (JSONAPISerializer, WaterbutlerLink, NodeFileHyperLink, IDField, TypeField,
-    TargetTypeField, JSONAPIListField, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly, CheckRetraction)
+    TargetTypeField, JSONAPIListField, LinksField, JSONAPIHyperlinkedIdentityField, DevOnly, HideIfRetraction)
 from api.base.exceptions import InvalidModelValueError
 
 
@@ -48,17 +48,17 @@ class NodeSerializer(JSONAPISerializer):
 
     title = ser.CharField(required=True)
     description = ser.CharField(required=False, allow_blank=True, allow_null=True)
-    category = CheckRetraction(ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string))
+    category = HideIfRetraction(ser.ChoiceField(choices=category_choices, help_text="Choices: " + category_choices_string))
     date_created = ser.DateTimeField(read_only=True)
-    date_modified = CheckRetraction(ser.DateTimeField(read_only=True))
+    date_modified = HideIfRetraction(ser.DateTimeField(read_only=True))
     registration = ser.BooleanField(read_only=True, source='is_registration')
-    fork = CheckRetraction(ser.BooleanField(read_only=True, source='is_fork'))
-    collection = CheckRetraction(DevOnly(ser.BooleanField(read_only=True, source='is_folder')))
-    dashboard = CheckRetraction(ser.BooleanField(read_only=True, source='is_dashboard'))
-    tags = CheckRetraction(JSONAPIListField(child=NodeTagField(), required=False))
+    fork = HideIfRetraction(ser.BooleanField(read_only=True, source='is_fork'))
+    collection = HideIfRetraction(DevOnly(ser.BooleanField(read_only=True, source='is_folder')))
+    dashboard = HideIfRetraction(ser.BooleanField(read_only=True, source='is_dashboard'))
+    tags = HideIfRetraction(JSONAPIListField(child=NodeTagField(), required=False))
 
     # Public is only write-able by admins--see update method
-    public = CheckRetraction(ser.BooleanField(source='is_public', required=False,
+    public = HideIfRetraction(ser.BooleanField(source='is_public', required=False,
                               help_text='Nodes that are made public will give read-only access '
                                         'to everyone. Private nodes require explicit read '
                                         'permission. Write and admin access are the same for '
@@ -69,28 +69,28 @@ class NodeSerializer(JSONAPISerializer):
     links = LinksField({'html': 'get_absolute_url'})
     # TODO: When we have osf_permissions.ADMIN permissions, make this writable for admins
 
-    children = CheckRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
+    children = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-children', lookup_field='pk', link_type='related',
                                                 lookup_url_kwarg='node_id', meta={'count': 'get_node_count'}))
 
     contributors = JSONAPIHyperlinkedIdentityField(view_name='nodes:node-contributors', lookup_field='pk', link_type='related',
                                                     lookup_url_kwarg='node_id', meta={'count': 'get_contrib_count'})
 
-    files = CheckRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
+    files = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-providers', lookup_field='pk', lookup_url_kwarg='node_id',
                                              link_type='related'))
 
-    node_links = CheckRetraction(DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
+    node_links = HideIfRetraction(DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-pointers', lookup_field='pk', link_type='related',
                                                   lookup_url_kwarg='node_id', meta={'count': 'get_pointers_count'})))
 
-    comments = CheckRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-comments', lookup_field='pk', lookup_url_kwarg='node_id',
+    comments = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-comments', lookup_field='pk', lookup_url_kwarg='node_id',
                                                link_type='related', meta={'unread': 'get_unread_comments_count'}))
 
-    parent = CheckRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
+    parent = HideIfRetraction(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-detail', lookup_field='parent_id', link_type='related',
                                               lookup_url_kwarg='node_id'))
 
-    registrations = CheckRetraction(DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
+    registrations = HideIfRetraction(DevOnly(JSONAPIHyperlinkedIdentityField(view_name='nodes:node-registrations', lookup_field='pk', link_type='related',
                                                      lookup_url_kwarg='node_id', meta={'count': 'get_registration_count'})))
 
-    forked_from = CheckRetraction(JSONAPIHyperlinkedIdentityField(
+    forked_from = HideIfRetraction(JSONAPIHyperlinkedIdentityField(
         view_name='nodes:node-detail',
         lookup_field='forked_from_id',
         link_type='related',
