@@ -8,7 +8,6 @@ import requests
 
 from framework.mongo.utils import to_mongo_key
 
-from website import settings
 from website.models import Node
 from website.addons.wiki import settings as wiki_settings
 from website.addons.wiki.exceptions import InvalidVersionError
@@ -89,7 +88,7 @@ def migrate_uuid(node, wname):
 
 def share_db():
     """Generate db client for sharejs db"""
-    client = MongoClient(settings.DB_HOST, settings.DB_PORT)
+    client = MongoClient(wiki_settings.SHAREJS_DB_URL)
     return client[wiki_settings.SHAREJS_DB_NAME]
 
 

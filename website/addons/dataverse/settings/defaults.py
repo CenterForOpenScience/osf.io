@@ -3,3 +3,5 @@ DEFAULT_HOSTS = [
     'dataverse-demo.iq.harvard.edu',    # Harvard DEMO server
     'apitest.dataverse.org',            # Dataverse TEST server
 ]
+
+REQUEST_TIMEOUT = 15

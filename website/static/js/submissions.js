@@ -59,7 +59,7 @@ function Submissions(data) {
                 {
                     data: 'author',  // Data field name
                     sortInclude: true,
-                    custom: function() { return m('a', {href: item.data.authorUrl}, item.data.author); }
+                    custom: function() { return m('a', {href: item.data.authorUrl, target : '_blank'}, item.data.author); }
                 },
 
                 {
@@ -77,7 +77,7 @@ function Submissions(data) {
                     custom : function() {
                         if(item.data.downloadUrl){
                             return [ m('a', { href : item.data.downloadUrl }, [
-                                m('button.btn.btn-success.btn-xs', { style : 'margin-right : 10px;'},  m('i.fa.fa-download.fa-inverse')),
+                                m('button.btn.btn-success.btn-xs', { style : 'margin-right : 10px;'},  m('i.fa.fa-download.fa-inverse'))
 
                             ] ), item.data.download  ];
                         } else {
@@ -89,7 +89,7 @@ function Submissions(data) {
                 {
                     data: 'confName',
                     sortInclude: true,
-                    custom: function() { return m('a', {href: item.data.confUrl}, item.data.confName); }
+                    custom: function() { return m('a', {href: item.data.confUrl, target : '_blank'}, item.data.confName); }
                 }
             ];
         },

@@ -4,12 +4,32 @@
 
         <form role="form" data-bind="submit: submit">
 
-            <div class="form-group">
-                <label>Personal Site</label>
-                <div class="input-group">
-                <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
-                <input class="form-control" data-bind="value: personal" placeholder="http://personalsite.com"/>
+            <label>Your websites</label>
+            <div data-bind="sortable: {
+                        data: profileWebsites,
+                        options: {
+                            handle: '.sort-handle',
+                            containment: '#containDrag'
+                        }
+                    }">
+
+                <div>
+                    <div class="sort-handle">
+                        <i title="Click to remove" class="btn text-danger pull-right  fa fa-times fa" data-bind="click: $parent.removeWebsite"></i>
+                        <div class="input-group" >
+                            <span class="input-group-addon"><i title="Drag to reorder"  class="fa fa-bars"></i></span>
+                            <input class="form-control" data-bind="value: $parent.profileWebsites()[$index()]" placeholder="http://yourwebsite.com"/>
+                        </div>
+                    </div>
+                    <div class="form-group" data-bind="visible: $index() != ($parent.profileWebsites().length - 1)">
+                    </div>
                 </div>
+            </div>
+
+            <div class="p-t-sm p-b-sm">
+                <a class="btn btn-default" data-bind="click: addWebsiteInput">
+                    Add website
+                </a>
             </div>
 
             <div class="form-group">
@@ -75,10 +95,10 @@
             </div>
 
             <div class="form-group">
-                <label>Academic.edu</label>
+                <label>Academia.edu</label>
                 <div class="input-group">
                 <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
-                <input class="form-control" data-bind="value: academic" placeholder="http://academic.edu/profile"/>
+                <input class="form-control" data-bind="value: academia" placeholder="http://academia.edu/profile"/>
                 </div>
             </div>
 
@@ -118,6 +138,14 @@
     <div data-bind="if: mode() === 'view'">
 
         <table class="table" data-bind="if: hasValues()">
+            <tbody>
+                <tr data-bind="if: hasProfileWebsites()">
+                    <td data-bind="visible: profileWebsites().length > 1">Personal websites</td>
+                    <td data-bind="visible: profileWebsites().length === 1">Personal website</td>
+                    <td data-bind="foreach: profileWebsites"><a target="_blank" data-bind="attr.href: $data">{{ $data }}</a></br></td>
+                </tr>
+            </tbody>
+
             <tbody data-bind="foreach: values">
                 <tr data-bind="if: value">
                     <td>{{ label }}</td>

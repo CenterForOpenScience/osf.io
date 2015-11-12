@@ -320,6 +320,22 @@ class MendeleyNodeSettings(AddonOAuthNodeSettingsBase):
         self.mendeley_list_id = None
         return super(MendeleyNodeSettings, self).clear_auth()
 
+    def deauthorize(self, auth=None, add_log=True):
+        """Remove user authorization from this node and log the event."""
+        if add_log:
+            self.owner.add_log(
+                'mendeley_node_deauthorized',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                },
+                auth=auth,
+            )
+
+        self.clear_auth()
+
+        self.save()
+
     def set_auth(self, *args, **kwargs):
         self.mendeley_list_id = None
         return super(MendeleyNodeSettings, self).set_auth(*args, **kwargs)

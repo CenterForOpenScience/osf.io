@@ -221,13 +221,20 @@ utils.maybeQuashEvent = function (event) {
 
 /* Adds a filter to the list of filters if it doesn't already exist */
 utils.updateFilter = function (vm, filter, required) {
-    if (required && vm.requiredFilters.indexOf(filter) === -1) {
-        vm.requiredFilters.push(filter);
-    } else if (vm.optionalFilters.indexOf(filter) === -1 && !required) {
-        vm.optionalFilters.push(filter);
-    }
+    var filters = ensureArray(filter);
+    filters.forEach(function(f){
+        if (required && vm.requiredFilters.indexOf(f) === -1) {
+            vm.requiredFilters.push(f);
+        } else if (vm.optionalFilters.indexOf(f) === -1 && !required) {
+            vm.optionalFilters.push(f);
+        }
+    });
     utils.search(vm);
 };
+
+function ensureArray(value) {
+    return Array.isArray(value) ? value : [value];
+}
 
 /* Removes a filter from the list of filters */
 utils.removeFilter = function (vm, filter) {
@@ -253,7 +260,7 @@ utils.loadRawNormalized = function(result){
     var docID = encodeURIComponent(result.shareProperties.docID);
     return m.request({
         method: 'GET',
-        url: 'api/v1/share/documents/' + source + '/' + docID + '/',
+        url: '/api/v1/share/documents/' + source + '/' + docID + '/',
         unwrapSuccess: function(data) {
             var unwrapped = {};
             var normed = JSON.parse(data.normalized);

@@ -5,6 +5,7 @@ from dataverse.exceptions import ConnectionError, UnauthorizedError, OperationFa
 
 from framework.exceptions import HTTPError
 
+from website.addons.dataverse import settings
 
 def _connect(host, token):
     try:
@@ -78,13 +79,13 @@ def publish_dataset(dataset):
 def get_datasets(dataverse):
     if dataverse is None:
         return []
-    return dataverse.get_datasets()
+    return dataverse.get_datasets(timeout=settings.REQUEST_TIMEOUT)
 
 
 def get_dataset(dataverse, doi):
     if dataverse is None:
         return
-    dataset = dataverse.get_dataset_by_doi(doi)
+    dataset = dataverse.get_dataset_by_doi(doi, timeout=settings.REQUEST_TIMEOUT)
     try:
         if dataset and dataset.get_state() == 'DEACCESSIONED':
             raise HTTPError(http.GONE, data=dict(

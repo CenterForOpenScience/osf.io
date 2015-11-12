@@ -44,7 +44,8 @@ def oauth_callback(service_name, auth):
     provider = get_service(service_name)
 
     # Retrieve permanent credentials from provider
-    provider.auth_callback(user=user)
+    if not provider.auth_callback(user=user):
+        return {}
 
     if provider.account not in user.external_accounts:
         user.external_accounts.append(provider.account)

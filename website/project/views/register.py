@@ -265,6 +265,10 @@ def node_register_template_page_post(auth, node, **kwargs):
     register = node.register_node(
         schema, auth, template, json.dumps(clean_data),
     )
+    register.is_public = False
+    for child in register.get_descendants_recursive():
+        child.is_public = False
+        child.save()
     try:
         if data.get('registrationChoice', 'immediate') == 'embargo':
             # Initiate embargo
