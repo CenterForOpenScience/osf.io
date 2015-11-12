@@ -690,7 +690,7 @@ class Node(GuidStoredObject, AddonModelMixin, IdentifierMixin):
 
     # A list of all MetaSchemas for which this Node has registered_meta
     registered_schema = fields.ForeignField('metaschema', backref='registered', list=True)
-    # A set of <metaschema.name>: <schema> pairs, where <schema> is a
+    # A set of <metaschema._id>: <schema> pairs, where <schema> is a
     # flat set of <question_id>: <response> pairs-- these quesiton ids_above
     # map the the ids in the registrations MetaSchema (see registered_schema).
     # {
