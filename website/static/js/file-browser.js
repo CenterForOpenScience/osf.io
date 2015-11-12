@@ -59,13 +59,14 @@ function getUID() {
 var FileBrowser = {
     controller : function (options) {
         var self = this;
-        self.wrapperSelector = options.wrapperSelector;
+        self.wrapperSelector = options.wrapperSelector;  // For encapsulating each implementation of this component in multiple use
         self.currentLink = ''; // Save the link to compare if a new link is being requested and avoid multiple calls
-        self.reload = m.prop(false);
+        self.reload = m.prop(false); // Gets set to true when treebeard link changes and it needs to be redrawn
+        self.nonLoadTemplate = m.prop(m('', 'Loading')); // Template for when data is not available or error happens
 
         // VIEW STATES
-        self.showInfo = m.prop(false);
-        self.showSidebar = m.prop(true);
+        self.showInfo = m.prop(false); // Show the info panel
+        self.showSidebar = m.prop(true); // Show the links with collections etc. used in narrow views
         self.showCollectionMenu = m.prop(false); // Show hide ellipsis menu for collections
         self.collectionMenuObject = m.prop({item : {label:null}, x : 0, y : 0}); // Collection object to complete actions on menu
 
@@ -101,7 +102,6 @@ var FileBrowser = {
         // INFORMATION PANEL
         self.selected = m.prop([]);
         self.updateSelected = function(selectedList){
-
             // If single project is selected, get activity
             if(selectedList.length === 1){
                 self.activityLogs([
@@ -125,21 +125,30 @@ var FileBrowser = {
             var xhrconfig = function (xhr) {
                 xhr.withCredentials = true;
             };
-            m.request({method : 'GET', url : url, config : xhrconfig}).then(self.data).then(function(value){
-                value.data.map(function(item){
-                    item.kind = 'folder';
-                    item.uid = item.id;
-                    item.name = item.attributes.title;
-                    item.date = new $osf.FormattableDate(item.attributes.date_modified);
+            m.request({method : 'GET', url : url, config : xhrconfig})
+                .then(function(value){
+                    value.data.map(function(item){
+                        item.kind = 'folder';
+                        item.uid = item.id;
+                        item.name = item.attributes.title;
+                        item.date = new $osf.FormattableDate(item.attributes.date_modified);
 
-                    // TODO: Dummy data, remove this when api is ready
-                    item.contributors = [{
-                        id: '8q36f',
-                        name : 'Dummy User'
-                    }];
-                });
+                        // TODO: Dummy data, remove this when api is ready
+                        item.contributors = [{
+                            id: '8q36f',
+                            name : 'Dummy User'
+                        }];
+                    });
+                self.data(value);
                 self.reload(true);
-            });
+            }, function(result){
+                    self.nonLoadTemplate(m('.fb-error.text-danger', [
+                        m('p','Projects couldn\'t load.'),
+                        m('p', m('.btn.btn-link', { onclick : self.updateFilter.bind(null, self.collections[0])},' Reload \'All My Projects\''))
+                    ]));
+                    console.error(result);
+                    throw new Error('Receiving initial data for File Browser failed. Please check your url');
+                });
         };
 
 
@@ -184,7 +193,7 @@ var FileBrowser = {
         };
         self.init = function () {
             var loadUrl = $osf.apiV2Url(self.collections[0].data.path, {
-                query : self.collections[0].data.pathQuery
+                query : self.collections[0].data.query
             });
             self.updateList(loadUrl);
         };
@@ -256,7 +265,7 @@ var FileBrowser = {
                 })
             ]) : '',
             m('.fb-main', { style : poStyle },
-                ctrl.data().length === 0 ? m('', 'Loading') : m('#poOrganizer',  m.component( ProjectOrganizer, {
+                ctrl.data().length === 0 ? ctrl.nonLoadTemplate() : m('#poOrganizer',  m.component( ProjectOrganizer, {
                         filesData : ctrl.data,
                         updateSelected : ctrl.updateSelected,
                         updateFilesData : ctrl.updateFilesData,

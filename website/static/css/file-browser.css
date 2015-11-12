@@ -132,6 +132,11 @@
     padding: 10px 2px;
 }
 
+.fb-error {
+    width: 100%;
+    text-align: center;
+}
+
 /* Responsive Style */
 @media only screen and (min-width : 1200px) {
 
