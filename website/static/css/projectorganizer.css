@@ -1,4 +1,4 @@
-.po-hover-multiselect { 
+.po-hover-multiselect {
     background : lightgoldenrodyellow;
 }
 
@@ -286,7 +286,7 @@ div.organize-project-controls {
     border-radius: 4px;
     outline: none;
 }
-input.typeahead.tt-input { 
+input.typeahead.tt-input {
 height: 32px ;
 }
 
@@ -365,7 +365,7 @@ h3.category {
 /* Project Toolbar New Additions and Changes */
 
 .po-placeholder {
-    line-height: 30px; 
+    line-height: 30px;
 }
 
 #project-grid {

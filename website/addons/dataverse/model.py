@@ -3,15 +3,13 @@ from time import sleep
 import requests
 import httplib as http
 
-import pymongo
 from modularodm import fields
 
-from framework.auth.core import _get_current_user
 from framework.auth.decorators import Auth
 from framework.exceptions import HTTPError
 
 from website.addons.base import (
-    AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, GuidFile, exceptions,
+    AddonOAuthNodeSettingsBase, AddonOAuthUserSettingsBase, exceptions,
 )
 from website.addons.base import StorageAddonBase
 from website.util import waterbutler_url_for
@@ -19,50 +17,6 @@ from website.util import waterbutler_url_for
 from website.addons.dataverse.client import connect_from_settings_or_401
 from website.addons.dataverse import serializer
 from website.addons.dataverse.provider import DataverseProvider
-
-
-class DataverseFile(GuidFile):
-
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('file_id', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-
-    file_id = fields.StringField(required=True, index=True)
-
-    @property
-    def waterbutler_path(self):
-        return '/' + self.file_id
-
-    @property
-    def provider(self):
-        return 'dataverse'
-
-    @property
-    def version_identifier(self):
-        return 'version'
-
-    @property
-    def unique_identifier(self):
-        return self.file_id
-
-    def enrich(self, save=True):
-        super(DataverseFile, self).enrich(save)
-
-        # Check permissions
-        user = _get_current_user()
-        if not user or not self.node.can_edit(user=user):
-            try:
-                # Users without edit permission can only see published files
-                if not self._metadata_cache['extra']['hasPublishedVersion']:
-                    raise exceptions.FileDoesntExistError
-            except (KeyError, IndexError):
-                pass
 
 
 class AddonDataverseUserSettings(AddonOAuthUserSettingsBase):
@@ -145,10 +99,6 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         sleep(1.0 / 5.0)
         return res.json().get('data', [])
 
-    def find_or_create_file_guid(self, path):
-        file_id = path.strip('/') if path else ''
-        return DataverseFile.get_or_create(node=self.owner, file_id=file_id)
-
     def delete(self, save=True):
         self.deauthorize(add_log=False)
         super(AddonDataverseNodeSettings, self).delete(save)
@@ -226,24 +176,6 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
     # backwards compatibility
     before_register = before_register_message
 
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return ('Because you have authorized the Dataverse add-on for this '
-                '{category}, forking it will also transfer your authentication '
-                'to the forked {category}.').format(category=category)
-
-        else:
-            return ('Because the Dataverse add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication to the forked '
-                    '{category}.').format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
-
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
         who authorized the Dataverse addon
@@ -297,7 +229,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
         else:
             message = (
                 'Dataverse authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href="{url}">Settings</a> '
+                'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                 'page.'
             ).format(
                 url=fork.web_url_for('node_setting'),
@@ -328,7 +260,7 @@ class AddonDataverseNodeSettings(StorageAddonBase, AddonOAuthNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message

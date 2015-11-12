@@ -11,6 +11,7 @@ $(document).ready(function() {
     })
     .done(function (data) {
         new fileBrowser(data);
+        $('#sharebutton').removeClass('disabled');
     });
 
     var panelToggle = $('.panel-toggle');
@@ -18,19 +19,14 @@ $(document).ready(function() {
     var panelVisible = panelToggle.find('.osf-panel-hide');
     var panelHidden = panelToggle.find('.osf-panel-show');
 
-    $('.panel-collapse').on('click', function () {
-        panelToggle.removeClass('col-sm-3').addClass('col-sm-1');
-        panelExpand.removeClass('col-sm-9').addClass('col-sm-11');
-
-        panelVisible.hide();
-        panelHidden.show();
-    });
-    $('.osf-panel-show .panel-heading').on('click', function () {
+    $('.osf-panel-show .tb-header-row').on('click', function () {
         panelToggle.removeClass('col-sm-1').addClass('col-sm-3');
         panelExpand.removeClass('col-sm-11').addClass('col-sm-9');
 
         panelVisible.show();
         panelHidden.hide();
     });
+    // TODO: This is a hack to highlight the "Files" tab. Rethink.
+    $('.osf-project-navbar li#projectNavFiles').addClass('active');
 
 });

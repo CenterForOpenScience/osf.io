@@ -9,9 +9,9 @@
                     {
                         "id": "datacompletion",
                         "type": "select",
-                        "label": "Is data collection for this project underway or complete?",
+                        "label": "Has data collection begun for this project?",
                         "caption": "Please choose",
-                        "options": ["No", "Yes"]
+                        "options": ["No, data collection has not begun", "Yes, data collection is underway or complete"]
                     },
                     {
                         "id": "looked",

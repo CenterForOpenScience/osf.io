@@ -29,10 +29,6 @@ def main(dry_run=True):
     analytics.hour.on(2)
     analytics.minute.on(0)  # Daily 2:00 a.m.
 
-    digest = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/send_digest.sh')))
-    digest.hour.on(2)
-    digest.minute.on(0)  # Daily 2:00 a.m.
-
     box = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/refresh_box_tokens.sh')))
     box.hour.on(2)
     box.minute.on(0)  # Daily 2:00 a.m.
@@ -44,6 +40,10 @@ def main(dry_run=True):
     embargoes = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/embargo_registrations.sh')))
     embargoes.hour.on(0)
     embargoes.minute.on(0)  # Daily 12 a.m.
+
+    registration_approvals = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/approve_registrations.sh')))
+    registration_approvals.hour.on(0)
+    registration_approvals.minute.on(0)  # Daily 12 a.m.
 
     files_audit = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/files_audit.sh')))
     files_audit.dow.on(0)
@@ -59,6 +59,18 @@ def main(dry_run=True):
     glacier_audit.dow.on(0)
     glacier_audit.hour.on(6)
     glacier_audit.minute.on(0)  # Sunday 6:00 a.m.
+
+    triggered_mails = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/triggered_mails.sh')))
+    triggered_mails.hour.on(0)
+    triggered_mails.minute.on(0)  # Daily 12 a.m.
+
+    send_queued_mails = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/send_queued_mails.sh')))
+    send_queued_mails.hour.on(12)
+    send_queued_mails.minute.on(0)  # Daily 12 p.m.
+
+    usage_audit = ensure_item(cron, 'bash {}'.format(app_prefix('scripts/osfstorage/usage_audit.sh')))
+    usage_audit.hour.on(0)
+    usage_audit.minute.on(0)  # Daily 12 a.m.
 
     logger.info('Updating crontab file:')
     logger.info(cron.render())

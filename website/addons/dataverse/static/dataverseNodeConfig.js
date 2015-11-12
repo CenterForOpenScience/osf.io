@@ -76,7 +76,7 @@ function ViewModel(url) {
                 'problem persists.';
         }),
         confirmDeauth: ko.pureComputed(function() {
-            return 'Are you sure you want to remove this ' + self.addonName + ' authorization?';
+            return 'Are you sure you want to remove this ' + self.addonName + ' account?';
         }),
         confirmAuth: ko.pureComputed(function() {
             return 'Are you sure you want to authorize this project with your ' + self.addonName + ' access token?';
@@ -85,7 +85,7 @@ function ViewModel(url) {
             return 'Disconnected ' + self.addonName + '.';
         }),
         deauthorizeFail: ko.pureComputed(function() {
-            return 'Could not deauthorize because of an error. Please try again later.';
+            return 'Could not disconnect because of an error. Please try again later.';
         }),
         authInvalid: ko.pureComputed(function() {
             return 'The API token provided for ' + self.host() + ' is invalid.';
@@ -221,7 +221,7 @@ function ViewModel(url) {
         self.updateFromData(response.result);
         self.loadedSettings(true);
     }).fail(function(xhr, textStatus, error) {
-        self.changeMessage(self.messages.userSettingsError, 'text-warning');
+        self.changeMessage(self.messages.userSettingsError, 'text-danger');
         Raven.captureMessage('Could not GET dataverse settings', {
             url: url,
             textStatus: textStatus,
@@ -349,6 +349,12 @@ ViewModel.prototype.getDatasets = function() {
 /** Send POST request to authorize Dataverse */
 ViewModel.prototype.sendAuth = function() {
     var self = this;
+
+    // Selection should not be empty
+    if( !self.selectedHost() ){
+        self.changeMessage("Please select a Dataverse repository.", 'text-danger');
+        return;
+    }
     var url = self.urls().create;
     return $osf.postJSON(
         url,
@@ -380,7 +386,7 @@ ViewModel.prototype.fetchAccounts = function() {
         ret.resolve(data.accounts);
     });
     request.fail(function(xhr, textStatus, error) {
-        self.changeMessage(self.messages.updateAccountsError(), 'text-warning');
+        self.changeMessage(self.messages.updateAccountsError(), 'text-danger');
         Raven.captureMessage('Could not GET ' + self.addonName + ' accounts for user', {
             url: self.url,
             textStatus: textStatus,
@@ -531,7 +537,7 @@ ViewModel.prototype._deauthorizeConfirm = function() {
 ViewModel.prototype.deauthorize = function() {
     var self = this;
     bootbox.confirm({
-        title: 'Disconnect ' + self.addonName + '?',
+        title: 'Disconnect ' + self.addonName + ' Account?',
         message: self.messages.confirmDeauth(),
         callback: function(confirmed) {
             if (confirmed) {

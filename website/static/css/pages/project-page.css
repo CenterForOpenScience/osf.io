@@ -27,6 +27,10 @@
     content: "";
 }
 
+#contributors p {
+    margin: 0;
+}
+
 /* Project Navigation */
 #projectSubnav .navbar-collapse {
     padding-left: 0;
@@ -64,6 +68,17 @@
     }
     .project-nav {
         overflow: hidden;
+    }
+
+    /* Allow project nav to move the content on small screen */
+    #projectBanner .osf-project-navbar {
+        position: relative;
+        top: 0;
+        margin-top: -55px;
+    }
+    #projectBanner {
+        margin-right: -15px;
+        margin-left: -15px;
     }
 }
 
@@ -113,6 +128,11 @@
     position: relative;
     word-break: break-all;
     word-break: break-word; /* Non standard for webkit*/
+}
+
+/* Disable word-break in project addon-settings table */
+.table-addon-terms td:first-child {
+    word-break: normal;
 }
 
 #commentsWidgetContainer .comment-body {

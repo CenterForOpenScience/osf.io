@@ -1,5 +1,6 @@
 NODE_SUBSCRIPTIONS_AVAILABLE = {
-    'comments': 'Comments Added'
+    'comments': 'Comments added',
+    'file_updated': 'Files updated'
 }
 
 USER_SUBSCRIPTIONS_AVAILABLE = {

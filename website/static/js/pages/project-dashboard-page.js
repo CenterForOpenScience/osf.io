@@ -2,9 +2,9 @@
 'use strict';
 
 var $ = require('jquery');
-require('../../vendor/bower_components/jquery.tagsinput/jquery.tagsinput.css');
 require('jquery-tagsinput');
 require('bootstrap-editable');
+require('js/osfToggleHeight');
 
 var m = require('mithril');
 var Fangorn = require('js/fangorn');
@@ -20,7 +20,6 @@ var CitationList = require('js/citationList');
 var CitationWidget = require('js/citationWidget');
 var mathrender = require('js/mathrender');
 var md = require('js/markdown').full;
-
 
 var ctx = window.contextVars;
 var nodeApiUrl = ctx.node.urls.api;
@@ -70,6 +69,8 @@ if (!ctx.node.anonymous && !ctx.node.isRetracted) {
 }
 $(document).ready(function () {
 
+    $('#contributorsList').osfToggleHeight();
+
     if (!ctx.node.isRetracted) {
         // Treebeard Files view
         $.ajax({
@@ -88,7 +89,7 @@ $(document).ready(function () {
                     return [
                         {
                             title: 'Name',
-                            width : '90%',
+                            width : '100%',
                             sort : true,
                             sortType : 'text'
                         }
@@ -99,6 +100,9 @@ $(document).ready(function () {
                     item.css = '';
                     if(tb.isMultiselected(item.id)){
                         item.css = 'fangorn-selected';
+                    }
+                    if(item.data.permissions && !item.data.permissions.view){
+                        item.css += ' tb-private-row';
                     }
                     var defaultColumns = [
                                 {

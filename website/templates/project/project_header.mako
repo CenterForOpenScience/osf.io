@@ -1,5 +1,4 @@
 <%
-    import json
     is_project = node['node_type'] == 'project'
 %>
 
@@ -31,15 +30,15 @@
 
                     % endif
                         <li>
-                            <a href="${node['url']}"  class="project-title">
-                                ${node['title'] | n}
+                            <a href="${node['url']}"  class="project-title"> 
+                                ${ node['title'] }
                                 % if user['unread_comments']['node'] > 0:
                                     <span class="badge">${user['unread_comments']['node']}</span>
                                 % endif
                             </a>
                         </li>
                     % if not node['is_retracted']:
-                        <li>
+                        <li id="projectNavFiles">
                             <a href="${node['url']}files/">
                                 Files
                                 % if user['unread_comments']['files'] > 0:
@@ -74,7 +73,7 @@
                             </a>
                         </li>
                         % if node['is_public'] or user['is_contributor']:
-                            <li><a href="${node['url']}statistics/">Statistics</a></li>
+                            <li><a href="${node['url']}analytics/">Analytics</a></li>
                         % endif
 
                         % if not node['is_registration']:
@@ -83,7 +82,7 @@
 
                         <li><a href="${node['url']}forks/">Forks</a></li>
                         % if user['is_contributor']:
-                            <li><a href="${node['url']}contributors/">Sharing</a></li>
+                            <li><a href="${node['url']}contributors/">Contributors</a></li>
                         % endif
 
                         % if user['has_read_permissions'] and not node['is_registration'] or (node['is_registration'] and 'admin' in user['permissions']):
@@ -109,17 +108,23 @@
     % if node['is_registration']:  ## Begin registration undismissable labels
 
         % if not node['is_retracted']:
-            <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.
-            </div>
-            <style type="text/css">
-            .watermarked {
-                background-image:url('/static/img/read-only.png');
-                background-repeat:repeat;
-            }
-            </style>
+           % if not node['is_pending_registration']:
+              <div class="alert alert-info">This ${node['node_type']} is a registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been frozen and cannot be edited.</div>
+
+           % else:
+              <div class="alert alert-info">This is a pending registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>, awaiting approval from project administrators. This registration will be final when all project administrators approve the registration or 48 hours pass, whichever comes first.</div>
+           % endif
+
+           <style type="text/css">
+              .watermarked {
+                  background-image:url('/static/img/read-only.png');
+                  background-repeat:repeat;
+              }
+           </style>
+
         % endif
 
-        % if node['pending_retraction']:
+        % if node['is_pending_retraction']:
             <div class="alert alert-info">This ${node['node_type']} is currently pending entering into a retracted state.</div>
         % endif
 
@@ -127,7 +132,7 @@
             <div class="alert alert-danger">This ${node['node_type']} is a retracted registration of <a class="link-solid" href="${node['registered_from_url']}">this ${node['node_type']}</a>; the content of the ${node['node_type']} has been taken down for the reason(s) stated below.</div>
         % endif
 
-        % if  node['pending_embargo']:
+        % if  node['is_pending_embargo']:
             <div class="alert alert-info">This ${node['node_type']} is currently pending registration, awaiting approval from project administrators. This registration will be final and enter the embargo period when all project administrators approve the registration or 48 hours pass, whichever comes first. The embargo will keep the registration private until the embargo period ends.</div>
         % endif
 

@@ -13,7 +13,7 @@
                 <input type="text" class='form-control' value="${user.username}" disabled/>
             </div>
             <div class='form-group'>
-                ${form.password(placeholder='Password', autofocus=True)}
+                ${form.password(placeholder='Password', autofocus=True) | unicode, n }
             </div>
 
             %if next_url:

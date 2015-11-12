@@ -51,7 +51,10 @@ class Zotero(ExternalProvider):
         """List of CitationList objects, derived from Zotero collections"""
         client = self.client
 
-        collections = client.collections()
+        # Note: Pagination is the only way to ensure all of the collections
+        #       are retrieved. 100 is the limit per request. This applies
+        #       to Mendeley too, though that limit is 500.
+        collections = client.collections(limit=100)
 
         all_documents = serialize_folder(
             'All Documents',
@@ -177,6 +180,22 @@ class ZoteroNodeSettings(AddonOAuthNodeSettingsBase):
     def clear_auth(self):
         self.zotero_list_id = None
         return super(ZoteroNodeSettings, self).clear_auth()
+
+    def deauthorize(self, auth=None, add_log=True):
+        """Remove user authorization from this node and log the event."""
+        if add_log:
+            self.owner.add_log(
+                'zotero_node_deauthorized',
+                params={
+                    'project': self.owner.parent_id,
+                    'node': self.owner._id,
+                },
+                auth=auth,
+            )
+
+        self.clear_auth()
+
+        self.save()
 
     def set_target_folder(self, zotero_list_id, zotero_list_name, auth):
         """Configure this addon to point to a Zotero folder

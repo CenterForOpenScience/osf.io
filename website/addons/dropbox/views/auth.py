@@ -13,7 +13,6 @@ from framework.sessions import session
 from framework.exceptions import HTTPError
 from framework.auth.decorators import collect_auth
 from framework.auth.decorators import must_be_logged_in
-from framework.status import push_status_message as flash
 
 from website.util import api_url_for
 from website.util import web_url_for
@@ -58,7 +57,6 @@ def finish_auth(node):
     except DropboxOAuth2Flow.CsrfException:
         raise HTTPError(http.FORBIDDEN)
     except DropboxOAuth2Flow.NotApprovedException:  # User canceled flow
-        flash('Did not approve token.', 'info')
         if node:
             return redirect(node.web_url_for('node_setting'))
         return redirect(web_url_for('user_addons'))
@@ -77,9 +75,8 @@ def dropbox_oauth_start(auth, **kwargs):
         session.data['dropbox_auth_nid'] = nid
     if not user:
         raise HTTPError(http.FORBIDDEN)
-    # If user has already authorized dropbox, flash error message
+    # Handle if user has already authorized dropbox
     if user.has_addon('dropbox') and user.get_addon('dropbox').has_auth:
-        flash('You have already authorized Dropbox for this account', 'warning')
         return redirect(web_url_for('user_addons'))
     # Force the user to reapprove the dropbox authorization each time. Currently the
     # URI component force_reapprove is not configurable from the dropbox python client.
@@ -134,7 +131,7 @@ def dropbox_oauth_delete_user(user_addon, auth, **kwargs):
             pass
         else:
             raise HTTPError(http.BAD_REQUEST)
-    user_addon.clear()
+    user_addon.delete()
     user_addon.save()
 
     return None

@@ -1,70 +1,17 @@
 # -*- coding: utf-8 -*-
 import os
-import base64
 import logging
-
-import pymongo
 
 from modularodm import fields
 
 from framework.auth import Auth
 from website.addons.base import exceptions
-from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase, GuidFile
+from website.addons.base import AddonUserSettingsBase, AddonNodeSettingsBase
 from website.addons.base import StorageAddonBase
 
-from website.addons.dropbox.utils import clean_path, DropboxNodeLogger
+from website.addons.dropbox.utils import DropboxNodeLogger
 
 logger = logging.getLogger(__name__)
-
-
-class DropboxFile(GuidFile):
-    """A Dropbox file model with a GUID. Created lazily upon viewing a
-    file's detail page.
-    """
-    __indices__ = [
-        {
-            'key_or_list': [
-                ('node', pymongo.ASCENDING),
-                ('path', pymongo.ASCENDING),
-            ],
-            'unique': True,
-        }
-    ]
-
-    #: Full path to the file, e.g. 'My Pictures/foo.png'
-    path = fields.StringField(required=True, index=True)
-
-    @property
-    def file_name(self):
-        if self.revision:
-            return '{0}_{1}_{2}.html'.format(self._id, self.revision, base64.b64encode(self.folder))
-        return '{0}_{1}_{2}.html'.format(self._id, self.unique_identifier, base64.b64encode(self.folder))
-
-    @property
-    def waterbutler_path(self):
-        path = '/' + self.path
-        if self.folder == '/':
-            return path
-        return path.replace(self.folder, '', 1)
-
-    @property
-    def folder(self):
-        addon = self.node.get_addon('dropbox')
-        if not addon or not addon.folder:
-            return ''  # Must return a str value this will error out properly later
-        return addon.folder
-
-    @property
-    def provider(self):
-        return 'dropbox'
-
-    @property
-    def version_identifier(self):
-        return 'revision'
-
-    @property
-    def unique_identifier(self):
-        return self._metadata_cache['extra']['revisionId']
 
 
 class DropboxUserSettings(AddonUserSettingsBase):
@@ -133,12 +80,6 @@ class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         """Whether an access token is associated with this node."""
         return bool(self.user_settings and self.user_settings.has_auth)
 
-    def find_or_create_file_guid(self, path):
-        return DropboxFile.get_or_create(
-            node=self.owner,
-            path=clean_path(os.path.join(self.folder, path.lstrip('/'))),
-        )
-
     def set_folder(self, folder, auth):
         self.folder = folder
         # Add log to node
@@ -183,8 +124,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         return {'folder': self.folder}
 
     def create_waterbutler_log(self, auth, action, metadata):
-        cleaned_path = clean_path(os.path.join(self.folder, metadata['path']))
-        url = self.owner.web_url_for('addon_view_or_download_file', path=cleaned_path, provider='dropbox')
+        url = self.owner.web_url_for('addon_view_or_download_file', path=metadata['path'].strip('/'), provider='dropbox')
         self.owner.add_log(
             'dropbox_{0}'.format(action),
             auth=auth,
@@ -219,24 +159,6 @@ class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
 
     # backwards compatibility
     before_register = before_register_message
-
-    def before_fork_message(self, node, user):
-        """Return warning text to display if user auth will be copied to a
-        fork.
-        """
-        category = node.project_or_component
-        if self.user_settings and self.user_settings.owner == user:
-            return (u'Because you have authorized the Dropbox add-on for this '
-                '{category}, forking it will also transfer your authentication token to '
-                'the forked {category}.').format(category=category)
-
-        else:
-            return (u'Because the Dropbox add-on has been authorized by a different '
-                    'user, forking it will not transfer authentication token to the forked '
-                    '{category}.').format(category=category)
-
-    # backwards compatibility
-    before_fork = before_fork_message
 
     def before_remove_contributor_message(self, node, removed):
         """Return warning text to display if removed contributor is the user
@@ -293,7 +215,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
         else:
             message = (
                 u'Dropbox authorization not copied to forked {cat}. You may '
-                'authorize this fork on the <a href="{url}">Settings</a> '
+                'authorize this fork on the <u><a href="{url}">Settings</a></u> '
                 'page.'
             ).format(
                 url=fork.web_url_for('node_setting'),
@@ -324,7 +246,7 @@ class DropboxNodeSettings(StorageAddonBase, AddonNodeSettingsBase):
             if not auth or auth.user != removed:
                 url = node.web_url_for('node_setting')
                 message += (
-                    u' You can re-authenticate on the <a href="{url}">Settings</a> page.'
+                    u' You can re-authenticate on the <u><a href="{url}">Settings</a></u> page.'
                 ).format(url=url)
             #
             return message

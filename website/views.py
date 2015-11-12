@@ -2,6 +2,7 @@
 import logging
 import itertools
 import math
+import urllib
 import httplib as http
 
 from modularodm import Q
@@ -15,7 +16,6 @@ from framework.routing import proxy_url
 from framework.exceptions import HTTPError
 from framework.auth.forms import SignInForm
 from framework.forms import utils as form_utils
-from framework.guid.model import GuidStoredObject
 from framework.auth.forms import RegistrationForm
 from framework.auth.forms import ResetPasswordForm
 from framework.auth.forms import ForgotPasswordForm
@@ -172,9 +172,9 @@ def get_all_registrations_smart_folder(auth, **kwargs):
         Q('is_folder', 'eq', False)
     ).sort('-title')
 
-    # Note(hrybacki): is_retracted and pending_embargo are property methods
+    # Note(hrybacki): is_retracted and is_pending_embargo are property methods
     # and cannot be directly queried
-    nodes = filter(lambda node: not node.is_retracted and not node.pending_embargo, nodes)
+    nodes = filter(lambda node: not node.is_retracted and not node.is_pending_embargo, nodes)
     keys = [node._id for node in nodes]
     return [rubeus.to_project_root(node, auth, **kwargs) for node in nodes if node.ids_above.isdisjoint(keys)]
 
@@ -290,7 +290,7 @@ def serialize_log(node_log, auth=None, anonymous=False):
         else {'fullname': node_log.foreign_user},
         'contributors': [node_log._render_log_contributor(c) for c in node_log.params.get("contributors", [])],
         'action': node_log.action,
-        'params': sanitize.safe_unescape_html(node_log.params),
+        'params': sanitize.unescape_entities(node_log.params),
         'date': utils.iso8601format(node_log.date),
         'node': node_log.node.serialize(auth) if node_log.node else None,
         'anonymous': anonymous
@@ -324,6 +324,8 @@ def _build_guid_url(base, suffix=None):
         each.strip('/') for each in [base, suffix]
         if each
     ])
+    if not isinstance(url, unicode):
+        url = url.decode('utf-8')
     return u'/{0}/'.format(url)
 
 
@@ -340,14 +342,14 @@ def resolve_guid(guid, suffix=None):
     guid_object = Guid.load(guid)
     if guid_object:
 
-        # verify that the object is a GuidStoredObject descendant. If a model
-        #   was once a descendant but that relationship has changed, it's
+        # verify that the object implements a GuidStoredObject-like interface. If a model
+        #   was once GuidStoredObject-like but that relationship has changed, it's
         #   possible to have referents that are instances of classes that don't
-        #   have a redirect_mode attribute or otherwise don't behave as
+        #   have a deep_url attribute or otherwise don't behave as
         #   expected.
-        if not isinstance(guid_object.referent, GuidStoredObject):
+        if not hasattr(guid_object.referent, 'deep_url'):
             sentry.log_message(
-                'Guid `{}` resolved to non-guid object'.format(guid)
+                'Guid `{}` resolved to an object with no deep_url'.format(guid)
             )
             raise HTTPError(http.NOT_FOUND)
         referent = guid_object.referent
@@ -356,7 +358,7 @@ def resolve_guid(guid, suffix=None):
             raise HTTPError(http.NOT_FOUND)
         if not referent.deep_url:
             raise HTTPError(http.NOT_FOUND)
-        url = _build_guid_url(referent.deep_url, suffix)
+        url = _build_guid_url(urllib.unquote(referent.deep_url), suffix)
         return proxy_url(url)
 
     # GUID not found; try lower-cased and redirect if exists
@@ -368,3 +370,15 @@ def resolve_guid(guid, suffix=None):
 
     # GUID not found
     raise HTTPError(http.NOT_FOUND)
+
+##### Redirects #####
+
+# Redirect /about/ to OSF wiki page
+# https://github.com/CenterForOpenScience/osf.io/issues/3862
+# https://github.com/CenterForOpenScience/community/issues/294
+def redirect_about(**kwargs):
+    return redirect('https://osf.io/4znzp/wiki/home/')
+
+
+def redirect_howosfworks(**kwargs):
+    return redirect('/getting-started/')

@@ -6,6 +6,11 @@ var bootbox = require('bootbox');
 require('bootstrap.growl');
 var History = require('exports?History!history');
 
+var siteLicenses = require('js/licenses');
+var licenses = siteLicenses.list;
+var DEFAULT_LICENSE = siteLicenses.DEFAULT_LICENSE;
+var OTHER_LICENSE = siteLicenses.OTHER_LICENSE;
+
 var $osf = require('js/osfHelpers');
 // Enable knockout punches
 ko.punches.enableAll();
@@ -13,7 +18,9 @@ ko.punches.enableAll();
 // Disable IE Caching of JSON
 $.ajaxSetup({ cache: false });
 
-//https://stackoverflow.com/questions/7731778/jquery-get-query-string-parameters
+var eqInsensitive = function(str1, str2) {
+    return str1.toUpperCase() === str2.toUpperCase();
+};
 
 var Category = function(name, count, display){
     var self = this;
@@ -36,6 +43,18 @@ var Tag = function(tagInfo){
     self.count = tagInfo.doc_count;
 };
 
+var License = function(name, id, count) {
+
+    this.name = name;
+    this.id = id;
+    this.count = ko.observable(count);
+
+    this.active = ko.observable(false);
+};
+License.prototype.toggleActive = function() {
+    this.active(!this.active());
+};
+
 var User = function(result){
     var self = this;
     self.category = result.category;
@@ -46,8 +65,6 @@ var User = function(result){
     self.degree = result.degree;
     self.school = result.school;
     self.url = result.url;
-    self.wikiUrl = result.url+'wiki/';
-    self.filesUrl = result.url+'files/';
     self.user = result.user;
 
     $.ajax('/api/v1'+ result.url).success(function(data){
@@ -75,15 +92,72 @@ var ViewModel = function(params) {
     self.searching = ko.observable(false);
     self.resultsPerPage = ko.observable(10);
     self.categories = ko.observableArray([]);
+    self.shareCategory = ko.observable('');
     self.searchStarted = ko.observable(false);
     self.showSearch = true;
     self.showClose = false;
     self.searchCSS = ko.observable('active');
     self.onSearchPage = true;
 
+    self.licenses = ko.observable(
+        $.map(licenses, function(license) {
+            var l = new License(license.name, license.id, 0);
+            l.active.subscribe(function() {
+                self.currentPage(1);
+                self.search();
+            });
+            return l;
+        })
+    );
+    self.licenseNames = ko.computed(function() {
+        var sortedLicenses = self.licenses() || [];
+        sortedLicenses.sort(function(a, b) {
+            if (a.count() > b.count()) {
+                return -1;
+            }
+            else if (b.count() > a.count()) {
+                return 1;
+            }
+            else {
+                if (a.name > b.name) {
+                    return 1;
+                }
+                else {
+                    return -1;
+                }
+                return 0;
+            }
+        });
+        return $.map(sortedLicenses, function(count, name) {
+            return name;
+        });
+    });
+    self.selectedLicenses = ko.pureComputed(function() {
+        return (self.licenses() || []).filter(function(license) {
+            return license.active();
+        });
+    });
+    self.showLicenses = ko.computed(function() {
+        return ['project', 'registration', 'component'].indexOf(self.category().name) >= 0;
+    });
+    self.category.subscribe(function(value) {
+        if (['project', 'registration', 'component'].indexOf(value) < 0) {
+            $.each(self.licenses(), function(i, license) {
+                license.active(false);
+            });
+        }
+    });
+
     // Maintain compatibility with hiding search bar elsewhere on the site
     self.toggleSearch = function() {
     };
+
+    self.allCategories = ko.pureComputed(function(){
+        if(self.shareCategory()){
+            return self.categories().concat(self.shareCategory());
+        }
+        return self.categories().concat(new Category('SHARE', 0, 'SHARE'));
+    });
 
     self.totalCount = ko.pureComputed(function() {
         if (self.categories().length === 0 || self.categories()[0] === undefined) {
@@ -94,7 +168,7 @@ var ViewModel = function(params) {
     });
 
     self.totalPages = ko.pureComputed(function() {
-        var resultsCount = Math.max(self.resultsPerPage(),1); // No Divide by Zero
+        var resultsCount = Math.max(self.resultsPerPage(), 1); // No Divide by Zero
         var countOfPages = Math.ceil(self.totalResults() / resultsCount);
         return countOfPages;
     });
@@ -141,14 +215,45 @@ var ViewModel = function(params) {
         };
     });
 
+    self.filters = function(){
+        var selectedLicenses = self.selectedLicenses();
+        if (selectedLicenses.length) {
+            var filters = {
+                terms: {
+                    'license.id': $.map(selectedLicenses, function(l) {
+                        return l.id;
+                    })
+                }
+            };
+            if (selectedLicenses.filter(function(l) {
+                return eqInsensitive(l.id, DEFAULT_LICENSE.id);
+            }).length) {
+                filters = {
+                    or: [
+                        filters,
+                        {
+                            missing: {field: 'license'}
+                        }
+                    ]
+                };
+            }
+            return filters;
+        }
+        return null;
+    };
 
-    self.fullQuery = ko.pureComputed(function() {
-        return {
-            'filtered': {
-                'query': self.queryObject()
+    self.fullQuery = function(filters) {
+        var query = {
+            filtered: {
+                query: self.queryObject()
             }
         };
-    });
+        if (filters) {
+            query.filtered.filter = filters;
+        }
+
+        return query;
+    };
 
     self.sortCategories = function(a, b) {
         if(a.name === 'Total') {
@@ -184,27 +289,43 @@ var ViewModel = function(params) {
         }
     };
 
-    /** name of tag, action add or remove.*/
-    self.clickTag = function(name, action) {
-        // To handle passing from template vs. in main html
-        var tag = name;
-
-        if(typeof name.name !== 'undefined') {
-            tag = name.name;
-        }
-
-        self.currentPage(1);
-        var tagString = 'tags:("' + tag + '")';
-
-        if (self.query().indexOf(tagString) === -1) {
-            if (self.query() !== '' && action === 'add') {
-                self.query(self.query() + ' AND ');
-            } else if (self.query() !== '' && action === 'remove') {
-                self.query(self.query() + ' NOT ');
+    self._makeTagString = function(tagName) {
+        return 'tags:("' + tagName.replace(/"/g, '\\\"') + '")';
+    };
+    self.addTag = function(tagName) {
+        var tagString = self._makeTagString(tagName);
+        var query = self.query();
+        if (query.indexOf(tagString) === -1) {
+            if (self.query() !== '') {
+                query += ' AND ';
             }
-            self.query(self.query() + tagString);
-            self.category(new Category('total', 0, 'Total'));
+            query += tagString;
+            self.query(query);
+            self.onUpdateTags();
         }
+    };
+    self.removeTag = function(tagName, _, e) {
+        e.stopPropagation();
+        var query = self.query();
+        var tagRegExp = /(?:AND)?\s*tags\:\([\'\"](.+?)[\'\"]\)/g;
+        var dirty = false;
+        while (tagRegExp.test(query)) {
+            var match = tagRegExp.exec(query);
+            var block = match.shift();
+            var tag = match.shift().trim();
+            if (tag === tagName) {
+                query = query.replace(block, '').trim();
+                dirty = true;
+            }
+        }
+        if (dirty) {
+            self.query(query);
+            self.onUpdateTags();
+        }
+    };
+    self.onUpdateTags = function() {
+        self.category(new Category('total', 0, 'Total'));
+        self.currentPage(1);
         self.search();
     };
 
@@ -223,7 +344,11 @@ var ViewModel = function(params) {
         query = query.replace(/\s?AND tags:/g, ' AND tags:');
         self.query(query);
 
-        var jsonData = {'query': self.fullQuery(), 'from': self.currentIndex(), 'size': self.resultsPerPage()};
+        var jsonData = {
+            query: self.fullQuery(self.filters()),
+            from: self.currentIndex(),
+            size: self.resultsPerPage()
+        };
         var url = self.queryUrl + self.category().url();
 
         $osf.postJSON(url, jsonData).success(function(data) {
@@ -233,6 +358,30 @@ var ViewModel = function(params) {
             self.tagMaxCount(1);
             self.results.removeAll();
             self.categories.removeAll();
+            self.shareCategory('');
+
+            // Deep copy license list
+            var licenseCounts = self.licenses().slice();
+            var noneLicense;
+            for(var i = 0; i < licenseCounts.length; i++) {
+                var l = licenseCounts[i];
+                l.count(0);
+                if (eqInsensitive(l.id, DEFAULT_LICENSE.id)) {
+                    noneLicense = l;
+                }
+            }
+            noneLicense.count(0);
+            var nullLicenseCount = data.aggs.total || 0;
+            if ((data.aggs || {}).licenses)  {
+                $.each(data.aggs.licenses, function(key, value) {
+                    licenseCounts.filter(function(l) {
+                        return eqInsensitive(l.id, key);
+                    })[0].count(value);
+                    nullLicenseCount -= value;
+                });
+            }
+            noneLicense.count(noneLicense.count() + nullLicenseCount);
+            self.licenses(licenseCounts);
 
             data.results.forEach(function(result){
                 if(result.category === 'user'){
@@ -243,7 +392,11 @@ var ViewModel = function(params) {
                         result.wikiUrl = result.url+'wiki/';
                         result.filesUrl = result.url+'files/';
                     }
+
                     self.results.push(result);
+                }
+                if(result.category === 'registration'){
+                    result.dateRegistered = new $osf.FormattableDate(result.date_registered);
                 }
             });
 
@@ -259,8 +412,18 @@ var ViewModel = function(params) {
             self.categories(self.categories().sort(self.sortCategories));
 
             // If our category is named attempt to load its total else set it to the total total
+            var selectedLicenses = self.selectedLicenses();
             if (self.category().name !== undefined) {
-                self.totalResults(data.counts[self.category().name] || 0);
+                if (selectedLicenses.length) {
+                    var total = 0;
+                    $.each(selectedLicenses, function(i, license) {
+                        total += license.count();
+                    });
+                    self.totalResults(total);
+                }
+                else {
+                    self.totalResults(data.counts[self.category().name] || 0);
+                }
             } else {
                 self.totalResults(self.self.categories()[0].count);
             }
@@ -282,8 +445,9 @@ var ViewModel = function(params) {
             }
 
             $osf.postJSON('/api/v1/share/search/?count&v=1', jsonData).success(function(data) {
-                self.categories.push(new Category('SHARE', data.count, 'SHARE'));
+                self.shareCategory(new Category('SHARE', data.count, 'SHARE'));
             });
+
         }).fail(function(response){
             self.totalResults(0);
             self.currentPage(0);
@@ -298,7 +462,7 @@ var ViewModel = function(params) {
 
     self.paginate = function(val) {
         window.scrollTo(0, 0);
-        self.currentPage(self.currentPage()+val);
+        self.currentPage(self.currentPage() + val);
         self.search();
     };
 

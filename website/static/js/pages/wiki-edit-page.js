@@ -88,13 +88,23 @@ if (ctx.canEditPageName) {
 
 // Apply panels
 $(document).ready(function () {
-
+    var errorMsg = $('#wikiErrorMessage');
+    var grid = $('#grid');
     // Treebeard Wiki Menu
     $.ajax({
         url: ctx.urls.grid
     })
     .done(function (data) {
         new WikiMenu(data, ctx.wikiID, ctx.canEdit);
+    })
+    .fail(function(xhr, status, error) {
+        grid.addClass('hidden');
+        errorMsg.removeClass('hidden');
+        errorMsg.append('<p>Could not retrieve wiki pages. If this issue persists, ' +
+            'please report it to <a href="mailto:support@osf.io">support@osf.io</a>.</p>');
+        Raven.captureMessage('Could not GET wiki menu pages', {
+            url: ctx.urls.grid, status: status, error: error
+        });
     });
 
     var bodyElement = $('body');

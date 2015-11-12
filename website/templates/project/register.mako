@@ -4,12 +4,12 @@
 <legend class="text-center">Register</legend>
 
 % if schema:
-    <%include file="metadata/register_${str(metadata_version)}.mako" />
+    <%include file="metadata/register_${ str(metadata_version) }.mako" />
 % else:
 
     <form role="form">
 
-        <div class="help-block">${language.REGISTRATION_INFO}</div>
+        <div class="help-block">${ language.REGISTRATION_INFO | n }</div>
 
         <select class="form-control" id="select-registration-template">
             <option value="">Please select a registration form to initiate registration</option>

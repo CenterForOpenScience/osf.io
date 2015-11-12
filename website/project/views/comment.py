@@ -15,12 +15,12 @@ from website import settings
 from website.notifications.emails import notify
 from website.notifications.constants import PROVIDERS
 from website.models import Guid, Comment
-from website.addons.base import GuidFile
+from website.files.models.base import FileNode
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
 from website.project.views.node import _view_project, n_unread_comments
-from website.addons.figshare.exceptions import FigshareIsDraftError
+# from website.addons.figshare.exceptions import FigshareIsDraftError
 from website.profile.utils import serialize_user
 
 
@@ -86,7 +86,7 @@ def serialize_comment(comment, auth, anonymous=False):
         # In case the wiki name is changed
         root_id = comment.root_target.page_name
         title = comment.root_target.page_name
-    elif isinstance(comment.root_target, GuidFile):  # File
+    elif isinstance(comment.root_target, FileNode):  # File
         root_id = comment.root_target._id
         title = comment.root_target.waterbutler_path
     else:  # Node or comment
@@ -101,7 +101,7 @@ def serialize_comment(comment, auth, anonymous=False):
         'targetId': getattr(comment.target, 'page_name', comment.target._id),
         'rootId': root_id,
         'title': title,
-        'provider': comment.root_target.provider if isinstance(comment.root_target, GuidFile) else '',
+        'provider': comment.root_target.provider if isinstance(comment.root_target, FileNode) else '',
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
@@ -155,7 +155,7 @@ def add_comment(auth, node, **kwargs):
     comment.save()
 
     context = dict(
-        gravatar_url=auth.user.gravatar_url,
+        gravatar_url=auth.user.profile_image_url(),
         content=content,
         page_type=get_page_type(page, node),
         page_title=get_root_target_title(page, comment.root_target),
@@ -166,7 +166,6 @@ def add_comment(auth, node, **kwargs):
     )
     time_now = datetime.utcnow().replace(tzinfo=pytz.utc)
     sent_subscribers = notify(
-        uid=node._id,
         event="comments",
         user=auth.user,
         node=node,
@@ -177,7 +176,6 @@ def add_comment(auth, node, **kwargs):
     if is_reply(target):
         if target.user and target.user not in sent_subscribers:
             notify(
-                uid=target.user._id,
                 event='comment_replies',
                 user=auth.user,
                 node=node,
@@ -212,10 +210,10 @@ def get_root_target_title(page, root_target):
     if page == Comment.WIKI:
         return root_target.page_name
     elif page == Comment.FILES:
-        try:
-            root_target.enrich()
-        except FigshareIsDraftError:
-            pass
+        # try:
+        root_target.enrich()
+        # except FigshareIsDraftError:
+        #     pass
         return getattr(root_target, 'name', os.path.split(root_target.waterbutler_path)[1])
     else:
         return ''

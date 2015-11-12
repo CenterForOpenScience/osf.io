@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+import json
 import time
 import logging
 import functools
 import httplib as http
+from urllib2 import unquote
 
 import bleach
 
@@ -239,17 +241,31 @@ def search_share_stats():
 
 @handle_search_errors
 def search_share_atom(**kwargs):
-    q = request.args.get('q', '*')
-    sort = request.args.get('sort', 'dateUpdated')
-
-    # we want the results per page to be constant between pages
-    # TODO -  move this functionality into build_query in util
+    json_query = request.args.get('jsonQuery')
     start = util.compute_start(request.args.get('page', 1), RESULTS_PER_PAGE)
 
-    query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
+    if not json_query:
+        q = request.args.get('q', '*')
+        sort = request.args.get('sort')
+
+        # we want the results per page to be constant between pages
+        # TODO -  move this functionality into build_query in util
+
+        query = build_query(q, size=RESULTS_PER_PAGE, start=start, sort=sort)
+    else:
+        query = json.loads(unquote(json_query))
+        query['from'] = start
+        query['size'] = RESULTS_PER_PAGE
+
+        # Aggregations are expensive, and we really don't want to
+        # execute them if they won't be used
+        for field in ['aggs', 'aggregations']:
+            if query.get(field):
+                del query[field]
+        q = query  # Do we really want to display this?
 
     try:
-        search_results = search.search_share(query, index='share_v1')
+        search_results = search.search_share(query)
     except MalformedQueryError:
         raise HTTPError(http.BAD_REQUEST)
     except IndexNotFoundError:

@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-'''Functional tests using WebTest.'''
+"""Functional tests using WebTest."""
 import httplib as http
-import unittest
-import re
-import mock
 import logging
+import mock
+import re
+import unittest
 
+import markupsafe
 from nose.tools import *  # flake8: noqa (PEP8 asserts)
 
 from framework.mongo.utils import to_mongo_key
@@ -27,6 +28,10 @@ from website.util import web_url_for, api_url_for
 
 logging.getLogger('website.project.model').setLevel(logging.ERROR)
 
+def assert_in_html(member, container, **kwargs):
+    """Looks for the specified member in markupsafe-escaped HTML output"""
+    member = markupsafe.escape(member)
+    return assert_in(member, container, **kwargs)
 
 class TestDisabledUser(OsfTestCase):
 
@@ -281,7 +286,7 @@ class TestRegistrations(OsfTestCase):
         res = self.app.get(self.project.url, auth=self.auth).maybe_follow()
         # Settings is not in the project navigation bar
         subnav = res.html.select('#projectSubnav')[0]
-        assert_in('Sharing', subnav.text)
+        assert_in('Contributors', subnav.text)
 
     def test_sees_registration_templates(self):
         # Browse to original project
@@ -356,7 +361,7 @@ class TestComponents(OsfTestCase):
         res = self.app.get(self.component.url, auth=self.user.auth).maybe_follow()
         parent_title = res.html.find_all('h2', class_='node-parent-title')
         assert_equal(len(parent_title), 1)
-        assert_in(self.project.title, parent_title[0].text)
+        assert_in(self.project.title, parent_title[0].text)  # Bs4 will handle unescaping HTML here
 
     def test_delete_project(self):
         res = self.app.get(
@@ -477,6 +482,7 @@ class TestMergingAccounts(OsfTestCase):
     def setUp(self):
         super(TestMergingAccounts, self).setUp()
         self.user = UserFactory.build()
+        self.user.fullname = "tess' test string"
         self.user.set_password('science')
         self.user.save()
         self.dupe = UserFactory.build()
@@ -491,14 +497,14 @@ class TestMergingAccounts(OsfTestCase):
         project.save()
         # At the project page, both are listed as contributors
         res = self.app.get(project.url).maybe_follow()
-        assert_in(self.user.fullname, res)
-        assert_in(self.dupe.fullname, res)
+        assert_in_html(self.user.fullname, res)
+        assert_in_html(self.dupe.fullname, res)
         # The accounts are merged
         self.user.merge_user(self.dupe)
         self.user.save()
         # Now only the master user is shown at the project page
         res = self.app.get(project.url).maybe_follow()
-        assert_in(self.user.fullname, res)
+        assert_in_html(self.user.fullname, res)
         assert_true(self.dupe.is_merged)
         assert_not_in(self.dupe.fullname, res)
 
@@ -683,7 +689,7 @@ class TestClaiming(OsfTestCase):
 
         res = self.app.get(self.project.url, auth=self.referrer.auth)
         # Correct name is shown
-        assert_in(name2, res)
+        assert_in_html(name2, res)
         assert_not_in(name1, res)
 
     def test_user_can_set_password_on_claim_page(self):
@@ -739,10 +745,10 @@ class TestClaiming(OsfTestCase):
         self.app.authenticate(*self.referrer.auth)
         # Each project displays a different name in the contributor list
         res = self.app.get(self.project.url)
-        assert_in(name1, res)
+        assert_in_html(name1, res)
 
         res2 = self.app.get(project2.url)
-        assert_in(name2, res2)
+        assert_in_html(name2, res2)
 
     @unittest.skip("as long as E-mails cannot be changed")
     def test_cannot_set_email_to_a_user_that_already_exists(self):
@@ -784,7 +790,7 @@ class TestClaiming(OsfTestCase):
         claim_url = new_user.get_claim_url(self.project._primary_key)
         res = self.app.get(claim_url)
         # Correct name (different_name) should be on page
-        assert_in(different_name, res)
+        assert_in_html(different_name, res)
 
 
 class TestConfirmingEmail(OsfTestCase):
@@ -958,15 +964,15 @@ class TestAUserProfile(OsfTestCase):
         url = web_url_for('profile_view_id', uid=self.me._primary_key)
         # I see the title of both my project and component
         res = self.app.get(url, auth=self.me.auth)
-        assert_in(self.component.title, res)
-        assert_in(self.project.title, res)
+        assert_in_html(self.component.title, res)
+        assert_in_html(self.project.title, res)
 
         # Another user can also see my public project and component
         url = web_url_for('profile_view_id', uid=self.me._primary_key)
         # I see the title of both my project and component
         res = self.app.get(url, auth=self.user.auth)
-        assert_in(self.component.title, res)
-        assert_in(self.project.title, res)
+        assert_in_html(self.component.title, res)
+        assert_in_html(self.project.title, res)
 
     def test_user_no_public_projects_or_components(self):
         # I go to other user's profile

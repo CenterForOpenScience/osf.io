@@ -8,6 +8,10 @@
     padding-bottom: 88px; /* Note: Must be the same as .cp-bar:margin-top */
 }
 
+.comment-info {
+  padding-bottom: 10px;
+}
+
 .comment-container {
     margin-top: 10px;
     margin-bottom: 10px;

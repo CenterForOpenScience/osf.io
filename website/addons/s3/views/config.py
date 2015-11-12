@@ -20,6 +20,11 @@ def s3_post_user_settings(auth, **kwargs):
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
 
+    if not (access_key and secret_key):
+        return {
+            'message': ('All the fields above are required.')
+        }, httplib.BAD_REQUEST
+
     if not utils.can_list(access_key, secret_key):
         return {
             'message': ('Unable to list buckets.\n'
@@ -40,6 +45,11 @@ def s3_authorize_node(auth, node_addon, **kwargs):
         secret_key = request.json['secret_key']
     except KeyError:
         raise HTTPError(httplib.BAD_REQUEST)
+
+    if not (access_key and secret_key):
+        return {
+            'message': 'All the fields above are required.'
+        }, httplib.BAD_REQUEST
 
     if not utils.can_list(access_key, secret_key):
         return {
@@ -145,3 +155,5 @@ def s3_delete_node_settings(auth, node_addon, **kwargs):
 @must_have_addon('s3', 'user')
 def s3_delete_user_settings(user_addon, auth, **kwargs):
     user_addon.revoke_auth(auth=auth, save=True)
+    user_addon.delete()
+    user_addon.save()

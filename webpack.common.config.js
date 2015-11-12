@@ -35,9 +35,14 @@ var entry = {
     'discussions-page': staticPath('js/pages/discussions-page.js'),
     'profile-settings-page': staticPath('js/pages/profile-settings-page.js'),
     'profile-account-settings-page': staticPath('js/pages/profile-account-settings-page.js'),
+    'profile-settings-applications-list-page': staticPath('js/pages/profile-settings-applications-list-page.js'),
+    'profile-settings-applications-detail-page': staticPath('js/pages/profile-settings-applications-detail-page.js'),
+    'profile-settings-personal-tokens-list-page': staticPath('js/pages/profile-settings-personal-tokens-list-page.js'),
+    'profile-settings-personal-tokens-detail-page': staticPath('js/pages/profile-settings-personal-tokens-detail-page.js'),
     'register_1-page': staticPath('js/pages/register_1-page.js'),
     'sharing-page': staticPath('js/pages/sharing-page.js'),
     'conference-page': staticPath('js/pages/conference-page.js'),
+    'meetings-page': staticPath('js/pages/meetings-page.js'),
     'view-file-tree-page': staticPath('js/pages/view-file-tree-page.js'),
     'project-settings-page': staticPath('js/pages/project-settings-page.js'),
     'search-page': staticPath('js/pages/search-page.js'),
@@ -70,6 +75,7 @@ var entry = {
         'js/fangorn',
         'js/citations',
         'js/osfHelpers',
+        'js/osfToggleHeight',
         'mithril'
     ]
 };
@@ -180,7 +186,7 @@ module.exports = {
             {test: /\.eot/, loader: 'file-loader'},
             {test: /\.ttf/, loader: 'file-loader'},
             //Dirty hack because mime-type's json file is "special"
-            {test: /db.json/, loader: 'json-loader'},
+            {test: /db.json/, loader: 'json-loader'}
         ]
     }
 };

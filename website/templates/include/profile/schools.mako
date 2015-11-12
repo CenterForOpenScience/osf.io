@@ -17,21 +17,20 @@
 
                     <div class="well well-sm sort-handle">
                         <span>Position {{ $index() + 1 }}</span>
-                        <span data-bind="visible: $parent.hasMultiple()">
+                        <span data-bind="visible: $parent.contentsLength() > 1">
                             [ drag to reorder ]
                         </span>
                         <a
                                 class="text-danger pull-right"
-                                data-bind="click: $parent.removeContent,
-                                           visible: $parent.canRemove"
-                            >Remove</a>
+                                data-bind="click: $parent.removeContent"
+                                >Remove</a>
                     </div>
 
                     <div class="form-group">
                         <label>Institution</label>
-                       <input class="form-control" data-bind="value: institution"
-                            required="required" placeholder="Required"/>
-                         <div data-bind="visible: $parent.showMessages, css:'text-danger'">
+                        <input class="form-control" data-bind="value: institution" 
+                            placeholder="Required" />
+                        <div data-bind="visible: $parent.showMessages, css:'text-danger'">
                             <p data-bind="validationMessage: institution"></p>
                         </div>
                     </div>
@@ -47,7 +46,7 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Start Date</label>
+                        <label>Start date</label>
                         <div class="row">
                             <div class ="col-md-3">
                                 <select class="form-control" data-bind="options: months,
@@ -62,7 +61,7 @@
                     </div>
 
                     <div class="form-group" data-bind="ifnot: ongoing">
-                        <label>End Date</label>
+                        <label>End date</label>
                             <div class="row">
                                 <div class ="col-md-3">
                                     <select class="form-control" data-bind="options: months,
@@ -96,7 +95,7 @@
             </div>
 
             <div>
-                <a class="btn btn-success" data-bind="click: addContent">
+                <a class="btn btn-default" data-bind="click: addContent">
                     Add another
                 </a>
             </div>
@@ -107,7 +106,7 @@
                         type="button"
                         class="btn btn-default"
                         data-bind="click: cancel"
-                    >Cancel</button>
+                    >Discard changes</button>
 
                 <button
                         type="submit"

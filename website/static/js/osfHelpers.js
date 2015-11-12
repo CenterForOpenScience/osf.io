@@ -59,6 +59,38 @@ var apiV2Url = function (path, options){
     return apiUrl.toString();
 };
 
+/*
+ * Perform an ajax request (cross-origin if necessary) that sends and receives JSON
+ */
+var ajaxJSON = function(method, url, options) {
+    var defaults = {
+        data: {},  // Request body (required for PUT, PATCH, POST, etc)
+        isCors: false,  // Is this sending a cross-domain request? (if true, will also send any login credentials)
+        fields: {}  // Additional fields (settings) for the JQuery AJAX call; overrides any defaults set by function
+    };
+    var opts = $.extend({}, defaults, options);
+
+    var ajaxFields = {
+        url: url,
+        type: method,
+        contentType: 'application/json',
+        dataType: 'json'
+    };
+    // Add JSON payload if not a GET request
+    if (method.toLowerCase() !== 'get') {
+        ajaxFields.data = JSON.stringify(opts.data);
+    }
+    if(opts.isCors) {
+        ajaxFields.crossOrigin = true;
+        ajaxFields.xhrFields =  {
+            withCredentials: true
+        };
+    }
+    $.extend(true, ajaxFields, opts.fields);
+
+    return $.ajax(ajaxFields);
+};
+
 
 /**
 * Posts JSON data.
@@ -82,18 +114,17 @@ var apiV2Url = function (path, options){
 */
 var postJSON = function(url, data, success, error) {
     var ajaxOpts = {
-        url: url, type: 'post',
-        data: JSON.stringify(data),
-        contentType: 'application/json', dataType: 'json'
+        data: data,
+        fields: {}
     };
     // For backwards compatibility. Prefer the Promise interface to these callbacks.
     if (typeof success === 'function') {
-        ajaxOpts.success = success;
+        ajaxOpts.fields.success = success;
     }
     if (typeof error === 'function') {
-        ajaxOpts.error = error;
+        ajaxOpts.fields.error = error;
     }
-    return $.ajax(ajaxOpts);
+    return ajaxJSON('post', url, ajaxOpts);
 };
 
 /**
@@ -111,18 +142,17 @@ var postJSON = function(url, data, success, error) {
   */
 var putJSON = function(url, data, success, error) {
     var ajaxOpts = {
-        url: url, type: 'put',
-        data: JSON.stringify(data),
-        contentType: 'application/json', dataType: 'json'
+        data: data,
+        fields: {}
     };
     // For backwards compatibility. Prefer the Promise interface to these callbacks.
     if (typeof success === 'function') {
-        ajaxOpts.success = success;
+        ajaxOpts.fields.success = success;
     }
     if (typeof error === 'function') {
-        ajaxOpts.error = error;
+        ajaxOpts.fields.error = error;
     }
-    return $.ajax(ajaxOpts);
+    return ajaxJSON('put', url, ajaxOpts);
 };
 
 /**
@@ -146,9 +176,13 @@ var putJSON = function(url, data, success, error) {
 * @param  {Object} XML Http Request
 * @return {Object} xhr
 */
-var setXHRAuthorization = function (xhr) {
-    if (window.contextVars.accessToken) {
-        xhr.setRequestHeader('Authorization', 'Bearer ' + window.contextVars.accessToken);
+var setXHRAuthorization = function (xhr, options) {
+    if (navigator.appVersion.indexOf('MSIE 9.') === -1) {
+        xhr.withCredentials = true;
+        if (options) {
+            options.withCredentials = true;
+            options.xhrFields = {withCredentials:true};
+        }
     }
     return xhr;
 };
@@ -168,7 +202,7 @@ var handleJSONError = function(response) {
 
 var handleEditableError = function(response) {
     Raven.captureMessage('Unexpected error occurred in an editable input');
-    return 'Unexpected error: ' + response.statusText;
+    return 'Error: ' + response.responseJSON.message_long;
 };
 
 var block = function(message) {
@@ -381,7 +415,7 @@ ko.bindingHandlers.anchorScroll = {
                 // get location of the target
                 var target = $item.attr('href');
                 // if target has a scrollbar scroll it, otherwise scroll the page
-                if ( $element.get(0).scrollHeight > $element.height() ) {
+                if ( $element.get(0).scrollHeight > $element.innerHeight() ) {
                     offset = $(target).position();
                     $element.scrollTop(offset.top - buffer);
                 } else {
@@ -510,7 +544,7 @@ var UTC_DATEFORMAT = 'YYYY-MM-DD HH:mm UTC';
 var FormattableDate = function(date) {
 
     if (typeof date === 'string') {
-        this.date = moment.utc(dateTimeWithoutOffset(date) ? forceUTC(date) : date).toDate();
+        this.date = moment(dateTimeWithoutOffset(date) ? forceUTC(date) : date).utc().toDate();
     } else {
         this.date = date;
     }
@@ -617,7 +651,7 @@ ko.bindingHandlers.listing = {
 
 /* Responsive Affix for side nav */
 var fixAffixWidth = function() {
-    $('.affix, .affix-top, .affix-bottom').each(function (){
+    $('.osf-affix').each(function (){
         var el = $(this);
         var colsize = el.parent('.affix-parent').width();
         el.outerWidth(colsize);
@@ -625,8 +659,13 @@ var fixAffixWidth = function() {
 };
 
 var initializeResponsiveAffix = function (){
-    $(window).resize(debounce(fixAffixWidth, 80, true));
-    $('.osf-affix').one('affix.bs.affix', fixAffixWidth);
+    // Set nav-box width based on screem
+    fixAffixWidth();
+    // Show the nav box
+    $('.osf-affix').each(function (){
+        $(this).show();
+    });
+    $(window).resize(debounce(fixAffixWidth, 20, true));
 };
 
 // Thanks to https://stackoverflow.com/questions/10420352/converting-file-size-in-bytes-to-human-readable
@@ -705,6 +744,14 @@ var isIE = function(userAgent) {
 };
 
 /**
+*  Helper function to judge if the user browser is Safari
+*/
+var isSafari = function(userAgent) {
+    userAgent = userAgent || navigator.userAgent;
+    return (userAgent.search('Safari') >= 0 && userAgent.search('Chrome') < 0);
+};
+
+/**
   * Confirm a dangerous action by requiring the user to enter specific text
   *
   * This is an abstraction over bootbox, and passes most options through to
@@ -747,14 +794,14 @@ var confirmDangerousAction = function (options) {
             },
             success: {
                 label: 'Confirm',
-                className: 'btn-success',
+                className: 'btn-danger',
                 callback: handleConfirmAttempt
             }
         },
         message: ''
     };
 
-    var bootboxOptions = $.extend({}, defaults, options);
+    var bootboxOptions = $.extend(true, {}, defaults, options);
 
     bootboxOptions.message += [
         '<p>Type the following to continue: <strong>',
@@ -766,11 +813,18 @@ var confirmDangerousAction = function (options) {
     bootbox.dialog(bootboxOptions);
 };
 
+/** A future-proof getter for the current user
+**/
+var currentUser = function(){
+    return window.contextVars.currentUser;
+};
+
 // Also export these to the global namespace so that these can be used in inline
 // JS. This is used on the /goodbye page at the moment.
 module.exports = window.$.osf = {
     postJSON: postJSON,
     putJSON: putJSON,
+    ajaxJSON: ajaxJSON,
     setXHRAuthorization: setXHRAuthorization,
     handleJSONError: handleJSONError,
     handleEditableError: handleEditableError,
@@ -793,5 +847,7 @@ module.exports = window.$.osf = {
     initializeResponsiveAffix: initializeResponsiveAffix,
     humanFileSize: humanFileSize,
     confirmDangerousAction: confirmDangerousAction,
-    isIE: isIE
+    isIE: isIE,
+    isSafari:isSafari,
+    currentUser: currentUser
 };

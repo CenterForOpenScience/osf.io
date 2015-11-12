@@ -35,8 +35,10 @@ _TPL_LOOKUP = TemplateLookup(
 _TPL_LOOKUP_SAFE = TemplateLookup(
     default_filters=[
         'unicode',  # default filter; must set explicitly when overriding
+        'temp_ampersand_fixer',  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
         'h',
     ],
+    imports=['from website.util.sanitize import temp_ampersand_fixer'],  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
     directories=[
         TEMPLATE_DIR,
         os.path.join(settings.BASE_PATH, 'addons/'),
@@ -210,6 +212,7 @@ def render_mako_string(tpldir, tplname, data, trust=True):
     :param trust: Optional. If ``False``, markup-save escaping will be enabled
     """
 
+    show_errors = settings.DEBUG_MODE  # thanks to abought
     # TODO: The "trust" flag is expected to be temporary, and should be removed
     #       once all templates manually set it to False.
 
@@ -221,10 +224,12 @@ def render_mako_string(tpldir, tplname, data, trust=True):
             tpl_text = f.read()
         tpl = Template(
             tpl_text,
+            format_exceptions=show_errors,
             lookup=lookup_obj,
             input_encoding='utf-8',
             output_encoding='utf-8',
-            default_filters=lookup_obj.template_args['default_filters']
+            default_filters=lookup_obj.template_args['default_filters'],
+            imports=lookup_obj.template_args['imports']  # FIXME: Temporary workaround for data stored in wrong format in DB. Unescape it before it gets re-escaped by Markupsafe.
         )
     # Don't cache in debug mode
     if not app.debug:

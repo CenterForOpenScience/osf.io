@@ -4,6 +4,7 @@ import re
 import httplib as http
 
 import pymongo
+from modularodm import Q
 from modularodm.exceptions import ValidationValueError
 
 from framework.exceptions import HTTPError
@@ -61,9 +62,9 @@ def unique_on(*groups):
     return wrapper
 
 
-def get_or_http_error(Model, pk):
+def get_or_http_error(Model, pk, allow_deleted=False):
     instance = Model.load(pk)
-    if getattr(instance, 'is_deleted', False):
+    if not allow_deleted and getattr(instance, 'is_deleted', False):
         raise HTTPError(http.GONE, data=dict(
             message_long="This resource has been deleted"
         ))
@@ -73,3 +74,17 @@ def get_or_http_error(Model, pk):
         ))
     else:
         return instance
+
+
+def paginated(model, query=None, increment=200):
+    last_id = ''
+    pages = (model.find(query).count() / increment) + 1
+    for i in xrange(pages):
+        q = Q('_id', 'gt', last_id)
+        if query:
+            q &= query
+        page = list(model.find(q).limit(increment))
+        for item in page:
+            yield item
+        if page:
+            last_id = item._id

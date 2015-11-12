@@ -47,7 +47,6 @@ class AddonSerializer(object):
                 result['urls']['owner'] = web_url_for('profile_view_id',
                                                   uid=owner._primary_key)
                 result['ownerName'] = owner.fullname
-
         return result
 
     @property
@@ -56,6 +55,9 @@ class AddonSerializer(object):
 
 
 class OAuthAddonSerializer(AddonSerializer):
+
+    REQUIRED_URLS = ['importAuth', 'folders', 'config', 'deauthorize', 'accounts']
+
     @property
     def serialized_accounts(self):
         return [
@@ -106,11 +108,6 @@ class OAuthAddonSerializer(AddonSerializer):
             'urls': urls,
         }
 
-
-class CitationsAddonSerializer(OAuthAddonSerializer):
-
-    REQUIRED_URLS = ['importAuth', 'folders', 'config', 'deauthorize', 'accounts']
-
     @property
     def serialized_urls(self):
         external_account = self.node_settings.external_account
@@ -118,7 +115,6 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
             'auth': api_url_for('oauth_connect',
                                 service_name=self.node_settings.provider_name),
             'settings': web_url_for('user_addons'),
-            'files': self.node_settings.owner.url,
         }
         if external_account and external_account.profile_url:
             ret['owner'] = external_account.profile_url
@@ -130,14 +126,6 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
             assert url in addon_urls, msg
         ret.update(addon_urls)
         return ret
-
-    @property
-    def serialized_node_settings(self):
-        result = super(CitationsAddonSerializer, self).serialized_node_settings
-        result['folder'] = {
-            'name': self.node_settings.selected_folder_name
-        }
-        return result
 
     @property
     def user_is_owner(self):
@@ -155,6 +143,16 @@ class CitationsAddonSerializer(OAuthAddonSerializer):
     @property
     def credentials_owner(self):
         return self.node_settings.user_settings.owner
+
+    @property
+    def serialized_node_settings(self):
+        result = super(OAuthAddonSerializer, self).serialized_node_settings
+        if self.node_settings.oauth_provider.short_name != 'dataverse':
+            result['folder'] = {'name': self.node_settings.selected_folder_name}
+        return result
+
+
+class CitationsAddonSerializer(OAuthAddonSerializer):
 
     @abc.abstractmethod
     def serialize_folder(self, folder):

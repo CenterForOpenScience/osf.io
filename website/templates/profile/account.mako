@@ -11,7 +11,7 @@
 <%def name="content()">
     <% from website import settings %>
     <div id="accountSettings">
-        <h2 class="page-header">Account Settings</h2>
+        <h2 class="page-header">Settings</h2>
         <div class="row">
             <div class="col-md-3 affix-parent">
               <%include file="include/profile/settings_navpanel.mako" args="current_page='account'"/>
@@ -44,11 +44,10 @@
                                 <tr>
                                     <td style="word-break: break-all;">{{ $data.address }}</td>
                                     <td style="width:150px;"><a data-bind="click: $parent.makeEmailPrimary">make&nbsp;primary</a></td>
-                                    <td><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                    <td style="width:50px;"><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                             </tbody>
                         </table>
-
                         <table class="table">
                             <thead>
                                 <tr>
@@ -60,17 +59,25 @@
                                 <tr>
                                     <td style="word-break: break-all;">{{ $data.address }}</td>
                                     <td style="width:150px;"><a data-bind="click: $parent.resendConfirmation">resend&nbsp;confirmation</a></td>
-                                    <td><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
+                                    <td style="width:50px;" ><a data-bind="click: $parent.removeEmail"><i class="fa fa-times text-danger"></i></a></td>
                                 </tr>
                                 <!-- /ko -->
                                 <tr>
                                     <td colspan="3">
                                         <form data-bind="submit: addEmail">
+                                            <p>
+                                            To merge an existing account with this one or to log in with multiple email addresses, add an alternate email address below.
+                                            <span class="fa fa-info-circle" data-bind="tooltip: {title: 'Merging accounts will move all projects and components associated with two emails into one account. All projects and components will be displayed under the email address listed as primary.',
+                                             placement: 'bottom', container : 'body'}"></span>
+                                            </p>
+                  
                                             <div class="form-group">
-                                              <input placeholder="Email address" data-bind="value: emailInput" class="form-control">
+                                                ## email input verification is not supported on safari
+                                              <input placeholder="Email address" type="email" data-bind="value: emailInput" class="form-control" required maxlength="254">
                                             </div>
                                             <input type="submit" value="Add Email" class="btn btn-success">
                                         </form>
+
                                         <div class="help-block">
                                             <p data-bind="html: message, attr: {class: messageClass}"></p>
                                         </div>
@@ -101,7 +108,7 @@
                         </form>
                     </div>
                 </div>
-				<div class="panel panel-default">
+                <div class="panel panel-default">
                   <div class="panel-heading clearfix"><h3 class="panel-title">Security Settings</h3></div>
                   <div class="panel-body">
                     % for addon in addons:
@@ -145,7 +152,7 @@
        template = config['user_settings_template']
        tpl = template.render(**config)
     %>
-    ${tpl}
+    ${ tpl | n }
 </%def>
 
 <%def name="javascript_bottom()">

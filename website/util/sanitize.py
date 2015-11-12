@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import collections
+
 import bleach
 import json
 
@@ -11,9 +13,14 @@ def strip_html(unclean):
     :return: stripped string
     :rtype: str
     """
+    # We make this noop for non-string, non-collection inputs so this function can be used with higher-order
+    # functions, such as rapply (recursively applies a function to collections)
+    if not isinstance(unclean, basestring) and not is_iterable(unclean) and unclean is not None:
+        return unclean
     return bleach.clean(unclean, strip=True, tags=[], attributes=[], styles=[])
 
 
+# TODO: Not used anywhere except unit tests? Review for deletion
 def clean_tag(data):
     """Format as a valid Tag
 
@@ -26,13 +33,16 @@ def clean_tag(data):
     return escape_html(data).replace('"', '&quot;').replace("'", '&#39')
 
 
+def is_iterable(obj):
+    return isinstance(obj, collections.Iterable)
+
 def is_iterable_but_not_string(obj):
     """Return True if ``obj`` is an iterable object that isn't a string."""
-    return (hasattr(obj, '__iter__') and not hasattr(obj, 'strip'))
+    return (is_iterable(obj) and not hasattr(obj, 'strip'))
 
 
 def escape_html(data):
-    """Escape HTML characters in data.
+    """Escape HTML characters in data (as opposed to stripping them out entirely). Will ignore whitelisted tags.
 
     :param data: A string, dict, or list to clean of HTML characters
 
@@ -54,6 +64,7 @@ def escape_html(data):
     return data
 
 
+# FIXME: Not sure what this function is trying to accomplish. Candidate for deletion?
 def assert_clean(data):
     """Ensure that data is cleaned
 
@@ -66,30 +77,29 @@ def assert_clean(data):
     return escape_html(data)
 
 
-# TODO: Remove safe_unescape_html when mako html safe comes in
-def safe_unescape_html(value):
+# TODO: Remove unescape_entities when mako html safe comes in
+def unescape_entities(value):
     """
-    Return data without html escape characters.
+    Convert HTML-encoded data (stored in the database) to literal characters.
+
+    Intended primarily for endpoints consumed by frameworks that handle their own escaping (eg Knockout)
 
     :param value: A string, dict, or list
     :return: A string or list or dict without html escape characters
-
     """
     safe_characters = {
         '&amp;': '&',
-        '&lt;': '<',
-        '&gt;': '>',
     }
 
     if isinstance(value, dict):
         return {
-            key: safe_unescape_html(value)
+            key: unescape_entities(value)
             for (key, value) in value.iteritems()
         }
 
     if is_iterable_but_not_string(value):
         return [
-            safe_unescape_html(each)
+            unescape_entities(each)
             for each in value
         ]
     if isinstance(value, basestring):
@@ -97,6 +107,14 @@ def safe_unescape_html(value):
             value = value.replace(escape_sequence, character)
         return value
     return value
+
+
+def temp_ampersand_fixer(s):
+    """As a workaround for ampersands stored as escape sequences in database, unescape text before use on a safe page
+
+    Explicitly differentiate from safe_unescape_html in case use cases/behaviors diverge
+    """
+    return s.replace('&amp;', '&')
 
 
 def safe_json(value):

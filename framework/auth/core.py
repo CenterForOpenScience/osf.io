@@ -1,34 +1,35 @@
 # -*- coding: utf-8 -*-
-import re
-import logging
-import urlparse
-import itertools
 import datetime as dt
+import itertools
+import logging
+import re
+import urlparse
 
 import bson
 import pytz
 import itsdangerous
 
 from modularodm import fields, Q
-from modularodm.validators import URLValidator
 from modularodm.exceptions import NoResultsFound
 from modularodm.exceptions import ValidationError, ValidationValueError
+from modularodm.validators import URLValidator
 
 import framework
-from framework import analytics
-from framework.sessions import session
-from framework.auth import exceptions, utils, signals
-from framework.sentry import log_exception
 from framework.addons import AddonModelMixin
-from framework.sessions.model import Session
-from framework.sessions.utils import remove_sessions_for_user
+from framework import analytics
+from framework.auth import signals, utils
+from framework.auth.exceptions import (ChangePasswordError, ExpiredTokenError, InvalidTokenError,
+                                       MergeConfirmedRequiredError, MergeConflictError)
+from framework.bcrypt import generate_password_hash, check_password_hash
 from framework.exceptions import PermissionsError
 from framework.guid.model import GuidStoredObject
-from framework.bcrypt import generate_password_hash, check_password_hash
-from framework.auth.exceptions import ChangePasswordError, ExpiredTokenError
+from framework.mongo.validators import string_required
+from framework.sentry import log_exception
+from framework.sessions import session
+from framework.sessions.model import Session
+from framework.sessions.utils import remove_sessions_for_user
 
 from website import mails, settings, filters, security
-
 
 name_formatters = {
     'long': lambda user: user.fullname,
@@ -48,11 +49,6 @@ def generate_confirm_token():
 
 def generate_claim_token():
     return security.random_string(30)
-
-
-def string_required(value):
-    if value is None or value == '':
-        raise ValidationValueError('Value must not be empty.')
 
 
 def validate_history_item(item):
@@ -85,8 +81,10 @@ def validate_year(item):
 
 
 validate_url = URLValidator()
-def validate_personal_site(value):
-    if value:
+
+
+def validate_profile_websites(profile_websites):
+    for value in profile_websites or []:
         try:
             validate_url(value)
         except ValidationError:
@@ -95,14 +93,7 @@ def validate_personal_site(value):
 
 
 def validate_social(value):
-    validate_personal_site(value.get('personal'))
-
-
-def validate_email(item):
-    if not (item
-            and re.match(r'^.+@[^.].*\.[a-z]{2,10}$', item, re.IGNORECASE)
-            and item == item.strip().lower()):
-        raise ValidationError("Invalid Email")
+    validate_profile_websites(value.get('profileWebsites'))
 
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
@@ -201,12 +192,12 @@ class User(GuidStoredObject, AddonModelMixin):
     #   search update for all nodes to which the user is a contributor.
 
     SOCIAL_FIELDS = {
-        'orcid': u'http://orcid.com/{}',
+        'orcid': u'http://orcid.org/{}',
         'github': u'http://github.com/{}',
-        'scholar': u'http://scholar.google.com/citation?user={}',
+        'scholar': u'http://scholar.google.com/citations?user={}',
         'twitter': u'http://twitter.com/{}',
-        'personal': u'{}',
-        'linkedIn': u'https://www.linkedin.com/profile/view?id={}',
+        'profileWebsites': [],
+        'linkedIn': u'https://www.linkedin.com/{}',
         'impactStory': u'https://impactstory.org/{}',
         'researcherId': u'http://researcherid.com/rid/{}',
     }
@@ -263,6 +254,15 @@ class User(GuidStoredObject, AddonModelMixin):
     #   ...
     # }
 
+    # Time of last sent notification email to newly added contributors
+    # Format : {
+    #   <project_id>: {
+    #       'last_sent': time.time()
+    #   }
+    #   ...
+    # }
+    contributor_added_email_records = fields.DictionaryField(default=dict)
+
     # The user into which this account was merged
     merged_by = fields.ForeignField('user',
                                     default=None,
@@ -286,8 +286,20 @@ class User(GuidStoredObject, AddonModelMixin):
     #              'expiration': <datetime>}
     # }
 
-    # email lists to which the user has chosen a subscription setting
+    # TODO remove this field once migration (scripts/migration/migrate_mailing_lists_to_mailchimp_fields.py)
+    # has been run. This field is deprecated and replaced with mailchimp_mailing_lists
     mailing_lists = fields.DictionaryField()
+
+    # email lists to which the user has chosen a subscription setting
+    mailchimp_mailing_lists = fields.DictionaryField()
+    # Format: {
+    #   'list1': True,
+    #   'list2: False,
+    #    ...
+    # }
+
+    # email lists to which the user has chosen a subscription setting, being sent from osf, rather than mailchimp
+    osf_mailing_lists = fields.DictionaryField(default=lambda: {settings.OSF_HELP_LIST: True})
     # Format: {
     #   'list1': True,
     #   'list2: False,
@@ -347,14 +359,14 @@ class User(GuidStoredObject, AddonModelMixin):
     # Social links
     social = fields.DictionaryField(validate=validate_social)
     # Format: {
-    #     'personal': <personal site>,
+    #     'profileWebsites': <list of profile websites>
     #     'twitter': <twitter id>,
     # }
 
     # hashed password used to authenticate to Piwik
     piwik_token = fields.StringField()
 
-    # date the user last logged in via the web interface
+    # date the user last sent a request
     date_last_login = fields.DateTimeField()
 
     # date the user first successfully confirmed an email address
@@ -456,6 +468,7 @@ class User(GuidStoredObject, AddonModelMixin):
         user.is_registered = True
         user.is_claimed = True
         user.date_confirmed = user.date_registered
+        user.emails.append(username)
         return user
 
     @classmethod
@@ -691,7 +704,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if email in self.emails:
             raise ValueError("Email already confirmed to this user.")
 
-        validate_email(email)
+        utils.validate_email(email)
 
         # If the unconfirmed email is already present, refresh the token
         if email in self.unconfirmed_emails:
@@ -729,11 +742,13 @@ class User(GuidStoredObject, AddonModelMixin):
         mails.send_mail(to_addr=self.username,
                         mail=mails.REMOVED_EMAIL,
                         user=self,
-                        removed_email=email)
+                        removed_email=email,
+                        security_addr='alternate email address ({})'.format(email))
         mails.send_mail(to_addr=email,
                         mail=mails.REMOVED_EMAIL,
                         user=self,
-                        removed_email=email)
+                        removed_email=email,
+                        security_addr='primary email address ({})'.format(self.username))
 
     def get_confirmation_token(self, email, force=False):
         """Return the confirmation token for a given email.
@@ -776,7 +791,7 @@ class User(GuidStoredObject, AddonModelMixin):
         :rtype: bool
         """
         if token not in self.email_verifications:
-            raise exceptions.InvalidTokenError()
+            raise InvalidTokenError
 
         verification = self.email_verifications[token]
         # Not all tokens are guaranteed to have expiration dates
@@ -784,7 +799,7 @@ class User(GuidStoredObject, AddonModelMixin):
             'expiration' in verification and
             verification['expiration'] < dt.datetime.utcnow()
         ):
-            raise exceptions.ExpiredTokenError()
+            raise ExpiredTokenError
 
         return verification['email']
 
@@ -811,7 +826,7 @@ class User(GuidStoredObject, AddonModelMixin):
         if user_to_merge and merge:
             self.merge_user(user_to_merge)
         elif user_to_merge:
-            raise exceptions.MergeConfirmedRequiredError(
+            raise MergeConfirmedRequiredError(
                 'Merge requires confirmation',
                 user=self,
                 user_to_merge=user_to_merge,
@@ -883,12 +898,14 @@ class User(GuidStoredObject, AddonModelMixin):
 
     @property
     def social_links(self):
-        return {
-            key: self.SOCIAL_FIELDS[key].format(val)
-            for key, val in self.social.items()
-            if val and
-            self.SOCIAL_FIELDS.get(key)
-        }
+        social_user_fields = {}
+        for key, val in self.social.items():
+            if val and key in self.SOCIAL_FIELDS:
+                if not isinstance(val, basestring):
+                    social_user_fields[key] = val
+                else:
+                    social_user_fields[key] = self.SOCIAL_FIELDS[key].format(val)
+        return social_user_fields
 
     @property
     def biblio_name(self):
@@ -942,12 +959,21 @@ class User(GuidStoredObject, AddonModelMixin):
     def deep_url(self):
         return '/profile/{}/'.format(self._primary_key)
 
-    @property
-    def gravatar_url(self):
+    def profile_image_url(self, size=None):
+        """A generalized method for getting a user's profile picture urls.
+        We may choose to use some service other than gravatar in the future,
+        and should not commit ourselves to using a specific service (mostly
+        an API concern).
+
+        As long as we use gravatar, this is just a proxy to User.gravatar_url
+        """
+        return self._gravatar_url(size)
+
+    def _gravatar_url(self, size):
         return filters.gravatar(
             self,
             use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=size
         )
 
     def get_activity_points(self, db=None):
@@ -1137,7 +1163,7 @@ class User(GuidStoredObject, AddonModelMixin):
         """
         # Fail if the other user has conflicts.
         if not user.can_be_merged:
-            raise exceptions.MergeConflictError("Users cannot be merged")
+            raise MergeConflictError("Users cannot be merged")
         # Move over the other user's attributes
         # TODO: confirm
         for system_tag in user.system_tags:
@@ -1167,13 +1193,13 @@ class User(GuidStoredObject, AddonModelMixin):
         security_messages.update(self.security_messages)
         self.security_messages = security_messages
 
-        for key, value in user.mailing_lists.iteritems():
+        for key, value in user.mailchimp_mailing_lists.iteritems():
             # subscribe to each list if either user was subscribed
-            subscription = value or self.mailing_lists.get(key)
+            subscription = value or self.mailchimp_mailing_lists.get(key)
             signals.user_merged.send(self, list_name=key, subscription=subscription)
 
             # clear subscriptions for merged user
-            signals.user_merged.send(user, list_name=key, subscription=False)
+            signals.user_merged.send(user, list_name=key, subscription=False, send_goodbye=False)
 
         for node_id, timestamp in user.comments_viewed_timestamp.iteritems():
             if not self.comments_viewed_timestamp.get(node_id):
@@ -1210,6 +1236,11 @@ class User(GuidStoredObject, AddonModelMixin):
             user_settings.merge(addon)
             user_settings.save()
 
+        # Disconnect signal to prevent emails being sent about being a new contributor when merging users
+        # be sure to reconnect it at the end of this code block. Import done here to prevent circular import error.
+        from website.project.signals import contributor_added
+        from website.project.views.contributor import notify_added_contributor
+        contributor_added.disconnect(notify_added_contributor)
         # - projects where the user was a contributor
         for node in user.node__contributed:
             # Skip dashboard node
@@ -1247,11 +1278,18 @@ class User(GuidStoredObject, AddonModelMixin):
                     user._id, node._id
                 ))
             node.save()
+        contributor_added.connect(notify_added_contributor)
 
         # - projects where the user was the creator
         for node in user.node__created:
             node.creator = self
             node.save()
+
+        # - file that the user has checked_out, import done here to prevent import error
+        from website.files.models.base import FileNode
+        for file_node in FileNode.files_checked_out(user=user):
+            file_node.checkout = self
+            file_node.save()
 
         # finalize the merge
 
@@ -1262,6 +1300,7 @@ class User(GuidStoredObject, AddonModelMixin):
         user.username = None
         user.password = None
         user.verification_key = None
+        user.osf_mailing_lists = {}
         user.merged_by = self
 
         user.save()

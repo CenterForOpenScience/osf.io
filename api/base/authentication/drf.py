@@ -9,12 +9,27 @@ from framework.auth import cas
 from framework.sessions.model import Session
 from framework.auth.core import User, get_user
 from website import settings
+from api.base.exceptions import UnconfirmedAccountError, DeactivatedAccountError
 
 
 def get_session_from_cookie(cookie_val):
     """Given a cookie value, return the `Session` object or `None`."""
     session_id = itsdangerous.Signer(settings.SECRET_KEY).unsign(cookie_val)
     return Session.load(session_id)
+
+
+def check_user(user):
+    """Checks that the user is neither unconfirmed nor disabled.
+
+    :param User user:
+    :raises DeactivatedAccountError:
+    :raise UnconfirmedAccountError:
+    """
+    if user.is_disabled:
+        raise DeactivatedAccountError
+    elif not user.is_confirmed:
+        raise UnconfirmedAccountError
+
 
 # http://www.django-rest-framework.org/api-guide/authentication/#custom-authentication
 class OSFSessionAuthentication(authentication.BaseAuthentication):
@@ -31,6 +46,7 @@ class OSFSessionAuthentication(authentication.BaseAuthentication):
         user_id = session.data.get('auth_user_id')
         user = User.load(user_id)
         if user:
+            check_user(user)
             return user, None
         return None
 
@@ -44,14 +60,18 @@ class OSFBasicAuthentication(BasicAuthentication):
         """
         user = get_user(email=userid, password=password)
 
-        if userid and user is None:
+        if userid and not user:
             raise exceptions.AuthenticationFailed(_('Invalid username/password.'))
         elif userid is None and password is None:
             raise exceptions.NotAuthenticated()
+        check_user(user)
         return (user, None)
 
     def authenticate_header(self, request):
-        return ""
+        """
+        Returns custom value other than "Basic" to prevent BasicAuth dialog prompt when returning 401
+        """
+        return 'Documentation realm="{}"'.format(self.www_authenticate_realm)
 
 class OSFCASAuthentication(authentication.BaseAuthentication):
     """Check whether the user provides a valid OAuth2 bearer token"""
@@ -66,19 +86,20 @@ class OSFCASAuthentication(authentication.BaseAuthentication):
 
         # Found a token; query CAS for the associated user id
         try:
-            resp = client.profile(auth_token)
+            cas_auth_response = client.profile(auth_token)
         except cas.CasHTTPError:
             raise exceptions.NotAuthenticated('User provided an invalid OAuth2 access token')
 
-        if resp.authenticated is False:
+        if cas_auth_response.authenticated is False:
             raise exceptions.NotAuthenticated('CAS server failed to authenticate this token')
 
-        user_id = resp.user
+        user_id = cas_auth_response.user
         user = User.load(user_id)
         if user is None:
             raise exceptions.AuthenticationFailed("Could not find the user associated with this token")
 
-        return user, auth_token
+        check_user(user)
+        return user, cas_auth_response
 
     def authenticate_header(self, request):
         return ""

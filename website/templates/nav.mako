@@ -35,7 +35,6 @@
         <li class="dropdown">
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">Help <span class="caret"></span></a>
           <ul class="dropdown-menu" role="menu">
-              <li><a href="/4znZP/wiki/home">About</a></li>
               <li><a href="/faq/">FAQ</a></li>
               <li><a href="/getting-started">Getting Started</a></li>
               <li><script type="text/javascript">document.write("<n uers=\"znvygb:fhccbeg@bfs.vb\" ery=\"absbyybj\">Rznvy Fhccbeg</n>".replace(/[a-zA-Z]/g,function(e){return String.fromCharCode((e<="Z"?90:122)>=(e=e.charCodeAt(0)+13)?e:e-26)}));</script><noscript>Email Support: <span class="obfuscated-email-noscript"><strong><u>supp<span style="display:none;">null</span>ort@<span style="display:none;">null</span>osf.<span style="display:none;">null</span>io</u></strong></span></noscript></li>
@@ -82,7 +81,7 @@
                   <div class="form-group"><input id="email" class="form-control" type="email" data-bind="value: username" name="username" placeholder="Email" aria-label="Username"></div>
                   <div class="form-group"><input name="password" id="password" class="form-control" type="password" placeholder="Password" data-bind="value: password" aria-label="Password"></div>
                   <div class="form-group"><button type="submit" id="btnLogin" class="btn btn-block btn-primary">Login</button></div>
-                 <div class="text-center m-b-sm"> <a href="/forgotpassword/">Forgot Password?</a></div>
+                 <div class="text-center m-b-sm"> <a href="/forgotpassword/">Forgot password?</a></div>
                </form>
             </ul>
           </div>

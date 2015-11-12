@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
-import framework
-from framework.auth.utils import privacy_info_handle
-from website.util.permissions import reduce_permissions
-from website.filters import gravatar
-from website import settings
 
 from modularodm import Q
 
+from framework import auth
+from framework.auth.utils import privacy_info_handle
+
+from website import settings
+from website.filters import gravatar
+from website.util.permissions import reduce_permissions
+
+
 def get_projects(user):
-    '''Return a list of user's projects, excluding registrations and folders.'''
+    """Return a list of user's projects, excluding registrations and folders."""
     return list(user.node__contributed.find(
         (
             Q('category', 'eq', 'project') &
@@ -19,13 +22,13 @@ def get_projects(user):
     ))
 
 def get_public_projects(user):
-    '''Return a list of a user's public projects.'''
+    """Return a list of a user's public projects."""
     return [p for p in get_projects(user) if p.is_public]
 
 
 def get_gravatar(user, size=None):
     if size is None:
-        size = settings.GRAVATAR_SIZE_PROFILE
+        size = settings.PROFILE_IMAGE_LARGE
     return gravatar(
         user, use_ssl=True,
         size=size
@@ -33,7 +36,8 @@ def get_gravatar(user, size=None):
 
 
 def serialize_user(user, node=None, admin=False, full=False, n_comments=None, anonymous=False):
-    """Return a dictionary representation of a registered user.
+    """
+    Return a dictionary representation of a registered user.
 
     :param User user: A User object
     :param Node node: A Node object
@@ -51,7 +55,7 @@ def serialize_user(user, node=None, admin=False, full=False, n_comments=None, an
         'shortname': privacy_info_handle(fullname if len(fullname) < 50 else fullname[:23] + "..." + fullname[-23:], anonymous),
         'gravatar_url': privacy_info_handle(gravatar(
             user, use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=settings.PROFILE_IMAGE_MEDIUM
         ), anonymous),
         'active': user.is_active,
     }
@@ -112,7 +116,7 @@ def serialize_user(user, node=None, admin=False, full=False, n_comments=None, an
             'activity_points': user.get_activity_points(),
             'gravatar_url': privacy_info_handle(gravatar(
                 user, use_ssl=True,
-                size=settings.GRAVATAR_SIZE_PROFILE
+                size=settings.PROFILE_IMAGE_LARGE
             ), anonymous),
             'is_merged': user.is_merged,
             'merged_by': privacy_info_handle(merged_by, anonymous),
@@ -138,7 +142,13 @@ def serialize_contributors(contribs, node, **kwargs):
 
 
 def add_contributor_json(user, current_user=None):
+    """
+    Generate a dictionary representation of a user, optionally including # projects shared with `current_user`
 
+    :param User user: The user object to serialize
+    :param User current_user : The user object for a different user, to calculate number of projects in common
+    :return dict: A dict representing the serialized user data
+    """
     # get shared projects
     if current_user:
         n_projects_in_common = current_user.n_projects_in_common(user)
@@ -165,15 +175,14 @@ def add_contributor_json(user, current_user=None):
         'active': user.is_active,
         'gravatar_url': gravatar(
             user, use_ssl=True,
-            size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR
+            size=settings.PROFILE_IMAGE_MEDIUM
         ),
         'profile_url': user.profile_url
     }
 
 def serialize_unregistered(fullname, email):
-    """Serializes an unregistered user.
-    """
-    user = framework.auth.get_user(email=email)
+    """Serializes an unregistered user."""
+    user = auth.get_user(email=email)
     if user is None:
         serialized = {
             'fullname': fullname,
@@ -181,7 +190,7 @@ def serialize_unregistered(fullname, email):
             'registered': False,
             'active': False,
             'gravatar': gravatar(email, use_ssl=True,
-                size=settings.GRAVATAR_SIZE_ADD_CONTRIBUTOR),
+                                 size=settings.PROFILE_IMAGE_MEDIUM),
             'email': email,
         }
     else:

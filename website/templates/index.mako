@@ -16,10 +16,13 @@
     <!-- Main jumbotron for a primary marketing message or call to action -->
     <div id="home-hero">
       <div class="container text-center">
+        <div class="visible-xs-block visible-sm-block visible-md-block network-bg"></div>
         <h1><strong>Simplified</strong> scientific collaboration</h1>
         <h3>Powerful end-to-end support for your research.</h3>
 
-        <canvas id="demo-canvas"></canvas>
+        <div id="canvas-container">
+          <canvas id="demo-canvas"></canvas>
+        </div>
 
         <div id="logo" class="off">
           <div class="circle" id="circle-1"><span></span></div>
@@ -36,37 +39,37 @@
           <div class="row">
             <div class="col-sm-6 hidden-xs">
               <a class="youtube" href="//www.youtube.com/watch?v=2TV21gOzfhw"><i class="icon icon-play"></i></a>
-              <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="" />
+              <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
             <div class="col-sm-6">
-              <h2>Free. Get started today.</h2>
+              <h2>Free and open source. Start now.</h2>
 
              <div id="signUp" class="anchor"></div>
                 <div id="signUpScope">
                     <form data-bind="submit: submit">
                         <div class="form-group" data-bind="css: {'has-error': fullName() && !fullName.isValid(), 'has-success': fullName() && fullName.isValid()}">
-                              <label class="placeholder-replace" style="display:none">Full Name</label>
+                              <label class="placeholder-replace" style="display:none">Full name</label>
                               <input class="form-control" placeholder="Full Name" data-bind=" value: fullName, disable: submitted(), event: { blur: trim.bind($data, fullName)}">
-                              <p class="help-block signup-help" data-bind="validationMessage: fullName" style="display: none;"></p>
+                              <p class="help-block osf-box-lt" data-bind="validationMessage: fullName" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': email1() && !email1.isValid(), 'has-success': email1() && email1.isValid()}">
-                              <label class="placeholder-replace" style="display:none">Contact Email</label>
+                              <label class="placeholder-replace" style="display:none">Contact email</label>
                               <input class="form-control" placeholder="Contact Email" data-bind=" value: email1, disable: submitted(), event: { blur: trim.bind($data, email1)}">
-                              <p class="help-block signup-help" data-bind="validationMessage: email1" style="display: none;"></p>
+                              <p class="help-block osf-box-lt" data-bind="validationMessage: email1" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': email2() && !email2.isValid(),'has-success': email2() && email2.isValid()}">
-                              <label class="placeholder-replace" style="display:none">Confirm Email</label>
+                              <label class="placeholder-replace" style="display:none">Confirm email</label>
                               <input class="form-control" placeholder="Confirm Email" data-bind="value: email2, disable: submitted(), event: { blur: trim.bind($data, email2)}">
-                              <p class="help-block signup-help" data-bind="validationMessage: email2" style="display: none;"></p>
+                              <p class="help-block osf-box-lt" data-bind="validationMessage: email2" style="display: none;"></p>
                           </div>
                           <div class="form-group" data-bind="css: {'has-error': password() && !password.isValid(), 'has-success': password() && password.isValid()}">
                               <label class="placeholder-replace" style="display:none">Password</label>
                               <input type="password" class="form-control" placeholder="Password (Must be 6 to 256 characters)" data-bind=" value: password, disable: submitted(), event: {blur: trim.bind($data, password)}">
-                                <p class="help-block signup-help" data-bind="validationMessage: password" style="display: none;"></p>
+                                <p class="help-block osf-box-lt" data-bind="validationMessage: password" style="display: none;"></p>
                           </div>
 
                           <!-- Flashed Messages -->
-                          <div class="help-block signup-help" >
+                          <div class="help-block osf-box-lt" >
                               <p data-bind="html: flashMessage, attr.class: flashMessageClass" class=""></p>
                           </div>
                           <div>
@@ -123,10 +126,12 @@
           </div>
         </div>
         <div class="col-md-6">
-          <div class="student-image">
-            <div class="quote">
-              <span class="main">“The OSF is a great way to collaborate and stay organized while still using your favorite external services."</span>
-              <span class="attrib"><strong>Kara Woo</strong> - Information Manager, Aquatic Ecology, Washington State</span>
+          <div class="student-wrap">
+            <div class="student-image">
+              <div class="quote">
+                <span class="main">“The OSF is a great way to collaborate and stay organized while still using your favorite external services."</span>
+                <span class="attrib"><strong>Kara Woo</strong> - Information Manager, Aquatic Ecology, Washington State</span>
+              </div>
             </div>
           </div>
         </div>
@@ -143,30 +148,30 @@
         </div>
         <div class="row integrations">
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/dropbox.png" class="img-responsive"/>
+            <img src="/static/img/front-page/dropbox.png" class="img-responsive" alt="Dropbox logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/github.png" class="img-responsive"/>
+            <img src="/static/img/front-page/github.png" class="img-responsive" alt="Github logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/amazon.png" class="img-responsive"/>
+            <img src="/static/img/front-page/amazon.png" class="img-responsive" alt="Amazon S3 logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/box.png" class="img-responsive"/>
+            <img src="/static/img/front-page/box.png" class="img-responsive" alt="Box logo" />
           </div>
       </div>
       <div class="row integrations">
           <div class="col-sm-3 col-xs-6">
-           <img src="/static/img/front-page/google.png" class="img-responsive"/>
+           <img src="/static/img/front-page/google.png" class="img-responsive"  alt="Google Drive logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/figshare.png" class="img-responsive"/>
+            <img src="/static/img/front-page/figshare.png" class="img-responsive" alt="Figshare logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/dataverse.png" class="img-responsive"/>
+            <img src="/static/img/front-page/dataverse.png" class="img-responsive"  alt="Dataverse logo" />
           </div>
           <div class="col-sm-3 col-xs-6">
-            <img src="/static/img/front-page/mendeley.png" class="img-responsive"/>
+            <img src="/static/img/front-page/mendeley.png" class="img-responsive" alt="Mendeley logo" />
           </div>
       </div>
 
@@ -192,7 +197,7 @@
             <h3>See project changes</h3>
             <p>See the latest project changes, who is contributing and <strong>historical file versions.</strong></p>
 
-            <h3>View project statistics</h3>
+            <h3>View project analytics</h3>
             <p>Access <strong>project data</strong> ranging from visits over time to top referring websites.</p>
 
           </div>
@@ -242,7 +247,7 @@
         </div>
 
         <div class="row">
-          <div class="col-xs-3">
+          <div class="col-xs-4 col-md-3">
             <img src="/static/img/front-page/user2.jpg" class="img-circle img-responsive" alt="Richard Ball" />
           </div>
           <div class="col-xs-8">
@@ -263,7 +268,7 @@
 
         <div class="row hidden-xs hidden-sm">
           <div class="col-md-3">
-            <img src="/static/img/front-page/user4.jpg" class="img-circle img-responsive" alt="" />
+            <img src="/static/img/front-page/user4.jpg" class="img-circle img-responsive" alt="Anne Allison" />
           </div>
           <div class="col-md-7">
             <h3>A centralized hub of information</h3>
@@ -280,7 +285,7 @@
           <div class="col-md-8">
             <h2><strong>Free and open source.</strong></h2>
             <h4>The OSF is a public good built to support your research.</h4>
-            <a href="#" class="btn btn-info btn-lg">Get Started</a>
+            <a href="#" class="btn btn-info btn-lg">Get started</a>
           </div>
           <div class="col-md-4 hidden-xs hidden-sm">
             <div id="logo">

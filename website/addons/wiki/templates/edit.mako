@@ -50,10 +50,11 @@
                 </div>
                 <div id="grid">
                     <div class="spinner-loading-wrapper">
-                        <div class="logo-spin text-center"><img src="/static/img/logo_spin.png" alt="loader"> </div>
+                        <div class="logo-spin logo-lg"></div>
                         <p class="m-t-sm fg-load-message"> Loading wiki pages...  </p>
                     </div>
                 </div>
+                <div class="hidden text-danger" id="wikiErrorMessage" style="padding: 15px"></div>
             </div>
 
             <!-- Menu with toggle collapsed -->
@@ -71,7 +72,55 @@
     <div class="wiki" id="wikiPageContext">
     <div class="panel-expand col-sm-${'9' if 'menu' in panels_used else '11' | n}">
       <div class="row">
-        % if user['can_edit']:
+
+          <div data-osf-panel="View"
+               class="${'col-sm-{0}'.format(12 / num_columns) | n}"
+               style="${'' if 'view' in panels_used else 'display: none' | n}">
+              <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
+                <div class="panel-heading wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
+                        </div>
+                        <div class="col-sm-8">
+
+                            <div class="pull-right">
+                                <!-- Version Picker -->
+                                <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
+                                    % if user['can_edit_wiki_body']:
+                                        <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
+                                    % endif
+                                    % if len(versions) > 0:
+                                        <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>(Current) ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
+                                    % else:
+                                        <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
+                                    % endif
+                                    % if len(versions) > 1:
+                                        % for version in versions[1:]:
+                                            <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>(${version['version']}) ${version['user_fullname']}: ${version['date']}</option>
+                                        % endfor
+                                    % endif
+                                </select>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+
+                <div id="wikiViewPanel"  class="panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
+                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
+                      % if wiki_content:
+                          ${wiki_content | n}
+                      % else:
+                          <p><em>No wiki content</em></p>
+                      % endif
+                  </div>
+                </div>
+              </div>
+          </div>
+
+          % if user['can_edit_wiki_body']:
             <div data-bind="with: $root.editVM.wikiEditor.viewModel"
                  data-osf-panel="Edit"
                  class="${'col-sm-{0}'.format(12 / num_columns) | n}"
@@ -112,8 +161,8 @@
                                       </a></li>
                                   <!-- /ko -->
                               </ul>
-                              <div id="wmd-button-bar"></div>
 
+                              <div id="wmd-button-bar"></div>
                               <div id="editor" class="wmd-input wiki-editor"
                                    data-bind="ace: currentText">Loading. . .</div>
                           </div>
@@ -145,49 +194,7 @@
             </div>
           % endif
 
-          <div data-osf-panel="View"
-               class="${'col-sm-{0}'.format(12 / num_columns) | n}"
-               style="${'' if 'view' in panels_used else 'display: none' | n}">
-              <div class="osf-panel panel panel-default no-border" data-bind="css: { 'no-border reset-height': $root.singleVis() === 'view', 'osf-panel-flex': $root.singleVis() !== 'view' }">
-                <div class="panel-heading wiki-single-heading" data-bind="css: { 'osf-panel-heading-flex': $root.singleVis() !== 'view', 'wiki-single-heading': $root.singleVis() === 'view' }">
-                    <div class="row">
-                        <div class="col-sm-6">
-                            <span class="panel-title" > <i class="fa fa-eye"> </i>  View</span>
-                        </div>
-                        <div class="col-sm-6">
 
-                            <div class="pull-right">
-                                <!-- Version Picker -->
-                                <select class="form-control" data-bind="value:viewVersion" id="viewVersionSelect">
-                                    % if user['can_edit']:
-                                        <option value="preview" ${'selected' if version_settings['view'] == 'preview' else ''}>Preview</option>
-                                    % endif
-                                    <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
-                                    % if len(versions) > 1:
-                                        <option value="previous" ${'selected' if version_settings['view'] == 'previous' else ''}>Previous</option>
-                                    % endif
-                                    % for version in versions[2:]:
-                                        <option value="${version['version']}" ${'selected' if version_settings['view'] == version['version'] else ''}>Version ${version['version']}</option>
-                                    % endfor
-                                </select>
-
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-                <div id="wikiViewPanel"  class="panel-body" data-bind="css: { 'osf-panel-body-flex': $root.singleVis() !== 'view' }">
-                  <div id="wikiViewRender" data-bind="html: renderedView, mathjaxify: renderedView, anchorScroll : { buffer: 50, elem : '#wikiViewPanel'}" class=" markdown-it-view">
-                      % if wiki_content:
-                          ${wiki_content | n}
-                      % else:
-                          <p><em>No wiki content</em></p>
-                      % endif
-                  </div>
-                </div>
-              </div>
-          </div>
           <div data-osf-panel="Compare"
                class="${'col-sm-{0}'.format(12 / num_columns) | n}"
                style="${'' if 'compare' in panels_used else 'display: none' | n}">
@@ -200,13 +207,17 @@
                             <!-- Version Picker -->
                             <span class="compare-version-text"><i> <span data-bind="text: viewVersionDisplay"></span></i> to
                               <select class="form-control" data-bind="value: compareVersion" id="compareVersionSelect">
-                                  <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>Current</option>
-                                  % if len(versions) > 1:
-                                      <option value="previous" ${'selected' if version_settings['compare'] == 'previous' else ''}>Previous</option>
+                                  % if len(versions) > 0:
+                                      <option value="current" ${'selected' if version_settings['compare'] == 'current' else ''}>(Current) ${versions[0]['user_fullname']}: ${versions[0]['date']}</option>
+                                  % else:
+                                      <option value="current" ${'selected' if version_settings['view'] == 'current' else ''}>Current</option>
                                   % endif
-                                  % for version in versions[2:]:
-                                      <option value="${version['version']}" ${'selected' if version_settings['compare'] == version['version'] else ''}>Version ${version['version']}</option>
-                                  % endfor
+                                  % if len(versions) > 1:
+                                      % for version in versions[1:]:
+                                          <option value="${version['version']}" ${'selected' if version_settings['compare'] == version['version'] else ''}>(${version['version']}) ${version['user_fullname']}: ${version['date']}</option>
+                                      % endfor
+                                  % endif
+
                               </select></span>
 
                           </div>
@@ -234,7 +245,7 @@
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">The permissions for this page have changed</h3>
+        <h3 class="modal-title">Page permissions have changed</h3>
       </div>
       <div class="modal-body">
         <p>Your browser should refresh shortly&hellip;</p>
@@ -244,23 +255,21 @@
 </div>
 
 <div class="modal fade" id="renameModal">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 class="modal-title">The content of this wiki has been moved to a different page</h3>
-      </div>
-      <div class="modal-body">
-        <p>Your browser should refresh shortly&hellip;</p>
-      </div>
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="spinner-loading-wrapper">
+                <div class="logo-spin logo-xl"></div>
+                 <p class="m-t-sm fg-load-message"> Renaming wiki...  </p>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <div class="modal fade" id="deleteModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h3 class="modal-title">This wiki page has been deleted</h3>
+        <h3 class="modal-title">Wiki page deleted</h3>
       </div>
       <div class="modal-body">
         <p>Press Confirm to return to the project wiki home page.</p>
@@ -349,16 +358,17 @@
 ${parent.javascript_bottom()}
 <script>
 
-    var canEdit = ${json.dumps(user['can_edit'])};
+    var canEditBody = ${user['can_edit_wiki_body'] | sjson, n};
+    var isContributor = ${user['can_edit']  | sjson, n};
 
-    var canEditPageName = canEdit && ${json.dumps(
+    var canEditPageName = isContributor && ${json.dumps(
         wiki_id and wiki_name != 'home'
     )};
 
     window.contextVars = window.contextVars || {};
     window.contextVars.wiki = {
         name: ${json.dumps(wiki_name) | n},
-        canEdit: canEdit,
+        canEdit: canEditBody,
         canEditPageName: canEditPageName,
         usePythonRender: ${json.dumps(use_python_render)},
         versionSettings: ${json.dumps(version_settings) | n},

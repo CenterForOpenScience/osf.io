@@ -68,6 +68,11 @@ describe('profile', () => {
                 });
             });
 
+            it('should not crash initials function when name contains two spaces', () => {
+                var initials = vm.initials('John  Quincy');
+                assert.equal(initials, 'J. Q.');
+            });
+
             describe('impute', () => {
                 it('should send request and update imputed names', (done) => {
                     vm.impute().done(() => {

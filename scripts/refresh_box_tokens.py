@@ -7,19 +7,23 @@ import datetime
 
 from modularodm import Q
 from dateutil.relativedelta import relativedelta
-from box.client import BoxAuthenticationException
 
 from scripts import utils as scripts_utils
 from website.app import init_app
-from website.addons.box import model
+from website.oauth.models import ExternalAccount
+from website.addons.base.exceptions import AddonError
+from website.addons.box.utils import refresh_oauth_key
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
 def get_targets(delta):
-    return model.BoxOAuthSettings.find(
-        Q('expires_at', 'lt', datetime.datetime.utcnow() - delta)
+    # NOTE: expires_at is the  access_token's expiration date,
+    # NOT the refresh token's
+    return ExternalAccount.find(
+        Q('expires_at', 'lt', datetime.datetime.utcnow() - delta) &
+        Q('provider', 'eq', 'box')
     )
 
 
@@ -27,14 +31,14 @@ def main(delta, dry_run):
     for record in get_targets(delta):
         logger.info(
             'Refreshing tokens on record {0}; expires at {1}'.format(
-                record.user_id,
+                record._id,
                 record.expires_at.strftime('%c')
             )
         )
         if not dry_run:
             try:
-                record.refresh_access_token(force=True)
-            except BoxAuthenticationException as ex:
+                refresh_oauth_key(record, force=True)
+            except AddonError as ex:
                 logger.error(ex.message)
 
 
@@ -44,7 +48,7 @@ if __name__ == '__main__':
     try:
         days = int(sys.argv[2])
     except (IndexError, ValueError, TypeError):
-        days = 60 - 7  # refresh tokens are good for 60 days
+        days = 60 - 7  # refresh tokens that expire this week
     delta = relativedelta(days=days)
     # Log to file
     if not dry_run:
