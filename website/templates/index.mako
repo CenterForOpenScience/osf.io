@@ -42,7 +42,7 @@
               <img src="/static/img/front-page/screenshot.png" class="img-responsive" id="screenshot" alt="Screenshot of OSF" />
             </div>
             <div class="col-sm-6">
-              <h2>Free. Get started today.</h2>
+              <h2>Free and open source. Start now.</h2>
 
              <div id="signUp" class="anchor"></div>
                 <div id="signUpScope">

@@ -2,6 +2,24 @@
 Changelog
 *********
 
+0.55.0 (2015-11-15)
+===================
+
+- File Check-out/Check-in.
+- Add tags to files.
+- Search files by name and tags.
+- Add licenses to projects.
+- Multiple Google Drive accounts can be associated with a user account.
+- Redesign of OSF for Meetings landing page.
+- APIv2: Comparison operators for filtering.
+
+Migrations
+----------
+
+* scripts.migration.migrate_index_for_existing_files
+* scripts.googledrive.migrate_to_external_account
+* scripts.googledrive.connect_external_accounts
+
 0.54.0 (2015-10-25)
 ===================
 
