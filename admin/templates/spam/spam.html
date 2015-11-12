@@ -5,7 +5,7 @@
 {% block content %}
     {{ block.super }}
     <h2>List of Spam</h2>
-    <table>
+    <table class="table table-striped table-hover table-responsive">
     <thead>
         <tr>
             <th><input type="checkbox"></th>
@@ -36,8 +36,8 @@
             {{ comment.content|truncatechars:30 }}
         </td>
         <td>
-            <a href="{% url 'spam:detail' comment.id %}">
-                <input type="button" value="Detail">
+            <a href="{% url 'spam:detail' comment.id %}" class="btn btn-primary">
+                Detail
             </a>
         </td>
     </tr>
