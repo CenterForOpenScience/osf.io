@@ -14,6 +14,7 @@ from api.base.serializers import Link, JSONAPISerializer, LinksField, IDField, T
 class CheckoutField(ser.HyperlinkedRelatedField):
 
     default_error_messages = {'invalid_data': 'Checkout must be either the current user or null'}
+    json_api_link = True  # serializes to a links object
 
     def __init__(self, **kwargs):
         kwargs['queryset'] = True
@@ -51,7 +52,11 @@ class CheckoutField(ser.HyperlinkedRelatedField):
 
         url = super(CheckoutField, self).to_representation(value)
 
-        ret = format_relationship_links(related_link=url)
+        rel_meta = None
+        if value:
+            rel_meta = {'id': value._id}
+
+        ret = format_relationship_links(related_link=url, rel_meta=rel_meta)
         return ret
 
 

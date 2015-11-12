@@ -40,6 +40,7 @@ def format_relationship_links(related_link=None, self_link=None, rel_meta=None, 
 
     return ret
 
+
 class AllowMissing(ser.Field):
 
     def __init__(self, field, **kwargs):
