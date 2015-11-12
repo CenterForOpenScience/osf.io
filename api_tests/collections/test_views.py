@@ -87,9 +87,13 @@ class TestCollectionCreate(ApiTestCase):
     def test_creates_collection_logged_in(self):
         res = self.app.post_json_api(self.url, self.collection, auth=self.user_one.auth)
         assert_equal(res.status_code, 201)
+        pid = res.json['data']['id']
         assert_equal(res.json['data']['attributes']['title'], self.title)
         assert_equal(res.content_type, 'application/vnd.api+json')
-        pid = res.json['data']['id']
+        assert_equal(res.json['data']['type'], 'collections')
+        res = self.app.get(self.url+'?filter[title]={}'.format(self.title), auth=self.user_one.auth)
+        ids = [each['id'] for each in res.json['data']]
+        assert_in(pid, ids)
         collection = Node.load(pid)
         assert_equal(collection.logs[-1].action, NodeLog.PROJECT_CREATED)
         assert_equal(collection.title, self.title)

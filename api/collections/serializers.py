@@ -43,6 +43,7 @@ class CollectionSerializer(JSONAPISerializer):
 
     def create(self, validated_data):
         node = Node(**validated_data)
+        node.is_folder = True
         try:
             node.save()
         except ValidationValueError as e:
