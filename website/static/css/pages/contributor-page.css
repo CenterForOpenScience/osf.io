@@ -94,6 +94,10 @@ th.biblio-contrib {
     width: 109px;
 }
 
+th.remove {
+    width: 94px;
+}
+
 #privateLinkTable th.shared-comp {
     width: 120px;
 }

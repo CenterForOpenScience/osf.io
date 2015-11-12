@@ -1,3 +1,5 @@
+'use strict';
+
 (function($){
     $.fn.filters = function (options) {
         /*
@@ -37,7 +39,7 @@
         var search = function(el) {
             for (var key in searchConstraints) {
                 if (searchConstraints.hasOwnProperty(key)) {
-                    var content = jQuery(el.querySelector(key)).text().toLowerCase();
+                    var content = $(el.querySelector(key)).text().toLowerCase();
                     var exists = content.indexOf(searchConstraints[key]);
                     if (exists === -1) {
                         return false;
@@ -54,7 +56,7 @@
                     var type = settings.groups[key].type;
                     var match = filterConstraints[key];
                     if (type === 'text') {
-                        var content = jQuery(el.querySelector(selector)).text();
+                        var content = $(el.querySelector(selector)).text();
                         if (match.indexOf(content) === -1) {
                             return false;
                         }
@@ -73,11 +75,7 @@
             var activeItems = $(itemsSelector);
             $(itemsSelector).each(function() {
                 var self = this;
-                if (!search(self)) {
-                    activeItems.splice(activeItems.index(self), 1);
-                    $(self).fadeOut();
-                }
-                else if (!filter(self)){
+                if (!search(self) || !filter(self)) {
                     activeItems.splice(activeItems.index(self), 1);
                     $(self).fadeOut();
                 }
@@ -87,7 +85,7 @@
                 var empty = [];
                 var filtered = [];
                 for (var i = 0, selector; selector = settings.items[i]; i ++) {
-                    var active = jQuery(activeItems).filter(selector);
+                    var active = $(activeItems).filter(selector);
                     var items = $(selector);
                     if (active.length < items.length) {
                         filtered.push(selector);
@@ -142,8 +140,8 @@
 
         for (var key in settings.inputs) {
             if (settings.inputs.hasOwnProperty(key)) {
-                jQuery('#' + key).keyup(keyupFunction);
+                $('#' + key).keyup(keyupFunction);
             }
         }
     };
-}(jQuery));
+}($));

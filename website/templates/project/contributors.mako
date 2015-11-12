@@ -154,8 +154,7 @@
                             data-bind="attr: {data-clipboard-text: linkUrl}" >
                         <i class="fa fa-copy"></i>
                     </button>
-                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}, click:
-                    function(data, event) {event.target.select()}, clickBubble: false"  />
+                    <input class="link-url" type="text" data-bind="value: linkUrl, attr:{readonly: readonly}, click: click, clickBubble: false"  />
                 </div>
             </div>
         </td>
@@ -223,7 +222,7 @@
                     data-html="true"
                 ></i>
             </th>
-            <th class="min-width"></th>
+            <th class="remove"></th>
         </tr>
     </thead>
     <!-- ko if: $data == 'contrib' -->
@@ -259,7 +258,7 @@
                     <span class="name-search" data-bind="text: contributor.shortname"></span>
                 </span>
                 <span data-bind="if: profileUrl">
-                    <a class="no-sort name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
+                    <a class="name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
                 </span>
                 <span data-bind="text: permissionText()" class="permission-filter permission-search"></span>
             </div>
@@ -269,7 +268,7 @@
                 <span class="name-search" data-bind="text: contributor.shortname"></span>
             </span>
             <span data-bind="if: profileUrl">
-                <a class="no-sort name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
+                <a class="name-search" data-bind="text: contributor.shortname, attr:{href: profileUrl}"></a>
             </span>
         </td>
         <td class="permissions">
@@ -279,9 +278,7 @@
                         <select class="form-control input-sm" data-bind="
                             options: $parents[1].permissionList,
                             value: permission,
-                            optionsText: function(val) {
-                                return $parents[1].permissionDict[val];
-                                },
+                            optionsText: optionsText.bind(permission),
                              style: { font-weight: permissionChange() ? 'normal' : 'bold' }"
                         >
                         </select>
@@ -298,7 +295,7 @@
         <td>
             <div class="td-content">
                 <input
-                    type="checkbox" class="no-sort biblio visible-filter"
+                    type="checkbox" class="biblio visible-filter"
                     data-bind="checked: visible, enable: $data.canEdit() && !contributor.isAdmin && !deleteStaged()"
                 />
             </div>
@@ -318,7 +315,7 @@
 
                 <!-- ko ifnot: contributor.canEdit() -->
                     <!-- ko if: canRemove -->
-                        <button type="button" class="btn btn-danger" data-bind="click: function() { $data.removeSelf($parents[1])}">Remove</button>
+                        <button type="button" class="btn btn-danger" data-bind="click: removeSelf">Remove</button>
                     <!-- /ko -->
                 <!-- /ko -->
             </div>

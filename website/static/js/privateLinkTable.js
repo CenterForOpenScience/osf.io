@@ -44,6 +44,10 @@ function LinkViewModel(data, $root) {
         }
         return [openTag, text, closeTag].join('');
     });
+
+    self.click = function(data, event) {
+        event.target.select();
+    }
 }
 
 function ViewModel(url, nodeIsPublic) {

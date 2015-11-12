@@ -136,8 +136,7 @@
                 <div class="col-xs-12">
                     <!-- ko if: expandable() -->
                         <div class="panel panel-default">
-                            <div class="panel-heading card-heading" data-bind="attr: {id: 'jobHeading' + $index(), href: '#jobCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false"
-                            onclick="jQuery(this.querySelector('.toggle-icon')).toggleClass('fa-angle-down fa-angle-up')">
+                            <div class="panel-heading card-heading" data-bind="click: click, attr: {id: 'jobHeading' + $index(), href: '#jobCard' + $index()}" role="button" data-toggle="collapse" aria-controls="card" aria-expanded="false">
                                 <div class="header-content">
                                     <h5 class="institution">{{ institution }}</h5>
                                     <span data-bind="ifnot: startYear() === null" class="subheading">{{ startMonth }} {{startYear }} - {{ endView }}</span>

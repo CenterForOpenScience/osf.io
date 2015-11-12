@@ -106,8 +106,12 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.unremove = function() {
         if (self.deleteStaged()) {
             self.deleteStaged(false);
-            parent.visibleCount(parent.visibleCount() + self.visible());
-            parent.adminCount(parent.adminCount() + (self.permission() === 'admin'));
+            if (self.visible()) {
+                parent.visibleCount(parent.visibleCount() + 1);
+            }
+            if (self.permission() === 'admin') {
+                parent.adminCount(parent.adminCount() + 1);
+            }
         }
         // Allow default action
         return true;
@@ -126,7 +130,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     // TODO: copied-and-pasted from nodeControl. When nodeControl
     // gets refactored, update this to use global method.
-    self.removeSelf = function(parent) {
+    self.removeSelf = function() {
         var id = self.id,
             name = self.fullname;
         var payload = {
@@ -175,6 +179,10 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
             return false;
         }
     };
+
+    self.optionsText = function(val) {
+        return parent.permissionDict[val];
+    }
 };
 
 var MessageModel = function(text, level) {
