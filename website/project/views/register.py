@@ -29,7 +29,7 @@ from website.models import MetaSchema, NodeLog
 from website import language
 from website.project import signals as project_signals
 from website import util
-
+from website.project.metadata.utils import serialize_meta_schema
 from website.archiver.decorators import fail_archive_on_error
 
 from website.identifiers.client import EzidClient
@@ -110,44 +110,26 @@ def node_registration_retraction_post(auth, node, **kwargs):
     return {'redirectUrl': node.web_url_for('view_project')}
 
 @must_be_valid_project
-@must_have_permission(ADMIN)
-def node_register_template_page(auth, node, **kwargs):
+@must_be_contributor_or_public
+def node_register_template_page(auth, node, metaschema_id, **kwargs):
+    if node.is_registration and bool(node.registered_schema):
+        try:
+            meta_schema = MetaSchema.find_one(
+                Q('_id', 'eq', metaschema_id)
+            )
+        except NoResultsFound:
+            raise HTTPError(http.NOT_FOUND, data={
+                'message_short': 'Invalid schema name',
+                'message_long': 'No registration schema with that name could be found.'
+            })
+        if meta_schema not in node.registered_schema:
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': 'Invalid schema',
+                'message_long': 'This registration has no registration supplment with that name.'
+            })
 
-    template_name = kwargs['template'].replace(' ', '_')
-    # Error to raise if template can't be found
-    not_found_error = HTTPError(
-        http.NOT_FOUND,
-        data=dict(
-            message_short='Template not found.',
-            message_long='The registration template you entered '
-                         'in the URL is not valid.'
-        )
-    )
-
-    if node.is_registration and node.registered_meta:
-        registered = True
-        payload = node.registered_meta
-
-        if node.registered_schema:
-            meta_schema = node.registered_schema
-        else:
-            try:
-                meta_schema = MetaSchema.find_one(
-                    Q('name', 'eq', template_name) &
-                    Q('schema_version', 'eq', 1)
-                )
-            except NoResultsFound:
-                raise not_found_error
-
-        ret = {
-            'template_name': template_name,
-            'metadata_version': meta_schema.metadata_version,
-            'schema_version': meta_schema.schema_version,
-            'registered': registered,
-            'payload': payload,
-            'children_ids': node.nodes._to_primary_keys(),
-        }
-        ret.update(_view_project(node, auth, primary=True))
+        ret = _view_project(node, auth, primary=True)
+        ret['node']['registered_schema'] = serialize_meta_schema(meta_schema)
         return ret
     else:
         status.push_status_message(
