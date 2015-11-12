@@ -53,7 +53,7 @@ $(function(){
     });
 
     // Activate autocomplete for draft registrations
-    $.getJSON('/api/v1/prereg/draft_registrations/').done(function(response){
+    $.getJSON('/api/v1/prereg/draft_registrations/').then(function(response){
         if (response.draftRegistrations.length) {
             $osf.applyBindings({}, '#existingPrereg');
         }

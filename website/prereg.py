@@ -14,29 +14,27 @@ from framework.auth import decorators
 from framework.utils import iso8601format
 from website import models
 
-
 @decorators.must_be_logged_in
 def prereg_landing_page(auth, **kwargs):
     """Landing page for the prereg challenge"""
-    has_project = False
-    has_draft_registration = False
+    PREREG_CHALLENGE_METASCHEMA = models.MetaSchema.find_one(
+        Q('name', 'eq', 'Prereg Challenge') &
+        Q('schema_version', 'eq', 1)
+    )
 
     registerable_nodes = (
         node for node
         in auth.user.contributor_to
         if node.has_permission(user=auth.user, permission='admin')
     )
-
-    for node in registerable_nodes:
-        if not has_project:
-            has_project = True
-        if node.draft_registrations:
-            has_draft_registration = True
-            break
+    has_projects = bool(registerable_nodes)
+    has_draft_registrations = bool(models.DraftRegistration.find(
+        Q('registration_schema', 'eq', PREREG_CHALLENGE_METASCHEMA)
+    ).count())
 
     return {
-        'has_draft_registration': has_draft_registration,
-        'has_project': has_project,
+        'has_draft_registrations': has_draft_registrations,
+        'has_projects': has_projects,
     }
 
 
@@ -44,8 +42,8 @@ def prereg_landing_page(auth, **kwargs):
 def prereg_draft_registrations(auth, **kwargs):
     """API endpoint; returns prereg draft registrations the user can resume"""
     PREREG_CHALLENGE_METASCHEMA = models.MetaSchema.find_one(
-        Q('name', 'eq', 'Open-Ended Registration') &
-        Q('schema_version', 'eq', 2)
+        Q('name', 'eq', 'Prereg Challenge') &
+        Q('schema_version', 'eq', 1)
     )
 
     drafts = models.DraftRegistration.find(
