@@ -202,21 +202,27 @@ var Question = function(questionSchema, data) {
     /**
      * @returns {Boolean} true if the value <input> is not blank
      **/
-    self.isComplete = ko.computed(function() {
-        if (self.type === 'object') {
-            var ret = true;
-            $.each(self.properties, function(_, subQuestion) {
-                if( subQuestion.type !== 'osf-upload') {
-                    if ( (subQuestion.value || '').trim() === '' ) {
-                        ret = false;
-                        return;
+    self.isComplete = ko.computed({
+        read: function() {
+            if (self.type === 'object') {
+                var ret = true;
+                $.each(self.properties, function(_, subQuestion) {
+                    if( subQuestion.type !== 'osf-upload') {
+                        if ((subQuestion.value() || '').trim() === '' ) {
+                            ret = false;
+                            return;
+                        }
                     }
-                }
-            });
-            return ret;
-        } else {
-            return (self.value() || '').trim() !== '';
-        }
+                    else {
+                        // TODO
+                    }
+                });
+                return ret;
+            } else {
+                return (self.value() || '').trim() !== '';
+            }
+        },
+        deferEvaluation: true
     });
 
     self.init();
@@ -229,7 +235,7 @@ Question.prototype.init = function() {
     if (self.type === 'object') {
         $.each(self.properties, function(prop, field) {
             field.qid = field.id;
-            self.properties[prop] = new Question(field, prop);
+            self.properties[prop] = new Question(field, self.data[prop]);
         });
     }
 };
