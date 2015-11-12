@@ -52,12 +52,6 @@ function getUID() {
     return window.fileBrowserCounter;
 }
 
-// TODO CHANGE Structure
-// Link is object for everything
-// filesdata update only gets link
-// breadcrumb update gets the whole linkobject 
-
-
 /**
  * Initialize File Browser. Prepeares an option object within FileBrowser
  * @constructor
@@ -132,7 +126,6 @@ var FileBrowser = {
                 xhr.withCredentials = true;
             };
             m.request({method : 'GET', url : url, config : xhrconfig}).then(self.data).then(function(value){
-                console.log(value);
                 value.data.map(function(item){
                     item.kind = 'folder';
                     item.uid = item.id;
@@ -182,7 +175,6 @@ var FileBrowser = {
                 x = x-115;
                 y = y-80;
             }
-            console.log(event.view.innerWidth < 767);
             self.showCollectionMenu(true);
             self.collectionMenuObject({
                 item : item,

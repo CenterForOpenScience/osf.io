@@ -484,7 +484,6 @@ var ProjectOrganizer = {
         self.tb = self.updateTB();
     },
     view : function (ctrl, args) {
-        console.log(args.reload());
         var tb = ctrl.tb;
         if (args.reload()) {
             tb = ctrl.updateTB();
