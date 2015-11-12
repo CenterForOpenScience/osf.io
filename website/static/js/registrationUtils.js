@@ -144,12 +144,12 @@ var Question = function(questionSchema, data) {
 
     self.id = questionSchema.qid;
 
-    data = data || {};
-    if ($.isFunction(data.value)) {
+    self.data = data || {};
+    if ($.isFunction(self.data.value)) {
         // For subquestions, this could be an observable
-        _value = data.value();
+        _value = self.data.value();
     } else {
-        _value = data.value || null;
+        _value = self.data.value || null;
     }
     self.value = ko.observable(_value);
     self.setValue = function(val) {
@@ -182,7 +182,7 @@ var Question = function(questionSchema, data) {
     self.showUploader = ko.observable(false);
 
     self.comments = ko.observableArray(
-        $.map(data.comments || [], function(comment) {
+        $.map(self.data.comments || [], function(comment) {
             return new Comment(comment);
         })
     );
@@ -223,6 +223,7 @@ Question.prototype.init = function() {
     var self = this;
     if (self.type === 'object') {
         $.each(self.properties, function(prop, field) {
+            field.qid = field.id;
             self.properties[prop] = new Question(field, prop);
         });
     }
@@ -273,7 +274,7 @@ var Page = function(schemaPage, schemaData) {
     self.id = schemaPage.id;
 
     self.active = ko.observable(false);
-    
+
     schemaData = schemaData || {};
     self.questions = $.map(schemaPage.questions, function(questionSchema) {
         return new Question(questionSchema, schemaData[questionSchema.qid]);
@@ -282,7 +283,7 @@ var Page = function(schemaPage, schemaData) {
     self.comments = ko.computed(function() {
         var comments = [];
         $.each(self.questions, function(_, question) {
-            comments = comments.concat(question.comments());            
+            comments = comments.concat(question.comments());
         });
         comments.sort(function(a, b) {
             return a.created > b.created;
@@ -352,6 +353,36 @@ MetaSchema.prototype.flatQuestions = function() {
         flat = flat.concat(page.questions);
     });
     return flat;
+};
+
+MetaSchema.prototype.askConsent = function() {
+    var self = this;
+
+    var ret = $.Deferred();
+
+    var viewModel = {
+        message: self.consent,
+        consent: ko.observable(false),
+        submit: function() {
+            $osf.unblock();
+            bootbox.hideAll();
+            ret.resolve();
+        },
+        cancel: function() {
+            $osf.unblock();
+            bootbox.hideAll();
+            ret.reject();
+        }
+    };
+
+    bootbox.dialog({
+        size: 'large',
+        message: function() {
+            ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
+        }
+    });
+
+    return ret.promise();
 };
 
 /**
@@ -479,54 +510,25 @@ Draft.prototype.preRegisterErrors = function(response, confirm) {
             }}
     });
 };
-Draft.prototype.askConsent = function() {
-    var self = this;
-
-    var ret = $.Deferred();
-
-    var viewModel = {
-        message: self.metaSchema.consent,
-        consent: ko.observable(false),
-        submit: function() {
-            $osf.unblock();
-            bootbox.hideAll();
-            ret.resolve();
-        },
-        cancel: function() {
-            $osf.unblock();
-            bootbox.hideAll();
-            ret.reject();
-        }
-    };    
-
-    bootbox.dialog({
-        size: 'large',
-        message: function() {
-            ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
-        }
-    });
-    
-    return ret.promise();
-};
 Draft.prototype.beforeRegister = function(url) {
     var self = this;
 
     $osf.block();
-    
+
     url = url || self.urls.register;
-       
+
     var request = $.getJSON(self.urls.before_register);
     request.done(function(response) {
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(
-                response, 
+                response,
                 self.preRegisterPrompts.bind(
-                    self, 
-                    response, 
+                    self,
+                    response,
                     self.register.bind(self, url)
                 )
             );
-        } 
+        }
         else {
             self.preRegisterPrompts(
                 response,
@@ -552,7 +554,7 @@ Draft.prototype.registerWithoutReview = function() {
                 className: 'btn-default',
                 callback: bootbox.hideAll
             }
-        }        
+        }
     });
 };
 Draft.prototype.onRegisterFail = bootbox.alert.bind(null, {
@@ -582,7 +584,7 @@ Draft.prototype.submitForReview = function() {
     var metaSchema = self.metaSchema;
     var messages = metaSchema.messages;
     var beforeSubmitForApprovalMessage = messages.beforeSubmitForApproval || '';
-    var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';   
+    var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';
 
     var submitForReview = function() {
         bootbox.confirm({
@@ -593,10 +595,10 @@ Draft.prototype.submitForReview = function() {
                 }
             }
         });
-    }; 
+    };
 
     if (self.metaSchema.requiresConsent) {
-        return self.askConsent()
+        return self.metaSchema.askConsent()
             .then(function() {
                 bootbox.hideAll();
                 submitForReview();
@@ -657,7 +659,7 @@ var RegistrationEditor = function(urls, editorId) {
         var data = {};
 
         $.each(self.pages(), function (_, page) {
-            $.each(page.questions(), function (_, question) {
+            $.each(page.questions, function (_, question) {
                 data[question.id] = {
                     value: question.value()
                 };
@@ -672,7 +674,7 @@ var RegistrationEditor = function(urls, editorId) {
     }.bind(self));
 
     // An incrementing dirty flag. The 0 state represents not-dirty.
-    // States greater than 0 imply dirty, and incrementing the number 
+    // States greater than 0 imply dirty, and incrementing the number
     // allows for reliable mutations of the ko.observable.
     self.dirtyCount = ko.observable(0);
     self.needsSave = ko.computed(function() {
@@ -724,7 +726,7 @@ RegistrationEditor.prototype.init = function(draft) {
     var schemaData = {};
     if (draft) {
         self.saveManager = new SaveManager(
-            self.urls.update.replace('{draft_pk}', draft.pk), 
+            self.urls.update.replace('{draft_pk}', draft.pk),
             null, {
                 dirty: self.dirtyCount
             }
@@ -837,7 +839,7 @@ RegistrationEditor.prototype.check = function() {
 
     var valid = true;
     ko.utils.arrayMap(self.draft().pages(), function(page) {
-        ko.utils.arrayMap(page.questions(), function(question) {
+        ko.utils.arrayMap(page.questions, function(question) {
             if (question.required && !question.value.isValid()) {
                 valid = false;
                 // Validation for a question failed
@@ -894,7 +896,7 @@ RegistrationEditor.prototype.getUnseenComments = function(qid) {
 RegistrationEditor.prototype.selectPage = function(page) {
     var self = this;
 
-    var questions = page.questions();
+    var questions = page.questions;
     var firstQuestion = questions[Object.keys(questions)[0]];
     self.currentQuestion(firstQuestion);
     self.currentPage(page);
@@ -972,7 +974,7 @@ RegistrationEditor.prototype.create = function(schemaData) {
         self.draft(draft);
         self.saveManager = new SaveManager(
             self.urls.update.replace('{draft_pk}', draft.pk),
-            null, 
+            null,
             {
                 dirty: self.dirtyCount
             }
@@ -1245,7 +1247,14 @@ RegistrationManager.prototype.createDraftModal = function() {
                 className: 'btn btn-primary',
                 callback: function(event) {
                     var selectedSchema = self.selectedSchema();
-                    $('#newDraftRegistrationForm').submit();
+                    if (selectedSchema.requiresConsent) {
+                        selectedSchema.askConsent().then(function() {
+                            $('#newDraftRegistrationForm').submit();
+                        });
+                    }
+                    else {
+                        $('#newDraftRegistrationForm').submit();
+                    }
                 }
             }
         }
