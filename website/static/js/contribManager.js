@@ -5,6 +5,9 @@ var ko = require('knockout');
 var bootbox = require('bootbox');
 require('jquery-ui');
 require('knockout-sortable');
+var ContribAdder = require('js/contribAdder');
+var ContribRemover = require('js/contribRemover');
+
 
 var $osf = require('./osfHelpers');
 
@@ -37,7 +40,7 @@ var sortMap = {
 
 // TODO: We shouldn't need both pageOwner (the current user) and currentUserCanEdit. Separate
 // out the permissions-related functions and remove currentUserCanEdit.
-var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRegistration, isAdmin) {
+var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, shouter, isRegistration, isAdmin) {
 
     var self = this;
     $.extend(self, contributor);
@@ -64,6 +67,12 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     self.deleteStaged = ko.observable(contributor.deleteStaged || false);
     self.removeContributor = 'Remove contributor';
     self.pageOwner = pageOwner;
+    self.contributorToRemove = ko.observable();
+
+    self.contributorToRemove.subscribe(function(newValue) {
+        shouter.notifySubscribers(newValue, "messageToPublish");
+    });
+
     self.serialize = function() {
         return JSON.parse(ko.toJSON(self));
     };
@@ -73,7 +82,10 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
     });
 
     self.remove = function() {
-        self.deleteStaged(true);
+
+        self.contributorToRemove(self.fullname);
+        //self.deleteStaged(true);
+        //debugger;
     };
     self.unremove = function(data, event) {
         var $target = $(event.target);
@@ -182,7 +194,7 @@ var MessageModel = function(text, level) {
 
 };
 
-var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration) {
+var ContributorsViewModel = function(contributors, adminContributors, user, isRegistration, shouter) {
 
     var self = this;
 
@@ -190,7 +202,7 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
     self.contributors = ko.observableArray();
     self.adminContributors = adminContributors;
-
+    self.contributorToRemove = ko.observable('');
     self.user = ko.observable(user);
     // TODO: Does this need to be an observable?
     self.userIsAdmin  = ko.observable($.inArray('admin', user.permissions) !== -1);
@@ -282,10 +294,10 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
     self.init = function() {
         self.messages([]);
         self.contributors(self.original().map(function(item) {
-            return new ContributorModel(item, self.canEdit(), self.user(), isRegistration);
+            return new ContributorModel(item, self.canEdit(), self.user(), shouter, isRegistration);
         }));
         self.adminContributors = adminContributors.map(function(contributor) {
-          return new ContributorModel(contributor, self.canEdit(), self.user(), isRegistration, true);
+          return new ContributorModel(contributor, self.canEdit(), self.user(), shouter, isRegistration, true);
         });
     };
 
@@ -399,11 +411,37 @@ var ContributorsViewModel = function(contributors, adminContributors, user, isRe
 
 function ContribManager(selector, contributors, adminContributors, user, isRegistration) {
     var self = this;
+    self.selectedRemove = new ko.observable();
+    var shouter = new ko.subscribable();
     self.selector = selector;
     self.$element = $(selector);
     self.contributors = contributors;
     self.adminContributors = adminContributors;
-    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration);
+    self.viewModel = new ContributorsViewModel(contributors, adminContributors, user, isRegistration, shouter);
+    $('body').on('nodeLoad', function(event, data) {
+        // If user is a contributor, initialize the contributor modal
+        // controller
+        if (data.user.can_edit) {
+            new ContribAdder(
+                '#addContributors',
+                data.node.title,
+                data.node.id,
+                data.parent_node.id,
+                data.parent_node.title
+            );
+            new ContribRemover(
+                '#removeContributor',
+                data.node.title,
+                data.node.id,
+                data.parent_node.id,
+                data.parent_node.title,
+                data.user.username,
+                shouter
+            );
+
+
+        }
+    });
     self.init();
 }
 

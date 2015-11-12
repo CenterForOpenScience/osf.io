@@ -3,6 +3,7 @@
 
 <%include file="project/modal_generate_private_link.mako"/>
 <%include file="project/modal_add_contributor.mako"/>
+<%include file="project/modal_remove_contributor.mako"/>
 
 <div class="page-header  visible-xs">
   <h2 class="text-300">Contributors</h2>
@@ -217,11 +218,19 @@
                 <!-- ko ifnot: deleteStaged -->
                     <!-- Note: Prevent clickBubble so that removing a
                      contributor does not immediately un-remove her. -->
+
+          <!--
+
                     <a
                             data-bind="click: remove, clickBubble: false, tooltip: {title: 'Remove contributor'}"
                         >
                                 <i class="fa fa-times text-danger no-sort"></i>
                     </a>
+           -->
+                        <a href="#removeContributor" data-bind="click: remove" data-toggle="modal">
+                            <i class="fa fa-times text-danger no-sort"></i>
+                        </a>
+
                 <!-- /ko -->
                 <!-- ko if: deleteStaged -->
                     Save to Remove
