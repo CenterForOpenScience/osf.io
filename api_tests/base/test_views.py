@@ -65,7 +65,7 @@ class TestApiBaseViews(ApiTestCase):
 
     def test_view_classes_support_embeds(self):
         for view in VIEW_CLASSES:
-            assert_true(hasattr(view, '_get_embed_partial'))
+            assert_true(hasattr(view, '_get_embed_partial'), "{0} lacks embed support".format(view))
 
     @mock.patch('framework.auth.core.User.is_confirmed', mock.PropertyMock(return_value=False))
     def test_unconfirmed_user_gets_error(self):
