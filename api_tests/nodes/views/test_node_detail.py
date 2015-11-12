@@ -93,17 +93,15 @@ class TestNodeDetail(ApiTestCase):
         expected_url = self.public_url + 'children/'
         assert_equal(urlparse(url).path, expected_url)
 
-    def test_node_has_contributors_link(self):
+    def test_node_contributors_embedded(self):
         res = self.app.get(self.public_url)
-        url = res.json['data']['relationships']['contributors']['links']['related']['href']
-        expected_url = self.public_url + 'contributors/'
-        assert_equal(urlparse(url).path, expected_url)
+        returned_id = res.json['data']['embeds']['contributors']['data'][0]['id']
+        assert_equal(returned_id, self.user._id)
 
-    def test_node_has_pointers_link(self):
+    def test_node_has_pointers_embedded(self):
         res = self.app.get(self.public_url)
-        url = res.json['data']['relationships']['node_links']['links']['related']['href']
-        expected_url = self.public_url + 'node_links/'
-        assert_equal(urlparse(url).path, expected_url)
+        returned_node_link = res.json['data']['embeds']['node_links']['data']
+        assert_equal(returned_node_link, [])
 
     def test_node_has_registrations_link(self):
         res = self.app.get(self.public_url)
