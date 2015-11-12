@@ -1416,6 +1416,9 @@ class NodeCommentsList(generics.ListCreateAPIView, ODMFilterMixin, NodeMixin):
         date_modified  iso8601 timestamp  timestamp when the comment was last updated
         modified       boolean            has this comment been edited?
         deleted        boolean            is this comment deleted?
+        is_abuse       boolean            has this comment been reported by the current user?
+        has_children   boolean            does this comment have replies?
+        can_edit       boolean            can the current user edit this comment?
 
     ##Links
 

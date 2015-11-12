@@ -163,8 +163,8 @@ class Comment(GuidStoredObject):
 
     # Dictionary field mapping user IDs to dictionaries of report details:
     # {
-    #   'icpnw': {'category': 'hate', 'message': 'offensive'},
-    #   'cdi38': {'category': 'spam', 'message': 'godwins law'},
+    #   'icpnw': {'category': 'hate', 'text': 'offensive'},
+    #   'cdi38': {'category': 'spam', 'text': 'godwins law'},
     # }
     reports = fields.DictionaryField(validate=validate_comment_reports)
 
