@@ -120,7 +120,7 @@ function _poTitleColumn(item) {
                 linkObject.ancestors = [];
                 function getAncestors (item) {
                     var parent = item.parent();
-                    if(parent && parent.id > 0) {
+                    if(parent && parent.id > tb.treeData.id) {
                         linkObject.ancestors.unshift(parent);
                         getAncestors(parent);
                     }
@@ -460,23 +460,6 @@ var tbOptions = {
                 $('#poFilter>input').val('');
             } }, tb.options.removeIcon())
         ];
-    },
-    lazyLoadPreprocess : function(value){
-        var tb = this;
-        value.data.map(function(item){
-            item.kind = 'folder';
-            item.uid = item.id;
-            item.name = item.attributes.title;
-            item.date = new $osf.FormattableDate(item.attributes.date_modified);
-
-            // TODO: Dummy data, remove this when api is ready
-            item.contributors = [{
-                id: '8q36f',
-                name : 'Dummy User'
-            }];
-        });
-        console.log('Lazyload processed', value.data);
-        return value.data;
     }
 };
 

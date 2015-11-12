@@ -19,18 +19,15 @@ var LinkObject = function (type, data, label, index) {
     self.generateLink = function () {
         if (self.type === 'collection'){
             return $osf.apiV2Url(self.data.path, {
-                    query : self.data.pathQuery
+                    query : self.data.query
                 }
             );
         }
-        else if (self.type === 'breadcrumb') {
-            return self.data.url;
-        }
         else if (self.type === 'tag') {
-            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data , 'related_counts' : true}});
+            return $osf.apiV2Url('nodes/', { query : {'filter[tags]' : self.data.tag , 'related_counts' : true}});
         }
         else if (self.type === 'name') {
-            return $osf.apiV2Url('users/' + self.data + '/nodes/', { query : {'related_counts' : true}});
+            return $osf.apiV2Url('users/' + self.data.id + '/nodes/', { query : {'related_counts' : true}});
         }
         else if (self.type === 'node') {
             return $osf.apiV2Url('nodes/' + self.data.uid + '/children/', { query : { 'related_counts' : true }});
@@ -39,29 +36,6 @@ var LinkObject = function (type, data, label, index) {
         throw new Error('Link could not be generated from linkObject data');
     };
     self.link = self.generateLink();
-};
-
-var Breadcrumb = function (label, url, type) {
-    this.label = label;
-    this.url = url;
-    this.type = 'breadcrumb' || type;
-};
-
-var Collection = function(label, path, pathQuery, systemCollection) {
-    this.id = getUID();
-    this.type = 'collection';
-    this.label = label || 'New Collection';
-    this.data = {
-        path: path,
-        pathQuery: pathQuery
-    };
-    this.systemCollection = systemCollection || false;
-};
-var Filter = function (label, data, type) {
-    this.id = getUID();
-    this.label = label;
-    this.data = data;
-    this.type = type;
 };
 
 var Activity = function(date, text, meta) {
@@ -103,18 +77,18 @@ var FileBrowser = {
 
         // DEFAULT DATA -- to be switched with server response
         self.collections = [
-            new Collection('All My Projects', 'users/me/nodes/', { 'related_counts' : true }, true),
-            new Collection('All My Registrations', 'registrations/', { 'related_counts' : true }, true),
-            new Collection('Everything', 'users/me/nodes/', { 'related_counts' : true })
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true }, systemCollection : true}, 'All My Projects'),
+            new LinkObject('collection', { path : 'registrations/', query : { 'related_counts' : true }, systemCollection : true}, 'All My Registrations'),
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true }, systemCollection : false}, 'Everything'),
         ];
         self.breadcrumbs = m.prop([
-            new Breadcrumb('All My Projects','http://localhost:8000/v2/users/me/nodes/?related_counts=true', 'collection')
+            new LinkObject('collection', { path : 'users/me/nodes/', query : { 'related_counts' : true }, systemCollection : true}, 'All My Projects'),
         ]);
         self.nameFilters = [
-            new Filter('Caner Uguz', '8q36f', 'name')
+            new LinkObject('name', { id : '8q36f', query : { 'related_counts' : true }}, 'Caner Uguz'),
         ];
         self.tagFilters = [
-            new Filter('Something Else', 'something', 'tag')
+            new LinkObject('tag', { tag : 'something', query : { 'related_counts' : true }}, 'Something Else'),
         ];
         self.data = m.prop([]);
         self.activityLogs = m.prop([
@@ -147,9 +121,8 @@ var FileBrowser = {
         // USER FILTER
         self.activeFilter = m.prop(1);
         self.updateFilter = function(filter) {
-            self.activeFilter(filter.id);
-            var linkObject = new LinkObject(filter.type, filter.data, filter.label);
-            self.updateFilesData(linkObject);
+            self.activeFilter(filter.data.id);
+            self.updateFilesData(filter);
         };
 
 
@@ -179,22 +152,21 @@ var FileBrowser = {
 
         // BREADCRUMBS
         self.updateBreadcrumbs = function(linkObject){
-            var crumb = new Breadcrumb(linkObject.label, linkObject.link, linkObject.type);
             if (linkObject.type === 'collection' || linkObject.type === 'name' || linkObject.type === 'tag'){
-                self.breadcrumbs([crumb]);
+                self.breadcrumbs([linkObject]);
                 return;
             }
-            if (linkObject.type === 'breadcrumb'){
+            if (linkObject.placement === 'breadcrumb'){
                 self.breadcrumbs().splice(linkObject.index+1, self.breadcrumbs().length-linkObject.index-1);
                 return;
             }
             if(linkObject.ancestors.length > 0){
                 linkObject.ancestors.forEach(function(item){
                     var ancestorLink = new LinkObject('node', item.data, item.data.name);
-                    self.breadcrumbs().push(new Breadcrumb(ancestorLink.label, ancestorLink.url, 'node'));
+                    self.breadcrumbs().push(ancestorLink);
                 });
             }
-            self.breadcrumbs().push(crumb);
+            self.breadcrumbs().push(linkObject);
         }.bind(self);
 
         self.sidebarInit = function (element, isInit) {
@@ -331,7 +303,7 @@ var Collections  = {
                     return m('li', { className : selectedCSS},
                         [
                             m('a', { href : '#', onclick : args.updateFilter.bind(null, item) },  item.label),
-                            !item.systemCollection ? m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
+                            !item.data.systemCollection ? m('i.fa.fa-ellipsis-v.pull-right.text-muted.p-xs', {
                                 onclick : function (e) {
                                     args.updateCollectionMenu(item, e);
                                 }
@@ -402,12 +374,13 @@ var Breadcrumbs = {
                                             item.label
                                         ]);
                                     }
-                                    var linkObject = new LinkObject(item.type, item, item.label, index);
+                                    item.index = index; // Add index to update breadcrumbs
+                                    item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                                     return m('.fb-parent-row',
                                         m('span.btn.btn-link', {
                                             style : 'margin-left:' + (index*20) + 'px;',
                                             onclick : function() {
-                                                args.updateFilesData(linkObject);
+                                                args.updateFilesData(item);
                                                 $('.modal').modal('hide');
                                             }
                                         },  [
@@ -427,9 +400,10 @@ var Breadcrumbs = {
                 if(index === array.length-1){
                     return m('li',  m('span.btn', item.label));
                 }
-                var linkObject = new LinkObject(item.type, item, item.label, index);
+                item.index = index; // Add index to update breadcrumbs
+                item.placement = 'breadcrumb'; // differentiate location for proper breadcrumb actions
                 return m('li',
-                    m('span.btn.btn-link', { onclick : args.updateFilesData.bind(null, linkObject)},  item.label),
+                    m('span.btn.btn-link', { onclick : args.updateFilesData.bind(null, item)},  item.label),
                     m('i.fa.fa-angle-right')
                 );
             })
