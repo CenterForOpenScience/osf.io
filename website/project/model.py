@@ -4008,10 +4008,11 @@ class DraftRegistration(StoredObject):
 
     @property
     def is_approved(self):
-        if self.requires_approval and not self.approval:
-            return False
-        elif self.requires_approval and self.approval:
-            return self.approval.is_approved
+        if self.requires_approval:
+            if not self.approval:
+                return False
+            else:
+                return self.approval.is_approved
         else:
             return True
 
@@ -4025,25 +4026,7 @@ class DraftRegistration(StoredObject):
                 changes.append(question_id)
 
         self.registration_metadata.update(metadata)
-
-        project_signals.draft_edited.send(changes)
-        self.after_edit(changes)
         return changes
-
-    def after_edit(self, changes):
-
-        if changes:
-            self.flags.update({
-                'isPendingReview': False,
-                'isApproved': False
-            })
-            self.save()
-
-    def find_question(self, qid):
-        for page in self.registration_schema.schema['pages']:
-            for question_id, question in page['questions'].iteritems():
-                if question_id == qid:
-                    return question
 
     def register(self, auth, save=False):
         node = self.branched_from
