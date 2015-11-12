@@ -26,11 +26,11 @@
     </p>
     <div class="row prereg-button-row m-v-lg">
         <%
-            if has_draft_registration and has_project:
+            if has_draft_registrations and has_projects:
                 # all three buttons
                 option_columns = 4
                 options_offset = 0
-            elif has_draft_registration or has_project:
+            elif has_draft_registrations or has_projects:
                 # two buttons
                 option_columns = 5
                 options_offset = 1
@@ -48,7 +48,7 @@
                     <button type="submit" id="newProject" class="btn btn-primary pull-right m-t-md">Continue <i class="fa fa-angle-right"></i></button>
             </div>
         </div>
-        %if has_draft_registration:
+        %if has_draft_registrations:
         <div class="col-sm-${ option_columns }">
             <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingPrereg">Continue working on an existing preregistration</div>
             <div id="existingPrereg" class="p-md osf-box box-round clearfix m-b-lg" style="display:none">
@@ -61,7 +61,7 @@
             </div>
         </div>
         %endif
-        %if has_project:
+        %if has_projects:
         <div class="col-sm-${ option_columns }">
             <div class="prereg-button m-b-md p-md osf-box-lt p-md box-round" data-qtoggle-group="prereg" data-qtoggle-target="#existingProject">Preregister a project you already have on the OSF</div>
             <div id="existingProject" class="p-md osf-box box-round clearfix m-b-lg" style="display:none">
