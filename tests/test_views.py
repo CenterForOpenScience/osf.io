@@ -3792,36 +3792,6 @@ class TestComments(OsfTestCase):
             {'category': 'spam', 'text': 'ads'}
         )
 
-    def test_can_view_private_comments_if_contributor(self):
-
-        self._configure_project(self.project, 'public')
-        CommentFactory(node=self.project, user=self.project.creator, is_public=False)
-
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url, auth=self.project.creator.auth)
-
-        assert_equal(len(res.json['comments']), 1)
-
-    def test_view_comments_with_anonymous_link(self):
-        self.project.save()
-        self.project.set_privacy('private')
-        self.project.reload()
-        user = AuthUserFactory()
-        link = PrivateLinkFactory(anonymous=True)
-        link.nodes.append(self.project)
-        link.save()
-
-        CommentFactory(node=self.project, user=self.project.creator, is_public=False)
-
-        url = self.project.api_url + 'comments/'
-        res = self.app.get(url, {"view_only": link.key}, auth=user.auth)
-        comment = res.json['comments'][0]
-        author = comment['author']
-        assert_in('A user', author['name'])
-        assert_false(author['gravatarUrl'])
-        assert_false(author['url'])
-        assert_false(author['id'])
-
     def test_discussion_recursive(self):
 
         self._configure_project(self.project, 'public')
@@ -3888,45 +3858,6 @@ class TestComments(OsfTestCase):
 
         self.non_contributor.reload()
         assert_not_in(self.project._id, self.non_contributor.comments_viewed_timestamp)
-
-    def test_n_unread_comments_updates_when_comment_is_added(self):
-        self._add_comment(self.project, auth=self.project.creator.auth)
-        self.project.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 1)
-
-        url = self.project.api_url_for('update_comments_timestamp')
-        res = self.app.put_json(url, auth=self.user.auth)
-        self.user.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 0)
-
-    def test_n_unread_comments_updates_when_comment_reply(self):
-        comment = CommentFactory(node=self.project, user=self.project.creator)
-        reply = CommentFactory(node=self.project, user=self.user, target=comment)
-        self.project.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.project.creator.auth)
-        assert_equal(res.json.get('nUnread'), 1)
-
-
-    def test_n_unread_comments_updates_when_comment_is_edited(self):
-        self.test_edit_comment()
-        self.project.reload()
-
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.user.auth)
-        assert_equal(res.json.get('nUnread'), 1)
-
-    def test_n_unread_comments_is_zero_when_no_comments(self):
-        url = self.project.api_url_for('list_comments')
-        res = self.app.get(url, auth=self.project.creator.auth)
-        assert_equal(res.json.get('nUnread'), 0)
 
 
 class TestTagViews(OsfTestCase):

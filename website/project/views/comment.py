@@ -102,14 +102,6 @@ def serialize_comment(comment, auth, anonymous=False):
     }
 
 
-def serialize_comments(record, auth, anonymous=False):
-
-    return [
-        serialize_comment(comment, auth, anonymous)
-        for comment in getattr(record, 'commented', [])
-    ]
-
-
 def get_comment(cid, auth, owner=False):
     comment = Comment.load(cid)
     if comment is None:
@@ -189,35 +181,6 @@ def is_reply(target):
     return isinstance(target, Comment)
 
 
-@must_be_contributor_or_public
-def list_comments(auth, node, **kwargs):
-    anonymous = has_anonymous_link(node, auth)
-    guid = request.args.get('target')
-    target = resolve_target(node, guid)
-    serialized_comments = serialize_comments(target, auth, anonymous)
-    n_unread = 0
-
-    if node.is_contributor(auth.user):
-        if auth.user.comments_viewed_timestamp is None:
-            auth.user.comments_viewed_timestamp = {}
-            auth.user.save()
-        n_unread = n_unread_comments(target, auth.user)
-    return {
-        'comments': serialized_comments,
-        'nUnread': n_unread
-    }
-
-
-def n_unread_comments(node, user):
-    """Return the number of unread comments on a node for a user."""
-    default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
-    view_timestamp = user.comments_viewed_timestamp.get(node._id, default_timestamp)
-    return Comment.find(Q('node', 'eq', node) &
-                        Q('user', 'ne', user) &
-                        Q('date_created', 'gt', view_timestamp) &
-                        Q('date_modified', 'gt', view_timestamp)).count()
-
-
 @must_be_logged_in
 @must_be_contributor_or_public
 def edit_comment(auth, **kwargs):
@@ -269,7 +232,6 @@ def update_comments_timestamp(auth, node, **kwargs):
     if node.is_contributor(auth.user):
         auth.user.comments_viewed_timestamp[node._id] = datetime.utcnow()
         auth.user.save()
-        list_comments(**kwargs)
         return {node._id: auth.user.comments_viewed_timestamp[node._id].isoformat()}
     else:
         return {}
