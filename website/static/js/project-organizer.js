@@ -19,14 +19,9 @@ var moment = require('moment');
 var Raven = require('raven-js');
 var $osf = require('js/osfHelpers');
 var iconmap = require('js/iconmap');
-var legendView = require('js/components/legend').view;
 var Fangorn = require('js/fangorn');
 
-var nodeCategories = require('json!built/nodeCategories.json');
 
-// copyMode can be 'copy', 'move', 'forbidden', or null.
-// This is set at draglogic and is used as global within this module
-var copyMode = null;
 // Initialize projectOrganizer object (separate from the ProjectOrganizer constructor at the end)
 var projectOrganizer = {};
 
@@ -38,13 +33,6 @@ var linkID;
 var COMMAND_KEYS = [224, 17, 91, 93];
 var ESCAPE_KEY = 27;
 var ENTER_KEY = 13;
-
-var projectOrganizerCategories = $.extend({}, {
-    collection: 'Collections',
-    smartCollection: 'Smart Collections',
-    project: 'Project',
-    link:  'Link'
-}, nodeCategories);
 
 var LinkObject;
 /**
