@@ -30,6 +30,7 @@ class UserSerializer(JSONAPISerializer):
     date_registered = ser.DateTimeField(read_only=True)
 
     # Social Fields are broken out to get around DRF complex object bug and to make API updating more user friendly.
+
     gitHub = DevOnly(AllowMissing(ser.CharField(required=False, source='social.github',
                                                 allow_blank=True, help_text='GitHub Handle'), required=False, source='social.github'))
     scholar = DevOnly(AllowMissing(ser.CharField(required=False, source='social.scholar',
@@ -46,6 +47,11 @@ class UserSerializer(JSONAPISerializer):
                                                allow_blank=True, help_text='ORCID'), required=False, source='social.orcid'))
     researcherId = DevOnly(AllowMissing(ser.CharField(required=False, source='social.researcherId',
                                                       allow_blank=True, help_text='ResearcherId Account'), required=False, source='social.researcherId'))
+    academia = DevOnly(AllowMissing(ser.URLField(required=False, source='social.academia',
+                                                         allow_blank=True, help_text='Academia.edu'), required=False, source='social.academia'))
+    researchgate = DevOnly(AllowMissing(ser.CharField(required=False, source='social.researchgate',
+                                                allow_blank=True, help_text='ResearchGate.net'), required=False, source='social.researchgate'))
+
 
     links = LinksField(
         add_dev_only_items({
@@ -54,6 +60,7 @@ class UserSerializer(JSONAPISerializer):
             'profile_image': 'profile_image_url',
         })
     )
+
     nodes = JSONAPIHyperlinkedIdentityField(view_name='users:user-nodes', lookup_field='pk', lookup_url_kwarg='user_id',
                                              link_type='related')
 

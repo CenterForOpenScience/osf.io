@@ -95,6 +95,19 @@ def validate_profile_websites(profile_websites):
 def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
 
+def validate_academic_site(value):
+    if value:
+        try:
+            validate_url(value)
+        except ValidationError:
+            # Reraise with a better message
+            raise ValidationError('Invalid Academic.edu link.')
+
+
+def validate_social(value):
+    validate_academic_site(value.get('academic'))
+
+
 
 # TODO - rename to _get_current_user_from_session /HRYBACKI
 def _get_current_user():
@@ -198,8 +211,10 @@ class User(GuidStoredObject, AddonModelMixin):
         'twitter': u'http://twitter.com/{}',
         'profileWebsites': [],
         'linkedIn': u'https://www.linkedin.com/{}',
+        'academia.edu': [],
         'impactStory': u'https://impactstory.org/{}',
         'researcherId': u'http://researcherid.com/rid/{}',
+        'researchgate': u'http://www.researchgate.net/profile/{}',
     }
 
     # This is a GuidStoredObject, so this will be a GUID.

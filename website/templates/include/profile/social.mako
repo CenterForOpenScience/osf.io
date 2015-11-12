@@ -94,6 +94,23 @@
                 </div>
             </div>
 
+            <div class="form-group">
+                <label>Academia.edu</label>
+                <div class="input-group">
+                <span class="input-group-addon"><i class="glyphicon glyphicon-globe"></i></span>
+                <input class="form-control" data-bind="value: academia" placeholder="http://academia.edu/profile"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>ResearchGate</label>
+                <div class="input-group">
+                <span class="input-group-addon">http://www.researchgate.net/profile/</span>
+                <input class="form-control" data-bind="value: researchgate" placeholder="profileID"/>
+                </div>
+            </div>
+
+
             <div class="p-t-lg p-b-lg">
 
                 <button
