@@ -1,5 +1,6 @@
 import functools
 import httplib as http
+import datetime
 
 from dateutil.parser import parse as parse_date
 from flask import request, redirect
@@ -19,7 +20,7 @@ from website.project.decorators import (
     must_have_permission,
     http_error_if_disk_saving_mode
 )
-from website import language
+from website import language, settings
 from website.project import utils as project_utils
 from website.project.model import MetaSchema, DraftRegistration, DraftRegistrationApproval
 from website.project.metadata.utils import serialize_meta_schema, serialize_draft_registration
@@ -29,6 +30,32 @@ from website.util.sanitize import strip_html
 
 get_schema_or_fail = lambda query: get_or_http_error(MetaSchema, query)
 autoload_draft = functools.partial(autoload, DraftRegistration, 'draft_id', 'draft')
+
+def validate_embargo_end_date(end_date_string, node):
+    """
+    Our reviewers have a window of time in which to review a draft reg. submission.
+    If an embargo end_date that is within that window is at risk of causing
+    validation errors down the line if the draft is approved and registered.
+
+    The draft registration approval window is always greater than the time span
+    for disallowed embargo end dates.
+
+    :raises: HTTPError if end_date is less than the approval window or greater than the
+    max embargo end date
+    """
+    end_date = parse_date(end_date_string)
+    today = datetime.datetime.utcnow()
+    if (end_date - today) <= settings.DRAFT_REGISTRATION_APPROVAL_PERIOD:
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid embargo end date',
+            'message_long': 'Embargo end date for this submission must be at least {0} days in the future.'.format(settings.DRAFT_REGISTRATION_APPROVAL_PERIOD)
+        })
+    elif not node._is_embargo_date_valid(end_date):
+        max_end_date = today + settings.DRAFT_REGISTRATION_APPROVAL_PERIOD
+        raise HTTPError(http.BAD_REQUEST, data={
+            'message_short': 'Invalid embargo end date',
+            'message_long': 'Embargo end date must on or before {0}.'.format(max_end_date.isoformat())
+        })
 
 @autoload_draft
 @must_have_permission(ADMIN)
@@ -46,12 +73,7 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
     if registration_choice == 'embargo':
         # Initiate embargo
         end_date_string = data['embargoEndDate']
-        end_date = parse_date(end_date_string)
-        if not node._is_embargo_date_valid(end_date):
-            raise HTTPError(http.BAD_REQUEST, data={
-                'message_short': 'Invalid embargo end date',
-                'message_long': 'Embargo end date must be more than one day in the future.'
-            })
+        validate_embargo_end_date(end_date_string)
         meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
     approval = DraftRegistrationApproval(

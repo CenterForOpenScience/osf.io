@@ -16,6 +16,11 @@ var language = osfLanguage.registrations;
 var SaveManager = require('js/saveManager');
 var editorExtensions = require('js/registrationEditorExtensions');
 var registrationEmbargo = require('js/registrationEmbargo');
+// This value should match website.settings.DRAFT_REGISTRATION_APPROVAL_PERIOD
+var DRAFT_REGISTRATION_MIN_EMBARGO_DAYS = 10;
+var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
+        DRAFT_REGISTRATION_MIN_EMBARGO_DAYS * 24 * 60 * 60 * 1000
+);
 
 /**
  * @class Comment
@@ -273,7 +278,7 @@ var Page = function(schemaPage, schemaData) {
     self.id = schemaPage.id;
 
     self.active = ko.observable(false);
-    
+
     schemaData = schemaData || {};
     self.questions = $.map(schemaPage.questions, function(questionSchema) {
         return new Question(questionSchema, schemaData[questionSchema.qid]);
@@ -282,7 +287,7 @@ var Page = function(schemaPage, schemaData) {
     self.comments = ko.computed(function() {
         var comments = [];
         $.each(self.questions, function(_, question) {
-            comments = comments.concat(question.comments());            
+            comments = comments.concat(question.comments());
         });
         comments.sort(function(a, b) {
             return a.created > b.created;
@@ -435,13 +440,21 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
         var embargoed = viewModel.showEmbargoDatePicker();
         return (embargoed && viewModel.isEmbargoEndDateValid()) || !embargoed;
     });
-    viewModel.pikaday.extend({
-        validation: {
+    var validation = [];
+    if (self.metaSchema.requiresApproval) {
+        validation.push({
             validator: function() {
-                return viewModel.isEmbargoEndDateValid();
+                return viewModel.embargoEndDate().getTime() > DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP;
             },
-            message: 'Embargo end date must be at least two days in the future.'
-        }
+            message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
+        });
+    }
+    validation.push({
+        validator: viewModel.isEmbargoEndDateValid,
+        message: 'Embargo end date must be at least two days in the future.'
+    });
+    viewModel.pikaday.extend({
+        validation: validation
     });
     viewModel.close = function() {
         bootbox.hideAll();
@@ -497,7 +510,7 @@ Draft.prototype.askConsent = function() {
             bootbox.hideAll();
             ret.reject();
         }
-    };    
+    };
 
     bootbox.dialog({
         size: 'large',
@@ -505,28 +518,28 @@ Draft.prototype.askConsent = function() {
             ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
         }
     });
-    
+
     return ret.promise();
 };
 Draft.prototype.beforeRegister = function(url) {
     var self = this;
 
     $osf.block();
-    
+
     url = url || self.urls.register;
-       
+
     var request = $.getJSON(self.urls.before_register);
     request.done(function(response) {
         if (response.errors && response.errors.length) {
             self.preRegisterErrors(
-                response, 
+                response,
                 self.preRegisterPrompts.bind(
-                    self, 
-                    response, 
+                    self,
+                    response,
                     self.register.bind(self, url)
                 )
             );
-        } 
+        }
         else {
             self.preRegisterPrompts(
                 response,
@@ -552,7 +565,7 @@ Draft.prototype.registerWithoutReview = function() {
                 className: 'btn-default',
                 callback: bootbox.hideAll
             }
-        }        
+        }
     });
 };
 Draft.prototype.onRegisterFail = bootbox.alert.bind(null, {
@@ -582,7 +595,7 @@ Draft.prototype.submitForReview = function() {
     var metaSchema = self.metaSchema;
     var messages = metaSchema.messages;
     var beforeSubmitForApprovalMessage = messages.beforeSubmitForApproval || '';
-    var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';   
+    var afterSubmitForApprovalMessage = messages.afterSubmitForApproval || '';
 
     var submitForReview = function() {
         bootbox.confirm({
@@ -593,7 +606,7 @@ Draft.prototype.submitForReview = function() {
                 }
             }
         });
-    }; 
+    };
 
     if (self.metaSchema.requiresConsent) {
         return self.askConsent()
@@ -672,7 +685,7 @@ var RegistrationEditor = function(urls, editorId) {
     }.bind(self));
 
     // An incrementing dirty flag. The 0 state represents not-dirty.
-    // States greater than 0 imply dirty, and incrementing the number 
+    // States greater than 0 imply dirty, and incrementing the number
     // allows for reliable mutations of the ko.observable.
     self.dirtyCount = ko.observable(0);
     self.needsSave = ko.computed(function() {
@@ -724,7 +737,7 @@ RegistrationEditor.prototype.init = function(draft) {
     var schemaData = {};
     if (draft) {
         self.saveManager = new SaveManager(
-            self.urls.update.replace('{draft_pk}', draft.pk), 
+            self.urls.update.replace('{draft_pk}', draft.pk),
             null, {
                 dirty: self.dirtyCount
             }
@@ -972,7 +985,7 @@ RegistrationEditor.prototype.create = function(schemaData) {
         self.draft(draft);
         self.saveManager = new SaveManager(
             self.urls.update.replace('{draft_pk}', draft.pk),
-            null, 
+            null,
             {
                 dirty: self.dirtyCount
             }
