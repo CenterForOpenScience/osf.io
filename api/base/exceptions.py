@@ -1,7 +1,7 @@
 import httplib as http
 
 from rest_framework import status
-from rest_framework.exceptions import APIException
+from rest_framework.exceptions import APIException, AuthenticationFailed
 
 
 def json_api_exception_handler(exc, context):
@@ -26,6 +26,9 @@ def json_api_exception_handler(exc, context):
 
     if response:
         message = response.data
+
+        if isinstance(exc, TwoFactorRequiredError):
+            response['X-OSF-OTP'] = 'required; app'
 
         if isinstance(exc, JSONAPIException):
             errors.extend([
@@ -181,6 +184,9 @@ class DeactivatedAccountError(APIException):
     status_code = 400
     default_detail = 'Making API requests with credentials associated with a deactivated account is not allowed.'
 
+
+class TwoFactorRequiredError(AuthenticationFailed):
+    pass
 
 class InvalidModelValueError(JSONAPIException):
     status_code = 400
