@@ -17,6 +17,11 @@ from api.base.exceptions import InvalidQueryStringError, Conflict, JSONAPIExcept
 
 
 def format_relationship_links(related_link=None, self_link=None, rel_meta=None, self_meta=None):
+    """
+    Properly handles formatting of self and related links according to JSON API.
+
+    Removes related or self link, if none.
+    """
 
     ret = {
         'links': {
@@ -523,7 +528,7 @@ class JSONAPIListSerializer(ser.ListSerializer):
 class JSONAPISerializer(ser.Serializer):
     """Base serializer. Requires that a `type_` option is set on `class Meta`. Also
     allows for enveloping of both single resources and collections.  Looks to nest fields
-    according to JSON API spec. Relational fields must use RelationshipField or HyperlinkedIdentityField.
+    according to JSON API spec. Relational fields must set json_api_link=True flag.
     Self/html links must be nested under "links".
     """
 
