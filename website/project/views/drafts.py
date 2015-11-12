@@ -38,13 +38,21 @@ def submit_draft_for_review(auth, node, draft, *args, **kwargs):
 
     :return: serialized registration
     :rtype: dict
+    :raises: HTTPError if embargo end date is invalid
     """
     data = request.get_json()
     meta = {}
     registration_choice = data.get('registrationChoice', 'immediate')
     if registration_choice == 'embargo':
         # Initiate embargo
-        meta['embargo_end_date'] = data['embargoEndDate']
+        end_date_string = data['embargoEndDate']
+        end_date = parse_date(end_date_string)
+        if not node._is_embargo_date_valid(end_date):
+            raise HTTPError(http.BAD_REQUEST, data={
+                'message_short': 'Invalid embargo end date',
+                'message_long': 'Embargo end date must be more than one day in the future.'
+            })
+        meta['embargo_end_date'] = end_date_string
     meta['registration_choice'] = registration_choice
     approval = DraftRegistrationApproval(
         initiated_by=auth.user,

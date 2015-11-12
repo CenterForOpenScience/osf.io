@@ -3492,6 +3492,7 @@ class EmailApprovableSanction(Sanction):
     APPROVE_URL_TEMPLATE = ''
     REJECT_URL_TEMPLATE = ''
 
+    # A flag to conditionally run a callback on complete
     notify_initiator_on_complete = fields.BooleanField(default=False)
     # Store a persistant copy of urls for use when needed outside of a request context.
     # This field gets automagically updated whenever models approval_state is modified
@@ -4017,7 +4018,7 @@ class DraftRegistrationApproval(Sanction):
                     registration.embargo_registration,
                     parse_date(self.meta['embargo_end_date'], ignoretz=True)
                 )
-            }[registration_choice]()
+            }[registration_choice](notify_initiator_on_complete=True)
         except KeyError:
             raise ValueError("'registration_choice' must be either 'emebargo' or 'immediate'")
         except NodeStateError as e:
