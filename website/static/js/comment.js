@@ -284,7 +284,7 @@ var CommentModel = function(data, $parent, $root) {
     self.undeleting = ko.observable(false);
 
     self.abuseCategory = ko.observable('spam');
-    self.abuseText = ko.observable();
+    self.abuseText = ko.observable('');
 
     self.editing = ko.observable(false);
 
