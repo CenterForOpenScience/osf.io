@@ -4359,7 +4359,7 @@ class TestDraftRegistration(OsfTestCase):
                 'value': True
             },
         }
-        changes =  self.draft.update_metadata({
+        new_meta = {
             'foo': {
                 'value': 'foobar',
             },
@@ -4372,11 +4372,15 @@ class TestDraftRegistration(OsfTestCase):
             'c': {
                 'value': 2,
             },
-        })
+        }
+        changes = self.draft.update_metadata(new_meta)
         self.draft.save()
         for key in ['foo', 'c']:
             assert_in(key, changes)
-
+            assert_equal(
+                self.draft.registration_metadata[key],
+                new_meta[key]
+            )
 
 if __name__ == '__main__':
     unittest.main()
