@@ -52,7 +52,6 @@ class UserSerializer(JSONAPISerializer):
     researchgate = DevOnly(AllowMissing(ser.CharField(required=False, source='social.researchgate',
                                                 allow_blank=True, help_text='ResearchGate.net'), required=False, source='social.researchgate'))
 
-
     links = LinksField(
         add_dev_only_items({
             'html': 'absolute_url',
