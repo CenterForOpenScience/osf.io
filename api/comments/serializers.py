@@ -5,7 +5,6 @@ from rest_framework.exceptions import ValidationError, PermissionDenied
 from api.base.exceptions import InvalidModelValueError
 from api.base.utils import absolute_reverse
 from api.base.serializers import (JSONAPISerializer,
-                                  JSONAPIHyperlinkedRelatedField,
                                   JSONAPIHyperlinkedGuidRelatedField,
                                   RelationshipField,
                                   IDField, TypeField, LinksField,
@@ -31,9 +30,9 @@ class CommentSerializer(JSONAPISerializer):
     type = TypeField()
     content = AuthorizedCharField(source='get_content')
 
-    user = JSONAPIHyperlinkedRelatedField(view_name='users:user-detail', lookup_field='pk', lookup_url_kwarg='user_id', link_type='related', read_only=True)
-    node = JSONAPIHyperlinkedRelatedField(view_name='nodes:node-detail', lookup_field='pk', lookup_url_kwarg='node_id', link_type='related', read_only=True)
     target = JSONAPIHyperlinkedGuidRelatedField(link_type='related', meta={'type': 'get_target_type'})
+    user = RelationshipField(related_view='users:user-detail', related_view_kwargs={'user_id': 'user._id'})
+    node = RelationshipField(related_view='nodes:node-detail', related_view_kwargs={'node_id': 'node._id'})
     replies = RelationshipField(self_view='comments:comment-replies', self_view_kwargs={'comment_id': 'pk'})
     reports = RelationshipField(related_view='comments:comment-reports', related_view_kwargs={'comment_id': 'pk'})
 
