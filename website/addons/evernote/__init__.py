@@ -32,6 +32,12 @@ INCLUDE_CSS = {}
 #OWNERS = ['user', 'node']
 OWNERS = ['user', 'node']
 
+# 'accounts' to have add-on show up in /settings/addons
+# https://github.com/CenterForOpenScience/osf.io/blob/release/0.56.0/website/profile/views.py#L361
+# 'node' presumably in the node addons setup (?)
+
+CONFIGS = ['accounts', 'node']
+
 
 MODELS = [
     model.EvernoteUserSettings,
@@ -40,4 +46,3 @@ MODELS = [
 
 USER_SETTINGS_MODEL = model.EvernoteUserSettings
 NODE_SETTINGS_MODEL = model.EvernoteNodeSettings
-
