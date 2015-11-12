@@ -95,7 +95,7 @@ def validate_profile_websites(profile_websites):
 def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
 
-def validate_profile_websites(academia):
+def validate_academia(academia):
     for value in academia or []:
         try:
             validate_url(value)
@@ -104,7 +104,7 @@ def validate_profile_websites(academia):
             raise ValidationError('Invalid academia.edu URL.')
 
 
-def validate_social(value):
+def validate_social_academia(value):
     validate_academia(value.get('academia'))
 
 
