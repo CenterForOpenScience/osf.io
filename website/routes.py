@@ -318,26 +318,6 @@ def make_url_map(app):
 
         Rule(
             [
-                '/project/<pid>/comment/<cid>/report/',
-                '/project/<pid>/node/<nid>/comment/<cid>/report/',
-            ],
-            'post',
-            project_views.comment.report_abuse,
-            json_renderer,
-        ),
-
-        Rule(
-            [
-                '/project/<pid>/comment/<cid>/unreport/',
-                '/project/<pid>/node/<nid>/comment/<cid>/unreport/',
-            ],
-            'post',
-            project_views.comment.unreport_abuse,
-            json_renderer,
-        ),
-
-        Rule(
-            [
                 '/project/<pid>/citation/',
                 '/project/<pid>/node/<nid>/citation/',
             ],

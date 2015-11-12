@@ -16,7 +16,6 @@ from tests.test_features import requires_search
 
 from modularodm import Q
 from modularodm.exceptions import ValidationError
-from dateutil.parser import parse as parse_date
 
 from framework import auth
 from framework.exceptions import HTTPError
@@ -42,7 +41,6 @@ from website.util import api_url_for, web_url_for
 from website import mails, settings
 from website.util import rubeus
 from website.project.views.node import _view_project, abbrev_authors, _should_show_wiki_widget
-from website.project.views.comment import serialize_comment
 from website.project.decorators import check_can_access
 from website.project.signals import contributor_added
 from website.addons.github.model import AddonGitHubOauthSettings
@@ -3504,30 +3502,6 @@ class TestComments(OsfTestCase):
 
         project.comment_level = comment_level
         project.save()
-
-    def test_report_abuse(self):
-
-        self._configure_project(self.project, 'public')
-        comment = CommentFactory(node=self.project)
-        reporter = AuthUserFactory()
-
-        url = self.project.api_url + 'comment/{0}/report/'.format(comment._id)
-
-        self.app.post_json(
-            url,
-            {
-                'category': 'spam',
-                'text': 'ads',
-            },
-            auth=reporter.auth,
-        )
-
-        comment.reload()
-        assert_in(reporter._id, comment.reports)
-        assert_equal(
-            comment.reports[reporter._id],
-            {'category': 'spam', 'text': 'ads'}
-        )
 
     def test_discussion_recursive(self):
 
