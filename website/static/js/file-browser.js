@@ -115,10 +115,7 @@ var FileBrowser = {
         self.tagFilters = [
             new Filter('Something Else', 'something', 'tag')
         ];
-        self.filesData = m.prop($osf.apiV2Url(
-            self.collections[0].data.path,
-            { query : self.collections[0].data.pathQuery }
-        ));
+        self.data = m.prop([]);
         self.activityLogs = m.prop([
             new Activity('2015-08-19 01:34 PM', 'Caner Uguz added a comment to Dashboard Redesign Proposal', {}),
         ]);
@@ -156,20 +153,15 @@ var FileBrowser = {
 
 
         // Refresh the Grid
-        self.updateList = function(element){
-            if(!self.isLoadedUrl) {
-                var el = element || $(self.wrapperSelector).find('.fb-main').get(0);
-                m.mount(el,
-                    m.component( ProjectOrganizer, {
-                        filesData : self.filesData,
-                        updateSelected : self.updateSelected,
-                        updateFilesData : self.updateFilesData,
-                        LinkObject : LinkObject
-                    })
-                );
-                self.isLoadedUrl = true;
-            }
-        }.bind(self);
+        self.updateList = function(path, options){
+            var url  = $osf.apiV2Url(path, options);
+            var xhrconfig = function (xhr) {
+                xhr.withCredentials = true;
+            };
+            m.request({method : 'GET', url : url, config : xhrconfig}).then(self.data).then(function(value){
+                console.log(value);
+            });
+        };
 
 
         // BREADCRUMBS
@@ -213,6 +205,12 @@ var FileBrowser = {
                 y : y
             });
         };
+        self.init = function () {
+            self.updateList(self.collections[0].data.path, {
+                query : self.collections[0].data.pathQuery
+            });
+        };
+        self.init();
     },
     view : function (ctrl) {
         var mobile = window.innerWidth < 767; // true if mobile view
@@ -279,8 +277,14 @@ var FileBrowser = {
                     tagFilters : ctrl.tagFilters
                 })
             ]) : '',
-            m('.fb-main', { config: ctrl.updateList, style : poStyle },
-                m('#poOrganizer', m('.spinner-loading-wrapper', m('.logo-spin.logo-md')))
+            m('.fb-main', { style : poStyle },
+                ctrl.data().length === 0 ? m('', 'Loading') : m('#poOrganizer',  m.component( ProjectOrganizer, {
+                        filesData : ctrl.data,
+                        updateSelected : ctrl.updateSelected,
+                        updateFilesData : ctrl.updateFilesData,
+                        LinkObject : LinkObject
+                    })
+                )
             ),
             infoPanel,
             m.component(Modals, { collectionMenuObject : ctrl.collectionMenuObject, selected : ctrl.selected}),
