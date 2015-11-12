@@ -43,6 +43,7 @@ from website.project import new_folder
 from website.project.licenses import serialize_node_license_record
 from website.util.sanitize import strip_html
 from website.util import rapply
+from website.files.models.base import File, FileNode
 from datetime import datetime
 
 r_strip_html = lambda collection: rapply(collection, strip_html)
@@ -871,10 +872,12 @@ def n_unread_comments(node, user, page, root_id=None, check=False):
         root_target = root_target.referent
     else:
         root_target = node.get_wiki_page(root_id, 1)
-    if page == 'files' and check:
-        exists, _ = check_file_exists(node, root_id)
-        if not exists:
-            return 0
+    if page == 'files':
+        root_target = FileNode.load(root_id)
+        if check:
+            exists, _ = check_file_exists(node, root_id)
+            if not exists:
+                return 0
     default_timestamp = datetime(1970, 1, 1, 12, 0, 0)
     view_timestamp = user.get_node_comment_timestamps(node, page)
     if not page == 'node' and isinstance(view_timestamp, dict):
@@ -954,13 +957,11 @@ def set_default_file_comment_timestamps(user, node):
 
 def check_file_exists(node, file_id):
     num_of_comments = node.commented_files[file_id]
-    # try:
-    file_guid = Guid.load(file_id).referent
-    file_guid.enrich()
-    # except AddonEnrichmentError:
-    #     return False, num_of_comments
-    return True, num_of_comments
-
+    file_guid = File.load(file_id)
+    if file_guid and file_guid.touch(request.headers.get('Authorization')):
+        return True, num_of_comments
+    else:
+        return False, num_of_comments
 
 @must_be_valid_project
 @must_have_permission(ADMIN)

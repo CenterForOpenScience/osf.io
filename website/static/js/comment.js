@@ -191,7 +191,6 @@ BaseComment.prototype.getThread = function(threadId) {
     request.done(function(response){
         self.comments([new CommentModel(response.comment, self, self.$root)]);
         deferred.resolve(self.comments());
-        self.configureCommentsVisibility();
         self._loaded = true;
     });
     return deferred.promise();
@@ -213,13 +212,15 @@ BaseComment.prototype.configureCommentsVisibility = function(nodeId) {
             comment.loading(false);
             continue;
         }
-        comment.checkFileExistsAndConfigure(nodeId);
+        if (comment.page() === FILES) {
+            comment.checkFileExistsAndConfigure(comment.rootId(), nodeId);
+        }
     }
 };
 
-BaseComment.prototype.checkFileExistsAndConfigure = function(nodeId) {
+BaseComment.prototype.checkFileExistsAndConfigure = function(rootId, nodeId) {
     var self = this;
-    var url  = waterbutler.buildMetadataUrl(self.title(), self.provider(), nodeId, {}); // waterbutler url
+    var url  = waterbutler.buildMetadataUrl(rootId, self.provider(), nodeId, {}); // waterbutler url
     var request = $.ajax({
         method: 'GET',
         url: url,
@@ -378,9 +379,7 @@ var CommentModel = function(data, $parent, $root) {
                 }
                 break;
             case 'files':
-                cleaned = '(Files - ';
-                var path = self.title().split('/');
-                cleaned += path[path.length - 1];
+                cleaned = '(Files - ' + self.title();
                 break;
             case 'node':
                 cleaned = '(Project Overview';

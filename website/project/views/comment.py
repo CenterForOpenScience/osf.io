@@ -15,12 +15,11 @@ from website import settings
 from website.notifications.emails import notify
 from website.notifications.constants import PROVIDERS
 from website.models import Guid, Comment
-from website.files.models.base import FileNode
+from website.files.models.base import File, StoredFileNode
 from website.project.decorators import must_be_contributor_or_public
 from datetime import datetime
 from website.project.model import has_anonymous_link
 from website.project.views.node import _view_project, n_unread_comments
-# from website.addons.figshare.exceptions import FigshareIsDraftError
 from website.profile.utils import serialize_user
 
 
@@ -74,6 +73,8 @@ def resolve_target(node, page, guid):
         return node
     target = Guid.load(guid)
     if target is None:
+        if page == Comment.FILES:
+            return File.load(guid)
         if page == Comment.WIKI:
             return node.get_wiki_page(guid, 1)
         raise HTTPError(http.BAD_REQUEST)
@@ -82,26 +83,36 @@ def resolve_target(node, page, guid):
 
 def serialize_comment(comment, auth, anonymous=False):
     node = comment.node
-    if hasattr(comment.root_target, 'page_name'):  # Wiki
-        # In case the wiki name is changed
-        root_id = comment.root_target.page_name
-        title = comment.root_target.page_name
-    elif isinstance(comment.root_target, FileNode):  # File
-        root_id = comment.root_target._id
-        title = comment.root_target.waterbutler_path
-    else:  # Node or comment
-        root_id = comment.root_target._id
+    if not comment.root_target:
+        root_id = ''
         title = ''
+        comment.is_hidden = True
+    else:
+        if hasattr(comment.root_target, 'page_name'):  # Wiki
+            # In case the wiki name is changed
+            root_id = comment.root_target.page_name
+            title = comment.root_target.page_name
+        elif isinstance(comment.root_target, StoredFileNode):  # File
+            root_id = comment.root_target._id
+            title = comment.root_target.name
+        else:  # Node or comment
+            root_id = comment.root_target._id
+            title = ''
+    if comment.target:
+        targetID = getattr(comment.target, 'page_name', comment.target._id)
+    else:
+        targetID = ''
+
     return {
         'id': comment._id,
         'author': serialize_user(comment.user, node=node, n_comments=1, anonymous=anonymous),
         'dateCreated': comment.date_created.isoformat(),
         'dateModified': comment.date_modified.isoformat(),
         'page': comment.page,
-        'targetId': getattr(comment.target, 'page_name', comment.target._id),
+        'targetId': targetID,
         'rootId': root_id,
         'title': title,
-        'provider': comment.root_target.provider if isinstance(comment.root_target, FileNode) else '',
+        'provider': comment.root_target.provider if isinstance(comment.root_target, StoredFileNode) else '',
         'content': comment.content,
         'hasChildren': bool(getattr(comment, 'commented', [])),
         'canEdit': comment.user == auth.user,
@@ -210,11 +221,7 @@ def get_root_target_title(page, root_target):
     if page == Comment.WIKI:
         return root_target.page_name
     elif page == Comment.FILES:
-        # try:
-        root_target.enrich()
-        # except FigshareIsDraftError:
-        #     pass
-        return getattr(root_target, 'name', os.path.split(root_target.waterbutler_path)[1])
+        return root_target.name
     else:
         return ''
 
@@ -223,7 +230,7 @@ def get_comment_url(node, page, root_target):
     if page == Comment.WIKI:
         return node.web_url_for('project_wiki_id_page', wid=root_target._id, _absolute=True)
     elif page == Comment.FILES:
-        path = root_target.waterbutler_path[1:]
+        path = root_target.path[1:]
         return node.web_url_for('addon_view_or_download_file', provider=root_target.provider, path=path, _absolute=True)
     else:
         return node.absolute_url
@@ -367,10 +374,10 @@ def _update_comments_timestamp_total(node, auth, page):
     ret = {}
     if page == Comment.FILES:
         for root_target_id in node.commented_files:
-            root_target = Guid.load(root_target_id).referent
+            root_target = File.load(root_target_id)
             if root_target.commented[0].is_hidden:
                 continue
-            ret = _update_comments_timestamp(auth, node, page, root_target._id)
+            ret = _update_comments_timestamp(auth, node, page, root_target_id)
     elif page == Comment.WIKI:
         root_targets = list(NodeWikiPage.find(Q('node', 'eq', node)))
         for wiki_page in root_targets:

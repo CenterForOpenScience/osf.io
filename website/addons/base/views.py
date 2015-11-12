@@ -566,7 +566,7 @@ def addon_view_file(auth, node, file_node, version):
         'size': version.size if version.size is not None else 9966699,
         'private': getattr(node.get_addon(file_node.provider), 'is_private', False),
         'file_tags': [tag._id for tag in file_node.tags],
-        'file_id': file_node._id, 
+        'file_id': file_node._id,
         # Note: Comments are allowed for all addons that support waterbutler
         'allow_comment': True
     })
