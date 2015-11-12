@@ -1282,6 +1282,8 @@ class NodeFilesList(generics.ListAPIView, WaterButlerMixin, ListFilterMixin, Nod
         base_permissions.TokenHasScope,
     )
 
+    ordering = ('materialized_path',)  # default ordering
+
     serializer_class = FileSerializer
 
     required_read_scopes = [CoreScopes.NODE_FILE_READ]
