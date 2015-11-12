@@ -182,7 +182,7 @@ var ContributorModel = function(contributor, currentUserCanEdit, pageOwner, isRe
 
     self.optionsText = function(val) {
         return parent.permissionDict[val];
-    }
+    };
 };
 
 var MessageModel = function(text, level) {

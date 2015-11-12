@@ -873,7 +873,7 @@ var JobViewModel = function() {
     self.click = function(data, event) {
         var el = event.toElement;
         $(el.querySelector('.toggle-icon')).toggleClass('fa-angle-down fa-angle-up');
-    }
+    };
 };
 $.extend(JobViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 
@@ -925,7 +925,7 @@ var SchoolViewModel = function() {
     self.click = function(data, event) {
         var el = event.toElement;
         $(el.querySelector('.toggle-icon')).toggleClass('fa-angle-down fa-angle-up');
-    }
+    };
 };
 $.extend(SchoolViewModel.prototype, DateMixin.prototype, TrackedMixin.prototype);
 

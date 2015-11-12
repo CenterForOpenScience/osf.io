@@ -47,7 +47,7 @@ function LinkViewModel(data, $root) {
 
     self.click = function(data, event) {
         event.target.select();
-    }
+    };
 }
 
 function ViewModel(url, nodeIsPublic) {

@@ -1,5 +1,7 @@
 'use strict';
 
+var $ = require('jquery');
+
 var responsiveTable = function(table) {
     var headers = table.querySelectorAll('th');
     var rows = table.querySelectorAll('tbody>tr');
