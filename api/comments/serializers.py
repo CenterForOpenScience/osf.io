@@ -60,6 +60,8 @@ class CommentSerializer(JSONAPISerializer):
 
     def get_can_edit(self, obj):
         auth = Auth(self.context['request'].user)
+        if not auth or auth.user.is_anonymous():
+            return False
         return obj.user._id == auth.user._id
 
     def get_has_children(self, obj):
