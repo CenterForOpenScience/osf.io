@@ -16,6 +16,11 @@ var language = osfLanguage.registrations;
 var SaveManager = require('js/saveManager');
 var editorExtensions = require('js/registrationEditorExtensions');
 var registrationEmbargo = require('js/registrationEmbargo');
+// This value should match website.settings.DRAFT_REGISTRATION_APPROVAL_PERIOD
+var DRAFT_REGISTRATION_MIN_EMBARGO_DAYS = 10;
+var DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP = new Date().getTime() + (
+        DRAFT_REGISTRATION_MIN_EMBARGO_DAYS * 24 * 60 * 60 * 1000
+);
 
 /**
  * @class Comment
@@ -466,13 +471,21 @@ Draft.prototype.preRegisterPrompts = function(response, confirm) {
         var embargoed = viewModel.showEmbargoDatePicker();
         return (embargoed && viewModel.isEmbargoEndDateValid()) || !embargoed;
     });
-    viewModel.pikaday.extend({
-        validation: {
+    var validation = [];
+    if (self.metaSchema.requiresApproval) {
+        validation.push({
             validator: function() {
-                return viewModel.isEmbargoEndDateValid();
+                return viewModel.embargoEndDate().getTime() > DRAFT_REGISTRATION_MIN_EMBARGO_TIMESTAMP;
             },
-            message: 'Embargo end date must be at least two days in the future.'
-        }
+            message: 'Embargo end date must be at least ' + DRAFT_REGISTRATION_MIN_EMBARGO_DAYS + ' days in the future.'
+        });
+    }
+    validation.push({
+        validator: viewModel.isEmbargoEndDateValid,
+        message: 'Embargo end date must be at least two days in the future.'
+    });
+    viewModel.pikaday.extend({
+        validation: validation
     });
     viewModel.close = function() {
         bootbox.hideAll();
@@ -509,6 +522,35 @@ Draft.prototype.preRegisterErrors = function(response, confirm) {
                 className:'btn-primary'
             }}
     });
+};
+Draft.prototype.askConsent = function() {
+    var self = this;
+
+    var ret = $.Deferred();
+
+    var viewModel = {
+        message: self.metaSchema.consent,
+        consent: ko.observable(false),
+        submit: function() {
+            $osf.unblock();
+            bootbox.hideAll();
+            ret.resolve();
+        },
+        cancel: function() {
+            $osf.unblock();
+            bootbox.hideAll();
+            ret.reject();
+        }
+    };
+
+    bootbox.dialog({
+        size: 'large',
+        message: function() {
+            ko.renderTemplate('preRegistrationConsent', viewModel, {}, this);
+        }
+    });
+
+    return ret.promise();
 };
 Draft.prototype.beforeRegister = function(url) {
     var self = this;
