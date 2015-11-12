@@ -177,7 +177,7 @@ var updateCommentUserData = function(commentJSON, self) {
 var setUnreadCommentCount = function(self) {
     var request = osfHelpers.ajaxJSON(
         'GET',
-        osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/?related_counts=True', {query: 'related_counts=True'}),
+        osfHelpers.apiV2Url('nodes/' + window.contextVars.node.id + '/', {query: 'related_counts=True'}),
         {'isCors': true});
     request.done(function(response) {
         self.unreadComments(response.data.relationships.comments.links.related.meta.unread);
