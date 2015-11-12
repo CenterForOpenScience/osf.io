@@ -6,7 +6,7 @@
         "id": "page1",
         "title": "Summary",
         "questions": [{
-            "qid": "q1",
+            "qid": "summary",
             "title": "Summary",
             "nav": "Summary",
             "type": "string",
