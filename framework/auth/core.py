@@ -95,17 +95,17 @@ def validate_profile_websites(profile_websites):
 def validate_social(value):
     validate_profile_websites(value.get('profileWebsites'))
 
-def validate_academic_site(value):
+def validate_academia_site(value):
     if value:
         try:
             validate_url(value)
         except ValidationError:
             # Reraise with a better message
-            raise ValidationError('Invalid Academic.edu link.')
+            raise ValidationError('Invalid Academia.edu link.')
 
 
 def validate_social(value):
-    validate_academic_site(value.get('academic'))
+    validate_academia_site(value.get('academia'))
 
 
 
