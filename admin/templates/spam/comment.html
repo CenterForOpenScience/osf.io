@@ -8,7 +8,9 @@
     <div class="container-fluid">
         <div class="row">
             <div class="btn-group col-sm-12">
-                <a href="{% url 'spam:spam' %}" class="btn btn-primary">Back</a>
+                <a href="{% url 'spam:spam' %}" class="btn btn-primary">
+                    Back to list
+                </a>
                 <a href="{% url 'spam:email' comment.id %}"
                    class="btn btn-default">
                     Email
@@ -16,20 +18,62 @@
             </div>
         </div>
 
-        <h2>Comment: {{ comment.id }}</h2>
+        <hr>
 
-        <div><strong>Author:</strong> {{ comment.author.fullname }} </div>
-        <div><strong>Comment:</strong> {{ comment.content }} </div>
-        <div>
-            <div><h3>Reports:</h3></div>
-            {{ comment.reports|length }}
+        {# General info about the comment #}
+        <div class="row">
+            <div class="col-md-6">
+                <h4><strong>Author:</strong> {{ comment.author.fullname }}</h4>
+            </div>
+            <div class="col-md-6">
+                <h4><strong>Comment ID:</strong> {{ comment.id }}</h4>
+            </div>
         </div>
+
+        {# Comment date and content #}
+        <div class="row">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4>
+                        <strong>Comment content</strong>
+                        created on:
+                        {{ comment.date_created }}
+                    </h4>
+                </div>
+                <div class="panel-body">
+                    {{ comment.content }}
+                </div>
+            </div>
+        </div>
+
+        <h4><strong>Reports</strong></h4>
         {% for report in comment.reports %}
-            <div><strong>Reporter: </strong> {{ report.reporter.fullname }}</div>
-            <div><strong>Category: </strong> {{ report.category }}</div>
-            <div><strong>Reason: </strong> {{ report.reason|default:"--Nothing--" }}</div>
+            <div class="row">
+                <div class="panel panel-default">
+                    <div class="panel-heading">
+                        <h4>
+                            Type:
+                            <strong>
+                                {{ report.category }}
+                            </strong>
+                        </h4>
+                    </div>
+                    <div class="panel-body">
+                        <div class="col-md-6">
+                            <strong>Reporter:</strong>
+                            {{ report.reporter.fullname }}
+                        </div>
+                        <div class="col-md-6">
+                            <strong>
+                                Reason:
+                            </strong>
+                            {{ report.reason|default:"--Nothing--" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
         {% empty %}
-            <div>Empty!</div>
+            <div>No reports!</div>
         {% endfor %}
     </div>
 
