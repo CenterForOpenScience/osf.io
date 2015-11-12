@@ -17,7 +17,7 @@ var staticAdminPath = function(dir) {
 };
 
 common.entry = {
-    'app.min':staticAdminPath('js/app.min.js'),
+    'AdminLTE.min':staticAdminPath('js/AdminLTE.min.js'),
 };
 
 // Adding bundle tracker to plugins
