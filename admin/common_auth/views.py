@@ -6,21 +6,21 @@ from forms import LoginForm
 
 def login(request):
     if request.user.is_authenticated():
-        return redirect('/admin/')
+        return redirect('home')
     form = LoginForm(request.POST or None)
     if request.POST and form.is_valid():
         username = request.POST['username']
         password = request.POST['password']
         user = authenticate(username=username, password=password)
         if user is not None:
-            auth_login(request, admin_user)
-            return redirect('/admin/')
+            auth_login(request, user)
+            return redirect('home')
         else:
             messages.error(request, 'Username and/or Password incorrect. Please try again.')
-            return redirect('/admin/auth/login/')
+            return redirect('auth:login')
     context = {'form': form}
     return render(request, 'login.html', context)
 
 def logout(request):
     logout_user(request)
-    return redirect('/admin/auth/login/')
+    return redirect('auth:login')
