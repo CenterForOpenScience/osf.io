@@ -72,6 +72,9 @@ def get_or_http_error(Model, pk_or_query, allow_deleted=False, display_name=None
         Q('title', 'eq', 'Entitled') & Q('version', 'eq', 1)
     :param bool allow_deleted: allow deleleted records?
     :param basestring display_name:
+    :raises: HTTPError(404) if the record does not exist
+    :raises: HTTPError(400) if no unique record is found
+    :raises: HTTPError(410) if the resource is deleted and allow_deleted = False
     :return: Model instance
     """
 
