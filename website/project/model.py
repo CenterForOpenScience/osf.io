@@ -3986,19 +3986,22 @@ class DraftRegistration(StoredObject):
     # Dictionary field mapping extra fields defined in the MetaSchema.schema to their
     # values. Defaults should be provided in the schema (e.g. 'paymentSent': false),
     # and these values are added to the DraftRegistration
-    flags = fields.DictionaryField()
-
-    notes = fields.StringField()
-
-    def __init__(self, *args, **kwargs):
-        super(DraftRegistration, self).__init__(*args, **kwargs)
-        meta_schema = self.registration_schema or kwargs.get('registration_schema')
-        if meta_schema:
-            schema = meta_schema.schema
-            if not self.registration_schema:
+    _metaschema_flags = fields.DictionaryField(default=None)
+    # lazily set flags
+    @property
+    def flags(self):
+        if not self._metaschema_flags:
+            self._metaschema_flags = {}
+            meta_schema = self.registration_schema
+            if meta_schema:
+                schema = meta_schema.schema
                 flags = schema.get('flags', {})
                 for flag, value in flags.iteritems():
-                    self.flags[flag] = value
+                    self._metaschema_flags[flag] = value
+            self.save()
+        return self._metaschema_flags
+
+    notes = fields.StringField()
 
     @property
     def requires_approval(self):
